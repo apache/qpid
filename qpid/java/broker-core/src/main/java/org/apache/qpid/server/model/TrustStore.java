@@ -31,7 +31,6 @@ public interface TrustStore<X extends TrustStore<X>> extends ConfiguredObject<X>
     String DURABLE = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE = "state";
-    String TIME_TO_LIVE = "timeToLive";
     String DESCRIPTION = "description";
 
     String PATH = "path";

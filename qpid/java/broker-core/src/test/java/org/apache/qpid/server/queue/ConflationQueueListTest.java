@@ -58,7 +58,7 @@ public class ConflationQueueListTest extends TestCase
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
 
         _queue = new ConflationQueue(virtualHost, queueAttributes);
-        _list = _queue.getEntries();
+        _list = (ConflationQueueList) _queue.getEntries();
     }
 
     public void testListHasNoEntries()
@@ -190,7 +190,7 @@ public class ConflationQueueListTest extends TestCase
 
     private int countEntries(ConflationQueueList list)
     {
-        QueueEntryIterator<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList,QueueConsumer<?,ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>> iterator =
+        QueueEntryIterator iterator =
                 list.iterator();
         int count = 0;
         while(iterator.advance())

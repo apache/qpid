@@ -212,7 +212,7 @@ public class QueueRestTest extends QpidRestTestCase
     {
         assertNotNull("Consumer map should not be null", consumer);
         Asserts.assertAttributesPresent(consumer,
-                                        AbstractConfiguredObject.getAttributeNames(Consumer.class), Consumer.STATE, Consumer.TIME_TO_LIVE,
+                                        AbstractConfiguredObject.getAttributeNames(Consumer.class), Consumer.STATE,
                 Consumer.SETTLEMENT_MODE, Consumer.EXCLUSIVE, Consumer.SELECTOR,
                 Consumer.NO_LOCAL,
                 ConfiguredObject.TYPE,

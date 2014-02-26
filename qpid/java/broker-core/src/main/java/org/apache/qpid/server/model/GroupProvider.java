@@ -28,10 +28,8 @@ import java.util.Set;
 public interface GroupProvider<X extends GroupProvider<X>> extends ConfiguredObject<X>
 {
     public static final String DESCRIPTION = "description";
-    public static final String STATE = "state";
     public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
-    public static final String TIME_TO_LIVE = "timeToLive";
 
     Set<Principal> getGroupPrincipalsForUser(String username);
 }

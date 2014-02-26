@@ -23,7 +23,6 @@ package org.apache.qpid.server.exchange;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -33,7 +32,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class DefaultExchangeFactory implements ExchangeFactory
 {
@@ -48,7 +46,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
                                                  ExchangeDefaults.TOPIC_EXCHANGE_CLASS};
 
     private final VirtualHost _host;
-    private Map<String, ExchangeType<? extends Exchange>> _exchangeClassMap = new HashMap<String, ExchangeType<? extends Exchange>>();
+    private Map<String, ExchangeType<? extends ExchangeImpl>> _exchangeClassMap = new HashMap<String, ExchangeType<? extends ExchangeImpl>>();
 
     public DefaultExchangeFactory(VirtualHost host)
     {
@@ -92,17 +90,17 @@ public class DefaultExchangeFactory implements ExchangeFactory
         return new QpidServiceLoader<ExchangeType>().atLeastOneInstanceOf(ExchangeType.class);
     }
 
-    public Collection<ExchangeType<? extends Exchange>> getRegisteredTypes()
+    public Collection<ExchangeType<? extends ExchangeImpl>> getRegisteredTypes()
     {
         return _exchangeClassMap.values();
     }
 
     @Override
-    public Exchange createExchange(final Map<String, Object> attributes)
+    public NonDefaultExchange createExchange(final Map<String, Object> attributes)
             throws AMQUnknownExchangeType, UnknownExchangeException
     {
         String type = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.TYPE, attributes);
-        ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(type);
+        ExchangeType<? extends ExchangeImpl> exchType = _exchangeClassMap.get(type);
         if (exchType == null)
         {
             throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
@@ -111,7 +109,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
     }
 
     @Override
-    public Exchange restoreExchange(Map<String,Object> attributes)
+    public NonDefaultExchange restoreExchange(Map<String,Object> attributes)
             throws AMQUnknownExchangeType, UnknownExchangeException
     {
         return createExchange(attributes);

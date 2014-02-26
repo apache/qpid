@@ -24,30 +24,30 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
 
-public abstract class OutOfOrderQueue<E extends QueueEntryImpl<E,Q,L>, Q extends OutOfOrderQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> extends AbstractQueue<E,Q,L>
+public abstract class OutOfOrderQueue extends AbstractQueue
 {
 
     protected OutOfOrderQueue(VirtualHost virtualHost,
                               Map<String, Object> attributes,
-                              QueueEntryListFactory<E, Q, L> entryListFactory)
+                              QueueEntryListFactory entryListFactory)
     {
         super(virtualHost, attributes, entryListFactory);
     }
 
     @Override
-    protected void checkConsumersNotAheadOfDelivery(final E entry)
+    protected void checkConsumersNotAheadOfDelivery(final QueueEntry entry)
     {
         // check that all consumers are not in advance of the entry
-        QueueConsumerList.ConsumerNodeIterator<E,Q,L> subIter = getConsumerList().iterator();
+        QueueConsumerList.ConsumerNodeIterator subIter = getConsumerList().iterator();
         while(subIter.advance() && !entry.isAcquired())
         {
-            final QueueConsumer<?,E,Q,L> consumer = subIter.getNode().getConsumer();
+            final QueueConsumer<?> consumer = subIter.getNode().getConsumer();
             if(!consumer.isClosed())
             {
-                QueueContext<E,Q,L> context = consumer.getQueueContext();
+                QueueContext context = consumer.getQueueContext();
                 if(context != null)
                 {
-                    E released = context.getReleasedEntry();
+                    QueueEntry released = context.getReleasedEntry();
                     while(!entry.isAcquired() && (released == null || released.compareTo(entry) > 0))
                     {
                         if(QueueContext._releasedUpdater.compareAndSet(context,released,entry))

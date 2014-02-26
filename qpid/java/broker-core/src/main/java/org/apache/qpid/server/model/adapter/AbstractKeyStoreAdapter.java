@@ -101,18 +101,6 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
     }
 
     @Override
-    public long getTimeToLive()
-    {
-        return 0;
-    }
-
-    @Override
-    public long setTimeToLive(long expected, long desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptySet();
@@ -146,10 +134,6 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
         else if(KeyStore.LIFETIME_POLICY.equals(name))
         {
             return getLifetimePolicy();
-        }
-        else if(KeyStore.TIME_TO_LIVE.equals(name))
-        {
-            return getTimeToLive();
         }
         else if(KeyStore.PASSWORD.equals(name))
         {

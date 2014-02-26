@@ -32,22 +32,22 @@ import org.apache.qpid.server.message.ServerMessage;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DefinedGroupMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> implements MessageGroupManager<E,Q,L>
+public class DefinedGroupMessageGroupManager implements MessageGroupManager
 {
     private static final Logger _logger = LoggerFactory.getLogger(DefinedGroupMessageGroupManager.class);
 
     private final String _groupId;
     private final String _defaultGroup;
     private final Map<Object, Group> _groupMap = new HashMap<Object, Group>();
-    private final ConsumerResetHelper<E,Q,L> _resetHelper;
+    private final ConsumerResetHelper _resetHelper;
 
     private final class Group
     {
         private final Object _group;
-        private QueueConsumer<?,E,Q,L> _consumer;
+        private QueueConsumer<?> _consumer;
         private int _activeCount;
 
-        private Group(final Object key, final QueueConsumer<?,E,Q,L> consumer)
+        private Group(final Object key, final QueueConsumer<?> consumer)
         {
             _group = key;
             _consumer = consumer;
@@ -104,7 +104,7 @@ public class DefinedGroupMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q 
             return !(_consumer == null || (_activeCount == 0 && _consumer.isClosed()));
         }
 
-        public QueueConsumer<?,E,Q,L> getConsumer()
+        public QueueConsumer<?> getConsumer()
         {
             return _consumer;
         }
@@ -120,14 +120,14 @@ public class DefinedGroupMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q 
         }
     }
 
-    public DefinedGroupMessageGroupManager(final String groupId, String defaultGroup, ConsumerResetHelper<E,Q,L> resetHelper)
+    public DefinedGroupMessageGroupManager(final String groupId, String defaultGroup, ConsumerResetHelper resetHelper)
     {
         _groupId = groupId;
         _defaultGroup = defaultGroup;
         _resetHelper = resetHelper;
     }
     
-    public synchronized QueueConsumer<?,E,Q,L> getAssignedConsumer(final E entry)
+    public synchronized QueueConsumer<?> getAssignedConsumer(final QueueEntry entry)
     {
         Object groupId = getKey(entry);
 
@@ -135,12 +135,12 @@ public class DefinedGroupMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q 
         return group == null || !group.isValid() ? null : group.getConsumer();
     }
 
-    public synchronized boolean acceptMessage(final QueueConsumer<?,E,Q,L> sub, final E entry)
+    public synchronized boolean acceptMessage(final QueueConsumer<?> sub, final QueueEntry entry)
     {
         return assignMessage(sub, entry) && entry.acquire(sub);
     }
 
-    private boolean assignMessage(final QueueConsumer<?,E,Q,L> sub, final E entry)
+    private boolean assignMessage(final QueueConsumer<?> sub, final QueueEntry entry)
     {
         Object groupId = getKey(entry);
         Group group = _groupMap.get(groupId);
@@ -173,24 +173,24 @@ public class DefinedGroupMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q 
         }
     }
 
-    public synchronized E findEarliestAssignedAvailableEntry(final QueueConsumer<?,E,Q,L> sub)
+    public synchronized QueueEntry findEarliestAssignedAvailableEntry(final QueueConsumer<?> sub)
     {
         EntryFinder visitor = new EntryFinder(sub);
         sub.getQueue().visit(visitor);
         return visitor.getEntry();
     }
 
-    private class EntryFinder implements QueueEntryVisitor<E>
+    private class EntryFinder implements QueueEntryVisitor
     {
-        private E _entry;
+        private QueueEntry _entry;
         private QueueConsumer _sub;
 
-        public EntryFinder(final QueueConsumer sub)
+        public EntryFinder(final QueueConsumer<?> sub)
         {
             _sub = sub;
         }
 
-        public boolean visit(final E entry)
+        public boolean visit(final QueueEntry entry)
         {
             if(!entry.isAvailable())
             {
@@ -211,18 +211,18 @@ public class DefinedGroupMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q 
             }
         }
 
-        public E getEntry()
+        public QueueEntry getEntry()
         {
             return _entry;
         }
     }
 
     
-    public void clearAssignments(final QueueConsumer sub)
+    public void clearAssignments(final QueueConsumer<?> sub)
     {
     }
     
-    private Object getKey(E entry)
+    private Object getKey(QueueEntry entry)
     {
         ServerMessage message = entry.getMessage();
         AMQMessageHeader messageHeader = message == null ? null : message.getMessageHeader();
@@ -234,7 +234,7 @@ public class DefinedGroupMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q 
         return groupVal;
     }
 
-    private class GroupStateChangeListener implements StateChangeListener<MessageInstance<?, ? extends QueueConsumer>, QueueEntry.State>
+    private class GroupStateChangeListener implements StateChangeListener<MessageInstance, MessageInstance.State>
     {
         private final Group _group;
 
@@ -243,7 +243,7 @@ public class DefinedGroupMessageGroupManager<E extends QueueEntryImpl<E,Q,L>, Q 
             _group = group;
         }
 
-        public void stateChanged(final MessageInstance<?, ? extends QueueConsumer> entry,
+        public void stateChanged(final MessageInstance entry,
                                  final MessageInstance.State oldState,
                                  final MessageInstance.State newState)
         {

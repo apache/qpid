@@ -306,7 +306,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
     {
         Asserts.assertAttributesPresent(provider, AbstractConfiguredObject.getAttributeNames(
                 AuthenticationProvider.class),
-                AuthenticationProvider.DESCRIPTION, AuthenticationProvider.TIME_TO_LIVE, ConfiguredObject.CREATED_BY,
+                AuthenticationProvider.DESCRIPTION, ConfiguredObject.CREATED_BY,
                 ConfiguredObject.CREATED_TIME, ConfiguredObject.LAST_UPDATED_BY, ConfiguredObject.LAST_UPDATED_TIME);
         assertEquals("Unexpected value of provider attribute " + AuthenticationProvider.STATE, State.ACTIVE.name(),
                 provider.get(AuthenticationProvider.STATE));

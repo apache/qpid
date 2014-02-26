@@ -31,14 +31,23 @@ import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.util.StateChangeListener;
 
+import java.security.AccessControlException;
 import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -46,17 +55,19 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
 
-class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> implements QueueConsumer<T,E,Q,L>
+class QueueConsumerImpl
+    extends AbstractConfiguredObject<QueueConsumerImpl>
+        implements QueueConsumer<QueueConsumerImpl>
 {
 
 
     private static final Logger _logger = Logger.getLogger(QueueConsumerImpl.class);
     private final AtomicBoolean _targetClosed = new AtomicBoolean(false);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
-    private final long _id;
+    private final long _consumerNumber;
     private final Lock _stateChangeLock = new ReentrantLock();
     private final long _createTime = System.currentTimeMillis();
-    private final MessageInstance.ConsumerAcquiredState<QueueConsumer<T,E,Q,L>> _owningState = new MessageInstance.ConsumerAcquiredState<QueueConsumer<T,E,Q,L>>(this);
+    private final MessageInstance.ConsumerAcquiredState<QueueConsumerImpl> _owningState = new MessageInstance.ConsumerAcquiredState<QueueConsumerImpl>(this);
     private final boolean _acquires;
     private final boolean _seesRequeues;
     private final String _consumerName;
@@ -66,8 +77,9 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
     private final FilterManager _filters;
     private final Class<? extends ServerMessage> _messageClass;
     private final Object _sessionReference;
-    private final Q _queue;
-    private GenericActor _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getId())
+    private final AbstractQueue _queue;
+    private final boolean _exclusive;
+    private GenericActor _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getConsumerNumber())
                                                       + "(UNKNOWN)"
                                                       + "] ");
 
@@ -77,14 +89,14 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
     static
     {
         STATE_MAP.put(ConsumerTarget.State.ACTIVE, State.ACTIVE);
-        STATE_MAP.put(ConsumerTarget.State.SUSPENDED, State.SUSPENDED);
-        STATE_MAP.put(ConsumerTarget.State.CLOSED, State.CLOSED);
+        STATE_MAP.put(ConsumerTarget.State.SUSPENDED, State.QUIESCED);
+        STATE_MAP.put(ConsumerTarget.State.CLOSED, State.DELETED);
     }
 
-    private final T _target;
+    private final ConsumerTarget _target;
     private final SubFlushRunner _runner = new SubFlushRunner(this);
-    private volatile QueueContext<E,Q,L> _queueContext;
-    private StateChangeListener<? super QueueConsumerImpl<T,E,Q,L>, State> _stateListener = new StateChangeListener<QueueConsumerImpl<T,E,Q,L>, State>()
+    private volatile QueueContext _queueContext;
+    private StateChangeListener<? super QueueConsumerImpl, State> _stateListener = new StateChangeListener<QueueConsumerImpl, State>()
     {
         public void stateChanged(QueueConsumerImpl sub, State oldState, State newState)
         {
@@ -93,16 +105,18 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
     };
     private final boolean _noLocal;
 
-    QueueConsumerImpl(final Q queue,
-                      T target, final String consumerName,
+    QueueConsumerImpl(final AbstractQueue queue,
+                      ConsumerTarget target, final String consumerName,
                       final FilterManager filters,
                       final Class<? extends ServerMessage> messageClass,
                       EnumSet<Option> optionSet)
     {
-
+        super(UUID.randomUUID(), Collections.<String,Object>emptyMap(),
+              Collections.<String,Object>emptyMap(),
+              queue.getVirtualHost().getTaskExecutor());
         _messageClass = messageClass;
         _sessionReference = target.getSessionModel().getConnectionReference();
-        _id = SUB_ID_GENERATOR.getAndIncrement();
+        _consumerNumber = CONSUMER_NUMBER_GENERATOR.getAndIncrement();
         _filters = filters;
         _acquires = optionSet.contains(Option.ACQUIRES);
         _seesRequeues = optionSet.contains(Option.SEES_REQUEUES);
@@ -111,6 +125,7 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
         _target = target;
         _queue = queue;
         _noLocal = optionSet.contains(Option.NO_LOCAL);
+        _exclusive = optionSet.contains(Option.EXCLUSIVE);
         setupLogging(optionSet.contains(Option.EXCLUSIVE));
 
         // Access control
@@ -151,14 +166,14 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
         {
             close();
         }
-        final StateChangeListener<? super QueueConsumerImpl<T,E,Q,L>, State> stateListener = getStateListener();
+        final StateChangeListener<? super QueueConsumerImpl, State> stateListener = getStateListener();
         if(stateListener != null)
         {
             stateListener.stateChanged(this, STATE_MAP.get(oldState), STATE_MAP.get(newState));
         }
     }
 
-    public T getTarget()
+    public ConsumerTarget getTarget()
     {
         return _target;
     }
@@ -166,7 +181,7 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
     @Override
     public void externalStateChange()
     {
-        getQueue().deliverAsync(this);
+        _queue.deliverAsync(this);
     }
 
     @Override
@@ -229,12 +244,12 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
         _target.queueDeleted();
     }
 
-    public boolean wouldSuspend(final E msg)
+    public boolean wouldSuspend(final QueueEntry msg)
     {
         return !_target.allocateCredit(msg.getMessage());
     }
 
-    public void restoreCredit(final E queueEntry)
+    public void restoreCredit(final QueueEntry queueEntry)
     {
         _target.restoreCredit(queueEntry.getMessage());
     }
@@ -244,12 +259,12 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
         _target.queueEmpty();
     }
 
-    State getState()
+    public State getState()
     {
         return STATE_MAP.get(_target.getState());
     }
 
-    public final Q getQueue()
+    public final AMQQueue getQueue()
     {
         return _queue;
     }
@@ -258,7 +273,7 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
     {
         String queueString = new QueueLogSubject(_queue).toLogString();
 
-        _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getId())
+        _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getConsumerNumber())
                              + "("
                              // queueString is [vh(/{0})/qu({1}) ] so need to trim
                              //                ^                ^^
@@ -289,10 +304,10 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
     @Override
     public final void flush()
     {
-        getQueue().flushConsumer(this);
+        _queue.flushConsumer(this);
     }
 
-    public boolean resend(final E entry)
+    public boolean resend(final QueueEntry entry)
     {
         return getQueue().resend(entry, this);
     }
@@ -302,27 +317,27 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
         return _runner;
     }
 
-    public final long getId()
+    public final long getConsumerNumber()
     {
-        return _id;
+        return _consumerNumber;
     }
 
-    public final StateChangeListener<? super QueueConsumerImpl<T,E,Q,L>, State> getStateListener()
+    public final StateChangeListener<? super QueueConsumerImpl, State> getStateListener()
     {
         return _stateListener;
     }
 
-    public final void setStateListener(StateChangeListener<? super QueueConsumerImpl<T,E,Q,L>, State> listener)
+    public final void setStateListener(StateChangeListener<? super QueueConsumerImpl, State> listener)
     {
         _stateListener = listener;
     }
 
-    public final QueueContext<E,Q,L> getQueueContext()
+    public final QueueContext getQueueContext()
     {
         return _queueContext;
     }
 
-    final void setQueueContext(QueueContext<E,Q,L> queueContext)
+    final void setQueueContext(QueueContext queueContext)
     {
         _queueContext = queueContext;
     }
@@ -334,10 +349,10 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
 
     public final boolean isClosed()
     {
-        return getState() == State.CLOSED;
+        return getState() == State.DELETED;
     }
 
-    public final boolean hasInterest(E entry)
+    public final boolean hasInterest(QueueEntry entry)
     {
        //check that the message hasn't been rejected
         if (entry.isRejectedBy(this))
@@ -412,7 +427,7 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
         return _createTime;
     }
 
-    public final MessageInstance.ConsumerAcquiredState<QueueConsumer<T,E,Q,L>> getOwningState()
+    public final MessageInstance.ConsumerAcquiredState<QueueConsumerImpl> getOwningState()
     {
         return _owningState;
     }
@@ -447,11 +462,126 @@ class QueueConsumerImpl<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L
         return _deliveredCount.longValue();
     }
 
-    public final void send(final E entry, final boolean batch)
+    public final void send(final QueueEntry entry, final boolean batch)
     {
         _deliveredCount.incrementAndGet();
         ServerMessage message = entry.getMessage();
         _deliveredBytes.addAndGet(message.getSize());
         _target.send(entry, batch);
+    }
+
+    @Override
+    protected boolean setState(final State currentState, final State desiredState)
+    {
+        return false;
+    }
+
+    @Override
+    public String getDistributionMode()
+    {
+        return acquires() ? "MOVE" : "COPY";
+    }
+
+    @Override
+    public String getSettlementMode()
+    {
+        return null;
+    }
+
+    @Override
+    public boolean isExclusive()
+    {
+        return _exclusive;
+    }
+
+    @Override
+    public boolean isNoLocal()
+    {
+        return isNoLocal();
+    }
+
+    @Override
+    public String getSelector()
+    {
+        return null;
+    }
+
+    @Override
+    public String setName(final String currentName, final String desiredName)
+            throws IllegalStateException, AccessControlException
+    {
+        return null;
+    }
+
+    @Override
+    public boolean isDurable()
+    {
+        return false;
+    }
+
+    @Override
+    public void setDurable(final boolean durable)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+
+    }
+
+    @Override
+    public LifetimePolicy getLifetimePolicy()
+    {
+        return LifetimePolicy.DELETE_ON_SESSION_END;
+    }
+
+    @Override
+    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        return null;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(final Class<C> clazz)
+    {
+        return Collections.<C>emptyList();
+    }
+
+    @Override
+    public Object getAttribute(final String name)
+    {
+        if(ID.equals(name))
+        {
+            return getId();
+        }
+        else if(NAME.equals(name))
+        {
+            return getName();
+        }
+        else if(DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if(DISTRIBUTION_MODE.equals(name))
+        {
+            return getDistributionMode();
+        }
+        else if(SETTLEMENT_MODE.equals(name))
+        {
+            return getSettlementMode();
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return getLifetimePolicy();
+        }
+        else if(EXCLUSIVE.equals(name))
+        {
+            return isExclusive();
+        }
+        return super.getAttribute(name);
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return getAttributeNames(getClass());
     }
 }

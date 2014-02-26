@@ -39,6 +39,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     public static final String DESCRIPTION = "description";
     public static final String LAST_UPDATED_BY = "lastUpdatedBy";
     public static final String LAST_UPDATED_TIME = "lastUpdatedTime";
+    public static final String STATE = "state";
     public static final String CREATED_BY = "createdBy";
     public static final String CREATED_TIME = "createdTime";
 
@@ -202,28 +203,6 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException,
                                                                                              AccessControlException,
                                                                                              IllegalArgumentException;
-
-    /**
-     * Get the time the object will live once the lifetime policy conditions are no longer fulfilled
-     *
-     * @return the time to live
-     */
-    @ManagedAttribute
-    long getTimeToLive();
-
-    /**
-     * Set the ttl value
-     *
-     * @param expected the ttl the caller believes the object currently has
-     * @param desired the ttl value the caller
-     * @return the new ttl value
-     * @throws IllegalStateException if the ttl cannot be set in the current state
-     * @throws AccessControlException if the caller does not have permission to change the ttl
-     * @throws IllegalArgumentException if the object does not support the requested ttl value
-     */
-    long setTimeToLive(long expected, long desired) throws IllegalStateException,
-                                                           AccessControlException,
-                                                           IllegalArgumentException;
 
     /**
      * Get the names of attributes that are set on this object

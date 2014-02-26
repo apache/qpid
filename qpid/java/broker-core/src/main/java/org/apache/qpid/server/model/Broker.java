@@ -47,8 +47,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
     String SUPPORTED_PREFERENCES_PROVIDER_TYPES = "supportedPreferencesProviderTypes";
     String DURABLE = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
-    String STATE = "state";
-    String TIME_TO_LIVE = "timeToLive";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";

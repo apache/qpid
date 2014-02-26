@@ -82,20 +82,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     }
 
     @Override
-    public long getTimeToLive()
-    {
-        return 0;
-    }
-
-    @Override
-    public long setTimeToLive(long expected, long desired) throws IllegalStateException, AccessControlException,
-            IllegalArgumentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptyList();
@@ -125,10 +111,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
         else if (LIFETIME_POLICY.equals(name))
         {
             return getLifetimePolicy();
-        }
-        else if (TIME_TO_LIVE.equals(name))
-        {
-            return getTimeToLive();
         }
         return super.getAttribute(name);
     }

@@ -30,7 +30,7 @@ import org.apache.qpid.server.queue.SortedQueueEntry.Colour;
  * ISBN-13: 978-0262033848
  * see http://en.wikipedia.org/wiki/Red-black_tree
  */
-public class SortedQueueEntryList implements QueueEntryListBase<SortedQueueEntry, SortedQueue, SortedQueueEntryList>
+public class SortedQueueEntryList implements QueueEntryList
 {
     private final SortedQueueEntry _head;
     private SortedQueueEntry _root;
@@ -279,8 +279,9 @@ public class SortedQueueEntryList implements QueueEntryListBase<SortedQueueEntry
         return (node == null ? Colour.BLACK : node.getColour()) == colour;
     }
 
-    public SortedQueueEntry next(final SortedQueueEntry node)
+    public SortedQueueEntry next(final QueueEntry entry)
     {
+        SortedQueueEntry node = (SortedQueueEntry)entry;
         synchronized(_lock)
         {
             if(node.isDeleted() && _head != node)
@@ -308,7 +309,7 @@ public class SortedQueueEntryList implements QueueEntryListBase<SortedQueueEntry
         }
     }
 
-    public QueueEntryIterator<SortedQueueEntry,SortedQueue,SortedQueueEntryList,QueueConsumer<?,SortedQueueEntry,SortedQueue,SortedQueueEntryList>> iterator()
+    public QueueEntryIterator iterator()
     {
         return new QueueEntryIteratorImpl(_head);
     }
@@ -323,8 +324,9 @@ public class SortedQueueEntryList implements QueueEntryListBase<SortedQueueEntry
         return _root;
     }
 
-    public void entryDeleted(final SortedQueueEntry entry)
+    public void entryDeleted(final QueueEntry e)
     {
+        SortedQueueEntry entry = (SortedQueueEntry)e;
         synchronized(_lock)
         {
             // If the node to be removed has two children, we swap the position
@@ -618,7 +620,7 @@ public class SortedQueueEntryList implements QueueEntryListBase<SortedQueueEntry
         return x == null ? null : x.getColour();
     }
 
-    public class QueueEntryIteratorImpl implements QueueEntryIterator<SortedQueueEntry,SortedQueue,SortedQueueEntryList,QueueConsumer<?,SortedQueueEntry,SortedQueue,SortedQueueEntryList>>
+    public class QueueEntryIteratorImpl implements QueueEntryIterator
     {
         private SortedQueueEntry _lastNode;
 

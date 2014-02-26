@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
@@ -56,8 +57,6 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
-    String STATE                                = "state";
-    String TIME_TO_LIVE                         = "timeToLive";
     String CONFIG_PATH                          = "configPath";
 
     // Attributes
@@ -156,7 +155,7 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     Collection<Exchange> getExchanges();
 
     Exchange createExchange(String name, State initialState, boolean durable,
-                            LifetimePolicy lifetime, long ttl, String type, Map<String, Object> attributes)
+                            LifetimePolicy lifetime, String type, Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException;
 
     Queue createQueue(Map<String, Object> attributes)
@@ -186,6 +185,9 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
      * TODO We need to add and implement an authorization provider configured object instead
      */
     SecurityManager getSecurityManager();
+
+    // TODO - remove this
+    TaskExecutor getTaskExecutor();
 
     MessageStore getMessageStore();
 

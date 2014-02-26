@@ -49,7 +49,7 @@ public class PriorityQueueTest extends AbstractQueueTestBase
     {
 
         // Enqueue messages in order
-        AbstractQueue queue = getQueue();
+        AbstractQueue queue = (AbstractQueue) getQueue();
         queue.enqueue(createMessage(1L, (byte) 10), null);
         queue.enqueue(createMessage(2L, (byte) 4), null);
         queue.enqueue(createMessage(3L, (byte) 0), null);

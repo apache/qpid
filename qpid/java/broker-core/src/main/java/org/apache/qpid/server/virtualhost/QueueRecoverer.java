@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -72,7 +72,7 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
         private final UUID _id;
         private AMQQueue _queue;
         private List<UnresolvedDependency> _dependencies = new ArrayList<UnresolvedDependency>();
-        private Exchange _alternateExchange;
+        private ExchangeImpl _alternateExchange;
 
         public UnresolvedQueue(final UUID id,
                                final String type,
@@ -136,7 +136,7 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
             @Override
             public void resolve(final Object dependency)
             {
-                _alternateExchange = (Exchange) dependency;
+                _alternateExchange = (ExchangeImpl) dependency;
                 _dependencies.remove(this);
             }
         }

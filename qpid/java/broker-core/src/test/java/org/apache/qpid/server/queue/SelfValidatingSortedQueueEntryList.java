@@ -51,7 +51,7 @@ public class SelfValidatingSortedQueueEntryList extends SortedQueueEntryList
     }
 
     @Override /** Overridden to automatically check queue properties before and after. */
-    public void entryDeleted(SortedQueueEntry entry)
+    public void entryDeleted(QueueEntry entry)
     {
         assertQueueProperties(); //before delete
         super.entryDeleted(entry);

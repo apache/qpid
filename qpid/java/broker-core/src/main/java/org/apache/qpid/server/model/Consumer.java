@@ -34,7 +34,6 @@ public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
     public String DURABLE = "durable";
     public String LIFETIME_POLICY = "lifetimePolicy";
     public String STATE = "state";
-    public String TIME_TO_LIVE = "timeToLive";
 
     @ManagedAttribute
     String getDistributionMode();

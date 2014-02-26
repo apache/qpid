@@ -210,7 +210,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                                                             props,
                                                             _channel.getChannelId(),
                                                             deliveryTag,
-                                                            _queue.getMessageCount());
+                                                            _queue.getQueueDepthMessages());
 
             _deliveredMessage = true;
         }

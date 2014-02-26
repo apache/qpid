@@ -25,7 +25,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.Rejected;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusExpiryPolicy;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.txn.ServerTransaction;
 
@@ -35,11 +35,11 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
     public static final Rejected REJECTED = new Rejected();
     private static final Outcome[] OUTCOMES = { ACCEPTED, REJECTED};
 
-    private Exchange _exchange;
+    private ExchangeImpl _exchange;
     private TerminusDurability _durability;
     private TerminusExpiryPolicy _expiryPolicy;
 
-    public ExchangeDestination(Exchange exchange, TerminusDurability durable, TerminusExpiryPolicy expiryPolicy)
+    public ExchangeDestination(ExchangeImpl exchange, TerminusDurability durable, TerminusExpiryPolicy expiryPolicy)
     {
         _exchange = exchange;
         _durability = durable;
@@ -98,7 +98,7 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
         return 20000;
     }
 
-    public Exchange getExchange()
+    public ExchangeImpl getExchange()
     {
         return _exchange;
     }

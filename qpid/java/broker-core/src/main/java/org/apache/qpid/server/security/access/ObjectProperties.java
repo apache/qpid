@@ -26,7 +26,7 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.queue.AMQQueue;
 
@@ -155,7 +155,7 @@ public class ObjectProperties
 
     }
 
-    public ObjectProperties(Exchange exch, AMQQueue queue, String routingKey)
+    public ObjectProperties(ExchangeImpl exch, AMQQueue queue, String routingKey)
     {
         this(queue);
 

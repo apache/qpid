@@ -1187,7 +1187,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         for (String key: source.keySet())
         {
             match = target.containsKey(key) &&
-                    target.get(key).equals(source.get(key));
+                    (target.get(key).equals(source.get(key))
+                    || (target.get(key) instanceof Number)
+                        && source.get(key) instanceof Number &&
+                        (((Number) target.get(key)).longValue()) == (((Number) source.get(key)).longValue()));
 
             if (!match)
             {

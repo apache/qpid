@@ -28,8 +28,6 @@ public interface PreferencesProvider<X extends PreferencesProvider<X>> extends C
 {
     String DURABLE         = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
-    String STATE           = "state";
-    String TIME_TO_LIVE    = "timeToLive";
 
     /**
      * Returns preferences {@link Map} for a given user ID

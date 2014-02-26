@@ -75,7 +75,7 @@ public class ExtractResendAndRequeueTest extends TestCase
         when(_queue.getName()).thenReturn(getName());
         when(_queue.isDeleted()).thenReturn(_queueDeleted);
         _consumer = mock(Consumer.class);
-        when(_consumer.getId()).thenReturn(Consumer.SUB_ID_GENERATOR.getAndIncrement());
+        when(_consumer.getConsumerNumber()).thenReturn(Consumer.CONSUMER_NUMBER_GENERATOR.getAndIncrement());
 
 
         long id = 0;

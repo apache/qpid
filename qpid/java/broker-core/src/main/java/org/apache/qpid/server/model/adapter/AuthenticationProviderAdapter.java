@@ -144,19 +144,6 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
     }
 
     @Override
-    public long getTimeToLive()
-    {
-        return 0;
-    }
-
-    @Override
-    public long setTimeToLive(long expected, long desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return 0;
-    }
-
-    @Override
     public Collection<String> getAttributeNames()
     {
         return _supportedAttributes;
@@ -180,10 +167,6 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
         else if(STATE.equals(name))
         {
             return getState();
-        }
-        else if(TIME_TO_LIVE.equals(name))
-        {
-            // TODO
         }
         return super.getAttribute(name);
     }
@@ -641,19 +624,6 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
                     throws IllegalStateException, AccessControlException, IllegalArgumentException
             {
                 throw new IllegalStateException("LifetimePolicy cannot be updated");
-            }
-
-            @Override
-            public long getTimeToLive()
-            {
-                return 0;
-            }
-
-            @Override
-            public long setTimeToLive(long expected, long desired)
-                    throws IllegalStateException, AccessControlException, IllegalArgumentException
-            {
-                throw new IllegalStateException("ttl cannot be updated");
             }
 
             @Override

@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 import java.util.*;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -41,6 +42,7 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AbstractQueue.QueueEntryFilter;
 import org.apache.qpid.server.consumer.MockConsumer;
@@ -50,19 +52,19 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
-abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> extends QpidTestCase
+abstract class AbstractQueueTestBase extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(AbstractQueueTestBase.class);
 
 
-    private Q _queue;
+    private AMQQueue<?> _queue;
     private VirtualHost _virtualHost;
     private String _qname = "qname";
     private String _owner = "owner";
     private String _routingKey = "routing key";
     private DirectExchange _exchange;
     private MockConsumer _consumerTarget = new MockConsumer();
-    private QueueConsumer _consumer;
+    private QueueConsumer<?> _consumer;
     private Map<String,Object> _arguments = Collections.emptyMap();
 
     @Override
@@ -78,7 +80,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         attributes.put(Queue.NAME, _qname);
         attributes.put(Queue.OWNER, _owner);
 
-        _queue = (Q) _virtualHost.createQueue(attributes);
+        _queue = _virtualHost.createQueue(attributes);
 
         _exchange = (DirectExchange) _virtualHost.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
@@ -106,7 +108,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
             Map<String,Object> attributes = new HashMap<String, Object>(_arguments);
             attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
 
-            _queue = (Q) _virtualHost.createQueue(attributes);
+            _queue =  _virtualHost.createQueue(attributes);
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -118,7 +120,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         Map<String,Object> attributes = new HashMap<String, Object>(_arguments);
         attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
         attributes.put(Queue.NAME, "differentName");
-        _queue = (Q) _virtualHost.createQueue(attributes);
+        _queue =  _virtualHost.createQueue(attributes);
         assertNotNull("Queue was not created", _queue);
     }
 
@@ -138,12 +140,13 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
                     _exchange.isBound(_routingKey,_queue));
         assertEquals("Exchange binding count", 1,
                      _queue.getBindings().size());
+        final BindingImpl firstBinding = _queue.getBindings().iterator().next();
         assertEquals("Wrong exchange bound", _routingKey,
-                _queue.getBindings().get(0).getBindingKey());
+                     firstBinding.getBindingKey());
         assertEquals("Wrong exchange bound", _exchange,
-                     _queue.getBindings().get(0).getExchangeImpl());
+                     firstBinding.getExchange());
 
-        _exchange.getBinding(_routingKey, _queue).delete();
+        _exchange.deleteBinding(_routingKey, _queue);
         assertFalse("Routing key was still bound",
                 _exchange.isBound(_routingKey));
 
@@ -154,13 +157,13 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         ServerMessage messageA = createMessage(new Long(24));
 
         // Check adding a consumer adds it to the queue
-        _consumer = _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                        EnumSet.of(Consumer.Option.ACQUIRES,
                                                   Consumer.Option.SEES_REQUEUES));
         assertEquals("Queue does not have consumer", 1,
                      _queue.getConsumerCount());
         assertEquals("Queue does not have active consumer", 1,
-                     _queue.getActiveConsumerCount());
+                     _queue.getConsumerCountWithCredit());
 
         // Check sending a message ends up with the subscriber
         _queue.enqueue(messageA, null);
@@ -179,7 +182,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         assertTrue("Consumer still had queue", _consumerTarget.isClosed());
         assertFalse("Queue still has consumer", 1 == _queue.getConsumerCount());
         assertFalse("Queue still has active consumer",
-                    1 == _queue.getActiveConsumerCount());
+                    1 == _queue.getConsumerCountWithCredit());
 
         ServerMessage messageB = createMessage(new Long (25));
         _queue.enqueue(messageB, null);
@@ -191,7 +194,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
     {
         ServerMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA, null);
-        _consumer = _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                        EnumSet.of(Consumer.Option.ACQUIRES,
                                                   Consumer.Option.SEES_REQUEUES));
         Thread.sleep(150);
@@ -209,7 +212,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         ServerMessage messageB = createMessage(new Long(25));
         _queue.enqueue(messageA, null);
         _queue.enqueue(messageB, null);
-        _consumer = _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                        EnumSet.of(Consumer.Option.ACQUIRES,
                                                   Consumer.Option.SEES_REQUEUES));
         Thread.sleep(150);
@@ -230,7 +233,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         ServerMessage messageC = createMessage(new Long(26));
 
 
-        _consumer = _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                            EnumSet.of(Consumer.Option.ACQUIRES,
                                                       Consumer.Option.SEES_REQUEUES));
 
@@ -270,14 +273,14 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
 
     /**
      * Tests that a released message that becomes expired is not resent to the subscriber.
-     * This tests ensures that SimpleAMQQueueEntry.getNextAvailableEntry avoids expired entries.
+     * This tests ensures that SimpleAMQQueue<?>Entry.getNextAvailableEntry avoids expired entries.
      * Verifies also that the QueueContext._releasedEntry is reset to null after the entry has been reset.
      */
     public void testReleaseMessageThatBecomesExpiredIsNotRedelivered() throws Exception
     {
         ServerMessage messageA = createMessage(new Long(24));
 
-        _consumer = _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                            EnumSet.of(Consumer.Option.SEES_REQUEUES,
                                                       Consumer.Option.ACQUIRES));
 
@@ -329,7 +332,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         ServerMessage messageB = createMessage(new Long(25));
         ServerMessage messageC = createMessage(new Long(26));
 
-        _consumer = _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                            EnumSet.of(Consumer.Option.ACQUIRES,
                                                       Consumer.Option.SEES_REQUEUES));
 
@@ -382,11 +385,11 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         MockConsumer target2 = new MockConsumer();
 
 
-        QueueConsumer consumer1 = _queue.addConsumer(target1, null, messageA.getClass(), "test",
+        QueueConsumer consumer1 = (QueueConsumer) _queue.addConsumer(target1, null, messageA.getClass(), "test",
                                                          EnumSet.of(Consumer.Option.ACQUIRES,
                                                                     Consumer.Option.SEES_REQUEUES));
 
-        QueueConsumer consumer2 = _queue.addConsumer(target2, null, messageA.getClass(), "test",
+        QueueConsumer consumer2 = (QueueConsumer) _queue.addConsumer(target2, null, messageA.getClass(), "test",
                                                          EnumSet.of(Consumer.Option.ACQUIRES,
                                                                     Consumer.Option.SEES_REQUEUES));
 
@@ -424,14 +427,14 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         ServerMessage messageA = createMessage(new Long(24));
         // Check adding an exclusive consumer adds it to the queue
 
-        _consumer = _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                            EnumSet.of(Consumer.Option.EXCLUSIVE, Consumer.Option.ACQUIRES,
                                                       Consumer.Option.SEES_REQUEUES));
 
         assertEquals("Queue does not have consumer", 1,
                      _queue.getConsumerCount());
         assertEquals("Queue does not have active consumer", 1,
-                     _queue.getActiveConsumerCount());
+                     _queue.getConsumerCountWithCredit());
 
         // Check sending a message ends up with the subscriber
         _queue.enqueue(messageA, null);
@@ -464,14 +467,14 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         // Check we cannot add an exclusive subscriber to a queue with an
         // existing consumer
         _consumer.close();
-        _consumer = _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                        EnumSet.of(Consumer.Option.ACQUIRES,
                                                   Consumer.Option.SEES_REQUEUES));
 
         try
         {
 
-            _consumer = _queue.addConsumer(subB, null, messageA.getClass(), "test",
+            _consumer = (QueueConsumer<?>) _queue.addConsumer(subB, null, messageA.getClass(), "test",
                                                EnumSet.of(Consumer.Option.EXCLUSIVE));
 
         }
@@ -488,13 +491,13 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         Long id = new Long(26);
         ServerMessage message = createMessage(id);
 
-        _consumer = _queue.addConsumer(_consumerTarget, null, message.getClass(), "test",
+        _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, message.getClass(), "test",
                                            EnumSet.of(Consumer.Option.ACQUIRES, Consumer.Option.SEES_REQUEUES));
 
-        _queue.enqueue(message, new Action<MessageInstance<?,? extends Consumer>>()
+        _queue.enqueue(message, new Action<MessageInstance>()
         {
             @Override
-            public void performAction(final MessageInstance<?,? extends Consumer> object)
+            public void performAction(final MessageInstance object)
             {
                 QueueEntryImpl entry = (QueueEntryImpl) object;
                 entry.setRedelivered();
@@ -577,7 +580,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
 
         // Get non-existent 0th QueueEntry & check returned list was empty
         // (the position parameters in this method are indexed from 1)
-        List<E> entries = _queue.getMessagesRangeOnTheQueue(0, 0);
+        List<? extends QueueEntry> entries = _queue.getMessagesRangeOnTheQueue(0, 0);
         assertTrue(entries.size() == 0);
 
         // Check that when 'from' is 0 it is ignored and the range continues from 1
@@ -725,7 +728,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         dequeueMessage(_queue, dequeueMessageIndex);
 
         // get messages on the queue
-        List<E> entries = _queue.getMessagesOnTheQueue();
+        List<? extends QueueEntry> entries = _queue.getMessagesOnTheQueue();
 
         // assert queue entries
         assertEquals(messageNumber - 1, entries.size());
@@ -762,9 +765,9 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         dequeueMessage(_queue, dequeueMessageIndex);
 
         // get messages on the queue with filter accepting all available messages
-        List<E> entries = _queue.getMessagesOnTheQueue(new QueueEntryFilter<E>()
+        List<? extends QueueEntry> entries = ((AbstractQueue)_queue).getMessagesOnTheQueue(new QueueEntryFilter()
         {
-            public boolean accept(E entry)
+            public boolean accept(QueueEntry entry)
             {
                 return true;
             }
@@ -813,7 +816,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         _queue.clearQueue();
 
         // get queue entries
-        List<E> entries = _queue.getMessagesOnTheQueue();
+        List<? extends QueueEntry> entries = _queue.getMessagesOnTheQueue();
 
         // assert queue entries
         assertNotNull(entries);
@@ -823,7 +826,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
 
     public void testNotificationFiredOnEnqueue() throws Exception
     {
-        AMQQueue.NotificationListener listener = mock(AMQQueue.NotificationListener.class);
+        QueueNotificationListener listener = mock(QueueNotificationListener .class);
 
         _queue.setNotificationListener(listener);
         _queue.setMaximumMessageCount(2);
@@ -838,7 +841,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
 
     public void testNotificationFiredAsync() throws Exception
     {
-        AMQQueue.NotificationListener listener = mock(AMQQueue.NotificationListener.class);
+        QueueNotificationListener  listener = mock(QueueNotificationListener .class);
 
         _queue.enqueue(createMessage(new Long(24)), null);
         _queue.enqueue(createMessage(new Long(25)), null);
@@ -864,12 +867,12 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
      * @param messageNumber
      *            number of messages to put into queue
      */
-    protected List<E> enqueueGivenNumberOfMessages(Q queue, int messageNumber)
+    protected List<? extends QueueEntry> enqueueGivenNumberOfMessages(AMQQueue<?> queue, int messageNumber)
     {
         putGivenNumberOfMessages(queue, messageNumber);
 
         // make sure that all enqueued messages are on the queue
-        List<E> entries = queue.getMessagesOnTheQueue();
+        List<? extends QueueEntry> entries = queue.getMessagesOnTheQueue();
         assertEquals(messageNumber, entries.size());
         for (int i = 0; i < messageNumber; i++)
         {
@@ -890,7 +893,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
      * @param queue
      * @param messageNumber
      */
-    protected <T extends AbstractQueue> void putGivenNumberOfMessages(T queue, int messageNumber)
+    protected void putGivenNumberOfMessages(AMQQueue<?> queue, int messageNumber)
     {
         for (int i = 0; i < messageNumber; i++)
         {
@@ -920,9 +923,9 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
      * @param dequeueMessageIndex
      *            entry index to dequeue.
      */
-    protected QueueEntry dequeueMessage(AMQQueue queue, int dequeueMessageIndex)
+    protected QueueEntry dequeueMessage(AMQQueue<?> queue, int dequeueMessageIndex)
     {
-        List<QueueEntry> entries = queue.getMessagesOnTheQueue();
+        List<? extends QueueEntry> entries = queue.getMessagesOnTheQueue();
         QueueEntry entry = entries.get(dequeueMessageIndex);
         entry.acquire();
         entry.delete();
@@ -953,12 +956,12 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         }
     }
 
-    public Q getQueue()
+    public AMQQueue<?> getQueue()
     {
         return _queue;
     }
 
-    protected void setQueue(Q queue)
+    protected void setQueue(AMQQueue<?> queue)
     {
         _queue = queue;
     }
@@ -996,7 +999,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         return message;
     }
 
-    private static class EntryListAddingAction implements Action<MessageInstance<?,? extends Consumer>>
+    private static class EntryListAddingAction implements Action<MessageInstance>
     {
         private final ArrayList<QueueEntry> _queueEntries;
 
@@ -1005,7 +1008,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
             _queueEntries = queueEntries;
         }
 
-        public void performAction(MessageInstance<?,? extends Consumer> entry)
+        public void performAction(MessageInstance entry)
         {
             _queueEntries.add((QueueEntry) entry);
         }
@@ -1043,17 +1046,17 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
     }
 
 
-    static class TestSimpleQueueEntryListFactory implements QueueEntryListFactory<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    static class TestSimpleQueueEntryListFactory implements QueueEntryListFactory
     {
 
         @Override
-        public NonAsyncDeliverList createQueueEntryList(final NonAsyncDeliverQueue queue)
+        public NonAsyncDeliverList createQueueEntryList(final AMQQueue<?> queue)
         {
-            return new NonAsyncDeliverList(queue);
+            return new NonAsyncDeliverList((NonAsyncDeliverQueue) queue);
         }
     }
 
-    private static class NonAsyncDeliverEntry extends OrderedQueueEntry<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    private static class NonAsyncDeliverEntry extends OrderedQueueEntry
     {
 
         public NonAsyncDeliverEntry(final NonAsyncDeliverList queueEntryList)
@@ -1074,17 +1077,17 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         }
     }
 
-    private static class NonAsyncDeliverList extends OrderedQueueEntryList<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    private static class NonAsyncDeliverList extends OrderedQueueEntryList
     {
 
-        private static final HeadCreator<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList> HEAD_CREATOR =
-                new HeadCreator<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>()
+        private static final HeadCreator HEAD_CREATOR =
+                new HeadCreator()
                 {
 
                     @Override
-                    public NonAsyncDeliverEntry createHead(final NonAsyncDeliverList list)
+                    public NonAsyncDeliverEntry createHead(final QueueEntryList list)
                     {
-                        return new NonAsyncDeliverEntry(list);
+                        return new NonAsyncDeliverEntry((NonAsyncDeliverList) list);
                     }
                 };
 
@@ -1101,7 +1104,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
     }
 
 
-    private static class NonAsyncDeliverQueue extends AbstractQueue<NonAsyncDeliverEntry, NonAsyncDeliverQueue, NonAsyncDeliverList>
+    private static class NonAsyncDeliverQueue extends AbstractQueue
     {
         public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHost vhost)
         {
@@ -1119,7 +1122,7 @@ abstract class AbstractQueueTestBase<E extends QueueEntryImpl<E,Q,L>, Q extends 
         }
 
         @Override
-        public void deliverAsync(QueueConsumer sub)
+        public void deliverAsync(QueueConsumer<?> sub)
         {
             // do nothing, i.e prevent deliveries by the SubFlushRunner
             // when registering the new consumers

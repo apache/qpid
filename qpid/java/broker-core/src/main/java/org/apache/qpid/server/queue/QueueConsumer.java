@@ -24,37 +24,30 @@ import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.MessageInstance;
 
-interface QueueConsumer<T extends ConsumerTarget, E extends QueueEntryImpl<E,Q,L>, Q extends AbstractQueue<E,Q,L>, L extends QueueEntryListBase<E,Q,L>> extends Consumer
+public interface QueueConsumer<X extends QueueConsumer<X>> extends Consumer, org.apache.qpid.server.model.Consumer<X>
 {
 
     void flushBatched();
 
     void queueEmpty();
 
-    boolean hasInterest(E node);
+    boolean hasInterest(QueueEntry node);
 
-    boolean wouldSuspend(E entry);
+    boolean wouldSuspend(QueueEntry entry);
 
-    void restoreCredit(E entry);
+    void restoreCredit(QueueEntry entry);
 
-    void send(E entry, boolean batch);
+    void send(QueueEntry entry, boolean batch);
 
     void queueDeleted();
 
     SubFlushRunner getRunner();
 
-    Q getQueue();
+    AMQQueue getQueue();
 
-    boolean resend(E e);
+    boolean resend(QueueEntry e);
 
-    public static enum State
-    {
-        ACTIVE,
-        SUSPENDED,
-        CLOSED
-    }
+    MessageInstance.ConsumerAcquiredState<X> getOwningState();
 
-    MessageInstance.ConsumerAcquiredState<QueueConsumer<T,E,Q,L>> getOwningState();
-
-    QueueContext<E,Q,L> getQueueContext();
+    QueueContext getQueueContext();
 }

@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -32,9 +33,14 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Publisher;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -44,6 +50,8 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.StateChangeListener;
+import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
+import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -58,19 +66,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class AbstractExchange<T extends Exchange> implements Exchange<T>
+public abstract class AbstractExchange<T extends AbstractExchange<T>>
+        extends AbstractConfiguredObject<T>
+        implements NonDefaultExchange<T>
 {
     private static final Logger _logger = Logger.getLogger(AbstractExchange.class);
+    private final LifetimePolicy _lifetimePolicy;
     private String _name;
     private final AtomicBoolean _closed = new AtomicBoolean();
 
-    private Exchange _alternateExchange;
+    private NonDefaultExchange _alternateExchange;
 
     private boolean _durable;
 
     private VirtualHost _virtualHost;
 
-    private final List<Action<Exchange>> _closeTaskList = new CopyOnWriteArrayList<Action<Exchange>>();
+    private final List<Action<ExchangeImpl>> _closeTaskList = new CopyOnWriteArrayList<Action<ExchangeImpl>>();
 
     /**
      * Whether the exchange is automatically deleted once all queues have detached from it
@@ -81,8 +92,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     private LogSubject _logSubject;
     private Map<ExchangeReferrer,Object> _referrers = new ConcurrentHashMap<ExchangeReferrer,Object>();
 
-    private final CopyOnWriteArrayList<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
-    private final UUID _id;
+    private final CopyOnWriteArrayList<BindingImpl> _bindings = new CopyOnWriteArrayList<BindingImpl>();
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
     private final AtomicLong _receivedMessageCount = new AtomicLong();
     private final AtomicLong _receivedMessageSize = new AtomicLong();
@@ -91,23 +101,25 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     private final AtomicLong _droppedMessageCount = new AtomicLong();
     private final AtomicLong _droppedMessageSize = new AtomicLong();
 
-    private final CopyOnWriteArrayList<Exchange.BindingListener> _listeners = new CopyOnWriteArrayList<Exchange.BindingListener>();
+    private final CopyOnWriteArrayList<ExchangeImpl.BindingListener> _listeners = new CopyOnWriteArrayList<ExchangeImpl.BindingListener>();
 
-    private final ConcurrentHashMap<BindingIdentifier, Binding> _bindingsMap = new ConcurrentHashMap<BindingIdentifier, Binding>();
+    private final ConcurrentHashMap<BindingIdentifier, BindingImpl> _bindingsMap = new ConcurrentHashMap<BindingIdentifier, BindingImpl>();
 
-
-    //TODO : persist creation time
-    private long _createTime = System.currentTimeMillis();
-    private StateChangeListener<Binding, State> _bindingListener;
+    private StateChangeListener<BindingImpl, State> _bindingListener;
 
     public AbstractExchange(VirtualHost vhost, Map<String, Object> attributes) throws UnknownExchangeException
     {
+        super(MapValueConverter.getUUIDAttribute(org.apache.qpid.server.model.Exchange.ID, attributes),
+              Collections.<String,Object>emptyMap(), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
 
-        _id = MapValueConverter.getUUIDAttribute(org.apache.qpid.server.model.Exchange.ID, attributes);
         _name = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.NAME, attributes);
         _durable = MapValueConverter.getBooleanAttribute(org.apache.qpid.server.model.Exchange.DURABLE, attributes);
-        _autoDelete = MapValueConverter.getEnumAttribute(LifetimePolicy.class, org.apache.qpid.server.model.Exchange.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT) != LifetimePolicy.PERMANENT;
+        _lifetimePolicy = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
+                                                                                org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                                                                                attributes,
+                                                                                LifetimePolicy.PERMANENT);
+        _autoDelete = _lifetimePolicy != LifetimePolicy.PERMANENT;
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
         // check ACL
@@ -116,9 +128,9 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         Object alternateExchangeAttr = attributes.get(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE);
         if(alternateExchangeAttr != null)
         {
-            if(alternateExchangeAttr instanceof Exchange)
+            if(alternateExchangeAttr instanceof ExchangeImpl)
             {
-                setAlternateExchange((Exchange) alternateExchangeAttr);
+                setAlternateExchange((ExchangeImpl) alternateExchangeAttr);
             }
             else if(alternateExchangeAttr instanceof UUID)
             {
@@ -146,10 +158,10 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
             }
 
         }
-        _bindingListener = new StateChangeListener<Binding, State>()
+        _bindingListener = new StateChangeListener<BindingImpl, State>()
         {
             @Override
-            public void stateChanged(final Binding binding, final State oldState, final State newState)
+            public void stateChanged(final BindingImpl binding, final State oldState, final State newState)
             {
                 if(newState == State.DELETED)
                 {
@@ -184,8 +196,8 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
         if(_closed.compareAndSet(false,true))
         {
-            List<Binding> bindings = new ArrayList<Binding>(_bindings);
-            for(Binding binding : bindings)
+            List<BindingImpl> bindings = new ArrayList<BindingImpl>(_bindings);
+            for(BindingImpl binding : bindings)
             {
                 binding.removeStateChangeListener(_bindingListener);
                 binding.delete();
@@ -198,7 +210,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
             CurrentActor.get().message(_logSubject, ExchangeMessages.DELETED());
 
-            for(Action<Exchange> task : _closeTaskList)
+            for(Action<ExchangeImpl> task : _closeTaskList)
             {
                 task.performAction(this);
             }
@@ -218,7 +230,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
     public final boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue)
     {
-        for(Binding b : _bindings)
+        for(BindingImpl b : _bindings)
         {
             if(bindingKey.equals(b.getBindingKey()) && queue == b.getAMQQueue())
             {
@@ -232,7 +244,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
     public final boolean isBound(String bindingKey, AMQQueue queue)
     {
-        for(Binding b : _bindings)
+        for(BindingImpl b : _bindings)
         {
             if(bindingKey.equals(b.getBindingKey()) && queue == b.getAMQQueue())
             {
@@ -244,7 +256,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
     public final boolean isBound(String bindingKey)
     {
-        for(Binding b : _bindings)
+        for(BindingImpl b : _bindings)
         {
             if(bindingKey.equals(b.getBindingKey()))
             {
@@ -256,7 +268,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
     public final boolean isBound(AMQQueue queue)
     {
-        for(Binding b : _bindings)
+        for(BindingImpl b : _bindings)
         {
             if(queue == b.getAMQQueue())
             {
@@ -269,7 +281,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     @Override
     public final boolean isBound(Map<String, Object> arguments, AMQQueue queue)
     {
-        for(Binding b : _bindings)
+        for(BindingImpl b : _bindings)
         {
             if(queue == b.getAMQQueue() &&
                ((b.getArguments() == null || b.getArguments().isEmpty())
@@ -285,7 +297,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
     public final boolean isBound(Map<String, Object> arguments)
     {
-        for(Binding b : _bindings)
+        for(BindingImpl b : _bindings)
         {
             if(((b.getArguments() == null || b.getArguments().isEmpty())
                                    ? (arguments == null || arguments.isEmpty())
@@ -301,7 +313,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     @Override
     public final boolean isBound(String bindingKey, Map<String, Object> arguments)
     {
-        for(Binding b : _bindings)
+        for(BindingImpl b : _bindings)
         {
             if(b.getBindingKey().equals(bindingKey) &&
                ((b.getArguments() == null || b.getArguments().isEmpty())
@@ -319,12 +331,12 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         return !_bindings.isEmpty();
     }
 
-    public Exchange getAlternateExchange()
+    public NonDefaultExchange getAlternateExchange()
     {
         return _alternateExchange;
     }
 
-    public void setAlternateExchange(Exchange exchange)
+    public void setAlternateExchange(NonDefaultExchange exchange)
     {
         if(_alternateExchange != null)
         {
@@ -353,17 +365,17 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         return !_referrers.isEmpty();
     }
 
-    public void addCloseTask(final Action<Exchange> task)
+    public void addCloseTask(final Action<ExchangeImpl> task)
     {
         _closeTaskList.add(task);
     }
 
-    public void removeCloseTask(final Action<Exchange> task)
+    public void removeCloseTask(final Action<ExchangeImpl> task)
     {
         _closeTaskList.remove(task);
     }
 
-    public final void doAddBinding(final Binding binding)
+    public final void doAddBinding(final BindingImpl binding)
     {
         _bindings.add(binding);
         int bindingCountSize = _bindings.size();
@@ -384,7 +396,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         return _bindingCountHigh.get();
     }
 
-    public final void doRemoveBinding(final Binding binding)
+    public final void doRemoveBinding(final BindingImpl binding)
     {
         onUnbind(binding);
         for(BindingListener listener : _listeners)
@@ -394,14 +406,14 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         _bindings.remove(binding);
     }
 
-    public final Collection<Binding> getBindings()
+    public final Collection<BindingImpl> getBindings()
     {
         return Collections.unmodifiableList(_bindings);
     }
 
-    protected abstract void onBind(final Binding binding);
+    protected abstract void onBind(final BindingImpl binding);
 
-    protected abstract void onUnbind(final Binding binding);
+    protected abstract void onUnbind(final BindingImpl binding);
 
 
     public String getName()
@@ -412,11 +424,6 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     public Map<String, Object> getArguments()
     {
         return Collections.emptyMap();
-    }
-
-    public UUID getId()
-    {
-        return _id;
     }
 
     public long getBindingCount()
@@ -469,13 +476,13 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
                           final InstanceProperties instanceProperties,
                           final ServerTransaction txn,
-                          final Action<? super MessageInstance<?, ? extends Consumer>> postEnqueueAction)
+                          final Action<? super MessageInstance> postEnqueueAction)
     {
         List<? extends BaseQueue> queues = route(message, instanceProperties);
 
         if(queues == null || queues.isEmpty())
         {
-            Exchange altExchange = getAlternateExchange();
+            ExchangeImpl altExchange = getAlternateExchange();
             if(altExchange != null)
             {
                 return altExchange.send(message, instanceProperties, txn, postEnqueueAction);
@@ -520,7 +527,8 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     protected abstract List<? extends BaseQueue> doRoute(final ServerMessage message,
                                                          final InstanceProperties instanceProperties);
 
-    public long getMsgReceives()
+    @Override
+    public long getMessagesIn()
     {
         return _receivedMessageCount.get();
     }
@@ -530,12 +538,14 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         return _routedMessageCount.get();
     }
 
-    public long getMsgDrops()
+    @Override
+    public long getMessagesDropped()
     {
         return _droppedMessageCount.get();
     }
 
-    public long getByteReceives()
+    @Override
+    public long getBytesIn()
     {
         return _receivedMessageSize.get();
     }
@@ -545,14 +555,10 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         return _routedMessageSize.get();
     }
 
-    public long getByteDrops()
+    @Override
+    public long getBytesDropped()
     {
         return _droppedMessageSize.get();
-    }
-
-    public long getCreateTime()
-    {
-        return _createTime;
     }
 
     public void addBindingListener(final BindingListener listener)
@@ -572,11 +578,11 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
     }
 
     @Override
-    public boolean replaceBinding(final UUID id, final String bindingKey,
+    public boolean replaceBinding(final String bindingKey,
                                   final AMQQueue queue,
                                   final Map<String, Object> arguments)
     {
-        return makeBinding(id, bindingKey, queue, arguments, false, true);
+        return makeBinding(getBinding(bindingKey,queue).getId(), bindingKey, queue, arguments, false, true);
     }
 
     @Override
@@ -586,7 +592,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         makeBinding(id, bindingKey,queue, argumentMap,true, false);
     }
 
-    private void removeBinding(final Binding binding)
+    private void removeBinding(final BindingImpl binding)
     {
         String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getAMQQueue();
@@ -601,7 +607,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         // Check access
         _virtualHost.getSecurityManager().authoriseUnbind(this, bindingKey, queue);
 
-        Binding b = _bindingsMap.remove(new BindingIdentifier(bindingKey,queue));
+        BindingImpl b = _bindingsMap.remove(new BindingIdentifier(bindingKey,queue));
 
         if (b != null)
         {
@@ -617,9 +623,7 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
 
     }
 
-
-    @Override
-    public Binding getBinding(String bindingKey, AMQQueue queue)
+    public BindingImpl getBinding(String bindingKey, AMQQueue queue)
     {
         assert queue != null;
 
@@ -656,8 +660,8 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
                                                    bindingKey,
                                                    _virtualHost.getName());
         }
-        Binding b = new Binding(id, bindingKey, queue, this, arguments);
-        Binding existingMapping = _bindingsMap.putIfAbsent(new BindingIdentifier(bindingKey,queue), b);
+        BindingImpl b = new BindingImpl(id, bindingKey, queue, this, arguments);
+        BindingImpl existingMapping = _bindingsMap.putIfAbsent(new BindingIdentifier(bindingKey,queue), b);
         if (existingMapping == null || force)
         {
             b.addStateChangeListener(_bindingListener);
@@ -682,6 +686,79 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         }
     }
 
+    @Override
+    protected boolean setState(final State currentState, final State desiredState)
+    {
+        if(desiredState == State.DELETED)
+        {
+            try
+            {
+                _virtualHost.removeExchange(this,true);
+            }
+            catch (ExchangeIsAlternateException e)
+            {
+                return false;
+            }
+            catch (RequiredExchangeException e)
+            {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public String setName(final String currentName, final String desiredName)
+            throws IllegalStateException, AccessControlException
+    {
+        return null;
+    }
+
+    @Override
+    public State getState()
+    {
+        return _closed.get() ? State.DELETED : State.ACTIVE;
+    }
+
+    @Override
+    public void setDurable(final boolean durable)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        if(durable == isDurable())
+        {
+            return;
+        }
+        throw new IllegalArgumentException();
+    }
+
+    @Override
+    public LifetimePolicy getLifetimePolicy()
+    {
+        return _lifetimePolicy;
+    }
+
+    @Override
+    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
+            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        // TODO
+        return _lifetimePolicy;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(final Class<C> clazz)
+    {
+        if(org.apache.qpid.server.model.Binding.class.isAssignableFrom(clazz))
+        {
+
+            return (Collection<C>) getBindings();
+        }
+        else
+        {
+            return Collections.EMPTY_SET;
+        }
+    }
 
     private static final class BindingIdentifier
     {
@@ -739,4 +816,120 @@ public abstract class AbstractExchange<T extends Exchange> implements Exchange<T
         }
     }
 
+    @Override
+    public Collection<Publisher> getPublishers()
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public boolean deleteBinding(final String bindingKey, final AMQQueue queue)
+    {
+        final BindingImpl binding = getBinding(bindingKey, queue);
+        if(binding == null)
+        {
+            return false;
+        }
+        else
+        {
+            binding.delete();
+            return true;
+        }
+    }
+
+    @Override
+    public boolean hasBinding(final String bindingKey, final AMQQueue queue)
+    {
+        return getBinding(bindingKey,queue) != null;
+    }
+
+    @Override
+    public void setAlternateExchange(final ExchangeImpl exchange)
+    {
+        // todo
+        _alternateExchange = (NonDefaultExchange) exchange;
+    }
+
+    @Override
+    public org.apache.qpid.server.model.Binding createBinding(final String bindingKey,
+                                                              final Queue queue,
+                                                              final Map<String, Object> bindingArguments,
+                                                              final Map<String, Object> attributes)
+    {
+        addBinding(bindingKey, (AMQQueue) queue, bindingArguments);
+        final BindingImpl binding = getBinding(bindingKey, (AMQQueue) queue);
+        childAdded(binding);
+        return binding;
+    }
+
+    @Override
+    public void delete()
+    {
+        try
+        {
+            _virtualHost.removeExchange(this,true);
+        }
+        catch (ExchangeIsAlternateException e)
+        {
+            throw new UnsupportedOperationException(e.getMessage(),e);
+        }
+        catch (RequiredExchangeException e)
+        {
+            throw new UnsupportedOperationException("'"+e.getMessage()+"' is a reserved exchange and can't be deleted",e);
+        }
+    }
+
+
+    @Override
+    public <T extends ConfiguredObject> T getParent(final Class<T> clazz)
+    {
+        if(clazz == org.apache.qpid.server.model.VirtualHost.class)
+        {
+            return (T) _virtualHost.getModel();
+        }
+        return super.getParent(clazz);
+    }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return getAttributeNames(getClass());
+    }
+
+    @Override
+    public Object getAttribute(final String name)
+    {
+        if(ConfiguredObject.STATE.equals(name))
+        {
+            return getState();
+        }
+        else if(LIFETIME_POLICY.equals(name))
+        {
+            return getLifetimePolicy();
+        }
+        else if(DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        return super.getAttribute(name);
+    }
+
+
+    @Override
+    protected void changeAttributes(Map<String, Object> attributes)
+    {
+        throw new UnsupportedOperationException("Changing attributes on exchange is not supported.");
+    }
+
+    @Override
+    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
+    {
+        _virtualHost.getSecurityManager().authoriseUpdate(this);
+    }
+
+    @Override
+    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    {
+        _virtualHost.getSecurityManager().authoriseUpdate(this);
+    }
 }

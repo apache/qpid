@@ -26,13 +26,13 @@ import java.util.UUID;
 
 public interface ExchangeRegistry
 {
-    void registerExchange(Exchange exchange);
+    void registerExchange(ExchangeImpl exchange);
 
-    Exchange getDefaultExchange();
+    ExchangeImpl getDefaultExchange();
 
     void initialise(ExchangeFactory exchangeFactory);
 
-    Exchange getExchange(String exchangeName);
+    ExchangeImpl getExchange(String exchangeName);
 
     /**
      * Unregister an exchange
@@ -43,9 +43,11 @@ public interface ExchangeRegistry
 
     void clearAndUnregisterMbeans();
 
-    Exchange getExchange(UUID exchangeId);
+    ExchangeImpl getExchange(UUID exchangeId);
 
-    Collection<Exchange> getExchanges();
+    Collection<ExchangeImpl> getExchanges();
+
+    Collection<NonDefaultExchange> getExchangesExceptDefault();
 
     void addRegistryChangeListener(RegistryChangeListener listener);
 
@@ -58,7 +60,7 @@ public interface ExchangeRegistry
 
     interface RegistryChangeListener
     {
-        void exchangeRegistered(Exchange exchange);
-        void exchangeUnregistered(Exchange exchange);
+        void exchangeRegistered(ExchangeImpl exchange);
+        void exchangeUnregistered(ExchangeImpl exchange);
     }
 }

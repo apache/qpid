@@ -122,7 +122,7 @@ public class FilterSupport
 
     public static final class NoLocalFilter implements MessageFilter
     {
-        private final MessageSource<?,?> _queue;
+        private final MessageSource _queue;
 
         private NoLocalFilter(MessageSource queue)
         {

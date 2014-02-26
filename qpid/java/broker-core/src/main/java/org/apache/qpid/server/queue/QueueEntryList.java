@@ -23,19 +23,19 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.message.ServerMessage;
 
-public interface QueueEntryList<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>, L extends QueueEntryList<E,Q,L,C>, C extends Consumer>
+public interface QueueEntryList
 {
-    Q getQueue();
+    AMQQueue getQueue();
 
-    E add(ServerMessage message);
+    QueueEntry add(ServerMessage message);
 
-    E next(E node);
+    QueueEntry next(QueueEntry node);
 
-    QueueEntryIterator<E,Q,L,C> iterator();
+    QueueEntryIterator iterator();
 
-    E getHead();
+    QueueEntry getHead();
 
-    void entryDeleted(E queueEntry);
+    void entryDeleted(QueueEntry queueEntry);
     
     int getPriorities();
 

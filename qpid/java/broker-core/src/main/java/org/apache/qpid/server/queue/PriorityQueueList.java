@@ -22,23 +22,23 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
 
-abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQueueList.PriorityQueueEntry, PriorityQueue, PriorityQueueList>
+abstract public class PriorityQueueList extends OrderedQueueEntryList
 {
 
 
     public PriorityQueueList(final PriorityQueue queue,
-                             final HeadCreator<PriorityQueueEntry, PriorityQueue, PriorityQueueList> headCreator)
+                             final HeadCreator headCreator)
     {
         super(queue, headCreator);
     }
 
     static class PriorityQueueMasterList extends PriorityQueueList
     {
-        private static final HeadCreator<PriorityQueueEntry, PriorityQueue, PriorityQueueList> DUMMY_HEAD_CREATOR =
-                new HeadCreator<PriorityQueueEntry, PriorityQueue, PriorityQueueList>()
+        private static final HeadCreator DUMMY_HEAD_CREATOR =
+                new HeadCreator()
                 {
                     @Override
-                    public PriorityQueueEntry createHead(final PriorityQueueList list)
+                    public PriorityQueueEntry createHead(final QueueEntryList list)
                     {
                         return null;
                     }
@@ -66,11 +66,13 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
             return _priorities;
         }
 
+        @Override
         public PriorityQueue getQueue()
         {
             return _queue;
         }
 
+        @Override
         public PriorityQueueEntry add(ServerMessage message)
         {
             int index = message.getMessageHeader().getPriority() - _priorityOffset;
@@ -82,7 +84,7 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
             {
                 index = 0;
             }
-            return _priorityLists[index].add(message);
+            return (PriorityQueueEntry) _priorityLists[index].add(message);
 
         }
 
@@ -92,13 +94,14 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
             throw new UnsupportedOperationException();
         }
 
-        public PriorityQueueEntry next(PriorityQueueEntry node)
+        @Override
+        public PriorityQueueEntry next(QueueEntry node)
         {
-            PriorityQueueEntry next = node.getNextValidEntry();
+            PriorityQueueEntry next = (PriorityQueueEntry) node.getNextValidEntry();
 
             if(next == null)
             {
-                final PriorityQueueList nodeEntryList = node.getQueueEntryList();
+                final PriorityQueueList nodeEntryList = (PriorityQueueList) ((PriorityQueueEntry)node).getQueueEntryList();
                 int index;
                 for(index = _priorityLists.length-1; _priorityLists[index] != nodeEntryList; index--)
                 {
@@ -108,16 +111,16 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
                 while(next == null && index != 0)
                 {
                     index--;
-                    next = _priorityLists[index].getHead().getNextValidEntry();
+                    next = (PriorityQueueEntry) _priorityLists[index].getHead().getNextValidEntry();
                 }
 
             }
             return next;
         }
 
-        private final class PriorityQueueEntryListIterator implements QueueEntryIterator<PriorityQueueEntry, PriorityQueue, PriorityQueueList, QueueConsumer<?,PriorityQueueEntry, PriorityQueue, PriorityQueueList>>
+        private final class PriorityQueueEntryListIterator implements QueueEntryIterator
         {
-            private final QueueEntryIterator<PriorityQueueEntry, PriorityQueue, PriorityQueueList,QueueConsumer<?,PriorityQueueEntry, PriorityQueue, PriorityQueueList>>[] _iterators = new QueueEntryIterator[ _priorityLists.length ];
+            private final QueueEntryIterator[] _iterators = new QueueEntryIterator[ _priorityLists.length ];
             private PriorityQueueEntry _lastNode;
 
             PriorityQueueEntryListIterator()
@@ -126,10 +129,10 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
                 {
                     _iterators[i] = _priorityLists[i].iterator();
                 }
-                _lastNode = _iterators[_iterators.length - 1].getNode();
+                _lastNode = (PriorityQueueEntry) _iterators[_iterators.length - 1].getNode();
             }
 
-
+            @Override
             public boolean atTail()
             {
                 for(int i = 0; i < _iterators.length; i++)
@@ -142,18 +145,20 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
                 return true;
             }
 
+            @Override
             public PriorityQueueEntry getNode()
             {
                 return _lastNode;
             }
 
+            @Override
             public boolean advance()
             {
                 for(int i = _iterators.length-1; i >= 0; i--)
                 {
                     if(_iterators[i].advance())
                     {
-                        _lastNode = _iterators[i].getNode();
+                        _lastNode = (PriorityQueueEntry) _iterators[i].getNode();
                         return true;
                     }
                 }
@@ -161,23 +166,26 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
             }
         }
 
+        @Override
         public PriorityQueueEntryListIterator iterator()
         {
 
             return new PriorityQueueEntryListIterator();
         }
 
+        @Override
         public PriorityQueueEntry getHead()
         {
-            return _priorityLists[_priorities-1].getHead();
+            return (PriorityQueueEntry) _priorityLists[_priorities-1].getHead();
         }
 
-        public void entryDeleted(final PriorityQueueEntry queueEntry)
+        @Override
+        public void entryDeleted(final QueueEntry queueEntry)
         {
 
         }
     }
-    static class Factory implements QueueEntryListFactory<PriorityQueueEntry, PriorityQueue, PriorityQueueList>
+    static class Factory implements QueueEntryListFactory
     {
         private final int _priorities;
 
@@ -186,20 +194,20 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
             _priorities = priorities;
         }
 
-        public PriorityQueueList createQueueEntryList(PriorityQueue queue)
+        public PriorityQueueList createQueueEntryList(AMQQueue<?> queue)
         {
-            return new PriorityQueueMasterList(queue, _priorities);
+            return new PriorityQueueMasterList((PriorityQueue) queue, _priorities);
         }
     }
 
     static class PriorityQueueEntrySubList extends PriorityQueueList
     {
-        private static final HeadCreator<PriorityQueueEntry, PriorityQueue, PriorityQueueList> HEAD_CREATOR = new HeadCreator<PriorityQueueEntry, PriorityQueue, PriorityQueueList>()
+        private static final HeadCreator HEAD_CREATOR = new HeadCreator()
         {
             @Override
-            public PriorityQueueEntry createHead(final PriorityQueueList list)
+            public PriorityQueueEntry createHead(final QueueEntryList list)
             {
-                return new PriorityQueueEntry(list);
+                return new PriorityQueueEntry((PriorityQueueList) list);
             }
         };
         private int _listPriority;
@@ -222,7 +230,7 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
         }
     }
 
-    static class PriorityQueueEntry extends OrderedQueueEntry<PriorityQueueEntry, PriorityQueue, PriorityQueueList>
+    static class PriorityQueueEntry extends OrderedQueueEntry
     {
         private PriorityQueueEntry(final PriorityQueueList queueEntryList)
         {
@@ -235,9 +243,10 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList<PriorityQu
         }
 
         @Override
-        public int compareTo(final PriorityQueueEntry o)
+        public int compareTo(final QueueEntry o)
         {
-            PriorityQueueEntrySubList pqel = (PriorityQueueEntrySubList)o.getQueueEntryList();
+            PriorityQueueEntry other = (PriorityQueueEntry)o;
+            PriorityQueueEntrySubList pqel = (PriorityQueueEntrySubList)other.getQueueEntryList();
             int otherPriority = pqel.getListPriority();
             int thisPriority = ((PriorityQueueEntrySubList) getQueueEntryList()).getListPriority();
 

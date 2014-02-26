@@ -183,7 +183,7 @@ public class ConnectionRestTest extends QpidRestTestCase
                                         ConfiguredObject.DESCRIPTION,
                                         Session.STATE,
                                         Session.DURABLE,
-                Session.LIFETIME_POLICY, Session.TIME_TO_LIVE);
+                                        Session.LIFETIME_POLICY);
         assertEquals("Unexpecte value of attribute " + Session.NAME, session.getChannelId() + "",
                 sessionData.get(Session.NAME));
         assertEquals("Unexpecte value of attribute " + Session.PRODUCER_FLOW_BLOCKED, Boolean.FALSE,

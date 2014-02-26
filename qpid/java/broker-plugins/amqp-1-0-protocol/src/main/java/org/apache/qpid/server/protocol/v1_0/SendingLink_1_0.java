@@ -21,16 +21,12 @@
 package org.apache.qpid.server.protocol.v1_0;
 
 import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -51,9 +47,7 @@ import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
-import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.exchange.DirectExchange;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
@@ -205,7 +199,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
 
                 AMQQueue queue = _vhost.getQueue(name);
-                Exchange exchange = exchangeDestination.getExchange();
+                ExchangeImpl exchange = exchangeDestination.getExchange();
 
                 if(queue == null)
                 {
@@ -220,17 +214,16 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
                 else
                 {
-                    List<Binding> bindings = queue.getBindings();
-                    List<Binding> bindingsToRemove = new ArrayList<Binding>();
-                    for(Binding existingBinding : bindings)
+                    Collection<BindingImpl> bindings = queue.getBindings();
+                    List<BindingImpl> bindingsToRemove = new ArrayList<BindingImpl>();
+                    for(BindingImpl existingBinding : bindings)
                     {
-                        if(existingBinding.getExchangeImpl() != _vhost.getDefaultExchange()
-                            && existingBinding.getExchangeImpl() != exchange)
+                        if(existingBinding.getExchange() != exchange)
                         {
                             bindingsToRemove.add(existingBinding);
                         }
                     }
-                    for(Binding existingBinding : bindingsToRemove)
+                    for(BindingImpl existingBinding : bindingsToRemove)
                     {
                         existingBinding.delete();
                     }

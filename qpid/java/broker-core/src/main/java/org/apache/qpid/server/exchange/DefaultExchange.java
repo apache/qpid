@@ -19,17 +19,14 @@
 package org.apache.qpid.server.exchange;
 
 import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
@@ -46,14 +43,13 @@ import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class DefaultExchange implements Exchange<DirectExchange>
+public class DefaultExchange implements ExchangeImpl<DirectExchange>
 {
 
     private final QueueRegistry _queueRegistry;
     private UUID _id;
     private VirtualHost _virtualHost;
     private static final Logger _logger = Logger.getLogger(DefaultExchange.class);
-    private final AtomicBoolean _closed = new AtomicBoolean();
 
     private Map<ExchangeReferrer,Object> _referrers = new ConcurrentHashMap<ExchangeReferrer,Object>();
 
@@ -76,35 +72,6 @@ public class DefaultExchange implements Exchange<DirectExchange>
         return DirectExchange.TYPE;
     }
 
-    @Override
-    public long getBindingCount()
-    {
-        return _virtualHost.getQueues().size();
-    }
-
-    @Override
-    public long getByteDrops()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getByteReceives()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getMsgDrops()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getMsgReceives()
-    {
-        return 0;
-    }
 
     @Override
     public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
@@ -113,7 +80,19 @@ public class DefaultExchange implements Exchange<DirectExchange>
     }
 
     @Override
-    public boolean replaceBinding(UUID id, String bindingKey, AMQQueue queue, Map<String, Object> arguments)
+    public boolean deleteBinding(final String bindingKey, final AMQQueue queue)
+    {
+        throw new AccessControlException("Cannot delete bindings from the default exchange");
+    }
+
+    @Override
+    public boolean hasBinding(final String bindingKey, final AMQQueue queue)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean replaceBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
     {
         throw new AccessControlException("Cannot replace bindings on the default exchange");
     }
@@ -122,34 +101,6 @@ public class DefaultExchange implements Exchange<DirectExchange>
     public void restoreBinding(UUID id, String bindingKey, AMQQueue queue, Map<String, Object> argumentMap)
     {
         _logger.warn("Bindings to the default exchange should not be stored in the configuration store");
-    }
-
-    @Override
-    public Binding getBinding(String bindingKey, AMQQueue queue)
-    {
-        if(_virtualHost.getQueue(bindingKey) == queue)
-        {
-            return convertToBinding(queue);
-        }
-        else
-        {
-            return null;
-        }
-
-    }
-
-    private Binding convertToBinding(AMQQueue queue)
-    {
-        String queueName = queue.getName();
-
-        UUID exchangeId = UUIDGenerator.generateBindingUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME,
-                                                            queueName,
-                                                            queueName,
-                                                            _virtualHost.getName());
-
-        final Binding binding = new Binding(exchangeId, queueName, queue, this, Collections.EMPTY_MAP);
-        binding.addStateChangeListener(STATE_CHANGE_LISTENER);
-        return binding;
     }
 
     @Override
@@ -185,7 +136,7 @@ public class DefaultExchange implements Exchange<DirectExchange>
     @Override
     public boolean hasBindings()
     {
-        return getBindingCount() != 0;
+        return !_virtualHost.getQueues().isEmpty();
     }
 
     @Override
@@ -225,13 +176,13 @@ public class DefaultExchange implements Exchange<DirectExchange>
     }
 
     @Override
-    public Exchange getAlternateExchange()
+    public ExchangeImpl getAlternateExchange()
     {
         return null;
     }
 
     @Override
-    public void setAlternateExchange(Exchange exchange)
+    public void setAlternateExchange(ExchangeImpl exchange)
     {
         _logger.warn("Cannot set the alternate exchange for the default exchange");
     }
@@ -255,38 +206,9 @@ public class DefaultExchange implements Exchange<DirectExchange>
     }
 
     @Override
-    public Collection<Binding> getBindings()
-    {
-        List<Binding> bindings = new ArrayList<Binding>();
-        for(AMQQueue q : _virtualHost.getQueues())
-        {
-            bindings.add(convertToBinding(q));
-        }
-        return bindings;
-    }
-
-    @Override
     public void addBindingListener(BindingListener listener)
     {
-        _queueRegistry.addRegistryChangeListener(convertListener(listener));
-    }
 
-    private QueueRegistry.RegistryChangeListener convertListener(final BindingListener listener)
-    {
-        return new QueueRegistry.RegistryChangeListener()
-        {
-            @Override
-            public void queueRegistered(AMQQueue queue)
-            {
-                listener.bindingAdded(DefaultExchange.this, convertToBinding(queue));
-            }
-
-            @Override
-            public void queueUnregistered(AMQQueue queue)
-            {
-                listener.bindingRemoved(DefaultExchange.this, convertToBinding(queue));
-            }
-        };
     }
 
     @Override
@@ -304,7 +226,7 @@ public class DefaultExchange implements Exchange<DirectExchange>
     public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
                           final InstanceProperties instanceProperties,
                           final ServerTransaction txn,
-                          final Action<? super MessageInstance<?, ? extends Consumer>> postEnqueueAction)
+                          final Action<? super MessageInstance> postEnqueueAction)
     {
         final AMQQueue q = _virtualHost.getQueue(message.getRoutingKey());
         if(q == null)
@@ -338,11 +260,11 @@ public class DefaultExchange implements Exchange<DirectExchange>
         }
     }
 
-    private static final StateChangeListener<Binding, State> STATE_CHANGE_LISTENER =
-            new StateChangeListener<Binding, State>()
+    private static final StateChangeListener<BindingImpl, State> STATE_CHANGE_LISTENER =
+            new StateChangeListener<BindingImpl, State>()
             {
                 @Override
-                public void stateChanged(final Binding object, final State oldState, final State newState)
+                public void stateChanged(final BindingImpl object, final State oldState, final State newState)
                 {
                     if(newState == State.DELETED)
                     {

@@ -27,9 +27,9 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.util.Action;
 
-public interface BaseQueue<C extends Consumer> extends TransactionLogResource
+public interface BaseQueue extends TransactionLogResource
 {
-    void enqueue(ServerMessage message, Action<? super MessageInstance<?,C>> action);
+    void enqueue(ServerMessage message, Action<? super MessageInstance> action);
 
     boolean isDurable();
     boolean isDeleted();

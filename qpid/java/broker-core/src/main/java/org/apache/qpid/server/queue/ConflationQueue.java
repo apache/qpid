@@ -28,7 +28,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class ConflationQueue extends AbstractQueue<ConflationQueueList.ConflationQueueEntry, ConflationQueue, ConflationQueueList>
+public class ConflationQueue extends AbstractQueue
 {
     public static final String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
 
@@ -52,7 +52,7 @@ public class ConflationQueue extends AbstractQueue<ConflationQueueList.Conflatio
 
     public String getConflationKey()
     {
-        return getEntries().getConflationKey();
+        return ((ConflationQueueList)getEntries()).getConflationKey();
     }
 
 }

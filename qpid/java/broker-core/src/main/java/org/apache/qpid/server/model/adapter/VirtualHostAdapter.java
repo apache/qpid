@@ -24,14 +24,11 @@ import java.io.File;
 import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -43,6 +40,8 @@ import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.XmlConfigurationUtilities.MyConfiguration;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
@@ -50,6 +49,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AbstractQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
@@ -86,11 +86,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     private final Map<AMQConnectionModel, ConnectionAdapter> _connectionAdapters =
             new HashMap<AMQConnectionModel, ConnectionAdapter>();
 
-    private final Map<AMQQueue, QueueAdapter> _queueAdapters =
-            new HashMap<AMQQueue, QueueAdapter>();
-
-    private final Map<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter> _exchangeAdapters =
-            new HashMap<org.apache.qpid.server.exchange.Exchange, ExchangeAdapter>();
     private final Broker<?> _broker;
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private StatisticsGatherer _brokerStatisticsGatherer;
@@ -162,46 +157,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
     }
 
-    private void populateExchanges()
-    {
-        Collection<org.apache.qpid.server.exchange.Exchange> actualExchanges =
-                _virtualHost.getExchanges();
-
-        synchronized (_exchangeAdapters)
-        {
-            for(org.apache.qpid.server.exchange.Exchange exchange : actualExchanges)
-            {
-                if(!_exchangeAdapters.containsKey(exchange))
-                {
-                    final ExchangeAdapter adapter = new ExchangeAdapter(this, exchange);
-                    _exchangeAdapters.put(exchange, adapter);
-                    childAdded(adapter);
-
-                }
-            }
-        }
-    }
-
-
-    private void populateQueues()
-    {
-        Collection<AMQQueue> actualQueues = _virtualHost.getQueues();
-        if ( actualQueues != null )
-        {
-            synchronized(_queueAdapters)
-            {
-                for(AMQQueue queue : actualQueues)
-                {
-                    if(!_queueAdapters.containsKey(queue))
-                    {
-                        final QueueAdapter adapter = new QueueAdapter(this, queue);
-                        _queueAdapters.put(queue, adapter);
-                        childAdded(adapter);
-                    }
-                }
-            }
-        }
-    }
 
     public Collection<VirtualHostAlias> getAliases()
     {
@@ -232,18 +187,12 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
     public Collection<Queue> getQueues()
     {
-        synchronized(_queueAdapters)
-        {
-            return new ArrayList<Queue>(_queueAdapters.values());
-        }
+        return _virtualHost == null ? Collections.<Queue>emptyList() : new ArrayList<Queue>(_virtualHost.getQueues());
     }
 
     public Collection<Exchange> getExchanges()
     {
-        synchronized (_exchangeAdapters)
-        {
-            return new ArrayList<Exchange>(_exchangeAdapters.values());
-        }
+        return _virtualHost == null ? Collections.<Exchange>emptyList() : new ArrayList<Exchange>(_virtualHost.getExchangesExceptDefault());
     }
 
 
@@ -257,23 +206,20 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         boolean        durable  = MapValueConverter.getBooleanAttribute(Exchange.DURABLE, attributes, false);
         LifetimePolicy lifetime = MapValueConverter.getEnumAttribute(LifetimePolicy.class, Exchange.LIFETIME_POLICY, attributes, LifetimePolicy.PERMANENT);
         String         type     = MapValueConverter.getStringAttribute(Exchange.TYPE, attributes, null);
-        long           ttl      = MapValueConverter.getLongAttribute(Exchange.TIME_TO_LIVE, attributes, 0l);
 
         attributes.remove(Exchange.NAME);
         attributes.remove(Exchange.STATE);
         attributes.remove(Exchange.DURABLE);
         attributes.remove(Exchange.LIFETIME_POLICY);
         attributes.remove(Exchange.TYPE);
-        attributes.remove(Exchange.TIME_TO_LIVE);
 
-        return createExchange(name, state, durable, lifetime, ttl, type, attributes);
+        return createExchange(name, state, durable, lifetime, type, attributes);
     }
 
     public Exchange createExchange(final String name,
                                    final State initialState,
                                    final boolean durable,
                                    final LifetimePolicy lifetime,
-                                   final long ttl,
                                    final String type,
                                    final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
@@ -344,11 +290,8 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
                             lifetime != null && lifetime != LifetimePolicy.PERMANENT
                                     ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
             attributes1.put(Exchange.ALTERNATE_EXCHANGE, alternateExchange);
-            org.apache.qpid.server.exchange.Exchange exchange = _virtualHost.createExchange(attributes1);
-            synchronized (_exchangeAdapters)
-            {
-                return _exchangeAdapters.get(exchange);
-            }
+            NonDefaultExchange exchange = _virtualHost.createExchange(attributes1);
+            return exchange;
 
         }
         catch(ExchangeExistsException e)
@@ -405,12 +348,11 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         try
         {
 
-            AMQQueue queue = _virtualHost.createQueue(attributes);
+            AMQQueue<?> queue = _virtualHost.createQueue(attributes);
 
-            synchronized (_queueAdapters)
-            {
-                return _queueAdapters.get(queue);
-            }
+
+            return queue;
+
 
         }
         catch(QueueExistsException qe)
@@ -565,76 +507,25 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         throw new IllegalArgumentException("Cannot create a child of class " + childClass.getSimpleName());
     }
 
-    public void exchangeRegistered(org.apache.qpid.server.exchange.Exchange exchange)
+    public void exchangeRegistered(ExchangeImpl exchange)
     {
-        ExchangeAdapter adapter = null;
-        synchronized (_exchangeAdapters)
-        {
-            if(!_exchangeAdapters.containsKey(exchange))
-            {
-                adapter = new ExchangeAdapter(this, exchange);
-                _exchangeAdapters.put(exchange, adapter);
-
-            }
-
-        }
-        if(adapter != null)
-        {
-            childAdded(adapter);
-        }
-
+        childAdded((NonDefaultExchange)exchange);
     }
 
 
-    public void exchangeUnregistered(org.apache.qpid.server.exchange.Exchange exchange)
+    public void exchangeUnregistered(ExchangeImpl exchange)
     {
-        ExchangeAdapter adapter;
-        synchronized (_exchangeAdapters)
-        {
-            adapter = _exchangeAdapters.remove(exchange);
-
-        }
-
-        if(adapter != null)
-        {
-            childRemoved(adapter);
-        }
+        childRemoved((NonDefaultExchange)exchange);
     }
 
     public void queueRegistered(AMQQueue queue)
     {
-        QueueAdapter adapter = null;
-        synchronized (_queueAdapters)
-        {
-            if(!_queueAdapters.containsKey(queue))
-            {
-                adapter = new QueueAdapter(this, queue);
-                _queueAdapters.put(queue, adapter);
-
-            }
-
-        }
-        if(adapter != null)
-        {
-            childAdded(adapter);
-        }
-
+        childAdded(queue);
     }
 
     public void queueUnregistered(AMQQueue queue)
     {
-
-        QueueAdapter adapter;
-        synchronized (_queueAdapters)
-        {
-            adapter = _queueAdapters.remove(queue);
-
-        }
-
-        if(adapter != null)
-        {
-            childRemoved(adapter);
-        }
+        childRemoved(queue);
     }
 
     public void connectionRegistered(AMQConnectionModel connection)
@@ -676,22 +567,14 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         }
     }
 
-    QueueAdapter getQueueAdapter(AMQQueue queue)
-    {
-        synchronized (_queueAdapters)
-        {
-            return _queueAdapters.get(queue);
-        }
-    }
-
     public Collection<String> getExchangeTypes()
     {
-        Collection<ExchangeType<? extends org.apache.qpid.server.exchange.Exchange>> types =
+        Collection<ExchangeType<? extends ExchangeImpl>> types =
                 _virtualHost.getExchangeTypes();
 
         Collection<String> exchangeTypes = new ArrayList<String>();
 
-        for(ExchangeType<? extends org.apache.qpid.server.exchange.Exchange> type : types)
+        for(ExchangeType<? extends ExchangeImpl> type : types)
         {
             exchangeTypes.add(type.getType());
         }
@@ -726,7 +609,7 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
             public void copy(MessageInstance entry, Queue queue)
             {
                 final ServerMessage message = entry.getMessage();
-                final AMQQueue toQueue = ((QueueAdapter)queue).getAMQQueue();
+                final AMQQueue toQueue = (AMQQueue)queue;
 
                 txn.enqueue(toQueue, message, new ServerTransaction.Action()
                 {
@@ -745,7 +628,7 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
             public void move(final MessageInstance entry, Queue queue)
             {
                 final ServerMessage message = entry.getMessage();
-                final AMQQueue toQueue = ((QueueAdapter)queue).getAMQQueue();
+                final AMQQueue toQueue = (AMQQueue)queue;
                 if(entry.acquire())
                 {
                     txn.enqueue(toQueue, message,
@@ -806,10 +689,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         else if(LIFETIME_POLICY.equals(name))
         {
             return LifetimePolicy.PERMANENT;
-        }
-        else if(TIME_TO_LIVE.equals(name))
-        {
-            // TODO
         }
         else if (_virtualHost != null)
         {
@@ -1194,8 +1073,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         virtualHostRegistry.registerVirtualHost(_virtualHost);
 
         _virtualHost.addVirtualHostListener(this);
-        populateQueues();
-        populateExchanges();
 
         synchronized(_aliases)
         {
@@ -1302,5 +1179,10 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         {
             throw new AccessControlException("Setting of virtual host attributes is denied");
         }
+    }
+
+    public TaskExecutor getTaskExecutor()
+    {
+        return super.getTaskExecutor();
     }
 }

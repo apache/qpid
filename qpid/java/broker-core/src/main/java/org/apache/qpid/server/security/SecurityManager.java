@@ -20,9 +20,9 @@ package org.apache.qpid.server.security;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.consumer.Consumer;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.plugin.AccessControlFactory;
@@ -252,9 +252,9 @@ public class SecurityManager implements ConfigurationChangeListener
         return true;
     }
 
-    public void authoriseCreateBinding(Binding binding)
+    public void authoriseCreateBinding(BindingImpl binding)
     {
-        final Exchange exch = binding.getExchangeImpl();
+        final ExchangeImpl exch = binding.getExchange();
         final AMQQueue queue = binding.getAMQQueue();
         final String bindingKey = binding.getBindingKey();
 
@@ -340,7 +340,7 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void authoriseCreateExchange(final Exchange exchange)
+    public void authoriseCreateExchange(final ExchangeImpl exchange)
     {
         final String exchangeName = exchange.getName();
         if(!checkAllPlugins(new AccessCheck()
@@ -408,7 +408,7 @@ public class SecurityManager implements ConfigurationChangeListener
     }
 
 
-    public void authoriseUpdate(final Exchange exchange)
+    public void authoriseUpdate(final ExchangeImpl exchange)
     {
         if(!checkAllPlugins(new AccessCheck()
         {
@@ -422,7 +422,7 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void authoriseDelete(final Exchange exchange)
+    public void authoriseDelete(final ExchangeImpl exchange)
     {
         if(! checkAllPlugins(new AccessCheck()
         {
@@ -519,7 +519,7 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void authoriseUnbind(final Exchange exch, final String routingKey, final AMQQueue queue)
+    public void authoriseUnbind(final ExchangeImpl exch, final String routingKey, final AMQQueue queue)
     {
         if(! checkAllPlugins(new AccessCheck()
         {

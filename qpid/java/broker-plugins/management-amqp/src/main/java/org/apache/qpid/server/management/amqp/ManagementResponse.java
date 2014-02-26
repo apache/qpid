@@ -31,7 +31,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 
-class ManagementResponse implements MessageInstance<ManagementResponse,ManagementNodeConsumer>
+class ManagementResponse implements MessageInstance
 {
     private final ManagementNodeConsumer _consumer;
     private int _deliveryCount;
@@ -65,13 +65,13 @@ class ManagementResponse implements MessageInstance<ManagementResponse,Managemen
     }
 
     @Override
-    public void addStateChangeListener(final StateChangeListener<? super ManagementResponse, State> listener)
+    public void addStateChangeListener(final StateChangeListener<? super MessageInstance, State> listener)
     {
 
     }
 
     @Override
-    public boolean removeStateChangeListener(final StateChangeListener<? super ManagementResponse, State> listener)
+    public boolean removeStateChangeListener(final StateChangeListener<? super MessageInstance, State> listener)
     {
         return false;
     }
@@ -84,7 +84,7 @@ class ManagementResponse implements MessageInstance<ManagementResponse,Managemen
     }
 
     @Override
-    public boolean isAcquiredBy(final ManagementNodeConsumer consumer)
+    public boolean isAcquiredBy(final Consumer consumer)
     {
         return consumer == _consumer && !isDeleted();
     }
@@ -114,7 +114,7 @@ class ManagementResponse implements MessageInstance<ManagementResponse,Managemen
     }
 
     @Override
-    public boolean isRejectedBy(final ManagementNodeConsumer consumer)
+    public boolean isRejectedBy(final Consumer consumer)
     {
         return false;
     }
@@ -132,7 +132,7 @@ class ManagementResponse implements MessageInstance<ManagementResponse,Managemen
     }
 
     @Override
-    public boolean acquire(final ManagementNodeConsumer sub)
+    public boolean acquire(final Consumer sub)
     {
         return false;
     }
@@ -144,7 +144,7 @@ class ManagementResponse implements MessageInstance<ManagementResponse,Managemen
     }
 
     @Override
-    public int routeToAlternate(final Action<? super MessageInstance<?, ? extends Consumer>> action,
+    public int routeToAlternate(final Action<? super MessageInstance> action,
                                 final ServerTransaction txn)
     {
         return 0;

@@ -28,10 +28,11 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.AbstractExchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -207,14 +208,14 @@ public class StandardVirtualHostTest extends QpidTestCase
         File config = writeConfigFile(vhostName, queueName, exchangeName, false, new String[]{"ping","pong"}, bindingArguments);
         VirtualHost vhost = createVirtualHost(vhostName, config);
 
-        Exchange exch = vhost.getExchange(getName() +".direct");
-        Collection<Binding> bindings = exch.getBindings();
+        ExchangeImpl exch = vhost.getExchange(getName() +".direct");
+        Collection<BindingImpl> bindings = ((AbstractExchange)exch).getBindings();
         assertNotNull("Bindings cannot be null", bindings);
         assertEquals("Unexpected number of bindings", 3, bindings.size());
 
         boolean foundPong = false;
         boolean foundPing = false;
-        for (Binding binding : bindings)
+        for (BindingImpl binding : bindings)
         {
             String qn = binding.getAMQQueue().getName();
             assertEquals("Unexpected queue name", getName(), qn);
@@ -252,10 +253,10 @@ public class StandardVirtualHostTest extends QpidTestCase
         AMQQueue queue = vhost.getQueue(queueName);
         assertNotNull("queue should exist", queue);
 
-        Exchange defaultExch = vhost.getDefaultExchange();
+        ExchangeImpl defaultExch = vhost.getDefaultExchange();
         assertTrue("queue should have been bound to default exchange with its name", defaultExch.isBound(queueName, queue));
 
-        Exchange exch = vhost.getExchange(exchangeName);
+        ExchangeImpl exch = vhost.getExchange(exchangeName);
         assertTrue("queue should have been bound to " + exchangeName + " with its name", exch.isBound(queueName, queue));
 
         for(String key: routingKeys)

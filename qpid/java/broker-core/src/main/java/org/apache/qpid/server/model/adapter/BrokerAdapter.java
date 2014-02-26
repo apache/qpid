@@ -928,10 +928,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         {
             return LifetimePolicy.PERMANENT;
         }
-        else if(TIME_TO_LIVE.equals(name))
-        {
-            // TODO
-        }
         else if(BUILD_VERSION.equals(name))
         {
             return QpidProperties.getBuildVersion();

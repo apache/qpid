@@ -22,7 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
 
-public class StandardQueueEntry extends OrderedQueueEntry<StandardQueueEntry, StandardQueue, StandardQueueEntryList>
+public class StandardQueueEntry extends OrderedQueueEntry
 {
     protected StandardQueueEntry(final StandardQueueEntryList queueEntryList)
     {

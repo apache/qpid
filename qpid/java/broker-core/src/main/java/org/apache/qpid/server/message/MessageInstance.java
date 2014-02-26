@@ -22,13 +22,14 @@ package org.apache.qpid.server.message;
 
 
 import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 
-public interface MessageInstance<M extends MessageInstance<M,C>, C extends Consumer>
+public interface MessageInstance
 {
 
 
@@ -43,33 +44,33 @@ public interface MessageInstance<M extends MessageInstance<M,C>, C extends Consu
 
     void decrementDeliveryCount();
 
-    void addStateChangeListener(StateChangeListener<? super M,State> listener);
+    void addStateChangeListener(StateChangeListener<? super MessageInstance,State> listener);
 
-    boolean removeStateChangeListener(StateChangeListener<? super M, State> listener);
+    boolean removeStateChangeListener(StateChangeListener<? super MessageInstance, State> listener);
 
     boolean acquiredByConsumer();
 
-    boolean isAcquiredBy(C consumer);
+    boolean isAcquiredBy(Consumer consumer);
 
     void setRedelivered();
 
     boolean isRedelivered();
 
-    C getDeliveredConsumer();
+    Consumer getDeliveredConsumer();
 
     void reject();
 
-    boolean isRejectedBy(C consumer);
+    boolean isRejectedBy(Consumer consumer);
 
     boolean getDeliveredToConsumer();
 
     boolean expired();
 
-    boolean acquire(C sub);
+    boolean acquire(Consumer sub);
 
     int getMaximumDeliveryCount();
 
-    int routeToAlternate(Action<? super MessageInstance<?, ? extends Consumer>> action, ServerTransaction txn);
+    int routeToAlternate(Action<? super MessageInstance> action, ServerTransaction txn);
 
     Filterable asFilterable();
 

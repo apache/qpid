@@ -25,20 +25,20 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
@@ -154,14 +154,14 @@ public class AMQQueueFactory implements QueueFactory
         {
 
             final String altExchangeAttr = (String) attributes.get(Queue.ALTERNATE_EXCHANGE);
-            Exchange altExchange;
+            NonDefaultExchange altExchange;
             try
             {
-                altExchange = _virtualHost.getExchange(UUID.fromString(altExchangeAttr));
+                altExchange = (NonDefaultExchange) _virtualHost.getExchange(UUID.fromString(altExchangeAttr));
             }
             catch(IllegalArgumentException e)
             {
-                altExchange = _virtualHost.getExchange(altExchangeAttr);
+                altExchange = (NonDefaultExchange) _virtualHost.getExchange(altExchangeAttr);
             }
             queue.setAlternateExchange(altExchange);
         }
@@ -183,7 +183,7 @@ public class AMQQueueFactory implements QueueFactory
         final String dlExchangeName = getDeadLetterExchangeName(queueName);
         final String dlQueueName = getDeadLetterQueueName(queueName);
 
-        Exchange dlExchange = null;
+        NonDefaultExchange dlExchange = null;
         final UUID dlExchangeId = UUIDGenerator.generateExchangeUUID(dlExchangeName, _virtualHost.getName());
 
         try
@@ -202,7 +202,7 @@ public class AMQQueueFactory implements QueueFactory
         catch(ExchangeExistsException e)
         {
             // We're ok if the exchange already exists
-            dlExchange = e.getExistingExchange();
+            dlExchange = (NonDefaultExchange) e.getExistingExchange();
         }
         catch (ReservedExchangeNameException e)
         {

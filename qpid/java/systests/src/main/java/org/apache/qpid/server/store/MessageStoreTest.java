@@ -34,13 +34,14 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -212,15 +213,15 @@ public class MessageStoreTest extends QpidTestCase
         createAllTopicQueues();
 
         //Register Non-Durable DirectExchange
-        Exchange nonDurableExchange = createExchange(DirectExchange.TYPE, nonDurableExchangeName, false);
+        ExchangeImpl nonDurableExchange = createExchange(DirectExchange.TYPE, nonDurableExchangeName, false);
         bindAllQueuesToExchange(nonDurableExchange, directRouting);
 
         //Register DirectExchange
-        Exchange directExchange = createExchange(DirectExchange.TYPE, directExchangeName, true);
+        ExchangeImpl directExchange = createExchange(DirectExchange.TYPE, directExchangeName, true);
         bindAllQueuesToExchange(directExchange, directRouting);
 
         //Register TopicExchange
-        Exchange topicExchange = createExchange(TopicExchange.TYPE, topicExchangeName, true);
+        ExchangeImpl topicExchange = createExchange(TopicExchange.TYPE, topicExchangeName, true);
         bindAllTopicQueuesToExchange(topicExchange, topicRouting);
 
         //Send Message To NonDurable direct Exchange = persistent
@@ -365,7 +366,7 @@ public class MessageStoreTest extends QpidTestCase
     {
         int origExchangeCount = getVirtualHost().getExchanges().size();
 
-        Map<String, Exchange> oldExchanges = createExchanges();
+        Map<String, ExchangeImpl> oldExchanges = createExchanges();
 
         assertEquals("Incorrect number of exchanges registered before recovery",
                 origExchangeCount + 3, getVirtualHost().getExchanges().size());
@@ -396,7 +397,7 @@ public class MessageStoreTest extends QpidTestCase
                 origExchangeCount + 1,  getVirtualHost().getExchanges().size());
 
         //test that removing the exchange means it is not recovered next time
-        final Exchange exchange = getVirtualHost().getExchange(directExchangeName);
+        final ExchangeImpl exchange = getVirtualHost().getExchange(directExchangeName);
         DurableConfigurationStoreHelper.removeExchange(getVirtualHost().getDurableConfigurationStore(), exchange);
 
         reloadVirtualHost();
@@ -420,11 +421,11 @@ public class MessageStoreTest extends QpidTestCase
         createAllQueues();
         createAllTopicQueues();
 
-        Map<String, Exchange> exchanges = createExchanges();
+        Map<String, ExchangeImpl> exchanges = createExchanges();
 
-        Exchange nonDurableExchange = exchanges.get(nonDurableExchangeName);
-        Exchange directExchange = exchanges.get(directExchangeName);
-        Exchange topicExchange = exchanges.get(topicExchangeName);
+        ExchangeImpl nonDurableExchange = exchanges.get(nonDurableExchangeName);
+        ExchangeImpl directExchange = exchanges.get(directExchangeName);
+        ExchangeImpl topicExchange = exchanges.get(topicExchangeName);
 
         bindAllQueuesToExchange(nonDurableExchange, directRouting);
         bindAllQueuesToExchange(directExchange, directRouting);
@@ -448,7 +449,7 @@ public class MessageStoreTest extends QpidTestCase
     public void testDurableBindingRemoval() throws Exception
     {
         //create durable queue and exchange, bind them
-        Exchange exch = createExchange(DirectExchange.TYPE, directExchangeName, true);
+        ExchangeImpl exch = createExchange(DirectExchange.TYPE, directExchangeName, true);
         createQueue(durableQueueName, false, true, false, false);
         bindQueueToExchange(exch, directRouting, getVirtualHost().getQueue(durableQueueName), false);
 
@@ -478,11 +479,11 @@ public class MessageStoreTest extends QpidTestCase
      * and that the new exchanges are not the same objects as the provided list (i.e. that the
      * reload actually generated new exchange objects)
      */
-    private void validateExchanges(int originalNumExchanges, Map<String, Exchange> oldExchanges)
+    private void validateExchanges(int originalNumExchanges, Map<String, ExchangeImpl> oldExchanges)
     {
-        Collection<Exchange> exchanges = getVirtualHost().getExchanges();
+        Collection<ExchangeImpl> exchanges = getVirtualHost().getExchanges();
         Collection<String> exchangeNames = new ArrayList(exchanges.size());
-        for(Exchange exchange : exchanges)
+        for(ExchangeImpl exchange : exchanges)
         {
             exchangeNames.add(exchange.getName());
         }
@@ -525,11 +526,11 @@ public class MessageStoreTest extends QpidTestCase
      * @param bindings     the set of bindings to validate
      * @param useSelectors if set, check the binding has a JMS_SELECTOR argument and the correct value for it
      */
-    private void validateBindingProperties(List<Binding> bindings, boolean useSelectors)
+    private void validateBindingProperties(Collection<? extends Binding> bindings, boolean useSelectors)
     {
         assertEquals("Each queue should only be bound once.", 1, bindings.size());
 
-        Binding binding = bindings.get(0);
+        Binding binding = bindings.iterator().next();
 
         if (useSelectors)
         {
@@ -605,7 +606,7 @@ public class MessageStoreTest extends QpidTestCase
         }
     }
 
-    private void sendMessageOnExchange(Exchange exchange, String routingKey, boolean deliveryMode)
+    private void sendMessageOnExchange(ExchangeImpl exchange, String routingKey, boolean deliveryMode)
     {
         //Set MessagePersistence
         BasicContentHeaderProperties properties = new BasicContentHeaderProperties();
@@ -708,9 +709,9 @@ public class MessageStoreTest extends QpidTestCase
 
     }
 
-    private Map<String, Exchange> createExchanges() throws Exception
+    private Map<String, ExchangeImpl> createExchanges() throws Exception
     {
-        Map<String, Exchange> exchanges = new HashMap<String, Exchange>();
+        Map<String, ExchangeImpl> exchanges = new HashMap<String, ExchangeImpl>();
 
         //Register non-durable DirectExchange
         exchanges.put(nonDurableExchangeName, createExchange(DirectExchange.TYPE, nonDurableExchangeName, false));
@@ -722,9 +723,9 @@ public class MessageStoreTest extends QpidTestCase
         return exchanges;
     }
 
-    private Exchange createExchange(ExchangeType<?> type, String name, boolean durable) throws Exception
+    private ExchangeImpl createExchange(ExchangeType<?> type, String name, boolean durable) throws Exception
     {
-        Exchange exchange = null;
+        ExchangeImpl exchange = null;
 
         Map<String,Object> attributes = new HashMap<String, Object>();
 
@@ -739,7 +740,7 @@ public class MessageStoreTest extends QpidTestCase
         return exchange;
     }
 
-    private void bindAllQueuesToExchange(Exchange exchange, String routingKey)
+    private void bindAllQueuesToExchange(ExchangeImpl exchange, String routingKey)
     {
         bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durablePriorityQueueName), false);
         bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableQueueName), false);
@@ -748,7 +749,7 @@ public class MessageStoreTest extends QpidTestCase
         bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durableExclusiveQueueName), false);
     }
 
-    private void bindAllTopicQueuesToExchange(Exchange exchange, String routingKey)
+    private void bindAllTopicQueuesToExchange(ExchangeImpl exchange, String routingKey)
     {
 
         bindQueueToExchange(exchange, routingKey, getVirtualHost().getQueue(durablePriorityTopicQueueName), true);
@@ -758,7 +759,7 @@ public class MessageStoreTest extends QpidTestCase
     }
 
 
-    protected void bindQueueToExchange(Exchange exchange,
+    protected void bindQueueToExchange(ExchangeImpl exchange,
                                        String routingKey,
                                        AMQQueue queue,
                                        boolean useSelector)
@@ -780,7 +781,7 @@ public class MessageStoreTest extends QpidTestCase
         }
     }
 
-    protected void unbindQueueFromExchange(Exchange exchange,
+    protected void unbindQueueFromExchange(ExchangeImpl exchange,
                                            String routingKey,
                                            AMQQueue queue,
                                            boolean useSelector)
@@ -794,8 +795,7 @@ public class MessageStoreTest extends QpidTestCase
 
         try
         {
-            Binding b = exchange.getBinding(routingKey, queue);
-            b.delete();
+            exchange.deleteBinding(routingKey, queue);
         }
         catch (Exception e)
         {
@@ -833,18 +833,18 @@ public class MessageStoreTest extends QpidTestCase
 
         assertNotNull("Queue(" + queueName + ") not correctly registered:", queue);
 
-        assertEquals("Incorrect Message count on queue:" + queueName, messageCount, queue.getMessageCount());
+        assertEquals("Incorrect Message count on queue:" + queueName, messageCount, queue.getQueueDepthMessages());
     }
 
     private class TestMessagePublishInfo implements MessagePublishInfo
     {
 
-        Exchange _exchange;
+        ExchangeImpl _exchange;
         boolean _immediate;
         boolean _mandatory;
         String _routingKey;
 
-        TestMessagePublishInfo(Exchange exchange, boolean immediate, boolean mandatory, String routingKey)
+        TestMessagePublishInfo(ExchangeImpl exchange, boolean immediate, boolean mandatory, String routingKey)
         {
             _exchange = exchange;
             _immediate = immediate;

@@ -20,52 +20,51 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import javax.management.NotificationListener;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>, C extends Consumer>
-        extends Comparable<Q>, ExchangeReferrer, BaseQueue<C>, MessageSource<C,Q>, CapacityChecker, MessageDestination,
-                Deletable<Q>
+public interface AMQQueue<X extends AMQQueue<X>>
+        extends Comparable<AMQQueue>, ExchangeReferrer, BaseQueue, MessageSource, CapacityChecker, MessageDestination,
+                Deletable<AMQQueue>, Queue<X>
 {
 
     void setExclusivityPolicy(ExclusivityPolicy desiredPolicy) throws ExistingConsumerPreventsExclusive;
 
-    public interface NotificationListener
-    {
-        void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg);
-    }
-
     boolean isExclusive();
 
-    void addBinding(Binding binding);
+    void addBinding(BindingImpl binding);
 
-    void removeBinding(Binding binding);
+    void removeBinding(BindingImpl binding);
 
-    List<Binding> getBindings();
+    Collection<BindingImpl> getBindings();
 
     int getBindingCount();
 
     LogSubject getLogSubject();
 
-    long getUnackedMessageBytes();
+    long getUnacknowledgedBytes();
 
-    long getTotalDequeueCount();
+    long getTotalDequeuedMessages();
 
-    long getTotalEnqueueCount();
+    long getTotalEnqueuedMessages();
 
     LifetimePolicy getLifetimePolicy();
 
@@ -73,10 +72,11 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     VirtualHost getVirtualHost();
 
+    public Collection<QueueConsumer<?>> getConsumers();
 
     int getConsumerCount();
 
-    int getActiveConsumerCount();
+    int getConsumerCountWithCredit();
 
     boolean hasExclusiveConsumer();
 
@@ -84,10 +84,10 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     boolean isEmpty();
 
-    int getMessageCount();
+    int getQueueDepthMessages();
 
 
-    long getQueueDepth();
+    long getQueueDepthBytes();
 
     long getOldestMessageArrivalTime();
 
@@ -95,21 +95,21 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     int delete();
 
-    void requeue(E entry);
+    void requeue(QueueEntry entry);
 
-    void dequeue(E entry);
+    void dequeue(QueueEntry entry);
 
-    void decrementUnackedMsgCount(E queueEntry);
+    void decrementUnackedMsgCount(QueueEntry queueEntry);
 
-    boolean resend(final E entry, final C consumer);
+    boolean resend(final QueueEntry entry, final QueueConsumer<?> consumer);
 
-    List<E> getMessagesOnTheQueue();
+    List<? extends QueueEntry> getMessagesOnTheQueue();
 
     List<Long> getMessagesOnTheQueue(int num);
 
     List<Long> getMessagesOnTheQueue(int num, int offset);
 
-    E getMessageOnTheQueue(long messageId);
+    QueueEntry getMessageOnTheQueue(long messageId);
 
     /**
      * Returns a list of QueEntries from a given range of queue positions, eg messages 5 to 10 on the queue.
@@ -120,42 +120,42 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
      * @param toPosition
      * @return
      */
-    public List<E> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
+    public List<? extends QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
 
-    void visit(QueueEntryVisitor<E> visitor);
+    void visit(QueueEntryVisitor visitor);
 
 
-    long getMaximumMessageSize();
+    long getAlertThresholdMessageSize();
 
     void setMaximumMessageSize(long value);
 
 
-    long getMaximumMessageCount();
+    long getAlertThresholdQueueDepthMessages();
 
     void setMaximumMessageCount(long value);
 
 
-    long getMaximumQueueDepth();
+    long getAlertThresholdQueueDepthBytes();
 
     void setMaximumQueueDepth(long value);
 
 
-    long getMaximumMessageAge();
+    long getAlertThresholdMessageAge();
 
     void setMaximumMessageAge(final long maximumMessageAge);
 
 
-    long getMinimumAlertRepeatGap();
+    long getAlertRepeatGap();
 
     void setMinimumAlertRepeatGap(long value);
 
 
-    long getCapacity();
+    long getQueueFlowControlSizeBytes();
 
     void setCapacity(long capacity);
 
 
-    long getFlowResumeCapacity();
+    long getQueueFlowResumeSizeBytes();
 
     void setFlowResumeCapacity(long flowResumeCapacity);
 
@@ -174,9 +174,9 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
 
     void stop();
 
-    Exchange getAlternateExchange();
+    NonDefaultExchange getAlternateExchange();
 
-    void setAlternateExchange(Exchange exchange);
+    void setAlternateExchange(NonDefaultExchange exchange);
 
     Collection<String> getAvailableAttributes();
     Object getAttribute(String attrName);
@@ -189,7 +189,7 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
      *
      * @return maximum delivery count
      */
-    int getMaximumDeliveryCount();
+    int getMaximumDeliveryAttempts();
 
     /**
      * Sets the maximum delivery count.
@@ -198,7 +198,7 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
      */
     public void setMaximumDeliveryCount(final int maximumDeliveryCount);
 
-    void setNotificationListener(NotificationListener listener);
+    void setNotificationListener(QueueNotificationListener listener);
 
     /**
      * Sets the free text description of this queue.
@@ -213,18 +213,18 @@ public interface AMQQueue<E extends QueueEntry<E,Q,C>, Q extends AMQQueue<E,Q,C>
      */
     String getDescription();
 
-    long getPersistentByteDequeues();
+    long getPersistentDequeuedBytes();
 
-    long getPersistentMsgDequeues();
+    long getPersistentDequeuedMessages();
 
-    long getPersistentByteEnqueues();
+    long getPersistentEnqueuedBytes();
 
-    long getPersistentMsgEnqueues();
+    long getPersistentEnqueuedMessages();
 
-    long getTotalDequeueSize();
+    long getTotalDequeuedBytes();
 
-    long getTotalEnqueueSize();
+    long getTotalEnqueuedBytes();
 
-    long getUnackedMessageCount();
+    long getUnacknowledgedMessages();
 
 }

@@ -27,13 +27,11 @@ import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.binding.*;
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterManager;
@@ -688,7 +686,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         if(method.getPassive())
         {
-            Exchange exchange = getExchange(session, exchangeName);
+            ExchangeImpl exchange = getExchange(session, exchangeName);
 
             if(exchange == null)
             {
@@ -736,7 +734,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             catch(ExchangeExistsException e)
             {
-                Exchange exchange = e.getExistingExchange();
+                ExchangeImpl exchange = e.getExistingExchange();
                 if(!exchange.getTypeName().equals(method.getType()))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
@@ -776,7 +774,7 @@ public class ServerSessionDelegate extends SessionDelegate
         ((ServerSession)session).close(errorCode.getValue(), description);
     }
 
-    private Exchange getExchange(Session session, String exchangeName)
+    private ExchangeImpl getExchange(Session session, String exchangeName)
     {
         return getVirtualHost(session).getExchange(exchangeName);
     }
@@ -827,7 +825,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 return;
             }
 
-            Exchange exchange = getExchange(session, method.getExchange());
+            ExchangeImpl exchange = getExchange(session, method.getExchange());
 
             if(exchange == null)
             {
@@ -862,7 +860,7 @@ public class ServerSessionDelegate extends SessionDelegate
         return false;
     }
 
-    private boolean isStandardExchange(Exchange exchange, Collection<ExchangeType<? extends Exchange>> registeredTypes)
+    private boolean isStandardExchange(ExchangeImpl exchange, Collection<ExchangeType<? extends ExchangeImpl>> registeredTypes)
     {
         for(ExchangeType type : registeredTypes)
         {
@@ -880,7 +878,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         ExchangeQueryResult result = new ExchangeQueryResult();
 
-        Exchange exchange = getExchange(session, method.getName());
+        ExchangeImpl exchange = getExchange(session, method.getName());
 
         if(exchange != null)
         {
@@ -919,7 +917,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 method.setBindingKey(method.getQueue());
             }
             AMQQueue queue = virtualHost.getQueue(method.getQueue());
-            Exchange exchange = virtualHost.getExchange(method.getExchange());
+            ExchangeImpl exchange = virtualHost.getExchange(method.getExchange());
             if(queue == null)
             {
                 exception(session, method, ExecutionErrorCode.NOT_FOUND, "Queue: '" + method.getQueue() + "' not found");
@@ -978,7 +976,7 @@ public class ServerSessionDelegate extends SessionDelegate
         else
         {
             AMQQueue queue = virtualHost.getQueue(method.getQueue());
-            Exchange exchange = virtualHost.getExchange(method.getExchange());
+            ExchangeImpl exchange = virtualHost.getExchange(method.getExchange());
             if(queue == null)
             {
                 exception(session, method, ExecutionErrorCode.NOT_FOUND, "Queue: '" + method.getQueue() + "' not found");
@@ -991,10 +989,9 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 try
                 {
-                    Binding binding = exchange.getBinding(method.getBindingKey(), queue);
-                    if(binding != null)
+                    if(exchange.hasBinding(method.getBindingKey(), queue))
                     {
-                        binding.delete();
+                        exchange.deleteBinding(method.getBindingKey(), queue);
                     }
                 }
                 catch (AccessControlException e)
@@ -1011,7 +1008,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         ExchangeBoundResult result = new ExchangeBoundResult();
         VirtualHost virtualHost = getVirtualHost(session);
-        Exchange exchange;
+        ExchangeImpl exchange;
         AMQQueue queue;
         if(method.hasExchange())
         {
@@ -1378,7 +1375,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 arguments.put(attrName, queue.getAttribute(attrName));
             }
             result.setArguments(QueueArgumentsConverter.convertModelArgsToWire(arguments));
-            result.setMessageCount(queue.getMessageCount());
+            result.setMessageCount(queue.getQueueDepthMessages());
             result.setSubscriberCount(queue.getConsumerCount());
 
         }

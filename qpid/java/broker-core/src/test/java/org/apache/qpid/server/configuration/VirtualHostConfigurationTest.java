@@ -146,15 +146,15 @@ public class VirtualHostConfigurationTest extends QpidTestCase
 
         // Check specifically configured values
         AMQQueue aTest = vhost.getQueue("atest");
-        assertEquals(4, aTest.getMaximumQueueDepth());
-        assertEquals(5, aTest.getMaximumMessageSize());
-        assertEquals(6, aTest.getMaximumMessageAge());
+        assertEquals(4, aTest.getAlertThresholdQueueDepthBytes());
+        assertEquals(5, aTest.getAlertThresholdMessageSize());
+        assertEquals(6, aTest.getAlertThresholdMessageAge());
 
         // Check default values
         AMQQueue bTest = vhost.getQueue("btest");
-        assertEquals(1, bTest.getMaximumQueueDepth());
-        assertEquals(2, bTest.getMaximumMessageSize());
-        assertEquals(3, bTest.getMaximumMessageAge());
+        assertEquals(1, bTest.getAlertThresholdQueueDepthBytes());
+        assertEquals(2, bTest.getAlertThresholdMessageSize());
+        assertEquals(3, bTest.getAlertThresholdMessageAge());
     }
 
     public void testMaxDeliveryCount() throws Exception

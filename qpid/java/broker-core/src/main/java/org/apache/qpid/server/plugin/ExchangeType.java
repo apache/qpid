@@ -21,13 +21,13 @@
 package org.apache.qpid.server.plugin;
 
 import java.util.Map;
-import java.util.UUID;
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public interface ExchangeType<T extends Exchange> extends Pluggable
+public interface ExchangeType<T extends NonDefaultExchange> extends Pluggable
 {
     public String getType();
 

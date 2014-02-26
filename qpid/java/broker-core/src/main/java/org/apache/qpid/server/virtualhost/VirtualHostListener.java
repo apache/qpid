@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 
@@ -35,7 +35,7 @@ public interface VirtualHostListener
 
     public void connectionUnregistered(AMQConnectionModel connection);
 
-    public void exchangeRegistered(Exchange exchange);
+    public void exchangeRegistered(ExchangeImpl exchange);
 
-    public void exchangeUnregistered(Exchange exchange);
+    public void exchangeUnregistered(ExchangeImpl exchange);
 }

@@ -110,19 +110,6 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
     }
 
     @Override
-    public long getTimeToLive()
-    {
-        return 0;  // TODO - Implement
-    }
-
-    @Override
-    public long setTimeToLive(long expected, long desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();  // TODO - Implement
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptySet();

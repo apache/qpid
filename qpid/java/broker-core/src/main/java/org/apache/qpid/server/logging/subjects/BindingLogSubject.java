@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.BINDING_FORMAT;
@@ -37,7 +37,7 @@ public class BindingLogSubject extends AbstractLogSubject
      * @param exchange
      * @param queue
      */
-    public BindingLogSubject(String routingKey, Exchange exchange,
+    public BindingLogSubject(String routingKey, ExchangeImpl exchange,
                              AMQQueue queue)
     {
         setLogStringWithFormat(BINDING_FORMAT,

@@ -22,6 +22,8 @@
 package org.apache.qpid.server.jmx.mbeans;
 
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Binding;
@@ -173,7 +175,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
     {
         if(HEADERS_EXCHANGE_TYPE.equals(_exchange.getType()))
         {
-            return getHeadersBindings(_exchange.getBindings()); 
+            return getHeadersBindings(_exchange.getBindings());
         }
         else
         {
@@ -181,7 +183,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
         }
     }
 
-    private TabularData getHeadersBindings(Collection<Binding> bindings) throws OpenDataException
+    private TabularData getHeadersBindings(Collection<? extends Binding> bindings) throws OpenDataException
     {
         TabularType bindinglistDataType =
                 new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
@@ -221,7 +223,7 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 
     }
 
-    private TabularData getNonHeadersBindings(Collection<Binding> bindings) throws OpenDataException
+    private TabularData getNonHeadersBindings(Collection<? extends Binding> bindings) throws OpenDataException
     {
 
         TabularType bindinglistDataType = 

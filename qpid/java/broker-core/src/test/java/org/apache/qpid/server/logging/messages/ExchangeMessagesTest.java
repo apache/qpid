@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 import java.util.List;
@@ -32,7 +32,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 {
     public void testExchangeCreated_Transient() throws Exception
     {
-        Exchange exchange = BrokerTestHelper.createExchange("test");
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test");
 
         String type = exchange.getTypeName();
         String name = exchange.getName();
@@ -47,7 +47,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 
     public void testExchangeCreated_Persistent() throws Exception
     {
-        Exchange exchange = BrokerTestHelper.createExchange("test");
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test");
 
         String type = exchange.getTypeName();
         String name = exchange.getName();
@@ -72,7 +72,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 
     public void testExchangeDiscardedMessage() throws Exception
     {
-        Exchange exchange = BrokerTestHelper.createExchange("test");
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test");
 
         final String name = exchange.getName();
         final String routingKey = "routingKey";

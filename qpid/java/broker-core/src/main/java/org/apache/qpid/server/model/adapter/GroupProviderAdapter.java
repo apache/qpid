@@ -132,20 +132,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
     }
 
     @Override
-    public long getTimeToLive()
-    {
-        return 0;
-    }
-
-    @Override
-    public long setTimeToLive(long expected, long desired)
-            throws IllegalStateException, AccessControlException,
-            IllegalArgumentException
-    {
-        return 0;
-    }
-
-    @Override
     public Collection<String> getAttributeNames()
     {
         return _supportedAttributes;
@@ -169,10 +155,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         else if (STATE.equals(name))
         {
             return getState();
-        }
-        else if (TIME_TO_LIVE.equals(name))
-        {
-            // TODO
         }
 
         return super.getAttribute(name);
@@ -407,20 +389,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         }
 
         @Override
-        public long getTimeToLive()
-        {
-            return 0;
-        }
-
-        @Override
-        public long setTimeToLive(long expected, long desired)
-                throws IllegalStateException, AccessControlException,
-                IllegalArgumentException
-        {
-            throw new IllegalStateException("ttl cannot be updated");
-        }
-
-        @Override
         public <C extends ConfiguredObject> Collection<C> getChildren(
                 Class<C> clazz)
         {
@@ -587,20 +555,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
                     AccessControlException, IllegalArgumentException
             {
                 return null;
-            }
-
-            @Override
-            public long getTimeToLive()
-            {
-                return 0;
-            }
-
-            @Override
-            public long setTimeToLive(long expected, long desired)
-                    throws IllegalStateException, AccessControlException,
-                    IllegalArgumentException
-            {
-                return 0;
             }
 
             @Override

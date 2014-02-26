@@ -30,9 +30,8 @@ import org.apache.qpid.framing.QueueUnbindBody;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -94,13 +93,13 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
         }
-        final Exchange exch = virtualHost.getExchange(body.getExchange() == null ? null : body.getExchange().toString());
+        final ExchangeImpl exch = virtualHost.getExchange(body.getExchange() == null ? null : body.getExchange().toString());
         if (exch == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
         }
 
-        if(exch.getBinding(String.valueOf(routingKey), queue) == null)
+        if(!exch.hasBinding(String.valueOf(routingKey), queue))
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND,"No such binding");
         }
@@ -108,11 +107,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         {
             try
             {
-                Binding binding = exch.getBinding(String.valueOf(routingKey), queue);
-                if(binding != null)
-                {
-                    binding.delete();
-                }
+                exch.deleteBinding(String.valueOf(routingKey), queue);
             }
             catch (AccessControlException e)
             {

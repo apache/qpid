@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -406,7 +406,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
             if(owningResource instanceof AMQQueue)
             {
                 final AMQQueue queue = (AMQQueue)owningResource;
-                final Exchange alternateExchange = queue.getAlternateExchange();
+                final ExchangeImpl alternateExchange = queue.getAlternateExchange();
 
                 if(alternateExchange != null)
                 {

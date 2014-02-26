@@ -24,7 +24,7 @@ import org.apache.qpid.server.message.ServerMessage;
 /**
  * An implementation of QueueEntryImpl to be used in SortedQueueEntryList.
  */
-public class SortedQueueEntry extends QueueEntryImpl<SortedQueueEntry, SortedQueue, SortedQueueEntryList>
+public class SortedQueueEntry extends QueueEntryImpl
 {
     public static enum Colour
     {
@@ -52,8 +52,9 @@ public class SortedQueueEntry extends QueueEntryImpl<SortedQueueEntry, SortedQue
     }
 
     @Override
-    public int compareTo(final SortedQueueEntry o)
+    public int compareTo(final QueueEntry other)
     {
+        SortedQueueEntry o = (SortedQueueEntry)other;
         final String otherKey = o._key;
         final int compare = _key == null ? (otherKey == null ? 0 : -1) : otherKey == null ? 1 : _key.compareTo(otherKey);
         return compare == 0 ? super.compareTo(o) : compare;

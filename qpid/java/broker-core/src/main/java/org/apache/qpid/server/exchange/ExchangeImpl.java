@@ -20,17 +20,15 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
-public interface Exchange<T extends Exchange> extends ExchangeReferrer, MessageDestination
+public interface ExchangeImpl<T extends NonDefaultExchange> extends ExchangeReferrer, MessageDestination
 {
 
     UUID getId();
@@ -48,31 +46,21 @@ public interface Exchange<T extends Exchange> extends ExchangeReferrer, MessageD
      */
     boolean isAutoDelete();
 
-    Exchange getAlternateExchange();
+    ExchangeImpl getAlternateExchange();
 
-    void setAlternateExchange(Exchange exchange);
-
-    long getBindingCount();
-
-    long getByteDrops();
-
-    long getByteReceives();
-
-    long getMsgDrops();
-
-    long getMsgReceives();
-
+    void setAlternateExchange(ExchangeImpl exchange);
 
     boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
+    boolean deleteBinding(String bindingKey, AMQQueue queue);
+    boolean hasBinding(String bindingKey, AMQQueue queue);
 
-    boolean replaceBinding(UUID id, String bindingKey,
+
+    boolean replaceBinding(String bindingKey,
                            AMQQueue queue,
                            Map<String, Object> arguments);
 
     void restoreBinding(UUID id, String bindingKey, AMQQueue queue,
                         Map<String, Object> argumentMap);
-
-    Binding getBinding(String bindingKey, AMQQueue queue);
 
     void close();
 
@@ -108,8 +96,6 @@ public interface Exchange<T extends Exchange> extends ExchangeReferrer, MessageD
      */
     boolean hasBindings();
 
-    Collection<Binding> getBindings();
-
     boolean isBound(AMQQueue queue);
 
     boolean isBound(Map<String, Object> arguments);
@@ -128,8 +114,8 @@ public interface Exchange<T extends Exchange> extends ExchangeReferrer, MessageD
 
     public interface BindingListener
     {
-        void bindingAdded(Exchange exchange, Binding binding);
-        void bindingRemoved(Exchange exchange, Binding binding);
+        void bindingAdded(ExchangeImpl exchange, BindingImpl binding);
+        void bindingRemoved(ExchangeImpl exchange, BindingImpl binding);
     }
 
     public void addBindingListener(BindingListener listener);

@@ -56,7 +56,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementNode>, MessageDestination
+class ManagementNode implements MessageSource, MessageDestination
 {
 
     public static final String NAME_ATTRIBUTE = "name";
@@ -93,8 +93,8 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
 
     private final UUID _id;
 
-    private final CopyOnWriteArrayList<ConsumerRegistrationListener<ManagementNode>> _consumerRegistrationListeners =
-            new CopyOnWriteArrayList<ConsumerRegistrationListener<ManagementNode>>();
+    private final CopyOnWriteArrayList<ConsumerRegistrationListener<? super MessageSource>> _consumerRegistrationListeners =
+            new CopyOnWriteArrayList<ConsumerRegistrationListener<? super MessageSource>>();
 
     private final SystemNodeCreator.SystemNodeRegistry _registry;
     private final ConfiguredObject<?> _managedObject;
@@ -139,18 +139,41 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
 
     private Class getManagementClass(Class objectClass)
     {
-        List<Class> allClasses = new ArrayList<Class>();
-        allClasses.add(objectClass);
-        allClasses.addAll(Arrays.asList(objectClass.getInterfaces()));
-        allClasses.add(objectClass.getSuperclass());
-        for(Class clazz : allClasses)
+
+        if(objectClass.getAnnotation(ManagedObject.class)!=null)
         {
-            ManagedObject annotation = (ManagedObject) clazz.getAnnotation(ManagedObject.class);
-            if(annotation != null)
+            return objectClass;
+        }
+        List<Class> allClasses = Collections.singletonList(objectClass);
+        List<Class> testedClasses = new ArrayList<Class>();
+        do
+        {
+            testedClasses.addAll( allClasses );
+            allClasses = new ArrayList<Class>();
+            for(Class c : testedClasses)
             {
-                return clazz;
+                for(Class i : c.getInterfaces())
+                {
+                    if(!allClasses.contains(i))
+                    {
+                        allClasses.add(i);
+                    }
+                }
+                if(c.getSuperclass() != null && !allClasses.contains(c.getSuperclass()))
+                {
+                    allClasses.add(c.getSuperclass());
+                }
+            }
+            allClasses.removeAll(testedClasses);
+            for(Class c : allClasses)
+            {
+                if(c.getAnnotation(ManagedObject.class) != null)
+                {
+                    return c;
+                }
             }
         }
+        while(!allClasses.isEmpty());
         return null;
     }
 
@@ -240,7 +263,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     public  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
                     final InstanceProperties instanceProperties,
                     final ServerTransaction txn,
-                    final Action<? super MessageInstance<?, ? extends Consumer>> postEnqueueAction)
+                    final Action<? super MessageInstance> postEnqueueAction)
     {
 
         @SuppressWarnings("unchecked")
@@ -286,7 +309,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         return header.containsHeader(name) && header.getHeader(name) instanceof String;
     }
 
-    synchronized void enqueue(InternalMessage message, InstanceProperties properties, Action<? super MessageInstance<?, ? extends Consumer>> postEnqueueAction)
+    synchronized void enqueue(InternalMessage message, InstanceProperties properties, Action<? super MessageInstance> postEnqueueAction)
     {
         if(postEnqueueAction != null)
         {
@@ -925,7 +948,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     }
 
     @Override
-    public synchronized <T extends ConsumerTarget> ManagementNodeConsumer addConsumer(final T target,
+    public synchronized  ManagementNodeConsumer addConsumer(final ConsumerTarget target,
                                 final FilterManager filters,
                                 final Class<? extends ServerMessage> messageClass,
                                 final String consumerName,
@@ -935,7 +958,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         final ManagementNodeConsumer managementNodeConsumer = new ManagementNodeConsumer(consumerName,this, target);
         target.consumerAdded(managementNodeConsumer);
         _consumers.put(consumerName, managementNodeConsumer);
-        for(ConsumerRegistrationListener<ManagementNode> listener : _consumerRegistrationListeners)
+        for(ConsumerRegistrationListener<? super MessageSource> listener : _consumerRegistrationListeners)
         {
             listener.consumerAdded(this, managementNodeConsumer);
         }
@@ -949,7 +972,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
     }
 
     @Override
-    public void addConsumerRegistrationListener(final ConsumerRegistrationListener<ManagementNode> listener)
+    public void addConsumerRegistrationListener(final ConsumerRegistrationListener<? super MessageSource> listener)
     {
         _consumerRegistrationListeners.add(listener);
     }
@@ -984,7 +1007,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         return false;
     }
 
-    private class ConsumedMessageInstance implements MessageInstance<ConsumedMessageInstance,Consumer>
+    private class ConsumedMessageInstance implements MessageInstance
     {
         private final ServerMessage _message;
         private final InstanceProperties _properties;
@@ -1015,13 +1038,13 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
         @Override
-        public void addStateChangeListener(final StateChangeListener<? super ConsumedMessageInstance, State> listener)
+        public void addStateChangeListener(final StateChangeListener<? super MessageInstance, State> listener)
         {
 
         }
 
         @Override
-        public boolean removeStateChangeListener(final StateChangeListener<? super ConsumedMessageInstance, State> listener)
+        public boolean removeStateChangeListener(final StateChangeListener<? super MessageInstance, State> listener)
         {
             return false;
         }
@@ -1094,7 +1117,7 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         }
 
         @Override
-        public int routeToAlternate(final Action<? super MessageInstance<?, ? extends Consumer>> action,
+        public int routeToAlternate(final Action<? super MessageInstance> action,
                                     final ServerTransaction txn)
         {
             return 0;
@@ -1182,7 +1205,8 @@ class ManagementNode implements MessageSource<ManagementNodeConsumer,ManagementN
         @Override
         public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
         {
-            final ManagedEntityType entityType = _entityTypes.get(getManagementClass(child.getClass()).getName());
+            final Class managementClass = getManagementClass(child.getClass());
+            final ManagedEntityType entityType = _entityTypes.get(managementClass.getName());
             if(entityType != null)
             {
                 _entities.get(entityType).put(child.getName(), child);

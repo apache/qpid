@@ -22,7 +22,6 @@ package org.apache.qpid.server.util;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.when;
 
 import java.net.SocketAddress;
@@ -32,13 +31,13 @@ import java.util.UUID;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -171,7 +170,7 @@ public class BrokerTestHelper
         return connection;
     }
 
-    public static Exchange createExchange(String hostName) throws Exception
+    public static ExchangeImpl createExchange(String hostName) throws Exception
     {
         SecurityManager securityManager = new SecurityManager(mock(Broker.class), false);
         VirtualHost virtualHost = mock(VirtualHost.class);

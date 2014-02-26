@@ -34,8 +34,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
-import org.apache.qpid.server.model.ExclusivityPolicy;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
@@ -45,7 +47,6 @@ import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -54,6 +55,7 @@ import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
@@ -358,7 +360,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
                            autodelete ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
             attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
-            Exchange newExchange = createExchange(attributes);
+            ExchangeImpl newExchange = createExchange(attributes);
         }
         catch(ExchangeExistsException e)
         {
@@ -381,13 +383,13 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         //get the exchange name (returns default exchange name if none was specified)
         String exchangeName = queueConfiguration.getExchange();
 
-        Exchange exchange = _exchangeRegistry.getExchange(exchangeName);
+        ExchangeImpl exchange = _exchangeRegistry.getExchange(exchangeName);
         if (exchange == null)
         {
             throw new ConfigurationException("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName);
         }
 
-        Exchange defaultExchange = _exchangeRegistry.getDefaultExchange();
+        ExchangeImpl defaultExchange = _exchangeRegistry.getDefaultExchange();
 
         //get routing keys in configuration (returns empty list if none are defined)
         List<?> routingKeys = queueConfiguration.getRoutingKeys();
@@ -418,7 +420,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     }
 
-    private void configureBinding(AMQQueue queue, Exchange exchange, String routingKey, Map<String,Object> arguments)
+    private void configureBinding(AMQQueue queue, ExchangeImpl exchange, String routingKey, Map<String,Object> arguments)
     {
         if (_logger.isInfoEnabled())
         {
@@ -458,13 +460,13 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         _exchangeRegistry.addRegistryChangeListener(new ExchangeRegistry.RegistryChangeListener()
         {
             @Override
-            public void exchangeRegistered(Exchange exchange)
+            public void exchangeRegistered(ExchangeImpl exchange)
             {
                 listener.exchangeRegistered(exchange);
             }
 
             @Override
-            public void exchangeUnregistered(Exchange exchange)
+            public void exchangeUnregistered(ExchangeImpl exchange)
             {
                 listener.exchangeUnregistered(exchange);
             }
@@ -591,37 +593,43 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
-    public Exchange getExchange(String name)
+    public ExchangeImpl getExchange(String name)
     {
         return _exchangeRegistry.getExchange(name);
     }
 
     @Override
-    public Exchange getExchange(UUID id)
+    public ExchangeImpl getExchange(UUID id)
     {
         return _exchangeRegistry.getExchange(id);
     }
 
     @Override
-    public Exchange getDefaultExchange()
+    public ExchangeImpl getDefaultExchange()
     {
         return _exchangeRegistry.getDefaultExchange();
     }
 
     @Override
-    public Collection<Exchange> getExchanges()
+    public Collection<ExchangeImpl> getExchanges()
     {
         return Collections.unmodifiableCollection(_exchangeRegistry.getExchanges());
     }
 
     @Override
-    public Collection<ExchangeType<? extends Exchange>> getExchangeTypes()
+    public Collection<NonDefaultExchange> getExchangesExceptDefault()
+    {
+        return Collections.unmodifiableCollection(_exchangeRegistry.getExchangesExceptDefault());
+    }
+
+    @Override
+    public Collection<ExchangeType<? extends ExchangeImpl>> getExchangeTypes()
     {
         return _exchangeFactory.getRegisteredTypes();
     }
 
     @Override
-    public Exchange createExchange(Map<String,Object> attributes)
+    public NonDefaultExchange createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType
     {
@@ -632,7 +640,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         synchronized (_exchangeRegistry)
         {
-            Exchange existing;
+            ExchangeImpl existing;
             if((existing = _exchangeRegistry.getExchange(name)) !=null)
             {
                 throw new ExchangeExistsException(name,existing);
@@ -650,7 +658,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                                UUIDGenerator.generateExchangeUUID(name, getName()));
             }
 
-            Exchange exchange = _exchangeFactory.createExchange(attributes);
+            NonDefaultExchange exchange = _exchangeFactory.createExchange(attributes);
 
             _exchangeRegistry.registerExchange(exchange);
             if(durable)
@@ -662,7 +670,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
-    public void removeExchange(Exchange exchange, boolean force)
+    public void removeExchange(ExchangeImpl exchange, boolean force)
             throws ExchangeIsAlternateException, RequiredExchangeException
     {
         if(exchange.hasReferrers())
@@ -1072,5 +1080,18 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     public int getDefaultMaximumDeliveryAttempts()
     {
         return getConfiguration().getMaxDeliveryCount();
+    }
+
+    @Override
+    public TaskExecutor getTaskExecutor()
+    {
+        // todo - remove this once virtualhost is a configured object itself
+        return _model.getTaskExecutor();
+    }
+
+    @Override
+    public org.apache.qpid.server.model.VirtualHost getModel()
+    {
+        return _model;
     }
 }

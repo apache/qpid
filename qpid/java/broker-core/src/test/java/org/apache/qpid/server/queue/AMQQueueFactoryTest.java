@@ -36,7 +36,8 @@ import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -140,16 +141,16 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
 
         when(_virtualHost.createExchange(attributes.capture())).then(
-                new Answer<Exchange>()
+                new Answer<ExchangeImpl>()
                 {
                     @Override
-                    public Exchange answer(InvocationOnMock invocation) throws Throwable
+                    public ExchangeImpl answer(InvocationOnMock invocation) throws Throwable
                     {
                         Map attributeValues = attributes.getValue();
                         final String name = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.NAME, attributeValues);
                         final UUID id = MapValueConverter.getUUIDAttribute(org.apache.qpid.server.model.Exchange.ID, attributeValues);
 
-                        final Exchange exchange = mock(Exchange.class);
+                        final NonDefaultExchange exchange = mock(NonDefaultExchange.class);
                         ExchangeType exType = mock(ExchangeType.class);
 
                         when(exchange.getName()).thenReturn(name);
@@ -260,7 +261,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         AMQQueue queue = _queueFactory.createQueue(attributes);
 
-        Exchange altExchange = queue.getAlternateExchange();
+        ExchangeImpl altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
         assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
         assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getTypeName());
@@ -272,7 +273,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNotNull("The DLQ was not registered as expected", dlQueue);
         assertTrue("DLQ should have been bound to the alternate exchange", altExchange.isBound(dlQueue));
         assertNull("DLQ should have no alternate exchange", dlQueue.getAlternateExchange());
-        assertEquals("DLQ should have a zero maximum delivery count", 0, dlQueue.getMaximumDeliveryCount());
+        assertEquals("DLQ should have a zero maximum delivery count", 0, dlQueue.getMaximumDeliveryAttempts());
 
         //2 queues should have been registered
         verifyRegisteredQueueCount(2);
@@ -301,8 +302,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         AMQQueue queue = _queueFactory.createQueue(attributes);
 
-        assertEquals("Unexpected maximum delivery count", 5, queue.getMaximumDeliveryCount());
-        Exchange altExchange = queue.getAlternateExchange();
+        assertEquals("Unexpected maximum delivery count", 5, queue.getMaximumDeliveryAttempts());
+        ExchangeImpl altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
         assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
         assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getTypeName());
@@ -314,7 +315,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         assertNotNull("The DLQ was not registered as expected", dlQueue);
         assertTrue("DLQ should have been bound to the alternate exchange", altExchange.isBound(dlQueue));
         assertNull("DLQ should have no alternate exchange", dlQueue.getAlternateExchange());
-        assertEquals("DLQ should have a zero maximum delivery count", 0, dlQueue.getMaximumDeliveryCount());
+        assertEquals("DLQ should have a zero maximum delivery count", 0, dlQueue.getMaximumDeliveryAttempts());
 
         //2 queues should have been registered
         verifyRegisteredQueueCount(2);
@@ -403,7 +404,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         final AMQQueue queue = _queueFactory.createQueue(attributes);
 
         assertNotNull("The queue was not registered as expected ", queue);
-        assertEquals("Maximum delivery count not as expected", 5, queue.getMaximumDeliveryCount());
+        assertEquals("Maximum delivery count not as expected", 5, queue.getMaximumDeliveryAttempts());
 
         verifyRegisteredQueueCount(1);
     }
@@ -421,7 +422,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
         final AMQQueue queue = _queueFactory.createQueue(attributes);
 
         assertNotNull("The queue was not registered as expected ", queue);
-        assertEquals("Maximum delivery count not as expected", 0, queue.getMaximumDeliveryCount());
+        assertEquals("Maximum delivery count not as expected", 0, queue.getMaximumDeliveryAttempts());
 
         verifyRegisteredQueueCount(1);
     }

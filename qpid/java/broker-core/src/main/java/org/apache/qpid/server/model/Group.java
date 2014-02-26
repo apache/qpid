@@ -24,6 +24,4 @@ public interface Group<X extends Group<X>> extends ConfiguredObject<X>
     String DURABLE         = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE           = "state";
-    String TIME_TO_LIVE    = "timeToLive";
-
 }

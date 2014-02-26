@@ -163,7 +163,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
             QueueDeclareOkBody responseBody =
                     methodRegistry.createQueueDeclareOkBody(queueName,
-                                                            queue.getMessageCount(),
+                                                            queue.getQueueDepthMessages(),
                                                             queue.getConsumerCount());
             protocolConnection.writeFrame(responseBody.generateFrame(channelId));
 
