@@ -37,7 +37,7 @@ public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
     // Attributes
 
     @ManagedAttribute
-    Exchange<?> getAlternateExchange();
+    <T extends Exchange<T>> Exchange<T> getAlternateExchange();
 
     //children
     Collection<? extends Binding> getBindings();
