@@ -46,7 +46,7 @@ public interface ExchangeImpl<T extends NonDefaultExchange> extends ExchangeRefe
      */
     boolean isAutoDelete();
 
-    ExchangeImpl getAlternateExchange();
+    <X extends NonDefaultExchange<X>> ExchangeImpl<X> getAlternateExchange();
 
     void setAlternateExchange(ExchangeImpl exchange);
 

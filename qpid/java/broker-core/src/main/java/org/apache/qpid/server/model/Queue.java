@@ -120,12 +120,8 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     @ManagedAttribute
     int getPriorities();
 
-
-
     //children
     Collection<? extends Binding> getBindings();
-    Collection<? extends Consumer> getConsumers();
-
 
     //operations
 
