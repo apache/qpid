@@ -20,8 +20,9 @@
 
   <parent>
     <groupId>org.apache.qpid</groupId>
-    <artifactId>qpid-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>qpid-systests-parent</artifactId>
+    <version>0.28-SNAPSHOT</version>
+    <relativePath>../qpid-systests-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>qpid-systests</artifactId>
@@ -29,43 +30,12 @@
   <name>Qpid System Tests</name>
   <description>System testing configuration, code and tests</description>
 
-  <properties>
-    <broker.home.dir>target${file.separator}qpid-broker${file.separator}${project.version}</broker.home.dir>
-    <!-- test properties -->
-    <qpid.home>${basedir}${file.separator}${broker.home.dir}</qpid.home>
-    <qpid.home.qbtc.output>${qpid.home}${file.separator}qbtc-output</qpid.home.qbtc.output>
-  </properties>
-
   <dependencies>
-    <!-- general test deps -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit-version}</version>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-      <version>${mockito-version}</version>
-      <scope>compile</scope>
-    </dependency>
 
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-test-utils</artifactId>
       <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
     </dependency>
 
     <!-- client deps -->
@@ -215,126 +185,5 @@
     </dependency>
 
   </dependencies>
-   
-  <build>
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-      </resource>
-      <resource>
-        <directory>src/main/java</directory>
-        <excludes>
-          <exclude>**/*.java/</exclude>
-        </excludes>
-      </resource>
-    </resources>
-
-    <testSourceDirectory>src/main/java</testSourceDirectory>
-
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <!--version specified in parent pluginManagement -->
-        <configuration>
-          <workingDirectory>${basedir}/..</workingDirectory>
-          <!-- Skip the default test phase, bind to the
-               integration-test phase below instead -->
-          <skip>true</skip>
-          <systemPropertyVariables>
-            <log4j.configuration.file>${project.basedir}${file.separator}..${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
-          </systemPropertyVariables>
-        </configuration>
-        <executions>
-          <execution>
-            <id>integration-test</id>
-            <phase>integration-test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <skip>false</skip>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <!--version specified in parent pluginManagement -->
-        <executions>
-          <!-- copy the systests config files into the ${qpid.home}/etc
-               directory where the tests expect them -->
-          <execution>
-            <id>copy-systests-etc-resources</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${qpid.home}</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${basedir}</directory>
-                  <includes>
-                    <include>etc/</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-          <!-- copy the ../test-profiles directory into ${qpid.home}/..
-               directory where the tests expect it -->
-          <execution>
-            <id>copy-test-profile-resources</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${qpid.home}/..</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${basedir}/..</directory>
-                  <includes>
-                    <include>test-profiles/</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <!--version specified in parent pluginManagement -->
-        <executions>
-          <execution>
-            <id>extract-broker-distribution</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-            <configuration>
-              <outputAbsoluteArtifactFilename>false</outputAbsoluteArtifactFilename>
-              <outputDirectory>${project.build.directory}</outputDirectory>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.apache.qpid</groupId>
-                  <artifactId>qpid-broker</artifactId>
-                  <version>${project.version}</version>
-                  <classifier>bin</classifier>
-                  <type>tar.gz</type>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 
 </project>

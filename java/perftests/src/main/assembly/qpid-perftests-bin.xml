@@ -11,11 +11,20 @@
       <directory>${project.basedir}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
-        <include>README*</include>
-        <include>LICENSE*</include>
-        <include>NOTICE*</include>
         <include>etc/</include>
       </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}/generated-licenses/</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>README</include>
+        <include>NOTICE</include>
+        <include>LICENSE</include>
+        <include>THIRDPARTY</include>
+      </includes>
+      <fileMode>0644</fileMode>
+      <directoryMode>0755</directoryMode>
     </fileSet>
   </fileSets>
   <dependencySets>
