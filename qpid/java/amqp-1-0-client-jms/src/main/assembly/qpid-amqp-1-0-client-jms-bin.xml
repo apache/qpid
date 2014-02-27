@@ -8,13 +8,16 @@
   <baseDirectory>qpid-amqp-1-0-client-jms/${project.version}</baseDirectory>
   <fileSets>
     <fileSet>
-      <directory>${project.basedir}</directory>
+      <directory>${project.build.directory}/generated-licenses/</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
-        <include>README*</include>
-        <include>LICENSE*</include>
-        <include>NOTICE*</include>
+        <include>README</include>
+        <include>NOTICE</include>
+        <include>LICENSE</include>
+        <include>THIRDPARTY</include>
       </includes>
+      <fileMode>0644</fileMode>
+      <directoryMode>0755</directoryMode>
     </fileSet>
   </fileSets>
   <dependencySets>

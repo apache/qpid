@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-java-build</artifactId>
+    <version>0.28-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>qpid-systests-parent</artifactId>
+  <version>0.28-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Qpid Java System Test Parent</name>
+  <description>Parent POM for Qpid system testing modules</description>
+
+  <properties>
+    <broker.home.dir>target${file.separator}qpid-broker${file.separator}${project.version}</broker.home.dir>
+    <!-- test properties -->
+    <qpid.home>${basedir}${file.separator}${broker.home.dir}</qpid.home>
+    <qpid.home.qbtc.output>${qpid.home}${file.separator}qbtc-output</qpid.home.qbtc.output>
+    <test.log4j.configuration.file>${project.basedir}${file.separator}..${file.separator}test-profiles${file.separator}log4j-test.xml</test.log4j.configuration.file>
+    <test.working.directory>${basedir}/..</test.working.directory>
+    <test.resource.directory>${basedir}/..</test.resource.directory>
+  </properties>
+
+  <dependencies>
+    <!-- general test deps -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit-version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>${mockito-version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>src/main/java</directory>
+        <excludes>
+          <exclude>**/*.java/</exclude>
+        </excludes>
+      </resource>
+    </resources>
+
+    <testSourceDirectory>src/main/java</testSourceDirectory>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <!--version specified in parent pluginManagement -->
+        <configuration>
+          <workingDirectory>${test.working.directory}</workingDirectory>
+          <!-- Skip the default test phase, bind to the
+               integration-test phase below instead -->
+          <skip>true</skip>
+          <systemPropertyVariables>
+            <log4j.configuration.file>${test.log4j.configuration.file}</log4j.configuration.file>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test</id>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>false</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <!--version specified in parent pluginManagement -->
+        <executions>
+          <!-- copy the systests config files into the ${qpid.home}/etc
+               directory where the tests expect them -->
+          <execution>
+            <id>copy-systests-etc-resources</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${qpid.home}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}</directory>
+                  <includes>
+                    <include>etc/</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+          <!-- copy the ../test-profiles directory into ${qpid.home}/..
+               directory where the tests expect it -->
+          <execution>
+            <id>copy-test-profile-resources</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${qpid.home}/..</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${test.resource.directory}</directory>
+                  <includes>
+                    <include>test-profiles/</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <!--version specified in parent pluginManagement -->
+        <executions>
+          <execution>
+            <id>extract-broker-distribution</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <outputAbsoluteArtifactFilename>false</outputAbsoluteArtifactFilename>
+              <outputDirectory>${project.build.directory}</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.apache.qpid</groupId>
+                  <artifactId>qpid-broker</artifactId>
+                  <version>${project.version}</version>
+                  <classifier>bin</classifier>
+                  <type>tar.gz</type>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+          <!-- work around to make sure bdb jar available for bdb profiles -->
+          <execution>
+            <id>copy-sleepycat-jar-for-bdb-tests</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>com.sleepycat</groupId>
+                  <artifactId>je</artifactId>
+                  <type>jar</type>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/qpid-broker/${project.version}/lib</outputDirectory>
+            </configuration>
+          </execution>
+
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
