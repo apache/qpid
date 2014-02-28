@@ -25,7 +25,6 @@
   </parent>
 
   <artifactId>qpid-amqp-1-0-common</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid AMQP 1.0 Common</name>
   <description>AMQP 1.0 compliant common module</description>
 

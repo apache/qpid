@@ -25,7 +25,6 @@
   </parent>
 
   <artifactId>qpid-jca</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid JCA</name>
   <description>J2EE Connector Architecture code</description>
 

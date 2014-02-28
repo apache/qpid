@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-management-examples</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid Management Examples</name>
   <description>Example management code</description>
 

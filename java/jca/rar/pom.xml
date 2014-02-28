@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-ra</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <packaging>rar</packaging>
   <name>Qpid Resource Adaptor</name>
   <description>Resource Adaptor</description>

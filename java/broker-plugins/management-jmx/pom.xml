@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-broker-plugins-management-jmx</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid JMX Management Broker Plug-in</name>
   <description>JMX management broker plug-in</description>
 

@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-broker-plugins-amqp-0-8-protocol</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid AMQP 0-8 Protocol Broker Plug-in</name>
   <description>AMQP 0-8, 0-9 and 0-9-1 protocol broker plug-in</description>
 

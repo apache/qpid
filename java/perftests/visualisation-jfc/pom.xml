@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-perftests-visualisation-jfc</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid Performance Tests Visualisation JFC</name>
   <description>Performance testing visualisation using JFreeChart</description>
 

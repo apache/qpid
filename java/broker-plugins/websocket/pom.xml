@@ -26,7 +26,6 @@
     </parent>
 
     <artifactId>qpid-broker-plugins-websocket</artifactId>
-    <version>0.28-SNAPSHOT</version>
     <name>Qpid WebSocket Broker Plug-in</name>
     <description>WebSocket broker plug-in</description>
 
