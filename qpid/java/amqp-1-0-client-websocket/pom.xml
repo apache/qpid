@@ -25,7 +25,6 @@
   </parent>
 
   <artifactId>qpid-amqp-1-0-client-websocket</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid AMQP 1.0 Client WebSocket</name>
   <description>AMQP 1.0 compliant WebSocket module</description>
 

@@ -25,7 +25,6 @@
   </parent>
 
   <artifactId>qpid-common</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid Common</name>
   <description>Common functionality</description>
 

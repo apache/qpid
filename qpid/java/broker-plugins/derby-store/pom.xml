@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-broker-plugins-derby-store</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid Derby Message Store</name>
   <description>Apache Derby DB message store broker plug-in</description>
 

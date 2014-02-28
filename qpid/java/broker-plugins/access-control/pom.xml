@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-broker-plugins-access-control</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid Access Control Broker Plug-in</name>
   <description>Access Control broker plug-in</description>
 

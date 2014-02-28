@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-perftests</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid Performance Tests</name>
   <description>Performance testing configuration, code and tests</description>
 

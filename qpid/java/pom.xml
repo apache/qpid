@@ -224,7 +224,7 @@
             <broker.virtualhosts-config>${profile.broker.virtualhosts-config}</broker.virtualhosts-config>
             <broker.persistent>${profile.broker.persistent}</broker.persistent>
             <messagestore.class.name>${profile.messagestore.class.name}</messagestore.class.name>
-            <!-- <profile>${profile}</profile> -->
+            <profile>${profile}</profile>
 
             <!-- This must be a child of qpid home currently due to the horrible mechanics of QBTC  -->
             <test.output>${qpid.home.qbtc.output}</test.output>
@@ -387,6 +387,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-mms.0-10</profile>
         <profile.excludes>JavaTransientExcludes Java010Excludes</profile.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
@@ -405,6 +406,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-mms.0-9-1</profile>
         <profile.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
@@ -423,6 +425,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-mms.0-9</profile>
         <profile.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
@@ -441,6 +444,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-bdb.0-10</profile>
         <profile.excludes>JavaPersistentExcludes Java010Excludes JavaBDBExcludes</profile.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
@@ -459,6 +463,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-bdb.0-9-1</profile>
         <profile.excludes>JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes</profile.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
@@ -477,6 +482,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-bdb.0-9</profile>
         <profile.excludes>JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes</profile.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
@@ -495,6 +501,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-dby-mem.0-10</profile>
         <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes Java010Excludes</profile.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
@@ -513,6 +520,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-dby-mem.0-9-1</profile>
         <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
@@ -531,6 +539,7 @@
         </property>
       </activation>
       <properties>
+        <profile>java-dby-mem.0-9</profile>
         <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>

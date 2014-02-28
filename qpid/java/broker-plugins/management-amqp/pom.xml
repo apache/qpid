@@ -28,7 +28,6 @@
     </parent>
 
     <artifactId>qpid-broker-plugins-management-amqp</artifactId>
-    <version>0.28-SNAPSHOT</version>
     <name>Qpid AMQP Management Protocol Broker Plug-in</name>
     <description>Qpid AMQP Management broker plug-in</description>
 

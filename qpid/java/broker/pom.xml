@@ -25,7 +25,6 @@
   </parent>
 
   <artifactId>qpid-broker</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid Java Broker</name>
   <description>Broker configuration and executable</description>
 

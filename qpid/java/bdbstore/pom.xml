@@ -25,7 +25,6 @@
   </parent>
 
   <artifactId>qpid-bdbstore</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid BDB Message Store</name>
   <description>BDB message store implementation using Oracle Berkeley DB Java Edition</description>
 

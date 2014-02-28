@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-broker-plugins-jdbc-store</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid JDBC Message Store Broker Plug-in</name>
   <description>JDBC message store broker plug-in</description>
 

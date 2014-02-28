@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>qpid-broker-plugins-amqp-msg-conv-0-10-to-1-0</artifactId>
-  <version>0.28-SNAPSHOT</version>
   <name>Qpid AMQP 0-10 to 1-0 Message Conversion Broker Plug-in</name>
   <description>AMQP message conversion (0-10 to 1-0) broker plug-in</description>
 
