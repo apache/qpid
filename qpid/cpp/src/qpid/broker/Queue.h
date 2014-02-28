@@ -400,7 +400,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN bool find(framing::SequenceNumber pos, Message& msg ) const;
 
     // Remember the queue's owner so acl quotas can be restored after restart
-    void setOwningUser(std::string& _userId) { userId  = _userId; }
+    void setOwningUser(std::string& _userId);
     void updateAclUserQueueCount();
 
     QPID_BROKER_EXTERN void setAlternateExchange(boost::shared_ptr<Exchange> exchange);

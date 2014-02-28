@@ -282,8 +282,9 @@
     <statistic name="flowStopped"         type="bool"     desc="Flow control active."/>
     <statistic name="flowStoppedCount"    type="count32"  desc="Number of times flow control was activated for this queue"/>
 
-   <statistic name="redirectPeer"         type="sstr"     desc="Partner queue for redirected pair"/>
-   <statistic name="redirectSource"       type="bool"     desc="This queue is the redirect source"/>
+    <statistic name="redirectPeer"        type="sstr"     desc="Partner queue for redirected pair"/>
+    <statistic name="redirectSource"      type="bool"     desc="This queue is the redirect source"/>
+    <statistic name="creator"             type="sstr"     desc="userId of creator of the queue"/>
 
     <method name="purge" desc="Discard all or some messages on a queue">
       <arg name="request" dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
