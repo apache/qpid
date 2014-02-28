@@ -1660,6 +1660,12 @@ void Queue::setMgmtRedirectState( std::string peer, bool enabled, bool isSrc ) {
     }
 }
 
+void Queue::setOwningUser(std::string& _userId) {
+    userId  = _userId;
+    if (mgmtObject != 0)
+       mgmtObject->set_creator(userId);
+}
+
 bool Queue::reroute(boost::shared_ptr<Exchange> e, const Message& m)
 {
     if (e) {
