@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<appendix id="Java-Broker-Appendix-System-Properties">
+  <title>System Properties</title>
+  <para>The following table describes the Java system properties used by the Broker to control
+    various optional behaviours.</para>
+  <para>The preferred method of enabling these system properties is using the <link
+      linkend="Java-Broker-Appendix-Environment-Variables-Qpid-Opts"
+      ><literal>QPID_OPTS</literal></link> environment variable described in the previous
+    section.</para>
+  <table pgwide="1">
+    <title>System properties</title>
+    <tgroup cols="3">
+      <thead>
+        <row>
+          <entry>System property</entry>
+          <entry>Default</entry>
+          <entry>Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-System-Properties-Shared-Msg-Group">
+          <entry>qpid.shared_msg_group</entry>
+          <entry>
+            <literal>qpid.no-group</literal>
+          </entry>
+          <entry>
+            <para>Controls the default group for groups operating in 'shared groups' mode. See <xref
+                linkend="Java-Broker-Queues-OtherTypes-Message-Grouping"/></para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Heartbeat-Timeout-Factor">
+          <entry>qpid.broker_heartbeat_timeout_factor</entry>
+          <entry>2</entry>
+          <entry>Factor to determine the maximum length of that may elapse between heartbeats being
+            received from the peer before a connection is deemed to have been broken.</entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Dead-Letter-Exchange-Suffix">
+          <entry>qpid.broker_dead_letter_exchange_suffix</entry>
+          <entry>_DLE</entry>
+          <entry>Used with the <xref
+              linkend="Java-Broker-Runtime-Handling-Undeliverable-Messages-Dead-Letter-Queues"/>
+            feature. Governs the suffix used when generating a name for a Dead Letter
+            Exchange.</entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Dead-Letter-Queue-Suffix">
+          <entry>qpid.broker_dead_letter_queue_suffix</entry>
+          <entry>_DLQ</entry>
+          <entry>Used with the <xref
+              linkend="Java-Broker-Runtime-Handling-Undeliverable-Messages-Dead-Letter-Queues"/>
+            feature. Governs the suffix used when generating a name for a Dead Letter Queue.</entry>
+        </row>
+        <row>
+          <entry>qpid.broker_msg_auth</entry>
+          <entry>false</entry>
+          <entry>
+            <para>If set true, the Broker ensures that the user id of each received message matches
+              the user id of the producing connection. If this check fails, the message is returned
+              to the producer's connection with a 403 (Access Refused) error code.</para>
+            <para>This is check is currently not enforced when using AMQP 0-10 and 1-0
+              protocols.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Status-Updates">
+          <entry>qpid.broker_status_updates</entry>
+          <entry>true</entry>
+          <entry>
+            <para>If set true, the Broker will produce operational logging messages.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Amqp-Protocol-Excludes">
+          <entry>qpid.broker_default_amqp_protocol_excludes</entry>
+          <entry>none</entry>
+          <entry>
+            <para>Controls the AMQP protocol versions supported by the Broker. The value of this
+              property is a comma separated list of AMQP protocol versions whose support should be
+              disabled.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Amqp-Protocol-Includes">
+          <entry>qpid.broker_default_amqp_protocol_includes</entry>
+          <entry>none</entry>
+          <entry>
+            <para>Controls the AMQP protocol versions supported by the Broker. The value of this
+              property is a comma separated list of AMQP protocol versions whose support should be
+              enabled.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Default-Supported-Protocol-Version-Reply">
+          <entry>qpid.broker_default_supported_protocol_version_reply</entry>
+          <entry>none</entry>
+          <entry>
+            <para>Used during protocol negotiation. If set, the Broker will offer this AMQP version
+              to a client requesting an AMQP protocol that is not supported by the Broker.  If not set, the
+              Broker offers the highest protocol version it supports.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Disabled-Features">
+          <entry>qpid.broker_disabled_features</entry>
+          <entry>none</entry>
+          <entry>
+            <para>Allows optional Broker features to be disabled. Currently understood feature
+              names are: <literal>qpid.jms-selector</literal></para>
+            <para>Feature names should be comma separated.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Frame-Size">
+          <entry>qpid.broker_frame_size</entry>
+          <entry>65536</entry>
+          <entry>
+            <para>Maximum AMQP frame size supported by the Broker.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Jmx-Method-Rights">
+          <entry>qpid.broker_jmx_method_rights_infer_all_access</entry>
+          <entry>true</entry>
+          <entry>
+            <para>Used when using <link linkend="Java-Broker-Security-ACLs">ACLs</link> and the JMX
+              management interface.</para>
+            <para>If set true, the METHOD object permission is sufficient to allow the user to
+              perform the operation. If set false, the user will require both the METHOD object
+              permission and the underlying object permission too (for instance QUEUE object
+              permission if performing management operations on a queue). If the user is not granted
+              both permissions, the operation will be denied.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Jmx-Custom-Rmi">
+          <entry>qpid.broker_jmx_use_custom_rmi_socket_factory</entry>
+          <entry>true</entry>
+          <entry>
+            <para>Applicable to the JMX management interface. If true, the Broker creates a custom
+              RMI socket factory that is secured from changes outside of the JVM.  If false,
+              a standard RMI socket factory is used.</para>
+            <para>It is not recommended to change this property from its default value.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-System-Properties-Broker-Log-Record-Buffer-Size">
+          <entry>qpid.broker_log_records_buffer_size</entry>
+          <entry>4096</entry>
+          <entry>
+            <para>Controls the number of recent Broker log entries that remain viewable online via
+              the HTTP Management interface.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+</appendix>

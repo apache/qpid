@@ -125,7 +125,7 @@
         command-line (for the lifetime of the command interpreter), but you will normally want to set
         the environment variable permanently via the Advanced System Settings in the Control Panel.</para>
       <screen>set QPID_WORK=C:\qpidwork</screen>
-      <para>If the directory referred to by QPID_WORK does not exist, the Java Broker will attempt to create it
+      <para>If the directory referred to by <link linkend="Java-Broker-Appendix-Environment-Variables-Qpid-Work">QPID_WORK</link> does not exist, the Java Broker will attempt to create it
          on start-up.</para>
     </section>
     <section role="h3" id="Java-Broker-Installation-InstallationWindows-OptionalDependencies">
@@ -169,7 +169,7 @@ drwxr-xr-x  34 qpid  qpid   1156 25 Jul 23:22 lib
         the environment variable permanently the user's shell profile file (~/.bash_profile for Bash etc).</para>
       <screen><![CDATA[export QPID_WORK=/var/qpidwork]]>
       </screen>
-      <para>If the directory referred to by QPID_WORK does not exist, the Java Broker will attempt to create it
+      <para>If the directory referred to by <link linkend="Java-Broker-Appendix-Environment-Variables-Qpid-Work">QPID_WORK</link> does not exist, the Java Broker will attempt to create it
          on start-up.
       </para>
     </section>
