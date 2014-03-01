@@ -38,5 +38,7 @@
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-High-Availability.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Virtual-Hosts-Configuration.xml"/>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Miscellaneous.xml"/>
-
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Environment-Variables.xml"/>
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-System-Properties.xml"/>
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Operational-Logging-Messages.xml"/>
 </book>

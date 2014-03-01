@@ -1,0 +1,956 @@
+<?xml version="1.0"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<appendix id="Java-Broker-Appendix-Operation-Logging">
+  <title>Operational Logging</title>
+  <para>The Broker will, by default, produce structured log messages in response to key events in
+    the lives of objects within the Broker. These consise messages are designed to allow the user to
+    understand the actions of the Broker in retrospect. This is valuable for problem diagnosis and
+    provides a useful audit trail.</para>
+  <para>Each log message includes details of the entity causing the action (e.g. a management user
+    or messaging client connection), the entity receiving the action (e.g. a queue or connection)
+    and a description of operation itself.</para>
+  <para>The log messages have the following format:</para>
+  <screen>
+    [<literal>Actor</literal>] {[<literal>Subject</literal>]} [<literal>Message Id</literal>] [<literal>Message Text</literal>]
+  </screen>
+  <para>Where:</para>
+  <itemizedlist>
+    <listitem>
+      <para><literal>Actor</literal> is the entity within the Broker that is
+          <emphasis>performing</emphasis> the action. There are actors corresponding to the Broker
+        itself, Management, Connection, and Channels. Their format is described in the <link
+          linkend="Java-Broker-Appendix-Operation-Logging-Actor-Format">table</link> below.</para>
+    </listitem>
+    <listitem>
+      <para><literal>Subject</literal> (optional) is the entity within the Broker that is
+          <emphasis>receiving</emphasis> the action. There are subjects corresponding to the
+        Connections, Channels, Queues, Exchanges, Subscriptions, and Message Stores. Their format is
+        described in the <link linkend="Java-Broker-Appendix-Operation-Logging-Subject-Format"
+          >table</link> below.</para>
+      <para>Some actions are reflexive, in these cases the Actor and Subject will be equal.</para>
+    </listitem>
+    <listitem>
+      <para><literal>Message Id</literal> is an identifier for the type of message. It has the form
+        three alphas and four digits separated by a hyphen <literal>AAA-9999</literal>.</para>
+    </listitem>
+    <listitem>
+      <para><literal>Message Text</literal> is a textual description</para>
+    </listitem>
+  </itemizedlist>
+  <para>To illustrate, let's look at two examples.</para>
+  <para><literal><link linkend="Java-Broker-Appendix-Operation-Logging-Message-CON-1001"
+        >CON-1001</link></literal> is used when a messages client makes an AMQP connection. The
+    connection actor (<literal>con</literal>) provides us with details of the peer's connection: the
+    user id used by the client (myapp1), their IP, ephemeral port number and the name of the virtual
+    host. The message text itself gives us further details about the connection: the client id, the
+    protocol version in used, and details of the client's qpid library.</para>
+  <screen>[con:8(myapp1@/127.0.0.1:52851/default)] CON-1001 : Open : Client ID : clientid :
+             Protocol Version : 0-10 : Client Version : &qpidCurrentRelease; : Client Product : qpid</screen>
+  <para><literal><link linkend="Java-Broker-Appendix-Operation-Logging-Message-QUE-1001"
+        >QUE-1001</link></literal> is used when a queue is created. The connection actor
+      <literal>con</literal> tells us details of the connection performing the queue creation: the
+    user id used by the client (myapp1), the IP, ephemeral port number and the name of the virtual
+    host. The queue subject tells use the queue's name (myqueue) and the virtualhost. The message
+    itself tells us more information about the queue that is being created. </para>
+
+  <screen>[con:8(myapp1@/127.0.0.1:52851/default)/ch:0] [vh(/default)/qu(myqueue)] QUE-1001 : Create : Owner: clientid Transient</screen>
+  <para>The first two tables that follow describe the actor and subject entities, then the later
+    provide a complete catalogue of all supported messages.</para>
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Actor-Format">
+    <title>Actors Entities</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Actor Type</entry>
+          <entry>Format and Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry morerows="1">Broker</entry>
+          <entry>[Broker]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Used during startup and shutdown</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Management</entry>
+          <entry>
+              [mng:<replaceable>userid</replaceable>(<replaceable>clientip</replaceable>:<replaceable>ephemeralport</replaceable>)] </entry>
+
+        </row>
+        <row>
+          <entry>
+            <para>Used for operations performed by the either the JMX or Web Management
+              interfaces.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Connection</entry>
+          <entry>
+              [con:<replaceable>connectionnumber</replaceable>(<replaceable>userid</replaceable>@/<replaceable>clientip</replaceable>:<replaceable>ephemeralport</replaceable>/<replaceable>virtualhostname</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Used for operations performed by a client connection. Note that connections are
+              numbered by a sequence number that begins at 1.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Channel</entry>
+          <entry>
+              [con:<replaceable>connectionnumber</replaceable>(<replaceable>userid</replaceable>@/<replaceable>clientip</replaceable>:<replaceable>ephemeralport</replaceable>/<replaceable>virtualhostname</replaceable>/ch:<replaceable>channelnumber</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Used for operations performed by a client's channel (corresponds to the JMS
+              concept of Session). Note that channels are numbered by a sequence number that is
+              scoped by the owning connection.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Subject-Format">
+    <title>Subject Entities</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Subject Type</entry>
+          <entry>Format and Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry morerows="1">Connection</entry>
+          <entry>
+              [con:<replaceable>connectionnumber</replaceable>(<replaceable>userid</replaceable>@/<replaceable>clientip</replaceable>:<replaceable>ephemeralport</replaceable>/<replaceable>virtualhostname</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>A connection to the Broker.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Channel</entry>
+          <entry>
+              [con:<replaceable>connectionnumber</replaceable>(<replaceable>userid</replaceable>@/<replaceable>clientip</replaceable>:<replaceable>ephemeralport</replaceable>/<replaceable>virtualhostname</replaceable>/ch:<replaceable>channelnumber</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>A client's channel within a connection.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Subscription</entry>
+          <entry>
+              [sub:<replaceable>subscriptionnumber</replaceable>(vh(/<replaceable>virtualhostname</replaceable>)/qu(<replaceable>queuename</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>A subscription to a queue. This corresponds to the JMS concept of a
+              Consumer.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Queue</entry>
+          <entry>[vh(/<replaceable>virtualhostname</replaceable>)/qu(<replaceable>queuename</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>A queue on a virtualhost</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Exchange</entry>
+          <entry>[vh(/<replaceable>virtualhostname</replaceable>)/ex(<replaceable>exchangetype</replaceable>/<replaceable>exchangename</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>An exchange on a virtualhost</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Binding</entry>
+          <entry>
+              [vh(/<replaceable>virtualhostname</replaceable>)/ex(<replaceable>exchangetype</replaceable>/<replaceable>exchangename</replaceable>)/qu(<replaceable>queuename</replaceable>)/rk(<replaceable>bindingkey</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>A binding between a queue and exchange with the giving binding key.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">Message Store</entry>
+          <entry>
+              [vh(/<replaceable>virtualhostname</replaceable>)/ms(<replaceable>messagestorename</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>A virtualhost/message store on the Broker.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <para>The following tables lists all the operation log messages that can be produced by the
+    Broker, and the describes the circumstances under which each may be seen.</para>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Broker">
+    <title>Broker Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1001">
+          <entry morerows="1">BRK-1001</entry>
+          <entry>Startup : Version: <replaceable>version</replaceable> Build:
+              <replaceable>build</replaceable>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the Broker is starting up</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1002">
+          <entry morerows="1">BRK-1002</entry>
+          <entry>Starting : Listening on <replaceable>transporttype</replaceable> port
+              <replaceable>portnumber</replaceable>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the Broker has begun listening on a port.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1003">
+          <entry morerows="1">BRK-1003</entry>
+          <entry>Shutting down : <replaceable>transporttype</replaceable> port
+              <replaceable>portnumber</replaceable>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the Broker has stopped listening on a port.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1004">
+          <entry morerows="1">BRK-1004</entry>
+          <entry>Qpid Broker Ready</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the Broker is ready for normal operations.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1005">
+          <entry morerows="1">BRK-1005</entry>
+          <entry>Stopped</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the Broker is stopped.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1006">
+          <entry morerows="1">BRK-1006</entry>
+          <entry>Using configuration : <replaceable>file</replaceable>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates the name of the configuration store in use by the Broker.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1007">
+          <entry morerows="1">BRK-1007</entry>
+          <entry>Using logging configuration : <replaceable>file</replaceable>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates the name of the log configuration file in use by the Broker.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1008">
+          <entry morerows="1">BRK-1008</entry>
+          <entry><replaceable>delivered|received</replaceable> : <replaceable>size</replaceable>
+            kB/s peak : <replaceable>size</replaceable> bytes total</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Statistic - bytes delivered or received by the Broker.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1009">
+          <entry morerows="1">BRK-1009</entry>
+          <entry><replaceable>delivered|received</replaceable> : <replaceable>size</replaceable>
+            msg/s peak : <replaceable>size</replaceable> msgs total</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Statistic - messages delivered or received by the Broker.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Management">
+    <title>Management Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1001">
+          <entry morerows="1">MNG-1001</entry>
+          <entry><replaceable>type</replaceable> Management Startup </entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a Management plugin is starting up. Currently supported management
+              plugins are JMX and Web.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1002">
+          <entry morerows="1">MNG-1002</entry>
+          <entry>Starting : <replaceable>type</replaceable> : Listening on port
+              <replaceable>port</replaceable>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a Management plugin is listening on the given port.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1003">
+          <entry morerows="1">MNG-1003</entry>
+          <entry>Shutting down : <replaceable>type</replaceable> : port
+              <replaceable>port</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a Management plugin is ceasing to listen on the given port.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1004">
+          <entry morerows="1">MNG-1004</entry>
+          <entry><replaceable>type</replaceable> Management Ready</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a Management plugin is ready for work.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1005">
+          <entry morerows="1">MNG-1005</entry>
+          <entry><replaceable>type</replaceable> Management Stopped</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a Management plugin is stopped.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1006">
+          <entry morerows="1">MNG-1006</entry>
+          <entry>Using SSL Keystore : <replaceable>file</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a Management transport is secured by SSL and using the given
+              keystore file.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1007">
+          <entry morerows="1">MNG-1007</entry>
+          <entry>Open : User <replaceable>username</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates the opening of a connection to Management has by the given
+              username.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1008">
+          <entry morerows="1">MNG-1008</entry>
+          <entry>Close : User <replaceable>username</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates the closing of a connection to Management has by the given
+              username.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-VirtualHost">
+    <title>Virtual Host Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <!--  Virtual host -->
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-VHT-1001">
+          <entry morerows="1">VHT-1001</entry>
+          <entry>Created : <replaceable>virtualhostname</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a virtualhost has been created.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-VHT-1002">
+          <entry morerows="1">VHT-1002</entry>
+          <entry>Closed</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a virtualhost has been closed. This occurs on Broker
+              shutdown.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-VHT-1003">
+          <entry morerows="1">VHT-1003</entry>
+          <entry><replaceable>virtualhostname</replaceable> :
+              <replaceable>delivered|received</replaceable> : <replaceable>size</replaceable> kB/s
+            peak : <replaceable>size</replaceable> bytes total</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Statistic - bytes delivered or received by the virtualhost.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-VHT-1004">
+          <entry morerows="1">VHT-1004</entry>
+          <entry><replaceable>virtualhostname</replaceable> :
+              <replaceable>delivered|received</replaceable> : <replaceable>size</replaceable> msg/s
+            peak : <replaceable>size</replaceable> msgs total</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Statistic - messages delivered or received by the virtualhost.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-VHT-1005">
+          <entry morerows="1">VHT-1005</entry>
+          <entry>Unexpected fatal error</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Virtualhost has suffered an unexpected fatal error, check the logs for more
+              details.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Queue">
+    <title>Queue Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <!-- Queue -->
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-QUE-1001">
+          <entry morerows="1">QUE-1001</entry>
+          <entry>Create : Owner: <replaceable>owner</replaceable>
+            <replaceable>AutoDelete</replaceable> [<replaceable>Durable</replaceable>]
+              <replaceable>Transient</replaceable> Priority:
+              <replaceable>numberofpriorities</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a queue has been created.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-QUE-1002">
+          <entry morerows="1">QUE-1002</entry>
+          <entry>Deleted</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a queue has been deleted.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-QUE-1003">
+          <entry morerows="1">QUE-1003</entry>
+          <entry>Overfull : Size : <replaceable>size</replaceable> bytes, Capacity :
+              <replaceable>maximumsize</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a queue has exceeded its permitted capacity. See <xref
+                linkend="Qpid-Producer-Flow-Control"/> for details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-QUE-1004">
+          <entry morerows="1">QUE-1004</entry>
+          <entry>Underfull : Size : <replaceable>size</replaceable> bytes, Resume Capacity :
+              <replaceable>resumesize</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a queue has fallen to its resume capacity. See <xref
+                linkend="Qpid-Producer-Flow-Control"/> for details.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Exchange">
+    <title>Exchange Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <!-- Exchange -->
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-EXH-1001">
+          <entry morerows="1">EXH-1001</entry>
+          <entry>Create : [<replaceable>Durable</replaceable>] Type: <replaceable>type</replaceable>
+            Name: <replaceable>exchange name</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that an exchange has been created.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-EXH-1002">
+          <entry morerows="1">EXH-1002</entry>
+          <entry>Deleted</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that an exchange has been deleted.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-EXH-1003">
+          <entry morerows="1">EXH-1003</entry>
+          <entry>Discarded Message : Name: <replaceable>exchange name</replaceable> Routing Key:
+              <replaceable>routing key</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that an exchange received a message that could not be routed to at least
+              one queue. queue has exceeded its permitted capacity. See <xref
+                linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/> for details.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Binding">
+    <title>Binding Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BND-1001">
+          <entry morerows="1">BND-1001</entry>
+          <entry>Create : Arguments : <replaceable>arguments</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a binding has been made between an exchange and a queue.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BND-1002">
+          <entry morerows="1">BND-1002</entry>
+          <entry>Deleted</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a binding has been deleted</para>
+          </entry>
+        </row>
+
+      </tbody>
+    </tgroup>
+  </table>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Connection">
+    <title>Connection Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CON-1001">
+          <entry morerows="1">CHN-1001</entry>
+          <entry>Open : Client ID : <replaceable>clientid</replaceable> : Protocol Version :
+              <replaceable>protocol version</replaceable> : Client Version : <replaceable>client
+              version</replaceable> : Client Product :<replaceable>client
+            product</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a connection has been opened. The Broker logs one of these message
+              each time it learns more about the client as the connection is negotiated.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CON-1002">
+          <entry morerows="1">CHN-1002</entry>
+          <entry>Close</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a connection has been closed. This message is logged regardless of
+              if the connection is closed normally, or if the connection is somehow lost e.g network
+              error. </para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CON-1003">
+          <entry morerows="1">CHN-1003</entry>
+          <entry>Closed due to inactivity</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Used when heart beating is in-use. Indicates that the connection has not received
+              a heartbeat for too long and is therefore closed as being inactive. </para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Channel">
+    <title>Channel Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1001">
+          <entry morerows="1">CHN-1001</entry>
+          <entry>Create</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a channel (corresponds to the JMS concept of Session) has been
+              created.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1002">
+          <entry morerows="1">CHN-1002</entry>
+          <entry>Flow Started</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates message flow to a session has begun.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1003">
+          <entry morerows="1">CHN-1003</entry>
+          <entry>Close</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a channel has been closed.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1004">
+          <entry morerows="1">CHN-1004</entry>
+          <entry>Prefetch Size (bytes) <replaceable>size</replaceable> : Count <replaceable>number
+              of messages</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates the prefetch size in use by a channel.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1005">
+          <entry morerows="1">CHN-1005</entry>
+          <entry>Flow Control Enforced (Queue <replaceable>queue name</replaceable>)</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that producer flow control has been imposed on a channel owning to
+              excessive queue depth in the indicated queue. Produces using the channel will be
+              requested to pause the sending of messages. See <xref
+                linkend="Qpid-Producer-Flow-Control"/> for more details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1006">
+          <entry morerows="1">CHN-1006</entry>
+          <entry>Flow Control Removed</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that producer flow control has been removed from a channel. See <xref
+                linkend="Qpid-Producer-Flow-Control"/> for more details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1007">
+          <entry morerows="1">CHN-1007</entry>
+          <entry>Open Transaction : <replaceable>time</replaceable> ms</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a producer transaction has been open for longer than that
+              permitted. See <xref linkend="Java-Broker-Runtime-Producer-Transaction-Timeout"/> for
+              more details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1008">
+          <entry morerows="1">CHN-1008</entry>
+          <entry>Idle Transaction : <replaceable>time</replaceable> ms</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a producer transaction has been idle for longer than that
+              permitted. See <xref linkend="Java-Broker-Runtime-Producer-Transaction-Timeout"/> for
+              more details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1009">
+          <entry morerows="1">CHN-1009</entry>
+          <entry>Discarded message : <replaceable>message number</replaceable> as no alternate
+            exchange configured for queue : <replaceable>queue name</replaceable>{1} routing key :
+              <replaceable>routing key</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a channel has discarded a message as the maximum delivery count has
+              been exceeded but the queue defines no alternate exchange. See <xref
+                linkend="Java-Broker-Runtime-Handling-Undeliverable-Messages-Maximum-Delivery-Count"
+              /> for more details. Note that <replaceable>message number</replaceable> is an
+              internal message reference.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1010">
+          <entry morerows="1">CHN-1010</entry>
+          <entry>Discarded message : <replaceable>message number</replaceable> as no binding on
+            alternate exchange : <replaceable>exchange name</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a channel has discarded a message as the maximum delivery count has
+              been exceeded but the queue's alternate exchange has no binding to a queue. See <xref
+                linkend="Java-Broker-Runtime-Handling-Undeliverable-Messages-Maximum-Delivery-Count"
+              /> for more details. Note that <replaceable>message number</replaceable> is an
+              internal message reference.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1010">
+          <entry morerows="1">CHN-1011</entry>
+          <entry>Message : <replaceable>message number</replaceable> moved to dead letter queue :
+              <replaceable>queue name</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a channel has moved a message to the named dead letter queue
+            </para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Subscription">
+    <title>Subscription Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-SUB-1001">
+          <entry morerows="1">SUB-1001</entry>
+          <entry>Create : [<replaceable>Durable</replaceable>] Arguments :
+              <replaceable>arguments</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a subscription (corresponds to JMS concept of a MessageConsumer)
+              has been created.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-SUB-1002">
+          <entry morerows="1">SUB-1002</entry>
+          <entry>Close</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a subscription has been closed.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-SUB-1003">
+          <entry morerows="1">SUB-1003</entry>
+          <entry>State : <replaceable>boolean</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a subscription has changed state. This occurs when the consumer is
+              ready to receive more messages. As this happens frequently in normal operation, this
+              log messages is disabled by default.</para>
+          </entry>
+        </row>
+
+      </tbody>
+    </tgroup>
+  </table>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-MessageStore">
+    <title>Message Store Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1001">
+          <entry morerows="1">MST-1001</entry>
+          <entry>Created</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a message store has been created.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1002">
+          <entry morerows="1">MST-1002</entry>
+          <entry>Store location : <replaceable>path</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the message store is using <replaceable>path</replaceable> for the
+              location of the message store.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1003">
+          <entry morerows="1">MST-1003</entry>
+          <entry>Closed</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the message store has been closed.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1004">
+          <entry morerows="1">MST-1004</entry>
+          <entry>Recovery Start</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that message recovery has begun.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1005">
+          <entry morerows="1">MST-1005</entry>
+          <entry>Recovered <replaceable>number of messages</replaceable> messages.</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that recovery recovered the given number of messages from the
+              store.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1006">
+          <entry morerows="1">MST-1006</entry>
+          <entry>Recovered Complete</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the message recovery is concluded.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1007">
+          <entry morerows="1">MST-1007</entry>
+          <entry>Store Passivated</entry>
+        </row>
+        <row>
+          <entry>
+            <para>The store is entering a passive state where is it unavailable for normal
+              operations. Currently this message is used by HA when the node is in replica
+              state.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1008">
+          <entry morerows="1">MST-1008</entry>
+          <entry>Store overfull, flow control will be enforced</entry>
+        </row>
+        <row>
+          <entry>
+            <para>The store has breached is maximum configured size. See <xref
+                linkend="Qpid-Producer-Flow-Control"/> for details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1009">
+          <entry morerows="1">MST-1009</entry>
+          <entry>Store overfull condition cleared</entry>
+        </row>
+        <row>
+          <entry>
+            <para>The store size has fallen beneath its resume capacity and therefore flow control
+              has been rescinded. See <xref linkend="Qpid-Producer-Flow-Control"/> for
+              details.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+
+</appendix>

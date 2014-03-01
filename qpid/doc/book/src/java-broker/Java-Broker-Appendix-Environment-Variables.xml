@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<appendix id="Java-Broker-Appendix-Environment-Variables">
+  <title>Environment Variables</title>
+  <para>The following table describes the environment variables understood by the Qpid scripts
+    contained within the <literal>/bin</literal> directory within the Broker distribution.</para>
+  <para>To take effect, these variables must be set within the shell (and exported - if using Unix)
+    before invoking the script.</para>
+  <table pgwide="1">
+    <title>Environment variables</title>
+    <tgroup cols="3">
+      <thead>
+        <row>
+          <entry>Environment variable</entry>
+          <entry>Default</entry>
+          <entry>Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Environment-Variables-Qpid-Home">
+          <entry>QPID_HOME</entry>
+          <entry>
+            <para>None</para>
+          </entry>
+          <entry>
+            <para>The variable used to tell the Broker its installation directory. It must be an
+              absolute path. This is used to determine the location of Qpid's dependency JARs and
+              some configuration files.</para>
+            <para>Typically the value of this variable will look similar to
+                <literal>c:\qpid\&windowsExtractedBrokerDirName;</literal> (Windows) or
+                <literal>/usr/local/qpid/&unixExtractedBrokerDirName;</literal> (Unix). The
+              installation prefix will differ from installation to installation. </para>
+            <para>If not set, a value for <literal>QPID_HOME</literal> is derived from the location
+              of the script itself.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Environment-Variables-Qpid-Work">
+          <entry>QPID_WORK</entry>
+          <entry>
+            <para>User's home directory</para>
+          </entry>
+          <entry>
+            <para>Used as the default root directory for any data written by the Broker. This is the
+              default location for any message data written to persistent stores and the Broker's
+              log file.</para>
+            <para>For example, <literal>QPID_WORK=/var/qpidwork</literal>.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Environment-Variables-Qpid-Opts">
+          <entry>QPID_OPTS</entry>
+          <entry>
+            <para>None</para>
+          </entry>
+          <entry>
+            <para>This is the preferred mechanism for passing Java <link
+                linkend="Java-Broker-Appendix-System-Properties">system properties</link> to the
+              Broker. The value must be a list of system properties each separate by a space.
+                  <literal>-D<replaceable>name1</replaceable>=<replaceable>value1</replaceable>
+                  -D<replaceable>name2</replaceable>=<replaceable>value2</replaceable></literal>.
+            </para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Environment-Variables-Qpid-Java-Gc">
+          <entry>QPID_JAVA_GC</entry>
+          <entry>
+            <literal>-XX:+HeapDumpOnOutOfMemoryError -XX:+UseConcMarkSweepGC</literal>
+          </entry>
+          <entry>
+            <para>This is the preferred mechanism for customising garbage collection behaviour. The
+              value should contain valid garbage collection options(s) for the target JVM.</para>
+            <para>Refer to the JVM's documentation for details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Environment-Variables-Qpid-Java-Mem">
+          <entry>QPID_JAVA_MEM</entry>
+          <entry>
+            <literal>-Xmx1024m</literal>
+          </entry>
+          <entry>
+            <para>This is the preferred mechanism for customising the size of the JVM's heap memory.
+              The value should contain valid memory option(s) for the target JVM. Oracle JVMs
+              understand <literal>-Xmx</literal> to specify a maximum heap size and
+                <literal>-Xms</literal> an initial size.</para>
+            <para>For example, <code>QPID_JAVA_MEM=-Xmx6g</code> would set a maximum heap size of
+              6GB.</para>
+            <para>Refer to the JVM's documentation for details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Environment-Variables-Java-Opts">
+          <entry>JAVA_OPTS</entry>
+          <entry>None</entry>
+          <entry>
+            <para>This is the preferred mechanism for passing any other JVM options. This variable is
+              commonly used to pass options for diagnostic purposes, for instance to turn on verbose
+              GC. <literal>-verbose:gc</literal>.</para>
+            <para>Refer to the JVM's documentation for details.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+</appendix>
