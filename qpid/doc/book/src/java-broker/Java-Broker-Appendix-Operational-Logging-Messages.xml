@@ -791,7 +791,7 @@
               internal message reference.</para>
           </entry>
         </row>
-        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1010">
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1011">
           <entry morerows="1">CHN-1011</entry>
           <entry>Message : <replaceable>message number</replaceable> moved to dead letter queue :
               <replaceable>queue name</replaceable></entry>
