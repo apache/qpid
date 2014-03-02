@@ -127,6 +127,10 @@ public class VirtualHostRecovererTest extends TestCase
             {
                 // pass
             }
+            catch(IllegalArgumentException e)
+            {
+                // pass
+            }
         }
     }
 }

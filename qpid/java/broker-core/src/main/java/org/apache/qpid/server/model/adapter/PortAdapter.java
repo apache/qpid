@@ -169,12 +169,6 @@ abstract public class PortAdapter<X extends PortAdapter<X>> extends AbstractConf
     }
 
     @Override
-    public String getName()
-    {
-        return (String)getAttribute(NAME);
-    }
-
-    @Override
     public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
     {
         throw new IllegalStateException();

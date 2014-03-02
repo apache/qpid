@@ -22,6 +22,8 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.filter.JMSSelectorFilter;
+import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -43,11 +45,7 @@ import org.apache.qpid.server.util.StateChangeListener;
 
 import java.security.AccessControlException;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -70,7 +68,6 @@ class QueueConsumerImpl
     private final MessageInstance.ConsumerAcquiredState<QueueConsumerImpl> _owningState = new MessageInstance.ConsumerAcquiredState<QueueConsumerImpl>(this);
     private final boolean _acquires;
     private final boolean _seesRequeues;
-    private final String _consumerName;
     private final boolean _isTransient;
     private final AtomicLong _deliveredCount = new AtomicLong(0);
     private final AtomicLong _deliveredBytes = new AtomicLong(0);
@@ -78,7 +75,6 @@ class QueueConsumerImpl
     private final Class<? extends ServerMessage> _messageClass;
     private final Object _sessionReference;
     private final AbstractQueue _queue;
-    private final boolean _exclusive;
     private GenericActor _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getConsumerNumber())
                                                       + "(UNKNOWN)"
                                                       + "] ");
@@ -103,7 +99,12 @@ class QueueConsumerImpl
             CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));
         }
     };
-    private final boolean _noLocal;
+    private boolean _durable;
+    private boolean _exclusive;
+    private boolean _noLocal;
+    private String _distributionMode;
+    private String _settlementMode;
+    private String _selector;
 
     QueueConsumerImpl(final AbstractQueue queue,
                       ConsumerTarget target, final String consumerName,
@@ -111,8 +112,8 @@ class QueueConsumerImpl
                       final Class<? extends ServerMessage> messageClass,
                       EnumSet<Option> optionSet)
     {
-        super(UUID.randomUUID(), Collections.<String,Object>emptyMap(),
-              Collections.<String,Object>emptyMap(),
+        super(Collections.<String,Object>emptyMap(),
+              createAttributeMap(consumerName,filters,optionSet),
               queue.getVirtualHost().getTaskExecutor());
         _messageClass = messageClass;
         _sessionReference = target.getSessionModel().getConnectionReference();
@@ -120,13 +121,10 @@ class QueueConsumerImpl
         _filters = filters;
         _acquires = optionSet.contains(Option.ACQUIRES);
         _seesRequeues = optionSet.contains(Option.SEES_REQUEUES);
-        _consumerName = consumerName;
         _isTransient = optionSet.contains(Option.TRANSIENT);
         _target = target;
         _queue = queue;
-        _noLocal = optionSet.contains(Option.NO_LOCAL);
-        _exclusive = optionSet.contains(Option.EXCLUSIVE);
-        setupLogging(optionSet.contains(Option.EXCLUSIVE));
+        setupLogging();
 
         // Access control
         _queue.getVirtualHost().getSecurityManager().authoriseCreateConsumer(this);
@@ -143,6 +141,32 @@ class QueueConsumerImpl
                             targetStateChanged(oldState, newState);
                         }
                     });
+    }
+
+    private static Map<String, Object> createAttributeMap(String name, FilterManager filters, EnumSet<Option> optionSet)
+    {
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(ID, UUID.randomUUID());
+        attributes.put(NAME, name);
+        attributes.put(EXCLUSIVE, optionSet.contains(Option.EXCLUSIVE));
+        attributes.put(NO_LOCAL, optionSet.contains(Option.NO_LOCAL));
+        attributes.put(DISTRIBUTION_MODE, optionSet.contains(Option.ACQUIRES) ? "MOVE" : "COPY");
+        attributes.put(DURABLE,false);
+        if(filters != null)
+        {
+            Iterator<MessageFilter> iter = filters.filters();
+            while(iter.hasNext())
+            {
+                MessageFilter filter = iter.next();
+                if(filter instanceof JMSSelectorFilter)
+                {
+                    attributes.put(SELECTOR, ((JMSSelectorFilter) filter).getSelector());
+                    break;
+                }
+            }
+        }
+
+        return attributes;
     }
 
     private void targetStateChanged(final ConsumerTarget.State oldState, final ConsumerTarget.State newState)
@@ -269,7 +293,7 @@ class QueueConsumerImpl
         return _queue;
     }
 
-    private void setupLogging(final boolean exclusive)
+    private void setupLogging()
     {
         String queueString = new QueueLogSubject(_queue).toLogString();
 
@@ -285,7 +309,7 @@ class QueueConsumerImpl
         if (CurrentActor.get().getRootMessageLogger().isMessageEnabled(_logActor, _logActor.getLogSubject(), SubscriptionMessages.CREATE_LOG_HIERARCHY))
         {
             final String filterLogString = getFilterLogString();
-            CurrentActor.get().message(_logActor.getLogSubject(), SubscriptionMessages.CREATE(filterLogString, _queue.isDurable() && exclusive,
+            CurrentActor.get().message(_logActor.getLogSubject(), SubscriptionMessages.CREATE(filterLogString, _queue.isDurable() && _exclusive,
                                                                                 filterLogString.length() > 0));
         }
     }
@@ -442,11 +466,6 @@ class QueueConsumerImpl
         return _seesRequeues;
     }
 
-    public final String getName()
-    {
-        return _consumerName;
-    }
-
     public final boolean isTransient()
     {
         return _isTransient;
@@ -479,13 +498,13 @@ class QueueConsumerImpl
     @Override
     public String getDistributionMode()
     {
-        return acquires() ? "MOVE" : "COPY";
+        return _distributionMode;
     }
 
     @Override
     public String getSettlementMode()
     {
-        return null;
+        return _settlementMode;
     }
 
     @Override
@@ -497,13 +516,13 @@ class QueueConsumerImpl
     @Override
     public boolean isNoLocal()
     {
-        return isNoLocal();
+        return _noLocal;
     }
 
     @Override
     public String getSelector()
     {
-        return null;
+        return _selector;
     }
 
     @Override
@@ -516,7 +535,7 @@ class QueueConsumerImpl
     @Override
     public boolean isDurable()
     {
-        return false;
+        return _durable;
     }
 
     @Override
@@ -548,33 +567,9 @@ class QueueConsumerImpl
     @Override
     public Object getAttribute(final String name)
     {
-        if(ID.equals(name))
-        {
-            return getId();
-        }
-        else if(NAME.equals(name))
-        {
-            return getName();
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
-        }
-        else if(DISTRIBUTION_MODE.equals(name))
-        {
-            return getDistributionMode();
-        }
-        else if(SETTLEMENT_MODE.equals(name))
-        {
-            return getSettlementMode();
-        }
-        else if(LIFETIME_POLICY.equals(name))
+        if(LIFETIME_POLICY.equals(name))
         {
             return getLifetimePolicy();
-        }
-        else if(EXCLUSIVE.equals(name))
-        {
-            return isExclusive();
         }
         return super.getAttribute(name);
     }

@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
@@ -43,25 +44,19 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
     public static final String DUMMY_PASSWORD_MASK = "********";
     public static final String DEFAULT_KEYSTORE_TYPE = java.security.KeyStore.getDefaultType();
 
-    private String _name;
     private String _password;
+
 
     protected AbstractKeyStoreAdapter(UUID id, Broker broker, Map<String, Object> defaults,
                                       Map<String, Object> attributes)
     {
         super(id, defaults, attributes, broker.getTaskExecutor());
+
         addParent(Broker.class, broker);
 
-        _name = MapValueConverter.getStringAttribute(TrustStore.NAME, attributes);
-        _password = MapValueConverter.getStringAttribute(TrustStore.PASSWORD, attributes);
         MapValueConverter.assertMandatoryAttribute(KeyStore.PATH, attributes);
     }
 
-    @Override
-    public String getName()
-    {
-        return _name;
-    }
 
     @Override
     public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
@@ -115,15 +110,7 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
     @Override
     public Object getAttribute(String name)
     {
-        if(KeyStore.ID.equals(name))
-        {
-            return getId();
-        }
-        else if(KeyStore.NAME.equals(name))
-        {
-            return getName();
-        }
-        else if(KeyStore.STATE.equals(name))
+        if(KeyStore.STATE.equals(name))
         {
             return getState();
         }
@@ -135,25 +122,13 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
         {
             return getLifetimePolicy();
         }
-        else if(KeyStore.PASSWORD.equals(name))
-        {
-            return getPassword();
-        }
 
         return super.getAttribute(name);
     }
 
     public String getPassword()
     {
-        // For security reasons we don't expose the password unless running as the system user
-        if(SecurityManager.SYSTEM.equals(Subject.getSubject(AccessController.getContext())))
-        {
-            return _password;
-        }
-        else
-        {
-            return DUMMY_PASSWORD_MASK;
-        }
+        return _password;
     }
 
     public void setPassword(String password)

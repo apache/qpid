@@ -420,13 +420,6 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         return httpPorts;
     }
 
-
-    @Override
-    public String getName()
-    {
-        return (String)getAttribute(NAME);
-    }
-
     @Override
     public Collection<String> getAttributeNames()
     {

@@ -34,6 +34,7 @@ import javax.security.auth.Subject;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.adapter.AbstractKeyStoreAdapter;

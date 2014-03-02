@@ -22,14 +22,7 @@ package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.*;
@@ -45,34 +38,58 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
             new HashMap<AMQSessionModel, SessionAdapter>();
 
+    private String _remoteAddress;
+    private String _localAddress;
+    private String _clientId;
+    private String _clientVersion;
+    private boolean _incoming;
+    private Transport _transport;
+    private Port _port;
+    private String _remoteProcessName;
+    private String _remoteProcessPid;
+
     public ConnectionAdapter(final AMQConnectionModel conn, TaskExecutor taskExecutor)
     {
-        super(UUIDGenerator.generateRandomUUID(), taskExecutor);
+        super(Collections.<String,Object>emptyMap(), createAttributes(conn), taskExecutor);
         _connection = conn;
+    }
+
+    private static Map<String, Object> createAttributes(final AMQConnectionModel conn)
+    {
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(ID, UUID.randomUUID());
+        attributes.put(NAME, conn.getRemoteAddressString().replaceAll("/", ""));
+        attributes.put(CLIENT_ID, conn.getClientId() );
+        attributes.put(CLIENT_VERSION, conn.getClientVersion());
+        attributes.put(TRANSPORT, conn.getTransport());
+        attributes.put(PORT, conn.getPort());
+        attributes.put(INCOMING, true);
+        attributes.put(REMOTE_ADDRESS, conn.getRemoteAddressString());
+        return attributes;
     }
 
     @Override
     public String getClientId()
     {
-        return (String) getAttribute(CLIENT_ID);
+        return _clientId;
     }
 
     @Override
     public String getClientVersion()
     {
-        return (String) getAttribute(CLIENT_VERSION);
+        return _clientVersion;
     }
 
     @Override
     public boolean isIncoming()
     {
-        return true;
+        return _incoming;
     }
 
     @Override
     public String getLocalAddress()
     {
-        return (String)getAttribute(LOCAL_ADDRESS);
+        return _localAddress;
     }
 
     @Override
@@ -85,19 +102,19 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     @Override
     public String getRemoteAddress()
     {
-        return _connection.getRemoteAddressString();
+        return _remoteAddress;
     }
 
     @Override
     public String getRemoteProcessName()
     {
-        return null;
+        return _remoteProcessName;
     }
 
     @Override
     public String getRemoteProcessPid()
     {
-        return null;
+        return _remoteProcessPid;
     }
 
     @Override
@@ -109,13 +126,13 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     @Override
     public Transport getTransport()
     {
-        return _connection.getTransport();
+        return _transport;
     }
 
     @Override
     public Port getPort()
     {
-        return _connection.getPort();
+        return _port;
     }
 
     public Collection<Session> getSessions()
@@ -170,12 +187,6 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
         _connection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
     }
 
-    public String getName()
-    {
-        final String remoteAddressString = _connection.getRemoteAddressString();
-        return remoteAddressString.replaceAll("/","");
-    }
-
     public String setName(final String currentName, final String desiredName)
             throws IllegalStateException, AccessControlException
     {
@@ -224,48 +235,12 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     public Object getAttribute(String name)
     {
 
-        if(name.equals(ID))
-        {
-            return getId();
-        }
-        else if (name.equals(NAME))
-        {
-            return getName();
-        }
-        else if(name.equals(CLIENT_ID))
-        {
-            return _connection.getClientId();
-        }
-        else if(name.equals(CLIENT_VERSION))
-        {
-            return _connection.getClientVersion();
-        }
-        else if(name.equals(INCOMING))
-        {
-            return true;
-        }
-        else if(name.equals(LOCAL_ADDRESS))
-        {
-
-        }
-        else if(name.equals(PRINCIPAL))
+        if(name.equals(PRINCIPAL))
         {
             final Principal authorizedPrincipal = _connection.getAuthorizedPrincipal();
             return authorizedPrincipal == null ? null : authorizedPrincipal.getName();
         }
         else if(name.equals(PROPERTIES))
-        {
-
-        }
-        else if(name.equals(REMOTE_ADDRESS))
-        {
-            return _connection.getRemoteAddressString();
-        }
-        else if(name.equals(REMOTE_PROCESS_NAME))
-        {
-
-        }
-        else if(name.equals(REMOTE_PROCESS_PID))
         {
 
         }
@@ -288,9 +263,7 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     @Override
     public Collection<String> getAttributeNames()
     {
-        final HashSet<String> attrNames = new HashSet<String>(getAttributeNames(Connection.class));
-
-        return Collections.unmodifiableCollection(attrNames);
+        return getAttributeNames(Connection.class);
     }
 
 

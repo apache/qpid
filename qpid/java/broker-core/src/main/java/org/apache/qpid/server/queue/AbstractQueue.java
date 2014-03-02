@@ -101,8 +101,6 @@ public abstract class AbstractQueue
 
     private final VirtualHost _virtualHost;
 
-    private final String _name;
-
     /** null means shared */
     private String _description;
 
@@ -189,7 +187,6 @@ public abstract class AbstractQueue
 
     private final AtomicBoolean _overfull = new AtomicBoolean(false);
     private final CopyOnWriteArrayList<BindingImpl> _bindings = new CopyOnWriteArrayList<BindingImpl>();
-    private UUID _id;
     private final Map<String, Object> _arguments;
 
     //TODO : persist creation time
@@ -216,10 +213,7 @@ public abstract class AbstractQueue
             throw new IllegalArgumentException("Virtual Host must not be null");
         }
 
-        UUID id = MapValueConverter.getUUIDAttribute(Queue.ID, attributes);
-        String name = MapValueConverter.getStringAttribute(Queue.NAME, attributes);
-
-        if (name == null)
+        if (getName() == null)
         {
             throw new IllegalArgumentException("Queue name must not be null");
         }
@@ -236,8 +230,6 @@ public abstract class AbstractQueue
                                                              attributes,
                                                              LifetimePolicy.PERMANENT);
 
-
-        _name = name;
         _durable = durable;
         _virtualHost = virtualHost;
         _entries = entryListFactory.createQueueEntryList(this);
@@ -251,8 +243,6 @@ public abstract class AbstractQueue
 
         _noLocal = MapValueConverter.getBooleanAttribute(Queue.NO_LOCAL, attributes, false);
 
-
-        _id = id;
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
         _logSubject = new QueueLogSubject(this);
@@ -562,10 +552,6 @@ public abstract class AbstractQueue
         {
             return getOwner();
         }
-        else if(NAME.equals(name))
-        {
-            return getName();
-        }
         if(ALERT_REPEAT_GAP.equals(name))
         {
             return getAlertRepeatGap();
@@ -641,10 +627,6 @@ public abstract class AbstractQueue
         {
             return isDurable();
         }
-        else if(ID.equals(name))
-        {
-            return getId();
-        }
         else if(LIFETIME_POLICY.equals(name))
         {
             return getLifetimePolicy();
@@ -692,11 +674,6 @@ public abstract class AbstractQueue
     public VirtualHost getVirtualHost()
     {
         return _virtualHost;
-    }
-
-    public String getName()
-    {
-        return _name;
     }
 
     // ------ Manage Consumers
@@ -1408,7 +1385,7 @@ public abstract class AbstractQueue
 
     public int compareTo(final AMQQueue o)
     {
-        return _name.compareTo(o.getName());
+        return getName().compareTo(o.getName());
     }
 
     public AtomicInteger getAtomicQueueCount()

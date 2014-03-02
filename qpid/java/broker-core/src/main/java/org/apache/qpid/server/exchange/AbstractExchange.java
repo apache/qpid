@@ -72,7 +72,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 {
     private static final Logger _logger = Logger.getLogger(AbstractExchange.class);
     private final LifetimePolicy _lifetimePolicy;
-    private String _name;
     private final AtomicBoolean _closed = new AtomicBoolean();
 
     private NonDefaultExchange _alternateExchange;
@@ -113,7 +112,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
               Collections.<String,Object>emptyMap(), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
 
-        _name = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.NAME, attributes);
         _durable = MapValueConverter.getBooleanAttribute(org.apache.qpid.server.model.Exchange.DURABLE, attributes);
         _lifetimePolicy = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
                                                                                 org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
@@ -170,7 +168,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             }
         };
         // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.CREATED(getExchangeType().getType(), _name, _durable));
+        CurrentActor.get().message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), _durable));
     }
 
     public abstract ExchangeType<T> getExchangeType();
@@ -414,12 +412,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     protected abstract void onBind(final BindingImpl binding);
 
     protected abstract void onUnbind(final BindingImpl binding);
-
-
-    public String getName()
-    {
-        return _name.toString();
-    }
 
     public Map<String, Object> getArguments()
     {

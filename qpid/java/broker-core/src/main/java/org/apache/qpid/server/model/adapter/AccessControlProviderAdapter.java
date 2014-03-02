@@ -49,7 +49,7 @@ public class AccessControlProviderAdapter extends AbstractConfiguredObject<Acces
 
     public AccessControlProviderAdapter(UUID id, Broker broker, AccessControl accessControl, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, Collections.<String,Object>emptyMap(), Collections.<String,Object>emptyMap(), broker.getTaskExecutor());
+        super(id, Collections.<String,Object>emptyMap(), Collections.singletonMap(NAME,attributes.get(NAME)), broker.getTaskExecutor());
 
         if (accessControl == null)
         {
@@ -86,12 +86,6 @@ public class AccessControlProviderAdapter extends AbstractConfiguredObject<Acces
         }
 
         return Collections.unmodifiableCollection(attributesNames);
-    }
-
-    @Override
-    public String getName()
-    {
-        return (String)getAttribute(AccessControlProvider.NAME);
     }
 
     @Override

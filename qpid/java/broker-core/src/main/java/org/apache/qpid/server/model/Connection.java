@@ -46,28 +46,28 @@ public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
     /** Name of port associated with the connection */
     public static final String PORT = "port";
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getClientId();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getClientVersion();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     boolean isIncoming();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getLocalAddress();
 
     @ManagedAttribute
     String getPrincipal();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getRemoteAddress();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getRemoteProcessName();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getRemoteProcessPid();
 
     @ManagedAttribute

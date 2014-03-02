@@ -21,6 +21,7 @@
 
 package org.apache.qpid.server.model.adapter;
 
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.qpid.server.model.AuthenticationMethod;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -42,9 +43,17 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
 
     public VirtualHostAliasAdapter(VirtualHostAdapter virtualHostAdapter, Port port)
     {
-        super(UUIDGenerator.generateVhostAliasUUID(virtualHostAdapter.getName(), port.getName()), virtualHostAdapter.getTaskExecutor());
+        super(Collections.<String,Object>emptyMap(), createAttributes(virtualHostAdapter, port), virtualHostAdapter.getTaskExecutor());
         _vhost = virtualHostAdapter;
         _port = port;
+    }
+
+    private static Map<String, Object> createAttributes(final VirtualHostAdapter virtualHostAdapter, final Port port)
+    {
+        final Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(ID, UUIDGenerator.generateVhostAliasUUID(virtualHostAdapter.getName(), port.getName()));
+        attributes.put(NAME, virtualHostAdapter.getName());
+        return attributes;
     }
 
     @Override
@@ -63,12 +72,6 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
     public Collection<AuthenticationMethod> getAuthenticationMethods()
     {
         return Collections.emptySet();  // TODO - Implement
-    }
-
-    @Override
-    public String getName()
-    {
-        return _vhost.getName();
     }
 
     @Override

@@ -49,7 +49,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the objects id
      */
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, mandatory = true )
     UUID getId();
 
     /**
@@ -57,7 +57,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the name of the object
      */
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, mandatory = true)
     String getName();
 
 

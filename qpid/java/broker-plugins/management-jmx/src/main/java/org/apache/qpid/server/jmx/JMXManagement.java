@@ -310,12 +310,6 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
     }
 
     @Override
-    public String getName()
-    {
-        return (String)getAttribute(NAME);
-    }
-
-    @Override
     public Collection<String> getAttributeNames()
     {
         return getAttributeNames(JMXManagement.class);

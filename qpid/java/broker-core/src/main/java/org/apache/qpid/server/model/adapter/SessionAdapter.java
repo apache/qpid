@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.consumer.Consumer;
@@ -42,16 +43,27 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     private AMQSessionModel _session;
     private Map<Consumer, QueueConsumer> _consumerAdapters = new HashMap<Consumer, QueueConsumer>();
 
+    private int _channelId;
+
     public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)
     {
-        super(UUIDGenerator.generateRandomUUID(), taskExecutor);
+        super(Collections.<String,Object>emptyMap(),createAttributes(session), taskExecutor);
         _session = session;
+    }
+
+    private static Map<String, Object> createAttributes(final AMQSessionModel session)
+    {
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(ID, UUID.randomUUID());
+        attributes.put(NAME, String.valueOf(session.getChannelId()));
+        attributes.put(CHANNEL_ID, session.getChannelId());
+        return attributes;
     }
 
     @Override
     public int getChannelId()
     {
-        return _session.getChannelId();
+        return _channelId;
     }
 
     @Override
@@ -71,11 +83,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     public Collection<Publisher> getPublishers()
     {
         return null;  //TODO
-    }
-
-    public String getName()
-    {
-        return String.valueOf(_session.getChannelId());
     }
 
     public String setName(final String currentName, final String desiredName)
@@ -121,19 +128,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     @Override
     public Object getAttribute(String name)
     {
-        if(name.equals(ID))
-        {
-            return getId();
-        }
-        else if (name.equals(NAME))
-        {
-            return getName();
-        }
-        else if(name.equals(CHANNEL_ID))
-        {
-            return _session.getChannelId();
-        }
-        else if(name.equals(PRODUCER_FLOW_BLOCKED))
+        if(name.equals(PRODUCER_FLOW_BLOCKED))
         {
             return _session.getBlocking();
         }
