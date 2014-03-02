@@ -22,6 +22,7 @@ package org.apache.qpid.server.filter;
 
 import org.apache.log4j.Logger;
 
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SimpleFilterManager implements FilterManager
@@ -65,6 +66,12 @@ public class SimpleFilterManager implements FilterManager
             }
         }
         return true;
+    }
+
+    @Override
+    public Iterator<MessageFilter> filters()
+    {
+        return _filters.iterator();
     }
 
     public boolean hasFilters()

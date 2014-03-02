@@ -64,6 +64,11 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> im
         put(KEY_MANAGER_FACTORY_ALGORITHM, String.class);
     }});
 
+    private String _keyStoreType;
+    private String _certificateAlias;
+    private String _keyManagerFactoryAlgorithm;
+    private String _path;
+
     @SuppressWarnings("serial")
     public static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
         put(KeyStore.KEY_STORE_TYPE, DEFAULT_KEYSTORE_TYPE);
@@ -74,24 +79,11 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> im
 
     public KeyStoreAdapter(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
-        super(id, broker, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        super(id, broker, DEFAULTS, attributes);
         _broker = broker;
 
-        String keyStorePath = (String)getAttribute(KeyStore.PATH);
-        String keyStorePassword = Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<String>()
-        {
-            @Override
-            public String run()
-            {
-                return getPassword();
-            }
-        });
-        String keyStoreType = (String)getAttribute(KeyStore.KEY_STORE_TYPE);
-        String keyManagerFactoryAlgorithm = (String)getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
-        String certAlias = (String)getAttribute(KeyStore.CERTIFICATE_ALIAS);
-
-        validateKeyStoreAttributes(keyStoreType, keyStorePath, keyStorePassword,
-                                   certAlias, keyManagerFactoryAlgorithm);
+        validateKeyStoreAttributes(_keyStoreType, _path, getPassword(),
+                                   _certificateAlias, _keyManagerFactoryAlgorithm);
     }
 
     @Override
@@ -235,59 +227,47 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> im
     @Override
     public String getPath()
     {
-        return (String) getAttribute(PATH);
+        return _path;
     }
 
     @Override
     public String getCertificateAlias()
     {
-        return (String) getAttribute(CERTIFICATE_ALIAS);
+        return _certificateAlias;
     }
 
     @Override
     public String getKeyManagerFactoryAlgorithm()
     {
-        return (String) getAttribute(KEY_MANAGER_FACTORY_ALGORITHM);
+        return _keyManagerFactoryAlgorithm;
     }
 
     @Override
     public String getKeyStoreType()
     {
-        return (String) getAttribute(KEY_STORE_TYPE);
+        return _keyStoreType;
     }
 
     public KeyManager[] getKeyManagers() throws GeneralSecurityException
     {
-        String keyStorePath = (String)getAttribute(KeyStore.PATH);
-        String keyStorePassword = Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<String>()
-                                    {
-                                        @Override
-                                        public String run()
-                                        {
-                                            return getPassword();
-                                        }
-                                    });
-        String keyStoreType = (String)getAttribute(KeyStore.KEY_STORE_TYPE);
-        String keyManagerFactoryAlgorithm = (String)getAttribute(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
-        String certAlias = (String)getAttribute(KeyStore.CERTIFICATE_ALIAS);
 
         try
         {
-            if (certAlias != null)
+            if (_certificateAlias != null)
             {
                 return new KeyManager[] {
-                        new QpidClientX509KeyManager( certAlias, keyStorePath, keyStoreType, keyStorePassword,
-                                                      keyManagerFactoryAlgorithm)
+                        new QpidClientX509KeyManager( _certificateAlias, _path, _keyStoreType, getPassword(),
+                                                      _keyManagerFactoryAlgorithm)
                                         };
 
             }
             else
             {
-                final java.security.KeyStore ks = SSLUtil.getInitializedKeyStore(keyStorePath, keyStorePassword, keyStoreType);
+                final java.security.KeyStore ks = SSLUtil.getInitializedKeyStore(_path, getPassword(), _keyStoreType);
 
-                char[] keyStoreCharPassword = keyStorePassword == null ? null : keyStorePassword.toCharArray();
+                char[] keyStoreCharPassword = getPassword() == null ? null : getPassword().toCharArray();
 
-                final KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
+                final KeyManagerFactory kmf = KeyManagerFactory.getInstance(_keyManagerFactoryAlgorithm);
 
                 kmf.init(ks, keyStoreCharPassword);
 

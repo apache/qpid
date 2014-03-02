@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessControlException;
@@ -38,20 +39,44 @@ import org.apache.qpid.server.configuration.updater.ChangeStateTask;
 import org.apache.qpid.server.configuration.updater.CreateChildTask;
 import org.apache.qpid.server.configuration.updater.SetAttributeTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 import javax.security.auth.Subject;
 
 public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> implements ConfiguredObject<X>
 {
-    private static final Object ID = "id";
+    private static final String ID = "id";
 
     private static final Map<Class<? extends ConfiguredObject>, Collection<Attribute<?,?>>> _allAttributes =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<Attribute<?, ?>>>());
 
     private static final Map<Class<? extends ConfiguredObject>, Collection<Statistic<?,?>>> _allStatistics =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<Statistic<?, ?>>>());
+
+    private static final Map<Class<? extends ConfiguredObject>, Map<String, Attribute<?,?>>> _allAttributeTypes =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, Attribute<?, ?>>>());
+
+    private static final Map<Class<? extends ConfiguredObject>, Map<String, Field>> _allAutomatedFields =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, Field>>());
+    private static final Map<Class, Object> SECURE_VALUES;
+    static
+    {
+        Map<Class,Object> secureValues = new HashMap<Class, Object>();
+        secureValues.put(String.class, "********");
+        secureValues.put(Integer.class, 0);
+        secureValues.put(Long.class, 0l);
+        secureValues.put(Byte.class, (byte)0);
+        secureValues.put(Short.class, (short)0);
+        secureValues.put(Double.class, (double)0);
+        secureValues.put(Float.class, (float)0);
+
+        SECURE_VALUES = Collections.unmodifiableMap(secureValues);
+    }
+
 
     private final Map<String,Object> _attributes = new HashMap<String, Object>();
     private final Map<Class<? extends ConfiguredObject>, ConfiguredObject> _parents =
@@ -65,20 +90,50 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private final long _createdTime;
     private final String _createdBy;
 
+    private String _name;
+
+    private final Map<String, Attribute<?,?>> _attributeTypes;
+    private final Map<String, Field> _automatedFields;
+
     protected AbstractConfiguredObject(UUID id,
                                        Map<String, Object> defaults,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor)
     {
-        this(id, defaults, attributes, taskExecutor, true);
+        this(defaults, combineIdWithAttributes(id,attributes), taskExecutor);
     }
+
+    public static Map<String,Object> combineIdWithAttributes(UUID id, Map<String,Object> attributes)
+    {
+        Map<String,Object> combined = new HashMap<String, Object>(attributes);
+        combined.put(ID, id);
+        return combined;
+    }
+
 
     protected AbstractConfiguredObject(UUID id, Map<String, Object> defaults, Map<String, Object> attributes,
                                        TaskExecutor taskExecutor, boolean filterAttributes)
 
     {
+        this(defaults, combineIdWithAttributes(id, attributes), taskExecutor, filterAttributes);
+    }
+
+    protected AbstractConfiguredObject(Map<String, Object> defaults,
+                                       Map<String, Object> attributes,
+                                       TaskExecutor taskExecutor)
+    {
+        this(defaults, attributes, taskExecutor, true);
+    }
+
+    protected AbstractConfiguredObject(Map<String, Object> defaults,
+                                       Map<String, Object> attributes,
+                                       TaskExecutor taskExecutor,
+                                       boolean filterAttributes)
+    {
         _taskExecutor = taskExecutor;
-        _id = id;
+        _id = (UUID)attributes.get(ID);
+        _attributeTypes = getAttributeTypes(getClass());
+        _automatedFields = getAutomatedFields(getClass());
         if (attributes != null)
         {
             Collection<String> names = getAttributeNames();
@@ -95,6 +150,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                             {
                                 _attributes.put(name, value);
                             }
+                            if(_automatedFields.containsKey(name))
+                            {
+                                automatedSetValue(name, value);
+                            }
                         }
                     }
                 }
@@ -105,6 +164,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                         if(entry.getValue()!=null)
                         {
                             _attributes.put(entry.getKey(),entry.getValue());
+                            if(_automatedFields.containsKey(entry.getKey()))
+                            {
+                                automatedSetValue(entry.getKey(), entry.getValue());
+                            }
                         }
                     }
                 }
@@ -113,10 +176,35 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         if (defaults != null)
         {
             _defaultAttributes.putAll(defaults);
+            for(Map.Entry<String,Object> defaultedEntry : defaults.entrySet())
+            {
+                if(_automatedFields.containsKey(defaultedEntry.getKey()) && !attributes.containsKey(defaultedEntry.getKey()))
+                {
+                    automatedSetValue(defaultedEntry.getKey(),defaultedEntry.getValue());
+                }
+            }
         }
         _createdTime = MapValueConverter.getLongAttribute(CREATED_TIME, attributes, System.currentTimeMillis());
         _createdBy = MapValueConverter.getStringAttribute(CREATED_BY, attributes, getCurrentUserName());
+        for(Attribute<?,?> attr : _attributeTypes.values())
+        {
+            if(attr.getAnnotation().mandatory() && !(attributes.containsKey(attr.getName())|| defaults.containsKey(attr.getName())))
+            {
+                throw new IllegalArgumentException("Mandatory attribute " + attr.getName() + " not supplied for instance of " + getClass().getName());
+            }
+        }
+    }
 
+    private void automatedSetValue(final String name, final Object value)
+    {
+        try
+        {
+            _automatedFields.get(name).set(this,_attributeTypes.get(name).convert(value));
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new ServerScopedRuntimeException("Unable to set the automated attribute " + name + " on the configure object type " + getClass().getName(),e);
+        }
     }
 
     protected AbstractConfiguredObject(UUID id, TaskExecutor taskExecutor)
@@ -127,6 +215,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public final UUID getId()
     {
         return _id;
+    }
+
+    public final String getName()
+    {
+        return _name;
     }
 
     public State getDesiredState()
@@ -245,12 +338,29 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public Object getAttribute(String name)
     {
-        Object value = getActualAttribute(name);
-        if (value == null)
+        Attribute<?,?> attr = _attributeTypes.get(name);
+        if(attr != null && attr.getAnnotation().automate())
         {
-            value = getDefaultAttribute(name);
+            Object value = attr.get(this);
+            if(value != null && attr.getAnnotation().secure() &&
+               !SecurityManager.SYSTEM.equals(Subject.getSubject(AccessController.getContext())))
+            {
+                return SECURE_VALUES.get(value.getClass());
+            }
+            else
+            {
+                return value;
+            }
         }
-        return value;
+        else
+        {
+            Object value = getActualAttribute(name);
+            if (value == null)
+            {
+                value = getDefaultAttribute(name);
+            }
+            return value;
+        }
     }
 
     @Override
@@ -325,6 +435,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 //TODO: don't put nulls
                 _attributes.put(name, desired);
+                Attribute<?,?> attr = _attributeTypes.get(name);
+                if(attr != null && attr.getAnnotation().automate())
+                {
+                    if(desired == null && _defaultAttributes.containsKey(name))
+                    {
+                        automatedSetValue(name, _defaultAttributes.get(name));
+                    }
+                    else
+                    {
+                        automatedSetValue(name, desired);
+                    }
+                }
                 return true;
             }
             else
@@ -441,7 +563,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             UUID id = getId();
             Object idAttributeValue = attributes.get(ID);
-            if (idAttributeValue != null && !idAttributeValue.equals(id.toString()))
+            if (idAttributeValue != null && !(idAttributeValue.equals(id) || idAttributeValue.equals(id.toString())))
             {
                 throw new IllegalConfigurationException("Cannot change existing configured object id");
             }
@@ -632,6 +754,22 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             Object o = attributeMap.get(_name);
             return _converter.convert(o);
         }
+
+        public T get(final AbstractConfiguredObject<?> object)
+        {
+            try
+            {
+                return (T) _getter.invoke(object);
+            }
+            catch (IllegalAccessException e)
+            {
+                throw new ServerScopedRuntimeException("Unable to access attribute " + getName() + " on configuredObject type " + object.getClass().getName(), e);
+            }
+            catch (InvocationTargetException e)
+            {
+                throw new ServerScopedRuntimeException("Unable to access attribute " + getName() + " on configuredObject type " + object.getClass().getName(), e);
+            }
+        }
     }
 
     private static final class Statistic<C extends ConfiguredObject, T extends Number> extends AttributeOrStatistic<C,T>
@@ -646,14 +784,28 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public static final class Attribute<C extends ConfiguredObject, T> extends AttributeOrStatistic<C,T>
     {
 
-        private Attribute(Class<C> clazz, String name, Class<T> type, final Method getter)
+        private final ManagedAttribute _annotation;
+
+        private Attribute(Class<C> clazz,
+                          String name,
+                          Class<T> type,
+                          final Method getter,
+                          final ManagedAttribute annotation)
         {
             super(name, getter, type);
+            _annotation = annotation;
             addToAttributesSet(clazz, this);
         }
 
+        public ManagedAttribute getAnnotation()
+        {
+            return _annotation;
+        }
 
-
+        public T convert(final Object value)
+        {
+            return _converter.convert(value);
+        }
     }
 
 
@@ -1002,36 +1154,59 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private static <X extends ConfiguredObject> void processAttributes(final Class<X> clazz)
     {
-        if(_allAttributes.containsKey(clazz))
+        synchronized (_allAttributes)
         {
-            return;
-        }
-
-
-        for(Class<?> parent : clazz.getInterfaces())
-        {
-            if(ConfiguredObject.class.isAssignableFrom(parent))
+            if(_allAttributes.containsKey(clazz))
             {
-                processAttributes((Class<? extends ConfiguredObject>)parent);
+                return;
             }
-        }
-        final Class<? super X> superclass = clazz.getSuperclass();
-        if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
-        {
-            processAttributes((Class<? extends ConfiguredObject>) superclass);
-        }
 
-        final ArrayList<Attribute<?, ?>> attributeList = new ArrayList<Attribute<?, ?>>();
-        final ArrayList<Statistic<?, ?>> statisticList = new ArrayList<Statistic<?, ?>>();
 
-        _allAttributes.put(clazz, attributeList);
-        _allStatistics.put(clazz, statisticList);
-
-        for(Class<?> parent : clazz.getInterfaces())
-        {
-            if(ConfiguredObject.class.isAssignableFrom(parent))
+            for(Class<?> parent : clazz.getInterfaces())
             {
-                Collection<Attribute<?, ?>> attrs = _allAttributes.get(parent);
+                if(ConfiguredObject.class.isAssignableFrom(parent))
+                {
+                    processAttributes((Class<? extends ConfiguredObject>)parent);
+                }
+            }
+            final Class<? super X> superclass = clazz.getSuperclass();
+            if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
+            {
+                processAttributes((Class<? extends ConfiguredObject>) superclass);
+            }
+
+            final ArrayList<Attribute<?, ?>> attributeList = new ArrayList<Attribute<?, ?>>();
+            final ArrayList<Statistic<?, ?>> statisticList = new ArrayList<Statistic<?, ?>>();
+
+            _allAttributes.put(clazz, attributeList);
+            _allStatistics.put(clazz, statisticList);
+
+            for(Class<?> parent : clazz.getInterfaces())
+            {
+                if(ConfiguredObject.class.isAssignableFrom(parent))
+                {
+                    Collection<Attribute<?, ?>> attrs = _allAttributes.get(parent);
+                    for(Attribute<?,?> attr : attrs)
+                    {
+                        if(!attributeList.contains(attr))
+                        {
+                            attributeList.add(attr);
+                        }
+                    }
+                    Collection<Statistic<?, ?>> stats = _allStatistics.get(parent);
+                    for(Statistic<?,?> stat : stats)
+                    {
+                        if(!statisticList.contains(stat))
+                        {
+                            statisticList.add(stat);
+                        }
+                    }
+                }
+            }
+            if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
+            {
+                Collection<Attribute<?, ?>> attrs = _allAttributes.get(superclass);
+                Collection<Statistic<?, ?>> stats = _allStatistics.get(superclass);
                 for(Attribute<?,?> attr : attrs)
                 {
                     if(!attributeList.contains(attr))
@@ -1039,7 +1214,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                         attributeList.add(attr);
                     }
                 }
-                Collection<Statistic<?, ?>> stats = _allStatistics.get(parent);
                 for(Statistic<?,?> stat : stats)
                 {
                     if(!statisticList.contains(stat))
@@ -1048,61 +1222,76 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     }
                 }
             }
-        }
-        if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
-        {
-            Collection<Attribute<?, ?>> attrs = _allAttributes.get(superclass);
-            Collection<Statistic<?, ?>> stats = _allStatistics.get(superclass);
-            for(Attribute<?,?> attr : attrs)
-            {
-                if(!attributeList.contains(attr))
-                {
-                    attributeList.add(attr);
-                }
-            }
-            for(Statistic<?,?> stat : stats)
-            {
-                if(!statisticList.contains(stat))
-                {
-                    statisticList.add(stat);
-                }
-            }
-        }
 
 
-        for(Method m : clazz.getDeclaredMethods())
-        {
-            ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
-            if(annotation != null)
+            for(Method m : clazz.getDeclaredMethods())
             {
-                if(m.getParameterTypes().length != 0)
-                {
-                    throw new IllegalArgumentException("ManagedAttribute annotation should only be added to no-arg getters");
-                }
-                Class<?> type = getType(m);
-                String name = getName(m, type);
-                Attribute<X,?> newAttr = new Attribute(clazz,name,type,m);
-
-            }
-            else
-            {
-                ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
-                if(statAnnotation != null)
+                ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
+                if(annotation != null)
                 {
                     if(m.getParameterTypes().length != 0)
                     {
-                        throw new IllegalArgumentException("ManagedStatistic annotation should only be added to no-arg getters");
+                        throw new IllegalArgumentException("ManagedAttribute annotation should only be added to no-arg getters");
                     }
                     Class<?> type = getType(m);
-                    if(!Number.class.isAssignableFrom(type))
-                    {
-                        throw new IllegalArgumentException("ManagedStatistic annotation should only be added to getters returning a Number type");
-                    }
                     String name = getName(m, type);
-                    Statistic<X,?> newStat = new Statistic(clazz,name,type,m);
+                    Attribute<X,?> newAttr = new Attribute(clazz,name,type,m, annotation);
+
+                }
+                else
+                {
+                    ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
+                    if(statAnnotation != null)
+                    {
+                        if(m.getParameterTypes().length != 0)
+                        {
+                            throw new IllegalArgumentException("ManagedStatistic annotation should only be added to no-arg getters");
+                        }
+                        Class<?> type = getType(m);
+                        if(!Number.class.isAssignableFrom(type))
+                        {
+                            throw new IllegalArgumentException("ManagedStatistic annotation should only be added to getters returning a Number type");
+                        }
+                        String name = getName(m, type);
+                        Statistic<X,?> newStat = new Statistic(clazz,name,type,m);
+                    }
                 }
             }
+
+            Map<String,Attribute<?,?>> attrMap = new HashMap<String, Attribute<?, ?>>();
+            Map<String,Field> fieldMap = new HashMap<String, Field>();
+
+
+            Collection<Attribute<?, ?>> attrCol = _allAttributes.get(clazz);
+            for(Attribute<?,?> attr : attrCol)
+            {
+                attrMap.put(attr.getName(), attr);
+                if(attr.getAnnotation().automate())
+                {
+                    fieldMap.put(attr.getName(), findField(attr, clazz));
+                }
+
+            }
+            _allAttributeTypes.put(clazz, attrMap);
+            _allAutomatedFields.put(clazz, fieldMap);
         }
+    }
+
+    private static Field findField(final Attribute<?, ?> attr, Class<?> clazz)
+    {
+        while(clazz != null)
+        {
+            for(Field field : clazz.getDeclaredFields())
+            {
+                if(field.getName().equals("_" + attr.getName()))
+                {
+                    field.setAccessible(true);
+                    return field;
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return null;
     }
 
     private static String getName(final Method m, final Class<?> type)
@@ -1246,6 +1435,21 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
 
+    private static Map<String, Attribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
+    {
+        if(!_allAttributeTypes.containsKey(clazz))
+        {
+            processAttributes(clazz);
+        }
+        return _allAttributeTypes.get(clazz);
+    }
 
-
+    private static Map<String, Field> getAutomatedFields(Class<? extends ConfiguredObject> clazz)
+    {
+        if(!_allAutomatedFields.containsKey(clazz))
+        {
+            processAttributes(clazz);
+        }
+        return _allAutomatedFields.get(clazz);
+    }
 }

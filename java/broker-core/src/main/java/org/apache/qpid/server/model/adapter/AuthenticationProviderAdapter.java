@@ -66,7 +66,7 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
 
     private AuthenticationProviderAdapter(UUID id, Broker broker, final T authManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, Collections.<String,Object>emptyMap(), Collections.<String,Object>emptyMap(), broker.getTaskExecutor());
+        super(createAttributes(id, attributes), Collections.<String,Object>emptyMap(), broker.getTaskExecutor());
         _authManager = authManager;
         _broker = broker;
         _supportedAttributes = createSupportedAttributes(attributeNames);
@@ -89,6 +89,14 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
         }
     }
 
+    private static Map<String, Object> createAttributes(final UUID id, final Map<String, Object> attributes)
+    {
+        Map<String, Object> initialAttributes = new HashMap<String, Object>();
+        initialAttributes.put(ID, id);
+        initialAttributes.put(NAME, attributes.get(NAME));
+        return initialAttributes;
+    }
+
     T getAuthManager()
     {
         return _authManager;
@@ -98,12 +106,6 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
     public Collection<VirtualHostAlias> getVirtualHostPortBindings()
     {
         return Collections.emptyList();
-    }
-
-    @Override
-    public String getName()
-    {
-        return (String)getAttribute(AuthenticationProvider.NAME);
     }
 
     @Override
@@ -556,7 +558,7 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
 
             public PrincipalAdapter(Principal user)
             {
-                super(UUIDGenerator.generateUserUUID(PrincipalDatabaseAuthenticationManagerAdapter.this.getName(), user.getName()),
+                super(Collections.<String,Object>emptyMap(), createPrincipalAttributes(PrincipalDatabaseAuthenticationManagerAdapter.this, user),
                         PrincipalDatabaseAuthenticationManagerAdapter.this.getTaskExecutor());
                 _user = user;
 
@@ -581,11 +583,6 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
                 }
             }
 
-            @Override
-            public String getName()
-            {
-                return _user.getName();
-            }
 
             @Override
             public String setName(String currentName, String desiredName)
@@ -751,6 +748,14 @@ public abstract class AuthenticationProviderAdapter<X extends AuthenticationProv
                 return PrincipalDatabaseAuthenticationManagerAdapter.this.getPreferencesProvider();
             }
 
+        }
+
+        private static Map<String, Object> createPrincipalAttributes(PrincipalDatabaseAuthenticationManagerAdapter manager, final Principal user)
+        {
+            final Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(ID, UUIDGenerator.generateUserUUID(manager.getName(), user.getName()));
+            attributes.put(NAME, user.getName());
+            return attributes;
         }
 
     }

@@ -95,12 +95,6 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
         return getAttributeNames(FileSystemPreferencesProvider.class);
     }
 
-    @Override
-    public String getName()
-    {
-        return (String) getAttribute(AuthenticationProvider.NAME);
-    }
-
     @ManagedAttribute
     public String getPath()
     {

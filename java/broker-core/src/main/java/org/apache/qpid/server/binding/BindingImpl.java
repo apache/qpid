@@ -234,11 +234,6 @@ public class BindingImpl
         }
     }
 
-    public String getName()
-    {
-        return _bindingKey;
-    }
-
     @Override
     public String setName(final String currentName, final String desiredName)
             throws IllegalStateException, AccessControlException

@@ -499,11 +499,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         return true;
     }
 
-    public String getName()
-    {
-        return (String)getAttribute(NAME);
-    }
-
     public String setName(final String currentName, final String desiredName)
             throws IllegalStateException, AccessControlException
     {

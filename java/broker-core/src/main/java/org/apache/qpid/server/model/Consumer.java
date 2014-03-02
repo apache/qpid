@@ -35,19 +35,19 @@ public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
     public String LIFETIME_POLICY = "lifetimePolicy";
     public String STATE = "state";
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getDistributionMode();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getSettlementMode();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     boolean isExclusive();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     boolean isNoLocal();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getSelector();
 
     @ManagedStatistic

@@ -36,8 +36,6 @@ public interface AuthenticationProvider<X extends AuthenticationProvider<X>> ext
     //children
     Collection<VirtualHostAlias> getVirtualHostPortBindings();
 
-    String getName();
-
     /**
      * A temporary method to create SubjectCreator.
      *

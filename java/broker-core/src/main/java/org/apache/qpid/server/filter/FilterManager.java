@@ -23,6 +23,8 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
+import java.util.Iterator;
+
 public interface FilterManager
 {
     void add(MessageFilter filter);
@@ -30,6 +32,8 @@ public interface FilterManager
     void remove(MessageFilter filter);
 
     boolean allAllow(Filterable  msg);
+
+    Iterator<MessageFilter> filters();
 
     boolean hasFilters();
 }

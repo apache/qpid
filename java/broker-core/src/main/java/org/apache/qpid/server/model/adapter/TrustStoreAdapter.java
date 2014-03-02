@@ -74,27 +74,21 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter<TrustStoreAdapter
         put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, TrustManagerFactory.getDefaultAlgorithm());
     }});
 
+
+    private String _trustStoreType;
+    private String _trustManagerFactoryAlgorithm;
+    private String _path;
+    private boolean _peersOnly;
+
+
     private Broker<?> _broker;
 
     public TrustStoreAdapter(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
-        super(id, broker, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES));
+        super(id, broker, DEFAULTS, attributes);
         _broker = broker;
 
-        String trustStorePath = (String) getAttribute(TrustStore.PATH);
-        String trustStorePassword = Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<String>()
-        {
-            @Override
-            public String run()
-            {
-                return getPassword();
-            }
-        });
-        String trustStoreType = (String) getAttribute(TrustStore.TRUST_STORE_TYPE);
-        String trustManagerFactoryAlgorithm = (String) getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
-
-        validateTrustStoreAttributes(trustStoreType, trustStorePath,
-                trustStorePassword, trustManagerFactoryAlgorithm);
+        validateTrustStoreAttributes(_trustStoreType, _path, getPassword(), _trustManagerFactoryAlgorithm);
     }
 
     @Override
@@ -224,41 +218,33 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter<TrustStoreAdapter
     @Override
     public String getPath()
     {
-        return (String) getAttribute(PATH);
+        return _path;
     }
 
     @Override
     public String getTrustManagerFactoryAlgorithm()
     {
-        return (String) getAttribute(TRUST_MANAGER_FACTORY_ALGORITHM);
+        return _trustManagerFactoryAlgorithm;
     }
 
     @Override
     public String getTrustStoreType()
     {
-        return (String) getAttribute(TRUST_STORE_TYPE);
+        return _trustStoreType;
     }
 
     @Override
     public boolean isPeersOnly()
     {
-        return (Boolean) getAttribute(PEERS_ONLY);
+        return _peersOnly;
     }
 
     public TrustManager[] getTrustManagers() throws GeneralSecurityException
     {
-        String trustStorePath = (String)getAttribute(TrustStore.PATH);
-        String trustStorePassword = Subject.doAs(org.apache.qpid.server.security.SecurityManager.SYSTEM,
-                                                 new PrivilegedAction<String>()
-                                                 {
-                                                     @Override
-                                                     public String run()
-                                                     {
-                                                         return getPassword();
-                                                     }
-                                                 });
-        String trustStoreType = (String)getAttribute(TrustStore.TRUST_STORE_TYPE);
-        String trustManagerFactoryAlgorithm = (String)getAttribute(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
+        String trustStorePath = _path;
+        String trustStorePassword = getPassword();
+        String trustStoreType = _trustStoreType;
+        String trustManagerFactoryAlgorithm = _trustManagerFactoryAlgorithm;
 
         try
         {
@@ -273,7 +259,7 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter<TrustStoreAdapter
             {
                 if (tm instanceof X509TrustManager)
                 {
-                    if (Boolean.TRUE.equals(getAttribute(PEERS_ONLY)))
+                    if (_peersOnly)
                     {
                         // truststore is supposed to trust only clients which peers certificates
                         // are directly in the store. CA signing will not be considered.

@@ -35,7 +35,7 @@ public interface Session<X extends Session<X>> extends ConfiguredObject<X>
     // available credit of both producer and consumer sides.
     public static final String PRODUCER_FLOW_BLOCKED = "producerFlowBlocked";
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     int getChannelId();
 
     @ManagedAttribute

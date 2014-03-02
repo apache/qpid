@@ -21,13 +21,7 @@ package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
@@ -49,7 +43,7 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
 
     public GroupProviderAdapter(UUID id, Broker broker, GroupManager groupManager, Map<String, Object> attributes, Collection<String> attributeNames)
     {
-        super(id, Collections.<String,Object>emptyMap(), Collections.<String,Object>emptyMap(), broker.getTaskExecutor());
+        super(id, Collections.singletonMap(NAME, attributes.get(NAME)), Collections.<String,Object>emptyMap(), broker.getTaskExecutor());
 
         if (groupManager == null)
         {
@@ -84,12 +78,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         }
 
         return Collections.unmodifiableCollection(attributesNames);
-    }
-
-    @Override
-    public String getName()
-    {
-        return (String)getAttribute(NAME);
     }
 
     @Override
@@ -170,7 +158,11 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
 
             getSecurityManager().authoriseGroupOperation(Operation.CREATE, groupName);
                 _groupManager.createGroup(groupName);
-                return (C) new GroupAdapter(groupName, getTaskExecutor());
+            Map<String,Object> attrMap = new HashMap<String, Object>();
+            UUID id = UUIDGenerator.generateGroupUUID(getName(),groupName);
+            attrMap.put(Group.ID, id);
+            attrMap.put(Group.NAME, groupName);
+                return (C) new GroupAdapter(attrMap, getTaskExecutor());
 
         }
 
@@ -189,7 +181,11 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
             Collection<Group> principals = new ArrayList<Group>(groups.size());
             for (Principal group : groups)
             {
-                principals.add(new GroupAdapter(group.getName(), getTaskExecutor()));
+                Map<String,Object> attrMap = new HashMap<String, Object>();
+                UUID id = UUIDGenerator.generateGroupUUID(getName(),group.getName());
+                attrMap.put(Group.ID, id);
+                attrMap.put(Group.NAME, group.getName());
+                principals.add(new GroupAdapter(attrMap, getTaskExecutor()));
             }
             return (Collection<C>) Collections
                     .unmodifiableCollection(principals);
@@ -331,22 +327,15 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         throw new UnsupportedOperationException("Changing attributes on group providers is not supported.");
     }
 
+
     private class GroupAdapter extends AbstractConfiguredObject<GroupAdapter> implements Group<GroupAdapter>
     {
-        private final String _group;
 
-        public GroupAdapter(String group, TaskExecutor taskExecutor)
+        public GroupAdapter(Map<String,Object> attributes, TaskExecutor taskExecutor)
         {
-            super(UUIDGenerator.generateGroupUUID(GroupProviderAdapter.this.getName(), group), taskExecutor);
-            _group = group;
-
+            super(Collections.<String,Object>emptyMap(),attributes, taskExecutor);
         }
 
-        @Override
-        public String getName()
-        {
-            return _group;
-        }
 
         @Override
         public String setName(String currentName, String desiredName)
@@ -395,11 +384,15 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
             if (clazz == GroupMember.class)
             {
                 Set<Principal> usersInGroup = _groupManager
-                        .getUserPrincipalsForGroup(_group);
+                        .getUserPrincipalsForGroup(getName());
                 Collection<GroupMember> members = new ArrayList<GroupMember>();
                 for (Principal principal : usersInGroup)
                 {
-                    members.add(new GroupMemberAdapter(principal.getName(), getTaskExecutor()));
+                    UUID id = UUIDGenerator.generateGroupMemberUUID(GroupProviderAdapter.this.getName(), getName(), principal.getName());
+                    Map<String,Object> attrMap = new HashMap<String, Object>();
+                    attrMap.put(GroupMember.ID,id);
+                    attrMap.put(GroupMember.NAME, principal.getName());
+                    members.add(new GroupMemberAdapter(attrMap, getTaskExecutor()));
                 }
                 return (Collection<C>) Collections
                         .unmodifiableCollection(members);
@@ -420,10 +413,14 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
             {
                 String memberName = (String) attributes.get(GroupMember.NAME);
 
-                getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group);
+                getSecurityManager().authoriseGroupOperation(Operation.UPDATE, getName());
 
-                _groupManager.addUserToGroup(memberName, _group);
-                return (C) new GroupMemberAdapter(memberName, getTaskExecutor());
+                _groupManager.addUserToGroup(memberName, getName());
+                UUID id = UUIDGenerator.generateGroupMemberUUID(GroupProviderAdapter.this.getName(), getName(), memberName);
+                Map<String,Object> attrMap = new HashMap<String, Object>();
+                attrMap.put(GroupMember.ID,id);
+                attrMap.put(GroupMember.NAME, memberName);
+                return (C) new GroupMemberAdapter(attrMap, getTaskExecutor());
 
             }
 
@@ -458,8 +455,8 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         {
             if (desiredState == State.DELETED)
             {
-                getSecurityManager().authoriseGroupOperation(Operation.DELETE, _group);
-                _groupManager.removeGroup(_group);
+                getSecurityManager().authoriseGroupOperation(Operation.DELETE, getName());
+                _groupManager.removeGroup(getName());
                 return true;
             }
 
@@ -483,12 +480,10 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
         private class GroupMemberAdapter extends AbstractConfiguredObject<GroupMemberAdapter> implements
                 GroupMember<GroupMemberAdapter>
         {
-            private String _memberName;
 
-            public GroupMemberAdapter(String memberName, TaskExecutor taskExecutor)
+            public GroupMemberAdapter(Map<String,Object> attrMap, TaskExecutor taskExecutor)
             {
-                super(UUIDGenerator.generateGroupMemberUUID(GroupProviderAdapter.this.getName(), _group, memberName), taskExecutor);
-                _memberName = memberName;
+                super(Collections.<String,Object>emptyMap(), attrMap, taskExecutor);
             }
 
             @Override
@@ -497,25 +492,6 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
                 return getAttributeNames(GroupMember.class);
             }
 
-            @Override
-            public Object getAttribute(String name)
-            {
-                if (ID.equals(name))
-                {
-                    return getId();
-                }
-                else if (NAME.equals(name))
-                {
-                    return getName();
-                }
-                return super.getAttribute(name);
-            }
-
-            @Override
-            public String getName()
-            {
-                return _memberName;
-            }
 
             @Override
             public String setName(String currentName, String desiredName)
@@ -579,9 +555,9 @@ public class GroupProviderAdapter extends AbstractConfiguredObject<GroupProvider
             {
                 if (desiredState == State.DELETED)
                 {
-                    getSecurityManager().authoriseGroupOperation(Operation.UPDATE, _group);
+                    getSecurityManager().authoriseGroupOperation(Operation.UPDATE, GroupAdapter.this.getName());
 
-                    _groupManager.removeUserFromGroup(_memberName, _group);
+                    _groupManager.removeUserFromGroup(getName(), GroupAdapter.this.getName());
                     return true;
 
                 }

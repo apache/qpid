@@ -39,19 +39,19 @@ public interface TrustStore<X extends TrustStore<X>> extends ConfiguredObject<X>
     String PEERS_ONLY = "peersOnly";
     String TRUST_MANAGER_FACTORY_ALGORITHM = "trustManagerFactoryAlgorithm";
 
-    @ManagedAttribute( secure = true )
+    @ManagedAttribute( secure = true, automate = true, mandatory = true)
     public String getPassword();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, mandatory = true )
     public String getPath();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     public String getTrustManagerFactoryAlgorithm();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     public String getTrustStoreType();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     public boolean isPeersOnly();
 
 

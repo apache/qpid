@@ -92,7 +92,7 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
     public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker<?> broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
     {
-        super(id, null, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
+        super(id, Collections.<String,Object>emptyMap(), MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
         _broker = broker;
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
         validateAttributes();
@@ -359,12 +359,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         {
             throw new IllegalArgumentException("Queue with name "+MapValueConverter.getStringAttribute(Queue.NAME,attributes)+" already exists");
         }
-    }
-
-
-    public String getName()
-    {
-        return (String)getAttribute(NAME);
     }
 
     public String setName(final String currentName, final String desiredName)
