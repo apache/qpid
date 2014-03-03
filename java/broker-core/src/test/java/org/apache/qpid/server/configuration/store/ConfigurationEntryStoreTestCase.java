@@ -38,7 +38,6 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -85,7 +84,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _authenticationProviderId = UUID.randomUUID();
         _authenticationProviderAttributes = new HashMap<String, Object>();
         _authenticationProviderAttributes.put(AuthenticationProvider.NAME, "authenticationProvider1");
-        _authenticationProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, AnonymousAuthenticationManager.class.getSimpleName());
+        _authenticationProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.class.getSimpleName());
 
         _store = createStore(_brokerId, _brokerAttributes);
         addConfiguration(_virtualHostId, VirtualHost.class.getSimpleName(), _virtualHostAttributes);
@@ -247,7 +246,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         UUID authenticationProviderId = UUID.randomUUID();
         Map<String, Object> authenticationProviderAttributes = new HashMap<String, Object>();
         authenticationProviderAttributes.put(AuthenticationProvider.NAME, "authenticationProvider1");
-        authenticationProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, ExternalAuthenticationManager.class.getSimpleName());
+        authenticationProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManager.class.getSimpleName());
         ConfigurationEntry providerEntry = new ConfigurationEntry(authenticationProviderId, AuthenticationProvider.class.getSimpleName(),
                 authenticationProviderAttributes, Collections.<UUID> emptySet(), _store);
 
@@ -267,7 +266,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 
         Map<String, Object> authenticationProviderAttributes = new HashMap<String, Object>();
         authenticationProviderAttributes.put(AuthenticationProvider.NAME, "authenticationProvider1");
-        authenticationProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, ExternalAuthenticationManager.class.getSimpleName());
+        authenticationProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManager.class.getSimpleName());
         ConfigurationEntry updatedEntry = new ConfigurationEntry(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(),
                 authenticationProviderAttributes, Collections.<UUID> emptySet(), _store);
         _store.save(updatedEntry);

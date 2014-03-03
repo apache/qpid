@@ -23,6 +23,7 @@ package org.apache.qpid.server.model.adapter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,10 +32,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.PrincipalDatabaseAuthenticationManagerAdapter;
-import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.SimpleAuthenticationProviderAdapter;
+import org.apache.qpid.server.security.auth.manager.AbstractAuthenticationManager;
 
 public class AuthenticationProviderFactory
 {
@@ -60,9 +58,7 @@ public class AuthenticationProviderFactory
      */
     public AuthenticationProvider create(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        AuthenticationProviderAdapter provider = createAuthenticationProvider(id, broker, attributes);
-        provider.getAuthManager().onCreate();
-        return provider;
+        return createAuthenticationProvider(id, broker, attributes, false);
     }
 
     /**
@@ -73,27 +69,20 @@ public class AuthenticationProviderFactory
      */
     public AuthenticationProvider recover(UUID id, Map<String, Object> attributes, Broker broker)
     {
-        return createAuthenticationProvider(id, broker, attributes);
+        return createAuthenticationProvider(id, broker, attributes, true);
     }
 
-    private AuthenticationProviderAdapter createAuthenticationProvider(UUID id, Broker broker, Map<String, Object> attributes)
+    private AuthenticationProvider createAuthenticationProvider(UUID id, Broker broker, Map<String, Object> attributes, boolean recovering)
     {
+        attributes = new HashMap<String, Object>(attributes);
+        attributes.put(AuthenticationProvider.ID,id);
+
         for (AuthenticationManagerFactory factory : _factories)
         {
-            AuthenticationManager manager = factory.createInstance(broker, attributes);
+            AbstractAuthenticationManager manager = factory.createInstance(broker, attributes, recovering);
             if (manager != null)
             {
-                AuthenticationProviderAdapter authenticationProvider;
-                if (manager instanceof PrincipalDatabaseAuthenticationManager)
-                {
-                    authenticationProvider = new PrincipalDatabaseAuthenticationManagerAdapter(id, broker,
-                            (PrincipalDatabaseAuthenticationManager) manager, attributes, factory.getAttributeNames());
-                }
-                else
-                {
-                    authenticationProvider = new SimpleAuthenticationProviderAdapter(id, broker, manager, attributes, factory.getAttributeNames());
-                }
-                return authenticationProvider;
+                return manager;
             }
         }
 

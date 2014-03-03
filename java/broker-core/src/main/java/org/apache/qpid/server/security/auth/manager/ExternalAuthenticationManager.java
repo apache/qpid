@@ -19,29 +19,42 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.security.Principal;
+import java.util.Map;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.external.ExternalSaslServer;
 
-public class ExternalAuthenticationManager implements AuthenticationManager
+public class ExternalAuthenticationManager extends AbstractAuthenticationManager<ExternalAuthenticationManager>
 {
     private static final String EXTERNAL = "EXTERNAL";
 
-    private boolean _useFullDN = false;
+    private boolean _useFullDN;
 
-    ExternalAuthenticationManager(boolean useFullDN)
+    protected ExternalAuthenticationManager(final Broker broker,
+                                            final Map<String, Object> defaults,
+                                            final Map<String, Object> attributes)
     {
-        _useFullDN = useFullDN;
+        super(broker, defaults, attributes);
     }
+
 
     @Override
     public void initialise()
     {
 
+    }
+
+    @ManagedAttribute( automate = true )
+    public boolean getUseFullDN()
+    {
+        return _useFullDN;
     }
 
     @Override
@@ -101,13 +114,7 @@ public class ExternalAuthenticationManager implements AuthenticationManager
     }
 
     @Override
-    public void onCreate()
-    {
-        // nothing to do, no external resource is required
-    }
-
-    @Override
-    public void onDelete()
+    public void delete()
     {
         // nothing to do, no external resource is used
     }

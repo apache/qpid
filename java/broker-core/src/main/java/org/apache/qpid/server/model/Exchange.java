@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.Map;
 
 @ManagedObject
-
 public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
 {
     String DURABLE                              = "durable";

@@ -36,8 +36,7 @@ import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.AbstractPrincipalDatabaseAuthManagerFactory;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.tools.security.Passwd;
@@ -378,8 +377,8 @@ public class SaslRestTest extends QpidRestTestCase
 
         // configure broker to use Base64MD5PasswordFilePrincipalDatabase
         Map<String, Object> newAttributes = new HashMap<String, Object>();
-        newAttributes.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, passwordFile.getAbsolutePath());
-        newAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        newAttributes.put("path", passwordFile.getAbsolutePath());
+        newAttributes.put(AuthenticationProvider.TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
         getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
     }
 }

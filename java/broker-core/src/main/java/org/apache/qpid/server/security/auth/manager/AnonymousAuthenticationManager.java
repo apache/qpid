@@ -21,16 +21,19 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.security.Principal;
+import java.util.Map;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.anonymous.AnonymousSaslServer;
 
-public class AnonymousAuthenticationManager implements AuthenticationManager
+public class AnonymousAuthenticationManager extends AbstractAuthenticationManager<AnonymousAuthenticationManager>
 {
     private static final String ANONYMOUS = "ANONYMOUS";
 
@@ -46,10 +49,11 @@ public class AnonymousAuthenticationManager implements AuthenticationManager
 
     private static final AuthenticationResult ANONYMOUS_AUTHENTICATION = new AuthenticationResult(ANONYMOUS_PRINCIPAL);
 
-    static final AnonymousAuthenticationManager INSTANCE = new AnonymousAuthenticationManager();
-
-    AnonymousAuthenticationManager()
+    protected AnonymousAuthenticationManager(final Broker broker,
+                                             final Map<String, Object> defaults,
+                                             final Map<String, Object> attributes)
     {
+        super(broker, defaults, attributes);
     }
 
     @Override
@@ -112,13 +116,7 @@ public class AnonymousAuthenticationManager implements AuthenticationManager
     }
 
     @Override
-    public void onCreate()
-    {
-        // nothing to do, no external resource is required
-    }
-
-    @Override
-    public void onDelete()
+    public void delete()
     {
         // nothing to do, no external resource is used
     }

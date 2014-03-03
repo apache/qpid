@@ -24,6 +24,7 @@ package org.apache.qpid.server.model;
 import java.util.Map;
 import java.util.Set;
 
+@ManagedObject
 public interface PreferencesProvider<X extends PreferencesProvider<X>> extends ConfiguredObject<X>
 {
     String DURABLE         = "durable";

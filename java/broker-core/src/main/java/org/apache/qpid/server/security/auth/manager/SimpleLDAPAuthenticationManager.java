@@ -24,7 +24,9 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
@@ -44,6 +46,9 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -56,7 +61,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StringUtil;
 import org.apache.qpid.ssl.SSLContextFactory;
 
-public class SimpleLDAPAuthenticationManager implements AuthenticationManager
+public class SimpleLDAPAuthenticationManager extends AbstractAuthenticationManager<SimpleLDAPAuthenticationManager>
 {
     private static final Logger _logger = Logger.getLogger(SimpleLDAPAuthenticationManager.class);
 
@@ -65,34 +70,40 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
      */
     private static final String JAVA_NAMING_LDAP_FACTORY_SOCKET = "java.naming.ldap.factory.socket";
 
-    private final String _authManagerName;
-    private final String _providerSearchURL;
-    private final String _providerAuthURL;
-    private final String _searchContext;
-    private final String _searchFilter;
-    private final String _ldapContextFactory;
+    private String _providerUrl;
+    private String _providerAuthUrl;
+    private String _searchContext;
+    private String _searchFilter;
+    private String _ldapContextFactory;
+
 
     /**
      * Trust store - typically used when the Directory has been secured with a certificate signed by a
      * private CA (or self-signed certificate).
      */
-    private final TrustStore _trustStore;
+    private TrustStore _trustStore;
 
     /**
      * Dynamically created SSL Socket Factory implementation used in the case where user has specified a trust store.
      */
     private Class<? extends SocketFactory> _sslSocketFactoryOverrideClass;
 
-
-    SimpleLDAPAuthenticationManager(String authManagerName, String providerSearchUrl, String providerAuthUrl, String searchContext, String searchFilter, String ldapContextFactory, TrustStore trustStore)
+    protected SimpleLDAPAuthenticationManager(final Broker broker,
+                                              final Map<String, Object> defaults,
+                                              final Map<String, Object> attributes)
     {
-        _authManagerName = authManagerName;
-        _providerSearchURL = providerSearchUrl;
-        _providerAuthURL = providerAuthUrl;
-        _searchContext = searchContext;
-        _searchFilter = searchFilter;
-        _ldapContextFactory = ldapContextFactory;
-        _trustStore = trustStore;
+        super(broker, createDefaults(defaults, attributes), attributes);
+    }
+
+    private static Map<String, Object> createDefaults(final Map<String, Object> defaults,
+                                                      final Map<String, Object> attributes)
+    {
+        final Map<String, Object> newDefaults = new HashMap<String, Object>(defaults);
+        if(!defaults.containsKey("providerAuthUrl") && attributes.containsKey("providerUrl"))
+        {
+            newDefaults.put("providerAuthUrl", attributes.get("providerUrl"));
+        }
+        return newDefaults;
     }
 
     @Override
@@ -102,6 +113,43 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
         validateInitialDirContext();
     }
+
+    @ManagedAttribute( automate = true )
+    public String getProviderUrl()
+    {
+        return _providerUrl;
+    }
+
+    @ManagedAttribute( automate = true )
+    public String getProviderAuthUrl()
+    {
+        return _providerAuthUrl;
+    }
+
+    @ManagedAttribute( automate = true )
+    public String getSearchContext()
+    {
+        return _searchContext;
+    }
+
+    @ManagedAttribute( automate = true )
+    public String getSearchFilter()
+    {
+        return _searchFilter;
+    }
+
+    @ManagedAttribute( automate = true )
+    public String getLdapContextFactory()
+    {
+        return _ldapContextFactory;
+    }
+
+    @ManagedAttribute( automate = true )
+    public TrustStore getTrustStore()
+    {
+        return _trustStore;
+    }
+
 
     @Override
     public String getMechanisms()
@@ -181,7 +229,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
             return new AuthenticationResult(AuthenticationStatus.CONTINUE);
         }
 
-        Hashtable<String, Object> env = createInitialDirContextEnvironment(_providerAuthURL);
+        Hashtable<String, Object> env = createInitialDirContextEnvironment(_providerAuthUrl);
 
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, name);
@@ -264,7 +312,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     {
         if (_trustStore != null)
         {
-            String clazzName = new StringUtil().createUniqueJavaName(_authManagerName);
+            String clazzName = new StringUtil().createUniqueJavaName(getName());
             SSLContext sslContext = null;
             try
             {
@@ -300,7 +348,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
     private void validateInitialDirContext()
     {
-        Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerSearchURL);
+        Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerUrl);
         env.put(Context.SECURITY_AUTHENTICATION, "none");
 
         InitialDirContext ctx = null;
@@ -310,7 +358,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
         }
         catch (NamingException e)
         {
-            throw new ServerScopedRuntimeException("Unable to establish anonymous connection to the ldap server at " + _providerSearchURL, e);
+            throw new ServerScopedRuntimeException("Unable to establish anonymous connection to the ldap server at " + _providerUrl, e);
         }
         finally
         {
@@ -371,7 +419,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
 
     private String getNameFromId(String id) throws NamingException
     {
-        Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerSearchURL);
+        Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerUrl);
 
         env.put(Context.SECURITY_AUTHENTICATION, "none");
         InitialDirContext ctx = createInitialDirContext(env);
@@ -417,13 +465,7 @@ public class SimpleLDAPAuthenticationManager implements AuthenticationManager
     }
 
     @Override
-    public void onCreate()
-    {
-        // nothing to do, no external resource is required
-    }
-
-    @Override
-    public void onDelete()
+    public void delete()
     {
         // nothing to do, no external resource is used
     }

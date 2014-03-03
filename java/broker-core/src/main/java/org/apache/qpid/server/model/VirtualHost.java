@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.Map;
 
 @ManagedObject( managesChildren = true )
-
 public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
 {
 

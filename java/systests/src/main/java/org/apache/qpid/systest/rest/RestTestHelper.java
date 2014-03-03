@@ -55,7 +55,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.security.auth.manager.AbstractPrincipalDatabaseAuthManagerFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -443,7 +442,7 @@ public class RestTestHelper
         _passwdFile = createTemporaryPasswdFile(users);
 
         testCase.getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER,
-                AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _passwdFile.getAbsolutePath());
+                "path", _passwdFile.getAbsolutePath());
     }
 
     public void tearDown()

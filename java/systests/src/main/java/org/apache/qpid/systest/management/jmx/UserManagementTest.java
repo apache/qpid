@@ -30,8 +30,7 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 
 import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.AbstractPrincipalDatabaseAuthManagerFactory;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -58,8 +57,8 @@ public class UserManagementTest extends QpidBrokerTestCase
         _passwordFile = createTemporaryPasswordFileWithJmxAdminUser();
 
         Map<String, Object> newAttributes = new HashMap<String, Object>();
-        newAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, getAuthenticationManagerType());
-        newAttributes.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _passwordFile.getAbsolutePath());
+        newAttributes.put(AuthenticationProvider.TYPE, getAuthenticationManagerType());
+        newAttributes.put("path", _passwordFile.getAbsolutePath());
         getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
         getBrokerConfiguration().addJmxManagementConfiguration();
 

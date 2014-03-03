@@ -36,7 +36,6 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -48,7 +47,7 @@ public class MultipleAuthenticationManagersTest extends QpidBrokerTestCase
         TestBrokerConfiguration config = getBrokerConfiguration();
 
         Map<String, Object> externalAuthProviderAttributes = new HashMap<String, Object>();
-        externalAuthProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        externalAuthProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
         externalAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
         config.addAuthenticationProviderConfiguration(externalAuthProviderAttributes);
 

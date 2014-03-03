@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.security.AccessControl;
 
+@ManagedObject
 public interface AccessControlProvider<X extends AccessControlProvider<X>> extends ConfiguredObject<X>
 {
     public static final String DURABLE = "durable";

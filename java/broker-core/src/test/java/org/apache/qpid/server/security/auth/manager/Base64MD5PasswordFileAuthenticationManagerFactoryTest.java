@@ -25,9 +25,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
@@ -45,14 +47,17 @@ public class Base64MD5PasswordFileAuthenticationManagerFactoryTest extends  Test
         super.setUp();
         _emptyPasswordFile = File.createTempFile(getName(), "passwd");
         _emptyPasswordFile.deleteOnExit();
+
+        _configuration.put(AuthenticationProvider.ID, UUID.randomUUID());
+        _configuration.put(AuthenticationProvider.NAME, getName());
     }
 
     public void testBase64MD5InstanceCreated() throws Exception
     {
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _emptyPasswordFile.getAbsolutePath());
+        _configuration.put(AuthenticationProvider.TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put("path", _emptyPasswordFile.getAbsolutePath());
 
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
+        AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
         assertNotNull(manager);
         assertTrue(manager instanceof PrincipalDatabaseAuthenticationManager);
         assertTrue(((PrincipalDatabaseAuthenticationManager)manager).getPrincipalDatabase() instanceof Base64MD5PasswordFilePrincipalDatabase);
@@ -63,12 +68,12 @@ public class Base64MD5PasswordFileAuthenticationManagerFactoryTest extends  Test
         //delete the file
         _emptyPasswordFile.delete();
 
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _emptyPasswordFile.getAbsolutePath());
+        _configuration.put(AuthenticationProvider.TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put("path", _emptyPasswordFile.getAbsolutePath());
 
         try
         {
-            _factory.createInstance(_broker, _configuration);
+            _factory.createInstance(_broker, _configuration, false);
         }
         catch (RuntimeException re)
         {
@@ -78,23 +83,30 @@ public class Base64MD5PasswordFileAuthenticationManagerFactoryTest extends  Test
 
     public void testReturnsNullWhenNoConfig() throws Exception
     {
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
+        AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
         assertNull(manager);
     }
 
     public void testReturnsNullWhenConfigForOtherAuthManagerType() throws Exception
     {
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, "other-auth-manager");
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
+        _configuration.put(AuthenticationProvider.TYPE, "other-auth-manager");
+        AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
         assertNull(manager);
     }
 
-    public void testReturnsNullWhenConfigForPlainPDImplementationNoPasswordFileValueSpecified() throws Exception
+    public void testThrowsExceptionWhenConfigForPlainPDImplementationNoPasswordFileValueSpecified() throws Exception
     {
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put(AuthenticationProvider.TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
 
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
-        assertNull(manager);
+        try
+        {
+            AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
+            fail("No authentication manager should be created");
+        }
+        catch(IllegalArgumentException e)
+        {
+            // pass
+        }
     }
 
     @Override

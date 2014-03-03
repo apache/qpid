@@ -24,9 +24,11 @@ import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
@@ -44,14 +46,16 @@ public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
         super.setUp();
         _emptyPasswordFile = File.createTempFile(getName(), "passwd");
         _emptyPasswordFile.deleteOnExit();
+        _configuration.put(AuthenticationProvider.ID, UUID.randomUUID());
+        _configuration.put(AuthenticationProvider.NAME, getName());
     }
 
     public void testPlainInstanceCreated() throws Exception
     {
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _emptyPasswordFile.getAbsolutePath());
+        _configuration.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put("path", _emptyPasswordFile.getAbsolutePath());
 
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
+        AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
         assertNotNull(manager);
         assertTrue(manager instanceof PrincipalDatabaseAuthenticationManager);
         assertTrue(((PrincipalDatabaseAuthenticationManager)manager).getPrincipalDatabase() instanceof PlainPasswordFilePrincipalDatabase);
@@ -62,10 +66,11 @@ public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
         //delete the file
         _emptyPasswordFile.delete();
 
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_PATH, _emptyPasswordFile.getAbsolutePath());
+        _configuration.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put("path", _emptyPasswordFile.getAbsolutePath());
 
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
+
+        AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
 
         assertNotNull(manager);
         assertTrue(manager instanceof PrincipalDatabaseAuthenticationManager);
@@ -74,23 +79,30 @@ public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
 
     public void testReturnsNullWhenNoConfig() throws Exception
     {
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
+        AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
         assertNull(manager);
     }
 
     public void testReturnsNullWhenConfigForOtherAuthManagerType() throws Exception
     {
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, "other-auth-manager");
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
+        _configuration.put(AuthenticationProvider.TYPE, "other-auth-manager");
+        AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
         assertNull(manager);
     }
 
-    public void testReturnsNullWhenConfigForPlainPDImplementationNoPasswordFileValueSpecified() throws Exception
+    public void testThrowsExceptionWhenConfigForPlainPDImplementationNoPasswordFileValueSpecified() throws Exception
     {
-        _configuration.put(AbstractPrincipalDatabaseAuthManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
 
-        AuthenticationManager manager = _factory.createInstance(_broker, _configuration);
-        assertNull(manager);
+        try
+        {
+            AuthenticationManager manager = _factory.createInstance(_broker, _configuration, false);
+            fail("No authentication manager should be created");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass;
+        }
     }
 
     @Override

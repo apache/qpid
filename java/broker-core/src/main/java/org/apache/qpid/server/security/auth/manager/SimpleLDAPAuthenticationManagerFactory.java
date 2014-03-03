@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
@@ -46,7 +47,7 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
     public static final String ATTRIBUTE_PROVIDER_URL = "providerUrl";
 
     public static final Collection<String> ATTRIBUTES = Collections.<String> unmodifiableList(Arrays.asList(
-            ATTRIBUTE_TYPE,
+            AuthenticationProvider.TYPE,
             ATTRIBUTE_PROVIDER_URL,
             ATTRIBUTE_SEARCH_CONTEXT,
             ATTRIBUTE_SEARCH_FILTER,
@@ -56,42 +57,17 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
             ));
 
     @Override
-    public AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes)
+    public SimpleLDAPAuthenticationManager createInstance(Broker broker,
+                                                          Map<String, Object> attributes,
+                                                          final boolean recovering)
     {
-        if (attributes == null || !PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
+        if (attributes == null || !PROVIDER_TYPE.equals(attributes.get(AuthenticationProvider.TYPE)))
         {
             return null;
         }
 
-        String name = (String) attributes.get(ATTRIBUTE_NAME);
-        String providerUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_URL);
-        String providerAuthUrl = (String) attributes.get(ATTRIBUTE_PROVIDER_AUTH_URL);
 
-        if (providerAuthUrl == null)
-        {
-            providerAuthUrl = providerUrl;
-        }
-        String searchContext = (String) attributes.get(ATTRIBUTE_SEARCH_CONTEXT);
-        String searchFilter = (String) attributes.get(ATTRIBUTE_SEARCH_FILTER);
-        String ldapContextFactory = (String) attributes.get(ATTRIBUTE_LDAP_CONTEXT_FACTORY);
-        String trustStoreName = (String) attributes.get(ATTRIBUTE_TRUST_STORE);
-        if (ldapContextFactory == null)
-        {
-            ldapContextFactory = DEFAULT_LDAP_CONTEXT_FACTORY;
-        }
-
-        TrustStore trustStore = null;
-        if (trustStoreName != null)
-        {
-            trustStore = broker.findTrustStoreByName(trustStoreName);
-            if (trustStore == null)
-            {
-                throw new IllegalConfigurationException("Can't find truststore with name '" + trustStoreName + "'");
-            }
-        }
-
-        return new SimpleLDAPAuthenticationManager(name, providerUrl, providerAuthUrl, searchContext,
-                searchFilter, ldapContextFactory, trustStore);
+        return new SimpleLDAPAuthenticationManager(broker, Collections.<String,Object>emptyMap(),attributes);
     }
 
     @Override

@@ -83,7 +83,7 @@ public class AuthenticationProviderRecovererTest extends QpidTestCase
         try
         {
             Map<String, Object> authenticationAttributes = new HashMap<String, Object>();
-            authenticationAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE,
+            authenticationAttributes.put(AuthenticationProvider.TYPE,
                     PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
             authenticationAttributes.put(AuthenticationProvider.NAME, "test-authenticator");
             authenticationAttributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH,

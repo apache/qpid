@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+@ManagedObject
 public interface GroupMember<X extends GroupMember<X>> extends ConfiguredObject<X>
 {
     String DURABLE         = "durable";

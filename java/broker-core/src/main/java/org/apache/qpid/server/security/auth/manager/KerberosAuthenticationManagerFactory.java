@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
@@ -31,11 +32,13 @@ public class KerberosAuthenticationManagerFactory implements AuthenticationManag
     public static final String PROVIDER_TYPE = "Kerberos";
 
     @Override
-    public AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes)
+    public KerberosAuthenticationManager createInstance(Broker broker,
+                                                        Map<String, Object> attributes,
+                                                        final boolean recovering)
     {
-        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
+        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(AuthenticationProvider.TYPE)))
         {
-            return new KerberosAuthenticationManager();
+            return new KerberosAuthenticationManager(broker, Collections.<String,Object>emptyMap(), attributes);
         }
         return null;
     }
@@ -43,7 +46,7 @@ public class KerberosAuthenticationManagerFactory implements AuthenticationManag
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Collections.<String>singletonList(ATTRIBUTE_TYPE);
+        return Collections.<String>singletonList(AuthenticationProvider.TYPE);
     }
 
     @Override

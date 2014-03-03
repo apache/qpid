@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.util.ResourceBundleLoader;
@@ -35,17 +36,17 @@ public class ExternalAuthenticationManagerFactory implements AuthenticationManag
     public static final String ATTRIBUTE_USE_FULL_DN = "useFullDN";
 
     public static final Collection<String> ATTRIBUTES = Collections.<String> unmodifiableList(Arrays.asList(
-            ATTRIBUTE_TYPE,
+            AuthenticationProvider.TYPE,
             ATTRIBUTE_USE_FULL_DN));
 
     @Override
-    public AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes)
+    public ExternalAuthenticationManager createInstance(Broker broker,
+                                                        Map<String, Object> attributes,
+                                                        final boolean recovering)
     {
-        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
+        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(AuthenticationProvider.TYPE)))
         {
-            boolean useFullDN = Boolean.valueOf(String.valueOf(attributes.get(ATTRIBUTE_USE_FULL_DN)));
-
-            return new ExternalAuthenticationManager(useFullDN);
+            return new ExternalAuthenticationManager(broker, Collections.<String,Object>emptyMap(),attributes);
         }
         return null;
     }

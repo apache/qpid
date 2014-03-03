@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import javax.net.ssl.TrustManager;
 
+@ManagedObject
 public interface TrustStore<X extends TrustStore<X>> extends ConfiguredObject<X>
 {
     String DURABLE = "durable";

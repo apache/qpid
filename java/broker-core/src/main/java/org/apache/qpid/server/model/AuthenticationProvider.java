@@ -26,6 +26,7 @@ import java.util.Collections;
 
 import org.apache.qpid.server.security.SubjectCreator;
 
+@ManagedObject
 public interface AuthenticationProvider<X extends AuthenticationProvider<X>> extends ConfiguredObject<X>
 {
 

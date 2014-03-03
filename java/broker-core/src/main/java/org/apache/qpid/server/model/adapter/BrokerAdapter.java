@@ -45,13 +45,11 @@ import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.adapter.AuthenticationProviderAdapter.SimpleAuthenticationProviderAdapter;
 import org.apache.qpid.server.plugin.PreferencesProviderFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStoreCreator;
@@ -198,9 +196,12 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         _brokerStore = brokerStore;
         if (_brokerOptions.isManagementMode())
         {
-            AuthenticationManager authManager = new SimpleAuthenticationManager(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
-            _managementAuthenticationProvider = new SimpleAuthenticationProviderAdapter(UUID.randomUUID(), this,
-                    authManager, Collections.<String, Object> emptyMap(), Collections.<String> emptySet());
+            Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
+            authManagerAttrs.put(NAME,"MANAGEMENT_MODE_AUTHENTICATION");
+            authManagerAttrs.put(ID, UUID.randomUUID());
+            SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(this, Collections.<String,Object>emptyMap(), authManagerAttrs);
+            authManager.addUser(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
+            _managementAuthenticationProvider = authManager;
         }
     }
 

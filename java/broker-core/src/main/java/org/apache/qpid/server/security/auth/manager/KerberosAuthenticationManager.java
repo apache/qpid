@@ -21,6 +21,7 @@ package org.apache.qpid.server.security.auth.manager;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.Map;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
@@ -28,17 +29,24 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
-public class KerberosAuthenticationManager implements AuthenticationManager
+public class KerberosAuthenticationManager extends AbstractAuthenticationManager<KerberosAuthenticationManager>
 {
     private static final String GSSAPI_MECHANISM = "GSSAPI";
     private final CallbackHandler _callbackHandler = new GssApiCallbackHandler();
 
-    KerberosAuthenticationManager()
+    protected KerberosAuthenticationManager(final Broker broker,
+                                            final Map<String, Object> defaults,
+                                            final Map<String, Object> attributes)
     {
+        super(broker, defaults, attributes);
     }
+
 
     @Override
     public void initialise()
@@ -57,16 +65,8 @@ public class KerberosAuthenticationManager implements AuthenticationManager
     {
         if(GSSAPI_MECHANISM.equals(mechanism))
         {
-            try
-            {
             return Sasl.createSaslServer(GSSAPI_MECHANISM, "AMQP", localFQDN,
                                          new HashMap<String, Object>(), _callbackHandler);
-            }
-            catch (SaslException e)
-            {
-                e.printStackTrace(System.err);
-                throw e;
-            }
         }
         else
         {
@@ -110,13 +110,7 @@ public class KerberosAuthenticationManager implements AuthenticationManager
     }
 
     @Override
-    public void onCreate()
-    {
-        // nothing to do, no external resource is required
-    }
-
-    @Override
-    public void onDelete()
+    public void delete()
     {
         // nothing to do, no external resource is used
     }

@@ -27,19 +27,13 @@ import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.*;
 
-import org.apache.qpid.server.model.ConfigurationChangeListener;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedStatistic;
-import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.ChangeStateTask;
 import org.apache.qpid.server.configuration.updater.CreateChildTask;
 import org.apache.qpid.server.configuration.updater.SetAttributeTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -115,17 +109,28 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                        TaskExecutor taskExecutor, boolean filterAttributes)
 
     {
-        this(defaults, combineIdWithAttributes(id, attributes), taskExecutor, filterAttributes);
+        this(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>emptyMap(),
+             defaults, combineIdWithAttributes(id, attributes), taskExecutor, filterAttributes);
     }
 
     protected AbstractConfiguredObject(Map<String, Object> defaults,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor)
     {
-        this(defaults, attributes, taskExecutor, true);
+        this(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>emptyMap(),
+             defaults, attributes, taskExecutor, true);
     }
 
-    protected AbstractConfiguredObject(Map<String, Object> defaults,
+    protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
+                                       Map<String, Object> defaults,
+                                       Map<String, Object> attributes,
+                                       TaskExecutor taskExecutor)
+    {
+        this(parents, defaults, attributes, taskExecutor, true);
+    }
+
+    protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
+                                       Map<String, Object> defaults,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor,
                                        boolean filterAttributes)
@@ -134,6 +139,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         _id = (UUID)attributes.get(ID);
         _attributeTypes = getAttributeTypes(getClass());
         _automatedFields = getAutomatedFields(getClass());
+        for(Map.Entry<Class<? extends ConfiguredObject>, ConfiguredObject<?>> entry : parents.entrySet())
+        {
+            addParent((Class<ConfiguredObject>) entry.getKey(), entry.getValue());
+        }
         if (attributes != null)
         {
             Collection<String> names = getAttributeNames();
@@ -199,7 +208,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         try
         {
-            _automatedFields.get(name).set(this,_attributeTypes.get(name).convert(value));
+            final Attribute attribute = _attributeTypes.get(name);
+            _automatedFields.get(name).set(this, attribute.convert(value, this));
         }
         catch (IllegalAccessException e)
         {
@@ -739,20 +749,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             catch (IllegalAccessException e)
             {
                 Object o = configuredObject.getAttribute(_name);
-                return _converter.convert(o);
+                return _converter.convert(o, configuredObject);
             }
             catch (InvocationTargetException e)
             {
                 Object o = configuredObject.getAttribute(_name);
-                return _converter.convert(o);
+                return _converter.convert(o, configuredObject);
             }
 
-        }
-
-        public T getValue(Map<String, Object> attributeMap)
-        {
-            Object o = attributeMap.get(_name);
-            return _converter.convert(o);
         }
 
         public T get(final AbstractConfiguredObject<?> object)
@@ -802,47 +806,47 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             return _annotation;
         }
 
-        public T convert(final Object value)
+        public T convert(final Object value, C object)
         {
-            return _converter.convert(value);
+            return _converter.convert(value, object);
         }
     }
 
 
     private static interface Converter<T>
     {
-        T convert(Object o);
+        T convert(Object value, final ConfiguredObject object);
     }
 
     private static final Converter<String> STRING_CONVERTER = new Converter<String>()
     {
         @Override
-        public String convert(final Object o)
+        public String convert(final Object value, final ConfiguredObject object)
         {
-            return o == null ? null : o.toString();
+            return value == null ? null : value.toString();
         }
     };
 
     private static final Converter<UUID> UUID_CONVERTER = new Converter<UUID>()
     {
         @Override
-        public UUID convert(final Object o)
+        public UUID convert(final Object value, final ConfiguredObject object)
         {
-            if(o instanceof UUID)
+            if(value instanceof UUID)
             {
-                return (UUID)o;
+                return (UUID) value;
             }
-            else if(o instanceof String)
+            else if(value instanceof String)
             {
-                return UUID.fromString((String)o);
+                return UUID.fromString((String) value);
             }
-            else if(o == null)
+            else if(value == null)
             {
                 return null;
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to a UUID");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a UUID");
             }
         }
     };
@@ -851,27 +855,27 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
 
         @Override
-        public Long convert(final Object o)
+        public Long convert(final Object value, final ConfiguredObject object)
         {
-            if(o instanceof Long)
+            if(value instanceof Long)
             {
-                return (Long)o;
+                return (Long) value;
             }
-            else if(o instanceof Number)
+            else if(value instanceof Number)
             {
-                return ((Number)o).longValue();
+                return ((Number) value).longValue();
             }
-            else if(o instanceof String)
+            else if(value instanceof String)
             {
-                return Long.valueOf((String)o);
+                return Long.valueOf((String) value);
             }
-            else if(o == null)
+            else if(value == null)
             {
                 return null;
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to a Long");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Long");
             }
         }
     };
@@ -880,27 +884,27 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
 
         @Override
-        public Integer convert(final Object o)
+        public Integer convert(final Object value, final ConfiguredObject object)
         {
-            if(o instanceof Integer)
+            if(value instanceof Integer)
             {
-                return (Integer)o;
+                return (Integer) value;
             }
-            else if(o instanceof Number)
+            else if(value instanceof Number)
             {
-                return ((Number)o).intValue();
+                return ((Number) value).intValue();
             }
-            else if(o instanceof String)
+            else if(value instanceof String)
             {
-                return Integer.valueOf((String)o);
+                return Integer.valueOf((String) value);
             }
-            else if(o == null)
+            else if(value == null)
             {
                 return null;
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to an Integer");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to an Integer");
             }
         }
     };
@@ -909,23 +913,23 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
 
         @Override
-        public Boolean convert(final Object o)
+        public Boolean convert(final Object value, final ConfiguredObject object)
         {
-            if(o instanceof Boolean)
+            if(value instanceof Boolean)
             {
-                return (Boolean)o;
+                return (Boolean) value;
             }
-            else if(o instanceof String)
+            else if(value instanceof String)
             {
-                return Boolean.valueOf((String)o);
+                return Boolean.valueOf((String) value);
             }
-            else if(o == null)
+            else if(value == null)
             {
                 return null;
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to a Boolean");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Boolean");
             }
         }
     };
@@ -933,19 +937,19 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private static final Converter<List> LIST_CONVERTER = new Converter<List>()
     {
         @Override
-        public List convert(final Object o)
+        public List convert(final Object value, final ConfiguredObject object)
         {
-            if(o instanceof List)
+            if(value instanceof List)
             {
-                return (List)o;
+                return (List) value;
             }
-            else if(o == null)
+            else if(value == null)
             {
                 return null;
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to a List");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a List");
             }
         }
     };
@@ -953,19 +957,19 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private static final Converter<Collection> COLLECTION_CONVERTER = new Converter<Collection>()
     {
         @Override
-        public Collection convert(final Object o)
+        public Collection convert(final Object value, final ConfiguredObject object)
         {
-            if(o instanceof Collection)
+            if(value instanceof Collection)
             {
-                return (Collection)o;
+                return (Collection) value;
             }
-            else if(o == null)
+            else if(value == null)
             {
                 return null;
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to a List");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a List");
             }
         }
     };
@@ -973,19 +977,19 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private static final Converter<Map> MAP_CONVERTER = new Converter<Map>()
     {
         @Override
-        public Map convert(final Object o)
+        public Map convert(final Object value, final ConfiguredObject object)
         {
-            if(o instanceof Map)
+            if(value instanceof Map)
             {
-                return (Map)o;
+                return (Map) value;
             }
-            else if(o == null)
+            else if(value == null)
             {
                 return null;
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to a Map");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Map");
             }
         }
     };
@@ -1000,23 +1004,23 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
 
         @Override
-        public X convert(final Object o)
+        public X convert(final Object value, final ConfiguredObject object)
         {
-            if(o == null)
+            if(value == null)
             {
                 return null;
             }
-            else if(_klazz.isInstance(o))
+            else if(_klazz.isInstance(value))
             {
-                return (X) o;
+                return (X) value;
             }
-            else if(o instanceof String)
+            else if(value instanceof String)
             {
-                return Enum.valueOf(_klazz,(String)o);
+                return Enum.valueOf(_klazz,(String) value);
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to a " + _klazz.getName());
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a " + _klazz.getName());
             }
         }
     }
@@ -1031,22 +1035,54 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
 
         @Override
-        public X convert(final Object o)
+        public X convert(final Object value, final ConfiguredObject object)
         {
-            if(o == null)
+            if(value == null)
             {
                 return null;
             }
-            else if(_klazz.isInstance(o))
+            else if(_klazz.isInstance(value))
             {
-                return (X) o;
+                return (X) value;
             }
-            // TODO - traverse tree based on UUID
+            else if(value instanceof UUID)
+            {
+                Collection<X> reachable = getReachableObjects(object,_klazz);
+                for(X candidate : reachable)
+                {
+                    if(candidate.getId().equals(value))
+                    {
+                        return candidate;
+                    }
+                }
+                throw new IllegalArgumentException("Cannot find a " + _klazz.getName() + " with id " + value);
+            }
+            else if(value instanceof String)
+            {
+                Collection<X> reachable = getReachableObjects(object,_klazz);
+                for(X candidate : reachable)
+                {
+                    if(candidate.getName().equals(value))
+                    {
+                        return candidate;
+                    }
+                }
+                try
+                {
+                    UUID id = UUID.fromString((String)value);
+                    return convert(id, object);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IllegalArgumentException("Cannot find a " + _klazz.getSimpleName() + " with name '" + value + "'");
+                }
+            }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + o.getClass() + " to a " + _klazz.getName());
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a " + _klazz.getName());
             }
         }
+
     }
 
     private static <X> Converter<X> getConverter(final Class<X> type)
@@ -1452,4 +1488,142 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         return _allAutomatedFields.get(clazz);
     }
+
+    private static <X extends ConfiguredObject<X>> Collection<X> getReachableObjects(final ConfiguredObject<?> object,
+                                                                                     final Class<X> clazz)
+    {
+        Class<? extends ConfiguredObject> category = getCategory(object.getClass());
+        Class<? extends ConfiguredObject> ancestorClass = getAncestorClassWithGivenDescendant(category, clazz);
+        if(ancestorClass != null)
+        {
+            ConfiguredObject ancestor = getAncestor(ancestorClass, category, object);
+            if(ancestor != null)
+            {
+                return getAllDescendants(ancestor, ancestorClass, clazz);
+            }
+        }
+        return null;
+    }
+
+    private static <X extends ConfiguredObject<X>> Collection<X> getAllDescendants(final ConfiguredObject ancestor,
+                                                                                   final Class<? extends ConfiguredObject> ancestorClass,
+                                                                                   final Class<X> clazz)
+    {
+        Set<X> descendants = new HashSet<X>();
+        for(Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(ancestorClass))
+        {
+            Collection<? extends ConfiguredObject> children = ancestor.getChildren(childClass);
+            if(childClass == clazz)
+            {
+
+                if(children != null)
+                {
+                    descendants.addAll((Collection<X>)children);
+                }
+            }
+            else
+            {
+                if(children != null)
+                {
+                    for(ConfiguredObject child : children)
+                    {
+                        descendants.addAll(getAllDescendants(child, childClass, clazz));
+                    }
+                }
+            }
+        }
+        return descendants;
+    }
+
+    private static ConfiguredObject getAncestor(final Class<? extends ConfiguredObject> ancestorClass,
+                                                final Class<? extends ConfiguredObject> category,
+                                                final ConfiguredObject<?> object)
+    {
+        if(ancestorClass.isInstance(object))
+        {
+            return object;
+        }
+        else
+        {
+            for(Class<? extends ConfiguredObject> parentClass : Model.getInstance().getParentTypes(category))
+            {
+                ConfiguredObject parent = object.getParent(parentClass);
+                ConfiguredObject ancestor = getAncestor(ancestorClass, parentClass, parent);
+                if(ancestor != null)
+                {
+                    return ancestor;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Class<? extends ConfiguredObject> getAncestorClassWithGivenDescendant(
+            final Class<? extends ConfiguredObject> category,
+            final Class<? extends ConfiguredObject> descendantClass)
+    {
+        Model model = Model.getInstance();
+        Collection<Class<? extends ConfiguredObject>> candidateClasses =
+                Collections.<Class<? extends ConfiguredObject>>singleton(category);
+        while(!candidateClasses.isEmpty())
+        {
+            for(Class<? extends ConfiguredObject> candidate : candidateClasses)
+            {
+                if(hasDescendant(candidate, descendantClass))
+                {
+                    return candidate;
+                }
+            }
+            Set<Class<? extends ConfiguredObject>> previous = new HashSet<Class<? extends ConfiguredObject>>(candidateClasses);
+            candidateClasses = new HashSet<Class<? extends ConfiguredObject>>();
+            for(Class<? extends ConfiguredObject> prev : previous)
+            {
+                candidateClasses.addAll(model.getParentTypes(prev));
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasDescendant(final Class<? extends ConfiguredObject> candidate,
+                                         final Class<? extends ConfiguredObject> descendantClass)
+    {
+        int oldSize = 0;
+        Model model = Model.getInstance();
+
+        Set<Class<? extends ConfiguredObject>> allDescendants = new HashSet<Class<? extends ConfiguredObject>>(Collections.singleton(candidate));
+        while(allDescendants.size() > oldSize)
+        {
+            oldSize = allDescendants.size();
+            Set<Class<? extends ConfiguredObject>> prev = new HashSet<Class<? extends ConfiguredObject>>(allDescendants);
+            for(Class<? extends ConfiguredObject> clazz : prev)
+            {
+                allDescendants.addAll(model.getChildTypes(clazz));
+            }
+        }
+        return allDescendants.contains(descendantClass);
+    }
+
+    private static Class<? extends ConfiguredObject> getCategory(final Class<?> clazz)
+    {
+        ManagedObject annotation = clazz.getAnnotation(ManagedObject.class);
+        if(annotation != null && annotation.category())
+        {
+            return (Class<? extends ConfiguredObject>) clazz;
+        }
+        for(Class<?> iface : clazz.getInterfaces() )
+        {
+            Class<? extends ConfiguredObject> cat = getCategory(iface);
+            if(cat != null)
+            {
+                return cat;
+            }
+        }
+        if(clazz.getSuperclass() != null)
+        {
+            return getCategory(clazz.getSuperclass());
+        }
+        return null;
+    }
+
+
 }
