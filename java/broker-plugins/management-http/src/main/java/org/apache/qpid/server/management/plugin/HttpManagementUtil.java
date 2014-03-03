@@ -119,7 +119,6 @@ public class HttpManagementUtil
 
     public static void assertManagementAccess(final SecurityManager securityManager, Subject subject, LogActor actor)
     {
-        // TODO: We should eliminate SecurityManager.setThreadSubject in favour of Subject.doAs
         CurrentActor.set(actor);
         try
         {

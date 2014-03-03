@@ -325,7 +325,7 @@ public class SecurityManager implements ConfigurationChangeListener
 
     public void authoriseCreateConsumer(final Consumer consumer)
     {
-        // TODO
+        // TODO - remove cast to AMQQueue and allow testing of consumption from any MessageSource
         final AMQQueue queue = (AMQQueue) consumer.getMessageSource();
 
         if(!checkAllPlugins(new AccessCheck()
