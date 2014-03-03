@@ -84,7 +84,7 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 
     // TODO - this should either be a boolean or maybe an enum
     @ManagedAttribute
-    int getMessageGroupSharedGroups();
+    boolean isMessageGroupSharedGroups();
 
 
     @ManagedAttribute
@@ -130,18 +130,6 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     int delete();
 
     void setNotificationListener(QueueNotificationListener listener);
-
-    @ManagedStatistic
-    long getBytesIn();
-
-    @ManagedStatistic
-    long getBytesOut();
-
-    @ManagedStatistic
-    long getMessagesIn();
-
-    @ManagedStatistic
-    long getMessagesOut();
 
     @ManagedStatistic
     int getBindingCount();
