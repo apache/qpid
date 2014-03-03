@@ -46,12 +46,12 @@ using std::string;
 namespace qpid {
 namespace broker {
 
-Message::Message() : deliveryCount(-1), publisher(0), expiration(FAR_FUTURE), timestamp(0),
+Message::Message() : deliveryCount(-1), alreadyAcquired(false), publisher(0), expiration(FAR_FUTURE), timestamp(0),
                      isManagementMessage(false), replicationId(0)
 {}
 
 Message::Message(boost::intrusive_ptr<Encoding> e, boost::intrusive_ptr<PersistableMessage> p)
-    : encoding(e), persistentContext(p), deliveryCount(-1), publisher(0),
+    : encoding(e), persistentContext(p), deliveryCount(-1), alreadyAcquired(false), publisher(0),
       expiration(FAR_FUTURE), timestamp(0), isManagementMessage(false),
       replicationId(0)
 {
