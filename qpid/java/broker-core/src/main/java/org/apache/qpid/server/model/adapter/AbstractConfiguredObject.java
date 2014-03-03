@@ -909,6 +909,36 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     };
 
+
+    private static final Converter<Short> SHORT_CONVERTER = new Converter<Short>()
+    {
+
+        @Override
+        public Short convert(final Object value, final ConfiguredObject object)
+        {
+            if(value instanceof Short)
+            {
+                return (Short) value;
+            }
+            else if(value instanceof Number)
+            {
+                return ((Number) value).shortValue();
+            }
+            else if(value instanceof String)
+            {
+                return Short.valueOf((String) value);
+            }
+            else if(value == null)
+            {
+                return null;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to an Integer");
+            }
+        }
+    };
+
     private static final Converter<Boolean> BOOLEAN_CONVERTER = new Converter<Boolean>()
     {
 
@@ -1094,6 +1124,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         else if(type == Integer.class)
         {
             return (Converter<X>) INT_CONVERTER;
+        }
+        else if(type == Short.class)
+        {
+            return (Converter<X>) SHORT_CONVERTER;
         }
         else if(type == Long.class)
         {
