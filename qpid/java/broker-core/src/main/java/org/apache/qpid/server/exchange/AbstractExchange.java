@@ -198,7 +198,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             for(BindingImpl binding : bindings)
             {
                 binding.removeStateChangeListener(_bindingListener);
-                binding.delete();
+                removeBinding(binding);
             }
 
             if(_alternateExchange != null)
