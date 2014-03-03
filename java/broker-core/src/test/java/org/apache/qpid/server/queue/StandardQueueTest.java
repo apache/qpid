@@ -60,10 +60,6 @@ public class StandardQueueTest extends AbstractQueueTestBase
             assertTrue("Exception was not about missing vhost",
                        e.getMessage().contains("Host"));
         }
-        catch(NullPointerException e)
-        {
-
-        }
     }
 
 

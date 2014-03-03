@@ -53,8 +53,6 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.queues.maximumDeliveryCount",
-                                            "0");
         super.setUp();
         _connection = getConnection() ;
         _connection.start();
