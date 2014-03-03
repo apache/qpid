@@ -85,10 +85,11 @@ public:
     QPID_BROKER_EXTERN ~Message();
 
     bool isRedelivered() const { return deliveryCount > 0; }
-    void deliver() { ++deliveryCount; }
+    bool hasBeenAcquired() const { return alreadyAcquired; }
+    void deliver() { ++deliveryCount; alreadyAcquired |= (deliveryCount>0); }
     void undeliver() { --deliveryCount; }
     int getDeliveryCount() const { return deliveryCount; }
-    void resetDeliveryCount() { deliveryCount = -1; }
+    void resetDeliveryCount() { deliveryCount = -1; alreadyAcquired = false; }
 
     QPID_BROKER_EXTERN void setPublisher(const Connection& p);
     const Connection* getPublisher() const;
@@ -148,6 +149,7 @@ public:
     boost::intrusive_ptr<Encoding> encoding;
     boost::intrusive_ptr<PersistableMessage> persistentContext;
     int deliveryCount;
+    bool alreadyAcquired;
     const Connection* publisher;
     qpid::sys::AbsTime expiration;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;

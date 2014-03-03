@@ -51,7 +51,7 @@ uint32_t Header::getTtl() const
 
 bool Header::isFirstAcquirer() const
 {
-    return false;//TODO
+    return (!message.hasBeenAcquired());
 }
 
 uint32_t Header::getDeliveryCount() const
