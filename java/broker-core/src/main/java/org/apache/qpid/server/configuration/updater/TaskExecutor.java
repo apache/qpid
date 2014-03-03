@@ -96,16 +96,14 @@ public class TaskExecutor
             {
                 LOGGER.debug("Stopping task executor immediately");
                 List<Runnable> cancelledTasks = executor.shutdownNow();
-                if (cancelledTasks != null)
+                for (Runnable runnable : cancelledTasks)
                 {
-                    for (Runnable runnable : cancelledTasks)
+                    if (runnable instanceof RunnableFuture<?>)
                     {
-                        if (runnable instanceof RunnableFuture<?>)
-                        {
-                            ((RunnableFuture<?>) runnable).cancel(true);
-                        }
+                        ((RunnableFuture<?>) runnable).cancel(true);
                     }
                 }
+
                 _executor = null;
                 _taskThread = null;
                 LOGGER.debug("Task executor was stopped immediately. Number of unfinished tasks: " + cancelledTasks.size());
@@ -256,14 +254,14 @@ public class TaskExecutor
         }
     }
 
-    private class ImmediateFuture<T> implements Future<T>
+    private static class ImmediateFuture<T> implements Future<T>
     {
         private T _result;
 
         public ImmediateFuture(T result)
         {
             super();
-            this._result = result;
+            _result = result;
         }
 
         @Override

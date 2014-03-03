@@ -150,7 +150,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
 
     public void writerIdle()
     {
-        _connection.doHeartbeat();
+        _connection.doHeartBeat();
     }
 
     public void readerIdle()

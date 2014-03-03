@@ -25,6 +25,7 @@ package org.apache.qpid.amqp_1_0.type.messaging;
 
 
 
+import java.util.Arrays;
 import java.util.Map;
 
 
@@ -185,7 +186,7 @@ public class Target
             {
                 builder.append(',');
             }
-            builder.append("capabilities=").append(_capabilities);
+            builder.append("capabilities=").append(Arrays.toString(_capabilities));
         }
 
         builder.append('}');

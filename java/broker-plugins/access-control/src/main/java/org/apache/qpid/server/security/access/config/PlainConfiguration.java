@@ -148,7 +148,7 @@ public class PlainConfiguration extends AbstractConfiguration
                         {
                             if(StringUtils.equalsIgnoreCase("GROUP", first))
                             {
-                                throw new IllegalConfigurationException(String.format("GROUP keyword not supported. Groups should defined via a Group Provider, not in the ACL file.", getLine()));
+                                throw new IllegalConfigurationException(String.format("GROUP keyword not supported at line %d. Groups should defined via a Group Provider, not in the ACL file.", getLine()));
                             }
                             else if (StringUtils.equalsIgnoreCase(CONFIG, first))
                             {

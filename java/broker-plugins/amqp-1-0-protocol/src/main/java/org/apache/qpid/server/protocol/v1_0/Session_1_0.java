@@ -387,7 +387,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
 
             // TODO convert AMQP 1-0 node properties to queue attributes
 
-            final AMQQueue tempQueue = queue = getVirtualHost().createQueue(attributes);
+            queue = getVirtualHost().createQueue(attributes);
         }
         catch (AccessControlException e)
         {
@@ -449,7 +449,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         for(int i = 0; i < txnId.getLength(); i++)
         {
             id <<= 8;
-            id += data[i+txnId.getArrayOffset()];
+            id += ((int)data[i+txnId.getArrayOffset()] & 0xff);
         }
 
         return id;

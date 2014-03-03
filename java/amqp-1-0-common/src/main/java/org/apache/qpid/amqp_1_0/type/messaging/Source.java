@@ -25,6 +25,7 @@ package org.apache.qpid.amqp_1_0.type.messaging;
 
 
 
+import java.util.Arrays;
 import java.util.Map;
 
 
@@ -260,7 +261,7 @@ public class Source
             {
                 builder.append(',');
             }
-            builder.append("outcomes=").append(_outcomes);
+            builder.append("outcomes=").append(Arrays.toString(_outcomes));
         }
 
         if(_capabilities != null)
@@ -269,7 +270,7 @@ public class Source
             {
                 builder.append(',');
             }
-            builder.append("capabilities=").append(_capabilities);
+            builder.append("capabilities=").append(Arrays.toString(_capabilities));
         }
 
         builder.append('}');

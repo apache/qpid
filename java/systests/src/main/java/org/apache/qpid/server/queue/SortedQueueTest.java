@@ -49,9 +49,9 @@ public class SortedQueueTest extends QpidBrokerTestCase
 {
     private static final Logger LOGGER = Logger.getLogger(SortedQueueTest.class);
     public static final String TEST_SORT_KEY = "testSortKey";
-    private static final String VALUES[] = SortedQueueEntryListTest.keys.clone();
-    private static final String VALUES_SORTED[] = SortedQueueEntryListTest.keys.clone();
-    public final static String SUBSET_KEYS[] = { "000", "100", "200", "300", "400", "500", "600", "700", "800", "900" };
+    private static final String[] VALUES = SortedQueueEntryListTest.keys.clone();
+    private static final String[] VALUES_SORTED = SortedQueueEntryListTest.keys.clone();
+    private final String[] SUBSET_KEYS = { "000", "100", "200", "300", "400", "500", "600", "700", "800", "900" };
 
     private Connection _producerConnection;
     private Session _producerSession;
@@ -397,7 +397,7 @@ public class SortedQueueTest extends QpidBrokerTestCase
                 }
                 catch(Exception e)
                 {
-                    fail("Could not get connection");
+                    throw new RuntimeException("Could not get connection");
                 }
 
                 final Session session = conn.createSession((_sessionType == Session.SESSION_TRANSACTED ? true : false),

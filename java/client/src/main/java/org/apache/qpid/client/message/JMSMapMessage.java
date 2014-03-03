@@ -450,9 +450,9 @@ public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMe
 
     protected void populateMapFromData(ByteBuffer data) throws JMSException
     {
-        TypedBytesContentReader reader = new TypedBytesContentReader(data);
         if (data != null)
         {
+            TypedBytesContentReader reader = new TypedBytesContentReader(data);
             data.rewind();
 
             final int entries = reader.readIntImpl();

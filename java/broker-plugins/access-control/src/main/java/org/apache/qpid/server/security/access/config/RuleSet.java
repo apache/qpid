@@ -185,7 +185,6 @@ public class RuleSet
 
     public void addRule(Integer number, String identity, Permission permission, AclAction action)
     {
-        _cache.clear();
 
         if (!action.isAllowed())
         {
@@ -211,7 +210,7 @@ public class RuleSet
         }
 
         // save rule
-        _cache.remove(identity);
+        _cache.clear();
         _rules.put(rule.getNumber(), rule);
     }
 

@@ -27,6 +27,7 @@ package org.apache.qpid.amqp_1_0.type.transport;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 
 
+import java.util.Arrays;
 import java.util.Map;
 
 
@@ -195,7 +196,7 @@ public class Begin
             {
                 builder.append(',');
             }
-            builder.append("offeredCapabilities=").append(_offeredCapabilities);
+            builder.append("offeredCapabilities=").append(Arrays.toString(_offeredCapabilities));
         }
 
         if(_desiredCapabilities != null)
@@ -204,7 +205,7 @@ public class Begin
             {
                 builder.append(',');
             }
-            builder.append("desiredCapabilities=").append(_desiredCapabilities);
+            builder.append("desiredCapabilities=").append(Arrays.toString(_desiredCapabilities));
         }
 
         if(_properties != null)

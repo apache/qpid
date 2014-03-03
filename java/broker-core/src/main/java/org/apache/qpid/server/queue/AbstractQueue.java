@@ -2525,10 +2525,15 @@ public abstract class AbstractQueue
     }
 
     @Override
-    public synchronized void setExclusivityPolicy(final ExclusivityPolicy desiredPolicy)
+    public synchronized void setExclusivityPolicy(ExclusivityPolicy desiredPolicy)
             throws ExistingConsumerPreventsExclusive
     {
-        if(desiredPolicy != _exclusivityPolicy && !(desiredPolicy == null && _exclusivityPolicy == ExclusivityPolicy.NONE))
+        if(desiredPolicy == null)
+        {
+            desiredPolicy = ExclusivityPolicy.NONE;
+        }
+
+        if(desiredPolicy != _exclusivityPolicy)
         {
             switch(desiredPolicy)
             {

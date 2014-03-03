@@ -143,45 +143,45 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             addParent((Class<ConfiguredObject>) entry.getKey(), entry.getValue());
         }
-        if (attributes != null)
+
+        Collection<String> names = getAttributeNames();
+        if(names!=null)
         {
-            Collection<String> names = getAttributeNames();
-            if(names!=null)
+            if(filterAttributes)
             {
-                if(filterAttributes)
+                for (String name : names)
                 {
-                    for (String name : names)
+                    if (attributes.containsKey(name))
                     {
-                        if (attributes.containsKey(name))
+                        final Object value = attributes.get(name);
+                        if(value != null)
                         {
-                            final Object value = attributes.get(name);
-                            if(value != null)
-                            {
-                                _attributes.put(name, value);
-                            }
-                            if(_automatedFields.containsKey(name))
-                            {
-                                automatedSetValue(name, value);
-                            }
+                            _attributes.put(name, value);
                         }
-                    }
-                }
-                else
-                {
-                    for(Map.Entry<String, Object> entry : attributes.entrySet())
-                    {
-                        if(entry.getValue()!=null)
+                        if(_automatedFields.containsKey(name))
                         {
-                            _attributes.put(entry.getKey(),entry.getValue());
-                            if(_automatedFields.containsKey(entry.getKey()))
-                            {
-                                automatedSetValue(entry.getKey(), entry.getValue());
-                            }
+                            automatedSetValue(name, value);
                         }
                     }
                 }
             }
+            else
+            {
+                for(Map.Entry<String, Object> entry : attributes.entrySet())
+                {
+                    if(entry.getValue()!=null)
+                    {
+                        _attributes.put(entry.getKey(),entry.getValue());
+                        if(_automatedFields.containsKey(entry.getKey()))
+                        {
+                            automatedSetValue(entry.getKey(), entry.getValue());
+                        }
+                    }
+                }
+            }
+
         }
+
         if (defaults != null)
         {
             _defaultAttributes.putAll(defaults);
