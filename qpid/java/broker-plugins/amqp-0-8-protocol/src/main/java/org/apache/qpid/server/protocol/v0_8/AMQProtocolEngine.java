@@ -1159,6 +1159,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         }
 
         _authorizedSubject.getPrincipals().addAll(authorizedSubject.getPrincipals());
+        _authorizedSubject.getPrivateCredentials().addAll(authorizedSubject.getPrivateCredentials());
+        _authorizedSubject.getPublicCredentials().addAll(authorizedSubject.getPublicCredentials());
 
     }
 
