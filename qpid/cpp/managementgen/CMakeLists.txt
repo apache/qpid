@@ -16,19 +16,25 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-project(qpidc-qmfgen)
-cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
+option(INSTALL_QMFGEN "Install QMF-GEN and QMF Python site-packages" ON)
 
-find_package(PythonInterp REQUIRED)
+if (INSTALL_QMFGEN)
+    project(qpidc-qmfgen)
+    cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
 
-execute_process(COMMAND ${PYTHON_EXECUTABLE}
-                -c "from distutils.sysconfig import get_python_lib; print get_python_lib(False, prefix='${CMAKE_INSTALL_PREFIX}')"
-                OUTPUT_VARIABLE PYTHON_SITEARCH_PACKAGES
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+    find_package(PythonInterp REQUIRED)
 
-install(PROGRAMS qmf-gen DESTINATION ${QPID_INSTALL_BINDIR}
-        COMPONENT ${QPID_COMPONENT_QMF})
-install(DIRECTORY qmfgen
-        DESTINATION ${PYTHON_SITEARCH_PACKAGES}
-        COMPONENT ${QPID_COMPONENT_QMF}
-        PATTERN ".svn" EXCLUDE PATTERN "*.pyc" EXCLUDE)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE}
+                    -c "from distutils.sysconfig import get_python_lib; print get_python_lib(False, prefix='${CMAKE_INSTALL_PREFIX}').replace('\\\\', '/')"
+                    OUTPUT_VARIABLE PYTHON_SITEARCH_PACKAGES
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    install(PROGRAMS qmf-gen DESTINATION ${QPID_INSTALL_BINDIR}
+            COMPONENT ${QPID_COMPONENT_QMF})
+    install(DIRECTORY qmfgen
+            DESTINATION ${PYTHON_SITEARCH_PACKAGES}
+            COMPONENT ${QPID_COMPONENT_QMF}
+            PATTERN ".svn" EXCLUDE PATTERN "*.pyc" EXCLUDE)
+else (INSTALL_QMFGEN)
+    message (STATUS "Skipping installing qmf-gen and qmf python site-packages")
+endif (INSTALL_QMFGEN)
