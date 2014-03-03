@@ -2775,9 +2775,9 @@ public abstract class AbstractQueue
     }
 
     @Override
-    public int getMessageGroupSharedGroups()
+    public boolean isMessageGroupSharedGroups()
     {
-        return (Integer) getAttribute(MESSAGE_GROUP_SHARED_GROUPS);
+        return (Boolean) getAttribute(MESSAGE_GROUP_SHARED_GROUPS);
     }
 
 
@@ -2793,29 +2793,6 @@ public abstract class AbstractQueue
         return 0;
     }
 
-    @Override
-    public long getBytesIn()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getBytesOut()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getMessagesIn()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getMessagesOut()
-    {
-        return 0;
-    }
 
     @Override
     public String setName(final String currentName, final String desiredName)

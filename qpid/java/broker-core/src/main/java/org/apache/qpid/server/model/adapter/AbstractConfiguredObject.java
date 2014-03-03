@@ -934,7 +934,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to an Integer");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Short");
             }
         }
     };

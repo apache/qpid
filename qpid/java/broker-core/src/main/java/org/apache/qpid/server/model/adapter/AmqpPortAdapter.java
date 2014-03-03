@@ -202,33 +202,4 @@ public class AmqpPortAdapter extends PortAdapter<AmqpPortAdapter>
         return null;
     }
 
-    @Override
-    public boolean isTcpNoDelay()
-    {
-        return false;
-    }
-
-    @Override
-    public int getSendBufferSize()
-    {
-        return 0;
-    }
-
-    @Override
-    public int getReceiveBufferSize()
-    {
-        return 0;
-    }
-
-    @Override
-    public boolean getNeedClientAuth()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean getWantClientAuth()
-    {
-        return false;
-    }
 }
