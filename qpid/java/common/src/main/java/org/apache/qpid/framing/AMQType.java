@@ -596,22 +596,6 @@ public enum AMQType
             return EncodingUtils.encodedLongLength();
         }
 
-        public int getEncodingSize(long value)
-        {
-            return EncodingUtils.encodedLongLength();
-        }
-
-        public AMQTypedValue asTypedValue(long value)
-        {
-            return AMQTypedValue.createAMQTypedValue(value);
-        }
-
-        public void writeToBuffer(long value, DataOutput buffer) throws IOException
-        {
-            buffer.writeByte(identifier());
-            EncodingUtils.writeLong(buffer, value);
-        }
-
         public Object toNativeValue(Object value)
         {
             if (value instanceof Long)
@@ -645,12 +629,6 @@ public enum AMQType
         {
             EncodingUtils.writeLong(buffer, (Long) value);
         }
-
-        public long readLongFromBuffer(DataInput buffer) throws IOException
-        {
-            return EncodingUtils.readLong(buffer);
-        }
-
 
         public Object readValueFromBuffer(DataInput buffer) throws IOException
         {

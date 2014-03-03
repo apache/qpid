@@ -590,10 +590,9 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         super.setLocalAddress(localAddress);
     }
 
-    public void doHeartbeat()
+    public void doHeartBeat()
     {
         super.doHeartBeat();
-
     }
 
     @Override

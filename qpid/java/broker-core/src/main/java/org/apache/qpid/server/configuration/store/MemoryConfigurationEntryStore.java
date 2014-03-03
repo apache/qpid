@@ -302,17 +302,15 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         {
             if (is != null)
             {
-                if (is != null)
+                try
                 {
-                    try
-                    {
-                        is.close();
-                    }
-                    catch (IOException e)
-                    {
-                        throw new IllegalConfigurationException("Cannot close input stream for: " + url, e);
-                    }
+                    is.close();
                 }
+                catch (IOException e)
+                {
+                    throw new IllegalConfigurationException("Cannot close input stream for: " + url, e);
+                }
+
             }
         }
     }

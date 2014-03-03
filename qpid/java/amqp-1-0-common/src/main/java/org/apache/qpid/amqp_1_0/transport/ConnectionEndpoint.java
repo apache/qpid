@@ -424,6 +424,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 case AWAITING_OPEN:
                 case CLOSE_SENT:
                     _state = ConnectionState.CLOSED;
+                    break;
                 case OPEN:
                     _state = ConnectionState.CLOSE_RECEIVED;
                 case CLOSED:
@@ -1060,7 +1061,6 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     public boolean isClosed()
     {
         return _state == ConnectionState.CLOSED
-               || _state == ConnectionState.CLOSE_RECEIVED
                || _state == ConnectionState.CLOSE_RECEIVED;
     }
 

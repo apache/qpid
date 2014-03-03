@@ -60,6 +60,11 @@ final class BinaryString
 
     public final boolean equals(Object o)
     {
+        if(!(o instanceof BinaryString))
+        {
+            return false;
+        }
+
         BinaryString buf = (BinaryString) o;
         final int size = _size;
         if (size != buf._size)

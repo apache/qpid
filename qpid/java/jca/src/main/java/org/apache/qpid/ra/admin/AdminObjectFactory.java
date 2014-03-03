@@ -38,9 +38,6 @@ public class AdminObjectFactory implements ObjectFactory
     @Override
     public Object getObjectInstance(Object object, Name name, Context context, Hashtable<?, ?> env) throws Exception
     {
-
-        Object instance = null;
-
         if (object instanceof Reference)
         {
             Reference ref = (Reference) object;
@@ -49,10 +46,10 @@ public class AdminObjectFactory implements ObjectFactory
             if (ref.getClassName().equals(QpidQueueImpl.class.getName()))
             {
                 RefAddr addr = ref.get(QpidQueueImpl.class.getName());
-                bindingURLString = (String) addr.getContent();
-
                 if (addr != null)
                 {
+                    bindingURLString = (String) addr.getContent();
+
                     return new QpidQueueImpl(bindingURLString);
                 }
 
@@ -61,14 +58,14 @@ public class AdminObjectFactory implements ObjectFactory
             if (ref.getClassName().equals(QpidTopicImpl.class.getName()))
             {
                 RefAddr addr = ref.get(QpidTopicImpl.class.getName());
-                bindingURLString = (String) addr.getContent();
 
                 if (addr != null)
                 {
+                    bindingURLString = (String) addr.getContent();
                     return new QpidTopicImpl(bindingURLString);
                 }
             }
         }
-        return instance;
+        return null;
     }
 }

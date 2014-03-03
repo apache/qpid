@@ -422,7 +422,7 @@ public class Session
                         if(m != null)
                             return m;
                     }
-                    wait();
+                    getEndpoint().getLock().wait();
                 }
                 catch (InterruptedException e)
                 {

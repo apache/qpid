@@ -111,7 +111,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
                 else if (_quiescedEntries.containsKey(id))
                 {
                     // save entry with the original state
-                    entry = createEntryWithState(entry, _quiescedEntries.get(ATTRIBUTE_STATE));
+                    entry = createEntryWithState(entry, _quiescedEntries.get(id));
                 }
                 else if (_rootId.equals(id))
                 {
@@ -119,7 +119,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
                     Set<UUID> childrenIds = new HashSet<UUID>(entry.getChildrenIds());
                     if (!_cliEntries.isEmpty())
                     {
-                        childrenIds.removeAll(_cliEntries.entrySet());
+                        childrenIds.removeAll(_cliEntries.keySet());
                     }
                     HashMap<String, Object> attributes = new HashMap<String, Object>(entry.getAttributes());
                     entry = new ConfigurationEntry(entry.getId(), entry.getType(), attributes, childrenIds, this);

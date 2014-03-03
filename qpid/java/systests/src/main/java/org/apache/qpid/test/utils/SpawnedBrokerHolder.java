@@ -99,11 +99,11 @@ public class SpawnedBrokerHolder implements BrokerHolder
                 {
                     String processIdStr = line.substring(processIdOffset);
                     processIdStr = processIdStr.substring(0, processIdStr.indexOf(' '));
-                    processIdStr.trim();
+                    processIdStr = processIdStr.trim();
 
                     String parentProcessIdStr = line.substring(parentProcessIdOffset);
                     parentProcessIdStr = parentProcessIdStr.substring(0, parentProcessIdStr.indexOf(' '));
-                    parentProcessIdStr.trim();
+                    parentProcessIdStr = parentProcessIdStr.trim();
                     if(parentProcessIdStr.length() > 0 && (parentProcess == null || parentProcess.equals(parentProcessIdStr)))
                     {
                         List<String> children = parentProcessMap.get(parentProcessIdStr);

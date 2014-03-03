@@ -204,7 +204,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
 
         ByteBuffer data = message.getData();
-        messageProps.setContentLength(data.remaining());
+        messageProps.setContentLength(data == null ? 0 : data.remaining());
 
         // send the message
         try

@@ -316,10 +316,7 @@ public class ClientJmsDelegate
             {
                 _controllerSession.close();
             }
-            if (_controllerConnection != null)
-            {
-                _controllerConnection.close();
-            }
+            _controllerConnection.close();
 
         }
         catch (final JMSException jmse)
