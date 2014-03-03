@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+@ManagedObject
 public interface Publisher<X extends Publisher<X>> extends ConfiguredObject<X>
 {
 }

@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
+@ManagedObject
 public interface GroupProvider<X extends GroupProvider<X>> extends ConfiguredObject<X>
 {
     public static final String DESCRIPTION = "description";

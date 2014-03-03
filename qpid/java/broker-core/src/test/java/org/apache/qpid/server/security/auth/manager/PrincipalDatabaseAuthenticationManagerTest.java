@@ -28,8 +28,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.security.Principal;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslException;
@@ -37,12 +40,13 @@ import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
@@ -91,15 +95,32 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
         when(_principalDatabase.getMechanisms()).thenReturn(MOCK_MECH_NAME);
         when(_principalDatabase.createSaslServer(MOCK_MECH_NAME, LOCALHOST, null)).thenReturn(new MySaslServer(false, true));
 
-        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
+        setupManager(false);
+
         _manager.initialise();
+    }
+
+    private void setupManager(final boolean recovering)
+    {
+        Map<String,Object> attrs = new HashMap<String, Object>();
+        attrs.put(ConfiguredObject.ID, UUID.randomUUID());
+        attrs.put(ConfiguredObject.NAME, getTestName());
+        attrs.put("path", _passwordFileLocation);
+        _manager = new PrincipalDatabaseAuthenticationManager(mock(Broker.class), Collections.<String,Object>emptyMap(), attrs, recovering)
+        {
+            @Override
+            protected PrincipalDatabase createDatabase()
+            {
+                return _principalDatabase;
+            }
+
+        };
     }
 
     public void testInitialiseWhenPasswordFileNotFound() throws Exception
     {
         _principalDatabase = new PlainPasswordFilePrincipalDatabase();
-        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
-
+        setupManager(true);
         try
         {
             _manager.initialise();
@@ -114,7 +135,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
     public void testInitialiseWhenPasswordFileExists() throws Exception
     {
         _principalDatabase = new PlainPasswordFilePrincipalDatabase();
-        _manager = new PrincipalDatabaseAuthenticationManager(_principalDatabase, _passwordFileLocation);
+        setupManager(true);
 
         File f = new File(_passwordFileLocation);
         f.createNewFile();
@@ -230,7 +251,6 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
     {
         setupMocks();
 
-        _manager.onCreate();
         assertTrue("Password file was not created", new File(_passwordFileLocation).exists());
     }
 
@@ -238,10 +258,9 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
     {
         setupMocks();
 
-        _manager.onCreate();
         assertTrue("Password file was not created", new File(_passwordFileLocation).exists());
 
-        _manager.onDelete();
+        _manager.delete();
         assertFalse("Password file was not deleted", new File(_passwordFileLocation).exists());
     }
 

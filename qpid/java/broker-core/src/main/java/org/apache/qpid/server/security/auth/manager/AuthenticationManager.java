@@ -83,12 +83,7 @@ public interface AuthenticationManager extends Closeable
     AuthenticationResult authenticate(String username, String password);
 
     /**
-     * Called after manager creation to create the required resources, for example, user databases etc.
+     * Called before manager deletion to release and clean the resources.
      */
-    void onCreate();
-
-    /**
-     * Called before manager deletion to release and clean the resources created in {@link #onCreate()}.
-     */
-    void onDelete();
+    void delete();
 }

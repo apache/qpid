@@ -45,7 +45,6 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -349,7 +348,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
 
         Map<String, Object> externalAuthProviderAttributes = new HashMap<String, Object>();
         externalAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
-        externalAuthProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
+        externalAuthProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
         config.addAuthenticationProviderConfiguration(externalAuthProviderAttributes);
 
         config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);

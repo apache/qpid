@@ -21,16 +21,35 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
+import static org.mockito.Mockito.mock;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.test.utils.QpidTestCase;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public class AnonymousAuthenticationManagerTest extends QpidTestCase
 {
-    private AuthenticationManager _manager = new AnonymousAuthenticationManager();
+    private AuthenticationManager _manager;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        Map<String,Object> attrs = new HashMap<String, Object>();
+        attrs.put(AuthenticationProvider.ID, UUID.randomUUID());
+        attrs.put(AuthenticationProvider.NAME, getTestName());
+        _manager = new AnonymousAuthenticationManager(mock(Broker.class), Collections.<String,Object>emptyMap(), attrs);
+
+    }
 
     public void tearDown() throws Exception
     {

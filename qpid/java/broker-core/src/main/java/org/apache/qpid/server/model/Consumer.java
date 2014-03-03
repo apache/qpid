@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+@ManagedObject
 public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
 {
     public String DISTRIBUTION_MODE = "distributionMode";

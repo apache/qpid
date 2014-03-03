@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import javax.net.ssl.KeyManager;
 
+@ManagedObject
 public interface KeyStore<X extends KeyStore<X>> extends ConfiguredObject<X>
 {
     String DURABLE = "durable";

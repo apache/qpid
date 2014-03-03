@@ -36,28 +36,33 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
 
-public class SimpleAuthenticationManager implements AuthenticationManager
+public class SimpleAuthenticationManager extends AbstractAuthenticationManager<SimpleAuthenticationManager>
 {
     private static final Logger _logger = Logger.getLogger(SimpleAuthenticationManager.class);
 
     private static final String PLAIN_MECHANISM = "PLAIN";
     private static final String CRAM_MD5_MECHANISM = "CRAM-MD5";
 
-    private Map<String, String> _users;
+    private final Map<String, String> _users = Collections.synchronizedMap(new HashMap<String, String>());
 
-    public SimpleAuthenticationManager(String userName, String userPassword)
+    public SimpleAuthenticationManager(final Broker broker,
+                                          final Map<String, Object> defaults,
+                                          final Map<String, Object> attributes)
     {
-        this(Collections.singletonMap(userName, userPassword));
+        super(broker, defaults, attributes);
     }
 
-    public SimpleAuthenticationManager(Map<String, String> users)
+
+    public void addUser(String username, String password)
     {
-        _users = new HashMap<String, String>(users);
+        _users.put(username, password);
     }
 
     @Override
@@ -134,13 +139,7 @@ public class SimpleAuthenticationManager implements AuthenticationManager
     }
 
     @Override
-    public void onCreate()
-    {
-        // nothing to do, no external resource is required
-    }
-
-    @Override
-    public void onDelete()
+    public void delete()
     {
         // nothing to do, no external resource is used
     }

@@ -21,13 +21,11 @@ package org.apache.qpid.server.plugin;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AbstractAuthenticationManager;
 
 public interface AuthenticationManagerFactory extends Pluggable
 {
-    public static final String ATTRIBUTE_TYPE = AuthenticationProvider.TYPE;
 
     /**
      * Returns the authentication provider type
@@ -37,17 +35,21 @@ public interface AuthenticationManagerFactory extends Pluggable
 
     /**
      * Creates authentication manager from the provided attributes
+     *
      * @param broker
      *            broker model object
      * @param attributes
      *            attributes to create authentication manager
      *
+     * @param recovering
      * @return authentication manager instance
      */
-    AuthenticationManager createInstance(Broker broker, Map<String, Object> attributes);
+    AbstractAuthenticationManager createInstance(Broker broker,
+                                                 Map<String, Object> attributes,
+                                                 final boolean recovering);
 
     /**
-     * Get the names of attributes the authentication manager which can be passed into {@link #createInstance(Broker, Map)} to create the
+     * Get the names of attributes the authentication manager which can be passed into {@link #createInstance(org.apache.qpid.server.model.Broker, java.util.Map, boolean)} to create the
      * authentication manager
      *
      * @return the collection of attribute names

@@ -35,7 +35,6 @@ import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -76,7 +75,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
     {
         super.customizeConfiguration();
         Map<String, Object> anonymousAuthProviderAttributes = new HashMap<String, Object>();
-        anonymousAuthProviderAttributes.put(AuthenticationManagerFactory.ATTRIBUTE_TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        anonymousAuthProviderAttributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
         anonymousAuthProviderAttributes.put(AuthenticationProvider.NAME,  TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "-2");
         anonymousAuthProviderAttributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, _authenticationProviderFile.getAbsolutePath());
         getBrokerConfiguration().addAuthenticationProviderConfiguration(anonymousAuthProviderAttributes);

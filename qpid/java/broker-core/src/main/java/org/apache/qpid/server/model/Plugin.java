@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+@ManagedObject
 public interface Plugin<X extends Plugin<X>> extends ConfiguredObject<X>
 {
     //Hack, using it for the class name only for consistency with the other things.

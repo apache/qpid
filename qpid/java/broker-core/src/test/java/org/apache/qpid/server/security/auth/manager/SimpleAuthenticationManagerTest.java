@@ -21,16 +21,24 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.security.Principal;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.sasl.SaslUtil;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import static org.mockito.Mockito.mock;
 
 public class SimpleAuthenticationManagerTest extends QpidTestCase
 {
@@ -41,7 +49,13 @@ public class SimpleAuthenticationManagerTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _authenticationManager = new SimpleAuthenticationManager(TEST_USER, TEST_PASSWORD);
+        Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
+        authManagerAttrs.put(AuthenticationProvider.NAME,"MANAGEMENT_MODE_AUTHENTICATION");
+        authManagerAttrs.put(AuthenticationProvider.ID, UUID.randomUUID());
+        final SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(mock(Broker.class), Collections.<String,Object>emptyMap(),authManagerAttrs);
+        authManager.addUser(TEST_USER, TEST_PASSWORD);
+        _authenticationManager = authManager;
+
     }
 
     public void testGetMechanisms()

@@ -23,6 +23,7 @@ package org.apache.qpid.server.model;
 import java.security.AccessControlException;
 import java.util.Collection;
 
+@ManagedObject
 public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 {
     String DURABLE                              = "durable";

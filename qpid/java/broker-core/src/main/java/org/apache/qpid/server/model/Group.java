@@ -19,6 +19,7 @@
  */
 package org.apache.qpid.server.model;
 
+@ManagedObject
 public interface Group<X extends Group<X>> extends ConfiguredObject<X>
 {
     String DURABLE         = "durable";

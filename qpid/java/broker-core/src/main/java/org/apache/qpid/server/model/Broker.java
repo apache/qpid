@@ -32,6 +32,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
+@ManagedObject
 public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
 {
 

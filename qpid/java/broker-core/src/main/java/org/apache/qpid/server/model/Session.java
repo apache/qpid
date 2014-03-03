@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+@ManagedObject
 public interface Session<X extends Session<X>> extends ConfiguredObject<X>
 {
     public static final String STATE = "state";
