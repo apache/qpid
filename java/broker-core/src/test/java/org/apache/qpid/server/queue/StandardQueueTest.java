@@ -43,26 +43,6 @@ import static org.mockito.Mockito.mock;
 public class StandardQueueTest extends AbstractQueueTestBase
 {
 
-    public void testCreationFailsWithNoVhost()
-    {
-        try
-        {
-            Map<String,Object> queueAttributes = new HashMap<String, Object>();
-            queueAttributes.put(Queue.ID, UUID.randomUUID());
-            queueAttributes.put(Queue.NAME, "testActiveConsumerCount");
-            queueAttributes.put(Queue.OWNER, "testOwner");
-
-            setQueue(new StandardQueue(null, queueAttributes));
-            assertNull("Queue was created", getQueue());
-        }
-        catch (IllegalArgumentException e)
-        {
-            assertTrue("Exception was not about missing vhost",
-                       e.getMessage().contains("Host"));
-        }
-    }
-
-
     public void testAutoDeleteQueue() throws Exception
     {
         getQueue().stop();
