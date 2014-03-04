@@ -49,6 +49,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -70,10 +71,15 @@ public class SimpleLDAPAuthenticationManager extends AbstractAuthenticationManag
      */
     private static final String JAVA_NAMING_LDAP_FACTORY_SOCKET = "java.naming.ldap.factory.socket";
 
+    @ManagedAttributeField
     private String _providerUrl;
+    @ManagedAttributeField
     private String _providerAuthUrl;
+    @ManagedAttributeField
     private String _searchContext;
+    @ManagedAttributeField
     private String _searchFilter;
+    @ManagedAttributeField
     private String _ldapContextFactory;
 
 
@@ -81,6 +87,7 @@ public class SimpleLDAPAuthenticationManager extends AbstractAuthenticationManag
      * Trust store - typically used when the Directory has been secured with a certificate signed by a
      * private CA (or self-signed certificate).
      */
+    @ManagedAttributeField
     private TrustStore _trustStore;
 
     /**

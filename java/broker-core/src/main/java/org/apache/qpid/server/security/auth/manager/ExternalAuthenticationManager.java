@@ -27,6 +27,7 @@ import javax.security.sasl.SaslServer;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.external.ExternalSaslServer;
@@ -35,6 +36,7 @@ public class ExternalAuthenticationManager extends AbstractAuthenticationManager
 {
     private static final String EXTERNAL = "EXTERNAL";
 
+    @ManagedAttributeField
     private boolean _useFullDN;
 
     protected ExternalAuthenticationManager(final Broker broker,

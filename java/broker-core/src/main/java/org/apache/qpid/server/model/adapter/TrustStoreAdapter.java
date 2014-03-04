@@ -44,6 +44,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.IntegrityViolationException;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.TrustStore;
@@ -74,10 +75,13 @@ public class TrustStoreAdapter extends AbstractKeyStoreAdapter<TrustStoreAdapter
         put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, TrustManagerFactory.getDefaultAlgorithm());
     }});
 
-
+    @ManagedAttributeField
     private String _trustStoreType;
+    @ManagedAttributeField
     private String _trustManagerFactoryAlgorithm;
+    @ManagedAttributeField
     private String _path;
+    @ManagedAttributeField
     private boolean _peersOnly;
 
 

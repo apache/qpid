@@ -36,6 +36,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -99,11 +100,17 @@ class QueueConsumerImpl
             CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));
         }
     };
+    @ManagedAttributeField
     private boolean _durable;
+    @ManagedAttributeField
     private boolean _exclusive;
+    @ManagedAttributeField
     private boolean _noLocal;
+    @ManagedAttributeField
     private String _distributionMode;
+    @ManagedAttributeField
     private String _settlementMode;
+    @ManagedAttributeField
     private String _selector;
 
     QueueConsumerImpl(final AbstractQueue queue,

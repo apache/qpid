@@ -43,6 +43,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     private AMQSessionModel _session;
     private Map<Consumer, QueueConsumer> _consumerAdapters = new HashMap<Consumer, QueueConsumer>();
 
+    @ManagedAttributeField
     private int _channelId;
 
     public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)

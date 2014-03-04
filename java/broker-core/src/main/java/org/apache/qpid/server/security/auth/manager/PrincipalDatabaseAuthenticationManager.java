@@ -56,6 +56,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
 
 
     private final PrincipalDatabase _principalDatabase;
+    @ManagedAttributeField
     private String _path;
 
     protected PrincipalDatabaseAuthenticationManager(final Broker broker,
