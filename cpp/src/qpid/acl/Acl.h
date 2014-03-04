@@ -115,6 +115,7 @@ private:
         const std::string& name);
     bool readAclFile(std::string& errorText);
     bool readAclFile(std::string& aclFile, std::string& errorText);
+    void loadEmptyAclRuleset();
     Manageable::status_t lookup       (management::Args& args, std::string& text);
     Manageable::status_t lookupPublish(management::Args& args, std::string& text);
     virtual qpid::management::ManagementObject::shared_ptr GetManagementObject(void) const;
