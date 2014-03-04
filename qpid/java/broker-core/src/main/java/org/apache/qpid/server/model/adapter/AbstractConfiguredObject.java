@@ -23,6 +23,7 @@ package org.apache.qpid.server.model.adapter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.*;
@@ -78,12 +79,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private final Collection<ConfigurationChangeListener> _changeListeners =
             new ArrayList<ConfigurationChangeListener>();
 
+    @ManagedAttributeField
     private final UUID _id;
+
     private final Map<String, Object> _defaultAttributes = new HashMap<String, Object>();
     private final TaskExecutor _taskExecutor;
     private final long _createdTime;
     private final String _createdBy;
 
+    @ManagedAttributeField
     private String _name;
 
     private final Map<String, Attribute<?,?>> _attributeTypes;
@@ -348,10 +352,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public Object getAttribute(String name)
     {
-        Attribute<?,?> attr = _attributeTypes.get(name);
+        Attribute<X,?> attr = (Attribute<X, ?>) _attributeTypes.get(name);
         if(attr != null && attr.getAnnotation().automate())
         {
-            Object value = attr.get(this);
+            Object value = attr.getValue((X)this);
             if(value != null && attr.getAnnotation().secure() &&
                !SecurityManager.SYSTEM.equals(Subject.getSubject(AccessController.getContext())))
             {
@@ -759,21 +763,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         }
 
-        public T get(final AbstractConfiguredObject<?> object)
-        {
-            try
-            {
-                return (T) _getter.invoke(object);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to access attribute " + getName() + " on configuredObject type " + object.getClass().getName(), e);
-            }
-            catch (InvocationTargetException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to access attribute " + getName() + " on configuredObject type " + object.getClass().getName(), e);
-            }
-        }
     }
 
     private static final class Statistic<C extends ConfiguredObject, T extends Number> extends AttributeOrStatistic<C,T>
@@ -1347,13 +1336,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private static Field findField(final Attribute<?, ?> attr, Class<?> clazz)
+    private static Field findField(final Attribute<?, ?> attr, Class<?> objClass)
     {
+        Class<?> clazz = objClass;
         while(clazz != null)
         {
             for(Field field : clazz.getDeclaredFields())
             {
-                if(field.getName().equals("_" + attr.getName()))
+                if(field.getAnnotation(ManagedAttributeField.class) != null && field.getName().equals("_" + attr.getName().replace('.','_')))
                 {
                     field.setAccessible(true);
                     return field;
@@ -1361,7 +1351,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             clazz = clazz.getSuperclass();
         }
-        return null;
+        if(objClass.isInterface() || Modifier.isAbstract(objClass.getModifiers()))
+        {
+            return null;
+        }
+        throw new ServerScopedRuntimeException("Unable to find field definition for automated field " + attr.getName() + " in class " + objClass.getName());
     }
 
     private static String getName(final Method m, final Class<?> type)

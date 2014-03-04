@@ -43,6 +43,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.SecurityManager;
@@ -64,9 +65,13 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> im
         put(KEY_MANAGER_FACTORY_ALGORITHM, String.class);
     }});
 
+    @ManagedAttributeField
     private String _keyStoreType;
+    @ManagedAttributeField
     private String _certificateAlias;
+    @ManagedAttributeField
     private String _keyManagerFactoryAlgorithm;
+    @ManagedAttributeField
     private String _path;
 
     @SuppressWarnings("serial")

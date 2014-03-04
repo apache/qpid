@@ -38,14 +38,23 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
             new HashMap<AMQSessionModel, SessionAdapter>();
 
+    @ManagedAttributeField
     private String _remoteAddress;
+    @ManagedAttributeField
     private String _localAddress;
+    @ManagedAttributeField
     private String _clientId;
+    @ManagedAttributeField
     private String _clientVersion;
+    @ManagedAttributeField
     private boolean _incoming;
+    @ManagedAttributeField
     private Transport _transport;
+    @ManagedAttributeField
     private Port _port;
+    @ManagedAttributeField
     private String _remoteProcessName;
+    @ManagedAttributeField
     private String _remoteProcessPid;
 
     public ConnectionAdapter(final AMQConnectionModel conn, TaskExecutor taskExecutor)

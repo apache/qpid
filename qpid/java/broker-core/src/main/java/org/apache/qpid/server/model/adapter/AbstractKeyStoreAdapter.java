@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.SecurityManager;
@@ -44,6 +45,7 @@ public abstract class AbstractKeyStoreAdapter<X extends ConfiguredObject<X>> ext
     public static final String DUMMY_PASSWORD_MASK = "********";
     public static final String DEFAULT_KEYSTORE_TYPE = java.security.KeyStore.getDefaultType();
 
+    @ManagedAttributeField
     private String _password;
 
 
