@@ -71,11 +71,11 @@ struct AclPlugin : public Plugin {
 	  sys::Path dataDir(b.getDataDir().getPath());
 	  if (!aclFile.isAbsolute() && !dataDir.empty())
             values.aclFile =  (dataDir + aclFile).str();
-	}
 
-        acl = new Acl(values, b);
-        b.setAcl(acl.get());
-        b.addFinalizer(boost::bind(&AclPlugin::shutdown, this));
+          acl = new Acl(values, b);
+	  b.setAcl(acl.get());
+	  b.addFinalizer(boost::bind(&AclPlugin::shutdown, this));
+	}
     }
 
     template <class T> bool init(Plugin::Target& target) {
