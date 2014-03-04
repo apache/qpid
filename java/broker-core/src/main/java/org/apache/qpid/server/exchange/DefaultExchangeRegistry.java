@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -46,9 +47,9 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     /**
      * Maps from exchange name to exchange instance
      */
-    private ConcurrentMap<String, ExchangeImpl> _exchangeMap = new ConcurrentHashMap<String, ExchangeImpl>();
+    private ConcurrentMap<String, ExchangeImpl<?>> _exchangeMap = new ConcurrentHashMap<String, ExchangeImpl<?>>();
 
-    private ExchangeImpl _defaultExchange;
+    private MessageDestination _defaultExchange;
 
     private final VirtualHost _host;
     private final QueueRegistry _queueRegistry;
@@ -68,9 +69,8 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         initialiseExchanges(exchangeFactory, getDurableConfigurationStore());
 
         _defaultExchange =
-                new DefaultExchange(_host, _queueRegistry,
-                                    UUIDGenerator.generateExchangeUUID(ExchangeDefaults.DEFAULT_EXCHANGE_NAME,
-                                                                       _host.getName()));
+                new DefaultDestination(_host
+                );
 
 
     }
@@ -96,7 +96,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
                 attributes.put(org.apache.qpid.server.model.Exchange.NAME, name);
                 attributes.put(org.apache.qpid.server.model.Exchange.TYPE, type);
                 attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
-                ExchangeImpl exchange = f.createExchange(attributes);
+                ExchangeImpl<?> exchange = f.createExchange(attributes);
                 registerExchange(exchange);
                 if(exchange.isDurable())
                 {
@@ -135,7 +135,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
     }
 
-    public ExchangeImpl getDefaultExchange()
+    public MessageDestination getDefaultExchange()
     {
         return _defaultExchange;
     }
@@ -170,17 +170,9 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     }
 
-    public Collection<ExchangeImpl> getExchanges()
+    public Collection<ExchangeImpl<?>> getExchanges()
     {
-        return new ArrayList<ExchangeImpl>(_exchangeMap.values());
-    }
-
-    @Override
-    public Collection<NonDefaultExchange> getExchangesExceptDefault()
-    {
-        Collection allExchanges = getExchanges();
-        allExchanges.remove(_defaultExchange);
-        return allExchanges;
+        return new ArrayList<ExchangeImpl<?>>(_exchangeMap.values());
     }
 
     public void addRegistryChangeListener(RegistryChangeListener listener)
@@ -188,22 +180,15 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _listeners.add(listener);
     }
 
-    public ExchangeImpl getExchange(String name)
+    public ExchangeImpl<?> getExchange(String name)
     {
-        if ((name == null) || name.length() == 0)
-        {
-            return getDefaultExchange();
-        }
-        else
-        {
-            return _exchangeMap.get(name);
-        }
+        return _exchangeMap.get(name);
     }
 
     @Override
     public void clearAndUnregisterMbeans()
     {
-        for (final ExchangeImpl exchange : getExchanges())
+        for (final ExchangeImpl<?> exchange : getExchanges())
         {
             //TODO: this is a bit of a hack, what if the listeners aren't aware
             //that we are just unregistering the MBean because of HA, and aren't
@@ -220,24 +205,18 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     }
 
     @Override
-    public synchronized ExchangeImpl getExchange(UUID exchangeId)
+    public synchronized ExchangeImpl<?> getExchange(UUID exchangeId)
     {
-        if (exchangeId == null)
+        Collection<ExchangeImpl<?>> exchanges = _exchangeMap.values();
+        for (ExchangeImpl<?> exchange : exchanges)
         {
-            return getDefaultExchange();
-        }
-        else
-        {
-            Collection<ExchangeImpl> exchanges = _exchangeMap.values();
-            for (ExchangeImpl exchange : exchanges)
+            if (exchange.getId().equals(exchangeId))
             {
-                if (exchange.getId().equals(exchangeId))
-                {
-                    return exchange;
-                }
+                return exchange;
             }
-            return null;
         }
+        return null;
+
     }
 
     public boolean isReservedExchangeName(String name)

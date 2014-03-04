@@ -24,7 +24,6 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
@@ -33,7 +32,6 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
@@ -68,13 +66,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class AbstractExchange<T extends AbstractExchange<T>>
         extends AbstractConfiguredObject<T>
-        implements NonDefaultExchange<T>
+        implements ExchangeImpl<T>
 {
     private static final Logger _logger = Logger.getLogger(AbstractExchange.class);
     private final LifetimePolicy _lifetimePolicy;
     private final AtomicBoolean _closed = new AtomicBoolean();
 
-    private NonDefaultExchange _alternateExchange;
+    private ExchangeImpl _alternateExchange;
 
     private boolean _durable;
 
@@ -329,12 +327,12 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return !_bindings.isEmpty();
     }
 
-    public NonDefaultExchange getAlternateExchange()
+    public ExchangeImpl getAlternateExchange()
     {
         return _alternateExchange;
     }
 
-    public void setAlternateExchange(NonDefaultExchange exchange)
+    public void setAlternateExchange(ExchangeImpl exchange)
     {
         if(_alternateExchange != null)
         {
@@ -833,13 +831,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     public boolean hasBinding(final String bindingKey, final AMQQueue queue)
     {
         return getBinding(bindingKey,queue) != null;
-    }
-
-    @Override
-    public void setAlternateExchange(final ExchangeImpl exchange)
-    {
-        // todo
-        _alternateExchange = (NonDefaultExchange) exchange;
     }
 
     @Override

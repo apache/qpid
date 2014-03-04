@@ -31,7 +31,6 @@ import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -62,7 +61,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     AMQQueue createQueue(Map<String, Object> arguments) throws QueueExistsException;
 
-    NonDefaultExchange createExchange(Map<String,Object> attributes)
+    ExchangeImpl createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType;
 
@@ -75,9 +74,9 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     ExchangeImpl getExchange(UUID id);
 
 
-    ExchangeImpl getDefaultExchange();
+    MessageDestination getDefaultDestination();
 
-    Collection<ExchangeImpl> getExchanges();
+    Collection<ExchangeImpl<?>> getExchanges();
 
     Collection<ExchangeType<? extends ExchangeImpl>> getExchangeTypes();
 
@@ -136,8 +135,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     int getDefaultMaximumDeliveryAttempts();
 
     TaskExecutor getTaskExecutor();
-
-    Collection<NonDefaultExchange> getExchangesExceptDefault();
 
     org.apache.qpid.server.model.VirtualHost getModel();
 }

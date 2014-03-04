@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -683,83 +684,101 @@ public class ServerSessionDelegate extends SessionDelegate
                 return;
             }
         }
-
-        if(method.getPassive())
+        if(method.getExchange() == null || method.getExchange().equals(""))
         {
-            ExchangeImpl exchange = getExchange(session, exchangeName);
-
-            if(exchange == null)
+            if(!DirectExchange.TYPE.getType().equals(method.getType()))
             {
-                exception(session, method, ExecutionErrorCode.NOT_FOUND, "not-found: exchange-name '" + exchangeName + "'");
+                exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                          "Attempt to redeclare default exchange "
+                          + " of type " + DirectExchange.TYPE.getType()
+                          + " to " + method.getType() +".");
             }
-            else
+            if(method.hasAlternateExchange() && !"".equals(method.getAlternateExchange()))
             {
-                if (!exchange.getTypeName().equals(method.getType())
-                        && (method.getType() != null && method.getType().length() > 0))
-                {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: "
-                            + exchangeName + " of type " + exchange.getTypeName() + " to " + method.getType() + ".");
-                }
+                exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                          "Attempt to set alternate exchange of the default exchange "
+                          + " to " + method.getAlternateExchange() +".");
             }
         }
         else
         {
+            if(method.getPassive())
+            {
 
-            try
-            {
-                Map<String,Object> attributes = new HashMap<String, Object>();
+                ExchangeImpl exchange = getExchange(session, exchangeName);
 
-                attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
-                attributes.put(org.apache.qpid.server.model.Exchange.NAME, method.getExchange());
-                attributes.put(org.apache.qpid.server.model.Exchange.TYPE, method.getType());
-                attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, method.getDurable());
-                attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
-                               method.getAutoDelete() ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
-                attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, method.getAlternateExchange());
-                virtualHost.createExchange(attributes);
-            }
-            catch(ReservedExchangeNameException e)
-            {
-                exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to declare exchange: "
-                                            + exchangeName + " which begins with reserved name or prefix.");
-            }
-            catch(UnknownExchangeException e)
-            {
-                exception(session, method, ExecutionErrorCode.NOT_FOUND,
-                                                            "Unknown alternate exchange " + e.getExchangeName());
-            }
-            catch(AMQUnknownExchangeType e)
-            {
-                exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
-            }
-            catch(ExchangeExistsException e)
-            {
-                ExchangeImpl exchange = e.getExistingExchange();
-                if(!exchange.getTypeName().equals(method.getType()))
+                if(exchange == null)
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
-                            "Attempt to redeclare exchange: " + exchangeName
-                                    + " of type " + exchange.getTypeName()
-                                    + " to " + method.getType() +".");
+                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "not-found: exchange-name '" + exchangeName + "'");
                 }
-                else if(method.hasAlternateExchange()
-                          && (exchange.getAlternateExchange() == null ||
-                              !method.getAlternateExchange().equals(exchange.getAlternateExchange().getName())))
+                else
                 {
-                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
-                            "Attempt to change alternate exchange of: " + exchangeName
-                                    + " from " + exchange.getAlternateExchange()
-                                    + " to " + method.getAlternateExchange() +".");
+                    if (!exchange.getTypeName().equals(method.getType())
+                            && (method.getType() != null && method.getType().length() > 0))
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: "
+                                + exchangeName + " of type " + exchange.getTypeName() + " to " + method.getType() + ".");
+                    }
                 }
             }
-            catch (AccessControlException e)
+            else
             {
-                exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
+
+                try
+                {
+                    Map<String,Object> attributes = new HashMap<String, Object>();
+
+                    attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
+                    attributes.put(org.apache.qpid.server.model.Exchange.NAME, method.getExchange());
+                    attributes.put(org.apache.qpid.server.model.Exchange.TYPE, method.getType());
+                    attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, method.getDurable());
+                    attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                                   method.getAutoDelete() ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+                    attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, method.getAlternateExchange());
+                    virtualHost.createExchange(attributes);
+                }
+                catch(ReservedExchangeNameException e)
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to declare exchange: "
+                                                + exchangeName + " which begins with reserved name or prefix.");
+                }
+                catch(UnknownExchangeException e)
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_FOUND,
+                                                                "Unknown alternate exchange " + e.getExchangeName());
+                }
+                catch(AMQUnknownExchangeType e)
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
+                }
+                catch(ExchangeExistsException e)
+                {
+                    ExchangeImpl exchange = e.getExistingExchange();
+                    if(!exchange.getTypeName().equals(method.getType()))
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                                "Attempt to redeclare exchange: " + exchangeName
+                                        + " of type " + exchange.getTypeName()
+                                        + " to " + method.getType() +".");
+                    }
+                    else if(method.hasAlternateExchange()
+                              && (exchange.getAlternateExchange() == null ||
+                                  !method.getAlternateExchange().equals(exchange.getAlternateExchange().getName())))
+                    {
+                        exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
+                                "Attempt to change alternate exchange of: " + exchangeName
+                                        + " from " + exchange.getAlternateExchange()
+                                        + " to " + method.getAlternateExchange() +".");
+                    }
+                }
+                catch (AccessControlException e)
+                {
+                    exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
+                }
+
+
             }
-
-
         }
-
     }
 
     private void exception(Session session, Method method, ExecutionErrorCode errorCode, String description)
@@ -789,12 +808,12 @@ public class ServerSessionDelegate extends SessionDelegate
             destination = virtualHost.getMessageDestination(xfr.getDestination());
             if(destination == null)
             {
-                destination = virtualHost.getDefaultExchange();
+                destination = virtualHost.getDefaultDestination();
             }
         }
         else
         {
-            destination = virtualHost.getDefaultExchange();
+            destination = virtualHost.getDefaultDestination();
         }
         return destination;
     }
@@ -878,19 +897,30 @@ public class ServerSessionDelegate extends SessionDelegate
 
         ExchangeQueryResult result = new ExchangeQueryResult();
 
-        ExchangeImpl exchange = getExchange(session, method.getName());
 
-        if(exchange != null)
+        final String exchangeName = method.getName();
+
+        if(exchangeName == null || exchangeName.equals(""))
         {
-            result.setDurable(exchange.isDurable());
-            result.setType(exchange.getTypeName());
+            result.setDurable(true);
+            result.setType(DirectExchange.TYPE.getType());
             result.setNotFound(false);
         }
         else
         {
-            result.setNotFound(true);
-        }
+            ExchangeImpl exchange = getExchange(session, exchangeName);
 
+            if(exchange != null)
+            {
+                result.setDurable(exchange.isDurable());
+                result.setType(exchange.getTypeName());
+                result.setNotFound(false);
+            }
+            else
+            {
+                result.setNotFound(true);
+            }
+        }
         session.executionResult((int) method.getId(), result);
     }
 
@@ -904,52 +934,56 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not set");
         }
-        else if (nameNullOrEmpty(method.getExchange()))
-        {
-            exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Bind not allowed for default exchange");
-        }
         else
         {
-            //TODO - here because of non-compliant python tests
-            // should raise exception ILLEGAL_ARGUMENT "binding-key not set"
-            if (!method.hasBindingKey())
+            final String exchangeName = method.getExchange();
+            if (nameNullOrEmpty(exchangeName))
             {
-                method.setBindingKey(method.getQueue());
-            }
-            AMQQueue queue = virtualHost.getQueue(method.getQueue());
-            ExchangeImpl exchange = virtualHost.getExchange(method.getExchange());
-            if(queue == null)
-            {
-                exception(session, method, ExecutionErrorCode.NOT_FOUND, "Queue: '" + method.getQueue() + "' not found");
-            }
-            else if(exchange == null)
-            {
-                exception(session, method, ExecutionErrorCode.NOT_FOUND, "Exchange: '" + method.getExchange() + "' not found");
-            }
-            else if(exchange.getExchangeType().equals(HeadersExchange.TYPE) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
-            {
-                exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getType() + " require an x-match header");
+                exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Bind not allowed for default exchange");
             }
             else
             {
-                if (!exchange.isBound(method.getBindingKey(), method.getArguments(), queue))
+                //TODO - here because of non-compliant python tests
+                // should raise exception ILLEGAL_ARGUMENT "binding-key not set"
+                if (!method.hasBindingKey())
                 {
-                    try
-                    {
-                        exchange.addBinding(method.getBindingKey(), queue, method.getArguments());
-                    }
-                    catch (AccessControlException e)
-                    {
-                        exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
-                    }
+                    method.setBindingKey(method.getQueue());
+                }
+                AMQQueue queue = virtualHost.getQueue(method.getQueue());
+                ExchangeImpl exchange = virtualHost.getExchange(exchangeName);
+                if(queue == null)
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "Queue: '" + method.getQueue() + "' not found");
+                }
+                else if(exchange == null)
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "Exchange: '" + exchangeName + "' not found");
+                }
+                else if(exchange.getExchangeType().equals(HeadersExchange.TYPE) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
+                {
+                    exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getType() + " require an x-match header");
                 }
                 else
                 {
-                    // todo
+                    if (!exchange.isBound(method.getBindingKey(), method.getArguments(), queue))
+                    {
+                        try
+                        {
+                            exchange.addBinding(method.getBindingKey(), queue, method.getArguments());
+                        }
+                        catch (AccessControlException e)
+                        {
+                            exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
+                        }
+                    }
+                    else
+                    {
+                        // todo
+                    }
                 }
+
+
             }
-
-
         }
 
 
@@ -1010,8 +1044,10 @@ public class ServerSessionDelegate extends SessionDelegate
         VirtualHost virtualHost = getVirtualHost(session);
         ExchangeImpl exchange;
         AMQQueue queue;
-        if(method.hasExchange())
+        boolean isDefaultExchange;
+        if(method.hasExchange() && !method.getExchange().equals(""))
         {
+            isDefaultExchange = false;
             exchange = virtualHost.getExchange(method.getExchange());
 
             if(exchange == null)
@@ -1021,11 +1057,47 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         else
         {
-            exchange = virtualHost.getDefaultExchange();
+            isDefaultExchange = true;
+            exchange = null;
         }
 
+        if(isDefaultExchange)
+        {
+            if(method.hasQueue())
+            {
+                queue = getQueue(session, method.getQueue());
 
-        if(method.hasQueue())
+                if(queue == null)
+                {
+                    result.setQueueNotFound(true);
+                }
+                else
+                {
+                    if(method.hasBindingKey())
+                    {
+                        if(!method.getBindingKey().equals(method.getQueue()))
+                        {
+                            result.setKeyNotMatched(true);
+                        }
+                    }
+                }
+            }
+            else if(method.hasBindingKey())
+            {
+                if(getQueue(session, method.getBindingKey()) == null)
+                {
+                    result.setKeyNotMatched(true);
+                }
+            }
+
+            if(method.hasArguments() && !method.getArguments().isEmpty())
+            {
+                result.setArgsNotMatched(true);
+            }
+
+
+        }
+        else if(method.hasQueue())
         {
 
             queue = getQueue(session, method.getQueue());

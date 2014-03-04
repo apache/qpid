@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
@@ -114,7 +113,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
 
                 _exchange.restoreBinding(_bindingId, _bindingName, _queue, _bindingArgumentsMap);
             }
-            return ((NonDefaultExchange)_exchange).getBinding(_bindingName, _queue);
+            return (_exchange).getBinding(_bindingName, _queue);
         }
 
         private class QueueDependency implements UnresolvedDependency<AMQQueue>

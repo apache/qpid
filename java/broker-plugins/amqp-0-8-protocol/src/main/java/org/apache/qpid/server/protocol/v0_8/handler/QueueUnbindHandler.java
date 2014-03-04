@@ -93,6 +93,12 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
         }
+
+        if(body.getExchange() == null || body.getExchange().equals(AMQShortString.EMPTY_STRING))
+        {
+            throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Cannot unbind the queue " + queue.getName() + " from the default exchange");
+        }
+
         final ExchangeImpl exch = virtualHost.getExchange(body.getExchange() == null ? null : body.getExchange().toString());
         if (exch == null)
         {

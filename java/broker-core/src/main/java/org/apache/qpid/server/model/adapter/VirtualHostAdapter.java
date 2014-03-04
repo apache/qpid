@@ -41,7 +41,6 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.XmlConfigurationUtilities.MyConfiguration;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
@@ -49,7 +48,6 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AbstractQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
@@ -192,7 +190,7 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
     public Collection<Exchange> getExchanges()
     {
-        return _virtualHost == null ? Collections.<Exchange>emptyList() : new ArrayList<Exchange>(_virtualHost.getExchangesExceptDefault());
+        return _virtualHost == null ? Collections.<Exchange>emptyList() : new ArrayList<Exchange>(_virtualHost.getExchanges());
     }
 
 
@@ -290,7 +288,7 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
                             lifetime != null && lifetime != LifetimePolicy.PERMANENT
                                     ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
             attributes1.put(Exchange.ALTERNATE_EXCHANGE, alternateExchange);
-            NonDefaultExchange exchange = _virtualHost.createExchange(attributes1);
+            ExchangeImpl exchange = _virtualHost.createExchange(attributes1);
             return exchange;
 
         }
@@ -503,13 +501,13 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
     public void exchangeRegistered(ExchangeImpl exchange)
     {
-        childAdded((NonDefaultExchange)exchange);
+        childAdded(exchange);
     }
 
 
     public void exchangeUnregistered(ExchangeImpl exchange)
     {
-        childRemoved((NonDefaultExchange)exchange);
+        childRemoved(exchange);
     }
 
     public void queueRegistered(AMQQueue queue)

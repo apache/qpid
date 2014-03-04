@@ -40,7 +40,6 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.EnqueueableMessage;
@@ -81,7 +80,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private TransactionLogRecoveryHandler.QueueEntryRecoveryHandler _queueEntryRecoveryHandler;
     private TransactionLogRecoveryHandler.DtxRecordRecoveryHandler _dtxRecordRecoveryHandler;
 
-    private NonDefaultExchange _exchange = mock(NonDefaultExchange.class);
+    private ExchangeImpl _exchange = mock(ExchangeImpl.class);
     private static final String ROUTING_KEY = "routingKey";
     private static final String QUEUE_NAME = "queueName";
     private Map<String,Object> _bindingArgs;
@@ -258,7 +257,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     public void testCreateQueueAMQQueueWithAlternateExchange() throws Exception
     {
-        NonDefaultExchange alternateExchange = createTestAlternateExchange();
+        ExchangeImpl alternateExchange = createTestAlternateExchange();
 
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, alternateExchange, null);
         DurableConfigurationStoreHelper.createQueue(_configStore, queue);
@@ -274,10 +273,10 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
     }
 
-    private NonDefaultExchange createTestAlternateExchange()
+    private ExchangeImpl createTestAlternateExchange()
     {
         UUID exchUuid = UUID.randomUUID();
-        NonDefaultExchange alternateExchange = mock(NonDefaultExchange.class);
+        ExchangeImpl alternateExchange = mock(ExchangeImpl.class);
         when(alternateExchange.getId()).thenReturn(exchUuid);
         return alternateExchange;
     }
@@ -318,7 +317,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         DurableConfigurationStoreHelper.createQueue(_configStore, queue);
 
         // update the queue to have exclusive=false
-        NonDefaultExchange alternateExchange = createTestAlternateExchange();
+        ExchangeImpl alternateExchange = createTestAlternateExchange();
         queue = createTestQueue(getName(), getName() + "Owner", false, alternateExchange, attributes);
 
         DurableConfigurationStoreHelper.updateQueue(_configStore, queue);
@@ -362,7 +361,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private AMQQueue createTestQueue(String queueName,
                                      String queueOwner,
                                      boolean exclusive,
-                                     NonDefaultExchange alternateExchange,
+                                     ExchangeImpl alternateExchange,
                                      final Map<String, Object> arguments) throws StoreException
     {
         AMQQueue<?> queue = mock(AMQQueue.class);

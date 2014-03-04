@@ -139,7 +139,7 @@ public class HeadersBindingTest extends TestCase
     private MockHeader matchHeaders = new MockHeader();
     private int _count = 0;
     private AMQQueue _queue;
-    private NonDefaultExchange _exchange;
+    private ExchangeImpl _exchange;
 
     protected void setUp()
     {
@@ -149,7 +149,7 @@ public class HeadersBindingTest extends TestCase
         when(_queue.getVirtualHost()).thenReturn(vhost);
         when(vhost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         CurrentActor.set(mock(LogActor.class));
-        _exchange = mock(NonDefaultExchange.class);
+        _exchange = mock(ExchangeImpl.class);
         when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
     }
 

@@ -28,7 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.exchange.NonDefaultExchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.exchange.DirectExchange;
@@ -70,8 +70,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     private static final String CUSTOM_EXCHANGE_NAME = "customExchange";
 
     private DurableConfigurationRecoverer _durableConfigurationRecoverer;
-    private NonDefaultExchange _directExchange;
-    private NonDefaultExchange _topicExchange;
+    private ExchangeImpl _directExchange;
+    private ExchangeImpl _topicExchange;
     private VirtualHost _vhost;
     private DurableConfigurationStore _store;
     private ExchangeFactory _exchangeFactory;
@@ -84,11 +84,11 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         super.setUp();
 
 
-        _directExchange = mock(NonDefaultExchange.class);
+        _directExchange = mock(ExchangeImpl.class);
         when(_directExchange.getExchangeType()).thenReturn(DirectExchange.TYPE);
 
 
-        _topicExchange = mock(NonDefaultExchange.class);
+        _topicExchange = mock(ExchangeImpl.class);
         when(_topicExchange.getExchangeType()).thenReturn(TopicExchange.TYPE);
 
         AMQQueue queue = mock(AMQQueue.class);
@@ -101,14 +101,14 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         when(_vhost.getQueue(eq(QUEUE_ID))).thenReturn(queue);
 
-        final ArgumentCaptor<NonDefaultExchange> registeredExchange = ArgumentCaptor.forClass(NonDefaultExchange.class);
+        final ArgumentCaptor<ExchangeImpl> registeredExchange = ArgumentCaptor.forClass(ExchangeImpl.class);
         doAnswer(new Answer()
         {
 
             @Override
             public Object answer(final InvocationOnMock invocation) throws Throwable
             {
-                NonDefaultExchange exchange = registeredExchange.getValue();
+                ExchangeImpl exchange = registeredExchange.getValue();
                 when(_exchangeRegistry.getExchange(eq(exchange.getId()))).thenReturn(exchange);
                 when(_exchangeRegistry.getExchange(eq(exchange.getName()))).thenReturn(exchange);
                 return null;
@@ -139,14 +139,14 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                         when(_vhost.getQueue(eq(queueName))).thenReturn(queue);
                         when(_vhost.getQueue(eq(queueId))).thenReturn(queue);
 
-                        final ArgumentCaptor<NonDefaultExchange> altExchangeArg = ArgumentCaptor.forClass(NonDefaultExchange.class);
+                        final ArgumentCaptor<ExchangeImpl> altExchangeArg = ArgumentCaptor.forClass(ExchangeImpl.class);
                         doAnswer(
                                 new Answer()
                                 {
                                     @Override
                                     public Object answer(InvocationOnMock invocation) throws Throwable
                                     {
-                                        final NonDefaultExchange value = altExchangeArg.getValue();
+                                        final ExchangeImpl value = altExchangeArg.getValue();
                                         when(queue.getAlternateExchange()).thenReturn(value);
                                         return null;
                                     }
@@ -157,8 +157,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                         if (args.containsKey(Queue.ALTERNATE_EXCHANGE))
                         {
                             final UUID exchangeId = UUID.fromString(args.get(Queue.ALTERNATE_EXCHANGE).toString());
-                            final NonDefaultExchange exchange =
-                                    (NonDefaultExchange) _exchangeRegistry.getExchange(exchangeId);
+                            final ExchangeImpl exchange =
+                                    (ExchangeImpl) _exchangeRegistry.getExchange(exchangeId);
                             queue.setAlternateExchange(exchange);
                         }
                         return queue;
@@ -267,13 +267,13 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                                                            "org.apache.qpid.server.model.Exchange",
                                                            createExchange(CUSTOM_EXCHANGE_NAME, HeadersExchange.TYPE));
 
-        final NonDefaultExchange customExchange = mock(NonDefaultExchange.class);
+        final ExchangeImpl customExchange = mock(ExchangeImpl.class);
 
         final ArgumentCaptor<Map> attributesCaptor = ArgumentCaptor.forClass(Map.class);
-        when(_exchangeFactory.restoreExchange(attributesCaptor.capture())).thenAnswer(new Answer<NonDefaultExchange>()
+        when(_exchangeFactory.restoreExchange(attributesCaptor.capture())).thenAnswer(new Answer<ExchangeImpl>()
         {
             @Override
-            public NonDefaultExchange answer(final InvocationOnMock invocation) throws Throwable
+            public ExchangeImpl answer(final InvocationOnMock invocation) throws Throwable
             {
                 Map arguments = attributesCaptor.getValue();
                 if(CUSTOM_EXCHANGE_NAME.equals(arguments.get(org.apache.qpid.server.model.Exchange.NAME))
@@ -397,17 +397,17 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         final UUID queueId = new UUID(1, 0);
         final UUID exchangeId = new UUID(2, 0);
 
-        final NonDefaultExchange customExchange = mock(NonDefaultExchange.class);
+        final ExchangeImpl customExchange = mock(ExchangeImpl.class);
 
         when(customExchange.getId()).thenReturn(exchangeId);
         when(customExchange.getName()).thenReturn(CUSTOM_EXCHANGE_NAME);
 
         final ArgumentCaptor<Map> attributesCaptor = ArgumentCaptor.forClass(Map.class);
 
-        when(_exchangeFactory.restoreExchange(attributesCaptor.capture())).thenAnswer(new Answer<NonDefaultExchange>()
+        when(_exchangeFactory.restoreExchange(attributesCaptor.capture())).thenAnswer(new Answer<ExchangeImpl>()
         {
             @Override
-            public NonDefaultExchange answer(final InvocationOnMock invocation) throws Throwable
+            public ExchangeImpl answer(final InvocationOnMock invocation) throws Throwable
             {
                 Map arguments = attributesCaptor.getValue();
                 if(CUSTOM_EXCHANGE_NAME.equals(arguments.get(org.apache.qpid.server.model.Exchange.NAME))

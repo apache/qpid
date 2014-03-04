@@ -21,7 +21,6 @@
 package org.apache.qpid.server.binding;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
@@ -51,7 +50,7 @@ public class BindingImpl
 {
     private final String _bindingKey;
     private final AMQQueue _queue;
-    private final NonDefaultExchange _exchange;
+    private final ExchangeImpl _exchange;
     private final Map<String, Object> _arguments;
     private final UUID _id;
     private final AtomicLong _matches = new AtomicLong();
@@ -65,7 +64,7 @@ public class BindingImpl
     public BindingImpl(UUID id,
                        final String bindingKey,
                        final AMQQueue queue,
-                       final NonDefaultExchange exchange,
+                       final ExchangeImpl exchange,
                        final Map<String, Object> arguments)
     {
         this(id, convertToAttributes(bindingKey, arguments), queue, exchange);
@@ -82,7 +81,7 @@ public class BindingImpl
         return attributes;
     }
 
-    public BindingImpl(UUID id, Map<String, Object> attributes, AMQQueue queue, NonDefaultExchange exchange)
+    public BindingImpl(UUID id, Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
         super(id,Collections.EMPTY_MAP,attributes,queue.getVirtualHost().getTaskExecutor());
         _id = id;
@@ -120,7 +119,7 @@ public class BindingImpl
     }
 
     @Override
-    public NonDefaultExchange getExchange()
+    public ExchangeImpl getExchange()
     {
         return _exchange;
     }

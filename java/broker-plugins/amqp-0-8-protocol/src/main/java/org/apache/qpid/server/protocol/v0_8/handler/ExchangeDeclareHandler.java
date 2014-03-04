@@ -30,6 +30,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
@@ -78,75 +79,89 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
         ExchangeImpl exchange;
 
-        if (body.getPassive())
+        if(exchangeName == null || exchangeName.equals(AMQShortString.EMPTY_STRING))
         {
-            exchange = virtualHost.getExchange(exchangeName == null ? null : exchangeName.toString());
-            if(exchange == null)
+            if(!new AMQShortString(DirectExchange.TYPE.getType()).equals(body.getType()))
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
+                throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare default exchange: "
+                                                                          + " of type "
+                                                                          + DirectExchange.TYPE.getType()
+                                                                          + " to " + body.getType() +".",
+                                                 body.getClazz(), body.getMethod(),
+                                                 body.getMajor(), body.getMinor(),null);
             }
-            else if (!(body.getType() == null || body.getType().length() ==0) && !exchange.getTypeName().equals(body.getType().asString()))
-            {
-
-                throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " +
-                                  exchangeName + " of type " + exchange.getTypeName()
-                                  + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
-            }
-
         }
         else
         {
-            try
+            if (body.getPassive())
             {
-                String name = exchangeName == null ? null : exchangeName.intern().toString();
-                String type = body.getType() == null ? null : body.getType().intern().toString();
-                Map<String,Object> attributes = new HashMap<String, Object>();
-
-                attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
-                attributes.put(org.apache.qpid.server.model.Exchange.NAME,name);
-                attributes.put(org.apache.qpid.server.model.Exchange.TYPE,type);
-                attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, body.getDurable());
-                attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
-                               body.getAutoDelete() ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
-                attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
-                exchange = virtualHost.createExchange(attributes);
-
-            }
-            catch(ReservedExchangeNameException e)
-            {
-                throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                          "Attempt to declare exchange: " + exchangeName +
-                                          " which begins with reserved prefix.");
-
-            }
-            catch(ExchangeExistsException e)
-            {
-                exchange = e.getExistingExchange();
-                if(!new AMQShortString(exchange.getTypeName()).equals(body.getType()))
+                exchange = virtualHost.getExchange(exchangeName.toString());
+                if(exchange == null)
                 {
-                    throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
-                                                                              + exchangeName + " of type "
-                                                                              + exchange.getTypeName()
-                                                                              + " to " + body.getType() +".",
-                                                     body.getClazz(), body.getMethod(),
-                                                     body.getMajor(), body.getMinor(),null);
+                    throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
+                }
+                else if (!(body.getType() == null || body.getType().length() ==0) && !exchange.getTypeName().equals(body.getType().asString()))
+                {
+
+                    throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " +
+                                      exchangeName + " of type " + exchange.getTypeName()
+                                      + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
+                }
+
+            }
+            else
+            {
+                try
+                {
+                    String name = exchangeName == null ? null : exchangeName.intern().toString();
+                    String type = body.getType() == null ? null : body.getType().intern().toString();
+                    Map<String,Object> attributes = new HashMap<String, Object>();
+
+                    attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
+                    attributes.put(org.apache.qpid.server.model.Exchange.NAME,name);
+                    attributes.put(org.apache.qpid.server.model.Exchange.TYPE,type);
+                    attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, body.getDurable());
+                    attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                                   body.getAutoDelete() ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+                    attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
+                    exchange = virtualHost.createExchange(attributes);
+
+                }
+                catch(ReservedExchangeNameException e)
+                {
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                              "Attempt to declare exchange: " + exchangeName +
+                                              " which begins with reserved prefix.");
+
+                }
+                catch(ExchangeExistsException e)
+                {
+                    exchange = e.getExistingExchange();
+                    if(!new AMQShortString(exchange.getTypeName()).equals(body.getType()))
+                    {
+                        throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
+                                                                                  + exchangeName + " of type "
+                                                                                  + exchange.getTypeName()
+                                                                                  + " to " + body.getType() +".",
+                                                         body.getClazz(), body.getMethod(),
+                                                         body.getMajor(), body.getMinor(),null);
+                    }
+                }
+                catch(AMQUnknownExchangeType e)
+                {
+                    throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + exchangeName,e);
+                }
+                catch (AccessControlException e)
+                {
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                }
+                catch (UnknownExchangeException e)
+                {
+                    // note - since 0-8/9/9-1 can't set the alt. exchange this exception should never occur
+                    throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown alternate exchange",e);
                 }
             }
-            catch(AMQUnknownExchangeType e)
-            {
-                throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + exchangeName,e);
-            }
-            catch (AccessControlException e)
-            {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
-            }
-            catch (UnknownExchangeException e)
-            {
-                // note - since 0-8/9/9-1 can't set the alt. exchange this exception should never occur
-                throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown alternate exchange",e);
-            }
         }
-
 
         if(!body.getNowait())
         {

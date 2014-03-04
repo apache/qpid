@@ -37,7 +37,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
@@ -55,7 +54,6 @@ import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
@@ -380,44 +378,44 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             DurableConfigurationStoreHelper.createQueue(getDurableConfigurationStore(), queue);
         }
 
-        //get the exchange name (returns default exchange name if none was specified)
+        //get the exchange name (returns empty String if none was specified)
         String exchangeName = queueConfiguration.getExchange();
 
-        ExchangeImpl exchange = _exchangeRegistry.getExchange(exchangeName);
-        if (exchange == null)
+
+        if("".equals(exchangeName))
         {
-            throw new ConfigurationException("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName);
-        }
-
-        ExchangeImpl defaultExchange = _exchangeRegistry.getDefaultExchange();
-
-        //get routing keys in configuration (returns empty list if none are defined)
-        List<?> routingKeys = queueConfiguration.getRoutingKeys();
-
-        for (Object routingKeyNameObj : routingKeys)
-        {
-            String routingKey = String.valueOf(routingKeyNameObj);
-
-            if (exchange.equals(defaultExchange))
+            //get routing keys in configuration (returns empty list if none are defined)
+            List<?> routingKeys = queueConfiguration.getRoutingKeys();
+            if(!(routingKeys.isEmpty() || (routingKeys.size()==1 && routingKeys.contains(queueName))))
             {
-                if(!queueName.equals(routingKey))
-                {
-                    throw new ConfigurationException("Illegal attempt to bind queue '" + queueName +
-                                                     "' to the default exchange with a key other than the queue name: " + routingKey);
-                }
+                throw new ConfigurationException("Attempt to bind queue '" + queueName + "' with binding key(s) " +
+                                                 routingKeys + " without specifying an exchange");
             }
-            else
+        }
+        else
+        {
+            ExchangeImpl exchange = _exchangeRegistry.getExchange(exchangeName);
+            if (exchange == null)
             {
+                throw new ConfigurationException("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName);
+            }
+
+            //get routing keys in configuration (returns empty list if none are defined)
+            List<?> routingKeys = queueConfiguration.getRoutingKeys();
+
+            for (Object routingKeyNameObj : routingKeys)
+            {
+                String routingKey = String.valueOf(routingKeyNameObj);
+
                 configureBinding(queue, exchange, routingKey, (Map) queueConfiguration.getBindingArguments(routingKey));
             }
-        }
 
-        if (!exchange.equals(defaultExchange) && !routingKeys.contains(queueName))
-        {
-            //bind the queue to the named exchange using its name
-            configureBinding(queue, exchange, queueName, null);
+            if (!routingKeys.contains(queueName))
+            {
+                //bind the queue to the named exchange using its name
+                configureBinding(queue, exchange, queueName, null);
+            }
         }
-
     }
 
     private void configureBinding(AMQQueue queue, ExchangeImpl exchange, String routingKey, Map<String,Object> arguments)
@@ -605,21 +603,15 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
-    public ExchangeImpl getDefaultExchange()
+    public MessageDestination getDefaultDestination()
     {
         return _exchangeRegistry.getDefaultExchange();
     }
 
     @Override
-    public Collection<ExchangeImpl> getExchanges()
+    public Collection<ExchangeImpl<?>> getExchanges()
     {
         return Collections.unmodifiableCollection(_exchangeRegistry.getExchanges());
-    }
-
-    @Override
-    public Collection<NonDefaultExchange> getExchangesExceptDefault()
-    {
-        return Collections.unmodifiableCollection(_exchangeRegistry.getExchangesExceptDefault());
     }
 
     @Override
@@ -629,7 +621,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     @Override
-    public NonDefaultExchange createExchange(Map<String,Object> attributes)
+    public ExchangeImpl createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType
     {
@@ -658,7 +650,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                                UUIDGenerator.generateExchangeUUID(name, getName()));
             }
 
-            NonDefaultExchange exchange = _exchangeFactory.createExchange(attributes);
+            ExchangeImpl exchange = _exchangeFactory.createExchange(attributes);
 
             _exchangeRegistry.registerExchange(exchange);
             if(durable)

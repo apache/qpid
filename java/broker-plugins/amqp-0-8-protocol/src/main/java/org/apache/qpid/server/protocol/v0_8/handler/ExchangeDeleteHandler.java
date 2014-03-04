@@ -62,6 +62,11 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         {
             final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
 
+            if(exchangeName == null || "".equals(exchangeName))
+            {
+                throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Default Exchange cannot be deleted");
+            }
+
             final ExchangeImpl exchange = virtualHost.getExchange(exchangeName);
             if(exchange == null)
             {

@@ -26,7 +26,4 @@ import org.apache.qpid.server.queue.AMQQueue;
 
 public interface NonDefaultExchange<T extends NonDefaultExchange<T>> extends Exchange<T>, ExchangeImpl<T>
 {
-    NonDefaultExchange getAlternateExchange();
-
-    BindingImpl getBinding(String bindingName, AMQQueue queue);
 }

@@ -23,7 +23,6 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
@@ -32,11 +31,9 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.protocol.CapacityChecker;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import javax.management.NotificationListener;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -174,9 +171,9 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     void stop();
 
-    NonDefaultExchange getAlternateExchange();
+    ExchangeImpl getAlternateExchange();
 
-    void setAlternateExchange(NonDefaultExchange exchange);
+    void setAlternateExchange(ExchangeImpl exchange);
 
     Collection<String> getAvailableAttributes();
     Object getAttribute(String attrName);

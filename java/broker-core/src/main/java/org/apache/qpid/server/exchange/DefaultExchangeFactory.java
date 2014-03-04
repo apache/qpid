@@ -96,7 +96,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
     }
 
     @Override
-    public NonDefaultExchange createExchange(final Map<String, Object> attributes)
+    public ExchangeImpl createExchange(final Map<String, Object> attributes)
             throws AMQUnknownExchangeType, UnknownExchangeException
     {
         String type = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.TYPE, attributes);
@@ -109,7 +109,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
     }
 
     @Override
-    public NonDefaultExchange restoreExchange(Map<String,Object> attributes)
+    public ExchangeImpl restoreExchange(Map<String,Object> attributes)
             throws AMQUnknownExchangeType, UnknownExchangeException
     {
         return createExchange(attributes);
