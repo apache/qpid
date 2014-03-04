@@ -34,7 +34,6 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
-import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -366,7 +365,7 @@ public class MessageStoreTest extends QpidTestCase
     {
         int origExchangeCount = getVirtualHost().getExchanges().size();
 
-        Map<String, ExchangeImpl> oldExchanges = createExchanges();
+        Map<String, ExchangeImpl<?>> oldExchanges = createExchanges();
 
         assertEquals("Incorrect number of exchanges registered before recovery",
                 origExchangeCount + 3, getVirtualHost().getExchanges().size());
@@ -421,7 +420,7 @@ public class MessageStoreTest extends QpidTestCase
         createAllQueues();
         createAllTopicQueues();
 
-        Map<String, ExchangeImpl> exchanges = createExchanges();
+        Map<String, ExchangeImpl<?>> exchanges = createExchanges();
 
         ExchangeImpl nonDurableExchange = exchanges.get(nonDurableExchangeName);
         ExchangeImpl directExchange = exchanges.get(directExchangeName);
@@ -479,11 +478,11 @@ public class MessageStoreTest extends QpidTestCase
      * and that the new exchanges are not the same objects as the provided list (i.e. that the
      * reload actually generated new exchange objects)
      */
-    private void validateExchanges(int originalNumExchanges, Map<String, ExchangeImpl> oldExchanges)
+    private void validateExchanges(int originalNumExchanges, Map<String, ExchangeImpl<?>> oldExchanges)
     {
-        Collection<ExchangeImpl> exchanges = getVirtualHost().getExchanges();
+        Collection<ExchangeImpl<?>> exchanges = getVirtualHost().getExchanges();
         Collection<String> exchangeNames = new ArrayList(exchanges.size());
-        for(ExchangeImpl exchange : exchanges)
+        for(ExchangeImpl<?> exchange : exchanges)
         {
             exchangeNames.add(exchange.getName());
         }
@@ -709,9 +708,9 @@ public class MessageStoreTest extends QpidTestCase
 
     }
 
-    private Map<String, ExchangeImpl> createExchanges() throws Exception
+    private Map<String, ExchangeImpl<?>> createExchanges() throws Exception
     {
-        Map<String, ExchangeImpl> exchanges = new HashMap<String, ExchangeImpl>();
+        Map<String, ExchangeImpl<?>> exchanges = new HashMap<String, ExchangeImpl<?>>();
 
         //Register non-durable DirectExchange
         exchanges.put(nonDurableExchangeName, createExchange(DirectExchange.TYPE, nonDurableExchangeName, false));
@@ -723,9 +722,9 @@ public class MessageStoreTest extends QpidTestCase
         return exchanges;
     }
 
-    private ExchangeImpl createExchange(ExchangeType<?> type, String name, boolean durable) throws Exception
+    private ExchangeImpl<?> createExchange(ExchangeType<?> type, String name, boolean durable) throws Exception
     {
-        ExchangeImpl exchange = null;
+        ExchangeImpl<?> exchange = null;
 
         Map<String,Object> attributes = new HashMap<String, Object>();
 

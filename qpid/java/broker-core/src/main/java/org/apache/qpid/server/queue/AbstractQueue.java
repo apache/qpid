@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.SessionPrincipal;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.Queue;
@@ -106,7 +106,7 @@ public abstract class AbstractQueue
 
     private final boolean _durable;
 
-    private NonDefaultExchange _alternateExchange;
+    private ExchangeImpl _alternateExchange;
 
 
     private final QueueEntryList _entries;
@@ -516,12 +516,12 @@ public abstract class AbstractQueue
         return _exclusivityPolicy != ExclusivityPolicy.NONE;
     }
 
-    public NonDefaultExchange getAlternateExchange()
+    public ExchangeImpl getAlternateExchange()
     {
         return _alternateExchange;
     }
 
-    public void setAlternateExchange(NonDefaultExchange exchange)
+    public void setAlternateExchange(ExchangeImpl exchange)
     {
         if(_alternateExchange != null)
         {
@@ -2853,7 +2853,7 @@ public abstract class AbstractQueue
         if(childClass == Binding.class && otherParents.length == 1 && otherParents[0] instanceof Exchange)
         {
             final String bindingKey = (String) attributes.get("name");
-            ((NonDefaultExchange)otherParents[0]).addBinding(bindingKey, this, attributes);
+            ((ExchangeImpl)otherParents[0]).addBinding(bindingKey, this, attributes);
             for(Binding binding : _bindings)
             {
                 if(binding.getExchange() == otherParents[0] && binding.getName().equals(bindingKey))
@@ -2899,7 +2899,7 @@ public abstract class AbstractQueue
             else if(ALTERNATE_EXCHANGE.equals(name))
             {
                 // In future we may want to accept a UUID as an alternative way to identifying the exchange
-                NonDefaultExchange alternateExchange = (NonDefaultExchange) desired;
+                ExchangeImpl alternateExchange = (ExchangeImpl) desired;
                 setAlternateExchange(alternateExchange);
                 return true;
             }

@@ -20,19 +20,21 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.qpid.server.message.MessageDestination;
+
 import java.util.Collection;
 import java.util.UUID;
 
 
 public interface ExchangeRegistry
 {
-    void registerExchange(ExchangeImpl exchange);
+    void registerExchange(ExchangeImpl<?> exchange);
 
-    ExchangeImpl getDefaultExchange();
+    MessageDestination getDefaultExchange();
 
     void initialise(ExchangeFactory exchangeFactory);
 
-    ExchangeImpl getExchange(String exchangeName);
+    ExchangeImpl<?> getExchange(String exchangeName);
 
     /**
      * Unregister an exchange
@@ -43,11 +45,9 @@ public interface ExchangeRegistry
 
     void clearAndUnregisterMbeans();
 
-    ExchangeImpl getExchange(UUID exchangeId);
+    ExchangeImpl<?> getExchange(UUID exchangeId);
 
-    Collection<ExchangeImpl> getExchanges();
-
-    Collection<NonDefaultExchange> getExchangesExceptDefault();
+    Collection<ExchangeImpl<?>> getExchanges();
 
     void addRegistryChangeListener(RegistryChangeListener listener);
 

@@ -32,8 +32,8 @@ public interface ExchangeFactory
 
     Collection<ExchangeType<? extends ExchangeImpl>> getRegisteredTypes();
 
-    NonDefaultExchange createExchange(Map<String,Object> attributes) throws AMQUnknownExchangeType, UnknownExchangeException;
+    ExchangeImpl createExchange(Map<String,Object> attributes) throws AMQUnknownExchangeType, UnknownExchangeException;
 
-    NonDefaultExchange restoreExchange(Map<String,Object> attributes) throws AMQUnknownExchangeType, UnknownExchangeException;
+    ExchangeImpl restoreExchange(Map<String,Object> attributes) throws AMQUnknownExchangeType, UnknownExchangeException;
 
 }

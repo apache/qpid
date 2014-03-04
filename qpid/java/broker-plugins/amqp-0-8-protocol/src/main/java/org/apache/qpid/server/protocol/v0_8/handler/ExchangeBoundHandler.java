@@ -79,36 +79,109 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         channel.sync();
 
 
-        AMQShortString exchangeName = body.getExchange() == null ? AMQShortString.EMPTY_STRING : body.getExchange();
+        AMQShortString exchangeName = body.getExchange();
         AMQShortString queueName = body.getQueue();
         AMQShortString routingKey = body.getRoutingKey();
-        ExchangeImpl exchange = virtualHost.getExchange(exchangeName.toString());
         ExchangeBoundOkBody response;
-        if (exchange == null)
+        if(exchangeName == null || exchangeName.equals(AMQShortString.EMPTY_STRING))
         {
-
-
-            response = methodRegistry.createExchangeBoundOkBody(EXCHANGE_NOT_FOUND,
-                                                                new AMQShortString("Exchange '" + exchangeName + "' not found"));
-        }
-        else if (routingKey == null)
-        {
-            if (queueName == null)
+            if(routingKey == null)
             {
-                if (exchange.hasBindings())
+                if(queueName == null)
                 {
-                    response = methodRegistry.createExchangeBoundOkBody(OK, null);
+                    response = methodRegistry.createExchangeBoundOkBody(virtualHost.getQueues().isEmpty() ? NO_BINDINGS : OK, null);
                 }
                 else
                 {
+                    AMQQueue queue = virtualHost.getQueue(queueName.toString());
+                    if (queue == null)
+                    {
 
-                    response = methodRegistry.createExchangeBoundOkBody(NO_BINDINGS,	// replyCode
-                        null);	// replyText
+                        response = methodRegistry.createExchangeBoundOkBody(QUEUE_NOT_FOUND,	// replyCode
+                                                                            new AMQShortString("Queue '" + queueName + "' not found"));	// replyText
+                    }
+                    else
+                    {
+                        response = methodRegistry.createExchangeBoundOkBody(OK, null);
+                    }
                 }
             }
             else
             {
+                if(queueName == null)
+                {
+                    response = methodRegistry.createExchangeBoundOkBody(virtualHost.getQueue(routingKey.toString()) == null ? NO_QUEUE_BOUND_WITH_RK : OK, null);
+                }
+                else
+                {
+                    AMQQueue queue = virtualHost.getQueue(queueName.toString());
+                    if (queue == null)
+                    {
 
+                        response = methodRegistry.createExchangeBoundOkBody(QUEUE_NOT_FOUND,	// replyCode
+                                                                            new AMQShortString("Queue '" + queueName + "' not found"));	// replyText
+                    }
+                    else
+                    {
+                        response = methodRegistry.createExchangeBoundOkBody(queueName.equals(routingKey) ? OK : SPECIFIC_QUEUE_NOT_BOUND_WITH_RK, null);
+                    }
+                }
+            }
+        }
+        else
+        {
+            ExchangeImpl exchange = virtualHost.getExchange(exchangeName.toString());
+            if (exchange == null)
+            {
+
+
+                response = methodRegistry.createExchangeBoundOkBody(EXCHANGE_NOT_FOUND,
+                                                                    new AMQShortString("Exchange '" + exchangeName + "' not found"));
+            }
+            else if (routingKey == null)
+            {
+                if (queueName == null)
+                {
+                    if (exchange.hasBindings())
+                    {
+                        response = methodRegistry.createExchangeBoundOkBody(OK, null);
+                    }
+                    else
+                    {
+
+                        response = methodRegistry.createExchangeBoundOkBody(NO_BINDINGS,	// replyCode
+                            null);	// replyText
+                    }
+                }
+                else
+                {
+
+                    AMQQueue queue = virtualHost.getQueue(queueName.toString());
+                    if (queue == null)
+                    {
+
+                        response = methodRegistry.createExchangeBoundOkBody(QUEUE_NOT_FOUND,	// replyCode
+                            new AMQShortString("Queue '" + queueName + "' not found"));	// replyText
+                    }
+                    else
+                    {
+                        if (exchange.isBound(queue))
+                        {
+
+                            response = methodRegistry.createExchangeBoundOkBody(OK,	// replyCode
+                                null);	// replyText
+                        }
+                        else
+                        {
+
+                            response = methodRegistry.createExchangeBoundOkBody(QUEUE_NOT_BOUND,	// replyCode
+                                new AMQShortString("Queue '" + queueName + "' not bound to exchange '" + exchangeName + "'"));	// replyText
+                        }
+                    }
+                }
+            }
+            else if (queueName != null)
+            {
                 AMQQueue queue = virtualHost.getQueue(queueName.toString());
                 if (queue == null)
                 {
@@ -118,7 +191,8 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                 }
                 else
                 {
-                    if (exchange.isBound(queue))
+                    String bindingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().asString();
+                    if (exchange.isBound(bindingKey, queue))
                     {
 
                         response = methodRegistry.createExchangeBoundOkBody(OK,	// replyCode
@@ -127,25 +201,21 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                     else
                     {
 
-                        response = methodRegistry.createExchangeBoundOkBody(QUEUE_NOT_BOUND,	// replyCode
-                            new AMQShortString("Queue '" + queueName + "' not bound to exchange '" + exchangeName + "'"));	// replyText
+                        String message = "Queue '" + queueName + "' not bound with routing key '" +
+                                            body.getRoutingKey() + "' to exchange '" + exchangeName + "'";
+
+                        if(message.length()>255)
+                        {
+                            message = message.substring(0,254);
+                        }
+                        response = methodRegistry.createExchangeBoundOkBody(SPECIFIC_QUEUE_NOT_BOUND_WITH_RK,	// replyCode
+                            new AMQShortString(message));	// replyText
                     }
                 }
             }
-        }
-        else if (queueName != null)
-        {
-            AMQQueue queue = virtualHost.getQueue(queueName.toString());
-            if (queue == null)
-            {
-
-                response = methodRegistry.createExchangeBoundOkBody(QUEUE_NOT_FOUND,	// replyCode
-                    new AMQShortString("Queue '" + queueName + "' not found"));	// replyText
-            }
             else
             {
-                String bindingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().asString();
-                if (exchange.isBound(bindingKey, queue))
+                if (exchange.isBound(body.getRoutingKey() == null ? "" : body.getRoutingKey().asString()))
                 {
 
                     response = methodRegistry.createExchangeBoundOkBody(OK,	// replyCode
@@ -154,32 +224,10 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                 else
                 {
 
-                    String message = "Queue '" + queueName + "' not bound with routing key '" +
-                                        body.getRoutingKey() + "' to exchange '" + exchangeName + "'";
-
-                    if(message.length()>255)
-                    {
-                        message = message.substring(0,254);
-                    }
-                    response = methodRegistry.createExchangeBoundOkBody(SPECIFIC_QUEUE_NOT_BOUND_WITH_RK,	// replyCode
-                        new AMQShortString(message));	// replyText
+                    response = methodRegistry.createExchangeBoundOkBody(NO_QUEUE_BOUND_WITH_RK,	// replyCode
+                        new AMQShortString("No queue bound with routing key '" + body.getRoutingKey() +
+                        "' to exchange '" + exchangeName + "'"));	// replyText
                 }
-            }
-        }
-        else
-        {
-            if (exchange.isBound(body.getRoutingKey() == null ? "" : body.getRoutingKey().asString()))
-            {
-
-                response = methodRegistry.createExchangeBoundOkBody(OK,	// replyCode
-                    null);	// replyText
-            }
-            else
-            {
-
-                response = methodRegistry.createExchangeBoundOkBody(NO_QUEUE_BOUND_WITH_RK,	// replyCode
-                    new AMQShortString("No queue bound with routing key '" + body.getRoutingKey() +
-                    "' to exchange '" + exchangeName + "'"));	// replyText
             }
         }
         session.writeFrame(response.generateFrame(channelId));

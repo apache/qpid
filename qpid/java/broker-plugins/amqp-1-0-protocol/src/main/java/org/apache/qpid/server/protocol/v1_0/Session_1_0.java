@@ -130,11 +130,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                     MessageSource queue = getVirtualHost().getMessageSource(addr);
                     if(queue != null)
                     {
-
                         destination = new MessageSourceDestination(queue);
-
-
-
                     }
                     else
                     {
@@ -145,7 +141,6 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         }
                         else
                         {
-
                             endpoint.setSource(null);
                             destination = null;
                         }

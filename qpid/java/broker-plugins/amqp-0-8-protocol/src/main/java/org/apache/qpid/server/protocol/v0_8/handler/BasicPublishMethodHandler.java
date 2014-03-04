@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -62,16 +61,23 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
         }
 
         AMQShortString exchangeName = body.getExchange();
+        VirtualHost vHost = session.getVirtualHost();
+
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
-        if (exchangeName == null)
+
+        MessageDestination destination;
+
+        if (exchangeName == null || AMQShortString.EMPTY_STRING.equals(exchangeName))
         {
-            exchangeName = AMQShortString.valueOf(ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
+            destination = vHost.getDefaultDestination();
+        }
+        else
+        {
+            destination = vHost.getMessageDestination(exchangeName.toString());
         }
 
-        VirtualHost vHost = session.getVirtualHost();
-        MessageDestination exch = vHost.getMessageDestination(exchangeName.toString());
         // if the exchange does not exist we raise a channel exception
-        if (exch == null)
+        if (destination == null)
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange name");
         }
@@ -91,7 +97,7 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
             info.setExchange(exchangeName);
             try
             {
-                channel.setPublishFrame(info, exch);
+                channel.setPublishFrame(info, destination);
             }
             catch (AccessControlException e)
             {

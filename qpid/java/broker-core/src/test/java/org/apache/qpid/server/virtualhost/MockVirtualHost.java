@@ -27,7 +27,6 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.NonDefaultExchange;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -160,7 +159,7 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public NonDefaultExchange createExchange(Map<String,Object> attributes)
+    public ExchangeImpl createExchange(Map<String,Object> attributes)
     {
         return null;
     }
@@ -189,13 +188,13 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public ExchangeImpl getDefaultExchange()
+    public ExchangeImpl getDefaultDestination()
     {
         return null;
     }
 
     @Override
-    public Collection<ExchangeImpl> getExchanges()
+    public Collection<ExchangeImpl<?>> getExchanges()
     {
         return null;
     }
@@ -355,12 +354,6 @@ public class MockVirtualHost implements VirtualHost
 
     @Override
     public TaskExecutor getTaskExecutor()
-    {
-        return null;
-    }
-
-    @Override
-    public Collection<NonDefaultExchange> getExchangesExceptDefault()
     {
         return null;
     }

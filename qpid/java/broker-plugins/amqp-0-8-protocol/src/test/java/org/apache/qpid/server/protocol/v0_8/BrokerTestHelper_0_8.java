@@ -26,6 +26,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -73,10 +74,18 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
         when(info.getExchange()).thenReturn(exchangeNameAsShortString);
         when(info.getRoutingKey()).thenReturn(routingKey);
 
-        ExchangeImpl exchange = channel.getVirtualHost().getExchange(exchangeName);
+        MessageDestination destination;
+        if(exchangeName == null || "".equals(exchangeName))
+        {
+            destination = channel.getVirtualHost().getDefaultDestination();
+        }
+        else
+        {
+            destination = channel.getVirtualHost().getExchange(exchangeName);
+        }
         for (int count = 0; count < numberOfMessages; count++)
         {
-            channel.setPublishFrame(info, exchange);
+            channel.setPublishFrame(info, destination);
 
             // Set the body size
             ContentHeaderBody _headerBody = new ContentHeaderBody();

@@ -59,7 +59,7 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
 
     private class UnresolvedExchange implements UnresolvedObject<ExchangeImpl>
     {
-        private ExchangeImpl _exchange;
+        private ExchangeImpl<?> _exchange;
 
         public UnresolvedExchange(final UUID id,
                                   final Map<String, Object> attributeMap)

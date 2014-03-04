@@ -22,13 +22,14 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import java.util.Map;
 import java.util.UUID;
 
-public interface ExchangeImpl<T extends NonDefaultExchange> extends ExchangeReferrer, MessageDestination
+public interface ExchangeImpl<T extends ExchangeImpl<T>> extends Exchange<T>, ExchangeReferrer, MessageDestination
 {
 
     UUID getId();
@@ -46,7 +47,7 @@ public interface ExchangeImpl<T extends NonDefaultExchange> extends ExchangeRefe
      */
     boolean isAutoDelete();
 
-    <X extends NonDefaultExchange<X>> ExchangeImpl<X> getAlternateExchange();
+    ExchangeImpl getAlternateExchange();
 
     void setAlternateExchange(ExchangeImpl exchange);
 
@@ -110,6 +111,7 @@ public interface ExchangeImpl<T extends NonDefaultExchange> extends ExchangeRefe
 
     boolean hasReferrers();
 
+    BindingImpl getBinding(String bindingName, AMQQueue queue);
 
 
     public interface BindingListener

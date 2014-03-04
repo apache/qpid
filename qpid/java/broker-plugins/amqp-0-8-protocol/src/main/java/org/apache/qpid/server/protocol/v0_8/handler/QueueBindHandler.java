@@ -102,6 +102,12 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + queueName + " does not exist.");
         }
         final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
+
+        if(exchangeName == null || "".equals(exchangeName))
+        {
+            throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Cannot bind the queue " + queueName + " to the default exchange");
+        }
+
         final ExchangeImpl exch = virtualHost.getExchange(exchangeName);
         if (exch == null)
         {

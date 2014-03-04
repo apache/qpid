@@ -168,26 +168,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
 
     public void testCreateDefaultExchangeFactoryWithCustomExchangeType()
     {
-        ExchangeType<?> customExchangeType = new ExchangeType<NonDefaultExchange>()
-        {
-            @Override
-            public String getType()
-            {
-                return "my-custom-exchange";
-            }
-
-            @Override
-            public NonDefaultExchange newInstance(VirtualHost host, Map<String,Object> attributes)
-            {
-                return null;
-            }
-
-            @Override
-            public String getDefaultExchangeName()
-            {
-                return null;
-            }
-        };
+        ExchangeType<?> customExchangeType = new CustomExchangeType();
 
         _stubbedExchangeTypes.add(customExchangeType);
         _stubbedExchangeTypes.add(_directExchangeType);
@@ -204,6 +185,31 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         assertTrue("Topic exchange type is not found", registeredTypes.contains(_topicExchangeType));
         assertTrue("Headers exchange type is not found", registeredTypes.contains(_headersExchangeType));
         assertTrue("Custom exchange type is not found", registeredTypes.contains(customExchangeType));
+    }
+
+    public static abstract class CustomExchange implements ExchangeImpl<CustomExchange>
+    {
+    }
+
+    private static class CustomExchangeType implements ExchangeType<CustomExchange>
+    {
+        @Override
+        public String getType()
+        {
+            return "my-custom-exchange";
+        }
+
+        @Override
+        public CustomExchange newInstance(VirtualHost host, Map<String,Object> attributes)
+        {
+            return null;
+        }
+
+        @Override
+        public String getDefaultExchangeName()
+        {
+            return null;
+        }
     }
 
     private final class TestExchangeFactory extends DefaultExchangeFactory

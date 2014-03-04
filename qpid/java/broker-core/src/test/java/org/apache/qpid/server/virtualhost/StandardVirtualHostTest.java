@@ -117,7 +117,7 @@ public class StandardVirtualHostTest extends QpidTestCase
         {
             Throwable cause = e.getCause();
             assertNotNull(cause);
-            assertEquals("Illegal attempt to bind queue '" + queueName + "' to the default exchange with a key other than the queue name: " + customBinding, cause.getMessage());
+            assertEquals("Attempt to bind queue '" + queueName + "' with binding key(s) [" + customBinding + "] without specifying an exchange", cause.getMessage());
         }
     }
 
@@ -252,9 +252,6 @@ public class StandardVirtualHostTest extends QpidTestCase
 
         AMQQueue queue = vhost.getQueue(queueName);
         assertNotNull("queue should exist", queue);
-
-        ExchangeImpl defaultExch = vhost.getDefaultExchange();
-        assertTrue("queue should have been bound to default exchange with its name", defaultExch.isBound(queueName, queue));
 
         ExchangeImpl exch = vhost.getExchange(exchangeName);
         assertTrue("queue should have been bound to " + exchangeName + " with its name", exch.isBound(queueName, queue));
