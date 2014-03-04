@@ -62,17 +62,16 @@ struct AclPlugin : public Plugin {
     Options* getOptions() { return &options; }
 
     void init(broker::Broker& b) {
-        if (values.aclFile.empty()){
-            QPID_LOG(info, "Policy file not specified. ACL Disabled, no ACL checking being done!");
-        	return;
-        }
-
     	if (acl) throw Exception("ACL plugin cannot be initialized twice in one process.");
 
-        sys::Path aclFile(values.aclFile);
-        sys::Path dataDir(b.getDataDir().getPath());
-        if (!aclFile.isAbsolute() && !dataDir.empty())
+        if (values.aclFile.empty()){
+            QPID_LOG(info, "ACL Policy file not specified.");
+        } else {
+	  sys::Path aclFile(values.aclFile);
+	  sys::Path dataDir(b.getDataDir().getPath());
+	  if (!aclFile.isAbsolute() && !dataDir.empty())
             values.aclFile =  (dataDir + aclFile).str();
+	}
 
         acl = new Acl(values, b);
         b.setAcl(acl.get());
