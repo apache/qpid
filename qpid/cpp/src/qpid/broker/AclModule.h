@@ -142,6 +142,8 @@ namespace broker {
 
         virtual uint16_t getMaxConnectTotal()=0;
 
+        virtual bool userAclRules()=0;
+
         virtual bool authorise(
             const std::string&                    id,
             const acl::Action&                    action,

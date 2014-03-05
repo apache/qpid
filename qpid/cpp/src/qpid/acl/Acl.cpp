@@ -55,7 +55,8 @@ namespace _qmf = qmf::org::apache::qpid::acl;
 
 Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false),
     connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp, aclValues.aclMaxConnectTotal)),
-    resourceCounter(new ResourceCounter(*this, aclValues.aclMaxQueuesPerUser)){
+    resourceCounter(new ResourceCounter(*this, aclValues.aclMaxQueuesPerUser)),userRules(true)
+{
 
     if (aclValues.aclMaxConnectPerUser > AclData::getConnectMaxSpec())
         throw Exception("--connection-limit-per-user switch cannot be larger than " + AclData::getMaxConnectSpecStr());
@@ -86,6 +87,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         }
     } else {
         loadEmptyAclRuleset();
+        userRules = false;
         QPID_LOG(debug, "ACL loaded empty rule set");
     }
     broker->getConnectionObservers().add(connectionCounter);
