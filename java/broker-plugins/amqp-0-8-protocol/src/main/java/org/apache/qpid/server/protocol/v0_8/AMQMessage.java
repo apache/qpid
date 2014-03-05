@@ -71,7 +71,7 @@ public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMet
         return getMessageMetaData().getContentHeaderBody();
     }
 
-    public String getRoutingKey()
+    public String getInitialRoutingAddress()
     {
         MessageMetaData messageMetaData = getMessageMetaData();
         if (messageMetaData != null)

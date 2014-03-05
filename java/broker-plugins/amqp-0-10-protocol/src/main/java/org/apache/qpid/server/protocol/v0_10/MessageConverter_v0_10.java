@@ -33,7 +33,6 @@ import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -127,7 +126,7 @@ public class MessageConverter_v0_10 implements MessageConverter<ServerMessage, M
 
         deliveryProps.setExpiration(serverMsg.getExpiration());
         deliveryProps.setPriority(MessageDeliveryPriority.get(serverMsg.getMessageHeader().getPriority()));
-        deliveryProps.setRoutingKey(serverMsg.getRoutingKey());
+        deliveryProps.setRoutingKey(serverMsg.getInitialRoutingAddress());
         deliveryProps.setTimestamp(serverMsg.getMessageHeader().getTimestamp());
 
         messageProps.setContentEncoding(serverMsg.getMessageHeader().getEncoding());

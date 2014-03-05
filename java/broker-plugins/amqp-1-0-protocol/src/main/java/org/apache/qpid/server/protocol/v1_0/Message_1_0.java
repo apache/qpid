@@ -69,7 +69,7 @@ public class Message_1_0 extends AbstractServerMessageImpl<Message_1_0, MessageM
         _arrivalTime = System.currentTimeMillis();
     }
 
-    public String getRoutingKey()
+    public String getInitialRoutingAddress()
     {
         Object routingKey = getMessageHeader().getHeader("routing-key");
         if(routingKey != null)
@@ -78,7 +78,7 @@ public class Message_1_0 extends AbstractServerMessageImpl<Message_1_0, MessageM
         }
         else
         {
-            return getMessageHeader().getSubject();
+            return getMessageHeader().getTo();
         }
     }
 
@@ -90,12 +90,6 @@ public class Message_1_0 extends AbstractServerMessageImpl<Message_1_0, MessageM
     public MessageMetaData_1_0.MessageHeader_1_0 getMessageHeader()
     {
         return getMessageMetaData().getMessageHeader();
-    }
-
-    public boolean isRedelivered()
-    {
-        // TODO
-        return false;
     }
 
     public long getSize()

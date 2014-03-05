@@ -127,7 +127,7 @@ public class FanoutExchangeTest extends TestCase
         _exchange.addBinding("key",queue2, null);
 
 
-        List<? extends BaseQueue> result = _exchange.route(mockMessage(true),InstanceProperties.EMPTY);
+        List<? extends BaseQueue> result = _exchange.route(mockMessage(true), "", InstanceProperties.EMPTY);
 
         assertEquals("Expected message to be routed to both queues", 2, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
@@ -136,7 +136,7 @@ public class FanoutExchangeTest extends TestCase
         _exchange.addBinding("key2",queue2, Collections.singletonMap(AMQPFilterTypes.JMS_SELECTOR.toString(),(Object)"select = True"));
 
 
-        result = _exchange.route(mockMessage(true),InstanceProperties.EMPTY);
+        result = _exchange.route(mockMessage(true), "", InstanceProperties.EMPTY);
 
         assertEquals("Expected message to be routed to both queues", 2, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
@@ -144,14 +144,14 @@ public class FanoutExchangeTest extends TestCase
 
         _exchange.deleteBinding("key",queue2);
 
-        result = _exchange.route(mockMessage(true),InstanceProperties.EMPTY);
+        result = _exchange.route(mockMessage(true), "", InstanceProperties.EMPTY);
 
         assertEquals("Expected message to be routed to both queues", 2, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
         assertTrue("Expected queue2 to be routed to", result.contains(queue2));
 
 
-        result = _exchange.route(mockMessage(false),InstanceProperties.EMPTY);
+        result = _exchange.route(mockMessage(false), "", InstanceProperties.EMPTY);
 
         assertEquals("Expected message to be routed to queue1 only", 1, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
@@ -160,7 +160,7 @@ public class FanoutExchangeTest extends TestCase
         _exchange.addBinding("key",queue2, Collections.singletonMap(AMQPFilterTypes.JMS_SELECTOR.toString(),(Object)"select = False"));
 
 
-        result = _exchange.route(mockMessage(false),InstanceProperties.EMPTY);
+        result = _exchange.route(mockMessage(false), "", InstanceProperties.EMPTY);
         assertEquals("Expected message to be routed to both queues", 2, result.size());
         assertTrue("Expected queue1 to be routed to", result.contains(queue1));
         assertTrue("Expected queue2 to be routed to", result.contains(queue2));

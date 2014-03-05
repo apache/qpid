@@ -2864,16 +2864,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         else
         {
-            if (_declareExchanges)
+            if (_declareExchanges && !amqd.neverDeclare())
             {
                 declareExchange(amqd, nowait);
             }
 
-            if (_delareQueues || amqd.isNameRequired())
+            if ((_delareQueues || amqd.isNameRequired()) && !amqd.neverDeclare())
             {
                 declareQueue(amqd, consumer.isNoLocal(), nowait);
             }
-            if (_bindQueues)
+            if (_bindQueues && !amqd.neverDeclare())
             {
                 if(!isBound(amqd.getExchangeName(), amqd.getAMQQueueName(), amqd.getRoutingKey()))
                 {

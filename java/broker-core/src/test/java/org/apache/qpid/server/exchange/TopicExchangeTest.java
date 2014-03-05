@@ -324,8 +324,8 @@ public class TopicExchangeTest extends QpidTestCase
     private int routeMessage(String routingKey, long messageNumber)
     {
         ServerMessage message = mock(ServerMessage.class);
-        when(message.getRoutingKey()).thenReturn(routingKey);
-        List<? extends BaseQueue> queues = _exchange.route(message, InstanceProperties.EMPTY);
+        when(message.getInitialRoutingAddress()).thenReturn(routingKey);
+        List<? extends BaseQueue> queues = _exchange.route(message, routingKey, InstanceProperties.EMPTY);
         MessageReference ref = mock(MessageReference.class);
         when(ref.getMessage()).thenReturn(message);
         when(message.newReference()).thenReturn(ref);

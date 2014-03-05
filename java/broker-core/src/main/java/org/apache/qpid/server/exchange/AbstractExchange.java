@@ -423,11 +423,12 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
 
     final List<? extends BaseQueue> route(final ServerMessage message,
+                                          final String routingAddress,
                                           final InstanceProperties instanceProperties)
     {
         _receivedMessageCount.incrementAndGet();
         _receivedMessageSize.addAndGet(message.getSize());
-        List<? extends BaseQueue> queues = doRoute(message, instanceProperties);
+        List<? extends BaseQueue> queues = doRoute(message, routingAddress, instanceProperties);
         List<? extends BaseQueue> allQueues = queues;
 
         boolean deletedQueues = false;
@@ -464,18 +465,19 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
-                          final InstanceProperties instanceProperties,
-                          final ServerTransaction txn,
-                          final Action<? super MessageInstance> postEnqueueAction)
+                                                                                        final String routingAddress,
+                                                                                        final InstanceProperties instanceProperties,
+                                                                                        final ServerTransaction txn,
+                                                                                        final Action<? super MessageInstance> postEnqueueAction)
     {
-        List<? extends BaseQueue> queues = route(message, instanceProperties);
+        List<? extends BaseQueue> queues = route(message, routingAddress, instanceProperties);
 
         if(queues == null || queues.isEmpty())
         {
             ExchangeImpl altExchange = getAlternateExchange();
             if(altExchange != null)
             {
-                return altExchange.send(message, instanceProperties, txn, postEnqueueAction);
+                return altExchange.send(message, routingAddress, instanceProperties, txn, postEnqueueAction);
             }
             else
             {
@@ -515,6 +517,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     protected abstract List<? extends BaseQueue> doRoute(final ServerMessage message,
+                                                         final String routingAddress,
                                                          final InstanceProperties instanceProperties);
 
     @Override

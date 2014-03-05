@@ -32,14 +32,18 @@ public interface MessageDestination extends MessageNode
 
     /**
      * Routes a message
+     *
+     *
      * @param message the message to be routed
+     * @param routingAddress
      * @param instanceProperties the instance properties
      * @param txn the transaction to enqueue within
      * @param postEnqueueAction action to perform on the result of every enqueue (may be null)
      * @return the number of queues in which the message was enqueued performed
      */
     <M extends ServerMessage<? extends StorableMessageMetaData>> int send(M message,
-             InstanceProperties instanceProperties,
-             ServerTransaction txn,
-             Action<? super MessageInstance> postEnqueueAction);
+                                                                          final String routingAddress,
+                                                                          InstanceProperties instanceProperties,
+                                                                          ServerTransaction txn,
+                                                                          Action<? super MessageInstance> postEnqueueAction);
 }

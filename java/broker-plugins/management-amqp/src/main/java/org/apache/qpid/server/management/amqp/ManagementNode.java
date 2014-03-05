@@ -44,6 +44,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -261,9 +262,10 @@ class ManagementNode implements MessageSource, MessageDestination
 
     @Override
     public  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
-                    final InstanceProperties instanceProperties,
-                    final ServerTransaction txn,
-                    final Action<? super MessageInstance> postEnqueueAction)
+                                                                                  final String routingAddress,
+                                                                                  final InstanceProperties instanceProperties,
+                                                                                  final ServerTransaction txn,
+                                                                                  final Action<? super MessageInstance> postEnqueueAction)
     {
 
         @SuppressWarnings("unchecked")
@@ -361,10 +363,18 @@ class ManagementNode implements MessageSource, MessageDestination
 
 
         ManagementNodeConsumer consumer = _consumers.get(message.getMessageHeader().getReplyTo());
+        response.setInitialRoutingAddress(message.getMessageHeader().getReplyTo());
         if(consumer != null)
         {
             // TODO - check same owner
             consumer.send(response);
+        }
+        else
+        {
+            _virtualHost.getDefaultDestination().send(response,
+                                                      message.getMessageHeader().getReplyTo(), InstanceProperties.EMPTY,
+                                                      new AutoCommitTransaction(_virtualHost.getMessageStore()),
+                                                      null);
         }
         // TODO - route to a queue
 

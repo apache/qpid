@@ -112,6 +112,11 @@ public abstract class AMQDestination implements Destination, Referenceable
         _name = name;
     }
 
+    public boolean neverDeclare()
+    {
+        return false;
+    }
+
     // ----- Fields required to support new address syntax -------
 
     public enum DestSyntax {

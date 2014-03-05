@@ -131,7 +131,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         _channelId = channelId;
         _session = session;
         _producerId = producerId;
-        if (destination != null  && !(destination instanceof AMQUndefinedDestination))
+        if (destination != null  && !(destination.neverDeclare()))
         {
             declareDestination(destination);
         }
@@ -177,7 +177,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     void resubscribe() throws AMQException
     {
-        if (_destination != null && !(_destination instanceof AMQUndefinedDestination))
+        if (_destination != null && !_destination.neverDeclare())
         {
             declareDestination(_destination);
         }

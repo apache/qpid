@@ -377,6 +377,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         if (alternateExchange != null)
         {
             enqueues = alternateExchange.send(getMessage(),
+                                              getMessage().getInitialRoutingAddress(),
                                               getInstanceProperties(),
                                               txn,
                                               action);

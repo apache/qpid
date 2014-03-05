@@ -20,20 +20,27 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.ReplyTo;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.typedmessage.TypedBytesContentReader;
 import org.apache.qpid.typedmessage.TypedBytesFormatException;
+import org.apache.qpid.url.AMQBindingURL;
 
 import java.io.EOFException;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MessageConverter_v0_8_to_Internal implements MessageConverter<AMQMessage, InternalMessage>
 {
@@ -58,8 +65,209 @@ public class MessageConverter_v0_8_to_Internal implements MessageConverter<AMQMe
 
         Object body = convertMessageBody(mimeType, data);
 
-        return InternalMessage.convert(serverMessage.getMessageNumber(), serverMessage.isPersistent(), serverMessage.getMessageHeader(), body);
+        return InternalMessage.convert(serverMessage.getMessageNumber(), serverMessage.isPersistent(),
+                new DelegatingMessageHeader(serverMessage.getMessageHeader()), body);
     }
+
+    private static class ReplyToComponents
+    {
+        private String _exchange;
+        private String _queue;
+        private String _routingKey;
+
+        public void setExchange(final String exchange)
+        {
+            _exchange = exchange;
+        }
+
+        public void setQueue(final String queue)
+        {
+            _queue = queue;
+        }
+
+        public void setRoutingKey(final String routingKey)
+        {
+            _routingKey = routingKey;
+        }
+
+        public String getExchange()
+        {
+            return _exchange;
+        }
+
+        public String getQueue()
+        {
+            return _queue;
+        }
+
+        public String getRoutingKey()
+        {
+            return _routingKey;
+        }
+
+        public boolean hasExchange()
+        {
+            return _exchange != null;
+        }
+
+        public boolean hasQueue()
+        {
+            return _queue != null;
+        }
+
+        public boolean hasRoutingKey()
+        {
+            return _routingKey != null;
+        }
+    }
+
+    private static class DelegatingMessageHeader implements AMQMessageHeader
+    {
+        private final AMQMessageHeader _delegate;
+
+        private DelegatingMessageHeader(final AMQMessageHeader delegate)
+        {
+            _delegate = delegate;
+        }
+
+        @Override
+        public String getCorrelationId()
+        {
+            return _delegate.getCorrelationId();
+        }
+
+        @Override
+        public long getExpiration()
+        {
+            return _delegate.getExpiration();
+        }
+
+        @Override
+        public String getUserId()
+        {
+            return _delegate.getUserId();
+        }
+
+        @Override
+        public String getAppId()
+        {
+            return _delegate.getAppId();
+        }
+
+        @Override
+        public String getMessageId()
+        {
+            return _delegate.getMessageId();
+        }
+
+        @Override
+        public String getMimeType()
+        {
+            return _delegate.getMimeType();
+        }
+
+        @Override
+        public String getEncoding()
+        {
+            return _delegate.getEncoding();
+        }
+
+        @Override
+        public byte getPriority()
+        {
+            return _delegate.getPriority();
+        }
+
+        @Override
+        public long getTimestamp()
+        {
+            return _delegate.getTimestamp();
+        }
+
+        @Override
+        public String getType()
+        {
+            return _delegate.getType();
+        }
+
+        @Override
+        public String getReplyTo()
+        {
+            String originalReplyTo = _delegate.getReplyTo();
+            ReplyToComponents replyTo = convertReplyTo(originalReplyTo);
+            if(replyTo != null)
+            {
+                if(replyTo.hasExchange())
+                {
+                    return replyTo.getExchange() + (replyTo.hasRoutingKey() ? "/" + replyTo.getRoutingKey() : "");
+                }
+                else
+                {
+                    return replyTo.hasQueue() ? replyTo.getQueue() : replyTo.getRoutingKey();
+                }
+            }
+            else
+            {
+                return originalReplyTo;
+            }
+        }
+
+        private ReplyToComponents convertReplyTo(final String origReplyToString)
+        {
+            try
+            {
+                AMQBindingURL burl = new AMQBindingURL(origReplyToString);
+                ReplyToComponents replyTo = new ReplyToComponents();
+                AMQShortString routingKey = burl.getRoutingKey();
+                if(routingKey != null)
+                {
+                    replyTo.setRoutingKey(routingKey.asString());
+                }
+
+                AMQShortString exchangeName = burl.getExchangeName();
+                if(exchangeName != null)
+                {
+                    replyTo.setExchange(exchangeName.asString());
+                }
+
+                AMQShortString queueName = burl.getQueueName();
+                if(queueName != null)
+                {
+                    replyTo.setQueue(queueName.asString());
+                }
+                return replyTo;
+            }
+            catch (URISyntaxException e)
+            {
+                return null;
+            }
+        }
+
+        @Override
+        public Object getHeader(final String name)
+        {
+            return _delegate.getHeader(name);
+        }
+
+        @Override
+        public boolean containsHeaders(final Set<String> names)
+        {
+            return _delegate.containsHeaders(names);
+        }
+
+        @Override
+        public boolean containsHeader(final String name)
+        {
+            return _delegate.containsHeader(name);
+        }
+
+        @Override
+        public Collection<String> getHeaderNames()
+        {
+            return _delegate.getHeaderNames();
+        }
+    }
+
 
     private static Object convertMessageBody(String mimeType, byte[] data)
     {

@@ -67,7 +67,7 @@ class MockServerMessage implements ServerMessage
         throw new NotImplementedException();
     }
 
-    public String getRoutingKey()
+    public String getInitialRoutingAddress()
     {
         throw new NotImplementedException();
     }

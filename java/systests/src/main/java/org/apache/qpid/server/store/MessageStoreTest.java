@@ -62,7 +62,6 @@ import org.apache.qpid.util.FileUtils;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Matchers.eq;
@@ -627,7 +626,7 @@ public class MessageStoreTest extends QpidTestCase
 
 
         ServerTransaction trans = new AutoCommitTransaction(getVirtualHost().getMessageStore());
-        exchange.send(currentMessage, InstanceProperties.EMPTY, trans, null);
+        exchange.send(currentMessage, routingKey, InstanceProperties.EMPTY, trans, null);
 
     }
 
