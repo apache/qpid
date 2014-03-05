@@ -311,14 +311,24 @@ endif (BUILD_SASL)
 set (python_src ${CMAKE_SOURCE_DIR}/../python)
 if (EXISTS ${python_src})
     set (python_bld ${CMAKE_CURRENT_BINARY_DIR}/python)
-    add_custom_target(
-	build_python ALL
-	COMMAND ${PYTHON_EXECUTABLE} setup.py
+    # This will not pick up added or deleted python files
+    # In that case you need to rerun CMake
+    file(GLOB_RECURSE python_files ${python_src}/*.py)
+
+    add_custom_command(
+	OUTPUT ${python_bld}
+	DEPENDS ${python_files}
+	COMMAND ${PYTHON_EXECUTABLE}
+	    setup.py
 	    build --build-base=${python_bld}/build
-	    install --prefix=${python_bld} --install-lib=${python_bld}
-	            --install-scripts=${python_bld}/commands
+	    install --prefix=${python_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
 	WORKING_DIRECTORY ${python_src}
-	)
+    )
+
+    add_custom_target(
+	python_bld ALL
+	DEPENDS ${python_bld}
+    )
 endif (EXISTS ${python_src})
 
 if (BUILD_SASL)
