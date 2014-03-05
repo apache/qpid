@@ -439,10 +439,6 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public int compareTo(final QueueEntry o)
     {
-        if(o == null)
-        {
-            return 1;
-        }
         QueueEntryImpl other = (QueueEntryImpl)o;
         return getEntryId() > other.getEntryId() ? 1 : getEntryId() < other.getEntryId() ? -1 : 0;
     }
