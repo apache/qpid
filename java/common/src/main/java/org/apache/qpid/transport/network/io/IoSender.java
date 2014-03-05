@@ -309,7 +309,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
             }
             catch (IOException e)
             {
-                log.error(e, "error in write thread");
+                log.info("Exception in thread sending to '" + _remoteSocketAddress + "': " + e);
                 exception = e;
                 close(false, false);
                 break;
