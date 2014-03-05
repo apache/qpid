@@ -239,7 +239,7 @@ bool RecoveryManager::readNextRemainingRecord(void** const dataPtrPtr,
         checksum.addData((const unsigned char*)*dataPtrPtr, dataSize);
     }
     ::rec_tail_t enqueueTail;
-    inFileStream_.read((char*)&enqueueTail, sizeof(::rec_tail_t));
+    readJournalData((char*)&enqueueTail, sizeof(::rec_tail_t));
     uint32_t cs = checksum.getChecksum();
     uint16_t res = ::rec_tail_check(&enqueueTail, &enqueueHeader._rhdr, cs);
     if (res != 0) {
