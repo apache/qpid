@@ -55,7 +55,7 @@ namespace _qmf = qmf::org::apache::qpid::acl;
 
 Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false),
     connectionCounter(new ConnectionCounter(*this, aclValues.aclMaxConnectPerUser, aclValues.aclMaxConnectPerIp, aclValues.aclMaxConnectTotal)),
-    resourceCounter(new ResourceCounter(*this, aclValues.aclMaxQueuesPerUser)),userRules(true)
+    resourceCounter(new ResourceCounter(*this, aclValues.aclMaxQueuesPerUser)),userRules(false)
 {
 
     if (aclValues.aclMaxConnectPerUser > AclData::getConnectMaxSpec())
@@ -87,7 +87,6 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
         }
     } else {
         loadEmptyAclRuleset();
-        userRules = false;
         QPID_LOG(debug, "ACL loaded empty rule set");
     }
     broker->getConnectionObservers().add(connectionCounter);
@@ -263,6 +262,7 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
         data = d;
     }
     transferAcl = data->transferAcl; // any transfer ACL
+    userRules = true; // rules in force came from an ACL file
 
     if (data->transferAcl){
         QPID_LOG(debug,"ACL: Transfer ACL is Enabled!");
