@@ -127,22 +127,43 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         source.setAddress(tempQueue.getName());
                     }
                     String addr = source.getAddress();
-                    MessageSource queue = getVirtualHost().getMessageSource(addr);
-                    if(queue != null)
+                    if(!addr.startsWith("/") && addr.contains("/"))
                     {
-                        destination = new MessageSourceDestination(queue);
-                    }
-                    else
-                    {
-                        ExchangeImpl exchg = getVirtualHost().getExchange(addr);
+                        String[] parts = addr.split("/",2);
+                        ExchangeImpl exchg = getVirtualHost().getExchange(parts[0]);
                         if(exchg != null)
                         {
-                            destination = new ExchangeDestination(exchg, source.getDurable(), source.getExpiryPolicy());
+                            ExchangeDestination exchangeDestination =
+                                    new ExchangeDestination(exchg, source.getDurable(), source.getExpiryPolicy());
+                            exchangeDestination.setInitialRoutingAddress(parts[1]);
+                            destination = exchangeDestination;
+
                         }
                         else
                         {
                             endpoint.setSource(null);
                             destination = null;
+                        }
+                    }
+                    else
+                    {
+                        MessageSource queue = getVirtualHost().getMessageSource(addr);
+                        if(queue != null)
+                        {
+                            destination = new MessageSourceDestination(queue);
+                        }
+                        else
+                        {
+                            ExchangeImpl exchg = getVirtualHost().getExchange(addr);
+                            if(exchg != null)
+                            {
+                                destination = new ExchangeDestination(exchg, source.getDurable(), source.getExpiryPolicy());
+                            }
+                            else
+                            {
+                                endpoint.setSource(null);
+                                destination = null;
+                            }
                         }
                     }
 
@@ -265,28 +286,52 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         }
 
                         String addr = target.getAddress();
-                        MessageDestination messageDestination = getVirtualHost().getMessageDestination(addr);
-                        if(messageDestination != null)
+                        if(!addr.startsWith("/") && addr.contains("/"))
                         {
-                            destination = new NodeReceivingDestination(messageDestination, target.getDurable(),
-                                                                       target.getExpiryPolicy());
-                        }
-                        else
-                        {
-                            AMQQueue queue = getVirtualHost().getQueue(addr);
-                            if(queue != null)
+                            String[] parts = addr.split("/",2);
+                            ExchangeImpl exchange = getVirtualHost().getExchange(parts[0]);
+                            if(exchange != null)
                             {
+                                ExchangeDestination exchangeDestination =
+                                        new ExchangeDestination(exchange,
+                                                                target.getDurable(),
+                                                                target.getExpiryPolicy());
 
-                                destination = new QueueDestination(queue);
+                                exchangeDestination.setInitialRoutingAddress(parts[1]);
+
+                                destination = exchangeDestination;
+
                             }
                             else
                             {
                                 endpoint.setTarget(null);
                                 destination = null;
                             }
-
                         }
+                        else
+                        {
+                            MessageDestination messageDestination = getVirtualHost().getMessageDestination(addr);
+                            if(messageDestination != null)
+                            {
+                                destination = new NodeReceivingDestination(messageDestination, target.getDurable(),
+                                                                           target.getExpiryPolicy());
+                            }
+                            else
+                            {
+                                AMQQueue queue = getVirtualHost().getQueue(addr);
+                                if(queue != null)
+                                {
 
+                                    destination = new QueueDestination(queue);
+                                }
+                                else
+                                {
+                                    endpoint.setTarget(null);
+                                    destination = null;
+                                }
+
+                            }
+                        }
 
                     }
                     else

@@ -38,6 +38,7 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
     private ExchangeImpl _exchange;
     private TerminusDurability _durability;
     private TerminusExpiryPolicy _expiryPolicy;
+    private String _initialRoutingAddress;
 
     public ExchangeDestination(ExchangeImpl exchange, TerminusDurability durable, TerminusExpiryPolicy expiryPolicy)
     {
@@ -76,7 +77,13 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
                     return null;
                 }};
 
-        int enqueues = _exchange.send(message, message.getInitialRoutingAddress(), instanceProperties, txn, null);
+        int enqueues = _exchange.send(message,
+                                      _initialRoutingAddress == null
+                                              ? message.getInitialRoutingAddress()
+                                              : _initialRoutingAddress,
+                                      instanceProperties,
+                                      txn,
+                                      null);
 
 
         return enqueues == 0 ? REJECTED : ACCEPTED;
@@ -101,5 +108,15 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
     public ExchangeImpl getExchange()
     {
         return _exchange;
+    }
+
+    public void setInitialRoutingAddress(final String initialRoutingAddress)
+    {
+        _initialRoutingAddress = initialRoutingAddress;
+    }
+
+    public String getInitialRoutingAddress()
+    {
+        return _initialRoutingAddress;
     }
 }

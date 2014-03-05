@@ -230,7 +230,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
 
 
-                String binding = "";
+                String binding = null;
 
                 Map<Symbol,Filter> filters = source.getFilter();
                 Map<Symbol,Filter> actualFilters = new HashMap<Symbol,Filter>();
@@ -298,8 +298,14 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 }
                 _queue = queue;
                 source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
-
-                exchange.addBinding(binding, queue,null);
+                if(binding != null)
+                {
+                    exchange.addBinding(binding, queue,null);
+                }
+                if(exchangeDestination.getInitialRoutingAddress() != null)
+                {
+                    exchange.addBinding(exchangeDestination.getInitialRoutingAddress(),queue,null);
+                }
                 source.setDistributionMode(StdDistMode.COPY);
 
                 qd = new QueueDestination(queue);
