@@ -35,13 +35,13 @@ public class NodeReceivingDestination implements ReceivingDestination
     public static final Rejected REJECTED = new Rejected();
     private static final Outcome[] OUTCOMES = { ACCEPTED, REJECTED};
 
-    private MessageDestination _exchange;
+    private MessageDestination _destination;
     private TerminusDurability _durability;
     private TerminusExpiryPolicy _expiryPolicy;
 
-    public NodeReceivingDestination(MessageDestination exchange, TerminusDurability durable, TerminusExpiryPolicy expiryPolicy)
+    public NodeReceivingDestination(MessageDestination destination, TerminusDurability durable, TerminusExpiryPolicy expiryPolicy)
     {
-        _exchange = exchange;
+        _destination = destination;
         _durability = durable;
         _expiryPolicy = expiryPolicy;
     }
@@ -76,7 +76,7 @@ public class NodeReceivingDestination implements ReceivingDestination
                     return null;
                 }};
 
-        int enqueues = _exchange.send(message, message.getInitialRoutingAddress(), instanceProperties, txn, null);
+        int enqueues = _destination.send(message, message.getInitialRoutingAddress(), instanceProperties, txn, null);
 
 
         return enqueues == 0 ? REJECTED : ACCEPTED;
@@ -100,6 +100,6 @@ public class NodeReceivingDestination implements ReceivingDestination
 
     public MessageDestination getDestination()
     {
-        return _exchange;
+        return _destination;
     }
 }
