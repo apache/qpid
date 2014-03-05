@@ -198,7 +198,7 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
     }
     if (connection.isFederationLink()) {
         AclModule* acl =  connection.getBroker().getAcl();
-        if (acl) {
+        if (acl && acl->userAclRules()) {
             if (!acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
                 proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,
                             QPID_MSG("ACL denied " << connection.getUserId()

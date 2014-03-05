@@ -121,7 +121,7 @@ void Authorise::route(boost::shared_ptr<Exchange> exchange, const Message& msg)
 
 void Authorise::interlink()
 {
-    if (acl) {
+    if (acl && acl->userAclRules()) {
         if (!acl->authorise(user, acl::ACT_CREATE, acl::OBJ_LINK, "")){
             throw Exception(qpid::amqp::error_conditions::UNAUTHORIZED_ACCESS, QPID_MSG("ACL denied " << user << "  a AMQP 1.0 link"));
         }
