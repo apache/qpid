@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.converter.v0_10_v1_0;
 
+import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
@@ -33,6 +34,7 @@ import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.ReplyTo;
 
 import java.nio.ByteBuffer;
 
@@ -53,16 +55,18 @@ public class MessageConverter_1_0_to_v0_10 implements MessageConverter<Message_1
     @Override
     public MessageTransferMessage convert(Message_1_0 serverMsg, VirtualHost vhost)
     {
-        return new MessageTransferMessage(convertToStoredMessage(serverMsg), null);
+        return new MessageTransferMessage(convertToStoredMessage(serverMsg, vhost), null);
     }
 
-    private StoredMessage<MessageMetaData_0_10> convertToStoredMessage(final Message_1_0 serverMsg)
+    private StoredMessage<MessageMetaData_0_10> convertToStoredMessage(final Message_1_0 serverMsg,
+                                                                       final VirtualHost vhost)
     {
         Object bodyObject = MessageConverter_from_1_0.convertBodyToObject(serverMsg);
 
         final byte[] messageContent = MessageConverter_from_1_0.convertToBody(bodyObject);
 
         final MessageMetaData_0_10 messageMetaData_0_10 = convertMetaData(serverMsg,
+                                                                          vhost,
                                                                           MessageConverter_from_1_0.getBodyMimeType(bodyObject),
                                                                           messageContent.length);
 
@@ -119,25 +123,54 @@ public class MessageConverter_1_0_to_v0_10 implements MessageConverter<Message_1
         };
     }
 
-    private MessageMetaData_0_10 convertMetaData(ServerMessage serverMsg, final String bodyMimeType, final int size)
+    private MessageMetaData_0_10 convertMetaData(Message_1_0 serverMsg,
+                                                 final VirtualHost vhost,
+                                                 final String bodyMimeType,
+                                                 final int size)
     {
         DeliveryProperties deliveryProps = new DeliveryProperties();
         MessageProperties messageProps = new MessageProperties();
 
+        final AMQMessageHeader origHeader = serverMsg.getMessageHeader();
 
 
         deliveryProps.setExpiration(serverMsg.getExpiration());
-        deliveryProps.setPriority(MessageDeliveryPriority.get(serverMsg.getMessageHeader().getPriority()));
-        deliveryProps.setRoutingKey(serverMsg.getRoutingKey());
-        deliveryProps.setTimestamp(serverMsg.getMessageHeader().getTimestamp());
+        deliveryProps.setPriority(MessageDeliveryPriority.get(origHeader.getPriority()));
+        deliveryProps.setRoutingKey(serverMsg.getInitialRoutingAddress());
+        deliveryProps.setTimestamp(origHeader.getTimestamp());
 
-        messageProps.setContentEncoding(serverMsg.getMessageHeader().getEncoding());
+        messageProps.setContentEncoding(origHeader.getEncoding());
         messageProps.setContentLength(size);
         messageProps.setContentType(bodyMimeType);
-        if(serverMsg.getMessageHeader().getCorrelationId() != null)
+        if(origHeader.getCorrelationId() != null)
         {
-            messageProps.setCorrelationId(serverMsg.getMessageHeader().getCorrelationId().getBytes());
+            messageProps.setCorrelationId(origHeader.getCorrelationId().getBytes());
         }
+        final String origReplyTo = origHeader.getReplyTo();
+        if(origReplyTo != null && !origReplyTo.equals(""))
+        {
+            ReplyTo replyTo;
+            if(origReplyTo.startsWith("/"))
+            {
+                replyTo = new ReplyTo("",origReplyTo);
+            }
+            else if(origReplyTo.contains("/"))
+            {
+                String[] parts = origReplyTo.split("/",2);
+                replyTo = new ReplyTo(parts[0],parts[1]);
+            }
+            else if(vhost.getExchange(origReplyTo) != null)
+            {
+                replyTo = new ReplyTo(origReplyTo,"");
+            }
+            else
+            {
+                replyTo = new ReplyTo("",origReplyTo);
+            }
+            messageProps.setReplyTo(replyTo);
+        }
+
+        messageProps.setApplicationHeaders(serverMsg.getMessageHeader().getHeadersAsMap());
 
         Header header = new Header(deliveryProps, messageProps, null);
         return new MessageMetaData_0_10(header, size, serverMsg.getArrivalTime());

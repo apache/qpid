@@ -79,7 +79,9 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
     }
 
     @Override
-    public ArrayList<BaseQueue> doRoute(ServerMessage payload, final InstanceProperties instanceProperties)
+    public ArrayList<BaseQueue> doRoute(ServerMessage payload,
+                                        final String routingKey,
+                                        final InstanceProperties instanceProperties)
     {
 
         for(BindingImpl b : getBindings())

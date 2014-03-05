@@ -378,8 +378,11 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                                     }
                                 };
 
-                        int enqueues = _currentMessage.getDestination().send(amqMessage, instanceProperties, _transaction,
-                                                                          immediate ? _immediateAction : _capacityCheckAction);
+                        int enqueues = _currentMessage.getDestination().send(amqMessage,
+                                                                             amqMessage.getInitialRoutingAddress(),
+                                                                             instanceProperties, _transaction,
+                                                                          immediate ? _immediateAction : _capacityCheckAction
+                                                                            );
                         if(enqueues == 0)
                         {
                             handleUnroutableMessage(amqMessage);
@@ -1574,7 +1577,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     if (altExchange == null)
                     {
                         _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
-                        _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getRoutingKey()));
+                        _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getInitialRoutingAddress()));
 
                     }
                     else

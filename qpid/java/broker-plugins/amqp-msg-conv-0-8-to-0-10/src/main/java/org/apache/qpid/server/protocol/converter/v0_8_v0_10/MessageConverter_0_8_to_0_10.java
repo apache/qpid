@@ -132,7 +132,7 @@ public class MessageConverter_0_8_to_0_10  implements MessageConverter<AMQMessag
         deliveryProps.setExpiration(message_0_8.getExpiration());
         deliveryProps.setImmediate(message_0_8.isImmediate());
         deliveryProps.setPriority(MessageDeliveryPriority.get(properties.getPriority()));
-        deliveryProps.setRoutingKey(message_0_8.getRoutingKey());
+        deliveryProps.setRoutingKey(message_0_8.getInitialRoutingAddress());
         deliveryProps.setTimestamp(properties.getTimestamp());
 
         messageProps.setContentEncoding(properties.getEncodingAsString());

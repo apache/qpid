@@ -119,7 +119,7 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
         }
 
         @Override
-        public String getRoutingKey()
+        public String getInitialRoutingAddress()
         {
             return null;
         }

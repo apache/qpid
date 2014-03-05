@@ -76,7 +76,7 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
                     return null;
                 }};
 
-        int enqueues = _exchange.send(message, instanceProperties, txn, null);
+        int enqueues = _exchange.send(message, message.getInitialRoutingAddress(), instanceProperties, txn, null);
 
 
         return enqueues == 0 ? REJECTED : ACCEPTED;

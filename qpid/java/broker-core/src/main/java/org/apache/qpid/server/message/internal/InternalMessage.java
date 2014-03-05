@@ -44,6 +44,7 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
     private final Object _messageBody;
     private final int _contentSize;
     private InternalMessageHeader _header;
+    private String _initialRoutingAddress;
 
 
     InternalMessage(final StoredMessage<InternalMessageMetaData> handle,
@@ -80,9 +81,9 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
     }
 
     @Override
-    public String getRoutingKey()
+    public String getInitialRoutingAddress()
     {
-        return null;
+        return _initialRoutingAddress;
     }
 
     @Override
@@ -253,4 +254,8 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
     }
 
 
+    public void setInitialRoutingAddress(final String initialRoutingAddress)
+    {
+        _initialRoutingAddress = initialRoutingAddress;
+    }
 }

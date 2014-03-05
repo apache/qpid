@@ -143,10 +143,10 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
     }
 
     @Override
-    public List<? extends BaseQueue> doRoute(ServerMessage payload, final InstanceProperties instanceProperties)
+    public List<? extends BaseQueue> doRoute(ServerMessage payload,
+                                             final String routingKey,
+                                             final InstanceProperties instanceProperties)
     {
-
-        final String routingKey = payload.getRoutingKey();
 
         BindingSet bindings = _bindingsByKey.get(routingKey == null ? "" : routingKey);
 

@@ -73,7 +73,7 @@ public class HeadersExchangeTest extends TestCase
 
     protected void routeAndTest(ServerMessage msg, AMQQueue... expected) throws Exception
     {
-        List<? extends BaseQueue> results = _exchange.route(msg, InstanceProperties.EMPTY);
+        List<? extends BaseQueue> results = _exchange.route(msg, "", InstanceProperties.EMPTY);
         List<? extends BaseQueue> unexpected = new ArrayList<BaseQueue>(results);
         unexpected.removeAll(Arrays.asList(expected));
         assertTrue("Message delivered to unexpected queues: " + unexpected, unexpected.isEmpty());

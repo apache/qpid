@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.converter.v0_8_v1_0;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
@@ -37,6 +38,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v1_0.MessageConverter_to_1_0;
 import org.apache.qpid.server.protocol.v1_0.MessageMetaData_1_0;
+import org.apache.qpid.url.AMQBindingURL;
 
 public class MessageConverter_0_8_to_1_0 extends MessageConverter_to_1_0<AMQMessage>
 {
@@ -102,9 +104,45 @@ public class MessageConverter_0_8_to_1_0 extends MessageConverter_to_1_0<AMQMess
         {
             props.setMessageId(new Binary(messageId.getBytes()));
         }
-        props.setReplyTo(String.valueOf(contentHeader.getReplyTo()));
+        final String originalReplyTo = String.valueOf(contentHeader.getReplyTo());
+        try
+        {
+            AMQBindingURL burl = new AMQBindingURL(originalReplyTo);
+            String replyTo;
 
-        props.setSubject(serverMessage.getRoutingKey());
+            if(burl.getExchangeName() != null && !burl.getExchangeName().equals(AMQShortString.EMPTY_STRING))
+            {
+                replyTo = burl.getExchangeName().asString();
+
+                if(burl.getRoutingKey() != null)
+                {
+                    replyTo += "/" + burl.getRoutingKey().asString();
+                }
+
+            }
+            else if(burl.getQueueName() != null && !burl.getQueueName().equals(AMQShortString.EMPTY_STRING))
+            {
+                replyTo = burl.getQueueName().asString();
+            }
+            else if(burl.getRoutingKey() != null)
+            {
+                replyTo = burl.getRoutingKey().asString();
+            }
+            else
+            {
+                replyTo = originalReplyTo;
+            }
+
+            props.setReplyTo(replyTo);
+        }
+        catch (URISyntaxException e)
+        {
+            props.setReplyTo(originalReplyTo);
+        }
+
+
+
+        props.setSubject(serverMessage.getInitialRoutingAddress());
         if(contentHeader.getUserId() != null)
         {
             props.setUserId(new Binary(contentHeader.getUserId().getBytes()));

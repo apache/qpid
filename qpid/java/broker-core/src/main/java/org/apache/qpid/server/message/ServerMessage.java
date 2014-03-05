@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
 
 public interface ServerMessage<T extends StorableMessageMetaData> extends EnqueueableMessage, MessageContentSource
 {
-    String getRoutingKey();
+    String getInitialRoutingAddress();
 
     AMQMessageHeader getMessageHeader();
 

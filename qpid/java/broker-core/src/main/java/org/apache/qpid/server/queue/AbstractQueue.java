@@ -70,7 +70,6 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import javax.management.NotificationListener;
 import javax.security.auth.Subject;
 
 public abstract class AbstractQueue
@@ -2465,9 +2464,10 @@ public abstract class AbstractQueue
     }
 
     public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
-                              final InstanceProperties instanceProperties,
-                              final ServerTransaction txn,
-                              final Action<? super MessageInstance> postEnqueueAction)
+                                                                                        final String routingAddress,
+                                                                                        final InstanceProperties instanceProperties,
+                                                                                        final ServerTransaction txn,
+                                                                                        final Action<? super MessageInstance> postEnqueueAction)
     {
             txn.enqueue(this,message, new ServerTransaction.Action()
             {

@@ -125,7 +125,7 @@ public class MessageConverter_Internal_to_v0_8 implements MessageConverter<Inter
         };
     }
 
-    private MessageMetaData convertMetaData(InternalMessage serverMsg, final String bodyMimeType, final int size)
+    private MessageMetaData convertMetaData(final InternalMessage serverMsg, final String bodyMimeType, final int size)
     {
 
         MessagePublishInfo publishInfo = new MessagePublishInfo()
@@ -133,7 +133,7 @@ public class MessageConverter_Internal_to_v0_8 implements MessageConverter<Inter
                                                 @Override
                                                 public AMQShortString getExchange()
                                                 {
-                                                    return null;
+                                                    return AMQShortString.EMPTY_STRING;
                                                 }
 
                                                 @Override
@@ -157,7 +157,7 @@ public class MessageConverter_Internal_to_v0_8 implements MessageConverter<Inter
                                                 @Override
                                                 public AMQShortString getRoutingKey()
                                                 {
-                                                    return null;
+                                                    return AMQShortString.valueOf(serverMsg.getInitialRoutingAddress());
                                                 }
                                             };
 
@@ -174,6 +174,7 @@ public class MessageConverter_Internal_to_v0_8 implements MessageConverter<Inter
         props.setTimestamp(serverMsg.getMessageHeader().getTimestamp());
         props.setUserId(serverMsg.getMessageHeader().getUserId());
 
+
         Map<String,Object> headerProps = new LinkedHashMap<String, Object>();
 
         for(String headerName : serverMsg.getMessageHeader().getHeaderNames())
@@ -184,6 +185,7 @@ public class MessageConverter_Internal_to_v0_8 implements MessageConverter<Inter
         props.setHeaders(FieldTable.convertToFieldTable(headerProps));
 
         final ContentHeaderBody chb = new ContentHeaderBody(props, BASIC_CLASS_ID);
+        chb.setBodySize(size);
         return new MessageMetaData(publishInfo, chb, serverMsg.getArrivalTime());
     }
 

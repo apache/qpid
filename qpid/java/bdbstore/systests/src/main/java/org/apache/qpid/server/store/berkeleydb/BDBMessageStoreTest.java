@@ -585,7 +585,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
             _messageId = messageId;
         }
 
-        public String getRoutingKey()
+        public String getInitialRoutingAddress()
         {
             return null;
         }

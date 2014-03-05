@@ -41,7 +41,7 @@ public class MessageTransferMessage extends AbstractServerMessageImpl<MessageTra
         return getStoredMessage().getMetaData();
     }
 
-    public String getRoutingKey()
+    public String getInitialRoutingAddress()
     {
         return getMetaData().getRoutingKey();
     }

@@ -115,7 +115,7 @@ public class MessageConverter_0_10_to_1_0  extends MessageConverter_to_1_0<Messa
                 }
             }
 
-            props.setSubject(serverMessage.getRoutingKey());
+            props.setSubject(serverMessage.getInitialRoutingAddress());
 
             if(msgProps.hasUserId())
             {

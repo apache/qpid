@@ -37,4 +37,10 @@ public class AMQUndefinedDestination extends AMQDestination
     {
         return getAMQQueueName() == null;
     }
+
+    @Override
+    public boolean neverDeclare()
+    {
+        return true;
+    }
 }

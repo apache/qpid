@@ -30,17 +30,8 @@ import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
-import org.apache.qpid.transport.codec.BBDecoder;
-import org.apache.qpid.typedmessage.TypedBytesContentReader;
-import org.apache.qpid.typedmessage.TypedBytesFormatException;
 
-import java.io.EOFException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 
 public class MessageConverter_Internal_to_v0_10 implements MessageConverter<InternalMessage, MessageTransferMessage>
 {
@@ -123,7 +114,7 @@ public class MessageConverter_Internal_to_v0_10 implements MessageConverter<Inte
                 };
     }
 
-    private MessageMetaData_0_10 convertMetaData(ServerMessage serverMsg, final String bodyMimeType, final int size)
+    private MessageMetaData_0_10 convertMetaData(InternalMessage serverMsg, final String bodyMimeType, final int size)
     {
         DeliveryProperties deliveryProps = new DeliveryProperties();
         MessageProperties messageProps = new MessageProperties();
@@ -132,7 +123,7 @@ public class MessageConverter_Internal_to_v0_10 implements MessageConverter<Inte
 
         deliveryProps.setExpiration(serverMsg.getExpiration());
         deliveryProps.setPriority(MessageDeliveryPriority.get(serverMsg.getMessageHeader().getPriority()));
-        deliveryProps.setRoutingKey(serverMsg.getRoutingKey());
+        deliveryProps.setRoutingKey(serverMsg.getInitialRoutingAddress());
         deliveryProps.setTimestamp(serverMsg.getMessageHeader().getTimestamp());
 
         messageProps.setContentEncoding(serverMsg.getMessageHeader().getEncoding());
@@ -142,7 +133,7 @@ public class MessageConverter_Internal_to_v0_10 implements MessageConverter<Inte
         {
             messageProps.setCorrelationId(serverMsg.getMessageHeader().getCorrelationId().getBytes());
         }
-
+        messageProps.setApplicationHeaders(serverMsg.getMessageHeader().getHeaderMap());
         Header header = new Header(deliveryProps, messageProps, null);
         return new MessageMetaData_0_10(header, size, serverMsg.getArrivalTime());
     }

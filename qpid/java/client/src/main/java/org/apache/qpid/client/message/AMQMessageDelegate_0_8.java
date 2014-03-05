@@ -36,6 +36,7 @@ import org.apache.qpid.url.BindingURL;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageNotWriteableException;
+import javax.jms.Queue;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -258,7 +259,29 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
                 }
                 catch (URISyntaxException e)
                 {
-                    throw new JMSAMQException("Illegal value in JMS_ReplyTo property: " + replyToEncoding, e);
+                    if(replyToEncoding.startsWith("/"))
+                    {
+                        dest = new DefaultRouterDestination(replyToEncoding);
+                    }
+                    else if(replyToEncoding.contains("/"))
+                    {
+                        String[] parts = replyToEncoding.split("/",2);
+                        dest = new NonBURLReplyToDestination(parts[0], parts[1]);
+
+
+                    }
+                    else
+                    {
+                        if(getAMQSession().isQueueBound(AMQShortString.valueOf(replyToEncoding), null, null))
+                        {
+                            dest = new NonBURLReplyToDestination(replyToEncoding, "");
+                        }
+                        else
+                        {
+                            dest = new DefaultRouterDestination(replyToEncoding);
+                        }
+                    }
+                    
                 }
 
                 _destinationCache.put(replyToEncoding, dest);
@@ -371,7 +394,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         return getJmsHeaders().getBoolean(propertyName);
@@ -381,7 +404,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         return getJmsHeaders().getByte(propertyName);
@@ -391,7 +414,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         return getJmsHeaders().getShort(propertyName);
@@ -401,7 +424,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         return getJmsHeaders().getInteger(propertyName);
@@ -411,7 +434,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         return getJmsHeaders().getLong(propertyName);
@@ -421,7 +444,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         return getJmsHeaders().getFloat(propertyName);
@@ -431,7 +454,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         return getJmsHeaders().getDouble(propertyName);
@@ -448,7 +471,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         {
             if (STRICT_AMQP_COMPLIANCE)
             {
-                throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+                throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
             }
 
             return getJmsHeaders().getString(propertyName);
@@ -469,7 +492,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         checkWritableProperties();
@@ -480,7 +503,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         checkWritableProperties();
@@ -491,7 +514,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         checkWritableProperties();
@@ -508,7 +531,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         checkWritableProperties();
@@ -519,7 +542,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         checkWritableProperties();
@@ -530,7 +553,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (STRICT_AMQP_COMPLIANCE)
         {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            throw new UnsupportedOperationException("JMS Properties not supported in AMQP");
         }
 
         checkWritableProperties();
@@ -584,5 +607,51 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         getJmsHeaders().clear();
 
         _readableProperties = false;
+    }
+
+    private static class DefaultRouterDestination extends AMQDestination implements Queue
+    {
+        public DefaultRouterDestination(final String replyToEncoding)
+        {
+            super(AMQShortString.EMPTY_STRING,
+                  AMQShortString.valueOf("direct"),
+                  AMQShortString.valueOf(replyToEncoding),
+                  AMQShortString.valueOf(replyToEncoding));
+        }
+
+        @Override
+        public boolean isNameRequired()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean neverDeclare()
+        {
+            return true;
+        }
+    }
+
+    private static class NonBURLReplyToDestination extends AMQDestination implements Queue
+    {
+        public NonBURLReplyToDestination(final String exchange, final String routingKey)
+        {
+            super(AMQShortString.valueOf(exchange),
+                  null,
+                  AMQShortString.valueOf(routingKey),
+                  AMQShortString.valueOf(routingKey));
+        }
+
+        @Override
+        public boolean isNameRequired()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean neverDeclare()
+        {
+            return true;
+        }
     }
 }

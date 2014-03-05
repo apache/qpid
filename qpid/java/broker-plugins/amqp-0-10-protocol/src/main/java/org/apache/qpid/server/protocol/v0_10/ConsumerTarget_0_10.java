@@ -417,7 +417,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
                 {
                     logActor.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(),
                                                                           queue.getName(),
-                                                                          msg.getRoutingKey()));
+                                                                          msg.getInitialRoutingAddress()));
                 }
             }
         }

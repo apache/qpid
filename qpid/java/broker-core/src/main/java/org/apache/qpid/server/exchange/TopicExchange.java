@@ -157,12 +157,14 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
     }
 
     @Override
-    public ArrayList<BaseQueue> doRoute(ServerMessage payload, final InstanceProperties instanceProperties)
+    public ArrayList<BaseQueue> doRoute(ServerMessage payload,
+                                        final String routingAddress,
+                                        final InstanceProperties instanceProperties)
     {
 
-        final String routingKey = payload.getRoutingKey() == null
+        final String routingKey = routingAddress == null
                                           ? ""
-                                          : payload.getRoutingKey();
+                                          : routingAddress;
 
         final Collection<AMQQueue> matchedQueues =
                 getMatchedQueues(Filterable.Factory.newInstance(payload,instanceProperties), routingKey);
@@ -181,7 +183,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
 
         if(queues == null || queues.isEmpty())
         {
-            _logger.info("Message routing key: " + payload.getRoutingKey() + " No routes.");
+            _logger.info("Message routing key: " + routingAddress + " No routes.");
         }
 
         return queues;
