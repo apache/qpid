@@ -21,6 +21,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.qpid.server.management.plugin.servlet.ServletConnectionPrincipal;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -237,7 +238,13 @@ public class SaslServlet extends AbstractServlet
 
         if(saslServer.isComplete())
         {
-            Subject subject = subjectCreator.createSubjectWithGroups(saslServer.getAuthorizationID());
+            Subject originalSubject = subjectCreator.createSubjectWithGroups(saslServer.getAuthorizationID());
+            Subject subject = new Subject(false,
+                                          originalSubject.getPrincipals(),
+                                          originalSubject.getPublicCredentials(),
+                                          originalSubject.getPrivateCredentials());
+            subject.getPrincipals().add(new ServletConnectionPrincipal(request));
+            subject.setReadOnly();
 
             Broker broker = getBroker();
             LogActor actor = HttpManagementUtil.getOrCreateAndCacheLogActor(request, broker);
@@ -296,4 +303,5 @@ public class SaslServlet extends AbstractServlet
         }
         return subject;
     }
+
 }

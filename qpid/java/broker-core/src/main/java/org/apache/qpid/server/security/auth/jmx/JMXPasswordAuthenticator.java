@@ -20,13 +20,18 @@
  */
 package org.apache.qpid.server.security.auth.jmx;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.rmi.server.RemoteServer;
+import java.rmi.server.ServerNotActiveException;
+import java.security.Principal;
 import java.security.PrivilegedAction;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.SocketConnectionPrincipal;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 
 import javax.management.remote.JMXAuthenticator;
@@ -108,7 +113,24 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
         }
         else if (AuthenticationStatus.SUCCESS.equals(result.getStatus()))
         {
-            return result.getSubject();
+            final Subject originalSubject = result.getSubject();
+            Subject subject;
+
+            try
+            {
+                String clientHost = RemoteServer.getClientHost();
+                subject = new Subject(false,
+                                      originalSubject.getPrincipals(),
+                                      originalSubject.getPublicCredentials(),
+                                      originalSubject.getPrivateCredentials());
+                subject.getPrincipals().add(new JMSConnectionPrincipal(clientHost));
+                subject.setReadOnly();
+            }
+            catch(ServerNotActiveException e)
+            {
+                subject = originalSubject;
+            }
+            return subject;
         }
         else
         {
@@ -131,4 +153,53 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
     }
 
 
+    private static class JMSConnectionPrincipal implements SocketConnectionPrincipal
+    {
+        private final InetSocketAddress _address;
+
+        public JMSConnectionPrincipal(final String host)
+        {
+            _address = new InetSocketAddress(host,0);
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress()
+        {
+            return _address;
+        }
+
+        @Override
+        public String getName()
+        {
+            return _address.toString();
+        }
+
+        @Override
+        public boolean equals(final Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            final JMSConnectionPrincipal that = (JMSConnectionPrincipal) o;
+
+            if (!_address.equals(that._address))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _address.hashCode();
+        }
+    }
 }

@@ -40,6 +40,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.HttpManagementActor;
+import org.apache.qpid.server.management.plugin.servlet.ServletConnectionPrincipal;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -107,6 +108,15 @@ public class HttpManagementUtil
             {
                 throw new SecurityException("Only authenticated users can access the management interface");
             }
+
+            Subject original = subject;
+            subject = new Subject(false,
+                                  original.getPrincipals(),
+                                  original.getPublicCredentials(),
+                                  original.getPrivateCredentials());
+            subject.getPrincipals().add(new ServletConnectionPrincipal(request));
+            subject.setReadOnly();
+
             LogActor actor = createHttpManagementActor(broker, request);
 
             assertManagementAccess(broker.getSecurityManager(), subject, actor);
