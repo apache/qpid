@@ -18,37 +18,33 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.connection;
+package org.apache.qpid.server.management.plugin.servlet;
 
-import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.auth.SocketConnectionPrincipal;
 
+import javax.servlet.ServletRequest;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-public class ConnectionPrincipal implements SocketConnectionPrincipal
+public class ServletConnectionPrincipal implements SocketConnectionPrincipal
 {
-    private final AMQConnectionModel _connection;
+    private final InetSocketAddress _address;
 
-    public ConnectionPrincipal(final AMQConnectionModel connection)
+    public ServletConnectionPrincipal(ServletRequest request)
     {
-        _connection = connection;
-    }
-
-    @Override
-    public String getName()
-    {
-        return _connection.getRemoteAddressString();
+        _address = new InetSocketAddress(request.getRemoteHost(), request.getRemotePort());
     }
 
     @Override
     public SocketAddress getRemoteAddress()
     {
-        return _connection.getRemoteAddress();
+        return _address;
     }
 
-    public AMQConnectionModel getConnection()
+    @Override
+    public String getName()
     {
-        return _connection;
+        return _address.toString();
     }
 
     @Override
@@ -63,9 +59,9 @@ public class ConnectionPrincipal implements SocketConnectionPrincipal
             return false;
         }
 
-        final ConnectionPrincipal that = (ConnectionPrincipal) o;
+        final ServletConnectionPrincipal that = (ServletConnectionPrincipal) o;
 
-        if (!_connection.equals(that._connection))
+        if (!_address.equals(that._address))
         {
             return false;
         }
@@ -76,6 +72,6 @@ public class ConnectionPrincipal implements SocketConnectionPrincipal
     @Override
     public int hashCode()
     {
-        return _connection.hashCode();
+        return _address.hashCode();
     }
 }

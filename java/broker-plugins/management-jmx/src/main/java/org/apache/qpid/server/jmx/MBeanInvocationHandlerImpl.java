@@ -39,11 +39,14 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.management.RuntimeErrorException;
 import javax.management.remote.MBeanServerForwarder;
+import javax.management.remote.rmi.RMIServer;
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.rmi.server.RemoteServer;
+import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -236,6 +239,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         {
             try
             {
+
                 return Subject.doAs(SecurityManager.SYSTEM, new PrivilegedExceptionAction<Object>()
                 {
                     @Override
