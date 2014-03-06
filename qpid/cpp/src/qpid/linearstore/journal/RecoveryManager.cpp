@@ -281,6 +281,9 @@ void RecoveryManager::setLinearFileControllerJournals(lfcAddJournalFileFn fnPtr,
             lfcPtr->restoreEmptyFile(uninitFile);
         }
     } else {
+        if (initial_fid_ == 0) {
+            throw jexception(jerrno::JERR_RCVM_NULLFID, "RecoveryManager", "setLinearFileControllerJournals");
+        }
         for (fileNumberMapConstItr_t i = fileNumberMap_.begin(); i != fileNumberMap_.end(); ++i) {
             (lfcPtr->*fnPtr)(i->second->journalFilePtr_, i->second->completedDblkCount_, i->first == initial_fid_);
         }
@@ -589,11 +592,12 @@ bool RecoveryManager::getNextRecordHeader()
     rec_hdr_t h;
 
     bool hdr_ok = false;
-    uint64_t file_id = 0;
-    std::streampos file_pos = 0;
+    uint64_t file_id = currentJournalFileItr_->second->journalFilePtr_->getFileSeqNum();
+    std::streampos file_pos = inFileStream_.tellg();
     while (!hdr_ok) {
         if (needNextFile()) {
             if (!getNextFile(true)) {
+                lastRecord(file_id, file_pos);
                 return false;
             }
         }
@@ -610,6 +614,7 @@ bool RecoveryManager::getNextRecordHeader()
         } else {
             if (needNextFile()) {
                 if (!getNextFile(true)) {
+                    lastRecord(file_id, file_pos);
                     return false;
                 }
             }
