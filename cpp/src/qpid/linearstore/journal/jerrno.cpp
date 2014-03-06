@@ -87,12 +87,13 @@ const uint32_t jerrno::JERR_WMGR_DEQRIDNOTENQ    = 0x0805;
 const uint32_t jerrno::JERR_WMGR_BADFH           = 0x0806;
 
 // class RecoveryManager
-const uint32_t jerrno::JERR_RCVM_OPENRD          = 0x0900;         ///< Unable to open file for read
-const uint32_t jerrno::JERR_RCVM_STREAMBAD       = 0x0901;      ///< Read/write stream error
-const uint32_t jerrno::JERR_RCVM_READ            = 0x0902;           ///< Read error: no or insufficient data to read
-const uint32_t jerrno::JERR_RCVM_WRITE           = 0x0903;          ///< Write error
-const uint32_t jerrno::JERR_RCVM_NULLXID         = 0x0904;        ///< Null XID when XID length non-null in header
-const uint32_t jerrno::JERR_RCVM_NOTDBLKALIGNED  = 0x0905; ///< Offset is not data block (dblk)-aligned
+const uint32_t jerrno::JERR_RCVM_OPENRD          = 0x0900;
+const uint32_t jerrno::JERR_RCVM_STREAMBAD       = 0x0901;
+const uint32_t jerrno::JERR_RCVM_READ            = 0x0902;
+const uint32_t jerrno::JERR_RCVM_WRITE           = 0x0903;
+const uint32_t jerrno::JERR_RCVM_NULLXID         = 0x0904;
+const uint32_t jerrno::JERR_RCVM_NOTDBLKALIGNED  = 0x0905;
+const uint32_t jerrno::JERR_RCVM_NULLFID         = 0x0906;
 
 
 // class data_tok
@@ -109,11 +110,11 @@ const uint32_t jerrno::JERR_EFP_BADPARTITIONNAME = 0x0d01;
 const uint32_t jerrno::JERR_EFP_BADPARTITIONDIR  = 0x0d02;
 const uint32_t jerrno::JERR_EFP_BADEFPDIRNAME    = 0x0d03;
 const uint32_t jerrno::JERR_EFP_NOEFP            = 0x0d04;
-const uint32_t jerrno::JERR_EFP_EMPTY        = 0x0d05;
+const uint32_t jerrno::JERR_EFP_EMPTY            = 0x0d05;
 
 // Negative returns for some functions
-const int32_t jerrno::AIO_TIMEOUT               = -1;
-const int32_t jerrno::LOCK_TAKEN                = -2;
+const int32_t jerrno::AIO_TIMEOUT                = -1;
+const int32_t jerrno::LOCK_TAKEN                 = -2;
 
 
 // static initialization fn
@@ -185,6 +186,7 @@ jerrno::__init()
     _err_map[JERR_RCVM_WRITE] = "JERR_RCVM_WRITE: Write error";
     _err_map[JERR_RCVM_NULLXID] = "JERR_RCVM_NULLXID: Null XID when XID length non-null in header";
     _err_map[JERR_RCVM_NOTDBLKALIGNED] = "JERR_RCVM_NOTDBLKALIGNED: Offset is not data block (dblk)-aligned";
+    _err_map[JERR_RCVM_NULLFID] = "JERR_RCVM_NULLFID: Null file id (FID)";
 
     // class data_tok
     _err_map[JERR_DTOK_ILLEGALSTATE] = "JERR_MTOK_ILLEGALSTATE: Attempted to change to illegal state.";
