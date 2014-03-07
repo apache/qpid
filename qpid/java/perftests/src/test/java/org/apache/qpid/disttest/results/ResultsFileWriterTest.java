@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.disttest;
+package org.apache.qpid.disttest.results;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -25,6 +25,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
+import org.apache.qpid.disttest.results.ResultsCsvWriter;
 import org.apache.qpid.disttest.results.aggregation.TestResultAggregator;
 import org.apache.qpid.disttest.results.formatting.CSVFormatter;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -38,7 +39,7 @@ public class ResultsFileWriterTest extends QpidTestCase
 
     private File _outputDir = TestFileUtils.createTestDirectory();
 
-    private ResultsFileWriter _resultsFileWriter = new ResultsFileWriter(_outputDir);
+    private ResultsCsvWriter _resultsFileWriter = new ResultsCsvWriter(_outputDir);
 
     @Override
     public void setUp()
@@ -54,7 +55,7 @@ public class ResultsFileWriterTest extends QpidTestCase
         String expectedCsvContents = "expected-csv-contents";
         when(_csvFormater.format(resultsForAllTests)).thenReturn(expectedCsvContents);
 
-        _resultsFileWriter.writeResultsToFile(resultsForAllTests, "config.json");
+        _resultsFileWriter.writeResults(resultsForAllTests, "config.json");
 
         File resultsFile = new File(_outputDir, "config.csv");
 
@@ -77,7 +78,7 @@ public class ResultsFileWriterTest extends QpidTestCase
 
         _resultsFileWriter.writeResultsSummary(Arrays.asList(results1, results2));
 
-        File summaryFile = new File(_outputDir, ResultsFileWriter.TEST_SUMMARY_FILE_NAME);
+        File summaryFile = new File(_outputDir, ResultsCsvWriter.TEST_SUMMARY_FILE_NAME);
 
         assertEquals(expectedSummaryFileContents, FileUtils.readFileAsString(summaryFile));
     }

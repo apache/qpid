@@ -20,7 +20,7 @@
 package org.apache.qpid.disttest;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +32,8 @@ import org.apache.qpid.disttest.controller.config.Config;
 import org.apache.qpid.disttest.controller.config.ConfigReader;
 import org.apache.qpid.disttest.db.ResultsDbWriter;
 import org.apache.qpid.disttest.jms.ControllerJmsDelegate;
+import org.apache.qpid.disttest.results.ResultsCsvWriter;
+import org.apache.qpid.disttest.results.ResultsWriter;
 import org.apache.qpid.disttest.results.aggregation.Aggregator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +57,7 @@ public class ControllerRunner extends AbstractRunner
 
     private final ConfigFileHelper _configFileHelper = new ConfigFileHelper();
 
-    private ResultsFileWriter _resultsFileWriter;
+    private ResultsWriter _resultsFileWriter;
 
     private ResultsDbWriter _resultsDbWriter;
 
@@ -108,7 +110,7 @@ public class ControllerRunner extends AbstractRunner
     {
         String outputDirString = getCliOptions().get(ControllerRunner.OUTPUT_DIR_PROP);
         File outputDir = new File(outputDirString);
-        _resultsFileWriter = new ResultsFileWriter(outputDir);
+        _resultsFileWriter = new ResultsCsvWriter(outputDir);
     }
 
     private void runTests(ControllerJmsDelegate jmsDelegate)
@@ -155,7 +157,7 @@ public class ControllerRunner extends AbstractRunner
         ResultsForAllTests rawResultsForAllTests = controller.runAllTests();
         ResultsForAllTests resultsForAllTests = _aggregator.aggregateResults(rawResultsForAllTests);
 
-        _resultsFileWriter.writeResultsToFile(resultsForAllTests, testConfigFile);
+        _resultsFileWriter.writeResults(resultsForAllTests, testConfigFile);
         if(_resultsDbWriter != null)
         {
             _resultsDbWriter.writeResults(resultsForAllTests);
@@ -194,9 +196,9 @@ public class ControllerRunner extends AbstractRunner
         {
             testConfig = configReader.getConfigFromFile(testConfigFile);
         }
-        catch (FileNotFoundException e)
+        catch (IOException e)
         {
-            throw new DistributedTestException("Exception while loading test config from " + testConfigFile, e);
+            throw new DistributedTestException("Exception while loading test config from '" + testConfigFile + "'", e);
         }
         return testConfig;
     }
