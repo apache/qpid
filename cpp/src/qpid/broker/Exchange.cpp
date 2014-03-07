@@ -453,7 +453,7 @@ void Exchange::decOtherUsers(bool isControllingLink=false)
         if (isControllingLink) {
             if (broker) broker->getExchanges().destroy(name);
         } else if (!inUse() && !hasBindings()) {
-            checkAutoDelete();
+            checkAutodelete();
         }
     }
 }
