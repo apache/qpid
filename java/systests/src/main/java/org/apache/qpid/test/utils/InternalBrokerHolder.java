@@ -20,11 +20,15 @@
  */
 package org.apache.qpid.test.utils;
 
+import java.security.PrivilegedAction;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.Broker;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
+
+import javax.security.auth.Subject;
 
 public class InternalBrokerHolder implements BrokerHolder
 {
@@ -57,8 +61,21 @@ public class InternalBrokerHolder implements BrokerHolder
     {
         LOGGER.info("Shutting down Broker instance");
 
-        _broker.shutdown();
+        Subject subject = org.apache.qpid.server.security.SecurityManager.SYSTEM;
+        subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
+        subject.getPrincipals().add(new TaskPrincipal("Shutdown"));
 
+        Subject.doAs(subject, new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                _broker.shutdown();
+                return null;
+            }
+
+
+        });
         waitUntilPortsAreFree();
 
         LOGGER.info("Broker instance shutdown");

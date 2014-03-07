@@ -18,20 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.actors;
+package org.apache.qpid.server.security.auth;
 
-import org.apache.qpid.server.logging.RootMessageLogger;
-
-public class TestLogActor extends AbstractActor
+public interface ManagementConnectionPrincipal extends SocketConnectionPrincipal
 {
-    public TestLogActor(RootMessageLogger rootLogger)
-    {
-        super(rootLogger);
-    }
-
-    public String getLogMessage()
-    {
-        return "[Test Actor] ";
-    }
+    public String getType();
 }
-    

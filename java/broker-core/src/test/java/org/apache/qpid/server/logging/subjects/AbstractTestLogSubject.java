@@ -22,12 +22,10 @@ package org.apache.qpid.server.logging.subjects;
 
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -61,14 +59,8 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
     public void tearDown() throws Exception
     {
         BrokerTestHelper.tearDown();
-        try
-        {
-            CurrentActor.removeAll();
-        }
-        finally
-        {
-            super.tearDown();
-        }
+        super.tearDown();
+
     }
 
     protected List<Object> performLog(boolean statusUpdatesEnabled)
@@ -79,10 +71,9 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
         }
 
         UnitTestMessageLogger logger = new UnitTestMessageLogger(statusUpdatesEnabled);
+        SystemLog.setRootMessageLogger(logger);
 
-        LogActor actor = new TestLogActor(logger);
-
-        actor.message(_subject, new LogMessage()
+        SystemLog.message(_subject, new LogMessage()
         {
             public String toString()
             {

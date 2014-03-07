@@ -28,10 +28,9 @@ import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
 
@@ -103,7 +102,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
         checkUnresolvedDependencies();
         applyUpgrade();
 
-        CurrentActor.get().message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
+        SystemLog.message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
         return CURRENT_CONFIG_VERSION;
     }
 

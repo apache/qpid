@@ -20,9 +20,14 @@
  */
 package org.apache.qpid.server.logging.actors;
 
+import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.SystemLog;
 
+import javax.security.auth.Subject;
+import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -54,6 +59,8 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
     {
         super.setUp();
 
+        // ignore all the startup log messages
+        getRawLogger().clearLogMessages();
         final String message = sendLogMessage();
 
         List<Object> logs = getRawLogger().getLogMessages();
@@ -95,24 +102,34 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
     private String sendLogMessage()
     {
         final String message = "test logging";
-
-        getAmqpActor().message(new LogSubject()
+        Subject subject = new Subject(false, Collections.singleton(new ConnectionPrincipal(getConnection())), Collections.emptySet(), Collections.emptySet());
+        Subject.doAs(subject, new PrivilegedAction<Object>()
         {
-            public String toLogString()
+            @Override
+            public Object run()
             {
-                return "[AMQPActorTest]";
-            }
+                SystemLog.message(new LogSubject()
+                                  {
+                                      public String toLogString()
+                                      {
+                                          return "[AMQPActorTest]";
+                                      }
 
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return message;
-            }
+                                  }, new LogMessage()
+                                  {
+                                      public String toString()
+                                      {
+                                          return message;
+                                      }
 
-            public String getLogHierarchy()
-            {
-                return "test.hierarchy";
+                                      public String getLogHierarchy()
+                                      {
+                                          return "test.hierarchy";
+                                      }
+                                  }
+                                 );
+                return null;
+
             }
         });
         return message;

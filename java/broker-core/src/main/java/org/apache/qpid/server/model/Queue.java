@@ -123,6 +123,12 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     //children
     Collection<? extends Binding> getBindings();
 
+    // TODO - Undo this commented out line when we stop supporting 1.6 for compilation
+    //        In 1.6 this causes the build to break at AbstractQueue because the 1.6 compiler can't work out that
+    //        the definition in terms of the Consumer implementation meets both this, and the contract for AMQQueue
+
+    // Collection<? extends Consumer> getConsumers();
+
     //operations
 
     void visit(QueueEntryVisitor visitor);

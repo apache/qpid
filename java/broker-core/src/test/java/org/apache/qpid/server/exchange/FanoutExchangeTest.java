@@ -33,8 +33,6 @@ import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
@@ -54,7 +52,6 @@ public class FanoutExchangeTest extends TestCase
 
     public void setUp() throws UnknownExchangeException
     {
-        CurrentActor.setDefault(mock(LogActor.class));
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Exchange.ID, UUID.randomUUID());
         attributes.put(Exchange.NAME, "test");

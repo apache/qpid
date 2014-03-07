@@ -21,7 +21,7 @@
 package org.apache.qpid.server.binding;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.model.Binding;
@@ -94,9 +94,9 @@ public class BindingImpl
         //Perform ACLs
         queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
         _logSubject = new BindingLogSubject(_bindingKey,exchange,queue);
-        CurrentActor.get().message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
-                                                                        getArguments() != null
-                                                                        && !getArguments().isEmpty()));
+        SystemLog.message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
+                                                               getArguments() != null
+                                                               && !getArguments().isEmpty()));
 
 
     }
@@ -229,7 +229,7 @@ public class BindingImpl
             {
                 listener.stateChanged(this, State.ACTIVE, State.DELETED);
             }
-            CurrentActor.get().message(_logSubject, BindingMessages.DELETED());
+            SystemLog.message(_logSubject, BindingMessages.DELETED());
         }
     }
 

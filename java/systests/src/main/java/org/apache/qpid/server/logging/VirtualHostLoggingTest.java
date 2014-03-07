@@ -69,7 +69,7 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         {
             List<String> vhosts = Arrays.asList("test");
 
-            assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
+            assertEquals("Each vhost did not create a store.", 2*vhosts.size(), results.size());
 
             for (int index = 0; index < results.size(); index++)
             {

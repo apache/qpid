@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging;
 
-public class CompositeStartupMessageLogger extends AbstractRootMessageLogger
+public class CompositeStartupMessageLogger implements RootMessageLogger
 {
     private RootMessageLogger[] _loggers;
     
@@ -30,22 +30,50 @@ public class CompositeStartupMessageLogger extends AbstractRootMessageLogger
         _loggers = loggers;
     }
 
+
     @Override
-    public void rawMessage(String message, String logHierarchy)
+    public boolean isEnabled()
     {
         for(RootMessageLogger l : _loggers)
         {
-            l.rawMessage(message, logHierarchy);
+            if(l.isEnabled())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isMessageEnabled(final String logHierarchy)
+    {
+        for(RootMessageLogger l : _loggers)
+        {
+            if(l.isMessageEnabled(logHierarchy))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void message(final LogMessage message)
+    {
+        for(RootMessageLogger l : _loggers)
+        {
+            l.message(message);
         }
     }
 
     @Override
-    public void rawMessage(String message, Throwable throwable, String logHierarchy)
+    public void message(final LogSubject subject, final LogMessage message)
     {
         for(RootMessageLogger l : _loggers)
         {
-            l.rawMessage(message, throwable, logHierarchy);
+            l.message(subject, message);
         }
     }
+
 
 }

@@ -28,7 +28,7 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.message.EnqueueableMessage;
@@ -82,7 +82,7 @@ public class VirtualHostConfigRecoveryHandler implements
     {
         _logSubject = new MessageStoreLogSubject(_virtualHost.getName(), store.getClass().getSimpleName());
         _store = store;
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_START(null, false));
+        SystemLog.message(_logSubject, TransactionLogMessages.RECOVERY_START(null, false));
         return this;
     }
 
@@ -149,9 +149,9 @@ public class VirtualHostConfigRecoveryHandler implements
                 else
                 {
                     StringBuilder xidString = xidAsString(id);
-                    CurrentActor.get().message(_logSubject,
-                                               TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
-                                                                                            Long.toString(messageId)));
+                    SystemLog.message(_logSubject,
+                                      TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
+                                                                                   Long.toString(messageId)));
 
                 }
 
@@ -159,9 +159,9 @@ public class VirtualHostConfigRecoveryHandler implements
             else
             {
                 StringBuilder xidString = xidAsString(id);
-                CurrentActor.get().message(_logSubject,
-                                           TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
-                                                                                      record.getResource().getId().toString()));
+                SystemLog.message(_logSubject,
+                                  TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
+                                                                             record.getResource().getId().toString()));
 
             }
         }
@@ -199,9 +199,9 @@ public class VirtualHostConfigRecoveryHandler implements
                 else
                 {
                     StringBuilder xidString = xidAsString(id);
-                    CurrentActor.get().message(_logSubject,
-                                               TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
-                                                                                            Long.toString(messageId)));
+                    SystemLog.message(_logSubject,
+                                      TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
+                                                                                   Long.toString(messageId)));
 
                 }
 
@@ -209,9 +209,9 @@ public class VirtualHostConfigRecoveryHandler implements
             else
             {
                 StringBuilder xidString = xidAsString(id);
-                CurrentActor.get().message(_logSubject,
-                                           TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
-                                                                                      record.getResource().getId().toString()));
+                SystemLog.message(_logSubject,
+                                  TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
+                                                                             record.getResource().getId().toString()));
             }
 
         }
@@ -238,7 +238,7 @@ public class VirtualHostConfigRecoveryHandler implements
             _logger.warn("Message id " + m.getMessageNumber() + " in store, but not in any queue - removing....");
             m.remove();
         }
-        CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
+        SystemLog.message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
     }
 
     public void complete()
@@ -316,9 +316,9 @@ public class VirtualHostConfigRecoveryHandler implements
 
         for(Map.Entry<String,Integer> entry : _queueRecoveries.entrySet())
         {
-            CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERED(entry.getValue(), entry.getKey()));
+            SystemLog.message(_logSubject, TransactionLogMessages.RECOVERED(entry.getValue(), entry.getKey()));
 
-            CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(entry.getKey(), true));
+            SystemLog.message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(entry.getKey(), true));
         }
 
 

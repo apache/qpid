@@ -28,15 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -54,7 +49,6 @@ public class VirtualHostTest extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
 
         _broker = BrokerTestHelper.createBrokerMock();
         TaskExecutor taskExecutor = mock(TaskExecutor.class);
@@ -63,13 +57,6 @@ public class VirtualHostTest extends QpidTestCase
 
         _recovererProvider = mock(RecovererProvider.class);
         _statisticsGatherer = mock(StatisticsGatherer.class);
-    }
-
-    @Override
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-        CurrentActor.remove();
     }
 
     public void testInitialisingState()

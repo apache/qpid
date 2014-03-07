@@ -36,6 +36,7 @@ import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.Queue;
@@ -44,10 +45,7 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.filter.FilterManager;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -180,7 +178,6 @@ public abstract class AbstractQueue
 
 
     private LogSubject _logSubject;
-    private LogActor _logActor;
 
     private boolean _noLocal;
 
@@ -245,7 +242,6 @@ public abstract class AbstractQueue
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
         _logSubject = new QueueLogSubject(this);
-        _logActor = new QueueActor(this, CurrentActor.get().getRootMessageLogger());
 
         virtualHost.getSecurityManager().authoriseCreateQueue(this);
 
@@ -411,14 +407,14 @@ public abstract class AbstractQueue
 
         // Log the creation of this Queue.
         // The priorities display is toggled on if we set priorities > 0
-        CurrentActor.get().message(_logSubject,
-                                   QueueMessages.CREATED(ownerString,
-                                                         _entries.getPriorities(),
-                                                         ownerString != null ,
-                                                         _lifetimePolicy != LifetimePolicy.PERMANENT,
-                                                         durable,
-                                                         !durable,
-                                                         _entries.getPriorities() > 0));
+        SystemLog.message(_logSubject,
+                          QueueMessages.CREATED(ownerString,
+                                                _entries.getPriorities(),
+                                                ownerString != null,
+                                                _lifetimePolicy != LifetimePolicy.PERMANENT,
+                                                durable,
+                                                !durable,
+                                                _entries.getPriorities() > 0));
 
         if(attributes != null && attributes.containsKey(Queue.MESSAGE_GROUP_KEY))
         {
@@ -1684,7 +1680,7 @@ public abstract class AbstractQueue
             stop();
 
             //Log Queue Deletion
-            CurrentActor.get().message(_logSubject, QueueMessages.DELETED());
+            SystemLog.message(_logSubject, QueueMessages.DELETED());
 
         }
         return getQueueDepthMessages();
@@ -1707,7 +1703,7 @@ public abstract class AbstractQueue
             {
                 _overfull.set(true);
                 //Overfull log message
-                _logActor.message(_logSubject, QueueMessages.OVERFULL(_atomicQueueSize.get(), _capacity));
+                SystemLog.message(_logSubject, QueueMessages.OVERFULL(_atomicQueueSize.get(), _capacity));
 
                 _blockedChannels.add(channel);
 
@@ -1717,13 +1713,12 @@ public abstract class AbstractQueue
                 {
 
                     //Underfull log message
-                    _logActor.message(_logSubject, QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
+                    SystemLog.message(_logSubject, QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
 
                    channel.unblock(this);
                    _blockedChannels.remove(channel);
 
                 }
-
             }
 
 
@@ -1739,7 +1734,7 @@ public abstract class AbstractQueue
             {
                 if(_overfull.compareAndSet(true,false))
                 {//Underfull log message
-                    _logActor.message(_logSubject, QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
+                    SystemLog.message(_logSubject, QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
                 }
 
                 for(final AMQSessionModel blockedChannel : _blockedChannels)
@@ -2399,11 +2394,6 @@ public abstract class AbstractQueue
     {
         _unackedMsgCount.incrementAndGet();
         _unackedMsgBytes.addAndGet(entry.getSize());
-    }
-
-    public LogActor getLogActor()
-    {
-        return _logActor;
     }
 
     @Override

@@ -23,9 +23,13 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
 import org.apache.qpid.transport.TransportException;
 
+import javax.security.auth.Subject;
+import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,37 +62,46 @@ class SubFlushRunner implements Runnable
     {
         if(_scheduled.compareAndSet(SCHEDULED, RUNNING))
         {
-            boolean complete = false;
-            _stateChange.set(false);
-            try
+            Subject subject = new Subject(false, SecurityManager.SYSTEM.getPrincipals(), Collections.emptySet(), Collections.emptySet());
+            subject.getPrincipals().add(new TaskPrincipal("Sub. Delivery"));
+            Subject.doAs(subject, new PrivilegedAction<Object>()
             {
-                CurrentActor.set(_sub.getLogActor());
-                complete = getQueue().flushConsumer(_sub, ITERATIONS);
-            }
-            catch (final TransportException transe)
-            {
-                final String errorMessage = "Problem during asynchronous delivery by " + toString();
-                if(_logger.isDebugEnabled())
+                @Override
+                public Object run()
                 {
-                    _logger.debug(errorMessage, transe);
-                }
-                else
-                {
-                    _logger.info(errorMessage + ' ' + transe.getMessage());
-                }
-            }
-            finally
-            {
-                CurrentActor.remove();
-                _scheduled.compareAndSet(RUNNING, IDLE);
-                if ((!complete || _stateChange.compareAndSet(true,false))&& !_sub.isSuspended())
-                {
-                    if(_scheduled.compareAndSet(IDLE,SCHEDULED))
+                    boolean complete = false;
+                    _stateChange.set(false);
+                    try
                     {
-                        getQueue().execute(this);
+                        complete = getQueue().flushConsumer(_sub, ITERATIONS);
                     }
+                    catch (final TransportException transe)
+                    {
+                        final String errorMessage = "Problem during asynchronous delivery by " + toString();
+                        if(_logger.isDebugEnabled())
+                        {
+                            _logger.debug(errorMessage, transe);
+                        }
+                        else
+                        {
+                            _logger.info(errorMessage + ' ' + transe.getMessage());
+                        }
+                    }
+                    finally
+                    {
+                        _scheduled.compareAndSet(RUNNING, IDLE);
+                        if ((!complete || _stateChange.compareAndSet(true,false))&& !_sub.isSuspended())
+                        {
+                            if(_scheduled.compareAndSet(IDLE,SCHEDULED))
+                            {
+                                getQueue().execute(SubFlushRunner.this);
+                            }
+                        }
+                    }
+                    return null;
                 }
-            }
+            });
+
         }
     }
 
@@ -99,7 +112,7 @@ class SubFlushRunner implements Runnable
 
     public String toString()
     {
-        return "SubFlushRunner-" + _sub.getLogActor();
+        return "SubFlushRunner-" + _sub.toLogString();
     }
 
     public void execute(Executor executor)

@@ -20,56 +20,13 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.NullRootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import java.util.concurrent.CountDownLatch;
 
 public class HouseKeepingTaskTest extends QpidTestCase
 {
-    /**
-     * Tests that the abstract HouseKeepingTask properly cleans up any LogActor
-     * it adds to the CurrentActor stack by verifying the CurrentActor set
-     * before task execution is the CurrentActor after execution.
-     */
-    public void testCurrentActorStackBalance() throws Exception
-    {
-        //create and set a test actor
-        LogActor testActor = new TestLogActor(new NullRootMessageLogger());
-        CurrentActor.set(testActor);
-
-        //verify it is returned correctly before executing a HouseKeepingTask
-        assertEquals("Expected LogActor was not returned", testActor, CurrentActor.get());
-
-        final CountDownLatch latch = new CountDownLatch(1);
-        HouseKeepingTask testTask = new HouseKeepingTask(new MockVirtualHost("HouseKeepingTaskTestVhost"))
-        {
-            @Override
-            public void execute()
-            {
-                latch.countDown();
-            }
-        };
-
-        //run the test HouseKeepingTask using the current Thread to influence its CurrentActor stack
-        testTask.run();
-
-        assertEquals("The expected LogActor was not returned, the CurrentActor stack has become unbalanced",
-                     testActor, CurrentActor.get());
-        assertEquals("HouseKeepingTask execute() method was not run", 0, latch.getCount());
-
-        //clean up the test actor
-        CurrentActor.remove();
-    }
 
     public void testThreadNameIsSetForDurationOfTask() throws Exception
     {
-        //create and set a test actor
-        LogActor testActor = new TestLogActor(new NullRootMessageLogger());
-        CurrentActor.set(testActor);
 
         String originalThreadName = Thread.currentThread().getName();
 
@@ -84,8 +41,6 @@ public class HouseKeepingTaskTest extends QpidTestCase
         assertEquals("Thread name should have been set during execution", expectedThreadNameDuringExecution, testTask.getThreadNameDuringExecution());
         assertEquals("Thread name should have been reverted after task has run", originalThreadName, Thread.currentThread().getName());
 
-        //clean up the test actor
-        CurrentActor.remove();
     }
 
 

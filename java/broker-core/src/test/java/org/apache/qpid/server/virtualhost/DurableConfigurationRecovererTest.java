@@ -36,8 +36,6 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.exchange.TopicExchange;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -185,7 +183,6 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _store = mock(DurableConfigurationStore.class);
 
-        CurrentActor.set(mock(LogActor.class));
     }
 
     public void testUpgradeEmptyStore() throws Exception

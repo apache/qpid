@@ -23,6 +23,8 @@ package org.apache.qpid.server;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -32,13 +34,16 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.BrokerActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
+
+import javax.security.auth.Subject;
 
 public class Broker
 {
@@ -80,17 +85,22 @@ public class Broker
 
     public void startup(final BrokerOptions options) throws Exception
     {
-        CurrentActor.set(new BrokerActor(new SystemOutMessageLogger()));
-        try
+        Subject subject = SecurityManager.SYSTEM;
+        subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
+        subject.getPrincipals().add(new TaskPrincipal("Broker"));
+        Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
         {
-            startupImpl(options);
-            addShutdownHook();
-        }
-        finally
-        {
-            CurrentActor.remove();
+            @Override
+            public Object run() throws Exception
+            {
+                SystemLog.setRootMessageLogger(new SystemOutMessageLogger());
+                startupImpl(options);
+                addShutdownHook();
 
-        }
+                return null;
+            }
+        });
+
     }
 
     private void startupImpl(final BrokerOptions options) throws Exception
@@ -98,7 +108,7 @@ public class Broker
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
-        CurrentActor.get().message(BrokerMessages.CONFIG(storeLocation));
+        SystemLog.message(BrokerMessages.CONFIG(storeLocation));
 
         //Allow skipping the logging configuration for people who are
         //embedding the broker and want to configure it themselves.
@@ -159,7 +169,7 @@ public class Broker
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
-            CurrentActor.get().message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
+            SystemLog.message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
 
             if (logWatchTime > 0)
             {
@@ -270,8 +280,20 @@ public class Broker
     {
         public void run()
         {
-            LOGGER.debug("Shutdown hook running");
-            Broker.this.shutdown();
+
+            Subject subject = SecurityManager.SYSTEM;
+            subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
+            subject.getPrincipals().add(new TaskPrincipal("Shutdown"));
+            Subject.doAs(subject, new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    LOGGER.debug("Shutdown hook running");
+                    Broker.this.shutdown();
+                    return null;
+                }
+            });
         }
     }
 

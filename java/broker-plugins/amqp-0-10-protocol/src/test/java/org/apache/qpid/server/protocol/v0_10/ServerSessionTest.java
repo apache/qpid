@@ -19,8 +19,6 @@
 package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -41,7 +39,6 @@ public class ServerSessionTest extends QpidTestCase
         super.setUp();
         BrokerTestHelper.setUp();
         _virtualHost = BrokerTestHelper.createVirtualHost(getName());
-        GenericActor.setDefaultMessageLogger(CurrentActor.get().getRootMessageLogger());
     }
 
     @Override

@@ -46,8 +46,6 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
     @Override
     public void setUp() throws Exception
     {
-        mockLogging();
-
         Map<String,Object> attributes = new HashMap<String,Object>();
         attributes.put(Queue.ID,UUID.randomUUID());
         attributes.put(Queue.NAME, getName());

@@ -23,8 +23,6 @@ package org.apache.qpid.server.jmx;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
@@ -39,17 +37,13 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.management.RuntimeErrorException;
 import javax.management.remote.MBeanServerForwarder;
-import javax.management.remote.rmi.RMIServer;
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.rmi.server.RemoteServer;
-import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
@@ -64,7 +58,6 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
 
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer _mbs;
-    private final ManagementActor _logActor;
 
     private final boolean _managementRightsInferAllAccess;
     private final Broker _broker;
@@ -73,7 +66,6 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     {
         _managementRightsInferAllAccess = Boolean.valueOf(System.getProperty(BrokerProperties.PROPERTY_MANAGEMENT_RIGHTS_INFER_ALL_ACCESS, "true"));
         _broker = broker;
-        _logActor = new ManagementActor(broker.getRootMessageLogger());
     }
 
     public static MBeanServerForwarder newProxyInstance(Broker broker)
@@ -117,9 +109,9 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         return false;
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+    public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable
     {
-        String methodName = method.getName();
+        final String methodName = method.getName();
 
         if (methodName.equals("getMBeanServer"))
         {
@@ -167,16 +159,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
                 throw new SecurityException("Access denied: no authenticated principal", e);
             }
 
-            // Save the subject
-            CurrentActor.set(_logActor);
-            try
-            {
-                return authoriseAndInvoke(method, args);
-            }
-            finally
-            {
-                CurrentActor.remove();
-            }
+            return authoriseAndInvoke(method, args);
         }
         catch (InvocationTargetException e)
         {
@@ -207,7 +190,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         }
     }
 
-    private Object authoriseAndInvoke(final Method method, final Object[] args) throws Throwable
+    private Object authoriseAndInvoke(final Method method, final Object[] args) throws Exception
     {
         String methodName;
         // Get the component, type and impact, which may be null
@@ -239,8 +222,11 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         {
             try
             {
+                Subject subject = Subject.getSubject(AccessController.getContext());
+                subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
+                subject.getPrincipals().addAll(SecurityManager.SYSTEM.getPrincipals());
 
-                return Subject.doAs(SecurityManager.SYSTEM, new PrivilegedExceptionAction<Object>()
+                return Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
                 {
                     @Override
                     public Object run() throws IllegalAccessException, InvocationTargetException
@@ -251,7 +237,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
             }
             catch (PrivilegedActionException e)
             {
-                throw e.getCause();
+                throw (Exception) e.getCause();
             }
         }
         else

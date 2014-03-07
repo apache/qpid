@@ -18,36 +18,22 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.actors;
+package org.apache.qpid.server.security.auth;
 
-import org.apache.qpid.server.logging.RootMessageLogger;
+import java.security.Principal;
 
-public class BrokerActor extends AbstractActor
+public class TaskPrincipal implements Principal
 {
-    private final String _logString;
 
-    /**
-     * Create a new BrokerActor
-     *
-     * @param logger 
-     */
-    public BrokerActor(RootMessageLogger logger)
+    private final String _name;
+
+    public TaskPrincipal(final String name)
     {
-        super(logger);
-
-        _logString = "[Broker] ";
+        _name = name;
     }
 
-    public BrokerActor(String name, RootMessageLogger logger)
+    public String getName()
     {
-        super(logger);
-
-        _logString = "[Broker(" + name + ")] ";
+        return _name;
     }
-
-    public String getLogMessage()
-    {
-        return _logString;
-    }    
-
 }

@@ -24,8 +24,6 @@ import java.util.Collection;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -148,7 +146,6 @@ public class HeadersBindingTest extends TestCase
         VirtualHost vhost = mock(VirtualHost.class);
         when(_queue.getVirtualHost()).thenReturn(vhost);
         when(vhost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
-        CurrentActor.set(mock(LogActor.class));
         _exchange = mock(ExchangeImpl.class);
         when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
     }

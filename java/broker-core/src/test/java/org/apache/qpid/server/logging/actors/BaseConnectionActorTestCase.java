@@ -37,7 +37,6 @@ public class BaseConnectionActorTestCase extends BaseActorTestCase
         BrokerTestHelper.setUp();
         _session = BrokerTestHelper.createConnection();
         _virtualHost = BrokerTestHelper.createVirtualHost("test");
-        setAmqpActor(new AMQPConnectionActor(_session, getRootLogger()));
     }
 
     public VirtualHost getVirtualHost()

@@ -22,8 +22,6 @@ package org.apache.qpid.server.configuration.updater;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -39,10 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class TaskExecutor
@@ -210,47 +205,29 @@ public class TaskExecutor
     private class CallableWrapper<T> implements Task<T>
     {
         private Task<T> _userTask;
-        private LogActor _actor;
         private Subject _contextSubject;
 
         public CallableWrapper(Task<T> userWork)
         {
             _userTask = userWork;
-            _actor = CurrentActor.get();
             _contextSubject = Subject.getSubject(AccessController.getContext());
         }
 
         @Override
         public T call()
         {
-            CurrentActor.set(_actor);
-
-            try
-            {
-                T result = null;
-                result = Subject.doAs(_contextSubject, new PrivilegedAction<T>()
+            T result = null;
+            result = Subject.doAs(_contextSubject, new PrivilegedAction<T>()
+                {
+                    @Override
+                    public T run()
                     {
-                        @Override
-                        public T run()
-                        {
-                            return executeTask(_userTask);
-                        }
-                    });
+                        return executeTask(_userTask);
+                    }
+                });
 
 
-                return result;
-            }
-            finally
-            {
-                try
-                {
-                    CurrentActor.remove();
-                }
-                catch (Exception e)
-                {
-                    LOGGER.warn("Unexpected exception on current actor removal", e);
-                }
-            }
+            return result;
         }
     }
 

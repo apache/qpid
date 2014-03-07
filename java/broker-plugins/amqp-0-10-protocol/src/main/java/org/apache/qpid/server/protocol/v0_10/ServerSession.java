@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.security.AccessController;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,15 +45,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.connection.SessionPrincipal;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -102,7 +102,6 @@ public class ServerSession extends Session
     private final UUID _id = UUID.randomUUID();
     private final Subject _subject = new Subject();
     private long _createTime = System.currentTimeMillis();
-    private LogActor _actor = GenericActor.getInstance(this);
 
     private final Set<Object> _blockingEntities = Collections.synchronizedSet(new HashSet<Object>());
 
@@ -161,18 +160,44 @@ public class ServerSession extends Session
         });
     }
 
-    protected void setState(State state)
+    protected void setState(final State state)
     {
-        super.setState(state);
-
-        if (state == State.OPEN)
+        if(runningAsSubject())
         {
-            _actor.message(ChannelMessages.CREATE());
-            if(_blocking.get())
+            super.setState(state);
+
+            if (state == State.OPEN)
             {
-                invokeBlock();
+                SystemLog.message(ChannelMessages.CREATE());
+                if(_blocking.get())
+                {
+                    invokeBlock();
+                }
             }
         }
+        else
+        {
+            runAsSubject(new PrivilegedAction<Void>() {
+
+                @Override
+                public Void run()
+                {
+                    setState(state);
+                    return null;
+                }
+            });
+
+        }
+    }
+
+    private <T> T runAsSubject(final PrivilegedAction<T> privilegedAction)
+    {
+        return Subject.doAs(getAuthorizedSubject(), privilegedAction);
+    }
+
+    private boolean runningAsSubject()
+    {
+        return getAuthorizedSubject().equals(Subject.getSubject(AccessController.getContext()));
     }
 
     private void invokeBlock()
@@ -394,7 +419,7 @@ public class ServerSession extends Session
         {
             operationalLoggingMessage = ChannelMessages.CLOSE();
         }
-        CurrentActor.get().message(getLogSubject(), operationalLoggingMessage);
+        SystemLog.message(getLogSubject(), operationalLoggingMessage);
     }
 
     @Override
@@ -678,14 +703,10 @@ public class ServerSession extends Session
         return (ServerConnection) super.getConnection();
     }
 
-    public LogActor getLogActor()
-    {
-        return _actor;
-    }
 
     public LogSubject getLogSubject()
     {
-        return (LogSubject) this;
+        return this;
     }
 
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose)
@@ -704,7 +725,7 @@ public class ServerSession extends Session
     }
 
 
-    private void block(Object queue, String name)
+    private void block(final Object queue, final String name)
     {
         synchronized (_blockingEntities)
         {
@@ -717,7 +738,7 @@ public class ServerSession extends Session
                     {
                         invokeBlock();
                     }
-                    _actor.message(_logSubject, ChannelMessages.FLOW_ENFORCED(name));
+                    SystemLog.message(_logSubject, ChannelMessages.FLOW_ENFORCED(name));
                 }
 
 
@@ -735,25 +756,22 @@ public class ServerSession extends Session
         unblock(this);
     }
 
-    private void unblock(Object queue)
+    private void unblock(final Object queue)
     {
-        synchronized(_blockingEntities)
+        if(_blockingEntities.remove(queue) && _blockingEntities.isEmpty())
         {
-            if(_blockingEntities.remove(queue) && _blockingEntities.isEmpty())
+            if(_blocking.compareAndSet(true,false) && !isClosing())
             {
-                if(_blocking.compareAndSet(true,false) && !isClosing())
-                {
 
-                    _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
-                    MessageFlow mf = new MessageFlow();
-                    mf.setUnit(MessageCreditUnit.MESSAGE);
-                    mf.setDestination("");
-                    _outstandingCredit.set(Integer.MAX_VALUE);
-                    mf.setValue(Integer.MAX_VALUE);
-                    invoke(mf);
+                SystemLog.message(_logSubject, ChannelMessages.FLOW_REMOVED());
+                MessageFlow mf = new MessageFlow();
+                mf.setUnit(MessageCreditUnit.MESSAGE);
+                mf.setDestination("");
+                _outstandingCredit.set(Integer.MAX_VALUE);
+                mf.setValue(Integer.MAX_VALUE);
+                invoke(mf);
 
 
-                }
             }
         }
     }

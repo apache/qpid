@@ -33,13 +33,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.HttpManagementActor;
 import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
 import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -88,7 +84,6 @@ public abstract class AbstractServlet extends HttpServlet
 
     /**
      * Performs the GET action as the logged-in {@link Subject}.
-     * The {@link LogActor} is set before this method is called.
      * Subclasses commonly override this method
      */
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException
@@ -117,7 +112,6 @@ public abstract class AbstractServlet extends HttpServlet
 
     /**
      * Performs the POST action as the logged-in {@link Subject}.
-     * The {@link LogActor} is set before this method is called.
      * Subclasses commonly override this method
      */
     protected void doPostWithSubjectAndActor(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
@@ -145,7 +139,6 @@ public abstract class AbstractServlet extends HttpServlet
 
     /**
      * Performs the PUT action as the logged-in {@link Subject}.
-     * The {@link LogActor} is set before this method is called.
      * Subclasses commonly override this method
      */
     protected void doPutWithSubjectAndActor(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
@@ -174,7 +167,6 @@ public abstract class AbstractServlet extends HttpServlet
 
     /**
      * Performs the PUT action as the logged-in {@link Subject}.
-     * The {@link LogActor} is set before this method is called.
      * Subclasses commonly override this method
      */
     protected void doDeleteWithSubjectAndActor(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
@@ -198,8 +190,6 @@ public abstract class AbstractServlet extends HttpServlet
             return;
         }
 
-        HttpManagementActor logActor = HttpManagementUtil.getOrCreateAndCacheLogActor(request, _broker);
-        CurrentActor.set(logActor);
         try
         {
             Subject.doAs(subject, privilegedExceptionAction);
@@ -223,11 +213,6 @@ public abstract class AbstractServlet extends HttpServlet
             }
             throw new ConnectionScopedRuntimeException(e.getCause());
         }
-        finally
-        {
-            CurrentActor.remove();
-        }
-
     }
 
     protected Subject getAuthorisedSubject(HttpServletRequest request)

@@ -33,43 +33,20 @@ public interface RootMessageLogger
      * @return boolean true if enabled.
      */
     boolean isEnabled();
-    
-    /**
-     * Determine if the LogSubject and the LogActor should be
-     * generating log messages.
-     * @param actor   The actor requesting the logging
-     * @param subject The subject of this log request
-     * @param logHierarchy The log hierarchy for this request
-     *
-     * @return boolean true if the message should be logged.
-     */
-    boolean isMessageEnabled(LogActor actor, LogSubject subject, String logHierarchy);
 
     /**
      * Determine if  the LogActor should be generating log messages.
      *
-     * @param actor   The actor requesting the logging
      * @param logHierarchy The log hierarchy for this request
      *
      * @return boolean true if the message should be logged.
      */
-    boolean isMessageEnabled(LogActor actor, String logHierarchy);
+    boolean isMessageEnabled(String logHierarchy);
 
-    /**
-     * Log the raw message to the configured logger.
-     *
-     * @param message   The message to log
-     * @param logHierarchy The log hierarchy for this request
-     */
-    public void rawMessage(String message, String logHierarchy);
+    void message(LogMessage message);
 
-    /**
-     * Log the raw message to the configured logger.
-     * Along with a formatted stack trace from the Throwable.
-     *
-     * @param message   The message to log
-     * @param throwable Optional Throwable that should provide stack trace
-     * @param logHierarchy The log hierarchy for this request
-     */
-    void rawMessage(String message, Throwable throwable, String logHierarchy);
+    void message(LogSubject subject, LogMessage message);
+
+
+
 }

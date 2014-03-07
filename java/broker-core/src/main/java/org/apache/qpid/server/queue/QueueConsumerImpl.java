@@ -24,17 +24,14 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
@@ -56,7 +53,7 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPT
 
 class QueueConsumerImpl
     extends AbstractConfiguredObject<QueueConsumerImpl>
-        implements QueueConsumer<QueueConsumerImpl>
+        implements QueueConsumer<QueueConsumerImpl>, LogSubject
 {
 
 
@@ -76,9 +73,6 @@ class QueueConsumerImpl
     private final Class<? extends ServerMessage> _messageClass;
     private final Object _sessionReference;
     private final AbstractQueue _queue;
-    private GenericActor _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getConsumerNumber())
-                                                      + "(UNKNOWN)"
-                                                      + "] ");
 
     static final EnumMap<ConsumerTarget.State, State> STATE_MAP =
             new EnumMap<ConsumerTarget.State, State>(ConsumerTarget.State.class);
@@ -97,7 +91,7 @@ class QueueConsumerImpl
     {
         public void stateChanged(QueueConsumerImpl sub, State oldState, State newState)
         {
-            CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));
+            SystemLog.message(SubscriptionMessages.STATE(newState.toString()));
         }
     };
     @ManagedAttributeField
@@ -184,12 +178,12 @@ class QueueConsumerImpl
             {
                 if(_targetClosed.compareAndSet(false,true))
                 {
-                    CurrentActor.get().message(getLogSubject(), SubscriptionMessages.CLOSE());
+                    SystemLog.message(getLogSubject(), SubscriptionMessages.CLOSE());
                 }
             }
             else
             {
-                CurrentActor.get().message(getLogSubject(),SubscriptionMessages.STATE(newState.toString()));
+                SystemLog.message(getLogSubject(), SubscriptionMessages.STATE(newState.toString()));
             }
         }
 
@@ -302,35 +296,16 @@ class QueueConsumerImpl
 
     private void setupLogging()
     {
-        String queueString = new QueueLogSubject(_queue).toLogString();
-
-        _logActor = new GenericActor("[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getConsumerNumber())
-                             + "("
-                             // queueString is [vh(/{0})/qu({1}) ] so need to trim
-                             //                ^                ^^
-                             + queueString.substring(1,queueString.length() - 3)
-                             + ")"
-                             + "] ");
-
-
-        if (CurrentActor.get().getRootMessageLogger().isMessageEnabled(_logActor, _logActor.getLogSubject(), SubscriptionMessages.CREATE_LOG_HIERARCHY))
-        {
-            final String filterLogString = getFilterLogString();
-            CurrentActor.get().message(_logActor.getLogSubject(), SubscriptionMessages.CREATE(filterLogString, _queue.isDurable() && _exclusive,
-                                                                                filterLogString.length() > 0));
-        }
+        final String filterLogString = getFilterLogString();
+        SystemLog.message(this,
+                          SubscriptionMessages.CREATE(filterLogString, _queue.isDurable() && _exclusive,
+                                                      filterLogString.length() > 0));
     }
 
     protected final LogSubject getLogSubject()
     {
-        return _logActor.getLogSubject();
+        return this;
     }
-
-    final LogActor getLogActor()
-    {
-        return _logActor;
-    }
-
 
     @Override
     public final void flush()
@@ -585,5 +560,31 @@ class QueueConsumerImpl
     public Collection<String> getAttributeNames()
     {
         return getAttributeNames(getClass());
+    }
+
+    @Override
+    public String toLogString()
+    {
+        String logString;
+        if(_queue == null)
+        {
+            logString = "[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getConsumerNumber())
+                        + "(UNKNOWN)"
+                        + "] ";
+        }
+        else
+        {
+            String queueString = new QueueLogSubject(_queue).toLogString();
+            logString = "[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getConsumerNumber())
+                                     + "("
+                                     // queueString is [vh(/{0})/qu({1}) ] so need to trim
+                                     //                ^                ^^
+                                     + queueString.substring(1,queueString.length() - 3)
+                                     + ")"
+                                     + "] ";
+
+        }
+
+        return logString;
     }
 }

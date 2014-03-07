@@ -19,11 +19,10 @@ package org.apache.qpid.server.store;
 import java.util.ArrayList;
 import java.util.List;
 import junit.framework.TestCase;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
@@ -65,7 +64,7 @@ public class OperationalLoggingListenerTest extends TestCase
     {
         final List<LogMessage> messages = new ArrayList<LogMessage>();
 
-        CurrentActor.set(new TestActor(messages));
+        SystemLog.setRootMessageLogger(new TestRootLogger(messages));
 
         if(setStoreLocation)
         {
@@ -102,14 +101,6 @@ public class OperationalLoggingListenerTest extends TestCase
         assertEquals("Unexpected number of operational log messages on CLOSED", 1, messages.size());
         assertEquals(messages.remove(0).toString(), MessageStoreMessages.CLOSED().toString());
     }
-
-    @Override
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-        CurrentActor.remove();
-    }
-
 
     private static final LogSubject LOG_SUBJECT = new LogSubject()
     {
@@ -155,11 +146,11 @@ public class OperationalLoggingListenerTest extends TestCase
         }
     }
 
-    private static class TestActor implements LogActor
+    private static class TestRootLogger implements RootMessageLogger
     {
         private final List<LogMessage> _messages;
 
-        public TestActor(List<LogMessage> messages)
+        private TestRootLogger(final List<LogMessage> messages)
         {
             _messages = messages;
         }
@@ -169,19 +160,23 @@ public class OperationalLoggingListenerTest extends TestCase
             _messages.add(message);
         }
 
+        @Override
+        public boolean isEnabled()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isMessageEnabled(final String logHierarchy)
+        {
+            return true;
+        }
+
         public void message(LogMessage message)
         {
             _messages.add(message);
         }
 
-        public RootMessageLogger getRootMessageLogger()
-        {
-            return null;
-        }
-
-        public String getLogMessage()
-        {
-            return null;
-        }
     }
+
 }

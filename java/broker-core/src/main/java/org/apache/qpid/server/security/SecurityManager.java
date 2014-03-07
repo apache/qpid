@@ -151,6 +151,12 @@ public class SecurityManager implements ConfigurationChangeListener
         return _logger;
     }
 
+    public static boolean isSystemProcess()
+    {
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        return !(subject == null  || subject.getPrincipals(SystemPrincipal.class).isEmpty());
+    }
+
     private static final class SystemPrincipal implements Principal
     {
         private SystemPrincipal()
@@ -172,8 +178,7 @@ public class SecurityManager implements ConfigurationChangeListener
     private boolean checkAllPlugins(AccessCheck checker)
     {
         // If we are running as SYSTEM then no ACL checking
-        final Subject subject = Subject.getSubject(AccessController.getContext());
-        if(subject != null && !subject.getPrincipals(SystemPrincipal.class).isEmpty())
+        if(isSystemProcess())
         {
             return true;
         }

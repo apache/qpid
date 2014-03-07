@@ -38,7 +38,7 @@ import javax.security.auth.Subject;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.AccessControlMessages;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -321,14 +321,14 @@ public class RuleSet
                 switch (permission)
                 {
                     case ALLOW_LOG:
-                        CurrentActor.get().message(AccessControlMessages.ALLOWED(
+                        SystemLog.message(AccessControlMessages.ALLOWED(
                                 action.getOperation().toString(),
                                 action.getObjectType().toString(),
                                 action.getProperties().toString()));
                     case ALLOW:
                         return Result.ALLOWED;
                     case DENY_LOG:
-                        CurrentActor.get().message(AccessControlMessages.DENIED(
+                        SystemLog.message(AccessControlMessages.DENIED(
                                 action.getOperation().toString(),
                                 action.getObjectType().toString(),
                                 action.getProperties().toString()));

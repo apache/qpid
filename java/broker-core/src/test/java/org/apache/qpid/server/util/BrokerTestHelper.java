@@ -38,11 +38,6 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -72,22 +67,17 @@ public class BrokerTestHelper
         when(broker.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(10000l);
         when(broker.getId()).thenReturn(UUID.randomUUID());
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
-        RootMessageLogger rootMessageLogger = CurrentActor.get().getRootMessageLogger();
-        when(broker.getRootMessageLogger()).thenReturn(rootMessageLogger);
         when(broker.getVirtualHostRegistry()).thenReturn(new VirtualHostRegistry());
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(mock(Broker.class), false));
-        GenericActor.setDefaultMessageLogger(rootMessageLogger);
         return broker;
     }
 
     public static void setUp()
     {
-       CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
     }
 
     public static void tearDown()
     {
-        CurrentActor.remove();
     }
 
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration, VirtualHostRegistry virtualHostRegistry)
@@ -170,7 +160,7 @@ public class BrokerTestHelper
         return connection;
     }
 
-    public static ExchangeImpl createExchange(String hostName) throws Exception
+    public static ExchangeImpl createExchange(String hostName, final boolean durable) throws Exception
     {
         SecurityManager securityManager = new SecurityManager(mock(Broker.class), false);
         VirtualHost virtualHost = mock(VirtualHost.class);
@@ -181,7 +171,7 @@ public class BrokerTestHelper
         attributes.put(org.apache.qpid.server.model.Exchange.ID, UUIDGenerator.generateExchangeUUID("amp.direct", virtualHost.getName()));
         attributes.put(org.apache.qpid.server.model.Exchange.NAME, "amq.direct");
         attributes.put(org.apache.qpid.server.model.Exchange.TYPE, "direct");
-        attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, false);
+        attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, durable);
         return factory.createExchange(attributes);
     }
 

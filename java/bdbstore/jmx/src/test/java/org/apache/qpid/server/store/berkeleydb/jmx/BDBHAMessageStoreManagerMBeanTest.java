@@ -40,9 +40,6 @@ import junit.framework.TestCase;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
 
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
@@ -65,7 +62,6 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     {
         super.setUp();
 
-        CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
         _store = mock(BDBHAMessageStore.class);
         _mBeanParent = mock(AMQManagedObject.class);
         when(_mBeanParent.getRegistry()).thenReturn(mock(ManagedObjectRegistry.class));
@@ -76,7 +72,6 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        CurrentActor.remove();
     }
 
     public void testObjectName() throws Exception

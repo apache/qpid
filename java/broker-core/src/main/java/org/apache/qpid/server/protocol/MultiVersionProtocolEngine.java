@@ -30,17 +30,16 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSocket;
+import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
-import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.security.SSLStatus;
@@ -144,6 +143,12 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         return _delegate.getConnectionId();
     }
 
+    @Override
+    public Subject getSubject()
+    {
+        return _delegate.getSubject();
+    }
+
     private static final int MINIMUM_REQUIRED_HEADER_BYTES = 8;
 
     public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
@@ -242,6 +247,12 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         public long getConnectionId()
         {
             return _id;
+        }
+
+        @Override
+        public Subject getSubject()
+        {
+            return new Subject();
         }
     }
 
@@ -384,6 +395,12 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
             return _id;
         }
 
+        @Override
+        public Subject getSubject()
+        {
+            return _delegate.getSubject();
+        }
+
         public void exception(Throwable t)
         {
             _logger.error("Error establishing session", t);
@@ -423,7 +440,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public void readerIdle()
         {
-            CurrentActor.get().message(ConnectionMessages.IDLE_CLOSE());
+            SystemLog.message(ConnectionMessages.IDLE_CLOSE());
             _network.close();
         }
 
@@ -544,6 +561,12 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         public long getConnectionId()
         {
             return _decryptEngine.getConnectionId();
+        }
+
+        @Override
+        public Subject getSubject()
+        {
+            return _decryptEngine.getSubject();
         }
 
         @Override

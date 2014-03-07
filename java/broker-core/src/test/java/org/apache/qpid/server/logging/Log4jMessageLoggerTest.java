@@ -26,8 +26,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 
-import org.apache.qpid.server.logging.actors.BrokerActor;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -156,18 +154,17 @@ public class Log4jMessageLoggerTest extends TestCase
         Logger.getLogger(loggerName2).setLevel(Level.OFF);
         
         Log4jMessageLogger msgLogger = new Log4jMessageLogger();
-        BrokerActor actor = new BrokerActor(msgLogger);
-        
+
         assertTrue("Expected message logger to be enabled", msgLogger.isEnabled());
         
-        assertTrue("Message should be enabled", msgLogger.isMessageEnabled(actor, loggerName1));
-        assertFalse("Message should be disabled", msgLogger.isMessageEnabled(actor, loggerName2));
+        assertTrue("Message should be enabled", msgLogger.isMessageEnabled(loggerName1));
+        assertFalse("Message should be disabled", msgLogger.isMessageEnabled(loggerName2));
         
         Logger.getLogger(loggerName1).setLevel(Level.WARN);
         Logger.getLogger(loggerName2).setLevel(Level.INFO);
         
-        assertFalse("Message should be disabled", msgLogger.isMessageEnabled(actor, loggerName1));
-        assertTrue("Message should be enabled", msgLogger.isMessageEnabled(actor, loggerName2));
+        assertFalse("Message should be disabled", msgLogger.isMessageEnabled(loggerName1));
+        assertTrue("Message should be enabled", msgLogger.isMessageEnabled(loggerName2));
     }
 
     /**

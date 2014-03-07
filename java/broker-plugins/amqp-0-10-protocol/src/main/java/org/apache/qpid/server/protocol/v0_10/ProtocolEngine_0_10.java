@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
@@ -30,8 +31,11 @@ import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.NetworkConnection;
 
+import javax.security.auth.Subject;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 
 public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine
@@ -63,15 +67,31 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         }
     }
 
-    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+    public void setNetworkConnection(final NetworkConnection network, final Sender<ByteBuffer> sender)
     {
-        _network = network;
+        if(!getSubject().equals(Subject.getSubject(AccessController.getContext())))
+        {
+            Subject.doAs(getSubject(), new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    setNetworkConnection(network,sender);
+                    return null;
+                }
+            });
+        }
+        else
+        {
+            SystemLog.message(ConnectionMessages.OPEN(null, null, null, null, false, false, false, false));
+            _network = network;
 
-        _connection.setNetworkConnection(network);
-        _connection.setSender(new Disassembler(wrapSender(sender), MAX_FRAME_SIZE));
-        // FIXME Two log messages to maintain compatibility with earlier protocol versions
-        _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, null, null, false, false, false, false));
-        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", null, null, false, true, false, false));
+            _connection.setNetworkConnection(network);
+            _connection.setSender(new Disassembler(wrapSender(sender), MAX_FRAME_SIZE));
+            // FIXME Two log messages to maintain compatibility with earlier protocol versions
+            SystemLog.message(ConnectionMessages.OPEN(null, "0-10", null, null, false, true, false, false));
+
+        }
     }
 
     private Sender<ByteBuffer> wrapSender(final Sender<ByteBuffer> sender)
@@ -155,8 +175,17 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
 
     public void readerIdle()
     {
-        _connection.getLogActor().message(ConnectionMessages.IDLE_CLOSE());
-        _network.close();
+        Subject.doAs(_connection.getAuthorizedSubject(), new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    SystemLog.message(ConnectionMessages.IDLE_CLOSE());
+                    _network.close();
+                    return null;
+                }
+            });
+
     }
 
     public String getAddress()
@@ -188,5 +217,11 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     public long getConnectionId()
     {
         return _connection.getConnectionId();
+    }
+
+    @Override
+    public Subject getSubject()
+    {
+        return _connection.getAuthorizedSubject();
     }
 }

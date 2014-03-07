@@ -22,11 +22,8 @@ package org.apache.qpid.server.management.plugin;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 
@@ -37,9 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.HttpManagementActor;
 import org.apache.qpid.server.management.plugin.servlet.ServletConnectionPrincipal;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -51,7 +45,6 @@ import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationS
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class HttpManagementUtil
@@ -117,55 +110,33 @@ public class HttpManagementUtil
             subject.getPrincipals().add(new ServletConnectionPrincipal(request));
             subject.setReadOnly();
 
-            LogActor actor = createHttpManagementActor(broker, request);
+            assertManagementAccess(broker.getSecurityManager(), subject);
 
-            assertManagementAccess(broker.getSecurityManager(), subject, actor);
-
-            saveAuthorisedSubject(session, subject, actor);
+            saveAuthorisedSubject(session, subject);
 
 
         }
     }
 
-    public static void assertManagementAccess(final SecurityManager securityManager, Subject subject, LogActor actor)
+    public static void assertManagementAccess(final SecurityManager securityManager, Subject subject)
     {
-        CurrentActor.set(actor);
-        try
+        Subject.doAs(subject, new PrivilegedAction<Void>()
         {
-            Subject.doAs(subject, new PrivilegedAction<Void>()
+            @Override
+            public Void run()
             {
-                @Override
-                public Void run()
-                {
-                    securityManager.accessManagement();
-                    return null;
-                }
-            });
-        }
-        finally
-        {
-            CurrentActor.remove();
-        }
+                securityManager.accessManagement();
+                return null;
+            }
+        });
     }
 
-    public static HttpManagementActor getOrCreateAndCacheLogActor(HttpServletRequest request, Broker broker)
-    {
-        HttpSession session = request.getSession();
-        HttpManagementActor actor = (HttpManagementActor) session.getAttribute(ATTR_LOG_ACTOR);
-        if (actor == null)
-        {
-            actor = createHttpManagementActor(broker, request);
-            session.setAttribute(ATTR_LOG_ACTOR, actor);
-        }
-        return actor;
-    }
-
-    public static void saveAuthorisedSubject(HttpSession session, Subject subject, LogActor logActor)
+    public static void saveAuthorisedSubject(HttpSession session, Subject subject)
     {
         session.setAttribute(ATTR_SUBJECT, subject);
 
         // Cause the user logon to be logged.
-        session.setAttribute(ATTR_LOGIN_LOGOUT_REPORTER, new LoginLogoutReporter(logActor, subject));
+        session.setAttribute(ATTR_LOGIN_LOGOUT_REPORTER, new LoginLogoutReporter(subject));
     }
 
     public static Subject tryToAuthenticate(HttpServletRequest request, HttpManagementConfiguration managementConfig)
@@ -245,9 +216,5 @@ public class HttpManagementUtil
         return null;
     }
 
-    private static HttpManagementActor createHttpManagementActor(Broker broker, HttpServletRequest request)
-    {
-        return new HttpManagementActor(broker.getRootMessageLogger(), request.getRemoteAddr(), request.getRemotePort());
-    }
 
 }

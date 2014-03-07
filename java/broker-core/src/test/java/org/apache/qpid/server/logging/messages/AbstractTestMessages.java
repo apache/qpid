@@ -23,11 +23,10 @@ package org.apache.qpid.server.logging.messages;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -38,7 +37,6 @@ public abstract class AbstractTestMessages extends QpidTestCase
 {
     protected Configuration _config = new PropertiesConfiguration();
     protected LogMessage _logMessage = null;
-    protected LogActor _actor;
     protected UnitTestMessageLogger _logger;
     protected LogSubject _logSubject = new TestBlankSubject();
 
@@ -47,10 +45,9 @@ public abstract class AbstractTestMessages extends QpidTestCase
     {
         super.setUp();
 
-        _logger = new UnitTestMessageLogger();
-
-        _actor = new TestLogActor(_logger);
         BrokerTestHelper.setUp();
+        _logger = new UnitTestMessageLogger();
+        SystemLog.setRootMessageLogger(_logger);
     }
 
     @Override
@@ -60,14 +57,24 @@ public abstract class AbstractTestMessages extends QpidTestCase
         super.tearDown();
     }
 
+    protected List<Object> getLog()
+    {
+        return _logger.getLogMessages();
+    }
+
+    protected void clearLog()
+    {
+        _logger.clearLogMessages();
+    }
+
+
     protected List<Object> performLog()
     {
         if (_logMessage == null)
         {
             throw new NullPointerException("LogMessage has not been set");
         }
-
-        _actor.message(_logSubject, _logMessage);
+        SystemLog.message(_logSubject, _logMessage);
 
         return _logger.getLogMessages();
     }
@@ -75,6 +82,16 @@ public abstract class AbstractTestMessages extends QpidTestCase
     protected void validateLogMessage(List<Object> logs, String tag, String[] expected)
     {
         validateLogMessage(logs, tag, false, expected);
+    }
+
+    protected void validateLogMessageNoSubject(List<Object> logs, String tag, String[] expected)
+    {
+        validateLogMessage(logs, tag, null, false, expected);
+    }
+
+    protected void validateLogMessageNoSubject(List<Object> logs, String tag, boolean useStringForNull, String[] expected)
+    {
+        validateLogMessage(logs, tag, null, useStringForNull, expected);
     }
 
     /**
@@ -88,6 +105,11 @@ public abstract class AbstractTestMessages extends QpidTestCase
      */
     protected void validateLogMessage(List<Object> logs, String tag, boolean useStringForNull, String[] expected)
     {
+        validateLogMessage(logs, tag, _logSubject, useStringForNull, expected);
+    }
+
+    protected void validateLogMessage(List<Object> logs, String tag, LogSubject subject, boolean useStringForNull, String[] expected)
+    {
         assertEquals("Log has incorrect message count", 1, logs.size());
 
         //We trim() here as we don't care about extra white space at the end of the log message
@@ -98,11 +120,22 @@ public abstract class AbstractTestMessages extends QpidTestCase
         // Simple switch to print out all the logged messages 
         //System.err.println(log);
 
-        int msgIndex = log.indexOf(_logSubject.toLogString())+_logSubject.toLogString().length();
+        int msgIndex;
+        String message;
+        if(subject != null)
+        {
+            final String subjectString = subject.toLogString();
+            msgIndex = log.indexOf(subjectString)+ subjectString.length();
 
-        assertTrue("Unable to locate Subject:" + log, msgIndex != -1);
+            assertTrue("Unable to locate Subject:" + log, msgIndex != -1);
 
-        String message = log.substring(msgIndex);
+            message = log.substring(msgIndex);
+        }
+        else
+        {
+            msgIndex = log.indexOf(tag);
+            message = log.substring(msgIndex);
+        }
 
         assertTrue("Message does not start with tag:" + tag + ":" + message,
                    message.startsWith(tag));
