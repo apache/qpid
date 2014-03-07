@@ -29,6 +29,10 @@
   <name>Qpid Performance Tests</name>
   <description>Performance testing configuration, code and tests</description>
 
+  <properties>
+    <test.systest.resource.directory>${basedir}/../systests</test.systest.resource.directory>
+  </properties>
+
   <dependencies>
     <!-- client deps -->
     <dependency>
@@ -86,4 +90,29 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <testResources>
+      <testResource>
+        <directory>src/test/java</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+        </excludes>
+      </testResource>
+      <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+    </testResources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <!--version specified in parent pluginManagement -->
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+
+  </build>
 </project>
