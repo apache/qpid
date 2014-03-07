@@ -22,8 +22,7 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
@@ -387,7 +386,6 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
     protected void sendToDLQOrDiscard(MessageInstance entry)
     {
-        final LogActor logActor = CurrentActor.get();
         final ServerMessage msg = entry.getMessage();
 
         int requeues = entry.routeToAlternate(new Action<MessageInstance>()
@@ -395,7 +393,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
                         @Override
                         public void performAction(final MessageInstance requeueEntry)
                         {
-                            logActor.message( ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
+                            SystemLog.message(ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
                                                                             requeueEntry.getOwningResource().getName()));
                         }
                     }, null);
@@ -410,12 +408,12 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
                 if(alternateExchange != null)
                 {
-                    logActor.message( ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(),
+                    SystemLog.message( ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(),
                                                                          alternateExchange.getName()));
                 }
                 else
                 {
-                    logActor.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(),
+                    SystemLog.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(),
                                                                           queue.getName(),
                                                                           msg.getInitialRoutingAddress()));
                 }

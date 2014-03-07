@@ -511,6 +511,12 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         return _connectionId;
     }
 
+    @Override
+    public Subject getSubject()
+    {
+        return _connection.getSubject();
+    }
+
     public long getLastReadTime()
     {
         return _lastReadTime;

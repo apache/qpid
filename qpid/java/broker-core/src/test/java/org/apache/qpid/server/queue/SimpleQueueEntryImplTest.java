@@ -41,7 +41,6 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
     @Override
     public void setUp() throws Exception
     {
-        mockLogging();
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, "SimpleQueueEntryImplTest");

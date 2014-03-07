@@ -20,15 +20,19 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.TransportException;
+
+import javax.security.auth.Subject;
 
 /**
  * QueueRunners are Runnables used to process a queue when requiring
@@ -62,60 +66,68 @@ public class QueueRunner implements Runnable
     {
         if(_scheduled.compareAndSet(SCHEDULED,RUNNING))
         {
-            long runAgain = Long.MIN_VALUE;
-            _stateChange.set(false);
-            try
+            Subject subject = new Subject(false, org.apache.qpid.server.security.SecurityManager.SYSTEM.getPrincipals(), Collections
+                    .emptySet(), Collections.emptySet());
+            subject.getPrincipals().add(new TaskPrincipal("Queue Delivery"));
+            Subject.doAs(subject, new PrivilegedAction<Object>()
             {
-                CurrentActor.set(_queue.getLogActor());
-
-                runAgain = _queue.processQueue(this);
-            }
-            catch (final ConnectionScopedRuntimeException e)
-            {
-                final String errorMessage = "Problem during asynchronous delivery by " + toString();
-                if(_logger.isDebugEnabled())
+                @Override
+                public Object run()
                 {
-                    _logger.debug(errorMessage, e);
-                }
-                else
-                {
-                    _logger.info(errorMessage + ' ' + e.getMessage());
-                }
-            }
-            catch (final TransportException transe)
-            {
-                final String errorMessage = "Problem during asynchronous delivery by " + toString();
-                if(_logger.isDebugEnabled())
-                {
-                    _logger.debug(errorMessage, transe);
-                }
-                else
-                {
-                    _logger.info(errorMessage + ' ' + transe.getMessage());
-                }
-            }
-            finally
-            {
-                _scheduled.compareAndSet(RUNNING, IDLE);
-                final long stateChangeCount = _queue.getStateChangeCount();
-                _lastRunAgain.set(runAgain);
-                _lastRunTime.set(System.nanoTime());
-                if(runAgain == 0L || runAgain != stateChangeCount || _stateChange.compareAndSet(true,false))
-                {
-                    if(_scheduled.compareAndSet(IDLE, SCHEDULED))
+                    long runAgain = Long.MIN_VALUE;
+                    _stateChange.set(false);
+                    try
                     {
-                        _queue.execute(this);
+                        runAgain = _queue.processQueue(QueueRunner.this);
                     }
+                    catch (final ConnectionScopedRuntimeException e)
+                    {
+                        final String errorMessage = "Problem during asynchronous delivery by " + toString();
+                        if(_logger.isDebugEnabled())
+                        {
+                            _logger.debug(errorMessage, e);
+                        }
+                        else
+                        {
+                            _logger.info(errorMessage + ' ' + e.getMessage());
+                        }
+                    }
+                    catch (final TransportException transe)
+                    {
+                        final String errorMessage = "Problem during asynchronous delivery by " + toString();
+                        if(_logger.isDebugEnabled())
+                        {
+                            _logger.debug(errorMessage, transe);
+                        }
+                        else
+                        {
+                            _logger.info(errorMessage + ' ' + transe.getMessage());
+                        }
+                    }
+                    finally
+                    {
+                        _scheduled.compareAndSet(RUNNING, IDLE);
+                        final long stateChangeCount = _queue.getStateChangeCount();
+                        _lastRunAgain.set(runAgain);
+                        _lastRunTime.set(System.nanoTime());
+                        if(runAgain == 0L || runAgain != stateChangeCount || _stateChange.compareAndSet(true,false))
+                        {
+                            if(_scheduled.compareAndSet(IDLE, SCHEDULED))
+                            {
+                                _queue.execute(QueueRunner.this);
+                            }
+                        }
+                    }
+                    return null;
                 }
-                CurrentActor.remove();
-            }
 
+            });
         }
     }
 
     public String toString()
     {
-        return "QueueRunner-" + _queue.getLogActor();
+        return "QueueRunner-" + _queue.getLogSubject();
     }
 
     public void execute(Executor executor)

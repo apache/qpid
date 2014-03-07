@@ -32,32 +32,32 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 {
     public void testExchangeCreated_Transient() throws Exception
     {
-        ExchangeImpl exchange = BrokerTestHelper.createExchange("test");
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", false);
 
         String type = exchange.getTypeName();
         String name = exchange.getName();
 
         _logMessage = ExchangeMessages.CREATED(type, name, false);
-        List<Object> log = performLog();
+        List<Object> log = getLog();
 
         String[] expected = {"Create :", "Type:", type, "Name:", name};
 
-        validateLogMessage(log, "EXH-1001", expected);
+        validateLogMessageNoSubject(log, "EXH-1001", expected);
     }
 
     public void testExchangeCreated_Persistent() throws Exception
     {
-        ExchangeImpl exchange = BrokerTestHelper.createExchange("test");
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", true);
 
         String type = exchange.getTypeName();
         String name = exchange.getName();
 
         _logMessage = ExchangeMessages.CREATED(type, name, true);
-        List<Object> log = performLog();
+        List<Object> log = getLog();
 
         String[] expected = {"Create :", "Durable", "Type:", type, "Name:", name};
 
-        validateLogMessage(log, "EXH-1001", expected);
+        validateLogMessageNoSubject(log, "EXH-1001", expected);
     }
 
     public void testExchangeDeleted()
@@ -72,11 +72,11 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 
     public void testExchangeDiscardedMessage() throws Exception
     {
-        ExchangeImpl exchange = BrokerTestHelper.createExchange("test");
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", false);
 
         final String name = exchange.getName();
         final String routingKey = "routingKey";
-
+        clearLog();
         _logMessage = ExchangeMessages.DISCARDMSG(name, routingKey);
         List<Object> log = performLog();
 

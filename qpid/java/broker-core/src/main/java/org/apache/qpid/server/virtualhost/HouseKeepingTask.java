@@ -22,9 +22,11 @@ package org.apache.qpid.server.virtualhost;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.AbstractActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
+
+import javax.security.auth.Subject;
+import java.security.PrivilegedAction;
+import java.util.Collections;
 
 public abstract class HouseKeepingTask implements Runnable
 {
@@ -34,12 +36,17 @@ public abstract class HouseKeepingTask implements Runnable
 
     private String _name;
 
-    private RootMessageLogger _rootLogger;
+    private final Subject _subject;
+
     public HouseKeepingTask(VirtualHost vhost)
     {
         _virtualHost = vhost;
         _name = _virtualHost.getName() + ":" + this.getClass().getSimpleName();
-        _rootLogger = CurrentActor.get().getRootMessageLogger();
+        _subject = new Subject(false, org.apache.qpid.server.security.SecurityManager.SYSTEM.getPrincipals(), Collections
+                .emptySet(), Collections.emptySet());
+        _subject.getPrincipals().add(new TaskPrincipal(_name));
+        _subject.setReadOnly();
+
     }
 
     final public void run()
@@ -47,27 +54,27 @@ public abstract class HouseKeepingTask implements Runnable
         String originalThreadName = Thread.currentThread().getName();
         Thread.currentThread().setName(_name);
 
-        CurrentActor.set(new AbstractActor(_rootLogger)
-        {
-            @Override
-            public String getLogMessage()
-            {
-                return _name;
-            }
-        });
-
         try
         {
-            execute();
-        }
-        catch (Exception e)
-        {
-            _logger.warn(this.getClass().getSimpleName() + " throw exception: " + e, e);
+            Subject.doAs(_subject, new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    try
+                    {
+                        execute();
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.warn(this.getClass().getSimpleName() + " throw exception: " + e, e);
+                    }
+                    return null;
+                }
+            });
         }
         finally
         {
-            CurrentActor.remove();
-
             // eagerly revert the thread name to make thread dumps more meaningful if captured after task has finished
             Thread.currentThread().setName(originalThreadName);
         }

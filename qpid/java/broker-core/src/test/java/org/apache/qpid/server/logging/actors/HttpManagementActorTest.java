@@ -22,33 +22,74 @@ package org.apache.qpid.server.logging.actors;
 
 import javax.security.auth.Subject;
 
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.security.auth.ManagementConnectionPrincipal;
 import org.apache.qpid.server.security.auth.TestPrincipalUtils;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.List;
 
 public class HttpManagementActorTest extends BaseActorTestCase
 {
+    public static final LogMessage EMPTY_MESSAGE = new LogMessage()
+    {
+        @Override
+        public String getLogHierarchy()
+        {
+            return "";
+        }
+
+        public String toString()
+        {
+            return "";
+        }
+    };
     private static final String IP = "127.0.0.1";
     private static final int PORT = 1;
-    private static final String SUFFIX = "(" + IP + ":" + PORT + ")] ";
+    private static final String SUFFIX = "(/" + IP + ":" + PORT + ")] ";
+    private ManagementConnectionPrincipal _connectionPrincipal;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        setAmqpActor(new HttpManagementActor(getRootLogger(), IP, PORT));
+        _connectionPrincipal = new ManagementConnectionPrincipal()
+                                    {
+                                        @Override
+                                        public String getType()
+                                        {
+                                            return "HTTP";
+                                        }
+
+                                        @Override
+                                        public SocketAddress getRemoteAddress()
+                                        {
+                                            return new InetSocketAddress(IP, PORT);
+                                        }
+
+                                        @Override
+                                        public String getName()
+                                        {
+                                            return getRemoteAddress().toString();
+                                        }
+                                    };
     }
 
     public void testSubjectPrincipalNameAppearance()
     {
         Subject subject = TestPrincipalUtils.createTestSubject("guest");
 
+        subject.getPrincipals().add(_connectionPrincipal);
+
         final String message = Subject.doAs(subject, new PrivilegedAction<String>()
         {
             public String run()
             {
-                return sendTestLogMessage(getAmqpActor());
+                return sendTestLogMessage();
             }
         });
 
@@ -74,18 +115,46 @@ public class HttpManagementActorTest extends BaseActorTestCase
 
     private void assertLogMessageWithoutPrincipal()
     {
-        String message = getAmqpActor().getLogMessage();
-        assertEquals("Unexpected log message", "[mng:" + AbstractManagementActor.UNKNOWN_PRINCIPAL + SUFFIX, message);
+        getRawLogger().getLogMessages().clear();
+        Subject subject = new Subject(false,
+                                      Collections.singleton(_connectionPrincipal),
+                                      Collections.emptySet(),
+                                      Collections.emptySet());
+        Subject.doAs(subject, new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                SystemLog.message(EMPTY_MESSAGE);
+                List<Object> logs = getRawLogger().getLogMessages();
+                assertEquals("Message log size not as expected.", 1, logs.size());
+
+                String logMessage = logs.get(0).toString();
+                assertEquals("Unexpected log message",
+                             "[mng:" + "N/A" + SUFFIX,
+                             logMessage);
+                return null;
+            }
+        });
     }
 
     private void assertLogMessageWithPrincipal(String principalName)
     {
+        getRawLogger().getLogMessages().clear();
+
         Subject subject = TestPrincipalUtils.createTestSubject(principalName);
+        subject.getPrincipals().add(_connectionPrincipal);
         final String message = Subject.doAs(subject, new PrivilegedAction<String>()
         {
             public String run()
             {
-                return getAmqpActor().getLogMessage();
+                SystemLog.message(EMPTY_MESSAGE);
+                List<Object> logs = getRawLogger().getLogMessages();
+                assertEquals("Message log size not as expected.", 1, logs.size());
+
+                String logMessage = logs.get(0).toString();
+
+                return logMessage;
             }
         });
 

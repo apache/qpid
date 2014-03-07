@@ -21,7 +21,9 @@ package org.apache.qpid.server;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.qpid.server.logging.messages.ChannelMessages.IDLE_TXN_LOG_HIERARCHY;
 import static org.apache.qpid.server.logging.messages.ChannelMessages.OPEN_TXN_LOG_HIERARCHY;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -29,10 +31,10 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.hamcrest.Description;
@@ -40,7 +42,7 @@ import org.mockito.ArgumentMatcher;
 
 public class TransactionTimeoutHelperTest extends QpidTestCase
 {
-    private final LogActor _logActor = mock(LogActor.class);
+    private final RootMessageLogger _rootLogger = mock(RootMessageLogger.class);
     private final LogSubject _logSubject = mock(LogSubject.class);
     private final ServerTransaction _transaction = mock(ServerTransaction.class);
     private final CloseAction _closeAction = mock(CloseAction.class);
@@ -53,7 +55,7 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, 5, 10, 5, 10);
 
-        verifyZeroInteractions(_logActor, _closeAction);
+        verifyZeroInteractions(_rootLogger, _closeAction);
     }
 
     public void testOpenTransactionProducesWarningOnly() throws Exception
@@ -64,7 +66,7 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, SECONDS.toMillis(30), 0, 0, 0);
 
-        verify(_logActor).message(same(_logSubject), isLogMessage(OPEN_TXN_LOG_HIERARCHY, "CHN-1007 : Open Transaction : 61,\\d{3} ms"));
+        verify(_rootLogger).message(same(_logSubject), isLogMessage(OPEN_TXN_LOG_HIERARCHY, "CHN-1007 : Open Transaction : 61,\\d{3} ms"));
         verifyZeroInteractions(_closeAction);
     }
 
@@ -77,7 +79,7 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, 0, SECONDS.toMillis(30), 0, 0);
 
         verify(_closeAction).doTimeoutAction("Open transaction timed out");
-        verifyZeroInteractions(_logActor);
+        verifyZeroInteractions(_rootLogger);
     }
 
     public void testOpenTransactionProducesWarningAndTimeoutAction() throws Exception
@@ -88,7 +90,7 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, SECONDS.toMillis(15), SECONDS.toMillis(30), 0, 0);
 
-        verify(_logActor).message(same(_logSubject), isLogMessage(OPEN_TXN_LOG_HIERARCHY, "CHN-1007 : Open Transaction : 61,\\d{3} ms"));
+        verify(_rootLogger).message(same(_logSubject), isLogMessage(OPEN_TXN_LOG_HIERARCHY, "CHN-1007 : Open Transaction : 61,\\d{3} ms"));
         verify(_closeAction).doTimeoutAction("Open transaction timed out");
     }
 
@@ -101,7 +103,7 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, 0, 0, SECONDS.toMillis(30), 0);
 
-        verify(_logActor).message(same(_logSubject), isLogMessage(IDLE_TXN_LOG_HIERARCHY, "CHN-1008 : Idle Transaction : 31,\\d{3} ms"));
+        verify(_rootLogger).message(same(_logSubject), isLogMessage(IDLE_TXN_LOG_HIERARCHY, "CHN-1008 : Idle Transaction : 31,\\d{3} ms"));
         verifyZeroInteractions(_closeAction);
     }
 
@@ -115,7 +117,7 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, 0, 0, 0, SECONDS.toMillis(30));
 
         verify(_closeAction).doTimeoutAction("Idle transaction timed out");
-        verifyZeroInteractions(_logActor);
+        verifyZeroInteractions(_rootLogger);
     }
 
     public void testIdleTransactionProducesWarningAndTimeoutAction() throws Exception
@@ -127,7 +129,7 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, 0, 0, SECONDS.toMillis(15), SECONDS.toMillis(30));
 
-        verify(_logActor).message(same(_logSubject), isLogMessage(IDLE_TXN_LOG_HIERARCHY, "CHN-1008 : Idle Transaction : 31,\\d{3} ms"));
+        verify(_rootLogger).message(same(_logSubject), isLogMessage(IDLE_TXN_LOG_HIERARCHY, "CHN-1008 : Idle Transaction : 31,\\d{3} ms"));
         verify(_closeAction).doTimeoutAction("Idle transaction timed out");
     }
 
@@ -140,8 +142,8 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
 
         _transactionTimeoutHelper.checkIdleOrOpenTimes(_transaction, SECONDS.toMillis(60), 0, SECONDS.toMillis(30), 0);
 
-        verify(_logActor).message(same(_logSubject), isLogMessage(IDLE_TXN_LOG_HIERARCHY, "CHN-1008 : Idle Transaction : 31,\\d{3} ms"));
-        verify(_logActor).message(same(_logSubject), isLogMessage(OPEN_TXN_LOG_HIERARCHY, "CHN-1007 : Open Transaction : 61,\\d{3} ms"));
+        verify(_rootLogger).message(same(_logSubject), isLogMessage(IDLE_TXN_LOG_HIERARCHY, "CHN-1008 : Idle Transaction : 31,\\d{3} ms"));
+        verify(_rootLogger).message(same(_logSubject), isLogMessage(OPEN_TXN_LOG_HIERARCHY, "CHN-1007 : Open Transaction : 61,\\d{3} ms"));
         verifyZeroInteractions(_closeAction);
     }
 
@@ -149,24 +151,12 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-
-        CurrentActor.set(_logActor);
-
+        when(_logSubject.toLogString()).thenReturn("");
+        when(_rootLogger.isEnabled()).thenReturn(true);
+        when(_rootLogger.isMessageEnabled(anyString())).thenReturn(true);
+        SystemLog.setRootMessageLogger(_rootLogger);
         _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, _closeAction);
         _now = System.currentTimeMillis();
-    }
-
-    @Override
-    protected void tearDown() throws Exception
-    {
-        try
-        {
-            super.tearDown();
-        }
-        finally
-        {
-            CurrentActor.remove();
-        }
     }
 
     private void configureMockTransaction(final long startTime, final long updateTime)

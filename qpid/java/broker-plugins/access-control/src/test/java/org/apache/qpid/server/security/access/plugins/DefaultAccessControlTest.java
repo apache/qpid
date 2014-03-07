@@ -33,9 +33,8 @@ import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -67,7 +66,7 @@ public class DefaultAccessControlTest extends TestCase
     private void configureAccessControl(final RuleSet rs) throws ConfigurationException
     {
         _plugin = new DefaultAccessControl(rs);
-        CurrentActor.set(new TestLogActor(messageLogger));
+        SystemLog.setRootMessageLogger(messageLogger);
     }
 
     private RuleSet createGroupRuleSet()

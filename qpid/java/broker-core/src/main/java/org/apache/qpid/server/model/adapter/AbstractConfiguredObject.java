@@ -357,7 +357,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             Object value = attr.getValue((X)this);
             if(value != null && attr.getAnnotation().secure() &&
-               !SecurityManager.SYSTEM.equals(Subject.getSubject(AccessController.getContext())))
+               !SecurityManager.isSystemProcess())
             {
                 return SECURE_VALUES.get(value.getClass());
             }

@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.server.configuration.updater;
 
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -37,12 +35,7 @@ import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.NullRootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class TaskExecutorTest extends TestCase
@@ -215,37 +208,26 @@ public class TaskExecutorTest extends TestCase
     public void testSubmitAndWaitCurrentActorAndSecurityManagerSubjectAreRespected() throws Exception
     {
         _executor.start();
-        LogActor actor = new TestLogActor(new NullRootMessageLogger());
         Subject subject = new Subject();
-        final AtomicReference<LogActor> taskLogActor = new AtomicReference<LogActor>();
         final AtomicReference<Subject> taskSubject = new AtomicReference<Subject>();
-        try
+        Subject.doAs(subject, new PrivilegedAction<Object>()
         {
-            CurrentActor.set(actor);
-            Subject.doAs(subject, new PrivilegedAction<Object>()
+            @Override
+            public Object run()
+            {
+                _executor.submitAndWait(new TaskExecutor.Task<Object>()
             {
                 @Override
-                public Object run()
-                {        _executor.submitAndWait(new TaskExecutor.Task<Object>()
+                public Void call()
                 {
-                    @Override
-                    public Void call()
-                    {
-                        taskLogActor.set(CurrentActor.get());
-                        taskSubject.set(Subject.getSubject(AccessController.getContext()));
-                        return null;
-                    }
-                });
-                    return null;
+                taskSubject.set(Subject.getSubject(AccessController.getContext()));
+                return null;
                 }
             });
+                return null;
+            }
+        });
 
-        }
-        finally
-        {
-            CurrentActor.remove();
-        }
-        assertEquals("Unexpected task log actor", actor, taskLogActor.get());
         assertEquals("Unexpected security manager subject", subject, taskSubject.get());
     }
 

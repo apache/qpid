@@ -23,14 +23,9 @@ package org.apache.qpid.server.logging;
 
 public class SystemOutMessageLogger extends AbstractRootMessageLogger
 {
-    @Override
-    public boolean isMessageEnabled(LogActor actor, LogSubject subject, String logHierarchy)
-    {
-        return true;
-    }
 
     @Override
-    public boolean isMessageEnabled(LogActor actor, String logHierarchy)
+    public boolean isMessageEnabled(String logHierarchy)
     {
         return true;
     }

@@ -20,7 +20,7 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
@@ -49,31 +49,31 @@ public class OperationalLoggingListener implements EventListener
         switch(event)
         {
             case BEFORE_INIT:
-                CurrentActor.get().message(_logSubject, ConfigStoreMessages.CREATED());
+                SystemLog.message(_logSubject, ConfigStoreMessages.CREATED());
                 break;
             case AFTER_INIT:
-                CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED());
-                CurrentActor.get().message(_logSubject, TransactionLogMessages.CREATED());
+                SystemLog.message(_logSubject, MessageStoreMessages.CREATED());
+                SystemLog.message(_logSubject, TransactionLogMessages.CREATED());
                 String storeLocation = _store.getStoreLocation();
                 if (storeLocation != null)
                 {
-                    CurrentActor.get().message(_logSubject, MessageStoreMessages.STORE_LOCATION(storeLocation));
+                    SystemLog.message(_logSubject, MessageStoreMessages.STORE_LOCATION(storeLocation));
                 }
                 break;
             case BEFORE_ACTIVATE:
-                CurrentActor.get().message(_logSubject, MessageStoreMessages.RECOVERY_START());
+                SystemLog.message(_logSubject, MessageStoreMessages.RECOVERY_START());
                 break;
             case AFTER_ACTIVATE:
-                CurrentActor.get().message(_logSubject, MessageStoreMessages.RECOVERY_COMPLETE());
+                SystemLog.message(_logSubject, MessageStoreMessages.RECOVERY_COMPLETE());
                 break;
             case AFTER_CLOSE:
-                CurrentActor.get().message(_logSubject,MessageStoreMessages.CLOSED());
+                SystemLog.message(_logSubject, MessageStoreMessages.CLOSED());
                 break;
             case PERSISTENT_MESSAGE_SIZE_OVERFULL:
-                CurrentActor.get().message(_logSubject,MessageStoreMessages.OVERFULL());
+                SystemLog.message(_logSubject, MessageStoreMessages.OVERFULL());
                 break;
             case PERSISTENT_MESSAGE_SIZE_UNDERFULL:
-                CurrentActor.get().message(_logSubject,MessageStoreMessages.UNDERFULL());
+                SystemLog.message(_logSubject, MessageStoreMessages.UNDERFULL());
                 break;
 
         }

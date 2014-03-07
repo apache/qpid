@@ -33,15 +33,9 @@ public class Log4jMessageLogger extends AbstractRootMessageLogger
     {
         super(statusUpdatesEnabled);
     }
-    
-    @Override
-    public boolean isMessageEnabled(LogActor actor, LogSubject subject, String logHierarchy)
-    {
-        return isMessageEnabled(actor, logHierarchy);
-    }
 
     @Override
-    public boolean isMessageEnabled(LogActor actor, String logHierarchy)
+    public boolean isMessageEnabled(String logHierarchy)
     {
         if(isEnabled())
         {
@@ -55,13 +49,13 @@ public class Log4jMessageLogger extends AbstractRootMessageLogger
     }
 
     @Override
-    public void rawMessage(String message, String logHierarchy)
+    void rawMessage(String message, String logHierarchy)
     {
         rawMessage(message, null, logHierarchy);
     }
 
     @Override
-    public void rawMessage(String message, Throwable throwable, String logHierarchy)
+    void rawMessage(String message, Throwable throwable, String logHierarchy)
     {
         Logger logger = Logger.getLogger(logHierarchy);
         logger.info(message, throwable);

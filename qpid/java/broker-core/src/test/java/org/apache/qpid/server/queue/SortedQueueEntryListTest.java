@@ -20,15 +20,12 @@
 package org.apache.qpid.server.queue;
 
 import java.util.Collections;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Arrays;
@@ -77,8 +74,6 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
     @Override
     protected void setUp() throws Exception
     {
-        mockLogging();
-
         Map<String,Object> attributes = new HashMap<String,Object>();
         attributes.put(Queue.ID,UUID.randomUUID());
         attributes.put(Queue.NAME, getName());
@@ -116,14 +111,6 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
         }
 
     }
-
-    protected void mockLogging()
-    {
-        final LogActor logActor = mock(LogActor.class);
-        when(logActor.getRootMessageLogger()).thenReturn(mock(RootMessageLogger.class));
-        CurrentActor.setDefault(logActor);
-    }
-
 
     @Override
     public SortedQueueEntryList getTestList()

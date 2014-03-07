@@ -23,6 +23,7 @@ import static javax.management.remote.JMXConnectionNotification.OPENED;
 import static javax.management.remote.JMXConnectionNotification.CLOSED;
 import static javax.management.remote.JMXConnectionNotification.FAILED;
 
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -31,10 +32,14 @@ import static org.mockito.Matchers.anyString;
 
 import javax.management.remote.JMXConnectionNotification;
 
-import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.RootMessageLogger;
 
 import junit.framework.TestCase;
+import org.apache.qpid.server.logging.SystemLog;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.mockito.ArgumentMatcher;
 
 public class ManagementLogonLogoffReporterTest extends TestCase
 {
@@ -52,8 +57,8 @@ public class ManagementLogonLogoffReporterTest extends TestCase
         _usernameAccessor = mock(UsernameAccessor.class);
         _rootMessageLogger = mock(RootMessageLogger.class);
         // Enable messaging so we can valid the generated strings
-        when(_rootMessageLogger.isMessageEnabled(any(LogActor.class), anyString())).thenReturn(true);
-
+        when(_rootMessageLogger.isMessageEnabled(anyString())).thenReturn(true);
+        SystemLog.setRootMessageLogger(_rootMessageLogger);
         _reporter = new ManagementLogonLogoffReporter(_rootMessageLogger, _usernameAccessor);
     }
 
@@ -64,7 +69,21 @@ public class ManagementLogonLogoffReporterTest extends TestCase
 
         _reporter.handleNotification(openNotification, null);
 
-        verify(_rootMessageLogger).rawMessage("[main] MNG-1007 : Open : User jmxuser", "qpid.message.managementconsole.open");
+        verify(_rootMessageLogger).message(messageMatch("MNG-1007 : Open : User jmxuser",
+                                                        "qpid.message.managementconsole.open"));
+    }
+
+    private LogMessage messageMatch(final String message, final String hierarchy)
+    {
+        return argThat(new ArgumentMatcher<LogMessage>()
+        {
+            @Override
+            public boolean matches(final Object argument)
+            {
+                LogMessage actual = (LogMessage) argument;
+                return actual.getLogHierarchy().equals(hierarchy) &&  actual.toString().equals(message);
+            }
+        });
     }
 
     public void testClosedNotification()
@@ -74,7 +93,7 @@ public class ManagementLogonLogoffReporterTest extends TestCase
 
         _reporter.handleNotification(closeNotification, null);
 
-        verify(_rootMessageLogger).rawMessage("[main] MNG-1008 : Close : User jmxuser", "qpid.message.managementconsole.close");
+        verify(_rootMessageLogger).message(messageMatch("MNG-1008 : Close : User jmxuser", "qpid.message.managementconsole.close"));
     }
 
     public void tesNotifiedForLogOnTypeEvents()

@@ -37,9 +37,6 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -74,10 +71,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
         when(_virtualHost.getConfiguration()).thenReturn(vhostConfig);
         _queueConfiguration = mock(QueueConfiguration.class);
         when(vhostConfig.getQueueConfiguration(anyString())).thenReturn(_queueConfiguration);
-        LogActor logActor = mock(LogActor.class);
-        CurrentActor.set(logActor);
-        RootMessageLogger rootLogger = mock(RootMessageLogger.class);
-        when(logActor.getRootMessageLogger()).thenReturn(rootLogger);
         DurableConfigurationStore store = mock(DurableConfigurationStore.class);
         when(_virtualHost.getDurableConfigurationStore()).thenReturn(store);
 

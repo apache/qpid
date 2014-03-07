@@ -81,7 +81,9 @@ public class ChannelLoggingTest extends AbstractTestLogging
         String log = getLogMessage(results, 0);
         //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1001 : Create
         validateMessageID("CHN-1001", log);
-        assertEquals("Incorrect Channel in actor:"+fromActor(log), isBroker010()? 0 : 1, getChannelID(fromActor(log)));
+        final String fromActor = fromActor(log);
+        final int channelID = getChannelID(fromActor);
+        assertEquals("Incorrect Channel in actor:"+fromActor(log), isBroker010()? 0 : 1, channelID);
 
         if (!isBroker010())
         {

@@ -35,9 +35,7 @@ import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -47,8 +45,6 @@ public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
         extends AMQVersionAwareProtocolSession, AuthorizationHolder, AMQConnectionModel<T,AMQChannel<T>>
 {
     long getSessionID();
-
-    LogActor getLogActor();
 
     void setMaxFrameSize(long frameMax);
 
@@ -202,13 +198,7 @@ public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
 
     void setMaximumNumberOfChannels(Long value);
 
-    void commitTransactions(AMQChannel<T> channel) throws AMQException;
-
-    void rollbackTransactions(AMQChannel<T> channel) throws AMQException;
-
     List<AMQChannel<T>> getChannels();
-
-    void mgmtCloseChannel(int channelId);
 
     public Principal getPeerPrincipal();
 

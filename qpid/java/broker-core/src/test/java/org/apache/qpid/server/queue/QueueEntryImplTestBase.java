@@ -20,9 +20,6 @@ package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -63,15 +60,6 @@ public abstract class QueueEntryImplTestBase extends TestCase
         _queueEntry2 = getQueueEntryImpl(2);
         _queueEntry3 = getQueueEntryImpl(3);
     }
-
-
-    protected void mockLogging()
-    {
-        final LogActor logActor = mock(LogActor.class);
-        when(logActor.getRootMessageLogger()).thenReturn(mock(RootMessageLogger.class));
-        CurrentActor.setDefault(logActor);
-    }
-
 
     public void testAcquire()
     {

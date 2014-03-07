@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.store.StoreException;
@@ -345,7 +346,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                serverSession.getLogActor().message(ExchangeMessages.DISCARDMSG(exchange.getName(), messageMetaData.getRoutingKey()));
+                SystemLog.message(ExchangeMessages.DISCARDMSG(exchange.getName(), messageMetaData.getRoutingKey()));
             }
         }
 

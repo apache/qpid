@@ -18,10 +18,9 @@
  */
 package org.apache.qpid.server;
 
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.txn.ServerTransaction;
 
@@ -73,8 +72,7 @@ public class TransactionTimeoutHelper
     {
         if (isTimedOut(timeSoFar, warnTimeout))
         {
-            LogActor logActor = CurrentActor.get();
-            logActor.message(_logSubject, warnMessage);
+            SystemLog.message(_logSubject, warnMessage);
         }
 
         if(isTimedOut(timeSoFar, closeTimeout))

@@ -20,10 +20,14 @@
  */
 package org.apache.qpid.protocol;
 
+import javax.security.auth.Subject;
+
 public interface ServerProtocolEngine extends ProtocolEngine
 {
     /**
      * Gets the connection ID associated with this ProtocolEngine
      */
     long getConnectionId();
+
+    Subject getSubject();
 }

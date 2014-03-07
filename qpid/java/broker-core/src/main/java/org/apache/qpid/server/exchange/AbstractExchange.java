@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -166,7 +166,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             }
         };
         // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), _durable));
+        SystemLog.message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), _durable));
     }
 
     public abstract ExchangeType<T> getExchangeType();
@@ -204,7 +204,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 _alternateExchange.removeReference(this);
             }
 
-            CurrentActor.get().message(_logSubject, ExchangeMessages.DELETED());
+            SystemLog.message(_logSubject, ExchangeMessages.DELETED());
 
             for(Action<ExchangeImpl> task : _closeTaskList)
             {

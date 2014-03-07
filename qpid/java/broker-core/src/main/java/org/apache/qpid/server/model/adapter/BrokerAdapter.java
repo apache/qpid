@@ -41,8 +41,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.BrokerActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.plugin.PreferencesProviderFactory;
@@ -1046,22 +1045,16 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
             changeState(_authenticationProviders, currentState, State.ACTIVE, false);
             changeState(_accessControlProviders, currentState, State.ACTIVE, false);
 
-            CurrentActor.set(new BrokerActor(getRootMessageLogger()));
-            try
-            {
-                changeState(_vhostAdapters, currentState, State.ACTIVE, false);
-            }
-            finally
-            {
-                CurrentActor.remove();
-            }
+
+            changeState(_vhostAdapters, currentState, State.ACTIVE, false);
 
             changeState(_portAdapters, currentState,State.ACTIVE, false);
             changeState(_plugins, currentState,State.ACTIVE, false);
 
             if (isManagementMode())
             {
-                CurrentActor.get().message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword()));
+                SystemLog.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
+                                                                 _brokerOptions.getManagementModePassword()));
             }
             return true;
         }

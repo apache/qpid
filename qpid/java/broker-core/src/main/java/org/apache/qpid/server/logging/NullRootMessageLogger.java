@@ -24,13 +24,7 @@ public class NullRootMessageLogger extends AbstractRootMessageLogger
 {
 
     @Override
-    public boolean isMessageEnabled(LogActor actor, LogSubject subject, String logHierarchy)
-    {
-        return false;
-    }
-
-    @Override
-    public boolean isMessageEnabled(LogActor actor, String logHierarchy)
+    public boolean isMessageEnabled(String logHierarchy)
     {
         return false;
     }

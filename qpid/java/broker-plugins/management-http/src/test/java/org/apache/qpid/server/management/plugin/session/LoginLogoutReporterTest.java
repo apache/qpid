@@ -19,16 +19,20 @@
  */
 package org.apache.qpid.server.management.plugin.session;
 
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.when;
 
 import javax.security.auth.Subject;
 
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.mockito.ArgumentMatcher;
-import org.mockito.Mockito;
 
 import junit.framework.TestCase;
 
@@ -36,7 +40,7 @@ public class LoginLogoutReporterTest extends TestCase
 {
     private LoginLogoutReporter _loginLogoutReport;
     private Subject _subject = new Subject();
-    private LogActor _logActor = Mockito.mock(LogActor.class);
+    private RootMessageLogger _logger = mock(RootMessageLogger.class);
 
     @Override
     protected void setUp() throws Exception
@@ -44,19 +48,22 @@ public class LoginLogoutReporterTest extends TestCase
         super.setUp();
 
         _subject.getPrincipals().add(new AuthenticatedPrincipal("mockusername"));
-        _loginLogoutReport = new LoginLogoutReporter(_logActor, _subject);
+        when(_logger.isEnabled()).thenReturn(true);
+        when(_logger.isMessageEnabled(anyString())).thenReturn(true);
+        SystemLog.setRootMessageLogger(_logger);
+        _loginLogoutReport = new LoginLogoutReporter(_subject);
     }
 
     public void testLoginLogged()
     {
         _loginLogoutReport.valueBound(null);
-        verify(_logActor).message(isLogMessageWithMessage("MNG-1007 : Open : User mockusername"));
+        verify(_logger).message(isLogMessageWithMessage("MNG-1007 : Open : User mockusername"));
     }
 
     public void testLogoutLogged()
     {
         _loginLogoutReport.valueUnbound(null);
-        verify(_logActor).message(isLogMessageWithMessage("MNG-1008 : Close : User mockusername"));
+        verify(_logger).message(isLogMessageWithMessage("MNG-1008 : Close : User mockusername"));
     }
 
     private LogMessage isLogMessageWithMessage(final String expectedMessage)

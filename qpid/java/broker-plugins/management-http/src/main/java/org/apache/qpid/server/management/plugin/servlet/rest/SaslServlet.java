@@ -27,7 +27,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
 import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 import org.apache.qpid.server.model.Broker;
@@ -247,10 +246,9 @@ public class SaslServlet extends AbstractServlet
             subject.setReadOnly();
 
             Broker broker = getBroker();
-            LogActor actor = HttpManagementUtil.getOrCreateAndCacheLogActor(request, broker);
             try
             {
-                HttpManagementUtil.assertManagementAccess(broker.getSecurityManager(), subject, actor);
+                HttpManagementUtil.assertManagementAccess(broker.getSecurityManager(), subject);
             }
             catch(SecurityException e)
             {
@@ -258,7 +256,7 @@ public class SaslServlet extends AbstractServlet
                 return;
             }
 
-            HttpManagementUtil.saveAuthorisedSubject(request.getSession(), subject, actor);
+            HttpManagementUtil.saveAuthorisedSubject(request.getSession(), subject);
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);

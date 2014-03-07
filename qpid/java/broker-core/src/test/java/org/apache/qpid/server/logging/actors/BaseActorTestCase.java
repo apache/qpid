@@ -20,17 +20,16 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class BaseActorTestCase extends QpidTestCase
 {
     private boolean _statusUpdatesEnabled = true;
-    private LogActor _amqpActor;
     private UnitTestMessageLogger _rawLogger;
     private RootMessageLogger _rootLogger;
 
@@ -38,10 +37,9 @@ public class BaseActorTestCase extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        CurrentActor.removeAll();
-        CurrentActor.setDefault(null);
         _rawLogger = new UnitTestMessageLogger(_statusUpdatesEnabled);
         _rootLogger = _rawLogger;
+        SystemLog.setRootMessageLogger(_rootLogger);
     }
 
     @Override
@@ -51,40 +49,39 @@ public class BaseActorTestCase extends QpidTestCase
         {
             _rawLogger.clearLogMessages();
         }
-        CurrentActor.removeAll();
-        CurrentActor.setDefault(null);
         super.tearDown();
     }
 
-    public String sendTestLogMessage(LogActor actor)
+    public String sendTestLogMessage()
     {
         String message = "Test logging: " + getName();
-        sendTestLogMessage(actor, message);
+        sendTestLogMessage(message);
         
         return message;
     }
     
-    public void sendTestLogMessage(LogActor actor, final String message)
+    public void sendTestLogMessage(final String message)
     {
-        actor.message(new LogSubject()
-        {
-            public String toLogString()
-            {
-                return message;
-            }
+        SystemLog.message(new LogSubject()
+                          {
+                              public String toLogString()
+                              {
+                                  return message;
+                              }
 
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return message;
-            }
+                          }, new LogMessage()
+                          {
+                              public String toString()
+                              {
+                                  return message;
+                              }
 
-            public String getLogHierarchy()
-            {
-                return "test.hierarchy";
-            }
-        });
+                              public String getLogHierarchy()
+                              {
+                                  return "test.hierarchy";
+                              }
+                          }
+                         );
     }
 
     public boolean isStatusUpdatesEnabled()
@@ -95,16 +92,6 @@ public class BaseActorTestCase extends QpidTestCase
     public void setStatusUpdatesEnabled(boolean statusUpdatesEnabled)
     {
         _statusUpdatesEnabled = statusUpdatesEnabled;
-    }
-
-    public LogActor getAmqpActor()
-    {
-        return _amqpActor;
-    }
-
-    public void setAmqpActor(LogActor amqpActor)
-    {
-        _amqpActor = amqpActor;
     }
 
     public UnitTestMessageLogger getRawLogger()

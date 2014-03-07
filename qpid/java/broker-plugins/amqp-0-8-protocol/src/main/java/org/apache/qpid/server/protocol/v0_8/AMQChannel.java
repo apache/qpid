@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_8;
 
 import java.nio.ByteBuffer;
 import java.security.AccessControlException;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,11 +55,9 @@ import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.AMQPChannelActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
@@ -154,7 +153,6 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     private final AtomicBoolean _blocking = new AtomicBoolean(false);
 
 
-    private LogActor _actor;
     private LogSubject _logSubject;
     private volatile boolean _rollingBack;
 
@@ -178,19 +176,17 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     private Subject _subject;
 
 
-    public AMQChannel(T session, int channelId, MessageStore messageStore)
+    public AMQChannel(T session, int channelId, final MessageStore messageStore)
             throws AMQException
     {
         _session = session;
         _channelId = channelId;
 
-        _actor = new AMQPChannelActor(this, session.getLogActor().getRootMessageLogger());
         _subject = new Subject(false, session.getAuthorizedSubject().getPrincipals(),
                                session.getAuthorizedSubject().getPublicCredentials(),
                                session.getAuthorizedSubject().getPrivateCredentials());
         _subject.getPrincipals().add(new SessionPrincipal(this));
         _logSubject = new ChannelLogSubject(this);
-        _actor.message(ChannelMessages.CREATE());
 
         _messageStore = messageStore;
 
@@ -214,6 +210,18 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 }
             }
         });
+
+        Subject.doAs(_subject, new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                SystemLog.message(ChannelMessages.CREATE());
+
+                return null;
+            }
+        });
+
     }
 
     /** Sets this channel to be part of a local transaction */
@@ -449,12 +457,13 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         }
         else
         {
-            _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchangeName().asString(),
-                                                       _currentMessage.getMessagePublishInfo().getRoutingKey() == null
-                                                               ? null
-                                                               : _currentMessage.getMessagePublishInfo()
-                                                                       .getRoutingKey()
-                                                                       .toString()));
+            SystemLog.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchangeName().asString(),
+                                                          _currentMessage.getMessagePublishInfo().getRoutingKey()
+                                                          == null
+                                                                  ? null
+                                                                  : _currentMessage.getMessagePublishInfo()
+                                                                          .getRoutingKey()
+                                                                          .toString()));
         }
     }
 
@@ -684,7 +693,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         LogMessage operationalLogMessage = cause == null ?
                 ChannelMessages.CLOSE() :
                 ChannelMessages.CLOSE_FORCED(cause.getCode(), message);
-        CurrentActor.get().message(_logSubject, operationalLogMessage);
+        SystemLog.message(_logSubject, operationalLogMessage);
 
         unsubscribeAllConsumers();
 
@@ -977,7 +986,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
             // Log Flow Started before we start the subscriptions
             if (!suspended)
             {
-                _actor.message(_logSubject, ChannelMessages.FLOW("Started"));
+                SystemLog.message(_logSubject, ChannelMessages.FLOW("Started"));
             }
 
 
@@ -1028,7 +1037,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
             // stopped.
             if (suspended)
             {
-                _actor.message(_logSubject, ChannelMessages.FLOW("Stopped"));
+                SystemLog.message(_logSubject, ChannelMessages.FLOW("Stopped"));
             }
 
         }
@@ -1174,7 +1183,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
     public void setCredit(final long prefetchSize, final int prefetchCount)
     {
-        _actor.message(ChannelMessages.PREFETCH_SIZE(prefetchSize, prefetchCount));
+        SystemLog.message(ChannelMessages.PREFETCH_SIZE(prefetchSize, prefetchCount));
         _creditManager.setCreditLimits(prefetchSize, prefetchCount);
     }
 
@@ -1431,19 +1440,13 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         }
     }
 
-
-    public LogActor getLogActor()
-    {
-        return _actor;
-    }
-
     public synchronized void block()
     {
         if(_blockingEntities.add(this))
         {
             if(_blocking.compareAndSet(false,true))
             {
-                _actor.message(_logSubject, ChannelMessages.FLOW_ENFORCED("** All Queues **"));
+                SystemLog.message(_logSubject, ChannelMessages.FLOW_ENFORCED("** All Queues **"));
                 flow(false);
             }
         }
@@ -1455,7 +1458,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         {
             if(_blockingEntities.isEmpty() && _blocking.compareAndSet(true,false))
             {
-                _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
+                SystemLog.message(_logSubject, ChannelMessages.FLOW_REMOVED());
 
                 flow(true);
             }
@@ -1469,7 +1472,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
             if(_blocking.compareAndSet(false,true))
             {
-                _actor.message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getName()));
+                SystemLog.message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getName()));
                 flow(false);
             }
         }
@@ -1481,8 +1484,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         {
             if(_blockingEntities.isEmpty() && _blocking.compareAndSet(true,false) && !isClosing())
             {
-                _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
-
+                SystemLog.message(_logSubject, ChannelMessages.FLOW_REMOVED());
                 flow(true);
             }
         }
@@ -1552,14 +1554,14 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         else
         {
             final ServerMessage msg = rejectedQueueEntry.getMessage();
-            final Consumer sub = rejectedQueueEntry.getDeliveredConsumer();
+
 
             int requeues = rejectedQueueEntry.routeToAlternate(new Action<MessageInstance>()
                 {
                     @Override
                     public void performAction(final MessageInstance requeueEntry)
                     {
-                        _actor.message( _logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
+                        SystemLog.message( _logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
                                                                                    requeueEntry.getOwningResource().getName()));
                     }
                 }, null);
@@ -1577,7 +1579,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     if (altExchange == null)
                     {
                         _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
-                        _actor.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getInitialRoutingAddress()));
+                        SystemLog.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getInitialRoutingAddress()));
 
                     }
                     else
@@ -1585,7 +1587,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                         _logger.debug(
                                 "Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: "
                                 + deliveryTag);
-                        _actor.message(_logSubject,
+                        SystemLog.message(_logSubject,
                                        ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), altExchange.getName()));
                     }
                 }

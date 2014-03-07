@@ -18,22 +18,20 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.management.plugin.servlet;
+package org.apache.qpid.server.security.auth.jmx;
 
 import org.apache.qpid.server.security.auth.ManagementConnectionPrincipal;
-import org.apache.qpid.server.security.auth.SocketConnectionPrincipal;
 
-import javax.servlet.ServletRequest;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-public class ServletConnectionPrincipal implements ManagementConnectionPrincipal
+public class JMXConnectionPrincipal implements ManagementConnectionPrincipal
 {
     private final InetSocketAddress _address;
 
-    public ServletConnectionPrincipal(ServletRequest request)
+    public JMXConnectionPrincipal(final String host)
     {
-        _address = new InetSocketAddress(request.getRemoteHost(), request.getRemotePort());
+        _address = new InetSocketAddress(host,0);
     }
 
     @Override
@@ -60,7 +58,7 @@ public class ServletConnectionPrincipal implements ManagementConnectionPrincipal
             return false;
         }
 
-        final ServletConnectionPrincipal that = (ServletConnectionPrincipal) o;
+        final JMXConnectionPrincipal that = (JMXConnectionPrincipal) o;
 
         if (!_address.equals(that._address))
         {
@@ -79,6 +77,6 @@ public class ServletConnectionPrincipal implements ManagementConnectionPrincipal
     @Override
     public String getType()
     {
-        return "HTTP";
+        return "JMX";
     }
 }

@@ -37,6 +37,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
@@ -48,7 +49,6 @@ import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageNode;
@@ -150,7 +150,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _id = UUIDGenerator.generateVhostUUID(_name);
 
-        CurrentActor.get().message(VirtualHostMessages.CREATED(_name));
+        SystemLog.message(VirtualHostMessages.CREATED(_name));
 
         _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"), _name);
 
@@ -704,7 +704,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _state = State.STOPPED;
 
-        CurrentActor.get().message(VirtualHostMessages.CLOSED());
+        SystemLog.message(VirtualHostMessages.CLOSED());
     }
 
     protected void closeStorage()
@@ -911,7 +911,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     {
         if (state == State.ERRORED)
         {
-            CurrentActor.get().message(VirtualHostMessages.ERRORED());
+            SystemLog.message(VirtualHostMessages.ERRORED());
         }
     }
 

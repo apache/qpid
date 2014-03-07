@@ -27,12 +27,19 @@ import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.remote.JMXConnectionNotification;
+import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.security.auth.jmx.JMXConnectionPrincipal;
+
+import java.rmi.server.RemoteServer;
+import java.rmi.server.ServerNotActiveException;
+import java.security.PrivilegedAction;
+import java.util.Collections;
 
 public class ManagementLogonLogoffReporter implements  NotificationListener, NotificationFilter
 {
@@ -65,19 +72,41 @@ public class ManagementLogonLogoffReporter implements  NotificationListener, Not
             final String[] splitConnectionId = connectionId.split(" ");
             user = splitConnectionId[1];
         }
+        Subject originalSubject = new Subject(false, Collections.singleton(new AuthenticatedPrincipal(user)), Collections.emptySet(), Collections.emptySet());
+        Subject subject;
 
-        // use a separate instance of actor as subject is not set on connect/disconnect
-        // we need to pass principal name explicitly into log actor
-        LogActor logActor = new ManagementActor(_rootMessageLogger, user);
-        if (JMXConnectionNotification.OPENED.equals(type))
+        try
         {
-            logActor.message(ManagementConsoleMessages.OPEN(user));
+            String clientHost = RemoteServer.getClientHost();
+            subject = new Subject(false,
+                                  originalSubject.getPrincipals(),
+                                  originalSubject.getPublicCredentials(),
+                                  originalSubject.getPrivateCredentials());
+            subject.getPrincipals().add(new JMXConnectionPrincipal(clientHost));
+            subject.setReadOnly();
         }
-        else if (JMXConnectionNotification.CLOSED.equals(type) ||
-                 JMXConnectionNotification.FAILED.equals(type))
+        catch(ServerNotActiveException e)
         {
-            logActor.message(ManagementConsoleMessages.CLOSE(user));
+            subject = originalSubject;
         }
+        final String username = user;
+        Subject.doAs(subject, new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                if (JMXConnectionNotification.OPENED.equals(type))
+                {
+                    SystemLog.message(ManagementConsoleMessages.OPEN(username));
+                }
+                else if (JMXConnectionNotification.CLOSED.equals(type) ||
+                         JMXConnectionNotification.FAILED.equals(type))
+                {
+                    SystemLog.message(ManagementConsoleMessages.CLOSE(username));
+                }
+                return null;
+            }
+        });
     }
 
     @Override

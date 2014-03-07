@@ -20,13 +20,9 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -57,9 +53,6 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
         queueAttributes.put(Queue.NAME, getName());
         final VirtualHost virtualHost = mock(VirtualHost.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
-        final LogActor logActor = mock(LogActor.class);
-        when(logActor.getRootMessageLogger()).thenReturn(mock(RootMessageLogger.class));
-        CurrentActor.set(logActor);
         _testQueue = new StandardQueue(virtualHost, queueAttributes);
 
         _sqel = (StandardQueueEntryList) _testQueue.getEntries();

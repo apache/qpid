@@ -32,10 +32,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
@@ -65,7 +63,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 {
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
-    private LogActor _actor;
 
     private final Subject _authorizedSubject = new Subject();
     private Principal _authorizedPrincipal = null;
@@ -87,7 +84,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     {
         _connectionId = connectionId;
         _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
-        _actor = new AMQPConnectionActor(this, broker.getRootMessageLogger());
     }
 
     public Object getReference()
@@ -112,7 +108,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             {
                 _onOpenTask.run();
             }
-            _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", getClientVersion(), getClientProduct(), true, true, true, true));
+            SystemLog.message(ConnectionMessages.OPEN(getClientId(), "0-10", getClientVersion(), getClientProduct(), true, true, true, true));
 
             getVirtualHost().getConnectionRegistry().registerConnection(this);
         }
@@ -135,7 +131,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     {
         if(_logClosed.compareAndSet(false, true))
         {
-            CurrentActor.get().message(this, ConnectionMessages.CLOSE());
+            SystemLog.message(this, ConnectionMessages.CLOSE());
         }
     }
 
@@ -258,42 +254,31 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         Subject subject;
         if (event.isConnectionControl())
         {
-            CurrentActor.set(_actor);
             subject = _authorizedSubject;
         }
         else
         {
             ServerSession channel = (ServerSession) getSession(event.getChannel());
-            LogActor channelActor = null;
             if (channel != null)
             {
                 subject = channel.getAuthorizedSubject();
-                channelActor = channel.getLogActor();
             }
             else
             {
                 subject = _authorizedSubject;
             }
-
-            CurrentActor.set(channelActor == null ? _actor : channelActor);
         }
 
-        try
+        Subject.doAs(subject, new PrivilegedAction<Void>()
         {
-            Subject.doAs(subject, new PrivilegedAction<Void>()
+            @Override
+            public Void run()
             {
-                @Override
-                public Void run()
-                {
-                    ServerConnection.super.received(event);
-                    return null;
-                }
-            });
-        }
-        finally
-        {
-            CurrentActor.remove();
-        }
+                ServerConnection.super.received(event);
+                return null;
+            }
+        });
+
     }
 
     public String toLogString()
@@ -329,11 +314,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
                                          getRemoteAddressString())
                  + "] ";
         }
-    }
-
-    public LogActor getLogActor()
-    {
-        return _actor;
     }
 
     public void close(AMQConstant cause, String message)

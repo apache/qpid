@@ -21,6 +21,7 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,10 +36,9 @@ import java.util.concurrent.Executors;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.actors.AbstractActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.HAMessageStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -65,6 +65,8 @@ import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
+
+import javax.security.auth.Subject;
 
 public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMessageStore
 {
@@ -608,7 +610,6 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
         private void executeStateChangeAsync(final Callable<Void> callable, final String threadName)
         {
-            final RootMessageLogger _rootLogger = CurrentActor.get().getRootMessageLogger();
 
             _executor.execute(new Runnable()
             {
@@ -618,25 +619,28 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                 {
                     final String originalThreadName = Thread.currentThread().getName();
                     Thread.currentThread().setName(threadName);
+                    Subject subject = new Subject(false, SecurityManager.SYSTEM.getPrincipals(),
+                                                  Collections.emptySet(), Collections.emptySet());
+                    subject.getPrincipals().add(new TaskPrincipal("BDB HA State Change"));
                     try
                     {
-                        CurrentActor.set(new AbstractActor(_rootLogger)
+                        Subject.doAs(subject, new PrivilegedAction<Object>()
                         {
                             @Override
-                            public String getLogMessage()
+                            public Object run()
                             {
-                                return threadName;
+
+                                try
+                                {
+                                    callable.call();
+                                }
+                                catch (Exception e)
+                                {
+                                    LOGGER.error("Exception during state change", e);
+                                }
+                                return null;
                             }
                         });
-
-                        try
-                        {
-                            callable.call();
-                        }
-                        catch (Exception e)
-                        {
-                            LOGGER.error("Exception during state change", e);
-                        }
                     }
                     finally
                     {

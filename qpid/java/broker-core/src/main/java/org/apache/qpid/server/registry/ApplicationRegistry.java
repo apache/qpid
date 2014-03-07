@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.registry;
 
+import java.security.PrivilegedAction;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -34,27 +36,22 @@ import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
-import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
-import org.apache.qpid.server.logging.Log4jMessageLogger;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.AbstractActor;
-import org.apache.qpid.server.logging.actors.BrokerActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.server.logging.*;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
+
+import javax.security.auth.Subject;
 
 
 /**
@@ -103,38 +100,28 @@ public class ApplicationRegistry implements IApplicationRegistry
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
         RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
         CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
+        SystemLog.setRootMessageLogger(startupMessageLogger);
 
-        BrokerActor actor = new BrokerActor(startupMessageLogger);
-        CurrentActor.set(actor);
-        CurrentActor.setDefault(actor);
-        GenericActor.setDefaultMessageLogger(_rootMessageLogger);
-        try
-        {
-            logStartupMessages(CurrentActor.get());
+        logStartupMessages();
 
-            _taskExecutor = new TaskExecutor();
-            _taskExecutor.start();
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
 
-            StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(_store);
-            RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, brokerOptions, storeChangeListener);
-            ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
-            _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
+        StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(_store);
+        RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, brokerOptions, storeChangeListener);
+        ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
+        _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 
-            _virtualHostRegistry.setDefaultVirtualHostName((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+        _virtualHostRegistry.setDefaultVirtualHostName((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
 
-            initialiseStatisticsReporting();
+        initialiseStatisticsReporting();
 
-            // starting the broker
-            _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
+        // starting the broker
+        _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
 
-            CurrentActor.get().message(BrokerMessages.READY());
-        }
-        finally
-        {
-            CurrentActor.remove();
-        }
+        SystemLog.message(BrokerMessages.READY());
+        SystemLog.setRootMessageLogger(_rootMessageLogger);
 
-        CurrentActor.setDefault(new BrokerActor(_rootMessageLogger));
     }
 
     private void initialiseStatisticsReporting()
@@ -158,29 +145,40 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         private final boolean _reset;
         private final RootMessageLogger _logger;
+        private final Subject _subject;
 
         public StatisticsReportingTask(boolean reset, RootMessageLogger logger)
         {
             _reset = reset;
             _logger = logger;
+            _subject = new Subject(false, SecurityManager.SYSTEM.getPrincipals(), Collections.emptySet(), Collections.emptySet());
+            _subject.getPrincipals().add(new TaskPrincipal("Statistics"));
+            _subject.setReadOnly();
+
         }
 
         public void run()
         {
-            CurrentActor.set(new AbstractActor(_logger)
+            Subject.doAs(_subject, new PrivilegedAction<Object>()
             {
-                public String getLogMessage()
+                @Override
+                public Object run()
                 {
-                    return "[" + Thread.currentThread().getName() + "] ";
+                    reportStatistics();
+                    return null;
                 }
             });
+        }
+
+        protected void reportStatistics()
+        {
             try
             {
-                CurrentActor.get().message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
-                CurrentActor.get().message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
-                CurrentActor.get().message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
-                CurrentActor.get().message(BrokerMessages.STATS_MSGS(RECEIVED, _messagesReceived.getPeak(), _messagesReceived.getTotal()));
-                Collection<VirtualHost>  hosts = _virtualHostRegistry.getVirtualHosts();
+                SystemLog.message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
+                SystemLog.message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
+                SystemLog.message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
+                SystemLog.message(BrokerMessages.STATS_MSGS(RECEIVED, _messagesReceived.getPeak(), _messagesReceived.getTotal()));
+                Collection<VirtualHost> hosts = _virtualHostRegistry.getVirtualHosts();
 
                 if (hosts.size() > 1)
                 {
@@ -192,10 +190,10 @@ public class ApplicationRegistry implements IApplicationRegistry
                         StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
                         StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
 
-                        CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
-                        CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
-                        CurrentActor.get().message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
-                        CurrentActor.get().message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
+                        SystemLog.message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
+                        SystemLog.message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
+                        SystemLog.message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
+                        SystemLog.message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
                     }
                 }
 
@@ -207,10 +205,6 @@ public class ApplicationRegistry implements IApplicationRegistry
             catch(Exception e)
             {
                 ApplicationRegistry._logger.warn("Unexpected exception occurred while reporting the statistics", e);
-            }
-            finally
-            {
-                CurrentActor.remove();
             }
         }
     }
@@ -241,8 +235,6 @@ public class ApplicationRegistry implements IApplicationRegistry
             _logger.info("Shutting down ApplicationRegistry:" + this);
         }
 
-        //Set the Actor for Broker Shutdown
-        CurrentActor.set(new BrokerActor(_rootMessageLogger));
         try
         {
             //Stop Statistics Reporting
@@ -264,7 +256,7 @@ public class ApplicationRegistry implements IApplicationRegistry
                 _taskExecutor.stop();
             }
 
-            CurrentActor.get().message(BrokerMessages.STOPPED());
+            SystemLog.message(BrokerMessages.STOPPED());
 
             _logRecorder.closeLogRecorder();
 
@@ -275,7 +267,6 @@ public class ApplicationRegistry implements IApplicationRegistry
             {
                 _taskExecutor.stopImmediately();
             }
-            CurrentActor.remove();
         }
         _store = null;
         _broker = null;
@@ -334,17 +325,17 @@ public class ApplicationRegistry implements IApplicationRegistry
         _dataReceived = new StatisticsCounter("bytes-received");
     }
 
-    private void logStartupMessages(LogActor logActor)
+    private void logStartupMessages()
     {
-        logActor.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
+        SystemLog.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
 
-        logActor.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
+        SystemLog.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
                                                  System.getProperty("java.runtime.version", System.getProperty("java.version")),
                                                  SystemUtils.getOSName(),
                                                  SystemUtils.getOSVersion(),
                                                  SystemUtils.getOSArch()));
 
-        logActor.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
+        SystemLog.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
     }
 
     @Override

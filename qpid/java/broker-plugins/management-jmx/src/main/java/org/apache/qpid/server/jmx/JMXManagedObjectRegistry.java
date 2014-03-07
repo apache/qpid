@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.jmx;
 
-import javax.net.ssl.KeyManager;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
@@ -32,7 +31,6 @@ import org.apache.qpid.server.model.Transport;
 
 import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.ssl.SSLContextFactory;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
@@ -99,12 +97,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     @Override
     public void start() throws IOException
     {
-        CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
+        SystemLog.message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
         //check if system properties are set to use the JVM's out-of-the-box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
         {
-            CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
+            SystemLog.message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
         }
         else
         {
@@ -138,7 +136,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 throw new ServerScopedRuntimeException("Unable to create SSLContext for key store", e);
             }
 
-            CurrentActor.get().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStore.getName()));
+            SystemLog.message(ManagementConsoleMessages.SSL_KEYSTORE(keyStore.getName()));
 
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
@@ -250,8 +248,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         _cs.start();
 
         String connectorServer = (connectorSslEnabled ? "SSL " : "") + "JMX RMIConnectorServer";
-        CurrentActor.get().message(ManagementConsoleMessages.LISTENING(connectorServer, jmxPortConnectorServer));
-        CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
+        SystemLog.message(ManagementConsoleMessages.LISTENING(connectorServer, jmxPortConnectorServer));
+        SystemLog.message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
     }
 
     private Registry createRmiRegistry(int jmxPortRegistryServer, boolean useCustomRmiRegistry)
@@ -269,7 +267,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             rmiRegistry = LocateRegistry.createRegistry(jmxPortRegistryServer, null, null);
         }
 
-        CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", jmxPortRegistryServer));
+        SystemLog.message(ManagementConsoleMessages.LISTENING("RMI Registry", jmxPortRegistryServer));
         return rmiRegistry;
     }
 
@@ -294,7 +292,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         unregisterAllMbeans();
 
-        CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
+        SystemLog.message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
     private void closeConnectorAndRegistryServers()
@@ -338,7 +336,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         if (_rmiRegistry != null)
         {
             // Stopping the RMI registry
-            CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI Registry", _registryPort.getPort()));
+            SystemLog.message(ManagementConsoleMessages.SHUTTING_DOWN("RMI Registry", _registryPort.getPort()));
             try
             {
                 boolean success = UnicastRemoteObject.unexportObject(_rmiRegistry, false);
@@ -365,7 +363,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             // Stopping the JMX ConnectorServer
             try
             {
-                CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("JMX RMIConnectorServer", _cs.getAddress().getPort()));
+                SystemLog.message(ManagementConsoleMessages.SHUTTING_DOWN("JMX RMIConnectorServer",
+                                                                          _cs.getAddress().getPort()));
                 _cs.stop();
             }
             catch (IOException e)
