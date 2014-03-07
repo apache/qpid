@@ -22,6 +22,7 @@ package org.apache.qpid.disttest.controller.config;
 
 import static org.apache.commons.beanutils.PropertyUtils.getProperty;
 
+import java.io.FileReader;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -37,6 +38,34 @@ public class JavaScriptConfigEvaluatorTest extends QpidTestCase
         String jsFilePath = TestFileUtils.createTempFileFromResource(this, "JavaScriptConfigEvaluatorTest-test-config.js").getAbsolutePath();
 
         String rawConfig = new JavaScriptConfigEvaluator().evaluateJavaScript(jsFilePath);
+
+        Object configAsObject = getObject(rawConfig);
+
+        // Tests are produced by the QPID.iterations js function
+        assertEquals("Unexpected number of countries", 2, getPropertyAsList(configAsObject, "_countries").size());
+
+        Object country0 = getProperty(configAsObject, "_countries.[0]");
+        assertEquals("Unexpected country name", "Country", getProperty(country0, "_name"));
+        assertEquals("Unexpected country iteration number", 0, getPropertyAsInt(country0, "_iterationNumber"));
+
+        assertEquals("Unexpected number of regions", 2, getPropertyAsList(country0, "_regions").size());
+        // Region names are produced by the QPID.times js function
+        assertEquals("Unexpected region name", "repeatingRegion0", getProperty(country0, "_regions.[0]._name"));
+        assertEquals("Unexpected region name", "repeatingRegion1", getProperty(country0, "_regions.[1]._name"));
+        // Iterating attribute are produced by the QPID.iterations js function
+        assertEquals("Unexpected iterating attribute", "0", getProperty(country0, "_regions.[0]._towns.[0]._iteratingAttribute"));
+
+        Object country1 = getProperty(configAsObject, "_countries.[1]");
+        assertEquals("Unexpected country iteration number", 1, getPropertyAsInt(country1, "_iterationNumber"));
+        assertEquals("Unexpected iterating attribute", "1", getProperty(country1, "_regions.[0]._towns.[0]._iteratingAttribute"));
+    }
+
+    public void testEvaluateJavaScriptWithReader() throws Exception
+    {
+        String jsFilePath = TestFileUtils.createTempFileFromResource(this, "JavaScriptConfigEvaluatorTest-test-config.js").getAbsolutePath();
+
+        FileReader fileReader = new FileReader(jsFilePath);
+        String rawConfig = new JavaScriptConfigEvaluator().evaluateJavaScript(fileReader);
 
         Object configAsObject = getObject(rawConfig);
 

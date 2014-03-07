@@ -21,6 +21,7 @@ package org.apache.qpid.disttest.controller.config;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
@@ -36,7 +37,7 @@ public class ConfigReader
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigReader.class);
 
-    public Config getConfigFromFile(String fileName) throws FileNotFoundException
+    public Config getConfigFromFile(String fileName) throws IOException
     {
         Reader reader = getConfigReader(fileName);
 
@@ -44,7 +45,24 @@ public class ConfigReader
         return config;
     }
 
-    protected Reader getConfigReader(String fileName) throws FileNotFoundException
+    public Config readConfig(Reader reader)
+    {
+        return readConfig(reader, false);
+    }
+
+    public Config readConfig(Reader reader, boolean isJavascript)
+    {
+        if (isJavascript)
+        {
+            return readJson(new StringReader(new JavaScriptConfigEvaluator().evaluateJavaScript(reader)));
+        }
+        else
+        {
+            return readJson(reader);
+        }
+    }
+
+    private Reader getConfigReader(String fileName) throws IOException
     {
         Reader reader = null;
         if (fileName.endsWith(".js"))
@@ -60,7 +78,8 @@ public class ConfigReader
         return reader;
     }
 
-    public Config readConfig(Reader reader)
+
+    private Config readJson(Reader reader)
     {
         Gson gson = new GsonBuilder()
             .registerTypeAdapter(PropertyValue.class, new PropertyValueAdapter())

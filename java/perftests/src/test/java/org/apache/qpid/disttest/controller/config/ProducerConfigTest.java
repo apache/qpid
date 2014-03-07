@@ -41,6 +41,21 @@ public class ProducerConfigTest extends QpidTestCase
         assertEquals(Message.DEFAULT_TIME_TO_LIVE, p.getTimeToLive());
     }
 
+    public void testMessageSizeDefault()
+    {
+        CreateProducerCommand producer = new ProducerConfig().createCommand("session1");
+        assertEquals("Unexpected default message size", 1024, producer.getMessageSize());
+    }
+
+    public void testMessageSizeDefaultOverride()
+    {
+        final long overriddenMessageSize = 4096;
+        setTestSystemProperty(ProducerConfig.MESSAGE_SIZE_OVERRIDE_SYSTEM_PROPERTY, String.valueOf(overriddenMessageSize));
+
+        CreateProducerCommand producer2 = new ProducerConfig().createCommand("session1");
+        assertEquals("Unexpected message size", overriddenMessageSize, producer2.getMessageSize());
+    }
+
     public void testCreateProducerCommand()
     {
         String destination = "url:/destination";

@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.disttest.controller.config;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -41,7 +42,26 @@ public class JavaScriptConfigEvaluator
 
     public static final String TEST_CONFIG_VARIABLE_NAME = "jsonObject";
 
-    public String evaluateJavaScript(String fileName) throws FileNotFoundException
+    public String evaluateJavaScript(String fileName) throws IOException
+    {
+        FileReader fileReader = null;
+        try
+        {
+            fileReader = new FileReader(fileName);
+            String result = evaluateJavaScript(fileReader);
+            LOGGER.debug("Evaluated javascript file " + fileName + ". Generated the following JSON: " + result);
+            return result;
+        }
+        finally
+        {
+            if (fileReader != null)
+            {
+                fileReader.close();
+            }
+        }
+    }
+
+    public String evaluateJavaScript(Reader fileReader)
     {
         ScriptEngineManager mgr = new ScriptEngineManager();
         ScriptEngine engine = mgr.getEngineByName("JavaScript");
@@ -49,7 +69,7 @@ public class JavaScriptConfigEvaluator
         {
             engine.eval(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("json2.js")));
             engine.eval(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("test-utils.js")));
-            engine.eval(new FileReader(fileName));
+            engine.eval(fileReader);
             engine.eval("jsonString = JSON.stringify(" + TEST_CONFIG_VARIABLE_NAME + ")");
         }
         catch (ScriptException e)
@@ -58,7 +78,6 @@ public class JavaScriptConfigEvaluator
         }
         String result = (String) engine.get("jsonString");
 
-        LOGGER.debug("Evaluated javascript file " + fileName + ". Generated the following JSON: " + result);
         return result;
     }
 }

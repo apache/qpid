@@ -16,22 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.disttest;
+package org.apache.qpid.disttest.results;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.controller.ResultsForAllTests;
 import org.apache.qpid.disttest.results.aggregation.TestResultAggregator;
 import org.apache.qpid.disttest.results.formatting.CSVFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ResultsFileWriter
+public class ResultsCsvWriter implements ResultsWriter
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResultsFileWriter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResultsCsvWriter.class);
 
     static final String TEST_SUMMARY_FILE_NAME = "test-summary.csv";
 
@@ -41,17 +42,19 @@ public class ResultsFileWriter
 
     private TestResultAggregator _testResultAggregator = new TestResultAggregator();
 
-    public ResultsFileWriter(File outputDir)
+    public ResultsCsvWriter(File outputDir)
     {
         _outputDir = outputDir;
     }
 
-    public void writeResultsToFile(ResultsForAllTests resultsForAllTests, String testConfigFile)
+    @Override
+    public void writeResults(ResultsForAllTests resultsForAllTests, String testConfigFile)
     {
         final String outputFile = generateOutputCsvNameFrom(testConfigFile);
         writeResultsToOutputFile(resultsForAllTests, outputFile);
     }
 
+    @Override
     public void writeResultsSummary(List<ResultsForAllTests> allResultsList)
     {
         ResultsForAllTests combinedResults = _testResultAggregator.aggregateTestResults(allResultsList);
@@ -99,7 +102,7 @@ public class ResultsFileWriter
         }
     }
 
-    void setCsvFormater(CSVFormatter csvFormater)
+    public void setCsvFormater(CSVFormatter csvFormater)
     {
         _csvFormater = csvFormater;
     }

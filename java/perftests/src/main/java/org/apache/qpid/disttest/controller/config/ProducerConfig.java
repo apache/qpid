@@ -21,10 +21,17 @@ package org.apache.qpid.disttest.controller.config;
 
 import javax.jms.Message;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.qpid.disttest.message.CreateProducerCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProducerConfig extends ParticipantConfig
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProducerConfig.class);
+
+    public static final String MESSAGE_SIZE_OVERRIDE_SYSTEM_PROPERTY = "qpid.disttest.messageSize";
+
     private int _deliveryMode;
     private int _messageSize;
     private int _priority;
@@ -32,6 +39,9 @@ public class ProducerConfig extends ParticipantConfig
     private long _interval;
     private long _startDelay;
     private String _messageProviderName;
+
+    /** used to ensure we only log about the overridden message size once */
+    private boolean _alreadyLoggedAboutOverriddenMessageSize;
 
     // For Gson
     public ProducerConfig()
@@ -78,7 +88,10 @@ public class ProducerConfig extends ParticipantConfig
 
         command.setSessionName(sessionName);
         command.setDeliveryMode(_deliveryMode);
-        command.setMessageSize(_messageSize);
+
+        Integer messageSize = (Integer)ObjectUtils.defaultIfNull(getOverriddenMessageSize(), _messageSize);
+
+        command.setMessageSize(messageSize);
         command.setPriority(_priority);
         command.setTimeToLive(_timeToLive);
         command.setInterval(_interval);
@@ -87,4 +100,31 @@ public class ProducerConfig extends ParticipantConfig
 
         return command;
     }
+
+    private Integer getOverriddenMessageSize()
+    {
+        String overriddenMessageSizeString = System.getProperty(MESSAGE_SIZE_OVERRIDE_SYSTEM_PROPERTY);
+        if(overriddenMessageSizeString != null)
+        {
+            try
+            {
+                int overriddenMessageSize = Integer.valueOf(overriddenMessageSizeString);
+
+                if(!_alreadyLoggedAboutOverriddenMessageSize)
+                {
+                    LOGGER.info("Applied overridden maximum duration " + overriddenMessageSize);
+                    _alreadyLoggedAboutOverriddenMessageSize = true;
+                }
+
+                return overriddenMessageSize;
+            }
+            catch (NumberFormatException e)
+            {
+                LOGGER.error("Couldn't parse overridden message size " + overriddenMessageSizeString, e);
+            }
+        }
+
+        return null;
+    }
+
 }
