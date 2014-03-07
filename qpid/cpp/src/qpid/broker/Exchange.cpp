@@ -444,12 +444,18 @@ void Exchange::incOtherUsers()
     Mutex::ScopedLock l(usersLock);
     otherUsers++;
 }
-void Exchange::decOtherUsers()
+void Exchange::decOtherUsers(bool isControllingLink=false)
 {
     Mutex::ScopedLock l(usersLock);
     assert(otherUsers);
     if (otherUsers) otherUsers--;
-    if (!inUse() && !hasBindings()) checkAutodelete();
+    if (autodelete) {
+        if (isControllingLink) {
+            if (broker) broker->getExchanges().destroy(name);
+        } else if (!inUse() && !hasBindings()) {
+            checkAutoDelete();
+        }
+    }
 }
 bool Exchange::inUse() const
 {
