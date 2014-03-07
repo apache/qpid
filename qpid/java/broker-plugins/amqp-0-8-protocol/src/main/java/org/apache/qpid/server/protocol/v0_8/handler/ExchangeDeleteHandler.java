@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.v0_8.handler;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
 import org.apache.qpid.protocol.AMQConstant;
@@ -60,12 +61,13 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         channel.sync();
         try
         {
-            final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
 
-            if(exchangeName == null || "".equals(exchangeName))
+            if(isDefaultExchange(body.getExchange()))
             {
                 throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Default Exchange cannot be deleted");
             }
+
+            final String exchangeName = body.getExchange().toString();
 
             final ExchangeImpl exchange = virtualHost.getExchange(exchangeName);
             if(exchange == null)
@@ -93,5 +95,11 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         {
             throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
         }
+    }
+
+
+    protected boolean isDefaultExchange(final AMQShortString exchangeName)
+    {
+        return exchangeName == null || exchangeName.equals(AMQShortString.EMPTY_STRING);
     }
 }

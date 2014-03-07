@@ -137,7 +137,7 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
                 {
                     try
                     {
-                        ft.put(new AMQShortString(entry.getKey()), entry.getValue());
+                        ft.put(AMQShortString.validValueOf(entry.getKey()), entry.getValue());
                     }
                     catch (AMQPInvalidClassException e)
                     {

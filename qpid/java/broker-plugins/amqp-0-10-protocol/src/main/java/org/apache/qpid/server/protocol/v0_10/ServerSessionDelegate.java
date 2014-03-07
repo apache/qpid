@@ -685,8 +685,9 @@ public class ServerSessionDelegate extends SessionDelegate
                 return;
             }
         }
-        if(method.getExchange() == null || method.getExchange().equals(""))
+        if(nameNullOrEmpty(method.getExchange()))
         {
+            // special case handling to fake the existence of the default exchange for 0-10
             if(!DirectExchange.TYPE.getType().equals(method.getType()))
             {
                 exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
@@ -694,7 +695,7 @@ public class ServerSessionDelegate extends SessionDelegate
                           + " of type " + DirectExchange.TYPE.getType()
                           + " to " + method.getType() +".");
             }
-            if(method.hasAlternateExchange() && !"".equals(method.getAlternateExchange()))
+            if(!nameNullOrEmpty(method.getAlternateExchange()))
             {
                 exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
                           "Attempt to set alternate exchange of the default exchange "
@@ -901,8 +902,9 @@ public class ServerSessionDelegate extends SessionDelegate
 
         final String exchangeName = method.getName();
 
-        if(exchangeName == null || exchangeName.equals(""))
+        if(nameNullOrEmpty(exchangeName))
         {
+            // Fake the existence of the "default" exchange for 0-10
             result.setDurable(true);
             result.setType(DirectExchange.TYPE.getType());
             result.setNotFound(false);
@@ -1046,7 +1048,7 @@ public class ServerSessionDelegate extends SessionDelegate
         ExchangeImpl exchange;
         AMQQueue queue;
         boolean isDefaultExchange;
-        if(method.hasExchange() && !method.getExchange().equals(""))
+        if(!nameNullOrEmpty(method.getExchange()))
         {
             isDefaultExchange = false;
             exchange = virtualHost.getExchange(method.getExchange());
@@ -1064,6 +1066,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         if(isDefaultExchange)
         {
+            // fake the existence of the "default" exchange for 0-10
             if(method.hasQueue())
             {
                 queue = getQueue(session, method.getQueue());

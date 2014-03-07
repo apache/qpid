@@ -129,7 +129,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     }
                     else
                     {
-                        AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.getConsumerTag() + "'");
+                        AMQShortString msg = AMQShortString.validValueOf("Non-unique consumer tag, '" + body.getConsumerTag() + "'");
 
                         MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                         AMQMethodBody responseBody = methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
@@ -146,7 +146,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
                     MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                     AMQMethodBody responseBody = methodRegistry.createChannelCloseBody(AMQConstant.ARGUMENT_INVALID.getCode(),
-                                                                                       new AMQShortString(ise.getMessage()),
+                                                                                       AMQShortString.validValueOf(ise.getMessage()),
                                                                                        body.getClazz(),
                                                                                        body.getMethod());
                     protocolConnection.writeFrame(responseBody.generateFrame(channelId));
