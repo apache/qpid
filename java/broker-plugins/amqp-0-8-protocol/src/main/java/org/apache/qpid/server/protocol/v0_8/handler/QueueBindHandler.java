@@ -101,12 +101,13 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + queueName + " does not exist.");
         }
-        final String exchangeName = body.getExchange() == null ? null : body.getExchange().toString();
 
-        if(exchangeName == null || "".equals(exchangeName))
+        if(isDefaultExchange(body.getExchange()))
         {
             throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Cannot bind the queue " + queueName + " to the default exchange");
         }
+
+        final String exchangeName = body.getExchange().toString();
 
         final ExchangeImpl exch = virtualHost.getExchange(exchangeName);
         if (exch == null)
@@ -147,5 +148,10 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             protocolConnection.writeFrame(responseBody.generateFrame(channelId));
 
         }
+    }
+
+    protected boolean isDefaultExchange(final AMQShortString exchangeName)
+    {
+        return exchangeName == null || exchangeName.equals(AMQShortString.EMPTY_STRING);
     }
 }

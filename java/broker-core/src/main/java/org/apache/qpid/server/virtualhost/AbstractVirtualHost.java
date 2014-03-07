@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -382,7 +383,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         String exchangeName = queueConfiguration.getExchange();
 
 
-        if("".equals(exchangeName))
+        if(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equals(exchangeName))
         {
             //get routing keys in configuration (returns empty list if none are defined)
             List<?> routingKeys = queueConfiguration.getRoutingKeys();

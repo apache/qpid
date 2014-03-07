@@ -94,7 +94,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
         }
 
-        if(body.getExchange() == null || body.getExchange().equals(AMQShortString.EMPTY_STRING))
+        if(isDefaultExchange(body.getExchange()))
         {
             throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Cannot unbind the queue " + queue.getName() + " from the default exchange");
         }
@@ -145,4 +145,10 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         channel.sync();
         session.writeFrame(responseBody.generateFrame(channelId));
     }
+
+    protected boolean isDefaultExchange(final AMQShortString exchangeName)
+    {
+        return exchangeName == null || exchangeName.equals(AMQShortString.EMPTY_STRING);
+    }
+
 }

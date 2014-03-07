@@ -79,7 +79,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
         ExchangeImpl exchange;
 
-        if(exchangeName == null || exchangeName.equals(AMQShortString.EMPTY_STRING))
+        if(isDefaultExchange(exchangeName))
         {
             if(!new AMQShortString(DirectExchange.TYPE.getType()).equals(body.getType()))
             {
@@ -170,5 +170,10 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
             channel.sync();
             session.writeFrame(responseBody.generateFrame(channelId));
         }
+    }
+
+    protected boolean isDefaultExchange(final AMQShortString exchangeName)
+    {
+        return exchangeName == null || exchangeName.equals(AMQShortString.EMPTY_STRING);
     }
 }
