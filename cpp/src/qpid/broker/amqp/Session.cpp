@@ -185,19 +185,20 @@ class IncomingToQueue : public DecodingIncoming
 class IncomingToExchange : public DecodingIncoming
 {
   public:
-    IncomingToExchange(Broker& b, Session& p, boost::shared_ptr<qpid::broker::Exchange> e, pn_link_t* l, const std::string& source)
-        : DecodingIncoming(l, b, p, source, e->getName(), pn_link_name(l)), exchange(e), authorise(p.getAuthorise())
+    IncomingToExchange(Broker& b, Session& p, boost::shared_ptr<qpid::broker::Exchange> e, pn_link_t* l, const std::string& source, bool icl)
+        : DecodingIncoming(l, b, p, source, e->getName(), pn_link_name(l)), exchange(e), authorise(p.getAuthorise()), isControllingLink(icl)
     {
         exchange->incOtherUsers();
     }
     ~IncomingToExchange()
     {
-        exchange->decOtherUsers();
+        exchange->decOtherUsers(isControllingLink);
     }
     void handle(qpid::broker::Message& m);
   private:
     boost::shared_ptr<qpid::broker::Exchange> exchange;
     Authorise& authorise;
+    bool isControllingLink;
 };
 
 Session::Session(pn_session_t* s, Connection& c, qpid::sys::OutputControl& o)
@@ -425,7 +426,7 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         boost::shared_ptr<Incoming> q(new IncomingToQueue(connection.getBroker(), *this, node.queue, link, source, node.created && node.properties.trackControllingLink()));
         incoming[link] = q;
     } else if (node.exchange) {
-        boost::shared_ptr<Incoming> e(new IncomingToExchange(connection.getBroker(), *this, node.exchange, link, source));
+        boost::shared_ptr<Incoming> e(new IncomingToExchange(connection.getBroker(), *this, node.exchange, link, source, node.created && node.properties.trackControllingLink()));
         incoming[link] = e;
     } else if (node.relay) {
         boost::shared_ptr<Incoming> in(new IncomingToRelay(link, connection.getBroker(), *this, source, name, pn_link_name(link), node.relay));
@@ -717,6 +718,8 @@ void IncomingToQueue::handle(qpid::broker::Message& message)
 
 void IncomingToExchange::handle(qpid::broker::Message& message)
 {
+    if (exchange->isDestroyed())
+        throw qpid::framing::ResourceDeletedException(QPID_MSG("Exchange " << exchange->getName() << " has been deleted."));
     authorise.route(exchange, message);
     DeliverableMessage deliverable(message, 0);
     exchange->route(deliverable);
