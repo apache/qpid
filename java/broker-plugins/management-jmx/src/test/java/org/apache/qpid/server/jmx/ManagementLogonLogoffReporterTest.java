@@ -34,6 +34,7 @@ import javax.management.remote.JMXConnectionNotification;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.MessageLogger;
 
@@ -61,7 +62,9 @@ public class ManagementLogonLogoffReporterTest extends TestCase
         // Enable messaging so we can valid the generated strings
         when(_messageLogger.isMessageEnabled(anyString())).thenReturn(true);
         EventLogger eventLogger = new EventLogger(_messageLogger);
-        _reporter = new ManagementLogonLogoffReporter(eventLogger, _usernameAccessor);
+        EventLoggerProvider provider = mock(EventLoggerProvider.class);
+        when(provider.getEventLogger()).thenReturn(eventLogger);
+        _reporter = new ManagementLogonLogoffReporter(provider, _usernameAccessor);
     }
 
     public void testOpenedNotification()

@@ -39,6 +39,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.messages.AccessControlMessages;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -52,7 +53,7 @@ import org.apache.qpid.server.security.access.Permission;
  * The access control rule definitions are loaded from an external configuration file, passed in as the
  * target to the {@link load(ConfigurationFile)} method. The file specified
  */
-public class RuleSet
+public class RuleSet implements EventLoggerProvider
 {
     private static final Logger _logger = Logger.getLogger(RuleSet.class);
 
@@ -70,9 +71,9 @@ public class RuleSet
     private final Map<Subject, Map<Operation, Map<ObjectType, List<Rule>>>> _cache =
                         new WeakHashMap<Subject, Map<Operation, Map<ObjectType, List<Rule>>>>();
     private final Map<String, Boolean> _config = new HashMap<String, Boolean>();
-    private final EventLogger _eventLogger;
+    private final EventLoggerProvider _eventLogger;
 
-    public RuleSet(EventLogger eventLogger)
+    public RuleSet(EventLoggerProvider eventLogger)
     {
         _eventLogger = eventLogger;
         // set some default configuration properties
@@ -323,14 +324,14 @@ public class RuleSet
                 switch (permission)
                 {
                     case ALLOW_LOG:
-                        _eventLogger.message(AccessControlMessages.ALLOWED(
+                        getEventLogger().message(AccessControlMessages.ALLOWED(
                                 action.getOperation().toString(),
                                 action.getObjectType().toString(),
                                 action.getProperties().toString()));
                     case ALLOW:
                         return Result.ALLOWED;
                     case DENY_LOG:
-                        _eventLogger.message(AccessControlMessages.DENIED(
+                        getEventLogger().message(AccessControlMessages.DENIED(
                                 action.getOperation().toString(),
                                 action.getObjectType().toString(),
                                 action.getProperties().toString()));
@@ -442,6 +443,6 @@ public class RuleSet
 
     public EventLogger getEventLogger()
     {
-        return _eventLogger;
+        return _eventLogger.getEventLogger();
     }
 }

@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.MessageLogger;
@@ -155,8 +156,9 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
         when(_rootLogger.isEnabled()).thenReturn(true);
         when(_rootLogger.isMessageEnabled(anyString())).thenReturn(true);
         EventLogger eventLogger = new EventLogger(_rootLogger);
-
-        _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, _closeAction, eventLogger);
+        EventLoggerProvider eventLoggerProvider = mock(EventLoggerProvider.class);
+        when(eventLoggerProvider.getEventLogger()).thenReturn(eventLogger);
+        _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, _closeAction, eventLoggerProvider);
         _now = System.currentTimeMillis();
     }
 

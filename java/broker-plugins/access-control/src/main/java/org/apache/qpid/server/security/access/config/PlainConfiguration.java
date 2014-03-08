@@ -36,6 +36,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
@@ -68,7 +69,7 @@ public class PlainConfiguration extends AbstractConfiguration
 
     private StreamTokenizer _st;
 
-    public PlainConfiguration(File file, final EventLogger eventLogger)
+    public PlainConfiguration(File file, final EventLoggerProvider eventLogger)
     {
         super(file, eventLogger);
     }

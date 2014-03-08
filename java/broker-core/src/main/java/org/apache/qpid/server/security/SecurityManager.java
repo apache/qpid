@@ -144,7 +144,7 @@ public class SecurityManager implements ConfigurationChangeListener
 
             for (AccessControlFactory provider : (new QpidServiceLoader<AccessControlFactory>()).instancesOf(AccessControlFactory.class))
             {
-                AccessControl accessControl = provider.createInstance(attributes, _broker.getEventLogger());
+                AccessControl accessControl = provider.createInstance(attributes, _broker);
                 accessControl.open();
                 if(accessControl != null)
                 {

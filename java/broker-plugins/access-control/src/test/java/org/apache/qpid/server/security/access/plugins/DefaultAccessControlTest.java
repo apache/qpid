@@ -34,6 +34,7 @@ import junit.framework.TestCase;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.Result;
@@ -79,7 +80,9 @@ public class DefaultAccessControlTest extends TestCase
 
     private RuleSet createGroupRuleSet()
     {
-        final RuleSet rs = new RuleSet(_eventLogger);
+        final EventLoggerProvider provider = mock(EventLoggerProvider.class);
+        when(provider.getEventLogger()).thenReturn(_eventLogger);
+        final RuleSet rs = new RuleSet(provider);
 
         // Rule expressed with username
         rs.grant(0, "user1", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
@@ -176,7 +179,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnAllComponents() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet(_eventLogger);
+        final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
         // grant user4 access right on any method in any component
         rs.grant(1, "user4", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, new ObjectProperties(ObjectProperties.STAR));
@@ -202,7 +205,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet(_eventLogger);
+        final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
         // grant user5 access right on any methods in "Test" component
         ObjectProperties ruleProperties = new ObjectProperties(ObjectProperties.STAR);
@@ -302,7 +305,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessMethodWhenSpecifiedAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet(_eventLogger);
+        final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
         // grant user6 access right on "getAttribute" method in "Test" component
         ObjectProperties ruleProperties = new ObjectProperties("getAttribute");
@@ -339,7 +342,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnSpecifiedMethodForAllComponents() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet(_eventLogger);
+        final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
         // grant user8 all rights on method queryNames in all component
         rs.grant(1, "user8", Permission.ALLOW, Operation.ALL, ObjectType.METHOD, new ObjectProperties("queryNames"));
@@ -378,7 +381,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnAllMethodsInAllComponents() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet(_eventLogger);
+        final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
         // grant user9 all rights on any method in all component
         rs.grant(1, "user9", Permission.ALLOW, Operation.ALL, ObjectType.METHOD, new ObjectProperties());
@@ -416,7 +419,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessMethodWhenMatchingAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet(_eventLogger);
+        final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
         // grant user9 all rights on "getAttribute*" methods in Test component
         ObjectProperties ruleProperties = new ObjectProperties();

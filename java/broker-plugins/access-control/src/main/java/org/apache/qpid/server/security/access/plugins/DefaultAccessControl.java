@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -50,9 +51,9 @@ public class DefaultAccessControl implements AccessControl
 
     private RuleSet _ruleSet;
     private File _aclFile;
-    private final EventLogger _eventLogger;
+    private final EventLoggerProvider _eventLogger;
 
-    public DefaultAccessControl(String fileName, final EventLogger eventLogger)
+    public DefaultAccessControl(String fileName, final EventLoggerProvider eventLogger)
     {
         _eventLogger = eventLogger;
         if (_logger.isDebugEnabled())
@@ -66,7 +67,7 @@ public class DefaultAccessControl implements AccessControl
     DefaultAccessControl(RuleSet rs) throws ConfigurationException
     {
         _ruleSet = rs;
-        _eventLogger = rs.getEventLogger();
+        _eventLogger = rs;
     }
 
     public void open()

@@ -61,7 +61,8 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORM
 public class ServerConnection extends Connection implements AMQConnectionModel<ServerConnection, ServerSession>,
                                                             LogSubject, AuthorizationHolder
 {
-    private final EventLogger _eventLogger;
+
+    private final Broker _broker;
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
 
@@ -85,7 +86,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     {
         _connectionId = connectionId;
         _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
-        _eventLogger = broker.getEventLogger();
+        _broker = broker;
     }
 
     public Object getReference()
@@ -101,7 +102,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
     EventLogger getEventLogger()
     {
-        return _virtualHost == null ? _eventLogger : _virtualHost.getEventLogger();
+        return _virtualHost == null ? _broker.getEventLogger() : _virtualHost.getEventLogger();
     }
 
     @Override

@@ -156,7 +156,7 @@ public class ServerSession extends Session
             {
                 getConnectionModel().closeSession(ServerSession.this, AMQConstant.RESOURCE_ERROR, reason);
             }
-        }, getVirtualHost().getEventLogger());
+        }, getVirtualHost());
     }
 
     protected void setState(final State state)
