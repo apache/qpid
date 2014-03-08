@@ -1,0 +1,297 @@
+<?xml version="1.0"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<chapter id="JMS-Client-0-8-Examples">
+	<title>Examples</title>
+
+	<para>The following programs shows how to send and receive messages using the Qpid JMS client.
+		The first program illustrates a <emphasis>point to point</emphasis> example, the second, a
+		pubish/subscribe example. </para>
+	<para>Both examples show the use JNDI to obtain connection factory and destination objects which
+		the application needs. In this way the configuration is kept separate from the application
+		code itself.</para>
+	<para>The example code will be straightforward for anyone familiar with Java JMS. Readers in
+		need of an introduction are directed towards <ulink url="&oracleJmsTutorial;">Oracle's JMS
+			tutorial</ulink>.</para>
+	<section id="JMS-Client-0-8-Examples-PTP">
+		<title>Point to point example</title>
+		<para>In this example, we illustrate point to point messaging. We create a JNDI context
+			using a properties file, use the context to lookup a connection factory, create and
+			start a connection, create a session, and lookup a destination (a queue) from the JNDI
+			context. Then we create a producer and a consumer, send a message with the producer and
+			receive it with the consumer.</para>
+
+		<example id="JMS-Client-0-8-Examples-PTP-Java">
+			<title>JMS Example - Point to Point Messaging</title>
+			<programlisting language="java">
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import java.util.Properties;
+
+public class Hello {
+
+    public Hello() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        Hello hello = new Hello();
+        hello.runTest();
+    }
+
+    private void runTest() throws Exception {
+      Properties properties = new Properties();
+      properties.load(this.getClass().getResourceAsStream("helloworld.properties"));  <co id="ptp-java-properties" linkends="callout-ptp-properties"/>
+      Context context = new InitialContext(properties);                               <co id="ptp-java-context" linkends="callout-ptp-context"/>
+
+      ConnectionFactory connectionFactory
+          = (ConnectionFactory) context.lookup("qpidConnectionFactory");              <co id="ptp-java-connection-factory" linkends="callout-ptp-connection-factory"/>
+      Connection connection = connectionFactory.createConnection();                   <co id="ptp-java-connection" linkends="callout-ptp-connection"/>
+      connection.start();                                                             <co id="ptp-java-start" linkends="callout-ptp-start"/>
+
+      Session session = connection.createSession(true, Session.SESSION_TRANSACTED);   <co id="ptp-java-session" linkends="callout-ptp-session"/>
+      Queue queue = (Queue) context.lookup("myqueue");                                <co id="ptp-java-destination" linkends="callout-ptp-destination"/>
+
+      MessageConsumer messageConsumer = session.createConsumer(queue);                <co id="ptp-java-consumer" linkends="callout-ptp-consumer"/>
+      MessageProducer messageProducer = session.createProducer(queue);                <co id="ptp-java-producer" linkends="callout-ptp-producer"/>
+
+      TextMessage message = session.createTextMessage("Hello world!");                <co id="ptp-java-send" linkends="callout-ptp-send"/>
+      messageProducer.send(message);
+      session.commit();
+
+      message = (TextMessage)messageConsumer.receive();                               <co id="ptp-java-receive" linkends="callout-ptp-receive"/>
+      session.commit();
+      System.out.println(message.getText());
+
+      connection.close();                                                             <co id="ptp-java-close" linkends="callout-ptp-close"/>
+      context.close();                                                                <co id="ptp-java-jndi-close" linkends="callout-ptp-jndi-close"/>
+    }
+}
+	</programlisting>
+		</example>
+
+		<calloutlist>
+			<callout id="callout-ptp-properties" arearefs="ptp-java-properties">
+				<para>Loads the JNDI properties file, which specifies the connection factory, queues
+					and topics. See <xref linkend="JMS-Client-0-8-JNDI-Properties-Format"/> for
+					details.</para>
+			</callout>
+			<callout id="callout-ptp-context" arearefs="ptp-java-context">
+				<para>Creates the JNDI initial context.</para>
+			</callout>
+			<callout id="callout-ptp-connection-factory" arearefs="ptp-java-connection-factory">
+				<para>Looks up a JMS connection factory for Qpid.</para>
+			</callout>
+			<callout id="callout-ptp-connection" arearefs="ptp-java-connection">
+				<para>Creates a JMS connection. Creating the JMS connections establishes the
+					connection to the Broker.</para>
+			</callout>
+			<callout id="callout-ptp-start" arearefs="ptp-java-start">
+				<para>Starts the connection, required for the consumption of messages.</para>
+			</callout>
+			<callout id="callout-ptp-session" arearefs="ptp-java-session">
+				<para>Creates a transactional session.</para>
+			</callout>
+			<callout id="callout-ptp-destination" arearefs="ptp-java-destination">
+				<para>Looks up a destination for the queue with JNDI name <emphasis>myqueue</emphasis>.</para>
+			</callout>
+			<callout id="callout-ptp-consumer" arearefs="ptp-java-consumer">
+				<para>Creates a consumer that reads messages from the queue<footnote>
+						<para>Creating consumer will automatically create the queue on the Broker
+							and bind it to an exchange. Specifically, in this case as the
+								<literal>queue.</literal> form is used in the JNDI properties the
+							effect will be to create a queue called <literal>queue1</literal> on the
+							Broker, and create a binding between the <literal>amq.direct</literal>
+							exchange and this queue using the queue's name. This process is
+							described in detail in <xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageConsumer-ConsumerSideEffect"
+							/></para>
+					</footnote>.</para>
+			</callout>
+			<callout id="callout-ptp-producer" arearefs="ptp-java-producer">
+				<para>Creates a producer that sends messages to the queue.</para>
+			</callout>
+			<callout id="callout-ptp-send" arearefs="ptp-java-send">
+				<para>Creates a new message of type <emphasis>javax.jms.TextMessage</emphasis>, publishes the message and commits the
+					session.</para>
+			</callout>
+			<callout id="callout-ptp-receive" arearefs="ptp-java-receive">
+				<para>Reads the next available message (awaiting indefinitely if necessary) and
+					commits the session.</para>
+			</callout>
+			<callout id="callout-ptp-close" arearefs="ptp-java-close">
+				<para>Closes the Connection. All sessions owned by the Connection along with their
+					MessageConsumers and MessageProducers are automatically closed. The connection
+					to the Broker is closed as this point.</para>
+			</callout>
+			<callout id="callout-ptp-jndi-close" arearefs="ptp-java-jndi-close">
+				<para>Closes the JNDI context.</para>
+			</callout>
+		</calloutlist>
+
+		<para>The contents of the <literal>helloworld.properties</literal> file are shown
+			below.</para>
+
+		<example id="JMS-Client-0-8-Examples-PTP-PropertiesFile">
+			<title>JMS Example - Point to Point Messaging - JNDI Properties</title>
+			<programlisting language="properties">
+java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+connectionfactory.qpidConnectionFactory = amqp://guest:guest@clientid/?brokerlist='tcp://localhost:5672' <co id="ptp-properties-connectionfactory" linkends="callout-ptp-properties-connectionfactory"/>
+queue.myqueue = queue1                                                                                   <co id="ptp-properties-destination" linkends="callout-ptp-properties-destination"/>
+	</programlisting>
+		</example>
+
+		<calloutlist>
+			<callout id="callout-ptp-properties-connectionfactory"
+				arearefs="ptp-properties-connectionfactory">
+				<para>Defines a connection factory from which Connections can be created. The syntax
+					of a ConnectionURL is given in <xref
+						linkend="JMS-Client-0-8-Connection-URL"/>.</para>
+			</callout>
+			<callout id="callout-ptp-properties-destination" arearefs="ptp-properties-destination">
+				<para>Defines a queue for which MessageProducers and/or MessageConsumers send and
+					receive messages. The format of these entries is described in <xref
+						linkend="JMS-Client-0-8-JNDI-Properties-Format-Queue"/>.</para>
+			</callout>
+		</calloutlist>
+	</section>
+	<section id="JMS-Client-0-8-Examples-PubSub">
+		<title>Publish/subscribe example</title>
+		<para>In this second example, we illustrate publish/subscribe messaging. Again, we create a
+			JNDI context using a properties file, use the context to lookup a connection factory,
+			create and start a connection, create a session, and lookup a destination (a topic) from
+			the JNDI context. Then we create a producer and two durable subscribers , send a message
+			with the producer. Both subscribers receive the same message.</para>
+
+		<example id="JMS-Client-0-8-Examples-PubSub-Java">
+			<title>JMS Example - Publish/subscribe Messaging</title>
+			<programlisting language="java">
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+
+import java.util.Properties;
+
+public class StocksExample {
+
+    public StocksExample() {
+    }
+
+    public static void main(String[] args) throws Exception {
+      StocksExample stocks = new StocksExample();
+      stocks.runTest();
+    }
+
+    private void runTest() throws Exception {
+      Properties properties = new Properties();
+      properties.load(this.getClass().getResourceAsStream("stocks.properties"));
+      Context context = new InitialContext(properties);
+
+      ConnectionFactory connectionFactory
+          = (ConnectionFactory) context.lookup("qpidConnectionFactory");
+      Connection connection = connectionFactory.createConnection();
+      connection.start();
+
+      Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+      Topic priceTopic = (Topic) context.lookup("myprices");                             <co id="pubsub-java-destination" linkends="callout-pubsub-destination"/>
+
+      MessageConsumer subscriber1 = session.createDurableSubscriber(priceTopic, "sub1"); <co id="pubsub-java-subscribers" linkends="callout-pubsub-subscribers"/>
+      MessageConsumer subscriber2 = session.createDurableSubscriber(priceTopic, "sub2" /*, "price > 150", false*/ );
+      MessageProducer messageProducer = session.createProducer(priceTopic);
+
+      Message message = session.createMessage();
+      message.setStringProperty("instrument", "IBM");
+      message.setIntProperty("price", 100);
+      messageProducer.send(message);
+      session.commit();
+
+      message = subscriber1.receive(1000);
+      session.commit();
+      System.out.println("Subscriber 1 received : " + message);
+
+      message = subscriber2.receive(1000);
+      session.commit();
+      System.out.println("Subscriber 2 received : " + message);
+
+      session.unsubscribe("sub1");                                                       <co id="pubsub-java-unsubscribe" linkends="callout-pubsub-unsubscribe"/>
+      session.unsubscribe("sub2");
+      connection.close();
+      context.close();
+    }
+}
+	</programlisting>
+		</example>
+
+		<calloutlist>
+			<callout id="callout-pubsub-destination" arearefs="pubsub-java-destination">
+				<para>Looks up a destination for the topic with JNDI name myprices.</para>
+			</callout>
+			<callout id="callout-pubsub-subscribers" arearefs="pubsub-java-subscribers">
+				<para>Creates two durable subscribers, <literal>sub1</literal> and
+						<literal>sub2</literal>. Durable subscriptions retain messages for the
+					client even when the client is disconnected, until the subscription is
+					unsubscribed. Subscription 2 has a (commented out) message selector argument so
+					you can conveniently experiement with the effect of those. <footnote>
+						<para>Each durable subscription is implemented as a queue on the Broker. See
+								<xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageConsumer-TopicSubscriptions"
+							/> for details.</para>
+					</footnote></para>
+			</callout>
+			<callout id="callout-pubsub-unsubscribe" arearefs="pubsub-java-unsubscribe">
+				<para>Unsubscribes the two durable subscribers, permanently removing the knowledge
+					of the subscriptions from the system. An application would normally
+						<emphasis>NOT</emphasis> do this. The typical use-case for durable
+					subsciption is one where the subscription exists over an extended period of
+					time.</para>
+			</callout>
+		</calloutlist>
+
+		<para>The contents of the <literal>stocks.properties</literal> file are shown below.</para>
+
+		<example id="JMS-Client-0-8-Examples-PubSub-PropertiesFile">
+			<title>JMS Example - Publish/subscribe Messaging - JNDI Properties</title>
+			<programlisting>
+java.naming.factory.initial = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+connectionfactory.qpidConnectionFactory = amqp://guest:guest@clientid/?brokerlist='tcp://localhost:5672'
+topic.myprices = prices <co id="pubsub-properties-destination" linkends="callout-pubsub-properties-destination"/>
+	</programlisting>
+		</example>
+
+		<calloutlist>
+			<callout id="callout-pubsub-properties-destination"
+				arearefs="pubsub-properties-destination">
+				<para>Defines a topic for which MessageProducers and/or MessageConsumers send and
+					receive messages. The format of this entry is described in <xref
+						linkend="JMS-Client-0-8-JNDI-Properties-Format-Topic"/>.</para>
+			</callout>
+		</calloutlist>
+	</section>
+
+
+</chapter>

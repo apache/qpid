@@ -1,0 +1,623 @@
+<?xml version="1.0"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<chapter id="JMS-Client-0-8-System-Properties">
+	<title>System Properties</title>
+	<para>The following system properties affect the behaviour of the Qpid JMS client. System
+		properties are global in nature so affect all Qpid interactions made from within the same
+		JVM. For many options, there are equivalent <link linkend="JMS-Client-0-8-Connection-URL"
+			>Connection URL</link> options allowing the option to be controlled at the level of the
+		Connection.</para>
+
+	<table pgwide="1">
+		<title>System Properties Affecting Connection Behaviour</title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>qpid.amqp.version</entry>
+					<entry>string</entry>
+					<entry>0-10</entry>
+					<entry><para>Sets the AMQP version to be used - currently supports one of
+							{0-8,0-9,0-91,0-10}.</para><para>The client will begin negotiation at
+							the specified version and only negotiate downwards if the Broker does
+							not support the specified version.</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-Heartbeat">
+					<entry>qpid.heartbeat</entry>
+					<entry>int</entry>
+					<entry><para>Defaults to the heartbeat value suggested by the Broker, if
+							any.</para></entry>
+					<entry>Frequency of heartbeat messages (in seconds). A value of 0 disables
+						heartbeating. <para>Two consecutive missed heartbeats will result in the
+							connection timing out.</para><para>This can also be set per connection
+							using the <link
+								linkend="JMS-Client-0-8-Connection-URL-BrokerOptions-Heartbeat"
+								>Connection URL</link> options.</para><para>For compatibility with
+							old client configuration, the synonym
+								<varname>amqj.heartbeat.delay</varname> is supported.</para></entry>
+				</row>
+				<row>
+					<entry>ignore_setclientID</entry>
+					<entry>boolean</entry>
+					<entry>false</entry>
+					<entry>If a client ID is specified in the connection URL it's used or else an ID
+						is generated. If an ID is specified after it's been set Qpid will throw an
+						exception. <para>Setting this property to 'true' will disable that check and
+							allow you to set a client ID of your choice later on.</para></entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+
+
+	<table pgwide="1">
+		<title>Config Options For Session Behaviour</title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row id="JMS-Client-0-8-System-Properties-DestSyntax">
+					<entry>qpid.dest_syntax</entry>
+					<entry>String</entry>
+					<entry>ADDR</entry>
+					<entry><para>The default addressing syntax.  The Address (ADDR) syntax is supported when using AMQP 0-10.  Binding URL (BURL)
+					  is supported by AMQP protocols 0-8 through to 0-10.</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-Maxprefetch">
+					<entry>max_prefetch</entry>
+					<entry>int</entry>
+					<entry>500</entry>
+					<entry><para>Maximum number of pre-fetched messages per Session. This can also
+							be defaulted for sessions created on a particular connection using the
+								<link
+								linkend="JMS-Client-0-8-Connection-URL-ConnectionOptions-Maxprefetch"
+								>Connection URL</link> options.</para></entry>
+				</row>
+
+
+				<!-- 0-10
+				<row>
+					<entry>qpid.session.command_limit</entry>
+					<entry>int</entry>
+					<entry>65536</entry>
+					<entry>Limits the # of unacked commands</entry>
+				</row>
+-->
+				<!-- 0-10
+					<row>
+					<entry>qpid.session.byte_limit</entry>
+					<entry>int</entry>
+					<entry>1048576</entry>
+					<entry>Limits the # of unacked commands in terms of bytes</entry>
+				</row>
+				-->
+				<row>
+					<entry>qpid.use_legacy_map_message</entry>
+					<entry>boolean</entry>
+					<entry>false</entry>
+					<entry><para>If set will use the old map message encoding. By default the Map
+							messages are encoded using the 0-10 map encoding.</para><para>This can
+							also be set per connection using the <link
+								linkend="JMS-Client-0-8-Connection-URL-ConnectionOptions-UseLegacyMap"
+								>Connection URL</link> options.</para></entry>
+				</row>
+
+				<row>
+					<entry>qpid.jms.daemon.dispatcher</entry>
+					<entry>boolean</entry>
+					<entry>false</entry>
+					<entry><para>Controls whether the Session dispatcher thread is a daemon thread
+							or not. If this system property is set to true then the Session
+							dispatcher threads will be created as daemon threads. This setting is
+							introduced in version 0.16.</para></entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+
+	<table pgwide="1">
+		<title>Config Options For Consumer Behaviour</title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row id="JMS-Client-0-8-System-Properties-DeclareExchanges">
+					<entry>qpid.declare_exchanges</entry>
+					<entry>Boolean</entry>
+					<entry>true</entry>
+					<entry><para>If true, creating a consumer will also declare the exchange on the
+							Broker (specified within the Binding URL associated with the
+							Destination), creating it if is does not already exist.
+						</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-DeclareQueues">
+					<entry>qpid.declare_queues</entry>
+					<entry>Boolean</entry>
+					<entry>true</entry>
+					<entry><para>If true, creating a consumer will also declare the queue on the
+							Broker (specified within the Binding URL associated with the
+							Destination), creating it if is does not already
+						exist.</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-RejectBehaviour">
+					<entry>qpid.reject.behaviour</entry>
+					<entry>String</entry>
+					<entry>NORMAL</entry>
+					<entry><para>Used with the maximum delivery count feature. See <xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageConsumer-MaximumDeliveryCount"
+							/> for details.</para></entry>
+				</row>
+
+				<!-- 0-10 
+				<row>
+					<entry>qpid.session.max_ack_delay</entry>
+					<entry>long</entry>
+					<entry>1000 (ms)</entry>
+					<entry><para>Timer interval to flush message acks in buffer when using AUTO_ACK
+							and DUPS_OK.</para>
+						<para>When using the above ack modes, message acks are batched and sent if
+							one of the following conditions are met (which ever happens first). <itemizedlist>
+								<listitem>
+									<para>When the ack timer fires.</para>
+								</listitem>
+								<listitem>
+									<para>if un_acked_msg_count > max_prefetch/2.</para>
+								</listitem>
+							</itemizedlist>
+						</para>
+						<para>The ack timer can be disabled by setting it to 0.</para>
+					</entry>
+				</row>
+-->
+				<!-- 0-10
+				<row>
+					<entry>sync_ack</entry>
+					<entry>boolean</entry>
+					<entry>false</entry>
+					<entry><para>If set, each message will be acknowledged synchronously. When using
+							AUTO_ACK mode, you need to set this to "true", in order to get the
+							correct behaviour as described by the JMS spec.</para><para>This is set
+							to false by default for performance reasons, therefore by default
+							AUTO_ACK behaves similar to DUPS_OK.</para><para>This can also be set
+							per connection using the <link linkend="section-jms-connection-url"
+								>Connection URL</link> options.</para></entry>
+				</row>
+				-->
+			</tbody>
+		</tgroup>
+	</table>
+
+	<table pgwide="1">
+		<title>Config Options For Producer Behaviour</title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row id="JMS-Client-0-8-System-Properties-DefaultMandatory">
+					<entry>qpid.default_mandatory</entry>
+					<entry>Boolean</entry>
+					<entry>True</entry>
+					<entry><para>If true, messages sent to Queue destinations for which cannot be
+							routed to at least one queue on the Broker, will be returned to the
+							application. See <xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageProducer-MandatoryMessage"
+							/> for more details.</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-DefaultMandatoryTopic">
+					<entry>qpid.default_mandatory_topic</entry>
+					<entry>Boolean</entry>
+					<entry>False</entry>
+					<entry><para>If true, messages sent to Topic destinations for which cannot be
+							routed to at least one queue on the Broker, will be returned to the
+							application. See <xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageProducer-MandatoryMessage"
+							/> for more details..</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-DefaultImmediate">
+					<entry>qpid.default_immediate</entry>
+					<entry>Boolean</entry>
+					<entry>False</entry>
+					<entry><para>If true, the message will be returned to the application unless the
+							Broker is able to route the message to at least one queue with a
+							consumer attached. See <xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageProducer-ImmediateMessage"
+							/> for more details.</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-FlowControlWaitFailure">
+					<entry>qpid.flow_control_wait_failure</entry>
+					<entry>Long</entry>
+					<entry>60000</entry>
+					<entry><para>Used with <xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageProducer-FlowControl"
+							/>. The amount of time (in milliseconds) to wait before timing
+							out.</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-FlowControlWaitNotifyPeriod">
+					<entry>qpid.flow_control_wait_notify_period</entry>
+					<entry>Long</entry>
+					<entry>5000</entry>
+					<entry><para>Used with <xref
+								linkend="JMS-Client-0-8-Client-Understanding-MessageProducer-FlowControl"
+							/>. The frequency at which the log message informing that the producer
+							is flow controlled .</para></entry>
+				</row>
+				<!--
+				<row>
+					<entry>sync_publish</entry>
+					<entry>string</entry>
+					<entry>"" (disabled)</entry>
+					<entry><para>If one of {persistent|all} is set then persistent messages or all
+							messages will be sent synchronously.</para><para>This can also be set
+							per connection using the <link linkend="section-jms-connection-url"
+								>Connection URL</link> options.</para></entry>
+				</row>
+				-->
+			</tbody>
+		</tgroup>
+	</table>
+
+	<table pgwide="1">
+		<title>Config Options For Threading</title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>qpid.thread_factory</entry>
+					<entry>string</entry>
+					<entry>org.apache.qpid.thread.DefaultThreadFactory</entry>
+					<entry><para>Specifies the thread factory to use.</para><para>If using a real
+							time JVM, you need to set the above property to
+								<varname>org.apache.qpid.thread.RealtimeThreadFactory</varname>.</para></entry>
+				</row>
+
+				<row>
+					<entry>qpid.rt_thread_priority</entry>
+					<entry>int</entry>
+					<entry>20</entry>
+					<entry><para>Specifies the priority (1-99) for Real time threads created by the
+							real time thread factory.</para></entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+
+	<table pgwide="1">
+		<title>Config Options For I/O</title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>qpid.transport</entry>
+					<entry>string</entry>
+					<entry>org.apache.qpid.transport.network.io.IoNetworkTransport</entry>
+					<entry><para>The transport implementation to be used.</para><para>A user could
+							specify an alternative transport mechanism that implements the interface
+								<varname>org.apache.qpid.transport.network.OutgoingNetworkTransport</varname>.</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-SyncOpTimeout">
+					<entry>qpid.sync_op_timeout</entry>
+					<entry>long</entry>
+					<entry>60000</entry>
+					<entry><para>The length of time (in milliseconds) to wait for a synchronous
+							operation to complete.</para><para>For compatibility with older clients,
+							the synonym <varname>amqj.default_syncwrite_timeout</varname> is
+							supported.</para></entry>
+				</row>
+				<row>
+					<entry>qpid.tcp_nodelay</entry>
+					<entry>boolean</entry>
+					<entry>true</entry>
+					<entry>
+						<para>Sets the TCP_NODELAY property of the underlying socket. The default
+							was changed to true as of Qpid 0.14.</para>
+						<para>This can also be set per connection using the Connection URL broker
+								option<link
+								linkend="JMS-Client-0-8-Connection-URL-BrokerOptions-TcpNoDelay"
+									><literal>tcp_nodelay</literal>.</link> options.</para>
+						<para>For compatibility with older clients, the synonym
+								<varname>amqj.tcp_nodelay</varname> is supported.</para>
+					</entry>
+				</row>
+				<row>
+					<entry>qpid.send_buffer_size</entry>
+					<entry>integer</entry>
+					<entry>65535</entry>
+					<entry>
+						<para>Sets the SO_SNDBUF property of the underlying socket. Added in Qpid
+							0.16.</para>
+						<para>For compatibility with older clients, the synonym
+								<varname>amqj.sendBufferSize</varname> is supported.</para>
+					</entry>
+				</row>
+				<row>
+					<entry>qpid.receive_buffer_size</entry>
+					<entry>integer</entry>
+					<entry>65535</entry>
+					<entry>
+						<para>Sets the SO_RCVBUF property of the underlying socket. Added in Qpid
+							0.16.</para>
+						<para>For compatibility with older clients, the synonym
+								<varname>amqj.receiveBufferSize</varname> is supported.</para>
+					</entry>
+				</row>
+				<row>
+					<entry>qpid.failover_method_timeout</entry>
+					<entry>long</entry>
+					<entry>60000</entry>
+					<entry>
+						<para>During failover, this is the timeout for each attempt to try to
+							re-establish the connection. If a reconnection attempt exceeds the
+							timeout, the entire failover process is aborted.</para>
+						<para>It is only applicable for AMQP 0-8/0-9/0-9-1 clients.</para>
+					</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+
+	<!-- These are all 0-10 related
+    <table pgwide="1">
+		<title>Config Options For Security</title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				
+				<row>
+					<entry>qpid.sasl_mechs</entry>
+					<entry>string</entry>
+					<entry>PLAIN</entry>
+					<entry><para>The SASL mechanism to be used. More than one could be specified as
+							a comma separated list.</para><para>We currently support the following
+							mechanisms {PLAIN | GSSAPI | EXTERNAL}.</para><para>This can also be set
+							per connection using the <link linkend="JMS-Client-0-8-Connection-URL"
+								>Connection URL</link> options.</para></entry>
+				</row>
+
+				<row>
+					<entry>qpid.sasl_protocol</entry>
+					<entry>string</entry>
+					<entry>AMQP</entry>
+					<entry><para>When using GSSAPI as the SASL mechanism,
+								<varname>sasl_protocol</varname> must be set to the principal for
+							the qpidd broker, e.g. <varname>qpidd</varname>.</para><para>This can
+							also be set per connection using the <link
+								linkend="JMS-Client-0-8-Connection-URL">Connection URL</link>
+							options.</para></entry>
+				</row>
+				<row>
+					<entry>qpid.sasl_server_name</entry>
+					<entry>string</entry>
+					<entry>localhost</entry>
+					<entry><para>When using GSSAPI as the SASL mechanism,
+								<varname>sasl_server</varname> must be set to the host for the SASL
+							server, e.g. <varname>example.com</varname>.</para><para>This can also
+							be set per connection using the <link
+								linkend="JMS-Client-0-8-Connection-URL">Connection URL</link>
+							options.</para></entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+
+	<table pgwide="1">
+		<title>Config Options For Security - Standard JVM properties needed when using GSSAPI as the
+			SASL mechanism.<footnote>
+				<para>Please refer to the Java security documentation for a complete understanding
+					of the above properties.</para>
+			</footnote></title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>javax.security.auth.useSubjectCredsOnly</entry>
+					<entry>boolean</entry>
+					<entry>true</entry>
+					<entry><para>If set to 'false', forces the SASL GASSPI client to obtain the
+							kerberos credentials explicitly instead of obtaining from the "subject"
+							that owns the current thread.</para></entry>
+				</row>
+
+				<row>
+					<entry>java.security.auth.login.config</entry>
+					<entry>string</entry>
+					<entry/>
+					<entry><para>Specifies the jass configuration
+								file.</para><para><varname>Ex-Djava.security.auth.login.config=myjas.conf</varname>
+						</para><para>Here is the sample myjas.conf JASS configuration file: <programlisting><![CDATA[
+
+		com.sun.security.jgss.initiate {
+		com.sun.security.auth.module.Krb5LoginModule required useTicketCache=true;
+		};
+
+		]]></programlisting></para></entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+	-->
+	<table pgwide="1">
+		<title>Config Options For Security - Using SSL for securing connections or using EXTERNAL as
+			the SASL mechanism.</title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>qpid.ssl_timeout</entry>
+					<entry>long</entry>
+					<entry>60000</entry>
+					<entry><para>Timeout value used by the Java SSL engine when waiting on
+							operations.</para></entry>
+				</row>
+
+				<row>
+					<entry>qpid.ssl.KeyManagerFactory.algorithm</entry>
+					<entry>string</entry>
+					<entry>-</entry>
+					<entry>
+						<para>The key manager factory algorithm name. If not set, defaults to the
+							value returned from the Java runtime call
+								<literal>KeyManagerFactory.getDefaultAlgorithm()</literal></para>
+						<para>For compatibility with older clients, the synonym
+								<varname>qpid.ssl.keyStoreCertType</varname> is supported.</para>
+					</entry>
+				</row>
+
+				<row>
+					<entry>qpid.ssl.TrustManagerFactory.algorithm</entry>
+					<entry>string</entry>
+					<entry>-</entry>
+					<entry>
+						<para>The trust manager factory algorithm name. If not set, defaults to the
+							value returned from the Java runtime call
+								<literal>TrustManagerFactory.getDefaultAlgorithm()</literal></para>
+						<para>For compatibility with older clients, the synonym
+								<varname>qpid.ssl.trustStoreCertType</varname> is supported.</para>
+					</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+
+	<table pgwide="1">
+		<title>Config Options For Security - Standard JVM properties needed when Using SSL for
+			securing connections or using EXTERNAL as the SASL mechanism.<footnote>
+				<para>Qpid allows you to have per connection key and trust stores if required. If
+					specified per connection, the JVM arguments are ignored.</para>
+			</footnote></title>
+		<tgroup cols="4">
+			<thead>
+				<row>
+					<entry>Property Name</entry>
+					<entry>Type</entry>
+					<entry>Default Value</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>javax.net.ssl.keyStore</entry>
+					<entry>string</entry>
+					<entry>jvm default</entry>
+					<entry><para>Specifies the key store path.</para><para>This can also be set per
+							connection using the <link linkend="JMS-Client-0-8-Connection-URL"
+								>Connection URL</link> options.</para></entry>
+				</row>
+
+				<row>
+					<entry>javax.net.ssl.keyStorePassword</entry>
+					<entry>string</entry>
+					<entry>jvm default</entry>
+					<entry><para>Specifies the key store password.</para><para>This can also be set
+							per connection using the <link linkend="JMS-Client-0-8-Connection-URL"
+								>Connection URL</link> options.</para></entry>
+				</row>
+
+				<row>
+					<entry>javax.net.ssl.trustStore</entry>
+					<entry>string</entry>
+					<entry>jvm default</entry>
+					<entry><para>Specifies the trust store path.</para><para>This can also be set
+							per connection using the <link linkend="JMS-Client-0-8-Connection-URL"
+								>Connection URL</link> options.</para></entry>
+				</row>
+
+				<row>
+					<entry>javax.net.ssl.trustStorePassword</entry>
+					<entry>string</entry>
+					<entry>jvm default</entry>
+					<entry><para>Specifies the trust store password.</para><para>This can also be
+							set per connection using the <link
+								linkend="JMS-Client-0-8-Connection-URL">Connection URL</link>
+							options.</para></entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+
+</chapter>
