@@ -333,7 +333,7 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ap
           >Session#createTopic()</ulink> accepts either a topic name, or a Binding URL. If only name
         is specified the destination will be resolved into binding URL: topic://amq.topic//&lt;topic
         name&gt;?routingkey=’&lt;topic name&gt;’.</para>
-      <para>Calling Session#createTopix() has no effect on the Broker.</para>
+      <para>Calling Session#createTopic() has no effect on the Broker.</para>
       <para>Reiterating the advice from the JMS javadoc, it is suggested that this method is not
         generally used. Instead, application should lookup Destinations declared within JNDI.</para>
     </section>
