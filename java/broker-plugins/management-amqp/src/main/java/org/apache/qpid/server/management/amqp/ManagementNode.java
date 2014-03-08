@@ -88,6 +88,8 @@ class ManagementNode implements MessageSource, MessageDestination
     public static final int STATUS_CODE_FORBIDDEN = 403;
     public static final int STATUS_CODE_BAD_REQUEST = 400;
     public static final int STATUS_CODE_INTERNAL_ERROR = 500;
+    public static final String ATTRIBUTE_NAMES = "attributeNames";
+    public static final String RESULTS = "results";
 
 
     private final VirtualHost _virtualHost;
@@ -117,24 +119,7 @@ class ManagementNode implements MessageSource, MessageDestination
 
         _managedObject = configuredObject;
 
-        populateTypeMetaData(configuredObject.getClass(), false);
-
         configuredObject.addChangeListener(new ModelObjectListener());
-
-        final Class managementClass = getManagementClass(_managedObject.getClass());
-        _entities.get(_entityTypes.get(managementClass.getName())).put(_managedObject.getName(), _managedObject);
-
-        Collection<Class<? extends ConfiguredObject>> childClasses = Model.getInstance().getChildTypes(managementClass);
-        for(Class<? extends ConfiguredObject> childClass : childClasses)
-        {
-            if(getManagementClass(childClass) != null)
-            {
-                for(ConfiguredObject child : _managedObject.getChildren(childClass))
-                {
-                    _entities.get(_entityTypes.get(getManagementClass(childClass).getName())).put(child.getName(), child);
-                }
-            }
-        }
 
     }
 
@@ -798,9 +783,9 @@ class ManagementNode implements MessageSource, MessageDestination
         }
 
 
-        if(messageBody instanceof List && !((List)messageBody).isEmpty())
+        if(messageBody instanceof Map && ((Map)messageBody).get(ATTRIBUTE_NAMES) instanceof List)
         {
-            attributes = (List<String>) messageBody;
+            attributes = (List<String>) ((Map)messageBody).get(ATTRIBUTE_NAMES);
         }
         else
         {
@@ -842,7 +827,6 @@ class ManagementNode implements MessageSource, MessageDestination
 
         responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_OK);
         List<List<? extends Object>> responseList = new ArrayList<List<? extends Object>>();
-        responseList.add(attributes);
         int rowNo = 0;
         for(String type : restriction)
         {
@@ -886,15 +870,18 @@ class ManagementNode implements MessageSource, MessageDestination
                 }
             }
 
-            if(responseList.size()==count+1)
+            if(responseList.size()==count)
             {
                 break;
             }
         }
-        responseHeader.setHeader(COUNT_HEADER, responseList.size()-1);
-        responseMessage = InternalMessage.createListMessage(_virtualHost.getMessageStore(),
-                                                            responseHeader,
-                                                            responseList);
+        responseHeader.setHeader(COUNT_HEADER, responseList.size());
+        Map<String,List> responseMap = new HashMap<String, List>();
+        responseMap.put(ATTRIBUTE_NAMES, attributes);
+        responseMap.put(RESULTS, responseList);
+        responseMessage = InternalMessage.createMapMessage(_virtualHost.getMessageStore(),
+                                                           responseHeader,
+                                                           responseMap);
         return responseMessage;
     }
 
@@ -1209,6 +1196,25 @@ class ManagementNode implements MessageSource, MessageDestination
             if(newState == State.DELETED)
             {
                 _registry.removeSystemNode(ManagementNode.this);
+            }
+            else if(newState == State.ACTIVE && object instanceof org.apache.qpid.server.model.VirtualHost)
+            {
+                populateTypeMetaData(object.getClass(), false);
+                final Class managementClass = getManagementClass(_managedObject.getClass());
+                _entities.get(_entityTypes.get(managementClass.getName())).put(_managedObject.getName(), _managedObject);
+
+                Collection<Class<? extends ConfiguredObject>> childClasses = Model.getInstance().getChildTypes(managementClass);
+                for(Class<? extends ConfiguredObject> childClass : childClasses)
+                {
+                    if(getManagementClass(childClass) != null)
+                    {
+                        for(ConfiguredObject child : _managedObject.getChildren(childClass))
+                        {
+                            _entities.get(_entityTypes.get(getManagementClass(childClass).getName())).put(child.getName(), child);
+                        }
+                    }
+                }
+
             }
         }
 

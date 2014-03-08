@@ -22,6 +22,7 @@ package org.apache.qpid.server.model;
 
 import java.util.Collection;
 
+@ManagedObject
 public interface VirtualHostAlias<X extends VirtualHostAlias<X>> extends ConfiguredObject<X>
 {
     // parents
