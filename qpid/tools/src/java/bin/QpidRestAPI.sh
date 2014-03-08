@@ -27,6 +27,16 @@ QMF2_LIBS=$QMF2_HOME/build/lib
 
 CLASSPATH=$QMF2_LIBS/qpid-client-patch.jar:$CLASSPATH:$QMF2_LIBS/qmf2.jar:$QMF2_LIBS/restapi.jar
 
+# Add Cygwin support.
+cygwin=false;
+case "`uname`" in
+  CYGWIN*) cygwin=true;;
+esac
+
+if $cygwin; then
+  CLASSPATH=$(cygpath -wp $CLASSPATH)
+fi
+
 # Get the log level from the AMQJ_LOGGING_LEVEL environment variable.
 if [ -n "$AMQJ_LOGGING_LEVEL" ]; then
     PROPERTIES=-Damqj.logging.level=$AMQJ_LOGGING_LEVEL
