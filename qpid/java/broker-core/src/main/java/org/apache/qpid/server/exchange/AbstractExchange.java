@@ -24,8 +24,8 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -104,6 +104,8 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     private StateChangeListener<BindingImpl, State> _bindingListener;
 
+    private final EventLogger _eventLogger;
+
     public AbstractExchange(VirtualHost vhost, Map<String, Object> attributes) throws UnknownExchangeException
     {
         super(MapValueConverter.getUUIDAttribute(org.apache.qpid.server.model.Exchange.ID, attributes),
@@ -117,6 +119,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                                                                 LifetimePolicy.PERMANENT);
         _autoDelete = _lifetimePolicy != LifetimePolicy.PERMANENT;
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
+        _eventLogger = vhost.getEventLogger();
 
         // check ACL
         _virtualHost.getSecurityManager().authoriseCreateExchange(this);
@@ -166,7 +169,13 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             }
         };
         // Log Exchange creation
-        SystemLog.message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), _durable));
+        getEventLogger().message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), _durable));
+    }
+
+    @Override
+    public EventLogger getEventLogger()
+    {
+        return _eventLogger;
     }
 
     public abstract ExchangeType<T> getExchangeType();
@@ -204,7 +213,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 _alternateExchange.removeReference(this);
             }
 
-            SystemLog.message(_logSubject, ExchangeMessages.DELETED());
+            _eventLogger.message(_logSubject, ExchangeMessages.DELETED());
 
             for(Action<ExchangeImpl> task : _closeTaskList)
             {

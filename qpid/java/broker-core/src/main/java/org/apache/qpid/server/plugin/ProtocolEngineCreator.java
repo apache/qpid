@@ -30,6 +30,10 @@ public interface ProtocolEngineCreator extends Pluggable
 {
     AmqpProtocolVersion getVersion();
     byte[] getHeaderIdentifier();
-    ServerProtocolEngine newProtocolEngine(Broker broker, NetworkConnection network, Port port, Transport transport, long id);
+    ServerProtocolEngine newProtocolEngine(Broker broker,
+                                           NetworkConnection network,
+                                           Port port,
+                                           Transport transport,
+                                           long id);
 }
 

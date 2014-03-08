@@ -25,7 +25,7 @@ package org.apache.qpid.server.logging;
  * logging is enabled for the requested message and to provide the actual
  * message that should be logged.
  */
-public interface RootMessageLogger
+public interface MessageLogger
 {
     /**
      * Determine whether the MessageLogger is enabled

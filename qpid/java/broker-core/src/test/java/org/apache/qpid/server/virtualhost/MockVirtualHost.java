@@ -27,6 +27,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -360,6 +361,12 @@ public class MockVirtualHost implements VirtualHost
 
     @Override
     public org.apache.qpid.server.model.VirtualHost getModel()
+    {
+        return null;
+    }
+
+    @Override
+    public EventLogger getEventLogger()
     {
         return null;
     }

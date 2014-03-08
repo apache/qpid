@@ -34,7 +34,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
@@ -51,6 +51,7 @@ public class Broker
 
     private volatile Thread _shutdownHookThread;
     private volatile IApplicationRegistry _applicationRegistry;
+    private EventLogger _eventLogger;
 
     protected static class InitException extends RuntimeException
     {
@@ -88,12 +89,13 @@ public class Broker
         Subject subject = SecurityManager.SYSTEM;
         subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
         subject.getPrincipals().add(new TaskPrincipal("Broker"));
+        _eventLogger = new EventLogger(new SystemOutMessageLogger());
+
         Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
         {
             @Override
             public Object run() throws Exception
             {
-                SystemLog.setRootMessageLogger(new SystemOutMessageLogger());
                 startupImpl(options);
                 addShutdownHook();
 
@@ -108,7 +110,7 @@ public class Broker
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
-        SystemLog.message(BrokerMessages.CONFIG(storeLocation));
+        _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
 
         //Allow skipping the logging configuration for people who are
         //embedding the broker and want to configure it themselves.
@@ -126,7 +128,7 @@ public class Broker
             store = new ManagementModeStoreHandler(store, options);
         }
 
-        _applicationRegistry = new ApplicationRegistry(store);
+        _applicationRegistry = new ApplicationRegistry(store,_eventLogger);
         try
         {
             _applicationRegistry.initialise(options);
@@ -169,7 +171,7 @@ public class Broker
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
-            SystemLog.message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
+            _eventLogger.message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
 
             if (logWatchTime > 0)
             {

@@ -21,7 +21,7 @@
 package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
@@ -83,13 +83,13 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         }
         else
         {
-            SystemLog.message(ConnectionMessages.OPEN(null, null, null, null, false, false, false, false));
+            _connection.getEventLogger().message(ConnectionMessages.OPEN(null, null, null, null, false, false, false, false));
             _network = network;
 
             _connection.setNetworkConnection(network);
             _connection.setSender(new Disassembler(wrapSender(sender), MAX_FRAME_SIZE));
             // FIXME Two log messages to maintain compatibility with earlier protocol versions
-            SystemLog.message(ConnectionMessages.OPEN(null, "0-10", null, null, false, true, false, false));
+            _connection.getEventLogger().message(ConnectionMessages.OPEN(null, "0-10", null, null, false, true, false, false));
 
         }
     }
@@ -180,7 +180,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
                 @Override
                 public Object run()
                 {
-                    SystemLog.message(ConnectionMessages.IDLE_CLOSE());
+                    _connection.getEventLogger().message(ConnectionMessages.IDLE_CLOSE());
                     _network.close();
                     return null;
                 }

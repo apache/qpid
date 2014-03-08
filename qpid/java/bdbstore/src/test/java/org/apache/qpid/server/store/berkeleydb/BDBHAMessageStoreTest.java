@@ -27,8 +27,10 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -97,7 +99,7 @@ public class BDBHAMessageStoreTest extends QpidTestCase
         String vhostName = "test" + _masterPort;
         VirtualHostConfiguration configuration = new VirtualHostConfiguration(vhostName, _configXml.subset("virtualhosts.virtualhost." + vhostName), BrokerTestHelper.createBrokerMock());
 
-        _virtualHost = BrokerTestHelper.createVirtualHost(configuration,null,_modelVhost);
+        _virtualHost = BrokerTestHelper.createVirtualHost(configuration,new VirtualHostRegistry(new EventLogger()),_modelVhost);
         BDBHAMessageStore store = (BDBHAMessageStore) _virtualHost.getMessageStore();
 
         // test whether JVM system settings were applied

@@ -34,6 +34,7 @@ import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -49,9 +50,11 @@ public class DefaultAccessControl implements AccessControl
 
     private RuleSet _ruleSet;
     private File _aclFile;
+    private final EventLogger _eventLogger;
 
-    public DefaultAccessControl(String fileName)
+    public DefaultAccessControl(String fileName, final EventLogger eventLogger)
     {
+        _eventLogger = eventLogger;
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Creating AccessControl instance using file: " + fileName);
@@ -63,6 +66,7 @@ public class DefaultAccessControl implements AccessControl
     DefaultAccessControl(RuleSet rs) throws ConfigurationException
     {
         _ruleSet = rs;
+        _eventLogger = rs.getEventLogger();
     }
 
     public void open()
@@ -74,7 +78,7 @@ public class DefaultAccessControl implements AccessControl
                 throw new IllegalConfigurationException("ACL file '" + _aclFile + "' is not found");
             }
 
-            ConfigurationFile configFile = new PlainConfiguration(_aclFile);
+            ConfigurationFile configFile = new PlainConfiguration(_aclFile, _eventLogger);
             _ruleSet = configFile.load();
         }
     }
@@ -103,7 +107,7 @@ public class DefaultAccessControl implements AccessControl
             }
 
             //verify it is parsable
-            new PlainConfiguration(_aclFile).load();
+            new PlainConfiguration(_aclFile, _eventLogger).load();
         }
     }
 

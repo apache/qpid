@@ -23,7 +23,6 @@ package org.apache.qpid.server.logging.actors;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.security.auth.ManagementConnectionPrincipal;
 import org.apache.qpid.server.security.auth.TestPrincipalUtils;
 
@@ -125,7 +124,7 @@ public class HttpManagementActorTest extends BaseActorTestCase
             @Override
             public Object run()
             {
-                SystemLog.message(EMPTY_MESSAGE);
+                getEventLogger().message(EMPTY_MESSAGE);
                 List<Object> logs = getRawLogger().getLogMessages();
                 assertEquals("Message log size not as expected.", 1, logs.size());
 
@@ -148,7 +147,7 @@ public class HttpManagementActorTest extends BaseActorTestCase
         {
             public String run()
             {
-                SystemLog.message(EMPTY_MESSAGE);
+                getEventLogger().message(EMPTY_MESSAGE);
                 List<Object> logs = getRawLogger().getLogMessages();
                 assertEquals("Message log size not as expected.", 1, logs.size());
 

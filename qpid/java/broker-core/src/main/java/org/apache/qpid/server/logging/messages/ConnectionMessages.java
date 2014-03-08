@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import static org.apache.qpid.server.logging.AbstractRootMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
+import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.BrokerProperties;

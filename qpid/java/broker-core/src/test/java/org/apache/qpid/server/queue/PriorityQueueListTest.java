@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -55,6 +56,7 @@ public class PriorityQueueListTest extends QpidTestCase
         queueAttributes.put(Queue.PRIORITIES, 10);
         final VirtualHost virtualHost = mock(VirtualHost.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
+        when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         PriorityQueue queue = new PriorityQueue(virtualHost, queueAttributes);
         _list = (PriorityQueueList) queue.getEntries();
 

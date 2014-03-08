@@ -33,7 +33,6 @@ import javax.servlet.DispatcherType;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFilter;
 import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
@@ -140,7 +139,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
     private void start()
     {
-        SystemLog.message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
+        getBroker().getEventLogger().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
         Collection<Port> httpPorts = getHttpPorts(getBroker().getPorts());
         _server = createServer(httpPorts);
@@ -154,7 +153,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
             throw new ServerScopedRuntimeException("Failed to start HTTP management on ports : " + httpPorts, e);
         }
 
-        SystemLog.message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
+        getBroker().getEventLogger().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
     }
 
     private void stop()
@@ -172,7 +171,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
             }
         }
 
-        SystemLog.message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
+        getBroker().getEventLogger().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
     public int getSessionTimeout()
@@ -381,14 +380,14 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         Connector[] connectors = server.getConnectors();
         for (Connector connector : connectors)
         {
-            SystemLog.message(ManagementConsoleMessages.LISTENING(stringifyConnectorScheme(connector),
+            getBroker().getEventLogger().message(ManagementConsoleMessages.LISTENING(stringifyConnectorScheme(connector),
                                                                   connector.getPort()));
             if (connector instanceof SslSocketConnector)
             {
                 SslContextFactory sslContextFactory = ((SslSocketConnector)connector).getSslContextFactory();
                 if (sslContextFactory != null && sslContextFactory.getKeyStorePath() != null)
                 {
-                    SystemLog.message(ManagementConsoleMessages.SSL_KEYSTORE(sslContextFactory.getKeyStorePath()));
+                    getBroker().getEventLogger().message(ManagementConsoleMessages.SSL_KEYSTORE(sslContextFactory.getKeyStorePath()));
                 }
             }
         }
@@ -399,7 +398,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         Connector[] connectors = server.getConnectors();
         for (Connector connector : connectors)
         {
-            SystemLog.message(ManagementConsoleMessages.SHUTTING_DOWN(stringifyConnectorScheme(connector),
+            getBroker().getEventLogger().message(ManagementConsoleMessages.SHUTTING_DOWN(stringifyConnectorScheme(connector),
                                                                       connector.getPort()));
         }
     }

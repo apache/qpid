@@ -56,7 +56,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -92,6 +92,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private static final int CHANNEL_CACHE_SIZE = 0xff;
     private static final int REUSABLE_BYTE_BUFFER_CAPACITY = 65 * 1024;
     private final Port _port;
+    private EventLogger _eventLogger;
 
     private AMQShortString _contextKey;
 
@@ -177,6 +178,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _broker = broker;
         _port = port;
         _transport = transport;
+        _eventLogger = broker.getEventLogger();
         _maxNoOfChannels = (Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT);
         _receivedLock = new ReentrantLock();
         _stateManager = new AMQStateManager(broker, this);
@@ -193,7 +195,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             {
                 setNetworkConnection(network);
 
-                SystemLog.message(ConnectionMessages.OPEN(null, null, null, null, false, false, false, false));
+                getEventLogger().message(ConnectionMessages.OPEN(null, null, null, null, false, false, false, false));
 
                 _closeWhenNoRoute = (Boolean)_broker.getAttribute(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE);
 
@@ -476,14 +478,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         try
         {
             // Log incoming protocol negotiation request
-            SystemLog.message(ConnectionMessages.OPEN(null,
-                                                      pi.getProtocolMajor() + "-" + pi.getProtocolMinor(),
-                                                      null,
-                                                      null,
-                                                      false,
-                                                      true,
-                                                      false,
-                                                      false));
+            getEventLogger().message(ConnectionMessages.OPEN(null,
+                                                             pi.getProtocolMajor() + "-" + pi.getProtocolMinor(),
+                                                             null,
+                                                             null,
+                                                             false,
+                                                             true,
+                                                             false,
+                                                             false));
 
             ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
 
@@ -932,7 +934,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                         _closed = true;
                         notifyAll();
                     }
-                    SystemLog.message(_logSubject, ConnectionMessages.CLOSE());
+                    getEventLogger().message(_logSubject, ConnectionMessages.CLOSE());
                 }
             }
             else
@@ -1092,14 +1094,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 setContextKey(new AMQShortString(clientId));
             }
 
-            SystemLog.message(ConnectionMessages.OPEN(clientId,
-                                                      _protocolVersion.toString(),
-                                                      _clientVersion,
-                                                      _clientProduct,
-                                                      true,
-                                                      true,
-                                                      true,
-                                                      true));
+            getEventLogger().message(ConnectionMessages.OPEN(clientId,
+                                                             _protocolVersion.toString(),
+                                                             _clientVersion,
+                                                             _clientProduct,
+                                                             true,
+                                                             true,
+                                                             true,
+                                                             true));
         }
     }
 
@@ -1564,5 +1566,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public boolean isCloseWhenNoRoute()
     {
         return _closeWhenNoRoute;
+    }
+
+    public EventLogger getEventLogger()
+    {
+        if(_virtualHost != null)
+        {
+            return _virtualHost.getEventLogger();
+        }
+        else
+        {
+            return _eventLogger;
+        }
     }
 }

@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -61,7 +61,6 @@ public class ServerSessionTest extends QpidTestCase
     public void testCompareTo() throws Exception
     {
         final Broker broker = mock(Broker.class);
-        when(broker.getRootMessageLogger()).thenReturn(mock(RootMessageLogger.class));
         ServerConnection connection = new ServerConnection(1, broker);
         connection.setVirtualHost(_virtualHost);
         ServerSession session1 = new ServerSession(connection, new ServerSessionDelegate(),

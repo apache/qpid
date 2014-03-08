@@ -21,6 +21,7 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.common.Closeable;
+import org.apache.qpid.server.logging.EventLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,11 +33,12 @@ public class VirtualHostRegistry implements Closeable
 {
     private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String, VirtualHost>();
     private String _defaultVirtualHostName;
+    private final EventLogger _eventLogger;
 
 
-    public VirtualHostRegistry()
+    public VirtualHostRegistry(EventLogger eventLogger)
     {
-        super();
+        _eventLogger = eventLogger;
     }
 
     public synchronized void registerVirtualHost(VirtualHost host)
@@ -92,4 +94,8 @@ public class VirtualHostRegistry implements Closeable
         }
     }
 
+    public EventLogger getEventLogger()
+    {
+        return _eventLogger;
+    }
 }

@@ -41,7 +41,7 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTIO
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
 
-public abstract class AbstractRootMessageLogger implements RootMessageLogger
+public abstract class AbstractMessageLogger implements MessageLogger
 {
     public static final String DEFAULT_LOG_HIERARCHY_PREFIX = "qpid.message.";
 
@@ -49,12 +49,12 @@ public abstract class AbstractRootMessageLogger implements RootMessageLogger
 
     private boolean _enabled = true;
 
-    public AbstractRootMessageLogger()
+    public AbstractMessageLogger()
     {
 
     }
     
-    public AbstractRootMessageLogger(boolean statusUpdatesEnabled)
+    public AbstractMessageLogger(boolean statusUpdatesEnabled)
     {
         _enabled = statusUpdatesEnabled;
     }

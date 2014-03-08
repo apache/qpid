@@ -21,12 +21,11 @@
 package org.apache.qpid.server.model;
 
 import java.net.SocketAddress;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -202,12 +201,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
     Collection<GroupProvider<?>> getGroupProviders();
 
     /**
-     * A temporary hack to expose root message logger via broker instance.
-     * TODO We need a better way to do operational logging, for example, via logging listeners
-     */
-    RootMessageLogger getRootMessageLogger();
-
-    /**
      * A temporary hack to expose security manager via broker instance.
      * TODO We need to add and implement an authorization provider configured object instead
      */
@@ -248,4 +241,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
     boolean isManagementMode();
 
     AuthenticationProvider<?> getAuthenticationProvider(SocketAddress localAddress);
+
+    EventLogger getEventLogger();
 }

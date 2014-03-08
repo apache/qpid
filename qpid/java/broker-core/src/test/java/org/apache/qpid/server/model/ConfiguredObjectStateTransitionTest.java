@@ -63,7 +63,7 @@ public class ConfiguredObjectStateTransitionTest extends QpidTestCase
         when(_broker.getTaskExecutor()).thenReturn(executor);
 
         _recovererProvider = new DefaultRecovererProvider(statisticsGatherer, _broker.getVirtualHostRegistry(),
-                _broker.getLogRecorder(), _broker.getRootMessageLogger(), executor, new BrokerOptions(), mock(StoreConfigurationChangeListener.class));
+                _broker.getLogRecorder(), _broker.getEventLogger(), executor, new BrokerOptions(), mock(StoreConfigurationChangeListener.class));
 
         _store = mock(ConfigurationEntryStore.class);
 

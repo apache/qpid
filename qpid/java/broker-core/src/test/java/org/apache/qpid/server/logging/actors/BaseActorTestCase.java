@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.logging.actors;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -31,15 +31,16 @@ public class BaseActorTestCase extends QpidTestCase
 {
     private boolean _statusUpdatesEnabled = true;
     private UnitTestMessageLogger _rawLogger;
-    private RootMessageLogger _rootLogger;
+    private MessageLogger _rootLogger;
+    private EventLogger _eventLogger;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
         _rawLogger = new UnitTestMessageLogger(_statusUpdatesEnabled);
+        _eventLogger = new EventLogger(_rawLogger);
         _rootLogger = _rawLogger;
-        SystemLog.setRootMessageLogger(_rootLogger);
     }
 
     @Override
@@ -62,7 +63,7 @@ public class BaseActorTestCase extends QpidTestCase
     
     public void sendTestLogMessage(final String message)
     {
-        SystemLog.message(new LogSubject()
+        getEventLogger().message(new LogSubject()
                           {
                               public String toLogString()
                               {
@@ -99,9 +100,9 @@ public class BaseActorTestCase extends QpidTestCase
         return _rawLogger;
     }
 
-    public RootMessageLogger getRootLogger()
+    public EventLogger getEventLogger()
     {
-        return _rootLogger;
+        return _eventLogger;
     }
 
 }

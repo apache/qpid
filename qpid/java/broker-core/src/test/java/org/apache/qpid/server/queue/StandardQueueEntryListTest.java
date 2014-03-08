@@ -20,6 +20,7 @@
 */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
@@ -52,7 +53,8 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
         final VirtualHost virtualHost = mock(VirtualHost.class);
-        when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
+        when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
+        when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         _testQueue = new StandardQueue(virtualHost, queueAttributes);
 
         _sqel = (StandardQueueEntryList) _testQueue.getEntries();
@@ -98,6 +100,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             queueAttributes.put(Queue.NAME, getName());
             final VirtualHost virtualHost = mock(VirtualHost.class);
             when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
+            when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
             StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
 
             return (StandardQueueEntryList) queue.getEntries();

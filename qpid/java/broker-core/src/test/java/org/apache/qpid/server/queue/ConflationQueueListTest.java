@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ServerMessage;
@@ -56,7 +57,7 @@ public class ConflationQueueListTest extends TestCase
         queueAttributes.put(Queue.LVQ_KEY, CONFLATION_KEY);
         final VirtualHost virtualHost = mock(VirtualHost.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
-
+        when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         _queue = new ConflationQueue(virtualHost, queueAttributes);
         _list = (ConflationQueueList) _queue.getEntries();
     }

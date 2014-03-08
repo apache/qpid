@@ -73,7 +73,7 @@ public class AccessControlProviderFactory
     {
         for (AccessControlFactory factory : _factories)
         {
-            AccessControl accessControl = factory.createInstance(attributes);
+            AccessControl accessControl = factory.createInstance(attributes, broker.getEventLogger());
             if (accessControl != null)
             {
                 return new AccessControlProviderAdapter(id, broker,accessControl, attributes, factory.getAttributeNames());

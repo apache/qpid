@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.UUID;
 import junit.framework.TestCase;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
@@ -59,6 +60,7 @@ public class HeadersExchangeTest extends TestCase
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
+        when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Exchange.ID, UUID.randomUUID());
         attributes.put(Exchange.NAME, "test");

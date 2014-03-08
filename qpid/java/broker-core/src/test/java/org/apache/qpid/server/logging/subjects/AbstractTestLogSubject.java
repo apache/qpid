@@ -22,9 +22,9 @@ package org.apache.qpid.server.logging.subjects;
 
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -71,9 +71,9 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
         }
 
         UnitTestMessageLogger logger = new UnitTestMessageLogger(statusUpdatesEnabled);
-        SystemLog.setRootMessageLogger(logger);
+        EventLogger eventLogger = new EventLogger(logger);
 
-        SystemLog.message(_subject, new LogMessage()
+        eventLogger.message(_subject, new LogMessage()
         {
             public String toString()
             {

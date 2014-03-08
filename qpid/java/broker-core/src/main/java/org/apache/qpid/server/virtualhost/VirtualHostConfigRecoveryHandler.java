@@ -26,9 +26,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.message.EnqueueableMessage;
@@ -62,27 +60,22 @@ public class VirtualHostConfigRecoveryHandler implements
     private final Map<String, Integer> _queueRecoveries = new TreeMap<String, Integer>();
     private final Map<Long, ServerMessage> _recoveredMessages = new HashMap<Long, ServerMessage>();
     private final Map<Long, StoredMessage> _unusedMessages = new HashMap<Long, StoredMessage>();
-
-    private final ExchangeRegistry _exchangeRegistry;
-    private final ExchangeFactory _exchangeFactory;
+    private final EventLogger _eventLogger;
 
     private MessageStoreLogSubject _logSubject;
     private MessageStore _store;
 
-    public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost,
-                                            ExchangeRegistry exchangeRegistry,
-                                            ExchangeFactory exchangeFactory)
+    public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost)
     {
         _virtualHost = virtualHost;
-        _exchangeRegistry = exchangeRegistry;
-        _exchangeFactory = exchangeFactory;
+        _eventLogger = virtualHost.getEventLogger();
     }
 
     public VirtualHostConfigRecoveryHandler begin(MessageStore store)
     {
         _logSubject = new MessageStoreLogSubject(_virtualHost.getName(), store.getClass().getSimpleName());
         _store = store;
-        SystemLog.message(_logSubject, TransactionLogMessages.RECOVERY_START(null, false));
+        _eventLogger.message(_logSubject, TransactionLogMessages.RECOVERY_START(null, false));
         return this;
     }
 
@@ -149,7 +142,7 @@ public class VirtualHostConfigRecoveryHandler implements
                 else
                 {
                     StringBuilder xidString = xidAsString(id);
-                    SystemLog.message(_logSubject,
+                    _eventLogger.message(_logSubject,
                                       TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
                                                                                    Long.toString(messageId)));
 
@@ -159,7 +152,7 @@ public class VirtualHostConfigRecoveryHandler implements
             else
             {
                 StringBuilder xidString = xidAsString(id);
-                SystemLog.message(_logSubject,
+                _eventLogger.message(_logSubject,
                                   TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
                                                                              record.getResource().getId().toString()));
 
@@ -199,7 +192,7 @@ public class VirtualHostConfigRecoveryHandler implements
                 else
                 {
                     StringBuilder xidString = xidAsString(id);
-                    SystemLog.message(_logSubject,
+                    _eventLogger.message(_logSubject,
                                       TransactionLogMessages.XA_INCOMPLETE_MESSAGE(xidString.toString(),
                                                                                    Long.toString(messageId)));
 
@@ -209,7 +202,7 @@ public class VirtualHostConfigRecoveryHandler implements
             else
             {
                 StringBuilder xidString = xidAsString(id);
-                SystemLog.message(_logSubject,
+                _eventLogger.message(_logSubject,
                                   TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
                                                                              record.getResource().getId().toString()));
             }
@@ -238,7 +231,7 @@ public class VirtualHostConfigRecoveryHandler implements
             _logger.warn("Message id " + m.getMessageNumber() + " in store, but not in any queue - removing....");
             m.remove();
         }
-        SystemLog.message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
+        _eventLogger.message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
     }
 
     public void complete()
@@ -316,9 +309,9 @@ public class VirtualHostConfigRecoveryHandler implements
 
         for(Map.Entry<String,Integer> entry : _queueRecoveries.entrySet())
         {
-            SystemLog.message(_logSubject, TransactionLogMessages.RECOVERED(entry.getValue(), entry.getKey()));
+            _eventLogger.message(_logSubject, TransactionLogMessages.RECOVERED(entry.getValue(), entry.getKey()));
 
-            SystemLog.message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(entry.getKey(), true));
+            _eventLogger.message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(entry.getKey(), true));
         }
 
 

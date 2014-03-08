@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.exchange.DirectExchange;
@@ -179,7 +180,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         }
         _durableConfigurationRecoverer =
                 new DurableConfigurationRecoverer(_vhost.getName(), recovererMap,
-                                                  new DefaultUpgraderProvider(_vhost, _exchangeRegistry));
+                                                  new DefaultUpgraderProvider(_vhost, _exchangeRegistry), new EventLogger());
 
         _store = mock(DurableConfigurationStore.class);
 

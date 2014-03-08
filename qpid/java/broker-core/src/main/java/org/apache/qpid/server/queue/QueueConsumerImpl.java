@@ -24,8 +24,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.MessageFilter;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.MessageInstance;
@@ -84,6 +84,7 @@ class QueueConsumerImpl
         STATE_MAP.put(ConsumerTarget.State.CLOSED, State.DELETED);
     }
 
+    private final EventLogger _eventLogger;
     private final ConsumerTarget _target;
     private final SubFlushRunner _runner = new SubFlushRunner(this);
     private volatile QueueContext _queueContext;
@@ -91,7 +92,7 @@ class QueueConsumerImpl
     {
         public void stateChanged(QueueConsumerImpl sub, State oldState, State newState)
         {
-            SystemLog.message(SubscriptionMessages.STATE(newState.toString()));
+            _eventLogger.message(SubscriptionMessages.STATE(newState.toString()));
         }
     };
     @ManagedAttributeField
@@ -125,6 +126,7 @@ class QueueConsumerImpl
         _isTransient = optionSet.contains(Option.TRANSIENT);
         _target = target;
         _queue = queue;
+        _eventLogger = queue.getEventLogger();
         setupLogging();
 
         // Access control
@@ -178,12 +180,12 @@ class QueueConsumerImpl
             {
                 if(_targetClosed.compareAndSet(false,true))
                 {
-                    SystemLog.message(getLogSubject(), SubscriptionMessages.CLOSE());
+                    _eventLogger.message(getLogSubject(), SubscriptionMessages.CLOSE());
                 }
             }
             else
             {
-                SystemLog.message(getLogSubject(), SubscriptionMessages.STATE(newState.toString()));
+                _eventLogger.message(getLogSubject(), SubscriptionMessages.STATE(newState.toString()));
             }
         }
 
@@ -297,7 +299,7 @@ class QueueConsumerImpl
     private void setupLogging()
     {
         final String filterLogString = getFilterLogString();
-        SystemLog.message(this,
+        _eventLogger.message(this,
                           SubscriptionMessages.CREATE(filterLogString, _queue.isDurable() && _exclusive,
                                                       filterLogString.length() > 0));
     }

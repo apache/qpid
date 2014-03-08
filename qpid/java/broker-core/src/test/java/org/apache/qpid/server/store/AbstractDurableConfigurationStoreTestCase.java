@@ -40,6 +40,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -114,6 +115,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
         when(_exchange.getId()).thenReturn(_exchangeId);
         when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
+        when(_exchange.getEventLogger()).thenReturn(new EventLogger());
         when(_configuration.getString(eq(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY), anyString())).thenReturn(
                 _storePath);
         when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);

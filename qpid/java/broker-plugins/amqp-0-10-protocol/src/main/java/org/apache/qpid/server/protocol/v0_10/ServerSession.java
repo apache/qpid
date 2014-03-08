@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.connection.SessionPrincipal;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
@@ -157,7 +156,7 @@ public class ServerSession extends Session
             {
                 getConnectionModel().closeSession(ServerSession.this, AMQConstant.RESOURCE_ERROR, reason);
             }
-        });
+        }, getVirtualHost().getEventLogger());
     }
 
     protected void setState(final State state)
@@ -168,7 +167,7 @@ public class ServerSession extends Session
 
             if (state == State.OPEN)
             {
-                SystemLog.message(ChannelMessages.CREATE());
+                getVirtualHost().getEventLogger().message(ChannelMessages.CREATE());
                 if(_blocking.get())
                 {
                     invokeBlock();
@@ -419,7 +418,7 @@ public class ServerSession extends Session
         {
             operationalLoggingMessage = ChannelMessages.CLOSE();
         }
-        SystemLog.message(getLogSubject(), operationalLoggingMessage);
+        getVirtualHost().getEventLogger().message(getLogSubject(), operationalLoggingMessage);
     }
 
     @Override
@@ -738,7 +737,7 @@ public class ServerSession extends Session
                     {
                         invokeBlock();
                     }
-                    SystemLog.message(_logSubject, ChannelMessages.FLOW_ENFORCED(name));
+                    getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_ENFORCED(name));
                 }
 
 
@@ -763,7 +762,7 @@ public class ServerSession extends Session
             if(_blocking.compareAndSet(true,false) && !isClosing())
             {
 
-                SystemLog.message(_logSubject, ChannelMessages.FLOW_REMOVED());
+                getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_REMOVED());
                 MessageFlow mf = new MessageFlow();
                 mf.setUnit(MessageCreditUnit.MESSAGE);
                 mf.setDestination("");

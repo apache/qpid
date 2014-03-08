@@ -21,7 +21,6 @@
 package org.apache.qpid.server.configuration.startup;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,8 +37,9 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -62,7 +62,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
     private final StatisticsGatherer _statisticsGatherer;
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
-    private final RootMessageLogger _rootMessageLogger;
+    private final EventLogger _eventLogger;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final AccessControlProviderFactory _accessControlProviderFactory;
     private final PortFactory _portFactory;
@@ -73,7 +73,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
 
     public BrokerRecoverer(AuthenticationProviderFactory authenticationProviderFactory, GroupProviderFactory groupProviderFactory,
             AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory, StatisticsGatherer statisticsGatherer,
-            VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor,
+            VirtualHostRegistry virtualHostRegistry, LogRecorder logRecorder, EventLogger eventLogger, TaskExecutor taskExecutor,
             BrokerOptions brokerOptions, StoreConfigurationChangeListener storeChangeListener)
     {
         _groupProviderFactory = groupProviderFactory;
@@ -83,7 +83,7 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         _statisticsGatherer = statisticsGatherer;
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
-        _rootMessageLogger = rootMessageLogger;
+        _eventLogger = eventLogger;
         _taskExecutor = taskExecutor;
         _brokerOptions = brokerOptions;
         _storeChangeListener = storeChangeListener;
@@ -97,7 +97,8 @@ public class BrokerRecoverer implements ConfiguredObjectRecoverer<Broker>
         attributesCopy.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
 
         BrokerAdapter broker = new BrokerAdapter(entry.getId(), attributesCopy, _statisticsGatherer, _virtualHostRegistry,
-                _logRecorder, _rootMessageLogger, _authenticationProviderFactory,_groupProviderFactory, _accessControlProviderFactory,
+                _logRecorder,
+                _eventLogger, _authenticationProviderFactory,_groupProviderFactory, _accessControlProviderFactory,
                 _portFactory, _taskExecutor, entry.getStore(), _brokerOptions);
 
         broker.addChangeListener(_storeChangeListener);

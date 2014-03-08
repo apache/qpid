@@ -64,9 +64,11 @@ public class ApplicationRegistry implements IApplicationRegistry
 {
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
-    private final VirtualHostRegistry _virtualHostRegistry = new VirtualHostRegistry();
+    private final EventLogger _eventLogger;
 
-    private volatile RootMessageLogger _rootMessageLogger;
+    private final VirtualHostRegistry _virtualHostRegistry;
+
+    private volatile MessageLogger _messageLogger;
 
     private Broker _broker;
 
@@ -78,14 +80,11 @@ public class ApplicationRegistry implements IApplicationRegistry
     private ConfigurationEntryStore _store;
     private TaskExecutor _taskExecutor;
 
-    protected void setRootMessageLogger(RootMessageLogger rootMessageLogger)
-    {
-        _rootMessageLogger = rootMessageLogger;
-    }
-
-    public ApplicationRegistry(ConfigurationEntryStore store)
+    public ApplicationRegistry(ConfigurationEntryStore store, EventLogger eventLogger)
     {
         _store = store;
+        _eventLogger = eventLogger;
+        _virtualHostRegistry = new VirtualHostRegistry(eventLogger);
         initialiseStatistics();
     }
 
@@ -93,14 +92,14 @@ public class ApplicationRegistry implements IApplicationRegistry
     {
         // Create the RootLogger to be used during broker operation
         boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
-        _rootMessageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
+        _messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
 
         _logRecorder = new LogRecorder();
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
-        RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
+        MessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _messageLogger};
         CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
-        SystemLog.setRootMessageLogger(startupMessageLogger);
+        _eventLogger.setMessageLogger(startupMessageLogger);
 
         logStartupMessages();
 
@@ -108,7 +107,8 @@ public class ApplicationRegistry implements IApplicationRegistry
         _taskExecutor.start();
 
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(_store);
-        RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, brokerOptions, storeChangeListener);
+        RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder,
+                                                                  _eventLogger, _taskExecutor, brokerOptions, storeChangeListener);
         ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
         _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
 
@@ -119,8 +119,8 @@ public class ApplicationRegistry implements IApplicationRegistry
         // starting the broker
         _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
 
-        SystemLog.message(BrokerMessages.READY());
-        SystemLog.setRootMessageLogger(_rootMessageLogger);
+        _eventLogger.message(BrokerMessages.READY());
+        _eventLogger.setMessageLogger(_messageLogger);
 
     }
 
@@ -133,7 +133,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         if (report > 0L)
         {
             _reportingTimer = new Timer("Statistics-Reporting", true);
-            StatisticsReportingTask task = new StatisticsReportingTask(reset, _rootMessageLogger);
+            StatisticsReportingTask task = new StatisticsReportingTask(reset, _messageLogger);
             _reportingTimer.scheduleAtFixedRate(task, report / 2, report);
         }
     }
@@ -144,10 +144,10 @@ public class ApplicationRegistry implements IApplicationRegistry
         private final int RECEIVED = 1;
 
         private final boolean _reset;
-        private final RootMessageLogger _logger;
+        private final MessageLogger _logger;
         private final Subject _subject;
 
-        public StatisticsReportingTask(boolean reset, RootMessageLogger logger)
+        public StatisticsReportingTask(boolean reset, MessageLogger logger)
         {
             _reset = reset;
             _logger = logger;
@@ -174,10 +174,12 @@ public class ApplicationRegistry implements IApplicationRegistry
         {
             try
             {
-                SystemLog.message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
-                SystemLog.message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
-                SystemLog.message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
-                SystemLog.message(BrokerMessages.STATS_MSGS(RECEIVED, _messagesReceived.getPeak(), _messagesReceived.getTotal()));
+                _eventLogger.message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
+                _eventLogger.message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
+                _eventLogger.message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
+                _eventLogger.message(BrokerMessages.STATS_MSGS(RECEIVED,
+                                                               _messagesReceived.getPeak(),
+                                                               _messagesReceived.getTotal()));
                 Collection<VirtualHost> hosts = _virtualHostRegistry.getVirtualHosts();
 
                 if (hosts.size() > 1)
@@ -189,11 +191,11 @@ public class ApplicationRegistry implements IApplicationRegistry
                         StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
                         StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
                         StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
-
-                        SystemLog.message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
-                        SystemLog.message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
-                        SystemLog.message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
-                        SystemLog.message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
+                        EventLogger logger = vhost.getEventLogger();
+                        logger.message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
                     }
                 }
 
@@ -256,7 +258,7 @@ public class ApplicationRegistry implements IApplicationRegistry
                 _taskExecutor.stop();
             }
 
-            SystemLog.message(BrokerMessages.STOPPED());
+            _eventLogger.message(BrokerMessages.STOPPED());
 
             _logRecorder.closeLogRecorder();
 
@@ -327,15 +329,15 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     private void logStartupMessages()
     {
-        SystemLog.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
+        _eventLogger.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
 
-        SystemLog.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
+        _eventLogger.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
                                                  System.getProperty("java.runtime.version", System.getProperty("java.version")),
                                                  SystemUtils.getOSName(),
                                                  SystemUtils.getOSVersion(),
                                                  SystemUtils.getOSArch()));
 
-        SystemLog.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
+        _eventLogger.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
     }
 
     @Override

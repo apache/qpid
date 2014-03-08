@@ -34,7 +34,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
@@ -99,7 +98,7 @@ public class AmqpPortAdapter extends PortAdapter<AmqpPortAdapter>
         _transport.start();
         for(Transport transport : getTransports())
         {
-            SystemLog.message(BrokerMessages.LISTENING(String.valueOf(transport), getPort()));
+            _broker.getEventLogger().message(BrokerMessages.LISTENING(String.valueOf(transport), getPort()));
         }
     }
 
@@ -110,7 +109,7 @@ public class AmqpPortAdapter extends PortAdapter<AmqpPortAdapter>
         {
             for(Transport transport : getTransports())
             {
-                SystemLog.message(BrokerMessages.SHUTTING_DOWN(String.valueOf(transport), getPort()));
+                _broker.getEventLogger().message(BrokerMessages.SHUTTING_DOWN(String.valueOf(transport), getPort()));
             }
             _transport.close();
         }

@@ -18,9 +18,9 @@
  */
 package org.apache.qpid.server;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.txn.ServerTransaction;
 
@@ -32,11 +32,15 @@ public class TransactionTimeoutHelper
     private final LogSubject _logSubject;
 
     private final CloseAction _closeAction;
+    private final EventLogger _eventLogger;
 
-    public TransactionTimeoutHelper(final LogSubject logSubject, final CloseAction closeAction)
+    public TransactionTimeoutHelper(final LogSubject logSubject,
+                                    final CloseAction closeAction,
+                                    final EventLogger eventLogger)
     {
         _logSubject = logSubject;
         _closeAction = closeAction;
+        _eventLogger = eventLogger;
     }
 
     public void checkIdleOrOpenTimes(ServerTransaction transaction, long openWarn, long openClose, long idleWarn, long idleClose)
@@ -72,7 +76,7 @@ public class TransactionTimeoutHelper
     {
         if (isTimedOut(timeSoFar, warnTimeout))
         {
-            SystemLog.message(_logSubject, warnMessage);
+            _eventLogger.message(_logSubject, warnMessage);
         }
 
         if(isTimedOut(timeSoFar, closeTimeout))

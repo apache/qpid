@@ -39,9 +39,9 @@ import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.plugin.PreferencesProviderFactory;
@@ -146,10 +146,10 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
             VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN};
 
 
+    private final EventLogger _eventLogger;
     private final StatisticsGatherer _statisticsGatherer;
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
-    private final RootMessageLogger _rootMessageLogger;
 
     private final Map<String, VirtualHost<?>> _vhostAdapters = new HashMap<String, VirtualHost<?>>();
     private final Map<UUID, Port<?>> _portAdapters = new HashMap<UUID, Port<?>>();
@@ -175,7 +175,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     private BrokerOptions _brokerOptions;
 
     public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
-            LogRecorder logRecorder, RootMessageLogger rootMessageLogger, AuthenticationProviderFactory authenticationProviderFactory,
+            LogRecorder logRecorder, EventLogger eventLogger, AuthenticationProviderFactory authenticationProviderFactory,
             GroupProviderFactory groupProviderFactory, AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory,
             TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
     {
@@ -183,7 +183,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         _statisticsGatherer = statisticsGatherer;
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
-        _rootMessageLogger = rootMessageLogger;
+        _eventLogger = eventLogger;
         _authenticationProviderFactory = authenticationProviderFactory;
         _groupProviderFactory = groupProviderFactory;
         _accessControlProviderFactory = accessControlProviderFactory;
@@ -1053,7 +1053,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
 
             if (isManagementMode())
             {
-                SystemLog.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
+                _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
                                                                  _brokerOptions.getManagementModePassword()));
             }
             return true;
@@ -1232,12 +1232,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         {
             throw new IllegalArgumentException("Attempted to recover unexpected type of configured object: " + object.getClass().getName());
         }
-    }
-
-    @Override
-    public RootMessageLogger getRootMessageLogger()
-    {
-        return _rootMessageLogger;
     }
 
     @Override
@@ -1433,5 +1427,11 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     private boolean isPreviouslyUsedPortNumber(Port port)
     {
         return _stillInUsePortNumbers.containsValue(port.getPort());
+    }
+
+    @Override
+    public EventLogger getEventLogger()
+    {
+        return _eventLogger;
     }
 }

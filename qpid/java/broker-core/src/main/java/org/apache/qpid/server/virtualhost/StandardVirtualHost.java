@@ -90,7 +90,7 @@ public class StandardVirtualHost extends AbstractVirtualHost
         final
         MessageStoreLogSubject
                 storeLogSubject = new MessageStoreLogSubject(getName(), messageStore.getClass().getSimpleName());
-        OperationalLoggingListener.listen(messageStore, storeLogSubject);
+        OperationalLoggingListener.listen(messageStore, storeLogSubject, getEventLogger());
 
         return messageStore;
     }
@@ -126,10 +126,10 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
         DurableConfigurationRecoverer configRecoverer =
                 new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
-                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()));
+                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()), getEventLogger());
         _durableConfigurationStore.configureConfigStore(virtualHost, configRecoverer);
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getExchangeRegistry(), getExchangeFactory());
+        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
         _messageStore.configureMessageStore(virtualHost, recoveryHandler, recoveryHandler);
 
         initialiseModel(hostConfig);

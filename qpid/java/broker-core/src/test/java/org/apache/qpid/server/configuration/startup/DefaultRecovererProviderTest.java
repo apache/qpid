@@ -25,8 +25,9 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
@@ -53,11 +54,11 @@ public class DefaultRecovererProviderTest extends TestCase
         StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
         VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
         LogRecorder logRecorder = mock(LogRecorder.class);
-        RootMessageLogger rootMessageLogger = mock(RootMessageLogger.class);
+
         TaskExecutor taskExecutor = mock(TaskExecutor.class);
 
         DefaultRecovererProvider provider = new DefaultRecovererProvider(statisticsGatherer, virtualHostRegistry,
-                logRecorder, rootMessageLogger, taskExecutor, mock(BrokerOptions.class),
+                logRecorder, new EventLogger(), taskExecutor, mock(BrokerOptions.class),
                 mock(StoreConfigurationChangeListener.class));
         for (String configuredObjectType : supportedTypes)
         {

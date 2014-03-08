@@ -20,9 +20,19 @@
  */
 package org.apache.qpid.server.logging;
 
-public class SystemLog
+public class EventLogger
 {
-    private static RootMessageLogger _rootMessageLogger = new NullRootMessageLogger();
+    private MessageLogger _messageLogger;
+
+    public EventLogger()
+    {
+        this(new NullMessageLogger());
+    }
+
+    public EventLogger(final MessageLogger messageLogger)
+    {
+        _messageLogger = messageLogger;
+    }
 
     /**
      * Logs the specified LogMessage about the LogSubject
@@ -30,9 +40,9 @@ public class SystemLog
      * @param subject The subject that is being logged
      * @param message The message to log
      */
-    public static void message(LogSubject subject, LogMessage message)
+    public void message(LogSubject subject, LogMessage message)
     {
-        getRootMessageLogger().message(subject, message);
+        _messageLogger.message(subject, message);
     }
 
     /**
@@ -40,19 +50,13 @@ public class SystemLog
      *
      * @param message The message to log
      */
-    public static void message(LogMessage message)
+    public void message(LogMessage message)
     {
-        getRootMessageLogger().message((message));
+        _messageLogger.message((message));
     }
 
-    private synchronized static RootMessageLogger getRootMessageLogger()
+    public void setMessageLogger(final MessageLogger messageLogger)
     {
-        final RootMessageLogger rootMessageLogger = _rootMessageLogger;
-        return rootMessageLogger == null ? new NullRootMessageLogger() : rootMessageLogger;
-    }
-
-    public static synchronized void setRootMessageLogger(final RootMessageLogger rootMessageLogger)
-    {
-        _rootMessageLogger = rootMessageLogger;
+        _messageLogger = messageLogger;
     }
 }

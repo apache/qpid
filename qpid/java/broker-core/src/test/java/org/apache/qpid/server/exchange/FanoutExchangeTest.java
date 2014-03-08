@@ -33,6 +33,7 @@ import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
@@ -60,6 +61,7 @@ public class FanoutExchangeTest extends TestCase
         _virtualHost = mock(VirtualHost.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
+        when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         _exchange = new FanoutExchange(_virtualHost, attributes);
     }
 
