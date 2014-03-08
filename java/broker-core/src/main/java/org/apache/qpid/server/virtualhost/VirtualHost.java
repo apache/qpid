@@ -31,6 +31,7 @@ import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -137,4 +138,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     TaskExecutor getTaskExecutor();
 
     org.apache.qpid.server.model.VirtualHost getModel();
+
+    EventLogger getEventLogger();
 }

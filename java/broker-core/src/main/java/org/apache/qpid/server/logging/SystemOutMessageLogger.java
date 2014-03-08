@@ -21,7 +21,7 @@
 package org.apache.qpid.server.logging;
 
 
-public class SystemOutMessageLogger extends AbstractRootMessageLogger
+public class SystemOutMessageLogger extends AbstractMessageLogger
 {
 
     @Override

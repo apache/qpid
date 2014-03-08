@@ -21,7 +21,7 @@
 package org.apache.qpid.server.binding;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.model.Binding;
@@ -55,6 +55,7 @@ public class BindingImpl
     private final UUID _id;
     private final AtomicLong _matches = new AtomicLong();
     private final BindingLogSubject _logSubject;
+    private final EventLogger _eventLogger;
 
     final AtomicBoolean _deleted = new AtomicBoolean();
     final CopyOnWriteArrayList<StateChangeListener<BindingImpl,State>> _stateChangeListeners =
@@ -90,11 +91,12 @@ public class BindingImpl
         _exchange = exchange;
         Map<String,Object> arguments = (Map<String, Object>) attributes.get(org.apache.qpid.server.model.Binding.ARGUMENTS);
         _arguments = arguments == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(arguments);
+        _eventLogger = exchange.getEventLogger();
 
         //Perform ACLs
         queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
         _logSubject = new BindingLogSubject(_bindingKey,exchange,queue);
-        SystemLog.message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
+        _eventLogger.message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
                                                                getArguments() != null
                                                                && !getArguments().isEmpty()));
 
@@ -229,7 +231,7 @@ public class BindingImpl
             {
                 listener.stateChanged(this, State.ACTIVE, State.DELETED);
             }
-            SystemLog.message(_logSubject, BindingMessages.DELETED());
+            _eventLogger.message(_logSubject, BindingMessages.DELETED());
         }
     }
 

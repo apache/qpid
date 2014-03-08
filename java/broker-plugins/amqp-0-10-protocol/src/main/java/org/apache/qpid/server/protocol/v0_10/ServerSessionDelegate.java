@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.store.StoreException;
@@ -289,9 +288,10 @@ public class ServerSessionDelegate extends SessionDelegate
 
         final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
 
+        final VirtualHost virtualHost = getVirtualHost(ssn);
         try
         {
-            getVirtualHost(ssn).getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName());
+            virtualHost.getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName());
         }
         catch (AccessControlException e)
         {
@@ -301,7 +301,7 @@ public class ServerSessionDelegate extends SessionDelegate
             return;
         }
 
-        final MessageStore store = getVirtualHost(ssn).getMessageStore();
+        final MessageStore store = virtualHost.getMessageStore();
         final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
         final ServerSession serverSession = (ServerSession) ssn;
         final MessageTransferMessage message = new MessageTransferMessage(storeMessage, serverSession.getReference());
@@ -346,7 +346,8 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                SystemLog.message(ExchangeMessages.DISCARDMSG(exchange.getName(), messageMetaData.getRoutingKey()));
+                virtualHost.getEventLogger().message(ExchangeMessages.DISCARDMSG(exchange.getName(),
+                                                                                 messageMetaData.getRoutingKey()));
             }
         }
 

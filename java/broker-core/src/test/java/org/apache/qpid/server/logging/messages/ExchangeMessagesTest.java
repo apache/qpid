@@ -32,7 +32,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 {
     public void testExchangeCreated_Transient() throws Exception
     {
-        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", false);
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", false, getEventLogger());
 
         String type = exchange.getTypeName();
         String name = exchange.getName();
@@ -47,7 +47,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 
     public void testExchangeCreated_Persistent() throws Exception
     {
-        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", true);
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", true, getEventLogger());
 
         String type = exchange.getTypeName();
         String name = exchange.getName();
@@ -72,7 +72,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
 
     public void testExchangeDiscardedMessage() throws Exception
     {
-        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", false);
+        ExchangeImpl exchange = BrokerTestHelper.createExchange("test", false, getEventLogger());
 
         final String name = exchange.getName();
         final String routingKey = "routingKey";

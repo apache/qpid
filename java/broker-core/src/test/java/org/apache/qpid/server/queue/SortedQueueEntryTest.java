@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -55,7 +56,7 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
 
         final VirtualHost virtualHost = mock(VirtualHost.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
-
+        when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         SortedQueue queue = new SortedQueue(virtualHost, attributes, new QueueEntryListFactory()
         {
 

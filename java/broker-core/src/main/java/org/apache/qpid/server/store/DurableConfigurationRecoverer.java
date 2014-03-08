@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 
@@ -47,6 +47,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
             new HashMap<String, Map<UUID, List<DependencyListener>>>();
     private final Map<String, DurableConfiguredObjectRecoverer> _recoverers;
     private final UpgraderProvider _upgraderProvider;
+    private final EventLogger _eventLogger;
 
     private DurableConfigurationStoreUpgrader _upgrader;
 
@@ -57,11 +58,12 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
 
     public DurableConfigurationRecoverer(final String name,
                                          Map<String, DurableConfiguredObjectRecoverer> recoverers,
-                                         UpgraderProvider upgraderProvider)
+                                         UpgraderProvider upgraderProvider, EventLogger eventLogger)
     {
         _recoverers = recoverers;
         _name = name;
         _upgraderProvider = upgraderProvider;
+        _eventLogger = eventLogger;
     }
 
     @Override
@@ -102,7 +104,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
         checkUnresolvedDependencies();
         applyUpgrade();
 
-        SystemLog.message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
+        _eventLogger.message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
         return CURRENT_CONFIG_VERSION;
     }
 

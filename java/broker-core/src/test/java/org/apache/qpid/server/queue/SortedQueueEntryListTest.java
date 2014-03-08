@@ -21,11 +21,13 @@ package org.apache.qpid.server.queue;
 
 import java.util.Collections;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Arrays;
@@ -83,8 +85,8 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
         // Create test list
         final VirtualHost virtualHost = mock(VirtualHost.class);
-        when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
-
+        when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
+        when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         _testQueue = new SortedQueue(virtualHost, attributes, new QueueEntryListFactory()
         {
 

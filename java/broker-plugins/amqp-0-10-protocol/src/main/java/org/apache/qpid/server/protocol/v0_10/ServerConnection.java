@@ -32,8 +32,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
@@ -61,6 +61,7 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORM
 public class ServerConnection extends Connection implements AMQConnectionModel<ServerConnection, ServerSession>,
                                                             LogSubject, AuthorizationHolder
 {
+    private final EventLogger _eventLogger;
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
 
@@ -84,6 +85,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     {
         _connectionId = connectionId;
         _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
+        _eventLogger = broker.getEventLogger();
     }
 
     public Object getReference()
@@ -97,6 +99,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         super.invoke(method);
     }
 
+    EventLogger getEventLogger()
+    {
+        return _virtualHost == null ? _eventLogger : _virtualHost.getEventLogger();
+    }
+
     @Override
     protected void setState(State state)
     {
@@ -108,7 +115,14 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             {
                 _onOpenTask.run();
             }
-            SystemLog.message(ConnectionMessages.OPEN(getClientId(), "0-10", getClientVersion(), getClientProduct(), true, true, true, true));
+            getEventLogger().message(ConnectionMessages.OPEN(getClientId(),
+                                                             "0-10",
+                                                             getClientVersion(),
+                                                             getClientProduct(),
+                                                             true,
+                                                             true,
+                                                             true,
+                                                             true));
 
             getVirtualHost().getConnectionRegistry().registerConnection(this);
         }
@@ -131,7 +145,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     {
         if(_logClosed.compareAndSet(false, true))
         {
-            SystemLog.message(this, ConnectionMessages.CLOSE());
+            getEventLogger().message(this, ConnectionMessages.CLOSE());
         }
     }
 

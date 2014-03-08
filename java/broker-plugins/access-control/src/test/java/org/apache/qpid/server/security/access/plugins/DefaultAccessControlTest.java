@@ -33,7 +33,7 @@ import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.Result;
@@ -56,7 +56,16 @@ public class DefaultAccessControlTest extends TestCase
     private static final String DENIED_GROUP = "denied_group";
 
     private DefaultAccessControl _plugin = null;  // Class under test
-    private final UnitTestMessageLogger messageLogger = new UnitTestMessageLogger();
+    private UnitTestMessageLogger _messageLogger;
+    private EventLogger _eventLogger;
+
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _messageLogger = new UnitTestMessageLogger();
+        _eventLogger = new EventLogger(_messageLogger);
+        _plugin = null;
+    }
 
     private void setUpGroupAccessControl() throws ConfigurationException
     {
@@ -66,12 +75,11 @@ public class DefaultAccessControlTest extends TestCase
     private void configureAccessControl(final RuleSet rs) throws ConfigurationException
     {
         _plugin = new DefaultAccessControl(rs);
-        SystemLog.setRootMessageLogger(messageLogger);
     }
 
     private RuleSet createGroupRuleSet()
     {
-        final RuleSet rs = new RuleSet();
+        final RuleSet rs = new RuleSet(_eventLogger);
 
         // Rule expressed with username
         rs.grant(0, "user1", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
@@ -82,11 +90,6 @@ public class DefaultAccessControlTest extends TestCase
         rs.grant(3, Rule.ALL, Permission.DENY_LOG, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
 
         return rs;
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
     }
 
     /**
@@ -153,12 +156,15 @@ public class DefaultAccessControlTest extends TestCase
                          @Override
                          public Object run()
                          {
-                             assertEquals("Expecting zero messages before test", 0, messageLogger.getLogMessages().size());
+                             assertEquals("Expecting zero messages before test",
+                                          0,
+                                          _messageLogger.getLogMessages().size());
                              final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
                              assertEquals(Result.DENIED, result);
 
-                             assertEquals("Expecting one message before test", 1, messageLogger.getLogMessages().size());
-                             assertTrue("Logged message does not contain expected string", messageLogger.messageContains(0, "ACL-1002"));
+                             assertEquals("Expecting one message before test", 1, _messageLogger.getLogMessages().size());
+                             assertTrue("Logged message does not contain expected string",
+                                        _messageLogger.messageContains(0, "ACL-1002"));
                              return null;
                          }
                      });
@@ -170,7 +176,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnAllComponents() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet();
+        final RuleSet rs = new RuleSet(_eventLogger);
 
         // grant user4 access right on any method in any component
         rs.grant(1, "user4", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, new ObjectProperties(ObjectProperties.STAR));
@@ -196,7 +202,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet();
+        final RuleSet rs = new RuleSet(_eventLogger);
 
         // grant user5 access right on any methods in "Test" component
         ObjectProperties ruleProperties = new ObjectProperties(ObjectProperties.STAR);
@@ -296,7 +302,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessMethodWhenSpecifiedAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet();
+        final RuleSet rs = new RuleSet(_eventLogger);
 
         // grant user6 access right on "getAttribute" method in "Test" component
         ObjectProperties ruleProperties = new ObjectProperties("getAttribute");
@@ -333,7 +339,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnSpecifiedMethodForAllComponents() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet();
+        final RuleSet rs = new RuleSet(_eventLogger);
 
         // grant user8 all rights on method queryNames in all component
         rs.grant(1, "user8", Permission.ALLOW, Operation.ALL, ObjectType.METHOD, new ObjectProperties("queryNames"));
@@ -372,7 +378,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnAllMethodsInAllComponents() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet();
+        final RuleSet rs = new RuleSet(_eventLogger);
 
         // grant user9 all rights on any method in all component
         rs.grant(1, "user9", Permission.ALLOW, Operation.ALL, ObjectType.METHOD, new ObjectProperties());
@@ -410,7 +416,7 @@ public class DefaultAccessControlTest extends TestCase
      */
     public void testAuthoriseAccessMethodWhenMatchingAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
     {
-        final RuleSet rs = new RuleSet();
+        final RuleSet rs = new RuleSet(_eventLogger);
 
         // grant user9 all rights on "getAttribute*" methods in Test component
         ObjectProperties ruleProperties = new ObjectProperties();

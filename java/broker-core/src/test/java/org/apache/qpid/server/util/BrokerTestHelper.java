@@ -32,6 +32,7 @@ import java.util.UUID;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -67,8 +68,9 @@ public class BrokerTestHelper
         when(broker.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(10000l);
         when(broker.getId()).thenReturn(UUID.randomUUID());
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
-        when(broker.getVirtualHostRegistry()).thenReturn(new VirtualHostRegistry());
+        when(broker.getVirtualHostRegistry()).thenReturn(new VirtualHostRegistry(new EventLogger()));
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(mock(Broker.class), false));
+        when(broker.getEventLogger()).thenReturn(new EventLogger());
         return broker;
     }
 
@@ -107,7 +109,8 @@ public class BrokerTestHelper
 
     public static VirtualHost createVirtualHost(VirtualHostConfiguration virtualHostConfiguration) throws Exception
     {
-        return createVirtualHost(virtualHostConfiguration, null);
+
+        return createVirtualHost(virtualHostConfiguration, new VirtualHostRegistry(new EventLogger()));
     }
 
     public static VirtualHost createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception
@@ -160,12 +163,13 @@ public class BrokerTestHelper
         return connection;
     }
 
-    public static ExchangeImpl createExchange(String hostName, final boolean durable) throws Exception
+    public static ExchangeImpl createExchange(String hostName, final boolean durable, final EventLogger eventLogger) throws Exception
     {
         SecurityManager securityManager = new SecurityManager(mock(Broker.class), false);
         VirtualHost virtualHost = mock(VirtualHost.class);
         when(virtualHost.getName()).thenReturn(hostName);
         when(virtualHost.getSecurityManager()).thenReturn(securityManager);
+        when(virtualHost.getEventLogger()).thenReturn(eventLogger);
         DefaultExchangeFactory factory = new DefaultExchangeFactory(virtualHost);
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.Exchange.ID, UUIDGenerator.generateExchangeUUID("amp.direct", virtualHost.getName()));

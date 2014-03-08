@@ -26,6 +26,8 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.NullMessageLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -49,7 +51,8 @@ public class VirtualHostConfigurationTest extends QpidTestCase
         _configXml = new XMLConfiguration();
         _configXml.addProperty("virtualhosts.virtualhost(-1).name", getName());
         _configXml.addProperty("virtualhosts.virtualhost(-1)."+getName()+".store.class", TestableMemoryMessageStore.class.getName());
-        _virtualHostRegistry = new VirtualHostRegistry();
+        EventLogger eventLogger = new EventLogger();
+        _virtualHostRegistry = new VirtualHostRegistry(eventLogger);
         _broker = mock(Broker.class);
         when(_broker.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(30000l);
     }

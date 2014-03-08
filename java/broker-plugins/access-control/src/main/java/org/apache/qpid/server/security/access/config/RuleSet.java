@@ -38,7 +38,7 @@ import javax.security.auth.Subject;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.AccessControlMessages;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
@@ -70,9 +70,11 @@ public class RuleSet
     private final Map<Subject, Map<Operation, Map<ObjectType, List<Rule>>>> _cache =
                         new WeakHashMap<Subject, Map<Operation, Map<ObjectType, List<Rule>>>>();
     private final Map<String, Boolean> _config = new HashMap<String, Boolean>();
+    private final EventLogger _eventLogger;
 
-    public RuleSet()
+    public RuleSet(EventLogger eventLogger)
     {
+        _eventLogger = eventLogger;
         // set some default configuration properties
         configure(DEFAULT_DENY, Boolean.TRUE);
     }
@@ -321,14 +323,14 @@ public class RuleSet
                 switch (permission)
                 {
                     case ALLOW_LOG:
-                        SystemLog.message(AccessControlMessages.ALLOWED(
+                        _eventLogger.message(AccessControlMessages.ALLOWED(
                                 action.getOperation().toString(),
                                 action.getObjectType().toString(),
                                 action.getProperties().toString()));
                     case ALLOW:
                         return Result.ALLOWED;
                     case DENY_LOG:
-                        SystemLog.message(AccessControlMessages.DENIED(
+                        _eventLogger.message(AccessControlMessages.DENIED(
                                 action.getOperation().toString(),
                                 action.getObjectType().toString(),
                                 action.getProperties().toString()));
@@ -436,5 +438,10 @@ public class RuleSet
             operations.put(operation, objects);
         }
         return objects;
+    }
+
+    public EventLogger getEventLogger()
+    {
+        return _eventLogger;
     }
 }

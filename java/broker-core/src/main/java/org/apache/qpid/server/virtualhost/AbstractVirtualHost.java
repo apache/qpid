@@ -38,7 +38,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
@@ -125,6 +125,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     private final Map<String, MessageSource> _systemNodeSources =
             Collections.synchronizedMap(new HashMap<String,MessageSource>());
 
+    private final EventLogger _eventLogger;
+
 
     public AbstractVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                StatisticsGatherer brokerStatisticsGatherer,
@@ -148,10 +150,11 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         _name = _vhostConfig.getName();
         _dtxRegistry = new DtxRegistry();
         _model = virtualHost;
+        _eventLogger = virtualHostRegistry.getEventLogger();
 
         _id = UUIDGenerator.generateVhostUUID(_name);
 
-        SystemLog.message(VirtualHostMessages.CREATED(_name));
+        _eventLogger.message(VirtualHostMessages.CREATED(_name));
 
         _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"), _name);
 
@@ -210,6 +213,12 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     public boolean isDurable()
     {
         return false;
+    }
+
+    @Override
+    public EventLogger getEventLogger()
+    {
+        return _eventLogger;
     }
 
     /**
@@ -705,7 +714,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _state = State.STOPPED;
 
-        SystemLog.message(VirtualHostMessages.CLOSED());
+        _eventLogger.message(VirtualHostMessages.CLOSED());
     }
 
     protected void closeStorage()
@@ -912,7 +921,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     {
         if (state == State.ERRORED)
         {
-            SystemLog.message(VirtualHostMessages.ERRORED());
+            _eventLogger.message(VirtualHostMessages.ERRORED());
         }
     }
 

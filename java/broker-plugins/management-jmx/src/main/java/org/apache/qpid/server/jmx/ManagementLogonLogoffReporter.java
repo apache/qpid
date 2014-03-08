@@ -30,8 +30,7 @@ import javax.management.remote.JMXConnectionNotification;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.jmx.JMXConnectionPrincipal;
@@ -44,12 +43,12 @@ import java.util.Collections;
 public class ManagementLogonLogoffReporter implements  NotificationListener, NotificationFilter
 {
     private static final Logger LOGGER = Logger.getLogger(ManagementLogonLogoffReporter.class);
-    private final RootMessageLogger _rootMessageLogger;
+    private final EventLogger _eventLogger;
     private final UsernameAccessor _usernameAccessor;
 
-    public ManagementLogonLogoffReporter(RootMessageLogger rootMessageLogger, UsernameAccessor usernameAccessor)
+    public ManagementLogonLogoffReporter(EventLogger eventLogger, UsernameAccessor usernameAccessor)
     {
-        _rootMessageLogger = rootMessageLogger;
+        _eventLogger = eventLogger;
         _usernameAccessor = usernameAccessor;
     }
 
@@ -97,12 +96,12 @@ public class ManagementLogonLogoffReporter implements  NotificationListener, Not
             {
                 if (JMXConnectionNotification.OPENED.equals(type))
                 {
-                    SystemLog.message(ManagementConsoleMessages.OPEN(username));
+                    _eventLogger.message(ManagementConsoleMessages.OPEN(username));
                 }
                 else if (JMXConnectionNotification.CLOSED.equals(type) ||
                          JMXConnectionNotification.FAILED.equals(type))
                 {
-                    SystemLog.message(ManagementConsoleMessages.CLOSE(username));
+                    _eventLogger.message(ManagementConsoleMessages.CLOSE(username));
                 }
                 return null;
             }

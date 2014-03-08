@@ -136,7 +136,8 @@ public class HttpManagementUtil
         session.setAttribute(ATTR_SUBJECT, subject);
 
         // Cause the user logon to be logged.
-        session.setAttribute(ATTR_LOGIN_LOGOUT_REPORTER, new LoginLogoutReporter(subject));
+        session.setAttribute(ATTR_LOGIN_LOGOUT_REPORTER,
+                             new LoginLogoutReporter(subject, getBroker(session.getServletContext()).getEventLogger()));
     }
 
     public static Subject tryToAuthenticate(HttpServletRequest request, HttpManagementConfiguration managementConfig)

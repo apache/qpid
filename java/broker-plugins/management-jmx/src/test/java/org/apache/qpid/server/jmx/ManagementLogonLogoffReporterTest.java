@@ -32,13 +32,11 @@ import static org.mockito.Matchers.anyString;
 
 import javax.management.remote.JMXConnectionNotification;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.MessageLogger;
 
 import junit.framework.TestCase;
-import org.apache.qpid.server.logging.SystemLog;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
 import org.mockito.ArgumentMatcher;
 
 public class ManagementLogonLogoffReporterTest extends TestCase
@@ -48,18 +46,18 @@ public class ManagementLogonLogoffReporterTest extends TestCase
 
     private ManagementLogonLogoffReporter _reporter;
     private UsernameAccessor _usernameAccessor;
-    private RootMessageLogger _rootMessageLogger;
+    private MessageLogger _messageLogger;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
         _usernameAccessor = mock(UsernameAccessor.class);
-        _rootMessageLogger = mock(RootMessageLogger.class);
+        _messageLogger = mock(MessageLogger.class);
         // Enable messaging so we can valid the generated strings
-        when(_rootMessageLogger.isMessageEnabled(anyString())).thenReturn(true);
-        SystemLog.setRootMessageLogger(_rootMessageLogger);
-        _reporter = new ManagementLogonLogoffReporter(_rootMessageLogger, _usernameAccessor);
+        when(_messageLogger.isMessageEnabled(anyString())).thenReturn(true);
+        EventLogger eventLogger = new EventLogger(_messageLogger);
+        _reporter = new ManagementLogonLogoffReporter(eventLogger, _usernameAccessor);
     }
 
     public void testOpenedNotification()
@@ -69,7 +67,7 @@ public class ManagementLogonLogoffReporterTest extends TestCase
 
         _reporter.handleNotification(openNotification, null);
 
-        verify(_rootMessageLogger).message(messageMatch("MNG-1007 : Open : User jmxuser",
+        verify(_messageLogger).message(messageMatch("MNG-1007 : Open : User jmxuser",
                                                         "qpid.message.managementconsole.open"));
     }
 
@@ -93,7 +91,7 @@ public class ManagementLogonLogoffReporterTest extends TestCase
 
         _reporter.handleNotification(closeNotification, null);
 
-        verify(_rootMessageLogger).message(messageMatch("MNG-1008 : Close : User jmxuser", "qpid.message.managementconsole.close"));
+        verify(_messageLogger).message(messageMatch("MNG-1008 : Close : User jmxuser", "qpid.message.managementconsole.close"));
     }
 
     public void tesNotifiedForLogOnTypeEvents()

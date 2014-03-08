@@ -19,8 +19,8 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
@@ -29,10 +29,13 @@ public class OperationalLoggingListener implements EventListener
 {
     protected final LogSubject _logSubject;
     private MessageStore _store;
+    private final EventLogger _eventLogger;
 
-    private OperationalLoggingListener(final MessageStore store, LogSubject logSubject)
+
+    private OperationalLoggingListener(final MessageStore store, LogSubject logSubject, final EventLogger eventLogger)
     {
         _logSubject = logSubject;
+        _eventLogger = eventLogger;
         store.addEventListener(this,
                                Event.BEFORE_INIT,
                                Event.AFTER_INIT,
@@ -42,45 +45,47 @@ public class OperationalLoggingListener implements EventListener
                                Event.PERSISTENT_MESSAGE_SIZE_OVERFULL,
                                Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
         _store = store;
+
     }
 
     public void event(Event event)
     {
+
         switch(event)
         {
             case BEFORE_INIT:
-                SystemLog.message(_logSubject, ConfigStoreMessages.CREATED());
+                _eventLogger.message(_logSubject, ConfigStoreMessages.CREATED());
                 break;
             case AFTER_INIT:
-                SystemLog.message(_logSubject, MessageStoreMessages.CREATED());
-                SystemLog.message(_logSubject, TransactionLogMessages.CREATED());
+                _eventLogger.message(_logSubject, MessageStoreMessages.CREATED());
+                _eventLogger.message(_logSubject, TransactionLogMessages.CREATED());
                 String storeLocation = _store.getStoreLocation();
                 if (storeLocation != null)
                 {
-                    SystemLog.message(_logSubject, MessageStoreMessages.STORE_LOCATION(storeLocation));
+                    _eventLogger.message(_logSubject, MessageStoreMessages.STORE_LOCATION(storeLocation));
                 }
                 break;
             case BEFORE_ACTIVATE:
-                SystemLog.message(_logSubject, MessageStoreMessages.RECOVERY_START());
+                _eventLogger.message(_logSubject, MessageStoreMessages.RECOVERY_START());
                 break;
             case AFTER_ACTIVATE:
-                SystemLog.message(_logSubject, MessageStoreMessages.RECOVERY_COMPLETE());
+                _eventLogger.message(_logSubject, MessageStoreMessages.RECOVERY_COMPLETE());
                 break;
             case AFTER_CLOSE:
-                SystemLog.message(_logSubject, MessageStoreMessages.CLOSED());
+                _eventLogger.message(_logSubject, MessageStoreMessages.CLOSED());
                 break;
             case PERSISTENT_MESSAGE_SIZE_OVERFULL:
-                SystemLog.message(_logSubject, MessageStoreMessages.OVERFULL());
+                _eventLogger.message(_logSubject, MessageStoreMessages.OVERFULL());
                 break;
             case PERSISTENT_MESSAGE_SIZE_UNDERFULL:
-                SystemLog.message(_logSubject, MessageStoreMessages.UNDERFULL());
+                _eventLogger.message(_logSubject, MessageStoreMessages.UNDERFULL());
                 break;
 
         }
     }
 
-    public static void listen(final MessageStore store, LogSubject logSubject)
+    public static void listen(final MessageStore store, LogSubject logSubject, final EventLogger eventLogger)
     {
-        new OperationalLoggingListener(store, logSubject);
+        new OperationalLoggingListener(store, logSubject, eventLogger);
     }
 }

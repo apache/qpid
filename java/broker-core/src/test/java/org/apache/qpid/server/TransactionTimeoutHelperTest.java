@@ -31,10 +31,10 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.hamcrest.Description;
@@ -42,7 +42,7 @@ import org.mockito.ArgumentMatcher;
 
 public class TransactionTimeoutHelperTest extends QpidTestCase
 {
-    private final RootMessageLogger _rootLogger = mock(RootMessageLogger.class);
+    private final MessageLogger _rootLogger = mock(MessageLogger.class);
     private final LogSubject _logSubject = mock(LogSubject.class);
     private final ServerTransaction _transaction = mock(ServerTransaction.class);
     private final CloseAction _closeAction = mock(CloseAction.class);
@@ -154,8 +154,9 @@ public class TransactionTimeoutHelperTest extends QpidTestCase
         when(_logSubject.toLogString()).thenReturn("");
         when(_rootLogger.isEnabled()).thenReturn(true);
         when(_rootLogger.isMessageEnabled(anyString())).thenReturn(true);
-        SystemLog.setRootMessageLogger(_rootLogger);
-        _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, _closeAction);
+        EventLogger eventLogger = new EventLogger(_rootLogger);
+
+        _transactionTimeoutHelper = new TransactionTimeoutHelper(_logSubject, _closeAction, eventLogger);
         _now = System.currentTimeMillis();
     }
 

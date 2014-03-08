@@ -27,14 +27,13 @@ import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.access.config.ConfigurationFile;
-import org.apache.qpid.server.security.access.config.PlainConfiguration;
-import org.apache.qpid.server.security.access.config.Rule;
-import org.apache.qpid.server.security.access.config.RuleSet;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * These tests check that the ACL file parsing works correctly.
@@ -58,7 +57,7 @@ public class PlainConfigurationTest extends TestCase
         aclWriter.close();
 
         // Load ruleset
-        PlainConfiguration configFile = new PlainConfiguration(acl);
+        PlainConfiguration configFile = new PlainConfiguration(acl, new EventLogger());
         configFile.load();
         return configFile;
     }
@@ -68,7 +67,7 @@ public class PlainConfigurationTest extends TestCase
         try
         {
             // Load ruleset
-            ConfigurationFile configFile = new PlainConfiguration(new File("doesnotexist"));
+            ConfigurationFile configFile = new PlainConfiguration(new File("doesnotexist"), new EventLogger());
             configFile.load();
 
             fail("fail");

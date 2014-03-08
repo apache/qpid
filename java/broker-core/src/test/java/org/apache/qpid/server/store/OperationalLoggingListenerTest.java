@@ -19,24 +19,27 @@ package org.apache.qpid.server.store;
 import java.util.ArrayList;
 import java.util.List;
 import junit.framework.TestCase;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
+
+import static org.mockito.Mockito.mock;
 
 public class OperationalLoggingListenerTest extends TestCase
 {
 
 
     public static final String STORE_LOCATION = "The moon!";
+    private EventLogger _eventLogger;
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        
+        _eventLogger = new EventLogger();
     }
 
     public void testOperationalLoggingWithStoreLocation() throws Exception
@@ -44,7 +47,7 @@ public class OperationalLoggingListenerTest extends TestCase
         TestMessageStore messageStore = new TestMessageStore();
         LogSubject logSubject = LOG_SUBJECT;
 
-        OperationalLoggingListener.listen(messageStore, logSubject);
+        OperationalLoggingListener.listen(messageStore, logSubject, _eventLogger);
 
         performTests(messageStore, true);
 
@@ -55,7 +58,7 @@ public class OperationalLoggingListenerTest extends TestCase
         TestMessageStore messageStore = new TestMessageStore();
         LogSubject logSubject = LOG_SUBJECT;
 
-        OperationalLoggingListener.listen(messageStore, logSubject);
+        OperationalLoggingListener.listen(messageStore, logSubject, _eventLogger);
 
         performTests(messageStore, false);
     }
@@ -64,7 +67,7 @@ public class OperationalLoggingListenerTest extends TestCase
     {
         final List<LogMessage> messages = new ArrayList<LogMessage>();
 
-        SystemLog.setRootMessageLogger(new TestRootLogger(messages));
+        _eventLogger.setMessageLogger(new TestLogger(messages));
 
         if(setStoreLocation)
         {
@@ -146,11 +149,11 @@ public class OperationalLoggingListenerTest extends TestCase
         }
     }
 
-    private static class TestRootLogger implements RootMessageLogger
+    private static class TestLogger implements MessageLogger
     {
         private final List<LogMessage> _messages;
 
-        private TestRootLogger(final List<LogMessage> messages)
+        private TestLogger(final List<LogMessage> messages)
         {
             _messages = messages;
         }

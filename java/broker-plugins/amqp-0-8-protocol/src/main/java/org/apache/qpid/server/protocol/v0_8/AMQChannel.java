@@ -57,7 +57,6 @@ import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
@@ -209,14 +208,14 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     throw new ConnectionScopedRuntimeException(e);
                 }
             }
-        });
+        }, getVirtualHost().getEventLogger());
 
         Subject.doAs(_subject, new PrivilegedAction<Object>()
         {
             @Override
             public Object run()
             {
-                SystemLog.message(ChannelMessages.CREATE());
+                getVirtualHost().getEventLogger().message(ChannelMessages.CREATE());
 
                 return null;
             }
@@ -457,7 +456,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         }
         else
         {
-            SystemLog.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchangeName().asString(),
+            getVirtualHost().getEventLogger().message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchangeName().asString(),
                                                           _currentMessage.getMessagePublishInfo().getRoutingKey()
                                                           == null
                                                                   ? null
@@ -693,7 +692,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         LogMessage operationalLogMessage = cause == null ?
                 ChannelMessages.CLOSE() :
                 ChannelMessages.CLOSE_FORCED(cause.getCode(), message);
-        SystemLog.message(_logSubject, operationalLogMessage);
+        getVirtualHost().getEventLogger().message(_logSubject, operationalLogMessage);
 
         unsubscribeAllConsumers();
 
@@ -986,7 +985,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
             // Log Flow Started before we start the subscriptions
             if (!suspended)
             {
-                SystemLog.message(_logSubject, ChannelMessages.FLOW("Started"));
+                getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW("Started"));
             }
 
 
@@ -1037,7 +1036,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
             // stopped.
             if (suspended)
             {
-                SystemLog.message(_logSubject, ChannelMessages.FLOW("Stopped"));
+                getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW("Stopped"));
             }
 
         }
@@ -1183,7 +1182,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
     public void setCredit(final long prefetchSize, final int prefetchCount)
     {
-        SystemLog.message(ChannelMessages.PREFETCH_SIZE(prefetchSize, prefetchCount));
+        getVirtualHost().getEventLogger().message(ChannelMessages.PREFETCH_SIZE(prefetchSize, prefetchCount));
         _creditManager.setCreditLimits(prefetchSize, prefetchCount);
     }
 
@@ -1446,7 +1445,8 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         {
             if(_blocking.compareAndSet(false,true))
             {
-                SystemLog.message(_logSubject, ChannelMessages.FLOW_ENFORCED("** All Queues **"));
+                getVirtualHost().getEventLogger().message(_logSubject,
+                                                          ChannelMessages.FLOW_ENFORCED("** All Queues **"));
                 flow(false);
             }
         }
@@ -1458,7 +1458,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         {
             if(_blockingEntities.isEmpty() && _blocking.compareAndSet(true,false))
             {
-                SystemLog.message(_logSubject, ChannelMessages.FLOW_REMOVED());
+                getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_REMOVED());
 
                 flow(true);
             }
@@ -1472,7 +1472,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
             if(_blocking.compareAndSet(false,true))
             {
-                SystemLog.message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getName()));
+                getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getName()));
                 flow(false);
             }
         }
@@ -1484,7 +1484,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         {
             if(_blockingEntities.isEmpty() && _blocking.compareAndSet(true,false) && !isClosing())
             {
-                SystemLog.message(_logSubject, ChannelMessages.FLOW_REMOVED());
+                getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_REMOVED());
                 flow(true);
             }
         }
@@ -1561,8 +1561,10 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     @Override
                     public void performAction(final MessageInstance requeueEntry)
                     {
-                        SystemLog.message( _logSubject, ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
-                                                                                   requeueEntry.getOwningResource().getName()));
+                        getVirtualHost().getEventLogger().message(_logSubject,
+                                                                  ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(),
+                                                                                                requeueEntry.getOwningResource()
+                                                                                                        .getName()));
                     }
                 }, null);
 
@@ -1579,7 +1581,10 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     if (altExchange == null)
                     {
                         _logger.debug("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
-                        SystemLog.message(_logSubject, ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), queue.getName(), msg.getInitialRoutingAddress()));
+                        getVirtualHost().getEventLogger().message(_logSubject,
+                                                                  ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(),
+                                                                                                       queue.getName(),
+                                                                                                       msg.getInitialRoutingAddress()));
 
                     }
                     else
@@ -1587,8 +1592,9 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                         _logger.debug(
                                 "Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: "
                                 + deliveryTag);
-                        SystemLog.message(_logSubject,
-                                       ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), altExchange.getName()));
+                        getVirtualHost().getEventLogger().message(_logSubject,
+                                                                  ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(),
+                                                                                                     altExchange.getName()));
                     }
                 }
             }

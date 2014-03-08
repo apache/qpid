@@ -25,6 +25,7 @@ import java.security.Principal;
 
 import javax.security.auth.Subject;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
@@ -34,6 +35,8 @@ import org.apache.qpid.server.security.access.config.Rule;
 import org.apache.qpid.server.security.access.config.RuleSet;
 import org.apache.qpid.server.security.auth.TestPrincipalUtils;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * This test checks that the {@link RuleSet} object which forms the core of the access control plugin performs correctly.
@@ -62,7 +65,7 @@ public class RuleSetTest extends QpidTestCase
     {
         super.setUp();
 
-        _ruleSet = new RuleSet();
+        _ruleSet = new RuleSet(new EventLogger());
     }
 
     @Override

@@ -23,8 +23,9 @@ package org.apache.qpid.server.configuration.startup;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -55,7 +56,7 @@ public class DefaultRecovererProvider implements RecovererProvider
     private final StatisticsGatherer _brokerStatisticsGatherer;
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
-    private final RootMessageLogger _rootMessageLogger;
+    private final EventLogger _eventLogger;
     private final AuthenticationProviderFactory _authenticationProviderFactory;
     private final AccessControlProviderFactory _accessControlProviderFactory;
     private final PortFactory _portFactory;
@@ -66,7 +67,7 @@ public class DefaultRecovererProvider implements RecovererProvider
     private final StoreConfigurationChangeListener _storeChangeListener;
 
     public DefaultRecovererProvider(StatisticsGatherer brokerStatisticsGatherer, VirtualHostRegistry virtualHostRegistry,
-            LogRecorder logRecorder, RootMessageLogger rootMessageLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions, StoreConfigurationChangeListener storeChangeListener)
+            LogRecorder logRecorder, EventLogger eventLogger, TaskExecutor taskExecutor, BrokerOptions brokerOptions, StoreConfigurationChangeListener storeChangeListener)
     {
         _authenticationProviderFactory = new AuthenticationProviderFactory(new QpidServiceLoader<AuthenticationManagerFactory>());
         _accessControlProviderFactory = new AccessControlProviderFactory(new QpidServiceLoader<AccessControlFactory>());
@@ -75,7 +76,7 @@ public class DefaultRecovererProvider implements RecovererProvider
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
-        _rootMessageLogger = rootMessageLogger;
+        _eventLogger = eventLogger;
         _pluginFactoryServiceLoader = new QpidServiceLoader<PluginFactory>();
         _taskExecutor = taskExecutor;
         _brokerOptions = brokerOptions;
@@ -88,7 +89,8 @@ public class DefaultRecovererProvider implements RecovererProvider
         if (Broker.class.getSimpleName().equals(type))
         {
             return new BrokerRecoverer(_authenticationProviderFactory, _groupProviderFactory, _accessControlProviderFactory, _portFactory,
-                    _brokerStatisticsGatherer, _virtualHostRegistry, _logRecorder, _rootMessageLogger, _taskExecutor, _brokerOptions, _storeChangeListener);
+                    _brokerStatisticsGatherer, _virtualHostRegistry, _logRecorder,
+                    _eventLogger, _taskExecutor, _brokerOptions, _storeChangeListener);
         }
         else if(VirtualHost.class.getSimpleName().equals(type))
         {

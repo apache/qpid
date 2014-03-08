@@ -24,7 +24,7 @@ package org.apache.qpid.server.logging;
 import java.util.LinkedList;
 import java.util.List;
 
-public class UnitTestMessageLogger extends AbstractRootMessageLogger
+public class UnitTestMessageLogger extends AbstractMessageLogger
 {
     private final List<Object> _log = new LinkedList<Object>();
     

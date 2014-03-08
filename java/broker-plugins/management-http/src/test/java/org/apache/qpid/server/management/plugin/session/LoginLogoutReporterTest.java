@@ -28,9 +28,9 @@ import static org.mockito.Mockito.when;
 
 import javax.security.auth.Subject;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.mockito.ArgumentMatcher;
 
@@ -40,7 +40,7 @@ public class LoginLogoutReporterTest extends TestCase
 {
     private LoginLogoutReporter _loginLogoutReport;
     private Subject _subject = new Subject();
-    private RootMessageLogger _logger = mock(RootMessageLogger.class);
+    private MessageLogger _logger = mock(MessageLogger.class);
 
     @Override
     protected void setUp() throws Exception
@@ -50,8 +50,8 @@ public class LoginLogoutReporterTest extends TestCase
         _subject.getPrincipals().add(new AuthenticatedPrincipal("mockusername"));
         when(_logger.isEnabled()).thenReturn(true);
         when(_logger.isMessageEnabled(anyString())).thenReturn(true);
-        SystemLog.setRootMessageLogger(_logger);
-        _loginLogoutReport = new LoginLogoutReporter(_subject);
+        EventLogger eventLogger = new EventLogger(_logger);
+        _loginLogoutReport = new LoginLogoutReporter(_subject, eventLogger);
     }
 
     public void testLoginLogged()

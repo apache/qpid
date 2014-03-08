@@ -20,16 +20,20 @@
  */
 package org.apache.qpid.server.security.access.config;
 
+import org.apache.qpid.server.logging.EventLogger;
+
 import java.io.File;
 
 public abstract class AbstractConfiguration implements ConfigurationFile
 {
     private File _file;
     private RuleSet _config;
-    
-    public AbstractConfiguration(File file)
+    private final EventLogger _eventLogger;
+
+    public AbstractConfiguration(File file, final EventLogger eventLogger)
     {
         _file = file;
+        _eventLogger = eventLogger;
     }
     
     public File getFile()
@@ -39,7 +43,7 @@ public abstract class AbstractConfiguration implements ConfigurationFile
     
     public RuleSet load()
     {
-        _config = new RuleSet();
+        _config = new RuleSet(_eventLogger);
         return _config;
     }
     

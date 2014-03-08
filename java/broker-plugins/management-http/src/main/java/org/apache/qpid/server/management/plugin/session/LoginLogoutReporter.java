@@ -28,7 +28,7 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.SystemLog;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
@@ -42,12 +42,14 @@ public class LoginLogoutReporter implements HttpSessionBindingListener
     private static final Logger LOGGER = Logger.getLogger(LoginLogoutReporter.class);
     private final Subject _subject;
     private final Principal _principal;
+    private final EventLogger _eventLogger;
 
-    public LoginLogoutReporter(Subject subject)
+    public LoginLogoutReporter(Subject subject, EventLogger eventLogger)
     {
         super();
         _subject = subject;
         _principal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(_subject);
+        _eventLogger = eventLogger;
     }
 
     @Override
@@ -74,7 +76,7 @@ public class LoginLogoutReporter implements HttpSessionBindingListener
             @Override
             public Void run()
             {
-                SystemLog.message(ManagementConsoleMessages.OPEN(_principal.getName()));
+                _eventLogger.message(ManagementConsoleMessages.OPEN(_principal.getName()));
                 return null;
             }
         });
@@ -92,7 +94,7 @@ public class LoginLogoutReporter implements HttpSessionBindingListener
             @Override
             public Void run()
             {
-                SystemLog.message(ManagementConsoleMessages.CLOSE(_principal.getName()));
+                _eventLogger.message(ManagementConsoleMessages.CLOSE(_principal.getName()));
                 return null;
             }
         });

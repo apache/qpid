@@ -21,6 +21,7 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -112,6 +113,8 @@ public interface ExchangeImpl<T extends ExchangeImpl<T>> extends Exchange<T>, Ex
     boolean hasReferrers();
 
     BindingImpl getBinding(String bindingName, AMQQueue queue);
+
+    EventLogger getEventLogger();
 
 
     public interface BindingListener

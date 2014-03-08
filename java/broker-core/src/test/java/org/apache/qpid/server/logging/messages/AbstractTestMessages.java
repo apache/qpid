@@ -23,9 +23,9 @@ package org.apache.qpid.server.logging.messages;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -39,6 +39,7 @@ public abstract class AbstractTestMessages extends QpidTestCase
     protected LogMessage _logMessage = null;
     protected UnitTestMessageLogger _logger;
     protected LogSubject _logSubject = new TestBlankSubject();
+    private EventLogger _eventLogger;
 
     @Override
     public void setUp() throws Exception
@@ -47,7 +48,7 @@ public abstract class AbstractTestMessages extends QpidTestCase
 
         BrokerTestHelper.setUp();
         _logger = new UnitTestMessageLogger();
-        SystemLog.setRootMessageLogger(_logger);
+        _eventLogger = new EventLogger(_logger);
     }
 
     @Override
@@ -67,6 +68,10 @@ public abstract class AbstractTestMessages extends QpidTestCase
         _logger.clearLogMessages();
     }
 
+    public EventLogger getEventLogger()
+    {
+        return _eventLogger;
+    }
 
     protected List<Object> performLog()
     {
@@ -74,7 +79,7 @@ public abstract class AbstractTestMessages extends QpidTestCase
         {
             throw new NullPointerException("LogMessage has not been set");
         }
-        SystemLog.message(_logSubject, _logMessage);
+        _eventLogger.message(_logSubject, _logMessage);
 
         return _logger.getLogMessages();
     }

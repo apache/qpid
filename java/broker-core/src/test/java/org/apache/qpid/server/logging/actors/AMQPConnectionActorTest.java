@@ -23,7 +23,6 @@ package org.apache.qpid.server.logging.actors;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.SystemLog;
 
 import javax.security.auth.Subject;
 import java.security.PrivilegedAction;
@@ -108,7 +107,7 @@ public class AMQPConnectionActorTest extends BaseConnectionActorTestCase
             @Override
             public Object run()
             {
-                SystemLog.message(new LogSubject()
+                getEventLogger().message(new LogSubject()
                                   {
                                       public String toLogString()
                                       {

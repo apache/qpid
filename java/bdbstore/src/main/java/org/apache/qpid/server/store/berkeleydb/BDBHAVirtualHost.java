@@ -60,7 +60,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
 
         final MessageStoreLogSubject storeLogSubject =
                 new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
-        OperationalLoggingListener.listen(_messageStore, storeLogSubject);
+        OperationalLoggingListener.listen(_messageStore, storeLogSubject, getEventLogger());
 
         _messageStore.addEventListener(new BeforeActivationListener(), Event.BEFORE_ACTIVATE);
         _messageStore.addEventListener(new AfterActivationListener(), Event.AFTER_ACTIVATE);
@@ -71,10 +71,10 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         _messageStore.addEventListener(new AfterInitialisationListener(), Event.AFTER_INIT);
         _messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getExchangeRegistry(), getExchangeFactory());
+        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
         DurableConfigurationRecoverer configRecoverer =
                 new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
-                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()));
+                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()), getEventLogger());
 
         _messageStore.configureConfigStore(
                 virtualHost, configRecoverer

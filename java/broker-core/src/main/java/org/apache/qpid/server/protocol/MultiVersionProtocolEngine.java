@@ -34,7 +34,6 @@ import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.logging.SystemLog;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
@@ -326,7 +325,9 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                         }
                         if(equal)
                         {
-                            newDelegate = _creators[i].newProtocolEngine(_broker, _network, _port, _transport, _id);
+                            newDelegate = _creators[i].newProtocolEngine(_broker,
+                                                                         _network, _port, _transport, _id
+                                                                        );
                         }
                     }
 
@@ -440,7 +441,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         public void readerIdle()
         {
-            SystemLog.message(ConnectionMessages.IDLE_CLOSE());
+            _broker.getEventLogger().message(ConnectionMessages.IDLE_CLOSE());
             _network.close();
         }
 

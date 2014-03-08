@@ -26,11 +26,14 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
+
+import static org.mockito.Mockito.mock;
 
 public class DefaultAccessControlFactoryTest extends QpidTestCase
 {
@@ -38,7 +41,7 @@ public class DefaultAccessControlFactoryTest extends QpidTestCase
     {
         DefaultAccessControlFactory factory = new DefaultAccessControlFactory();
         Map<String, Object> attributes = new HashMap<String, Object>();
-        AccessControl acl = factory.createInstance(attributes);
+        AccessControl acl = factory.createInstance(attributes, new EventLogger());
         assertNull("ACL was created without a configuration file", acl);
     }
 
@@ -49,7 +52,7 @@ public class DefaultAccessControlFactoryTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
         attributes.put(FileAccessControlProviderConstants.PATH, aclFile.getAbsolutePath());
-        AccessControl acl = factory.createInstance(attributes);
+        AccessControl acl = factory.createInstance(attributes, new EventLogger());
         acl.open();
 
         assertNotNull("ACL was not created from acl file: " + aclFile.getAbsolutePath(), acl);
@@ -65,7 +68,7 @@ public class DefaultAccessControlFactoryTest extends QpidTestCase
         attributes.put(FileAccessControlProviderConstants.PATH, aclFile.getAbsolutePath());
         try
         {
-            AccessControl control = factory.createInstance(attributes);
+            AccessControl control = factory.createInstance(attributes, new EventLogger());
             control.open();
             fail("It should not be possible to create and initialise ACL with non existing file");
         }
