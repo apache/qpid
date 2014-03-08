@@ -244,7 +244,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         _cs.setMBeanServerForwarder(mbsf);
 
         // Install a ManagementLogonLogoffReporter so we can report as users logon/logoff
-        ManagementLogonLogoffReporter jmxManagementUserLogonLogoffReporter = new ManagementLogonLogoffReporter(_broker.getEventLogger(), usernameCachingRmiServer);
+        ManagementLogonLogoffReporter jmxManagementUserLogonLogoffReporter = new ManagementLogonLogoffReporter(_broker, usernameCachingRmiServer);
         _cs.addNotificationListener(jmxManagementUserLogonLogoffReporter, jmxManagementUserLogonLogoffReporter, null);
 
         // Install the usernameCachingRmiServer as a listener so it may cleanup as clients disconnect

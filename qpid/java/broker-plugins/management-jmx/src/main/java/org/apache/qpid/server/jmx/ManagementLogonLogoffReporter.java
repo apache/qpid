@@ -31,6 +31,7 @@ import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.jmx.JMXConnectionPrincipal;
@@ -42,12 +43,12 @@ import java.security.PrivilegedAction;
 public class ManagementLogonLogoffReporter implements  NotificationListener, NotificationFilter
 {
     private static final Logger LOGGER = Logger.getLogger(ManagementLogonLogoffReporter.class);
-    private final EventLogger _eventLogger;
+    private final EventLoggerProvider _eventLoggerProvider;
     private final UsernameAccessor _usernameAccessor;
 
-    public ManagementLogonLogoffReporter(EventLogger eventLogger, UsernameAccessor usernameAccessor)
+    public ManagementLogonLogoffReporter(EventLoggerProvider eventLoggerProvider, UsernameAccessor usernameAccessor)
     {
-        _eventLogger = eventLogger;
+        _eventLoggerProvider = eventLoggerProvider;
         _usernameAccessor = usernameAccessor;
     }
 
@@ -109,12 +110,12 @@ public class ManagementLogonLogoffReporter implements  NotificationListener, Not
             {
                 if (JMXConnectionNotification.OPENED.equals(type))
                 {
-                    _eventLogger.message(ManagementConsoleMessages.OPEN(username));
+                    getEventLogger().message(ManagementConsoleMessages.OPEN(username));
                 }
                 else if (JMXConnectionNotification.CLOSED.equals(type) ||
                          JMXConnectionNotification.FAILED.equals(type))
                 {
-                    _eventLogger.message(ManagementConsoleMessages.CLOSE(username));
+                    getEventLogger().message(ManagementConsoleMessages.CLOSE(username));
                 }
                 return null;
             }
@@ -133,4 +134,8 @@ public class ManagementLogonLogoffReporter implements  NotificationListener, Not
         return CLOSED.equals(type) || FAILED.equals(type) || OPENED.equals(type);
     }
 
+    public EventLogger getEventLogger()
+    {
+        return _eventLoggerProvider.getEventLogger();
+    }
 }

@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.security.AccessControl;
 
@@ -29,7 +30,7 @@ public interface AccessControlFactory extends Pluggable
 {
     public static final String ATTRIBUTE_TYPE = AccessControlProvider.TYPE;
 
-    AccessControl createInstance(Map<String, Object> attributes, final EventLogger eventLogger);
+    AccessControl createInstance(Map<String, Object> attributes, final EventLoggerProvider eventLogger);
 
     /**
      * Returns the access control provider type

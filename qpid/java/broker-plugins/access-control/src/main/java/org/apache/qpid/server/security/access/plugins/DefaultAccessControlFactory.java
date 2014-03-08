@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.plugin.AccessControlFactory;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.util.ResourceBundleLoader;
@@ -44,7 +45,7 @@ public class DefaultAccessControlFactory implements AccessControlFactory
             PATH
             ));
 
-    public AccessControl createInstance(Map<String, Object> attributes, final EventLogger eventLogger)
+    public AccessControl createInstance(Map<String, Object> attributes, final EventLoggerProvider eventLogger)
     {
         if(attributes == null || !ACL_FILE_PROVIDER_TYPE.equals(attributes.get(ATTRIBUTE_TYPE)))
         {

@@ -29,6 +29,7 @@ import javax.servlet.http.HttpSessionBindingListener;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
@@ -42,14 +43,14 @@ public class LoginLogoutReporter implements HttpSessionBindingListener
     private static final Logger LOGGER = Logger.getLogger(LoginLogoutReporter.class);
     private final Subject _subject;
     private final Principal _principal;
-    private final EventLogger _eventLogger;
+    private final EventLoggerProvider _eventLoggerProvider;
 
-    public LoginLogoutReporter(Subject subject, EventLogger eventLogger)
+    public LoginLogoutReporter(Subject subject, EventLoggerProvider eventLoggerProvider)
     {
         super();
         _subject = subject;
         _principal = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(_subject);
-        _eventLogger = eventLogger;
+        _eventLoggerProvider = eventLoggerProvider;
     }
 
     @Override
@@ -76,7 +77,7 @@ public class LoginLogoutReporter implements HttpSessionBindingListener
             @Override
             public Void run()
             {
-                _eventLogger.message(ManagementConsoleMessages.OPEN(_principal.getName()));
+                getEventLogger().message(ManagementConsoleMessages.OPEN(_principal.getName()));
                 return null;
             }
         });
@@ -94,10 +95,14 @@ public class LoginLogoutReporter implements HttpSessionBindingListener
             @Override
             public Void run()
             {
-                _eventLogger.message(ManagementConsoleMessages.CLOSE(_principal.getName()));
+                getEventLogger().message(ManagementConsoleMessages.CLOSE(_principal.getName()));
                 return null;
             }
         });
     }
 
+    public EventLogger getEventLogger()
+    {
+        return _eventLoggerProvider.getEventLogger();
+    }
 }

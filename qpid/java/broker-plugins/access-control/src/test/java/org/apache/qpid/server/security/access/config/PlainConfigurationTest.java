@@ -28,6 +28,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.access.ObjectType;
@@ -57,7 +58,7 @@ public class PlainConfigurationTest extends TestCase
         aclWriter.close();
 
         // Load ruleset
-        PlainConfiguration configFile = new PlainConfiguration(acl, new EventLogger());
+        PlainConfiguration configFile = new PlainConfiguration(acl, mock(EventLoggerProvider.class));
         configFile.load();
         return configFile;
     }
@@ -67,7 +68,7 @@ public class PlainConfigurationTest extends TestCase
         try
         {
             // Load ruleset
-            ConfigurationFile configFile = new PlainConfiguration(new File("doesnotexist"), new EventLogger());
+            ConfigurationFile configFile = new PlainConfiguration(new File("doesnotexist"), mock(EventLoggerProvider.class));
             configFile.load();
 
             fail("fail");

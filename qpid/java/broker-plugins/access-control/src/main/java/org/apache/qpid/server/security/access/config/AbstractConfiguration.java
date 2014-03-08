@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.access.config;
 
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 
 import java.io.File;
 
@@ -28,9 +29,9 @@ public abstract class AbstractConfiguration implements ConfigurationFile
 {
     private File _file;
     private RuleSet _config;
-    private final EventLogger _eventLogger;
+    private final EventLoggerProvider _eventLogger;
 
-    public AbstractConfiguration(File file, final EventLogger eventLogger)
+    public AbstractConfiguration(File file, final EventLoggerProvider eventLogger)
     {
         _file = file;
         _eventLogger = eventLogger;

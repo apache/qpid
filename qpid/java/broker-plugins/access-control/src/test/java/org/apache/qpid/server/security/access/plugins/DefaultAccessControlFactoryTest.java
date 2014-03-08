@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
@@ -41,7 +42,7 @@ public class DefaultAccessControlFactoryTest extends QpidTestCase
     {
         DefaultAccessControlFactory factory = new DefaultAccessControlFactory();
         Map<String, Object> attributes = new HashMap<String, Object>();
-        AccessControl acl = factory.createInstance(attributes, new EventLogger());
+        AccessControl acl = factory.createInstance(attributes, mock(EventLoggerProvider.class));
         assertNull("ACL was created without a configuration file", acl);
     }
 
@@ -52,7 +53,7 @@ public class DefaultAccessControlFactoryTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
         attributes.put(FileAccessControlProviderConstants.PATH, aclFile.getAbsolutePath());
-        AccessControl acl = factory.createInstance(attributes, new EventLogger());
+        AccessControl acl = factory.createInstance(attributes, mock(EventLoggerProvider.class));
         acl.open();
 
         assertNotNull("ACL was not created from acl file: " + aclFile.getAbsolutePath(), acl);
@@ -68,7 +69,7 @@ public class DefaultAccessControlFactoryTest extends QpidTestCase
         attributes.put(FileAccessControlProviderConstants.PATH, aclFile.getAbsolutePath());
         try
         {
-            AccessControl control = factory.createInstance(attributes, new EventLogger());
+            AccessControl control = factory.createInstance(attributes, mock(EventLoggerProvider.class));
             control.open();
             fail("It should not be possible to create and initialise ACL with non existing file");
         }

@@ -92,7 +92,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private static final int CHANNEL_CACHE_SIZE = 0xff;
     private static final int REUSABLE_BYTE_BUFFER_CAPACITY = 65 * 1024;
     private final Port _port;
-    private EventLogger _eventLogger;
 
     private AMQShortString _contextKey;
 
@@ -178,7 +177,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _broker = broker;
         _port = port;
         _transport = transport;
-        _eventLogger = broker.getEventLogger();
         _maxNoOfChannels = (Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT);
         _receivedLock = new ReentrantLock();
         _stateManager = new AMQStateManager(broker, this);
@@ -1576,7 +1574,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         }
         else
         {
-            return _eventLogger;
+            return _broker.getEventLogger();
         }
     }
 }

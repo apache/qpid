@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -51,7 +52,9 @@ public class LoginLogoutReporterTest extends TestCase
         when(_logger.isEnabled()).thenReturn(true);
         when(_logger.isMessageEnabled(anyString())).thenReturn(true);
         EventLogger eventLogger = new EventLogger(_logger);
-        _loginLogoutReport = new LoginLogoutReporter(_subject, eventLogger);
+        EventLoggerProvider provider = mock(EventLoggerProvider.class);
+        when(provider.getEventLogger()).thenReturn(eventLogger);
+        _loginLogoutReport = new LoginLogoutReporter(_subject, provider);
     }
 
     public void testLoginLogged()

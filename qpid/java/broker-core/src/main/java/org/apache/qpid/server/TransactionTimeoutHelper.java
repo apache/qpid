@@ -19,6 +19,7 @@
 package org.apache.qpid.server;
 
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
@@ -32,15 +33,15 @@ public class TransactionTimeoutHelper
     private final LogSubject _logSubject;
 
     private final CloseAction _closeAction;
-    private final EventLogger _eventLogger;
+    private final EventLoggerProvider _eventLoggerProvider;
 
     public TransactionTimeoutHelper(final LogSubject logSubject,
                                     final CloseAction closeAction,
-                                    final EventLogger eventLogger)
+                                    final EventLoggerProvider eventLoggerProvider)
     {
         _logSubject = logSubject;
         _closeAction = closeAction;
-        _eventLogger = eventLogger;
+        _eventLoggerProvider = eventLoggerProvider;
     }
 
     public void checkIdleOrOpenTimes(ServerTransaction transaction, long openWarn, long openClose, long idleWarn, long idleClose)
@@ -76,7 +77,7 @@ public class TransactionTimeoutHelper
     {
         if (isTimedOut(timeSoFar, warnTimeout))
         {
-            _eventLogger.message(_logSubject, warnMessage);
+            getEventLogger().message(_logSubject, warnMessage);
         }
 
         if(isTimedOut(timeSoFar, closeTimeout))
@@ -98,6 +99,11 @@ public class TransactionTimeoutHelper
     public interface CloseAction
     {
         void doTimeoutAction(String reason);
+    }
+
+    public EventLogger getEventLogger()
+    {
+        return _eventLoggerProvider.getEventLogger();
     }
 
 }

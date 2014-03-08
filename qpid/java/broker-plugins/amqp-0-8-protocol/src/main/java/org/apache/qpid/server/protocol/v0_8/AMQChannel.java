@@ -208,7 +208,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     throw new ConnectionScopedRuntimeException(e);
                 }
             }
-        }, getVirtualHost().getEventLogger());
+        }, getVirtualHost());
 
         Subject.doAs(_subject, new PrivilegedAction<Object>()
         {

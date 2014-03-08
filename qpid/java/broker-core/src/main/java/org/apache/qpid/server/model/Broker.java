@@ -24,6 +24,7 @@ import java.net.SocketAddress;
 import java.util.Collection;
 
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -32,7 +33,7 @@ import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 @ManagedObject
-public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
+public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventLoggerProvider
 {
 
     String BUILD_VERSION = "buildVersion";
