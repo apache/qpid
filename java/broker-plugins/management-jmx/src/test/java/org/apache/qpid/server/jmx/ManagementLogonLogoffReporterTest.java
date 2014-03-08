@@ -31,18 +31,22 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 
 import javax.management.remote.JMXConnectionNotification;
+import javax.security.auth.Subject;
 
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.MessageLogger;
 
 import junit.framework.TestCase;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.mockito.ArgumentMatcher;
+
+import java.util.Collections;
 
 public class ManagementLogonLogoffReporterTest extends TestCase
 {
     private static final String TEST_JMX_UNIQUE_CONNECTION_ID = "jmxconnectionid1 jmxuser,group";
-    private static final String TEST_USER = "jmxuser";
+    private static final Subject TEST_USER = new Subject(false, Collections.singleton(new AuthenticatedPrincipal("jmxuser")), Collections.emptySet(), Collections.emptySet());
 
     private ManagementLogonLogoffReporter _reporter;
     private UsernameAccessor _usernameAccessor;
@@ -62,7 +66,7 @@ public class ManagementLogonLogoffReporterTest extends TestCase
 
     public void testOpenedNotification()
     {
-        when(_usernameAccessor.getUsernameForConnectionId(TEST_JMX_UNIQUE_CONNECTION_ID)).thenReturn(TEST_USER);
+        when(_usernameAccessor.getSubjectConnectionId(TEST_JMX_UNIQUE_CONNECTION_ID)).thenReturn(TEST_USER);
         JMXConnectionNotification openNotification = createMockNotification(TEST_JMX_UNIQUE_CONNECTION_ID, OPENED);
 
         _reporter.handleNotification(openNotification, null);
@@ -86,7 +90,7 @@ public class ManagementLogonLogoffReporterTest extends TestCase
 
     public void testClosedNotification()
     {
-        when(_usernameAccessor.getUsernameForConnectionId(TEST_JMX_UNIQUE_CONNECTION_ID)).thenReturn(TEST_USER);
+        when(_usernameAccessor.getSubjectConnectionId(TEST_JMX_UNIQUE_CONNECTION_ID)).thenReturn(TEST_USER);
         JMXConnectionNotification closeNotification = createMockNotification(TEST_JMX_UNIQUE_CONNECTION_ID, CLOSED);
 
         _reporter.handleNotification(closeNotification, null);

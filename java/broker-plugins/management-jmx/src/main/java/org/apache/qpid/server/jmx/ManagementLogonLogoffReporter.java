@@ -38,7 +38,6 @@ import org.apache.qpid.server.security.auth.jmx.JMXConnectionPrincipal;
 import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
 import java.security.PrivilegedAction;
-import java.util.Collections;
 
 public class ManagementLogonLogoffReporter implements  NotificationListener, NotificationFilter
 {
@@ -63,31 +62,45 @@ public class ManagementLogonLogoffReporter implements  NotificationListener, Not
             LOGGER.debug("Notification connectionId : " + connectionId + " type : " + type);
         }
 
-        String user = _usernameAccessor.getUsernameForConnectionId(connectionId);
-
-        // If user is still null, fallback to an unordered list of Principals from the connection id.
-        if (user == null)
+        Subject subject = _usernameAccessor.getSubjectConnectionId(connectionId);
+        if(subject == null)
         {
+            subject = new Subject();
+        }
+        AuthenticatedPrincipal authenticatedPrincipal =
+                AuthenticatedPrincipal.getOptionalAuthenticatedPrincipalFromSubject(subject);
+
+        String user;
+
+        if(authenticatedPrincipal != null)
+        {
+            user = authenticatedPrincipal.getName();
+        }
+        else
+        {
+            // If user is still null, fallback to an unordered list of Principals from the connection id.
             final String[] splitConnectionId = connectionId.split(" ");
             user = splitConnectionId[1];
         }
-        Subject originalSubject = new Subject(false, Collections.singleton(new AuthenticatedPrincipal(user)), Collections.emptySet(), Collections.emptySet());
-        Subject subject;
 
-        try
+
+        if(subject.getPrincipals(JMXConnectionPrincipal.class).isEmpty())
         {
-            String clientHost = RemoteServer.getClientHost();
-            subject = new Subject(false,
-                                  originalSubject.getPrincipals(),
-                                  originalSubject.getPublicCredentials(),
-                                  originalSubject.getPrivateCredentials());
-            subject.getPrincipals().add(new JMXConnectionPrincipal(clientHost));
-            subject.setReadOnly();
+            try
+            {
+                String clientHost = RemoteServer.getClientHost();
+                subject = new Subject(false,
+                                      subject.getPrincipals(),
+                                      subject.getPublicCredentials(),
+                                      subject.getPrivateCredentials());
+                subject.getPrincipals().add(new JMXConnectionPrincipal(clientHost));
+                subject.setReadOnly();
+            }
+            catch(ServerNotActiveException e)
+            {
+            }
         }
-        catch(ServerNotActiveException e)
-        {
-            subject = originalSubject;
-        }
+
         final String username = user;
         Subject.doAs(subject, new PrivilegedAction<Object>()
         {

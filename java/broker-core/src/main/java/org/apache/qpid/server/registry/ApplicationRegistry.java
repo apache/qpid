@@ -151,10 +151,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         {
             _reset = reset;
             _logger = logger;
-            _subject = new Subject(false, SecurityManager.SYSTEM.getPrincipals(), Collections.emptySet(), Collections.emptySet());
-            _subject.getPrincipals().add(new TaskPrincipal("Statistics"));
-            _subject.setReadOnly();
-
+            _subject = SecurityManager.getSystemTaskSubject("Statistics");
         }
 
         public void run()

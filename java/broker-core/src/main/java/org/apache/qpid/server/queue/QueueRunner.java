@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.TaskPrincipal;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.TransportException;
@@ -66,10 +68,7 @@ public class QueueRunner implements Runnable
     {
         if(_scheduled.compareAndSet(SCHEDULED,RUNNING))
         {
-            Subject subject = new Subject(false, org.apache.qpid.server.security.SecurityManager.SYSTEM.getPrincipals(), Collections
-                    .emptySet(), Collections.emptySet());
-            subject.getPrincipals().add(new TaskPrincipal("Queue Delivery"));
-            Subject.doAs(subject, new PrivilegedAction<Object>()
+            Subject.doAs(SecurityManager.getSystemTaskSubject("Queue Delivery"), new PrivilegedAction<Object>()
             {
                 @Override
                 public Object run()

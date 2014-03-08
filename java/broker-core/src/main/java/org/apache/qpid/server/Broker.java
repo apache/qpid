@@ -86,12 +86,9 @@ public class Broker
 
     public void startup(final BrokerOptions options) throws Exception
     {
-        Subject subject = SecurityManager.SYSTEM;
-        subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
-        subject.getPrincipals().add(new TaskPrincipal("Broker"));
         _eventLogger = new EventLogger(new SystemOutMessageLogger());
 
-        Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
+        Subject.doAs(SecurityManager.getSystemTaskSubject("Broker"), new PrivilegedExceptionAction<Object>()
         {
             @Override
             public Object run() throws Exception
@@ -282,11 +279,7 @@ public class Broker
     {
         public void run()
         {
-
-            Subject subject = SecurityManager.SYSTEM;
-            subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
-            subject.getPrincipals().add(new TaskPrincipal("Shutdown"));
-            Subject.doAs(subject, new PrivilegedAction<Object>()
+            Subject.doAs(SecurityManager.getSystemTaskSubject("Shutdown"), new PrivilegedAction<Object>()
             {
                 @Override
                 public Object run()

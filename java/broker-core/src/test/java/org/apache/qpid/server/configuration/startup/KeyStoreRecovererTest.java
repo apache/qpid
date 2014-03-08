@@ -63,7 +63,7 @@ public class KeyStoreRecovererTest extends TestCase
         assertEquals(id, keyStore.getId());
 
         //verify we can retrieve the actual password using the method
-        Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<Object>()
+        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
         {
             @Override
             public Object run()

@@ -714,7 +714,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _state = State.STOPPED;
 
-        _eventLogger.message(VirtualHostMessages.CLOSED());
+        _eventLogger.message(VirtualHostMessages.CLOSED(getName()));
     }
 
     protected void closeStorage()
@@ -921,7 +921,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     {
         if (state == State.ERRORED)
         {
-            _eventLogger.message(VirtualHostMessages.ERRORED());
+            _eventLogger.message(VirtualHostMessages.ERRORED(getName()));
         }
     }
 

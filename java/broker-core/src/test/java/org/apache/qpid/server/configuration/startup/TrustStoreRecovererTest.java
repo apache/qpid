@@ -59,7 +59,7 @@ public class TrustStoreRecovererTest extends QpidTestCase
         assertNotNull("Trust store configured object is not created", trustStore);
         assertEquals(id, trustStore.getId());
 
-        Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<Object>()
+        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
         {
             @Override
             public Object run()

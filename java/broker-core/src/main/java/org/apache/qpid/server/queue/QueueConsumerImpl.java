@@ -92,7 +92,7 @@ class QueueConsumerImpl
     {
         public void stateChanged(QueueConsumerImpl sub, State oldState, State newState)
         {
-            _eventLogger.message(SubscriptionMessages.STATE(newState.toString()));
+            _eventLogger.message(QueueConsumerImpl.this, SubscriptionMessages.STATE(newState.toString()));
         }
     };
     @ManagedAttributeField

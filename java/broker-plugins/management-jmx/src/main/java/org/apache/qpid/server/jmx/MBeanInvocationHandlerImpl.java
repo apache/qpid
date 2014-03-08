@@ -222,11 +222,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         {
             try
             {
-                Subject subject = Subject.getSubject(AccessController.getContext());
-                subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
-                subject.getPrincipals().addAll(SecurityManager.SYSTEM.getPrincipals());
-
-                return Subject.doAs(subject, new PrivilegedExceptionAction<Object>()
+                return Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedExceptionAction<Object>()
                 {
                     @Override
                     public Object run() throws IllegalAccessException, InvocationTargetException

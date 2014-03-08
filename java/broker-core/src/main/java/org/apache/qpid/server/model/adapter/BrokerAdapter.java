@@ -41,7 +41,6 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.plugin.PreferencesProviderFactory;
@@ -477,7 +476,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
 
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
-        Subject.doAs(SecurityManager.SYSTEM, new PrivilegedAction<Object>()
+        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
                             {
                                 @Override
                                 public Object run()

@@ -40,10 +40,11 @@ public class VirtualHostMessagesTest extends AbstractTestMessages
 
     public void testVirtualhostClosed()
     {
-        _logMessage = VirtualHostMessages.CLOSED();
+        String name = "test";
+        _logMessage = VirtualHostMessages.CLOSED(name);
         List<Object> log = performLog();
 
-        String[] expected = {"Closed"};
+        String[] expected = {"Closed :", name};
 
         validateLogMessage(log, "VHT-1002", expected);
     }
