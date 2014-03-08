@@ -42,6 +42,7 @@ import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
@@ -54,20 +55,20 @@ import org.apache.qpid.server.util.MapValueConverter;
  * This class is a Qpid Java Broker Plugin which follows the Plugin API added in Qpid 0.22 it implements 
  * org.apache.qpid.server.model.Plugin and extends org.apache.qpid.server.model.adapter.AbstractPluginAdapter.
  * <p>
- * This Plugin provides access to the Java broker Management Objects via QMF2 thus allowing the Java broker to
- * be managed and monitored in the same way as the C++ broker.
+ * This Plugin provides access to the Java Broker Management Objects via QMF2 thus allowing the Java Broker to
+ * be managed and monitored in the same way as the C++ Broker.
  * <p>
- * The intention is for the Java broker QmfManagementPlugin to conform to the same Management Schema as the C++
- * broker (e.g. as specified in <qpid>/specs/management-schema.xml) in order to provide maximum cohesion between
- * the to broker implementations, however that's not entirely possible given differences between the underlying
- * Management models. The ultimate aim is to align the Management models of the two Qpid brokers and migrate
+ * The intention is for the Java Broker QmfManagementPlugin to conform to the same Management Schema as the C++
+ * Broker (e.g. as specified in the management-schema.xml) in order to provide maximum cohesion between the
+ * two Broker implementations, however that's not entirely possible given differences between the underlying
+ * Management Models. The ultimate aim is to align the Management Models of the two Qpid Brokers and migrate
  * to the AMQP 1.0 Management architecture when it becomes available.
  * <p>
  * This Plugin attempts to map properties from the Java org.apache.qpid.server.model.* classes to equivalent
- * properties and statistics in the C++ broker's Management Schema rather than expose them "natively", this is
- * in order to try and maximise alignment between the two implementations and to try to allow the Java broker
- * to be managed by the Command Line tools used with the C++ broker such as qpid-config etc. it's also to
- * enable the Java broker to be accessed via the QMF2 REST API and GUI.
+ * properties and statistics in the C++ Broker's Management Schema rather than expose them "natively", this is
+ * in order to try and maximise alignment between the two implementations and to try to allow the Java Broker
+ * to be managed by the Command Line tools used with the C++ Broker such as qpid-config etc. it's also to
+ * enable the Java Broker to be accessed via the QMF2 REST API and GUI.
  * <p>
  * This class only bootstraps the ManagementPlugin, the actual business logic is run from QmfManagementAgent.
  * It's worth also mentioning that this Plugin actually establishes an AMQP Connection to the Broker via JMS.
@@ -88,7 +89,7 @@ import org.apache.qpid.server.util.MapValueConverter;
  * </pre>
  * @author Fraser Adams
  */
-public class QmfManagementPlugin extends AbstractPluginAdapter
+public class QmfManagementPlugin extends AbstractPluginAdapter<QmfManagementPlugin>
 {
     private static final Logger _log = LoggerFactory.getLogger(QmfManagementPlugin.class);
 
@@ -107,30 +108,24 @@ public class QmfManagementPlugin extends AbstractPluginAdapter
     public static final String DEFAULT_CONNECTION_URL = "amqp://guest:guest@/?brokerlist='tcp://0.0.0.0:5672'";
 
     @SuppressWarnings("serial")
-    private static final Collection<String> AVAILABLE_ATTRIBUTES = Collections.unmodifiableCollection(
-        new HashSet<String>(Plugin.AVAILABLE_ATTRIBUTES){{
-            add(NAME);
-            add(CONNECTION_URL);
-            add(PluginFactory.PLUGIN_TYPE);
-    }});
-
-    @SuppressWarnings("serial")
-    private static final Map<String, Object> DEFAULTS = new HashMap<String, Object>(){{
+    private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>()
+    {{
         put(NAME, DEFAULT_NAME);
         put(CONNECTION_URL, DEFAULT_CONNECTION_URL);
         put(PluginFactory.PLUGIN_TYPE, PLUGIN_TYPE);
-    }};
+    }});
 
     @SuppressWarnings("serial")
-    private static final Map<String, Type> ATTRIBUTE_TYPES = new HashMap<String, Type>(){{
+    private static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>()
+    {{
         put(NAME, String.class);
         put(CONNECTION_URL, String.class);
         put(PluginFactory.PLUGIN_TYPE, String.class);
-    }};
+    }});
 
     /************************************ End of Static initialiser *************************************/
 
-    private final Broker _broker;             // Passed in by Plugin bootstrapping.
+    private final Broker<?> _broker;          // Passed in by Plugin bootstrapping.
     private final String _defaultVirtualHost; // Pulled from the broker attributes.
     private final String _connectionURL;      // Pulled from the Plugin config.
     private QmfManagementAgent _agent;
@@ -147,7 +142,7 @@ public class QmfManagementPlugin extends AbstractPluginAdapter
         addParent(Broker.class, broker);
         _broker = broker;
         _defaultVirtualHost = (String)broker.getAttribute("defaultVirtualHost");
-        _connectionURL = (String)getAttribute("connectionURL");
+        _connectionURL = (String)getAttribute(CONNECTION_URL);
     }
 
     /**
@@ -201,7 +196,7 @@ public class QmfManagementPlugin extends AbstractPluginAdapter
             // Iterate through the Virtual Hosts looking for the default Virtual Host. When we find the default
             // we create the QMF exchanges then construct the QmfManagementAgent passing it the ConnectionURL.
             boolean foundDefaultVirtualHost = false;
-            for (VirtualHost vhost : _broker.getVirtualHosts())
+            for (VirtualHost<?> vhost : _broker.getVirtualHosts())
             {
                 if (vhost.getName().equals(_defaultVirtualHost))
                 {
@@ -228,13 +223,13 @@ public class QmfManagementPlugin extends AbstractPluginAdapter
                     if (needDefaultDirect)
                     {
                         vhost.createExchange("qmf.default.direct", State.ACTIVE, true,
-                                             LifetimePolicy.PERMANENT, 0l, "direct", attributes);
+                                             LifetimePolicy.PERMANENT, "direct", attributes);
                     }
 
                     if (needDefaultTopic)
                     {
                         vhost.createExchange("qmf.default.topic", State.ACTIVE, true,
-                                             LifetimePolicy.PERMANENT, 0l, "topic", attributes);
+                                             LifetimePolicy.PERMANENT, "topic", attributes);
                     }
 
                     // Now create the *real* Agent which maps Broker Management Objects to QmdAgentData Objects.
@@ -277,16 +272,6 @@ public class QmfManagementPlugin extends AbstractPluginAdapter
     }
 
     /**
-     * Get the name of this Plugin.
-     * @return the Plugin name (default is "qmf2Management").
-     */
-    @Override // From org.apache.qpid.server.model.ConfiguredObject
-    public String getName()
-    {
-        return (String)getAttribute(NAME);
-    }
-
-    /**
      * Accessor to retrieve the names of the available attributes. It is important to provide this overridden
      * method because the Constructor uses this information when populating the underlying AbstractPlugin
      * information. If we don't provide this override method getAttribute(name) will return the default values.
@@ -295,6 +280,26 @@ public class QmfManagementPlugin extends AbstractPluginAdapter
     @Override // From org.apache.qpid.server.model.adapter.AbstractPluginAdapter
     public Collection<String> getAttributeNames()
     {
-        return AVAILABLE_ATTRIBUTES;
+        return getAttributeNames(QmfManagementPlugin.class);
+    }
+
+    /**
+     * Accessor to retrieve the Plugin Type.
+     * @return the Plugin Type e.g. the String "MANAGEMENT-QMF2".
+     */
+    @Override // From org.apache.qpid.server.model.Plugin
+    public String getPluginType()
+    {
+        return PLUGIN_TYPE;
+    }
+
+    /**
+     * Accessor to retrieve the connectionURL attribute.
+     * @return the JMS connectionURL of the Plugin.
+     */
+    @ManagedAttribute
+    public String getConnectionURL()
+    {
+        return (String)getAttribute(CONNECTION_URL);
     }
 }

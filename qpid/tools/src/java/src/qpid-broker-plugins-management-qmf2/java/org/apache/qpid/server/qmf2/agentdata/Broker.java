@@ -90,7 +90,7 @@ public class Broker extends QmfAgentData
         //_schema.addProperty(new SchemaProperty("whatHappened", QmfType.TYPE_STRING));
     }
 
-    private final org.apache.qpid.server.model.Broker _broker; // Passed in by Plugin bootstrapping.
+    private final org.apache.qpid.server.model.Broker<?> _broker; // Passed in by Plugin bootstrapping.
     private final String _defaultVirtualHost; // Pulled from the broker attributes.
 
     /**
@@ -113,9 +113,9 @@ public class Broker extends QmfAgentData
     private class NameParser
     {
         private String _vhostName = _defaultVirtualHost;
-        private VirtualHost _vhost = null;
+        private VirtualHost<?> _vhost = null;
         private String _exchangeName = "";
-        private Exchange _exchange = null;
+        private Exchange<?> _exchange = null;
         private String _queueName = "";
         private Queue _queue = null;
         private String _bindingKey = "";
@@ -346,6 +346,7 @@ public class Broker extends QmfAgentData
     public Broker(final org.apache.qpid.server.model.Broker broker)
     {
         super(getSchema());
+
         _broker = broker;
         _defaultVirtualHost = (String)broker.getAttribute("defaultVirtualHost");
         int amqpPort = 5672; // Default AMQP Port.
@@ -355,7 +356,7 @@ public class Broker extends QmfAgentData
         // it might be good to return more detailed info, but for QMF the "port" property description for the
         // Broker Object says "TCP Port for AMQP Service" so doing anything fancier might break consumers.
         // TODO The C++ and Java Brokers should really return consistent information.
-        for (Port port : _broker.getPorts())
+        for (Port<?> port : _broker.getPorts())
         {
             boolean isAMQP = false;
             boolean isTCP  = false;
@@ -472,6 +473,7 @@ public class Broker extends QmfAgentData
      * @param methodName the name of the QMF method being invoked.
      * @param inArgs a Map of input arguments wrapped in a QmfData Object.
      */
+    @SuppressWarnings("unchecked")
     public void invokeMethod(Agent agent, Handle handle, String methodName, QmfData inArgs)
     {
         if (methodName.equals("create") || methodName.equals("delete"))
@@ -548,7 +550,7 @@ System.out.println("properties = " + properties);
                             // Note that for Qpid 0.20 the "qpid.msg_sequence=1" and "qpid.ive=1" properties are
                             // not suppored, indeed no exchange properties seem to be supported yet.
                             vhost.createExchange(nameParser.getExchangeName(), State.ACTIVE, durable,
-                                                 LifetimePolicy.PERMANENT, 0l, exchangeType, properties);
+                                                 LifetimePolicy.PERMANENT, exchangeType, properties);
                             if (alternateExchange != null)
                             {
                                 // TODO set Alternate Exchange. There doesn't seem to be a way to do this yet!!!

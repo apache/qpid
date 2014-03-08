@@ -37,8 +37,6 @@ import org.apache.qpid.qmf2.common.ObjectId;
 import org.apache.qpid.qmf2.common.SchemaObjectClass;
 //import org.apache.qpid.qmf2.common.SchemaProperty;
 
-import org.apache.qpid.server.model.Statistics;
-
 /**
  * This class provides a concrete implementation of QmfAgentData for the Session Management Object.
  * In general it's possible to use QmfAgentData without sub-classing as it's really a "bean" style class
@@ -89,7 +87,7 @@ public class Session extends QmfAgentData
     public Session(final org.apache.qpid.server.model.Session session, final ObjectId connectionRef)
     {
         super(getSchema());
-        _session = session; // Will eventually be used in mapEncode() to retrieve statistics.
+        _session = session;
 
         setValue("name", session.getAttribute("id")); // Use ID to be consistent with C++ Broker.
         setValue("channelId", session.getName());     // The Java Broker name uses the channelId.
@@ -107,9 +105,9 @@ public class Session extends QmfAgentData
     public Map<String, Object> mapEncode()
     {
         // Statistics
-
-        Statistics stats = _session.getStatistics();
-        setValue("unackedMessages", stats.getStatistic("unacknowledgedMessages"));
+        setValue("unackedMessages", _session.getUnacknowledgedMessages());
+        setValue("TxnStarts", _session.getLocalTransactionBegins());
+        setValue("TxnRejects", _session.getLocalTransactionRollbacks());
 
         update(); // TODO Only Update if statistics have changes.
 

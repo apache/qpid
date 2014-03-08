@@ -44,7 +44,6 @@ import org.apache.qpid.qmf2.common.SchemaObjectClass;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Statistics;
 
 /**
  * This class provides a concrete implementation of QmfAgentData for the Queue Management Object.
@@ -258,39 +257,38 @@ public class Queue extends QmfAgentData
         }
 
         // Statistics
-        Statistics stats = _queue.getStatistics();
-        setValue("msgTotalEnqueues", stats.getStatistic("totalEnqueuedMessages"));
-        setValue("msgTotalDequeues", stats.getStatistic("totalDequeuedMessages"));
-        // msgTxnEnqueues not implemented in Qpid 0.20
-        // msgTxnDequeues not implemented in Qpid 0.20
-        setValue("msgPersistEnqueues", stats.getStatistic("persistentEnqueuedMessages"));
-        setValue("msgPersistDequeues", stats.getStatistic("persistentDequeuedMessages"));
-        setValue("msgDepth", stats.getStatistic("queueDepthMessages"));
-        setValue("byteDepth", stats.getStatistic("queueDepthBytes"));
-        setValue("byteTotalEnqueues", stats.getStatistic("totalEnqueuedBytes"));
-        setValue("byteTotalDequeues", stats.getStatistic("totalDequeuedBytes"));
-        // byteTxnEnqueues not implemented in Qpid 0.20
-        // byteTxnDequeues not implemented in Qpid 0.20
-        setValue("bytePersistEnqueues", stats.getStatistic("persistentEnqueuedBytes"));
-        setValue("bytePersistDequeues", stats.getStatistic("persistentDequeuedBytes"));
+        setValue("msgTotalEnqueues", _queue.getTotalEnqueuedMessages());
+        setValue("msgTotalDequeues", _queue.getTotalDequeuedMessages());
+        // msgTxnEnqueues not implemented in Java Broker
+        // msgTxnDequeues not implemented in Java Broker
+        setValue("msgPersistEnqueues", _queue.getPersistentEnqueuedMessages());
+        setValue("msgPersistDequeues", _queue.getPersistentDequeuedMessages());
+        setValue("msgDepth", _queue.getQueueDepthMessages());
+        setValue("byteDepth", _queue.getQueueDepthBytes());
+        setValue("byteTotalEnqueues", _queue.getTotalEnqueuedBytes());
+        setValue("byteTotalDequeues", _queue.getTotalDequeuedBytes());
+        // byteTxnEnqueues not implemented in Java Broker
+        // byteTxnDequeues not implemented in Java Broker
+        setValue("bytePersistEnqueues", _queue.getPersistentEnqueuedBytes());
+        setValue("bytePersistDequeues", _queue.getPersistentDequeuedBytes());
 
-        // Flow-to-disk Statistics not implemented in Qpid 0.20
-        // releases & acquires not implemented in Qpid 0.20
-        // discardsTtl (discardsTtlMessages) not implemented in Qpid 0.20
-        // discardsRing not implemented in Qpid 0.20
-        // discardsLvq not implemented in Qpid 0.20
-        // discardsOverflow not implemented in Qpid 0.20
-        // discardsSubscriber not implemented in Qpid 0.20
-        // discardsPurge not implemented in Qpid 0.20
-        // reroutes not implemented in Qpid 0.20
+        // Flow-to-disk Statistics not implemented in Java Broker
+        // releases & acquires not implemented in Java Broker
+        // discardsTtl (discardsTtlMessages) not implemented in Java Broker
+        // discardsRing not implemented in Java Broker
+        // discardsLvq not implemented in Java Broker
+        // discardsOverflow not implemented in Java Broker
+        // discardsSubscriber not implemented in Java Broker
+        // discardsPurge not implemented in Java Broker
+        // reroutes not implemented in Java Broker
 
-        setValue("consumerCount", stats.getStatistic("consumerCount"));
-        setValue("bindingCount", stats.getStatistic("bindingCount"));
-        setValue("unackedMessages", stats.getStatistic("unacknowledgedMessages"));
+        setValue("consumerCount", _queue.getConsumerCount());
+        setValue("bindingCount", _queue.getBindingCount());
+        setValue("unackedMessages", _queue.getUnacknowledgedMessages());
 
         setValue("messageLatency", "Not yet implemented");
-        // flowStopped not implemented in Qpid 0.20
-        // flowStoppedCount not implemented in Qpid 0.20
+        // flowStopped not implemented in Java Broker
+        // flowStoppedCount not implemented in Java Broker
 
         update(); // TODO only update if statistics have actually changed.
         return super.mapEncode();

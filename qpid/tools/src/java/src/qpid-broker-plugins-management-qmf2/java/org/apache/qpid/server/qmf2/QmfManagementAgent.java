@@ -62,18 +62,18 @@ import org.apache.qpid.server.model.VirtualHost;
 
 /**
  * This class implements a QMF2 Agent providing access to the Java broker Management Objects via QMF2 thus
- * allowing the Java broker to be managed in the same way to the C++ broker.
+ * allowing the Java Broker to be managed in the same way to the C++ Broker.
  * <p>
- * The intention is for the QmfManagementAgent to conform to the same Management Schema as the C++ broker
- * (e.g. as specified in <qpid>/specs/management-schema.xml) in order to provide maximum cohesion between
- * the to broker implementations, however that's not entirely possible given differences between the underlying
- * Management models.
+ * The intention is for the QmfManagementAgent to conform to the same Management Schema as the C++ Broker
+ * (e.g. as specified in management-schema.xml) in order to provide maximum cohesion between the
+ * two Broker implementations, however that's not entirely possible given differences between the underlying
+ * Management Models.
  * <p>
  * This Plugin attempts to map properties from the Java org.apache.qpid.server.model.* classes to equivalent
  * properties and statistics in the C++ broker's Management Schema rather than expose them "natively", this is
- * in order to try and maximise alignment between the two implementations and to try to allow the Java broker
- * to be managed by the Command Line tools used with the C++ broker such as qpid-config etc. it's also to
- * enable the Java broker to be accessed via the QMF2 REST API and GUI.
+ * in order to try and maximise alignment between the two implementations and to try to allow the Java Broker
+ * to be managed by the Command Line tools used with the C++ Broker such as qpid-config etc. it's also to
+ * enable the Java Broker to be accessed via the QMF2 REST API and GUI.
  *
  * @author Fraser Adams
  */
@@ -87,11 +87,11 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     private Agent _agent = null;
 
     // The first Connection Object relates to the QmfManagementAgent, we use this flag to avoid mapping that Connection
-    // to a QMF Object thus hiding it from Consoles. This is done to provide consistency with the C++ broker which
+    // to a QMF Object thus hiding it from Consoles. This is done to provide consistency with the C++ Broker which
     // also "hides" its own private AMQP Connections, Queues & Bindings.
     private boolean agentConnection = true;
 
-    private final Broker _broker; // Passed in by Plugin bootstrapping.
+    private final Broker<?> _broker;          // Passed in by Plugin bootstrapping.
     private final String _defaultVirtualHost; // Pulled from the broker attributes.
 
     /**
@@ -115,10 +115,10 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     private Map<ConfiguredObject, QmfAgentData> _objects = new ConcurrentHashMap<ConfiguredObject, QmfAgentData>(100);
 
     /**
-     * Constructor. Creates the AMQP Connection to the broker and starts the QMF2 Agent.
+     * Constructor. Creates the AMQP Connection to the Broker and starts the QMF2 Agent.
      * @param url the Connection URL to be used to construct the AMQP Connection.
      * @param broker the root Broker Management Object from which the other Management Objects may be obtained.
-     * to work without explicitly setting a Virtual Host, which I think is necessary because the C++ broker and
+     * to work without explicitly setting a Virtual Host, which I think is necessary because the C++ Broker and
      * the python command line tools aren't currently Virtual Host aware (are they?). The intention is to mark
      * queues and exchanges with [vhost:<vhost-name>/]<object-name> in other words if we want to add things to
      * the non-default Virtual Host prefix their names with [vhost:<vhost-name>/]. This approach *ought* to allow
@@ -208,26 +208,26 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     }
 
     /**
-     * This method initialises the initial set of QmfAgentData Objects and tracks changes to the broker Management 
+     * This method initialises the initial set of QmfAgentData Objects and tracks changes to the Broker Management 
      * Objects via the childAdded() method call.
      */
     private void registerConfigurationChangeListeners()
     {
         childAdded(null, _broker);
 
-        for (VirtualHost vhost : _broker.getVirtualHosts())
+        for (VirtualHost<?> vhost : _broker.getVirtualHosts())
         {
             // We don't add QmfAgentData VirtualHost objects. Possibly TODO, but it's a bit awkward at the moment
-            // because (as of Qpid 0.20) the C++ broker doesn't *seem* to do much with them and the command line
-            // tools such as qpid-config don't appear to be VirtualHost aware. A way to stay compatible is to
-            // mark queues, exchanges etc with [vhost:<vhost-name>/]<object-name> (see Constructor comments).
+            // because the C++ Broker doesn't *seem* to do much with them and the command line tools such
+            // as qpid-config don't appear to be VirtualHost aware. A way to stay compatible is to mark queues,
+            // exchanges etc with [vhost:<vhost-name>/]<object-name> (see Constructor comments).
             vhost.addChangeListener(this);
 
-            for (Connection connection : vhost.getConnections())
+            for (Connection<?> connection : vhost.getConnections())
             {
                 childAdded(vhost, connection);
  
-                for (Session session : connection.getSessions())
+                for (Session<?> session : connection.getSessions())
                 {
                     childAdded(connection, session);
 
@@ -245,7 +245,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
             // relates to Queues or Bindings for the QmfManagementAgent. If they are QmfManagementAgent related
             // we avoid registering the Object as a QMF Object, in other words we "hide" QmfManagementAgent QMF Objects.
             // This is done to be consistent with the C++ broker which also "hides" its own Connection, Queue & Binding.
-            for (Exchange exchange : vhost.getExchanges())
+            for (Exchange<?> exchange : vhost.getExchanges())
             {
                 childAdded(vhost, exchange);
 
@@ -263,7 +263,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                 }
             }
 
-            for (Queue queue : vhost.getQueues())
+            for (Queue<?> queue : vhost.getQueues())
             {
                 boolean agentQueue = false;
                 for (Binding binding : queue.getBindings())
@@ -288,7 +288,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                         childAdded(queue, binding);
                     }
 
-                    for (Consumer subscription : queue.getConsumers())
+                    for (Consumer subscription : queue.getChildren(Consumer.class))
                     {
                         childAdded(queue, subscription);
                     }
@@ -342,7 +342,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     @Override
     public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
     {
-//System.out.println("childAdded() " + child.getClass().getSimpleName() + "." + child.getName());
+//System.out.println("childAdded: " + child.getClass().getSimpleName() + "." + child.getName());
 
         QmfAgentData data = null;
 
@@ -414,7 +414,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                 data = new org.apache.qpid.server.qmf2.agentdata.Binding((Binding)child);
                 _objects.put(child, data);
 
-                String eName = child.getAttribute("exchange").toString();
+                String eName = ((Binding)child).getExchange().getName();
                 if (!eName.equals("<<default>>")) // Don't send Event for Binding to default direct.
                 {
                     // Raise a Bind Event.
@@ -504,6 +504,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
 
         // Look up the associated QmfAgentData and mark it for deletion by the Agent.
         QmfAgentData data = _objects.get(child);
+
         if (data != null)
         {
             if (child instanceof Connection)
@@ -527,7 +528,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
             }
             else if (child instanceof Binding)
             {
-                String eName = child.getAttribute("exchange").toString();
+                String eName = ((Binding)child).getExchange().getName();
                 if (!eName.equals("<<default>>")) // Don't send Event for Unbinding from default direct.
                 {
                     // Raise an Unbind Event.
