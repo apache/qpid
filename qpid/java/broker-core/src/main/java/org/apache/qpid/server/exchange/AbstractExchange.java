@@ -104,8 +104,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     private StateChangeListener<BindingImpl, State> _bindingListener;
 
-    private final EventLogger _eventLogger;
-
     public AbstractExchange(VirtualHost vhost, Map<String, Object> attributes) throws UnknownExchangeException
     {
         super(MapValueConverter.getUUIDAttribute(org.apache.qpid.server.model.Exchange.ID, attributes),
@@ -119,7 +117,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                                                                 LifetimePolicy.PERMANENT);
         _autoDelete = _lifetimePolicy != LifetimePolicy.PERMANENT;
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
-        _eventLogger = vhost.getEventLogger();
+
 
         // check ACL
         _virtualHost.getSecurityManager().authoriseCreateExchange(this);
@@ -175,7 +173,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     @Override
     public EventLogger getEventLogger()
     {
-        return _eventLogger;
+        return _virtualHost.getEventLogger();
     }
 
     public abstract ExchangeType<T> getExchangeType();
@@ -213,7 +211,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 _alternateExchange.removeReference(this);
             }
 
-            _eventLogger.message(_logSubject, ExchangeMessages.DELETED());
+            getEventLogger().message(_logSubject, ExchangeMessages.DELETED());
 
             for(Action<ExchangeImpl> task : _closeTaskList)
             {

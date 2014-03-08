@@ -38,9 +38,7 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -78,7 +76,8 @@ public class BrokerRecovererTest extends TestCase
         super.setUp();
 
         _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(GroupProviderFactory.class), mock(AccessControlProviderFactory.class), mock(PortFactory.class),
-                mock(StatisticsGatherer.class), mock(VirtualHostRegistry.class), mock(LogRecorder.class), new EventLogger(), mock(TaskExecutor.class), mock(BrokerOptions.class),
+                mock(StatisticsGatherer.class), mock(VirtualHostRegistry.class), mock(LogRecorder.class),
+                mock(TaskExecutor.class), mock(BrokerOptions.class),
                 mock(StoreConfigurationChangeListener.class));
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getChildren()).thenReturn(_brokerEntryChildren);

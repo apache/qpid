@@ -55,7 +55,6 @@ public class BindingImpl
     private final UUID _id;
     private final AtomicLong _matches = new AtomicLong();
     private final BindingLogSubject _logSubject;
-    private final EventLogger _eventLogger;
 
     final AtomicBoolean _deleted = new AtomicBoolean();
     final CopyOnWriteArrayList<StateChangeListener<BindingImpl,State>> _stateChangeListeners =
@@ -91,14 +90,14 @@ public class BindingImpl
         _exchange = exchange;
         Map<String,Object> arguments = (Map<String, Object>) attributes.get(org.apache.qpid.server.model.Binding.ARGUMENTS);
         _arguments = arguments == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(arguments);
-        _eventLogger = exchange.getEventLogger();
+
 
         //Perform ACLs
         queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
         _logSubject = new BindingLogSubject(_bindingKey,exchange,queue);
-        _eventLogger.message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
-                                                               getArguments() != null
-                                                               && !getArguments().isEmpty()));
+        getEventLogger().message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
+                                                                      getArguments() != null
+                                                                      && !getArguments().isEmpty()));
 
 
     }
@@ -231,7 +230,7 @@ public class BindingImpl
             {
                 listener.stateChanged(this, State.ACTIVE, State.DELETED);
             }
-            _eventLogger.message(_logSubject, BindingMessages.DELETED());
+            getEventLogger().message(_logSubject, BindingMessages.DELETED());
         }
     }
 
@@ -320,5 +319,10 @@ public class BindingImpl
                                                                            IllegalArgumentException
     {
         throw new UnsupportedOperationException("Changing attributes on binding is not supported.");
+    }
+
+    private EventLogger getEventLogger()
+    {
+        return _exchange.getEventLogger();
     }
 }

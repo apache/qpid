@@ -56,7 +56,6 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
@@ -100,7 +99,6 @@ public abstract class AbstractQueue
     };
 
     private final VirtualHost _virtualHost;
-    private final EventLogger _eventLogger;
 
     /** null means shared */
     private String _description;
@@ -208,7 +206,7 @@ public abstract class AbstractQueue
     {
         super(MapValueConverter.getUUIDAttribute(Queue.ID, attributes),
               Collections.<String,Object>emptyMap(), attributes, virtualHost.getTaskExecutor());
-        _eventLogger = virtualHost.getEventLogger();
+
         if (virtualHost == null)
         {
             throw new IllegalArgumentException("Virtual Host must not be null");
@@ -412,14 +410,14 @@ public abstract class AbstractQueue
 
         // Log the creation of this Queue.
         // The priorities display is toggled on if we set priorities > 0
-        _eventLogger.message(_logSubject,
-                          QueueMessages.CREATED(ownerString,
-                                                _entries.getPriorities(),
-                                                ownerString != null,
-                                                _lifetimePolicy != LifetimePolicy.PERMANENT,
-                                                durable,
-                                                !durable,
-                                                _entries.getPriorities() > 0));
+        getEventLogger().message(_logSubject,
+                                 QueueMessages.CREATED(ownerString,
+                                                       _entries.getPriorities(),
+                                                       ownerString != null,
+                                                       _lifetimePolicy != LifetimePolicy.PERMANENT,
+                                                       durable,
+                                                       !durable,
+                                                       _entries.getPriorities() > 0));
 
         if(attributes != null && attributes.containsKey(Queue.MESSAGE_GROUP_KEY))
         {
@@ -995,7 +993,7 @@ public abstract class AbstractQueue
         if(action != null || (exclusiveSub == null  && _queueRunner.isIdle()))
         {
             /*
-             * iterate over consumers and if any is at the end of the queue and can deliver this message,
+            * iterate over consumers and if any is at the end of the queue and can deliver this message,
              * then deliver the message
              */
 
@@ -1438,7 +1436,7 @@ public abstract class AbstractQueue
 
     public EventLogger getEventLogger()
     {
-        return _eventLogger;
+        return _virtualHost.getEventLogger();
     }
 
 
@@ -1702,7 +1700,7 @@ public abstract class AbstractQueue
             stop();
 
             //Log Queue Deletion
-            _eventLogger.message(_logSubject, QueueMessages.DELETED());
+            getEventLogger().message(_logSubject, QueueMessages.DELETED());
 
         }
         return getQueueDepthMessages();
@@ -1725,7 +1723,7 @@ public abstract class AbstractQueue
             {
                 _overfull.set(true);
                 //Overfull log message
-                _eventLogger.message(_logSubject, QueueMessages.OVERFULL(_atomicQueueSize.get(), _capacity));
+                getEventLogger().message(_logSubject, QueueMessages.OVERFULL(_atomicQueueSize.get(), _capacity));
 
                 _blockedChannels.add(channel);
 
@@ -1735,7 +1733,8 @@ public abstract class AbstractQueue
                 {
 
                     //Underfull log message
-                    _eventLogger.message(_logSubject, QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
+                    getEventLogger().message(_logSubject,
+                                             QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
 
                    channel.unblock(this);
                    _blockedChannels.remove(channel);
@@ -1756,7 +1755,8 @@ public abstract class AbstractQueue
             {
                 if(_overfull.compareAndSet(true,false))
                 {//Underfull log message
-                    _eventLogger.message(_logSubject, QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
+                    getEventLogger().message(_logSubject,
+                                             QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
                 }
 
                 for(final AMQSessionModel blockedChannel : _blockedChannels)

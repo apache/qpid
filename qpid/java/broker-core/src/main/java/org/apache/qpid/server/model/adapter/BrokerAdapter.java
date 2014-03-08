@@ -145,7 +145,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
             VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN};
 
 
-    private final EventLogger _eventLogger;
+    private EventLogger _eventLogger;
     private final StatisticsGatherer _statisticsGatherer;
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
@@ -173,16 +173,24 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     private AuthenticationProvider<?> _managementAuthenticationProvider;
     private BrokerOptions _brokerOptions;
 
-    public BrokerAdapter(UUID id, Map<String, Object> attributes, StatisticsGatherer statisticsGatherer, VirtualHostRegistry virtualHostRegistry,
-            LogRecorder logRecorder, EventLogger eventLogger, AuthenticationProviderFactory authenticationProviderFactory,
-            GroupProviderFactory groupProviderFactory, AccessControlProviderFactory accessControlProviderFactory, PortFactory portFactory,
-            TaskExecutor taskExecutor, ConfigurationEntryStore brokerStore, BrokerOptions brokerOptions)
+    public BrokerAdapter(UUID id,
+                         Map<String, Object> attributes,
+                         StatisticsGatherer statisticsGatherer,
+                         VirtualHostRegistry virtualHostRegistry,
+                         LogRecorder logRecorder,
+                         AuthenticationProviderFactory authenticationProviderFactory,
+                         GroupProviderFactory groupProviderFactory,
+                         AccessControlProviderFactory accessControlProviderFactory,
+                         PortFactory portFactory,
+                         TaskExecutor taskExecutor,
+                         ConfigurationEntryStore brokerStore,
+                         BrokerOptions brokerOptions)
     {
         super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
         _statisticsGatherer = statisticsGatherer;
         _virtualHostRegistry = virtualHostRegistry;
         _logRecorder = logRecorder;
-        _eventLogger = eventLogger;
+        _eventLogger = virtualHostRegistry.getEventLogger();
         _authenticationProviderFactory = authenticationProviderFactory;
         _groupProviderFactory = groupProviderFactory;
         _accessControlProviderFactory = accessControlProviderFactory;
@@ -1432,5 +1440,11 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     public EventLogger getEventLogger()
     {
         return _eventLogger;
+    }
+
+    @Override
+    public void setEventLogger(final EventLogger eventLogger)
+    {
+        _eventLogger = eventLogger;
     }
 }

@@ -243,4 +243,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>
     AuthenticationProvider<?> getAuthenticationProvider(SocketAddress localAddress);
 
     EventLogger getEventLogger();
+
+    void setEventLogger(EventLogger eventLogger);
 }
