@@ -64,16 +64,21 @@ public class VirtualHostMessages
 
     /**
      * Log a VirtualHost message of the Format:
-     * <pre>VHT-1002 : Closed</pre>
+     * <pre>VHT-1002 : Closed : {0}</pre>
      * Optional values are contained in [square brackets] and are numbered
      * sequentially in the method call.
      *
      */
-    public static LogMessage CLOSED()
+    public static LogMessage CLOSED(String param1)
     {
         String rawMessage = _messages.getString("CLOSED");
 
-        final String message = rawMessage;
+        final Object[] messageArguments = {param1};
+        // Create a new MessageFormat to ensure thread safety.
+        // Sharing a MessageFormat and using applyPattern is not thread safe
+        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
+
+        final String message = formatter.format(messageArguments);
 
         return new LogMessage()
         {
@@ -187,16 +192,21 @@ public class VirtualHostMessages
 
     /**
      * Log a VirtualHost message of the Format:
-     * <pre>VHT-1005 : Unexpected fatal error</pre>
+     * <pre>VHT-1005 : {0} Unexpected fatal error</pre>
      * Optional values are contained in [square brackets] and are numbered
      * sequentially in the method call.
      *
      */
-    public static LogMessage ERRORED()
+    public static LogMessage ERRORED(String param1)
     {
         String rawMessage = _messages.getString("ERRORED");
 
-        final String message = rawMessage;
+        final Object[] messageArguments = {param1};
+        // Create a new MessageFormat to ensure thread safety.
+        // Sharing a MessageFormat and using applyPattern is not thread safe
+        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
+
+        final String message = formatter.format(messageArguments);
 
         return new LogMessage()
         {

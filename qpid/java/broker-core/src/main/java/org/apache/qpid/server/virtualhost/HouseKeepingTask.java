@@ -22,6 +22,8 @@ package org.apache.qpid.server.virtualhost;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.TaskPrincipal;
 
 import javax.security.auth.Subject;
@@ -42,11 +44,7 @@ public abstract class HouseKeepingTask implements Runnable
     {
         _virtualHost = vhost;
         _name = _virtualHost.getName() + ":" + this.getClass().getSimpleName();
-        _subject = new Subject(false, org.apache.qpid.server.security.SecurityManager.SYSTEM.getPrincipals(), Collections
-                .emptySet(), Collections.emptySet());
-        _subject.getPrincipals().add(new TaskPrincipal(_name));
-        _subject.setReadOnly();
-
+        _subject = SecurityManager.getSystemTaskSubject(_name);
     }
 
     final public void run()

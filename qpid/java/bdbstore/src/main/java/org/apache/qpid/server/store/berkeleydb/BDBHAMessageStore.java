@@ -619,12 +619,10 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                 {
                     final String originalThreadName = Thread.currentThread().getName();
                     Thread.currentThread().setName(threadName);
-                    Subject subject = new Subject(false, SecurityManager.SYSTEM.getPrincipals(),
-                                                  Collections.emptySet(), Collections.emptySet());
-                    subject.getPrincipals().add(new TaskPrincipal("BDB HA State Change"));
+
                     try
                     {
-                        Subject.doAs(subject, new PrivilegedAction<Object>()
+                        Subject.doAs(SecurityManager.getSystemTaskSubject("BDB HA State Change"), new PrivilegedAction<Object>()
                         {
                             @Override
                             public Object run()

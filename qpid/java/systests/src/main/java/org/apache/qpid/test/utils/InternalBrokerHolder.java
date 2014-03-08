@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.security.auth.TaskPrincipal;
+import org.apache.qpid.server.security.SecurityManager;
 
 import javax.security.auth.Subject;
 
@@ -61,11 +62,7 @@ public class InternalBrokerHolder implements BrokerHolder
     {
         LOGGER.info("Shutting down Broker instance");
 
-        Subject subject = org.apache.qpid.server.security.SecurityManager.SYSTEM;
-        subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
-        subject.getPrincipals().add(new TaskPrincipal("Shutdown"));
-
-        Subject.doAs(subject, new PrivilegedAction<Object>()
+        Subject.doAs(SecurityManager.getSystemTaskSubject("Shutdown"), new PrivilegedAction<Object>()
         {
             @Override
             public Object run()

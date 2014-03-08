@@ -19,8 +19,10 @@
  */
 package org.apache.qpid.server.jmx;
 
+import javax.security.auth.Subject;
+
 public interface UsernameAccessor
 {
-    public String getUsernameForConnectionId(String connectionId);
+    public Subject getSubjectConnectionId(String connectionId);
 
 }

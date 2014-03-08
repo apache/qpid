@@ -37,11 +37,9 @@ import javax.management.remote.rmi.RMIConnection;
 import javax.management.remote.rmi.RMIJRMPServerImpl;
 import javax.security.auth.Subject;
 
-import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
-
 /**
  * An implementation of RMIJRMPServerImpl that caches the usernames of users as they log-on
- * and makes the same available via {@link UsernameAccessor#getUsernameForConnectionId(String)}.
+ * and makes the same available via {@link UsernameAccessor#getSubjectConnectionId(String)}.
  *
  * Caller is responsible for installing this object as a {@link NotificationListener} of the
  * {@link JMXConnectorServer} so the cache entries are removed as the clients disconnect.
@@ -50,7 +48,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 public class UsernameCachingRMIJRMPServer extends RMIJRMPServerImpl implements NotificationListener, NotificationFilter, UsernameAccessor
 {
     // ConnectionId is guaranteed to be unique per client connection, according to the JMX spec.
-    private final Map<String, String> _connectionIdUsernameMap = new ConcurrentHashMap<String, String>();
+    private final Map<String, Subject> _connectionIdUsernameMap = new ConcurrentHashMap<String, Subject>();
 
     UsernameCachingRMIJRMPServer(int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf,
             Map<String, ?> env) throws IOException
@@ -62,13 +60,12 @@ public class UsernameCachingRMIJRMPServer extends RMIJRMPServerImpl implements N
     protected RMIConnection makeClient(String connectionId, Subject subject) throws IOException
     {
         final RMIConnection makeClient = super.makeClient(connectionId, subject);
-        final AuthenticatedPrincipal authenticatedPrincipalFromSubject = AuthenticatedPrincipal.getAuthenticatedPrincipalFromSubject(subject);
-        _connectionIdUsernameMap.put(connectionId, authenticatedPrincipalFromSubject.getName());
+        _connectionIdUsernameMap.put(connectionId, subject);
         return makeClient;
     }
 
     @Override
-    public String getUsernameForConnectionId(String connectionId)
+    public Subject getSubjectConnectionId(String connectionId)
     {
         return _connectionIdUsernameMap.get(connectionId);
     }

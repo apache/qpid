@@ -62,9 +62,7 @@ class SubFlushRunner implements Runnable
     {
         if(_scheduled.compareAndSet(SCHEDULED, RUNNING))
         {
-            Subject subject = new Subject(false, SecurityManager.SYSTEM.getPrincipals(), Collections.emptySet(), Collections.emptySet());
-            subject.getPrincipals().add(new TaskPrincipal("Sub. Delivery"));
-            Subject.doAs(subject, new PrivilegedAction<Object>()
+            Subject.doAs(SecurityManager.getSystemTaskSubject("Sub. Delivery"), new PrivilegedAction<Object>()
             {
                 @Override
                 public Object run()

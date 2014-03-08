@@ -22,6 +22,7 @@ import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -55,6 +56,8 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.security.*;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -985,60 +988,72 @@ public abstract class AbstractQueue
         _totalMessagesReceived.incrementAndGet();
 
 
-        QueueEntry entry;
+
         final QueueConsumer<?> exclusiveSub = _exclusiveSubscriber;
-        entry = _entries.add(message);
+        final QueueEntry entry = _entries.add(message);
 
         if(action != null || (exclusiveSub == null  && _queueRunner.isIdle()))
         {
             /*
-
-            iterate over consumers and if any is at the end of the queue and can deliver this message, then deliver the message
-
+             * iterate over consumers and if any is at the end of the queue and can deliver this message,
+             * then deliver the message
              */
-            QueueConsumerList.ConsumerNode node = _consumerList.getMarkedNode();
-            QueueConsumerList.ConsumerNode nextNode = node.findNext();
-            if (nextNode == null)
-            {
-                nextNode = _consumerList.getHead().findNext();
-            }
-            while (nextNode != null)
-            {
-                if (_consumerList.updateMarkedNode(node, nextNode))
-                {
-                    break;
-                }
-                else
-                {
-                    node = _consumerList.getMarkedNode();
-                    nextNode = node.findNext();
-                    if (nextNode == null)
-                    {
-                        nextNode = _consumerList.getHead().findNext();
-                    }
-                }
-            }
 
-            // always do one extra loop after we believe we've finished
-            // this catches the case where we *just* miss an update
-            int loops = 2;
+            Subject.doAs(SecurityManager.getSystemTaskSubject("Immediate Delivery"),
+                         new PrivilegedAction<Object>()
+                         {
+                             @Override
+                             public Object run()
+                             {
 
-            while (entry.isAvailable() && loops != 0)
-            {
-                if (nextNode == null)
-                {
-                    loops--;
-                    nextNode = _consumerList.getHead();
-                }
-                else
-                {
-                    // if consumer at end, and active, offer
-                    QueueConsumer<?> sub = nextNode.getConsumer();
-                    deliverToConsumer(sub, entry);
-                }
-                nextNode = nextNode.findNext();
+                                 QueueConsumerList.ConsumerNode node = _consumerList.getMarkedNode();
+                                 QueueConsumerList.ConsumerNode nextNode = node.findNext();
+                                 if (nextNode == null)
+                                 {
+                                     nextNode = _consumerList.getHead().findNext();
+                                 }
+                                 while (nextNode != null)
+                                 {
+                                     if (_consumerList.updateMarkedNode(node, nextNode))
+                                     {
+                                         break;
+                                     }
+                                     else
+                                     {
+                                         node = _consumerList.getMarkedNode();
+                                         nextNode = node.findNext();
+                                         if (nextNode == null)
+                                         {
+                                             nextNode = _consumerList.getHead().findNext();
+                                         }
+                                     }
+                                 }
+                                 // always do one extra loop after we believe we've finished
+                                 // this catches the case where we *just* miss an update
+                                 int loops = 2;
 
-            }
+                                 while (entry.isAvailable() && loops != 0)
+                                 {
+                                     if (nextNode == null)
+                                     {
+                                         loops--;
+                                         nextNode = _consumerList.getHead();
+                                     }
+                                     else
+                                     {
+                                         // if consumer at end, and active, offer
+                                         final QueueConsumer<?> sub = nextNode.getConsumer();
+                                         deliverToConsumer(sub, entry);
+
+
+                                     }
+                                     nextNode = nextNode.findNext();
+
+                                 }
+
+                                 return null;
+                             }
+                         });
         }
 
 

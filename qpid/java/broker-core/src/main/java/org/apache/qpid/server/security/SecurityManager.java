@@ -34,6 +34,7 @@ import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.OperationLoggingDetails;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
 
 import javax.security.auth.Subject;
 
@@ -69,7 +70,7 @@ public class SecurityManager implements ConfigurationChangeListener
 {
     private static final Logger _logger = Logger.getLogger(SecurityManager.class);
 
-    public static final Subject SYSTEM = new Subject(true,
+    private static final Subject SYSTEM = new Subject(true,
                                                      Collections.singleton(new SystemPrincipal()),
                                                      Collections.emptySet(),
                                                      Collections.emptySet());
@@ -105,6 +106,31 @@ public class SecurityManager implements ConfigurationChangeListener
             // our global plugins are the parent's host plugins
             _globalPlugins = parent._hostPlugins;
         }
+    }
+
+    public static Subject getSubjectWithAddedSystemRights()
+    {
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        if(subject == null)
+        {
+            subject = new Subject();
+        }
+        else
+        {
+            subject = new Subject(false, subject.getPrincipals(), subject.getPublicCredentials(), subject.getPrivateCredentials());
+        }
+        subject.getPrincipals().addAll(SYSTEM.getPrincipals());
+        subject.setReadOnly();
+        return subject;
+    }
+
+
+    public static Subject getSystemTaskSubject(String taskName)
+    {
+        Subject subject = new Subject(false, SYSTEM.getPrincipals(), SYSTEM.getPublicCredentials(), SYSTEM.getPrivateCredentials());
+        subject.getPrincipals().add(new TaskPrincipal(taskName));
+        subject.setReadOnly();
+        return subject;
     }
 
     private void configureVirtualHostAclPlugin(String aclFile, String vhostName)
