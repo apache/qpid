@@ -1154,6 +1154,7 @@ public class Agent extends QmfData implements MessageListener, SubscribableAgent
             response.setStringProperty("qmf.content", "_event");
             response.setStringProperty("qmf.agent", _name);
             response.setStringProperty("qpid.subject", subject);
+
             List<Map> results = new ArrayList<Map>();
             results.add(event.mapEncode());
             AMQPMessage.setList(response, results);

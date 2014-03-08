@@ -38,8 +38,6 @@ import org.apache.qpid.qmf2.common.SchemaEventClass;
 import org.apache.qpid.qmf2.common.SchemaObjectClass;
 //import org.apache.qpid.qmf2.common.SchemaProperty;
 
-import org.apache.qpid.server.model.Statistics;
-
 /**
  * This class provides a concrete implementation of QmfAgentData for the Binding Management Object.
  * In general it's possible to use QmfAgentData without sub-classing as it's really a "bean" style class
@@ -112,6 +110,7 @@ public class Binding extends QmfAgentData
      * Constructor.
      * @param binding the Binding ConfiguredObject from the broker model.
      */
+    @SuppressWarnings("unchecked")
     public Binding(final org.apache.qpid.server.model.Binding binding)
     {
         super(getSchema());
@@ -125,8 +124,7 @@ public class Binding extends QmfAgentData
         {
             setValue("arguments", arguments);
         }
-
-        // origin not implemented in Qpid 0.20 - not really sure what the origin property means anyway???
+        // origin not implemented in Java Broker - not really sure what the origin property means anyway???
     }
 
     /**
@@ -156,9 +154,9 @@ public class Binding extends QmfAgentData
         QmfEvent bind = new QmfEvent(_bindSchema);
         bind.setSeverity("info");
         bind.setValue("args", _binding.getArguments());
-        bind.setValue("exName", _binding.getAttribute("exchange"));
+        bind.setValue("exName", _binding.getExchange().getName());
         bind.setValue("key", _binding.getName());
-        bind.setValue("qName", _binding.getAttribute("queue"));
+        bind.setValue("qName", _binding.getQueue().getName());
         // TODO Not sure of a way to get these for Java Broker Exchange.
         //bind.setValue("rhost", _connection.getName());
         //bind.setValue("user", getStringValue("authIdentity"));
@@ -173,9 +171,9 @@ public class Binding extends QmfAgentData
     {
         QmfEvent unbind = new QmfEvent(_unbindSchema);
         unbind.setSeverity("info");
-        unbind.setValue("exName", _binding.getAttribute("exchange"));
+        unbind.setValue("exName", _binding.getExchange().getName());
         unbind.setValue("key", _binding.getName());
-        unbind.setValue("qName", _binding.getAttribute("queue"));
+        unbind.setValue("qName", _binding.getQueue().getName());
         // TODO Not sure of a way to get these for Java Broker Exchange.
         //unbind.setValue("rhost", _connection.getName());
         //unbind.setValue("user", getStringValue("authIdentity"));
@@ -193,11 +191,9 @@ public class Binding extends QmfAgentData
     public Map<String, Object> mapEncode()
     {
         // Statistics 
-        //Statistics stats = _binding.getStatistics();
-        // not implemented in Qpid 0.20 despite the property actually existing!!
-        //setValue("msgMatched", stats.getStatistic("matchedMessages"));
+        setValue("msgMatched", _binding.getMatches());
 
-        //update(); // No statistics have been updated ('cause there aren't any yet...)
+        update(); // TODO only set update if a statistic has actually changed value.
         return super.mapEncode();
     }
 }

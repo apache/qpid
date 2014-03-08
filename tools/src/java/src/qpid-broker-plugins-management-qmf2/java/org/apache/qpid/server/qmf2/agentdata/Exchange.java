@@ -39,7 +39,6 @@ import org.apache.qpid.qmf2.common.SchemaObjectClass;
 //import org.apache.qpid.qmf2.common.SchemaProperty;
 
 import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Statistics;
 
 /**
  * This class provides a concrete implementation of QmfAgentData for the Exchange Management Object.
@@ -214,21 +213,20 @@ public class Exchange extends QmfAgentData
     public Map<String, Object> mapEncode()
     {
         // Statistics
-        Statistics stats = _exchange.getStatistics();
-        long msgReceives = ((Long)stats.getStatistic("messagesIn")).longValue();
-        long msgDrops = ((Long)stats.getStatistic("messagesDropped")).longValue();
+        long msgReceives = _exchange.getMessagesIn();
+        long msgDrops = _exchange.getMessagesDropped();
         long msgRoutes = msgReceives - msgDrops;
 
-        long byteReceives = ((Long)stats.getStatistic("bytesIn")).longValue();
-        long byteDrops = ((Long)stats.getStatistic("bytesDropped")).longValue();
+        long byteReceives = _exchange.getBytesIn();
+        long byteDrops = _exchange.getBytesDropped();
         long byteRoutes = byteReceives - byteDrops;
 
-        setValue("producerCount", "Not yet implemented"); // In Qpid 0.20 producerCount statistic returns null.
+        setValue("producerCount", _exchange.getPublishers().size());
 
         // We have to modify the value of bindingCount for Exchange because the QmfManagementAgent "hides" the
         // QMF Objects that relate to its own AMQP Connection/Queues/Bindings so the bindingCount for default direct
         // qmf.default.direct and qmf.default.topic is different to the actual number of QMF bindings.
-        long bindingCount = ((Long)stats.getStatistic("bindingCount")).longValue();
+        long bindingCount = _exchange.getBindingCount();
         if (_name.equals(""))
         {
             bindingCount -= 3;

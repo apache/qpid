@@ -41,7 +41,6 @@ import org.apache.qpid.qmf2.common.SchemaObjectClass;
 
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.Statistics;
 
 /**
  * This class provides a concrete implementation of QmfAgentData for the Subscription Management Object.
@@ -124,9 +123,9 @@ public class Subscription extends QmfAgentData
         _subscription = subscription; // Will eventually be used in mapEncode() to retrieve statistics.
 
         setValue("name", subscription.getName());
-        setValue("browsing", false); // TODO not supported in Qpid 0.20.
-        setValue("acknowledged", true); // TODO not supported in Qpid 0.20.
-        setValue("creditMode", "WINDOW"); // TODO not supported in Qpid 0.20.
+        setValue("browsing", false);      // TODO not supported in Java Broker.
+        setValue("acknowledged", true);   // TODO not supported in Java Broker.
+        setValue("creditMode", "WINDOW"); // TODO not supported in Java Broker.
     }
 
     /**
@@ -202,8 +201,7 @@ public class Subscription extends QmfAgentData
     public Map<String, Object> mapEncode()
     {
         // Statistics 
-        Statistics stats = _subscription.getStatistics();
-        setValue("delivered", stats.getStatistic("messagesOut"));
+        setValue("delivered", _subscription.getMessagesOut());
 
         setValue("exclusive", _exclusive);
 

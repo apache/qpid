@@ -36,8 +36,6 @@ import org.apache.qpid.qmf2.common.SchemaEventClass;
 import org.apache.qpid.qmf2.common.SchemaObjectClass;
 //import org.apache.qpid.qmf2.common.SchemaProperty;
 
-import org.apache.qpid.server.model.Statistics;
-
 /**
  * This class provides a concrete implementation of QmfAgentData for the Connection Management Object.
  * In general it's possible to use QmfAgentData without sub-classing as it's really a "bean" style class
@@ -122,22 +120,23 @@ public class Connection extends QmfAgentData
         // TODO vhostRef - currently just use its name to try and get things working with standard command line tools.
 
         setValue("address", address);
-        setValue("incoming", true); // incoming not supported in Qpid 0.20
+        setValue("incoming", connection.isIncoming());
 
-        // Although not implemented in Qpid 0.20 it's reasonable for them to be false
-        setValue("SystemConnection", false); // Is the S in System really a capital? not implemented in Qpid 0.20
-        setValue("userProxyAuth", false); // Not implemented in Qpid 0.20
-        setValue("federationLink", false); // Not implemented in Qpid 0.20
+        // Although not implemented in Java Broker it's reasonable for them to be false
+        setValue("SystemConnection", false); // Is the S in System really a capital? not implemented in Java Broker
+        setValue("userProxyAuth", false);    // Not implemented in Java Broker
+        setValue("federationLink", false);   // Not implemented in Java Broker
+        setValue("authIdentity", (connection.getPrincipal() == null ? "unknown" : connection.getPrincipal()));
+        setValue("remoteProcessName", (connection.getRemoteProcessName() == null ?
+                                       "unknown" : connection.getRemoteProcessName()));
+        setValue("remotePid", (connection.getRemoteProcessPid() == null ?
+                               "unknown" : connection.getRemoteProcessPid()));
+        setValue("remoteParentPid", "unknown"); // remoteProcessName not supported in Java Broker
 
-        setValue("authIdentity", connection.getAttribute("principal"));
-        setValue("remoteProcessName", "unknown"); // remoteProcessName not supported in Qpid 0.20
-        setValue("remotePid", "unknown"); // remoteProcessName not supported in Qpid 0.20
-        setValue("remoteParentPid", "unknown"); // remoteProcessName not supported in Qpid 0.20
-
-        // shadow Not implemented in Qpid 0.20
-        // saslMechanism Not implemented in Qpid 0.20
-        // saslSsf Not implemented in Qpid 0.20
-        // protocol Not implemented in Qpid 0.20
+        // shadow Not implemented in Java Broker
+        // saslMechanism Not implemented in Java Broker
+        // saslSsf Not implemented in Java Broker
+        // protocol Not implemented in Java Broker
     }
 
     /**
@@ -179,16 +178,15 @@ public class Connection extends QmfAgentData
     public Map<String, Object> mapEncode()
     {
         // Statistics
-        Statistics stats = _connection.getStatistics();
-        // closing Not implemented in Qpid 0.20
-        setValue("framesFromClient", 0); // framesFromClient Not implemented in Qpid 0.20
-        setValue("framesToClient", 0); // framesToClient Not implemented in Qpid 0.20
-        setValue("bytesFromClient", stats.getStatistic("bytesIn"));
-        setValue("bytesToClient", stats.getStatistic("bytesOut")); 
-        setValue("msgsFromClient", stats.getStatistic("messagesIn"));
-        setValue("msgsToClient", stats.getStatistic("messagesOut"));
+        // closing Not implemented in Java Broker
+        setValue("framesFromClient", 0); // framesFromClient Not implemented in Java Broker
+        setValue("framesToClient", 0); // framesToClient Not implemented in Java Broker
+        setValue("bytesFromClient", _connection.getBytesIn());
+        setValue("bytesToClient", _connection.getBytesOut()); 
+        setValue("msgsFromClient", _connection.getMessagesIn());
+        setValue("msgsToClient", _connection.getMessagesOut());
 
-        update(); // TODO set update if statistics change.
+        update(); // TODO only set update if statistics change.
         return super.mapEncode();
     }
 }
