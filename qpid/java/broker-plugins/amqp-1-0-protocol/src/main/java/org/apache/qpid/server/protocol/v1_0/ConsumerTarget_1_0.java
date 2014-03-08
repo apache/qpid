@@ -37,13 +37,13 @@ import org.apache.qpid.amqp_1_0.type.messaging.Released;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
@@ -60,7 +60,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
     private Binary _transactionId;
     private final AMQPDescribedTypeRegistry _typeRegistry;
     private final SectionEncoder _sectionEncoder;
-    private Consumer _consumer;
+    private ConsumerImpl _consumer;
 
     public ConsumerTarget_1_0(final SendingLink_1_0 link,
                               boolean acquires)
@@ -72,7 +72,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         _acquires = acquires;
     }
 
-    public Consumer getConsumer()
+    public ConsumerImpl getConsumer()
     {
         return _consumer;
     }
@@ -498,13 +498,13 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
     }
 
     @Override
-    public void consumerAdded(final Consumer sub)
+    public void consumerAdded(final ConsumerImpl sub)
     {
         _consumer = sub;
     }
 
     @Override
-    public void consumerRemoved(final Consumer sub)
+    public void consumerRemoved(final ConsumerImpl sub)
     {
 
     }

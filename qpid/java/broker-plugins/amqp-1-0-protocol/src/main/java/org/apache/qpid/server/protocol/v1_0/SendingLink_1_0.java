@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -55,7 +56,6 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
@@ -69,7 +69,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     private VirtualHost _vhost;
     private SendingDestination _destination;
 
-    private Consumer _consumer;
+    private ConsumerImpl _consumer;
     private ConsumerTarget_1_0 _target;
 
     private boolean _draining;
@@ -99,7 +99,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         linkAttachment.setDeliveryStateHandler(this);
         QueueDestination qd = null;
 
-        EnumSet<Consumer.Option> options = EnumSet.noneOf(Consumer.Option.class);
+        EnumSet<ConsumerImpl.Option> options = EnumSet.noneOf(ConsumerImpl.Option.class);
 
 
         boolean noLocal = false;
@@ -163,8 +163,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             _target = new ConsumerTarget_1_0(this, source.getDistributionMode() != StdDistMode.COPY);
             if(source.getDistributionMode() != StdDistMode.COPY)
             {
-                options.add(Consumer.Option.ACQUIRES);
-                options.add(Consumer.Option.SEES_REQUEUES);
+                options.add(ConsumerImpl.Option.ACQUIRES);
+                options.add(ConsumerImpl.Option.SEES_REQUEUES);
             }
 
         }
@@ -318,8 +318,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
 
             _target = new ConsumerTarget_1_0(this, true);
-            options.add(Consumer.Option.ACQUIRES);
-            options.add(Consumer.Option.SEES_REQUEUES);
+            options.add(ConsumerImpl.Option.ACQUIRES);
+            options.add(ConsumerImpl.Option.SEES_REQUEUES);
 
         }
         else
@@ -331,7 +331,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         {
             if(noLocal)
             {
-                options.add(Consumer.Option.NO_LOCAL);
+                options.add(ConsumerImpl.Option.NO_LOCAL);
             }
 
             try
@@ -372,7 +372,6 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     public void resume(SendingLinkAttachment linkAttachment)
     {
         _linkAttachment = linkAttachment;
-
     }
 
     public void remoteDetached(final LinkEndpoint endpoint, final Detach detach)
@@ -691,5 +690,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     public VirtualHost getVirtualHost()
     {
         return _vhost;
+    }
+
+    public ConsumerImpl getConsumer()
+    {
+        return _consumer;
     }
 }

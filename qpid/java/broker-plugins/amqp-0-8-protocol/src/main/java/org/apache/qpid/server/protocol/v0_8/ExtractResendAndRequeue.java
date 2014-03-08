@@ -23,8 +23,8 @@ package org.apache.qpid.server.protocol.v0_8;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.consumer.Consumer;
 
 import java.util.Map;
 
@@ -49,7 +49,7 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
     {
 
         message.setRedelivered();
-        final Consumer consumer = message.getDeliveredConsumer();
+        final ConsumerImpl consumer = message.getDeliveredConsumer();
         if (consumer != null)
         {
             // Consumer exists

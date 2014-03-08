@@ -20,13 +20,12 @@
 */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.consumer.Consumer;
 
 public interface ClientDeliveryMethod
 {
-    void deliverToClient(final Consumer sub, final ServerMessage message, final InstanceProperties props,
+    void deliverToClient(final ConsumerImpl sub, final ServerMessage message, final InstanceProperties props,
                          final long deliveryTag);
 }

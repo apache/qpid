@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.management.amqp;
 
-import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
@@ -84,7 +84,7 @@ class ManagementResponse implements MessageInstance
     }
 
     @Override
-    public boolean isAcquiredBy(final Consumer consumer)
+    public boolean isAcquiredBy(final ConsumerImpl consumer)
     {
         return consumer == _consumer && !isDeleted();
     }
@@ -114,7 +114,7 @@ class ManagementResponse implements MessageInstance
     }
 
     @Override
-    public boolean isRejectedBy(final Consumer consumer)
+    public boolean isRejectedBy(final ConsumerImpl consumer)
     {
         return false;
     }
@@ -132,7 +132,7 @@ class ManagementResponse implements MessageInstance
     }
 
     @Override
-    public boolean acquire(final Consumer sub)
+    public boolean acquire(final ConsumerImpl sub)
     {
         return false;
     }

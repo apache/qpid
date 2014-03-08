@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.connection.SessionPrincipal;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.Filterable;
@@ -66,7 +67,12 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.CapacityChecker;
+import org.apache.qpid.server.protocol.ConsumerListener;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -76,7 +82,6 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.LocalTransaction.ActivityTimeAccessor;
@@ -173,6 +178,9 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     private final CapacityCheckAction _capacityCheckAction = new CapacityCheckAction();
     private final ImmediateAction _immediateAction = new ImmediateAction();
     private Subject _subject;
+    private final CopyOnWriteArrayList<Consumer<?>> _consumers = new CopyOnWriteArrayList<Consumer<?>>();
+    private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
+    private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
 
 
     public AMQChannel(T session, int channelId, final MessageStore messageStore)
@@ -526,7 +534,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     }
 
 
-    public Consumer getSubscription(AMQShortString tag)
+    public ConsumerImpl getSubscription(AMQShortString tag)
     {
         final ConsumerTarget_0_8 target = _tag2SubscriptionTargetMap.get(tag);
         return target == null ? null : target.getConsumer();
@@ -545,7 +553,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
      * @param exclusive Flag requesting exclusive access to the queue
      * @return the consumer tag. This is returned to the subscriber and used in subsequent unsubscribe requests
      *
-     * @throws AMQException                  if something goes wrong
+     * @throws org.apache.qpid.AMQException                  if something goes wrong
      */
     public AMQShortString consumeFromSource(AMQShortString tag, MessageSource source, boolean acks,
                                             FieldTable filters, boolean exclusive, boolean noLocal)
@@ -564,7 +572,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         }
 
         ConsumerTarget_0_8 target;
-        EnumSet<Consumer.Option> options = EnumSet.noneOf(Consumer.Option.class);
+        EnumSet<ConsumerImpl.Option> options = EnumSet.noneOf(ConsumerImpl.Option.class);
 
         if(filters != null && Boolean.TRUE.equals(filters.get(AMQPFilterTypes.NO_CONSUME.getValue())))
         {
@@ -573,19 +581,19 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         else if(acks)
         {
             target = ConsumerTarget_0_8.createAckTarget(this, tag, filters, _creditManager);
-            options.add(Consumer.Option.ACQUIRES);
-            options.add(Consumer.Option.SEES_REQUEUES);
+            options.add(ConsumerImpl.Option.ACQUIRES);
+            options.add(ConsumerImpl.Option.SEES_REQUEUES);
         }
         else
         {
             target = ConsumerTarget_0_8.createNoAckTarget(this, tag, filters, _creditManager);
-            options.add(Consumer.Option.ACQUIRES);
-            options.add(Consumer.Option.SEES_REQUEUES);
+            options.add(ConsumerImpl.Option.ACQUIRES);
+            options.add(ConsumerImpl.Option.SEES_REQUEUES);
         }
 
         if(exclusive)
         {
-            options.add(Consumer.Option.EXCLUSIVE);
+            options.add(ConsumerImpl.Option.EXCLUSIVE);
         }
 
 
@@ -615,12 +623,19 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     }
                 });
             }
-            Consumer sub =
+            ConsumerImpl sub =
                     source.addConsumer(target,
                                        filterManager,
-                                      AMQMessage.class,
-                                      AMQShortString.toString(tag),
-                                      options);
+                                       AMQMessage.class,
+                                       AMQShortString.toString(tag),
+                                       options);
+            if(sub instanceof Consumer<?>)
+            {
+                final Consumer<?> modelConsumer = (Consumer<?>) sub;
+                consumerAdded(modelConsumer);
+                modelConsumer.addChangeListener(_consumerClosedListener);
+                _consumers.add(modelConsumer);
+            }
         }
         catch (AccessControlException e)
         {
@@ -659,15 +674,19 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     {
 
         ConsumerTarget_0_8 target = _tag2SubscriptionTargetMap.remove(consumerTag);
-        Consumer sub = target == null ? null : target.getConsumer();
+        ConsumerImpl sub = target == null ? null : target.getConsumer();
         if (sub != null)
         {
             sub.close();
+            if(sub instanceof Consumer<?>)
+            {
+                _consumers.remove(sub);
+            }
             return true;
         }
         else
         {
-            _logger.warn("Attempt to unsubscribe consumer with tag '"+consumerTag+"' which is not registered.");
+            _logger.warn("Attempt to unsubscribe consumer with tag '" + consumerTag + "' which is not registered.");
         }
         return false;
     }
@@ -735,7 +754,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 _logger.info("Unsubscribing consumer '" + me.getKey() + "' on channel " + toString());
             }
 
-            Consumer sub = me.getValue().getConsumer();
+            ConsumerImpl sub = me.getValue().getConsumer();
 
             if(sub != null)
             {
@@ -754,7 +773,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
      *                    delivery tag)
      * @param consumer The consumer that is to acknowledge this message.
      */
-    public void addUnacknowledgedMessage(MessageInstance entry, long deliveryTag, Consumer consumer)
+    public void addUnacknowledgedMessage(MessageInstance entry, long deliveryTag, ConsumerImpl consumer)
     {
         if (_logger.isDebugEnabled())
         {
@@ -1126,7 +1145,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
         for(MessageInstance entry : _resendList)
         {
-            Consumer sub = entry.getDeliveredConsumer();
+            ConsumerImpl sub = entry.getDeliveredConsumer();
             if(sub == null || sub.isClosed())
             {
                 entry.release();
@@ -1199,7 +1218,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     private final RecordDeliveryMethod _recordDeliveryMethod = new RecordDeliveryMethod()
         {
 
-            public void recordMessageDelivery(final Consumer sub, final MessageInstance entry, final long deliveryTag)
+            public void recordMessageDelivery(final ConsumerImpl sub, final MessageInstance entry, final long deliveryTag)
             {
                 addUnacknowledgedMessage(entry, deliveryTag, sub);
             }
@@ -1657,5 +1676,72 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     public int getConsumerCount()
     {
         return _tag2SubscriptionTargetMap.size();
+    }
+
+    @Override
+    public Collection<Consumer<?>> getConsumers()
+    {
+        return Collections.unmodifiableCollection(_consumers);
+    }
+
+    private class ConsumerClosedListener implements ConfigurationChangeListener
+    {
+        @Override
+        public void stateChanged(final ConfiguredObject object, final State oldState, final State newState)
+        {
+            if(newState == State.DELETED)
+            {
+                consumerRemoved((Consumer<?>)object);
+            }
+        }
+
+        @Override
+        public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
+        {
+
+        }
+
+        @Override
+        public void childRemoved(final ConfiguredObject object, final ConfiguredObject child)
+        {
+
+        }
+
+        @Override
+        public void attributeSet(final ConfiguredObject object,
+                                 final String attributeName,
+                                 final Object oldAttributeValue,
+                                 final Object newAttributeValue)
+        {
+
+        }
+    }
+
+    private void consumerAdded(final Consumer<?> consumer)
+    {
+        for(ConsumerListener l : _consumerListeners)
+        {
+            l.consumerAdded(consumer);
+        }
+    }
+
+    private void consumerRemoved(final Consumer<?> consumer)
+    {
+        for(ConsumerListener l : _consumerListeners)
+        {
+            l.consumerRemoved(consumer);
+        }
+    }
+
+    @Override
+    public void addConsumerListener(ConsumerListener listener)
+    {
+        _consumerListeners.add(listener);
+    }
+
+    @Override
+    public void removeConsumerListener(ConsumerListener listener)
+    {
+        _consumerListeners.remove(listener);
     }
 }

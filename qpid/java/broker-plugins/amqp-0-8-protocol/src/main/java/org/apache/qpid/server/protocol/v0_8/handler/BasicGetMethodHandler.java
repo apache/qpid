@@ -29,6 +29,7 @@ import org.apache.qpid.framing.BasicGetBody;
 import org.apache.qpid.framing.BasicGetEmptyBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageSource;
@@ -44,7 +45,6 @@ import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
 import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.security.AccessControlException;
@@ -150,15 +150,15 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         final RecordDeliveryMethod getRecordMethod = new RecordDeliveryMethod()
         {
 
-            public void recordMessageDelivery(final Consumer sub, final MessageInstance entry, final long deliveryTag)
+            public void recordMessageDelivery(final ConsumerImpl sub, final MessageInstance entry, final long deliveryTag)
             {
                 channel.addUnacknowledgedMessage(entry, deliveryTag, null);
             }
         };
 
         ConsumerTarget_0_8 target;
-        EnumSet<Consumer.Option> options = EnumSet.of(Consumer.Option.TRANSIENT, Consumer.Option.ACQUIRES,
-                                                          Consumer.Option.SEES_REQUEUES);
+        EnumSet<ConsumerImpl.Option> options = EnumSet.of(ConsumerImpl.Option.TRANSIENT, ConsumerImpl.Option.ACQUIRES,
+                                                          ConsumerImpl.Option.SEES_REQUEUES);
         if(acks)
         {
 
@@ -173,7 +173,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                                                           singleMessageCredit, getDeliveryMethod, getRecordMethod);
         }
 
-        Consumer sub = queue.addConsumer(target, null, AMQMessage.class, "", options);
+        ConsumerImpl sub = queue.addConsumer(target, null, AMQMessage.class, "", options);
         sub.flush();
         sub.close();
         return(getDeliveryMethod.hasDeliveredMessage());
@@ -202,7 +202,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         }
 
         @Override
-        public void deliverToClient(final Consumer sub, final ServerMessage message,
+        public void deliverToClient(final ConsumerImpl sub, final ServerMessage message,
                                     final InstanceProperties props, final long deliveryTag)
         {
             _singleMessageCredit.useCreditForMessage(message.getSize());

@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -29,7 +30,6 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -201,7 +201,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         return acquired;
     }
 
-    public boolean acquire(Consumer sub)
+    public boolean acquire(ConsumerImpl sub)
     {
         final boolean acquired = acquire(((QueueConsumer<?>)sub).getOwningState());
         if(acquired)
@@ -217,7 +217,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         return (_state instanceof ConsumerAcquiredState);
     }
 
-    public boolean isAcquiredBy(Consumer consumer)
+    public boolean isAcquiredBy(ConsumerImpl consumer)
     {
         EntryState state = _state;
         return state instanceof ConsumerAcquiredState
@@ -295,7 +295,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public boolean isRejectedBy(Consumer consumer)
+    public boolean isRejectedBy(ConsumerImpl consumer)
     {
 
         if (_rejectedBy != null) // We have consumers that rejected this message

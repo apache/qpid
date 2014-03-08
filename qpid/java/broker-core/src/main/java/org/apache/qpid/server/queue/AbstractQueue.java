@@ -36,6 +36,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.SessionPrincipal;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageSource;
@@ -54,7 +55,6 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -99,6 +99,7 @@ public abstract class AbstractQueue
     };
 
     private final VirtualHost _virtualHost;
+    private final DeletedChildListener _deletedChildListener = new DeletedChildListener();
 
     /** null means shared */
     private String _description;
@@ -682,7 +683,7 @@ public abstract class AbstractQueue
                                      final FilterManager filters,
                                      final Class<? extends ServerMessage> messageClass,
                                      final String consumerName,
-                                     EnumSet<Consumer.Option> optionSet)
+                                     EnumSet<ConsumerImpl.Option> optionSet)
             throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive,
                    ConsumerAccessRefused
     {
@@ -762,13 +763,13 @@ public abstract class AbstractQueue
                 throw new ServerScopedRuntimeException("Unknown exclusivity policy " + _exclusivityPolicy);
         }
 
-        boolean exclusive =  optionSet.contains(Consumer.Option.EXCLUSIVE);
-        boolean isTransient =  optionSet.contains(Consumer.Option.TRANSIENT);
+        boolean exclusive =  optionSet.contains(ConsumerImpl.Option.EXCLUSIVE);
+        boolean isTransient =  optionSet.contains(ConsumerImpl.Option.TRANSIENT);
 
-        if(_noLocal && !optionSet.contains(Consumer.Option.NO_LOCAL))
+        if(_noLocal && !optionSet.contains(ConsumerImpl.Option.NO_LOCAL))
         {
             optionSet = EnumSet.copyOf(optionSet);
-            optionSet.add(Consumer.Option.NO_LOCAL);
+            optionSet.add(ConsumerImpl.Option.NO_LOCAL);
         }
 
         if(exclusive && getConsumerCount() != 0)
@@ -821,6 +822,9 @@ public abstract class AbstractQueue
         {
             // TODO
         }
+
+        childAdded(consumer);
+        consumer.addChangeListener(_deletedChildListener);
 
         deliverAsync(consumer);
 
@@ -2598,7 +2602,7 @@ public abstract class AbstractQueue
             case CONTAINER:
             case CONNECTION:
                 AMQSessionModel session = null;
-                for(Consumer c : getConsumers())
+                for(ConsumerImpl c : getConsumers())
                 {
                     if(session == null)
                     {
@@ -2624,7 +2628,7 @@ public abstract class AbstractQueue
             case CONTAINER:
             case PRINCIPAL:
                 AMQConnectionModel con = null;
-                for(Consumer c : getConsumers())
+                for(ConsumerImpl c : getConsumers())
                 {
                     if(con == null)
                     {
@@ -2652,7 +2656,7 @@ public abstract class AbstractQueue
             case NONE:
             case PRINCIPAL:
                 String containerID = null;
-                for(Consumer c : getConsumers())
+                for(ConsumerImpl c : getConsumers())
                 {
                     if(containerID == null)
                     {
@@ -2683,7 +2687,7 @@ public abstract class AbstractQueue
             case NONE:
             case CONTAINER:
                 Principal principal = null;
-                for(Consumer c : getConsumers())
+                for(ConsumerImpl c : getConsumers())
                 {
                     if(principal == null)
                     {
@@ -3079,4 +3083,43 @@ public abstract class AbstractQueue
         }
     }
 
+    @Override
+    public void bindingCreated(final Binding<BindingImpl> binding)
+    {
+        childAdded(binding);
+        binding.addChangeListener(_deletedChildListener);
+    }
+
+    private class DeletedChildListener implements ConfigurationChangeListener
+    {
+        @Override
+        public void stateChanged(final ConfiguredObject object, final State oldState, final State newState)
+        {
+            if(newState == State.DELETED)
+            {
+                AbstractQueue.this.childRemoved(object);
+            }
+        }
+
+        @Override
+        public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
+        {
+
+        }
+
+        @Override
+        public void childRemoved(final ConfiguredObject object, final ConfiguredObject child)
+        {
+
+        }
+
+        @Override
+        public void attributeSet(final ConfiguredObject object,
+                                 final String attributeName,
+                                 final Object oldAttributeValue,
+                                 final Object newAttributeValue)
+        {
+
+        }
+    }
 }

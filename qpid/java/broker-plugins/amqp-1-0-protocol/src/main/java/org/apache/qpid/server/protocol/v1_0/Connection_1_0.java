@@ -40,6 +40,8 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -51,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 
@@ -68,6 +71,8 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     private final Object _reference = new Object();
     private final Subject _subject = new Subject();
 
+    private final CopyOnWriteArrayList<SessionModelListener> _sessionListeners =
+            new CopyOnWriteArrayList<SessionModelListener>();
 
     private StatisticsCounter _messageDeliveryStatistics = new StatisticsCounter();
     private StatisticsCounter _messageReceiptStatistics = new StatisticsCounter();
@@ -111,7 +116,6 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         _connectionId = connectionId;
         _subject.getPrincipals().add(new ConnectionPrincipal(this));
         _subjectCreator = subjectCreator;
-        //_vhost.getConnectionRegistry().registerConnection(this);
 
     }
 
@@ -129,6 +133,8 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
             host = (String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST);
         }
         _vhost = _broker.getVirtualHostRegistry().getVirtualHost(host);
+        _vhost.getConnectionRegistry().registerConnection(this);
+
         if(_vhost == null)
         {
             final Error err = new Error();
@@ -147,6 +153,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     {
         final Session_1_0 session = new Session_1_0(this, endpoint);
         _sessions.add(session);
+        sessionAdded(session);
         endpoint.setSessionEventListener(new SessionEventListener()
         {
             @Override
@@ -182,6 +189,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     void sessionEnded(Session_1_0 session)
     {
         _sessions.remove(session);
+        sessionRemoved(session);
     }
 
     public void removeDeleteTask(final Action<? super Connection_1_0> task)
@@ -428,4 +436,35 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     {
         return _vhost;
     }
+
+
+    @Override
+    public void addSessionListener(final SessionModelListener listener)
+    {
+        _sessionListeners.add(listener);
+    }
+
+    @Override
+    public void removeSessionListener(final SessionModelListener listener)
+    {
+        _sessionListeners.remove(listener);
+    }
+
+    private void sessionAdded(final AMQSessionModel<?,?> session)
+    {
+        for(SessionModelListener l : _sessionListeners)
+        {
+            l.sessionAdded(session);
+        }
+    }
+
+    private void sessionRemoved(final AMQSessionModel<?,?> session)
+    {
+        for(SessionModelListener l : _sessionListeners)
+        {
+            l.sessionRemoved(session);
+        }
+    }
+
+
 }

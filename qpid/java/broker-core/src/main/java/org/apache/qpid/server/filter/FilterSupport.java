@@ -30,9 +30,8 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.TokenMgrError;
-import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 
 public class FilterSupport
@@ -132,8 +131,8 @@ public class FilterSupport
         public boolean matches(Filterable message)
         {
 
-            final Collection<? extends Consumer> consumers = _queue.getConsumers();
-            for(Consumer c : consumers)
+            final Collection<? extends ConsumerImpl> consumers = _queue.getConsumers();
+            for(ConsumerImpl c : consumers)
             {
                 if(c.getSessionModel().getConnectionReference() == message.getConnectionReference())
                 {

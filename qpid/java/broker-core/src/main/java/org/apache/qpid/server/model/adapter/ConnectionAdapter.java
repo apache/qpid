@@ -29,9 +29,11 @@ import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
-final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter> implements Connection<ConnectionAdapter>
+final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter> implements Connection<ConnectionAdapter>,
+                                                                                             SessionModelListener
 {
     private AMQConnectionModel _connection;
 
@@ -61,6 +63,7 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     {
         super(Collections.<String,Object>emptyMap(), createAttributes(conn), taskExecutor);
         _connection = conn;
+        conn.addSessionListener(this);
     }
 
     private static Map<String, Object> createAttributes(final AMQConnectionModel conn)
@@ -146,33 +149,8 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
 
     public Collection<Session> getSessions()
     {
-        List<AMQSessionModel> actualSessions = _connection.getSessionModels();
-
         synchronized (_sessionAdapters)
         {
-            Iterator<AMQSessionModel> iterator = _sessionAdapters.keySet().iterator();
-            while(iterator.hasNext())
-            {
-                AMQSessionModel session = iterator.next();
-                if(!actualSessions.contains(session))
-                {
-                    SessionAdapter adapter = _sessionAdapters.get(session);
-                    iterator.remove();
-
-                    childRemoved(adapter); // Trigger corresponding ConfigurationChangeListener childRemoved() callback.
-                }
-            }
-
-            for(AMQSessionModel session : actualSessions)
-            {
-                if(!_sessionAdapters.containsKey(session))
-                {
-                    SessionAdapter adapter = new SessionAdapter(session, getTaskExecutor());
-                    _sessionAdapters.put(session, adapter);
-                    childAdded(adapter); // Trigger corresponding ConfigurationChangeListener childAdded() callback.
-                }
-            }
-
             return new ArrayList<Session>(_sessionAdapters.values());
         }
     }
@@ -186,7 +164,6 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     {
         synchronized (_sessionAdapters)
         {
-            getSessions(); // Call getSessions() first to ensure _sessionAdapters state is up to date with actualSessions.
             return _sessionAdapters.get(session);
         }
     }
@@ -358,5 +335,32 @@ final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter
     public int getSessionCount()
     {
         return _connection.getSessionModels().size();
+    }
+
+    @Override
+    public void sessionAdded(final AMQSessionModel<?, ?> session)
+    {
+        synchronized (_sessionAdapters)
+        {
+            if(!_sessionAdapters.containsKey(session))
+            {
+                SessionAdapter adapter = new SessionAdapter(session, getTaskExecutor());
+                _sessionAdapters.put(session, adapter);
+                childAdded(adapter);
+            }
+        }
+    }
+
+    @Override
+    public void sessionRemoved(final AMQSessionModel<?, ?> session)
+    {
+        synchronized (_sessionAdapters)
+        {
+            SessionAdapter adapter = _sessionAdapters.remove(session);
+            if(adapter != null)
+            {
+                childRemoved(adapter);
+            }
+        }
     }
 }

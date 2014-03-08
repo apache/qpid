@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;

@@ -20,10 +20,10 @@
 */
 package org.apache.qpid.server.protocol.v0_8;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.consumer.Consumer;
 
 public interface RecordDeliveryMethod
 {
-    void recordMessageDelivery(final Consumer sub, final MessageInstance entry, final long deliveryTag);
+    void recordMessageDelivery(final ConsumerImpl sub, final MessageInstance entry, final long deliveryTag);
 }

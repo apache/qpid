@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.logging.EventLogger;
@@ -31,7 +32,6 @@ import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -66,7 +66,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
     private final Map<String, Object> _arguments;
     private int _deferredMessageCredit;
     private long _deferredSizeCredit;
-    private Consumer _consumer;
+    private ConsumerImpl _consumer;
 
 
     public ConsumerTarget_0_10(ServerSession session,
@@ -90,7 +90,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         _name = name;
     }
 
-    public Consumer getConsumer()
+    public ConsumerImpl getConsumer()
     {
         return _consumer;
     }
@@ -105,7 +105,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         boolean closed = false;
         State state = getState();
 
-        final Consumer consumer = getConsumer();
+        final ConsumerImpl consumer = getConsumer();
         if(consumer != null)
         {
             consumer.getSendLock();
@@ -569,13 +569,13 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
 
     @Override
-    public void consumerAdded(final Consumer sub)
+    public void consumerAdded(final ConsumerImpl sub)
     {
         _consumer = sub;
     }
 
     @Override
-    public void consumerRemoved(final Consumer sub)
+    public void consumerRemoved(final ConsumerImpl sub)
     {
     }
 

@@ -36,9 +36,9 @@ public interface ConsumerTarget
 
     State getState();
 
-    void consumerAdded(Consumer sub);
+    void consumerAdded(ConsumerImpl sub);
 
-    void consumerRemoved(Consumer sub);
+    void consumerRemoved(ConsumerImpl sub);
 
     void setStateListener(StateChangeListener<ConsumerTarget, State> listener);
 

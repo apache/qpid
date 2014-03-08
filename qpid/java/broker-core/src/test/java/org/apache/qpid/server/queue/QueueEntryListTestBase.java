@@ -24,7 +24,6 @@ import junit.framework.TestCase;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.consumer.Consumer;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

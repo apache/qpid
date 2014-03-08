@@ -18,20 +18,10 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.protocol;
 
-package org.apache.qpid.server.queue;
-
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.util.Action;
-
-public interface BaseQueue extends TransactionLogResource
+public interface SessionModelListener
 {
-    void enqueue(ServerMessage message, Action<? super MessageInstance> action);
-
-    boolean isDurable();
-    boolean isDeleted();
-
-    String getName();
+    void sessionAdded(AMQSessionModel<?,?> session);
+    void sessionRemoved(AMQSessionModel<?,?> session);
 }

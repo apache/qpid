@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.ExclusivityPolicy;
@@ -51,7 +52,6 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.DtxNotSelectedException;
 import org.apache.qpid.server.txn.IncorrectDtxStateException;
@@ -234,25 +234,25 @@ public class ServerSessionDelegate extends SessionDelegate
                     ((ServerSession)session).register(destination, target);
                     try
                     {
-                        EnumSet<Consumer.Option> options = EnumSet.noneOf(Consumer.Option.class);
+                        EnumSet<ConsumerImpl.Option> options = EnumSet.noneOf(ConsumerImpl.Option.class);
                         if(method.getAcquireMode() == MessageAcquireMode.PRE_ACQUIRED)
                         {
-                            options.add(Consumer.Option.ACQUIRES);
+                            options.add(ConsumerImpl.Option.ACQUIRES);
                         }
                         if(method.getAcquireMode() != MessageAcquireMode.NOT_ACQUIRED || method.getAcceptMode() == MessageAcceptMode.EXPLICIT)
                         {
-                            options.add(Consumer.Option.SEES_REQUEUES);
+                            options.add(ConsumerImpl.Option.SEES_REQUEUES);
                         }
                         if(method.getExclusive())
                         {
-                            options.add(Consumer.Option.EXCLUSIVE);
+                            options.add(ConsumerImpl.Option.EXCLUSIVE);
                         }
-                        Consumer sub =
+                        ((ServerSession)session).register(
                                 queue.addConsumer(target,
                                                   filterManager,
                                                   MessageTransferMessage.class,
                                                   destination,
-                                                  options);
+                                                  options));
                     }
                     catch (AMQQueue.ExistingExclusiveConsumer existing)
                     {

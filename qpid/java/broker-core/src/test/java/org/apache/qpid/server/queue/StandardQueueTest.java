@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.consumer.MockConsumer;
 import org.apache.qpid.server.message.MessageInstance;
@@ -57,8 +57,8 @@ public class StandardQueueTest extends AbstractQueueTestBase
         ServerMessage message = createMessage(25l);
         QueueConsumer consumer =
                 (QueueConsumer) getQueue().addConsumer(getConsumerTarget(), null, message.getClass(), "test",
-                                       EnumSet.of(Consumer.Option.ACQUIRES,
-                                                  Consumer.Option.SEES_REQUEUES));
+                                       EnumSet.of(ConsumerImpl.Option.ACQUIRES,
+                                                  ConsumerImpl.Option.SEES_REQUEUES));
 
         getQueue().enqueue(message, null);
         consumer.close();
@@ -84,8 +84,8 @@ public class StandardQueueTest extends AbstractQueueTestBase
                           null,
                           createMessage(-1l).getClass(),
                           "test",
-                          EnumSet.of(Consumer.Option.ACQUIRES,
-                                     Consumer.Option.SEES_REQUEUES));
+                          EnumSet.of(ConsumerImpl.Option.ACQUIRES,
+                                     ConsumerImpl.Option.SEES_REQUEUES));
         assertEquals("Unexpected active consumer count", 1, queue.getConsumerCountWithCredit());
 
         //verify adding an inactive consumer doesn't increase the count
@@ -97,8 +97,8 @@ public class StandardQueueTest extends AbstractQueueTestBase
                           null,
                           createMessage(-1l).getClass(),
                           "test",
-                          EnumSet.of(Consumer.Option.ACQUIRES,
-                                     Consumer.Option.SEES_REQUEUES));
+                          EnumSet.of(ConsumerImpl.Option.ACQUIRES,
+                                     ConsumerImpl.Option.SEES_REQUEUES));
         assertEquals("Unexpected active consumer count", 1, queue.getConsumerCountWithCredit());
 
         //verify behaviour in face of expected state changes:
@@ -151,8 +151,8 @@ public class StandardQueueTest extends AbstractQueueTestBase
                           null,
                           createMessage(-1l).getClass(),
                           "test",
-                          EnumSet.of(Consumer.Option.ACQUIRES,
-                                     Consumer.Option.SEES_REQUEUES));
+                          EnumSet.of(ConsumerImpl.Option.ACQUIRES,
+                                     ConsumerImpl.Option.SEES_REQUEUES));
 
         // put test messages into a queue
         putGivenNumberOfMessages(queue, 4);
@@ -219,8 +219,8 @@ public class StandardQueueTest extends AbstractQueueTestBase
                               null,
                               entries.get(0).getMessage().getClass(),
                               "test",
-                              EnumSet.of(Consumer.Option.ACQUIRES,
-                                         Consumer.Option.SEES_REQUEUES));
+                              EnumSet.of(ConsumerImpl.Option.ACQUIRES,
+                                         ConsumerImpl.Option.SEES_REQUEUES));
 
         // process queue
         testQueue.processQueue(new QueueRunner(testQueue)
@@ -335,7 +335,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
         }
 
         @Override
-        public boolean acquire(Consumer sub)
+        public boolean acquire(ConsumerImpl sub)
         {
             if(_message.getMessageNumber() % 2 == 0)
             {

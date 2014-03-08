@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.slf4j.Logger;
@@ -160,7 +160,7 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
             }
         }
 
-        Consumer assignedSub = group.getConsumer();
+        ConsumerImpl assignedSub = group.getConsumer();
 
         if(assignedSub == sub)
         {

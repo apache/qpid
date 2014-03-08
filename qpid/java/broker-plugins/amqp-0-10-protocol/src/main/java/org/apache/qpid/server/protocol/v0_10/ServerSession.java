@@ -45,6 +45,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.connection.SessionPrincipal;
+import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.protocol.ConsumerListener;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.TransactionTimeoutHelper;
@@ -108,6 +114,9 @@ public class ServerSession extends Session
     private ChannelLogSubject _logSubject;
     private final AtomicInteger _outstandingCredit = new AtomicInteger(UNLIMITED_CREDIT);
     private final CheckCapacityAction _checkCapacityAction = new CheckCapacityAction();
+    private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
+    private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
+
 
     public static interface MessageDispositionChangeListener
     {
@@ -133,6 +142,7 @@ public class ServerSession extends Session
     private final AtomicLong _txnCount = new AtomicLong(0);
 
     private Map<String, ConsumerTarget_0_10> _subscriptions = new ConcurrentHashMap<String, ConsumerTarget_0_10>();
+    private final CopyOnWriteArrayList<Consumer<?>> _consumers = new CopyOnWriteArrayList<Consumer<?>>();
 
     private final List<Action<? super ServerSession>> _taskList = new CopyOnWriteArrayList<Action<? super ServerSession>>();
 
@@ -456,6 +466,18 @@ public class ServerSession extends Session
     public void register(String destination, ConsumerTarget_0_10 sub)
     {
         _subscriptions.put(destination == null ? NULL_DESTINATION : destination, sub);
+    }
+
+
+    public void register(final ConsumerImpl consumerImpl)
+    {
+        if(consumerImpl instanceof Consumer<?>)
+        {
+            final Consumer<?> consumer = (Consumer<?>) consumerImpl;
+            _consumers.add(consumer);
+            consumer.addChangeListener(_consumerClosedListener);
+            consumerAdded(consumer);
+        }
     }
 
     public ConsumerTarget_0_10 getSubscription(String destination)
@@ -949,6 +971,41 @@ public class ServerSession extends Session
     }
 
     @Override
+    public Collection<Consumer<?>> getConsumers()
+    {
+
+        return Collections.unmodifiableCollection(_consumers);
+    }
+
+    @Override
+    public void addConsumerListener(final ConsumerListener listener)
+    {
+        _consumerListeners.add(listener);
+    }
+
+    @Override
+    public void removeConsumerListener(final ConsumerListener listener)
+    {
+        _consumerListeners.remove(listener);
+    }
+
+    private void consumerAdded(Consumer<?> consumer)
+    {
+        for(ConsumerListener l : _consumerListeners)
+        {
+            l.consumerAdded(consumer);
+        }
+    }
+
+    private void consumerRemoved(Consumer<?> consumer)
+    {
+        for(ConsumerListener l : _consumerListeners)
+        {
+            l.consumerRemoved(consumer);
+        }
+    }
+
+    @Override
     public int compareTo(ServerSession o)
     {
         return getId().compareTo(o.getId());
@@ -964,6 +1021,39 @@ public class ServerSession extends Session
             {
                 ((CapacityChecker)queue).checkCapacity(ServerSession.this);
             }
+        }
+    }
+
+    private class ConsumerClosedListener implements ConfigurationChangeListener
+    {
+        @Override
+        public void stateChanged(final ConfiguredObject object, final org.apache.qpid.server.model.State oldState, final org.apache.qpid.server.model.State newState)
+        {
+            if(newState == org.apache.qpid.server.model.State.DELETED)
+            {
+                consumerRemoved((Consumer<?>)object);
+            }
+        }
+
+        @Override
+        public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
+        {
+
+        }
+
+        @Override
+        public void childRemoved(final ConfiguredObject object, final ConfiguredObject child)
+        {
+
+        }
+
+        @Override
+        public void attributeSet(final ConfiguredObject object,
+                                 final String attributeName,
+                                 final Object oldAttributeValue,
+                                 final Object newAttributeValue)
+        {
+
         }
     }
 }

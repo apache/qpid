@@ -26,6 +26,7 @@ import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -224,4 +225,6 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     long getUnacknowledgedMessages();
 
+
+    void bindingCreated(Binding<BindingImpl> binding);
 }
