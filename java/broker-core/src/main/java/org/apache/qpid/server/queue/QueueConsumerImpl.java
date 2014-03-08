@@ -84,7 +84,6 @@ class QueueConsumerImpl
         STATE_MAP.put(ConsumerTarget.State.CLOSED, State.DELETED);
     }
 
-    private final EventLogger _eventLogger;
     private final ConsumerTarget _target;
     private final SubFlushRunner _runner = new SubFlushRunner(this);
     private volatile QueueContext _queueContext;
@@ -92,7 +91,7 @@ class QueueConsumerImpl
     {
         public void stateChanged(QueueConsumerImpl sub, State oldState, State newState)
         {
-            _eventLogger.message(QueueConsumerImpl.this, SubscriptionMessages.STATE(newState.toString()));
+            getEventLogger().message(QueueConsumerImpl.this, SubscriptionMessages.STATE(newState.toString()));
         }
     };
     @ManagedAttributeField
@@ -126,7 +125,6 @@ class QueueConsumerImpl
         _isTransient = optionSet.contains(Option.TRANSIENT);
         _target = target;
         _queue = queue;
-        _eventLogger = queue.getEventLogger();
         setupLogging();
 
         // Access control
@@ -180,12 +178,12 @@ class QueueConsumerImpl
             {
                 if(_targetClosed.compareAndSet(false,true))
                 {
-                    _eventLogger.message(getLogSubject(), SubscriptionMessages.CLOSE());
+                    getEventLogger().message(getLogSubject(), SubscriptionMessages.CLOSE());
                 }
             }
             else
             {
-                _eventLogger.message(getLogSubject(), SubscriptionMessages.STATE(newState.toString()));
+                getEventLogger().message(getLogSubject(), SubscriptionMessages.STATE(newState.toString()));
             }
         }
 
@@ -299,9 +297,9 @@ class QueueConsumerImpl
     private void setupLogging()
     {
         final String filterLogString = getFilterLogString();
-        _eventLogger.message(this,
-                          SubscriptionMessages.CREATE(filterLogString, _queue.isDurable() && _exclusive,
-                                                      filterLogString.length() > 0));
+        getEventLogger().message(this,
+                                 SubscriptionMessages.CREATE(filterLogString, _queue.isDurable() && _exclusive,
+                                                             filterLogString.length() > 0));
     }
 
     protected final LogSubject getLogSubject()
@@ -588,5 +586,10 @@ class QueueConsumerImpl
         }
 
         return logString;
+    }
+
+    private EventLogger getEventLogger()
+    {
+        return _queue.getEventLogger();
     }
 }

@@ -22,7 +22,6 @@ package org.apache.qpid.server.registry;
 
 import java.security.PrivilegedAction;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -44,7 +43,6 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.TaskPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -84,7 +82,7 @@ public class ApplicationRegistry implements IApplicationRegistry
     {
         _store = store;
         _eventLogger = eventLogger;
-        _virtualHostRegistry = new VirtualHostRegistry(eventLogger);
+        _virtualHostRegistry = new VirtualHostRegistry(_eventLogger);
         initialiseStatistics();
     }
 
@@ -93,25 +91,27 @@ public class ApplicationRegistry implements IApplicationRegistry
         // Create the RootLogger to be used during broker operation
         boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
         _messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
-
+        _eventLogger.setMessageLogger(_messageLogger);
         _logRecorder = new LogRecorder();
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
         MessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _messageLogger};
-        CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
-        _eventLogger.setMessageLogger(startupMessageLogger);
 
-        logStartupMessages();
+        CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
+        EventLogger startupLogger = new EventLogger(startupMessageLogger);
+
+
+        logStartupMessages(startupLogger);
 
         _taskExecutor = new TaskExecutor();
         _taskExecutor.start();
 
         StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(_store);
         RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder,
-                                                                  _eventLogger, _taskExecutor, brokerOptions, storeChangeListener);
+                                                                  _taskExecutor, brokerOptions, storeChangeListener);
         ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
         _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
-
+        _broker.setEventLogger(startupLogger);
         _virtualHostRegistry.setDefaultVirtualHostName((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
 
         initialiseStatisticsReporting();
@@ -119,8 +119,8 @@ public class ApplicationRegistry implements IApplicationRegistry
         // starting the broker
         _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
 
-        _eventLogger.message(BrokerMessages.READY());
-        _eventLogger.setMessageLogger(_messageLogger);
+        startupLogger.message(BrokerMessages.READY());
+        _broker.setEventLogger(_eventLogger);
 
     }
 
@@ -324,17 +324,17 @@ public class ApplicationRegistry implements IApplicationRegistry
         _dataReceived = new StatisticsCounter("bytes-received");
     }
 
-    private void logStartupMessages()
+    private void logStartupMessages(EventLogger eventLogger)
     {
-        _eventLogger.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
+        eventLogger.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(), QpidProperties.getBuildVersion()));
 
-        _eventLogger.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
+        eventLogger.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
                                                  System.getProperty("java.runtime.version", System.getProperty("java.version")),
                                                  SystemUtils.getOSName(),
                                                  SystemUtils.getOSVersion(),
                                                  SystemUtils.getOSArch()));
 
-        _eventLogger.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
+        eventLogger.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
     }
 
     @Override
