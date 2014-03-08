@@ -130,4 +130,10 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
         // TODO: state is not supported at the moment
         return false;
     }
+
+    @Override
+    public Collection<String> getAttributeNames()
+    {
+        return getAttributeNames(getClass());
+    }
 }
