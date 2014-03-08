@@ -182,7 +182,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public ExchangeImpl<?> getExchange(String name)
     {
-        return _exchangeMap.get(name);
+        return name == null ? null : _exchangeMap.get(name);
     }
 
     @Override
