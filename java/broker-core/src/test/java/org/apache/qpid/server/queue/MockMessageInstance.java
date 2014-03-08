@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -60,7 +60,7 @@ public class MockMessageInstance implements MessageInstance
     }
 
     @Override
-    public boolean isAcquiredBy(final Consumer consumer)
+    public boolean isAcquiredBy(final ConsumerImpl consumer)
     {
         return false;
     }
@@ -76,7 +76,7 @@ public class MockMessageInstance implements MessageInstance
     }
 
     @Override
-    public boolean acquire(final Consumer sub)
+    public boolean acquire(final ConsumerImpl sub)
     {
         return false;
     }
@@ -86,7 +86,7 @@ public class MockMessageInstance implements MessageInstance
         return false;
     }
 
-    public Consumer getDeliveredConsumer()
+    public ConsumerImpl getDeliveredConsumer()
     {
         return null;
     }
@@ -116,7 +116,7 @@ public class MockMessageInstance implements MessageInstance
     }
 
     @Override
-    public boolean isRejectedBy(final Consumer consumer)
+    public boolean isRejectedBy(final ConsumerImpl consumer)
     {
         return false;
     }

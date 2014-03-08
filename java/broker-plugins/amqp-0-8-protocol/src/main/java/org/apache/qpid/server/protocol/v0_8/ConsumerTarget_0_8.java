@@ -25,17 +25,16 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.protocol.v0_8.handler.BasicGetMethodHandler;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -71,7 +70,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
     private final AtomicLong _unacknowledgedCount = new AtomicLong(0);
     private final AtomicLong _unacknowledgedBytes = new AtomicLong(0);
-    private Consumer _consumer;
+    private ConsumerImpl _consumer;
 
 
     public static ConsumerTarget_0_8 createBrowserTarget(AMQChannel channel,
@@ -368,18 +367,18 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         }
     }
 
-    public Consumer getConsumer()
+    public ConsumerImpl getConsumer()
     {
         return _consumer;
     }
 
     @Override
-    public void consumerRemoved(final Consumer sub)
+    public void consumerRemoved(final ConsumerImpl sub)
     {
     }
 
     @Override
-    public void consumerAdded(final Consumer sub)
+    public void consumerAdded(final ConsumerImpl sub)
     {
         _consumer = sub;
     }
@@ -428,7 +427,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         boolean closed = false;
         State state = getState();
 
-        final Consumer consumer = getConsumer();
+        final ConsumerImpl consumer = getConsumer();
 
         if(consumer != null)
         {

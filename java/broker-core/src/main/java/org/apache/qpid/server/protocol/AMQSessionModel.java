@@ -20,11 +20,13 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.Deletable;
 
@@ -86,4 +88,10 @@ public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQCo
     int getChannelId();
 
     int getConsumerCount();
+
+    Collection<Consumer<?>> getConsumers();
+
+    void addConsumerListener(ConsumerListener listener);
+
+    void removeConsumerListener(ConsumerListener listener);
 }

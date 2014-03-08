@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -31,13 +31,13 @@ import java.util.EnumSet;
 
 public interface MessageSource extends TransactionLogResource, MessageNode
 {
-     Consumer addConsumer(ConsumerTarget target, FilterManager filters,
+     ConsumerImpl addConsumer(ConsumerTarget target, FilterManager filters,
                          Class<? extends ServerMessage> messageClass,
-                         String consumerName, EnumSet<Consumer.Option> options)
+                         String consumerName, EnumSet<ConsumerImpl.Option> options)
             throws ExistingExclusiveConsumer, ExistingConsumerPreventsExclusive,
                    ConsumerAccessRefused;
 
-    Collection<? extends Consumer> getConsumers();
+    Collection<? extends ConsumerImpl> getConsumers();
 
     void addConsumerRegistrationListener(ConsumerRegistrationListener<? super MessageSource> listener);
 
@@ -47,8 +47,8 @@ public interface MessageSource extends TransactionLogResource, MessageNode
 
     interface ConsumerRegistrationListener<Q extends MessageSource>
     {
-        void consumerAdded(Q source, Consumer consumer);
-        void consumerRemoved(Q queue, Consumer consumer);
+        void consumerAdded(Q source, ConsumerImpl consumer);
+        void consumerRemoved(Q queue, ConsumerImpl consumer);
     }
 
     /**

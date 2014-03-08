@@ -18,20 +18,11 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.message;
 
-package org.apache.qpid.server.queue;
+import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.model.Consumer;
 
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.util.Action;
-
-public interface BaseQueue extends TransactionLogResource
+public interface MessageSourceConsumer<X extends MessageSourceConsumer<X>> extends ConsumerImpl, Consumer<MessageSourceConsumer<X>>
 {
-    void enqueue(ServerMessage message, Action<? super MessageInstance> action);
-
-    boolean isDurable();
-    boolean isDeleted();
-
-    String getName();
 }

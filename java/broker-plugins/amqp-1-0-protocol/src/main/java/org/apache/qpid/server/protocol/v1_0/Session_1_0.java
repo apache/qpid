@@ -43,6 +43,7 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.server.connection.SessionPrincipal;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.protocol.AMQConstant;
@@ -50,6 +51,7 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.ConsumerListener;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -85,6 +87,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     private AtomicBoolean _closed = new AtomicBoolean();
     private final Subject _subject = new Subject();
 
+    private final CopyOnWriteArrayList<Consumer<?>> _consumers = new CopyOnWriteArrayList<Consumer<?>>();
+    private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
+    private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
 
 
     public Session_1_0(final Connection_1_0 connection, final SessionEndpoint endpoint)
@@ -184,6 +189,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         );
 
                         sendingLinkEndpoint.setLinkEventListener(new SubjectSpecificSendingLinkListener(sendingLink));
+                        registerConsumer(sendingLink.getConsumer());
 
                         link = sendingLink;
                         if(TerminusDurability.UNSETTLED_STATE.equals(source.getDurable()))
@@ -380,6 +386,17 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         else
         {
             link.start();
+        }
+    }
+
+    private void registerConsumer(final ConsumerImpl consumer)
+    {
+        if(consumer instanceof Consumer<?>)
+        {
+            Consumer<?> modelConsumer = (Consumer<?>) consumer;
+            _consumers.add(modelConsumer);
+            modelConsumer.addChangeListener(_consumerClosedListener);
+            consumerAdded(modelConsumer);
         }
     }
 
@@ -653,9 +670,9 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     @Override
     public int getConsumerCount()
     {
-        // TODO
-        return 0;
+        return getConsumers().size();
     }
+
 
 
     public String toLogString()
@@ -783,6 +800,74 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                     return null;
                 }
             });
+        }
+    }
+
+
+    @Override
+    public Collection<Consumer<?>> getConsumers()
+    {
+        return Collections.unmodifiableCollection(_consumers);
+    }
+
+    @Override
+    public void addConsumerListener(final ConsumerListener listener)
+    {
+        _consumerListeners.add(listener);
+    }
+
+    @Override
+    public void removeConsumerListener(final ConsumerListener listener)
+    {
+        _consumerListeners.remove(listener);
+    }
+
+    private void consumerAdded(Consumer<?> consumer)
+    {
+        for(ConsumerListener l : _consumerListeners)
+        {
+            l.consumerAdded(consumer);
+        }
+    }
+
+    private void consumerRemoved(Consumer<?> consumer)
+    {
+        for(ConsumerListener l : _consumerListeners)
+        {
+            l.consumerRemoved(consumer);
+        }
+    }
+
+    private class ConsumerClosedListener implements ConfigurationChangeListener
+    {
+        @Override
+        public void stateChanged(final ConfiguredObject object, final org.apache.qpid.server.model.State oldState, final org.apache.qpid.server.model.State newState)
+        {
+            if(newState == org.apache.qpid.server.model.State.DELETED)
+            {
+                consumerRemoved((Consumer<?>)object);
+            }
+        }
+
+        @Override
+        public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
+        {
+
+        }
+
+        @Override
+        public void childRemoved(final ConfiguredObject object, final ConfiguredObject child)
+        {
+
+        }
+
+        @Override
+        public void attributeSet(final ConfiguredObject object,
+                                 final String attributeName,
+                                 final Object oldAttributeValue,
+                                 final Object newAttributeValue)
+        {
+
         }
     }
 }

@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -40,7 +41,6 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.consumer.Consumer;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
@@ -327,7 +327,7 @@ public class MessageServlet extends AbstractServlet
                                    : entry.isAcquired()
                                              ? "Acquired"
                                              : "");
-        final Consumer deliveredConsumer = entry.getDeliveredConsumer();
+        final ConsumerImpl deliveredConsumer = entry.getDeliveredConsumer();
         object.put("deliveredTo", deliveredConsumer == null ? null : deliveredConsumer.getConsumerNumber());
         ServerMessage message = entry.getMessage();
 

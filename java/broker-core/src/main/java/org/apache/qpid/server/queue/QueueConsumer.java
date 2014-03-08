@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.consumer.Consumer;
-import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.model.Consumer;
 
-public interface QueueConsumer<X extends QueueConsumer<X>> extends Consumer, org.apache.qpid.server.model.Consumer<X>
+public interface QueueConsumer<X extends QueueConsumer<X>> extends ConsumerImpl, Consumer<X>
 {
 
     void flushBatched();

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.management.amqp;
 
-import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.internal.InternalMessage;
@@ -33,9 +33,9 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class ManagementNodeConsumer implements Consumer
+class ManagementNodeConsumer implements ConsumerImpl
 {
-    private final long _id = Consumer.CONSUMER_NUMBER_GENERATOR.getAndIncrement();
+    private final long _id = ConsumerImpl.CONSUMER_NUMBER_GENERATOR.getAndIncrement();
     private final ManagementNode _managementNode;
     private final List<ManagementResponse> _queue = Collections.synchronizedList(new ArrayList<ManagementResponse>());
     private final ConsumerTarget _target;

@@ -26,13 +26,13 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -49,7 +49,7 @@ import java.util.Set;
 public class AckTest extends QpidTestCase
 {
     private ConsumerTarget_0_8 _subscriptionTarget;
-    private Consumer _consumer;
+    private ConsumerImpl _consumer;
 
     private AMQProtocolSession _protocolSession;
 
@@ -176,8 +176,8 @@ public class AckTest extends QpidTestCase
                                                                  null,
                                                                  new LimitlessCreditManager());
         _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
-                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
-                                                  Consumer.Option.ACQUIRES));
+                                       EnumSet.of(ConsumerImpl.Option.SEES_REQUEUES,
+                                                  ConsumerImpl.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount, true);
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
@@ -209,8 +209,8 @@ public class AckTest extends QpidTestCase
                                        null,
                                        AMQMessage.class,
                                        DEFAULT_CONSUMER_TAG.toString(),
-                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
-                                                  Consumer.Option.ACQUIRES));
+                                       EnumSet.of(ConsumerImpl.Option.SEES_REQUEUES,
+                                                  ConsumerImpl.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount);
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
@@ -232,7 +232,7 @@ public class AckTest extends QpidTestCase
                                                                    null,
                                                                    new LimitlessCreditManager());
         _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
-                                       EnumSet.of(Consumer.Option.SEES_REQUEUES, Consumer.Option.ACQUIRES));
+                                       EnumSet.of(ConsumerImpl.Option.SEES_REQUEUES, ConsumerImpl.Option.ACQUIRES));
         final int msgCount = 10;
         publishMessages(msgCount, true);
 
@@ -255,8 +255,8 @@ public class AckTest extends QpidTestCase
                                                                  null,
                                                                  new LimitlessCreditManager());
         _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
-                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
-                                                  Consumer.Option.ACQUIRES));
+                                       EnumSet.of(ConsumerImpl.Option.SEES_REQUEUES,
+                                                  ConsumerImpl.Option.ACQUIRES));
 
         final int msgCount = 10;
         publishMessages(msgCount);
@@ -292,8 +292,8 @@ public class AckTest extends QpidTestCase
                                                                  null,
                                                                  new LimitlessCreditManager());
         _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
-                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
-                                                  Consumer.Option.ACQUIRES));
+                                       EnumSet.of(ConsumerImpl.Option.SEES_REQUEUES,
+                                                  ConsumerImpl.Option.ACQUIRES));
 
         final int msgCount = 10;
         publishMessages(msgCount);
@@ -326,8 +326,8 @@ public class AckTest extends QpidTestCase
                                                                  null,
                                                                  new LimitlessCreditManager());
         _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
-                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
-                                                  Consumer.Option.ACQUIRES));
+                                       EnumSet.of(ConsumerImpl.Option.SEES_REQUEUES,
+                                                  ConsumerImpl.Option.ACQUIRES));
 
         final int msgCount = 10;
         publishMessages(msgCount);
@@ -360,8 +360,8 @@ public class AckTest extends QpidTestCase
 
         _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel, DEFAULT_CONSUMER_TAG, null, creditManager);
         _consumer = _queue.addConsumer(_subscriptionTarget, null, AMQMessage.class, DEFAULT_CONSUMER_TAG.toString(),
-                                       EnumSet.of(Consumer.Option.SEES_REQUEUES,
-                                                  Consumer.Option.ACQUIRES));
+                                       EnumSet.of(ConsumerImpl.Option.SEES_REQUEUES,
+                                                  ConsumerImpl.Option.ACQUIRES));
 
         final int msgCount = 1;
         publishMessages(msgCount);

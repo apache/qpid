@@ -26,6 +26,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.Deletable;
+import org.apache.qpid.transport.SessionListener;
 
 import java.net.SocketAddress;
 import java.security.Principal;
@@ -98,4 +99,8 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
     String getVirtualHostName();
 
     String getRemoteContainerName();
+
+    void addSessionListener(SessionModelListener listener);
+
+    void removeSessionListener(SessionModelListener listener);
 }

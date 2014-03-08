@@ -56,10 +56,13 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.protocol.v0_8.handler.ServerMethodDispatcherImpl;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
@@ -73,7 +76,6 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -102,6 +104,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private final Map<Integer, AMQChannel<AMQProtocolEngine>> _channelMap =
             new HashMap<Integer, AMQChannel<AMQProtocolEngine>>();
+    private final CopyOnWriteArrayList<SessionModelListener> _sessionListeners =
+            new CopyOnWriteArrayList<SessionModelListener>();
 
     @SuppressWarnings("unchecked")
     private final AMQChannel<AMQProtocolEngine>[] _cachedChannels = new AMQChannel[CHANNEL_CACHE_SIZE + 1];
@@ -759,7 +763,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             synchronized (_channelMap)
             {
                 _channelMap.put(channel.getChannelId(), channel);
-
+                sessionAdded(channel);
                 if(_blocking)
                 {
                     channel.block();
@@ -770,6 +774,22 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         if (((channelId & CHANNEL_CACHE_SIZE) == channelId))
         {
             _cachedChannels[channelId] = channel;
+        }
+    }
+
+    private void sessionAdded(final AMQSessionModel<?,?> session)
+    {
+        for(SessionModelListener l : _sessionListeners)
+        {
+            l.sessionAdded(session);
+        }
+    }
+
+    private void sessionRemoved(final AMQSessionModel<?,?> session)
+    {
+        for(SessionModelListener l : _sessionListeners)
+        {
+            l.sessionRemoved(session);
         }
     }
 
@@ -844,15 +864,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      */
     public void removeChannel(int channelId)
     {
+        AMQChannel<AMQProtocolEngine> session;
         synchronized (_channelMap)
         {
-            _channelMap.remove(channelId);
-
+            session = _channelMap.remove(channelId);
             if ((channelId & CHANNEL_CACHE_SIZE) == channelId)
             {
                 _cachedChannels[channelId] = null;
             }
         }
+        sessionRemoved(session);
     }
 
     /**
@@ -1509,6 +1530,18 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return String.valueOf(getContextKey());
     }
 
+    @Override
+    public void addSessionListener(final SessionModelListener listener)
+    {
+        _sessionListeners.add(listener);
+    }
+
+    @Override
+    public void removeSessionListener(final SessionModelListener listener)
+    {
+        _sessionListeners.remove(listener);
+    }
+
     public void setDeferFlush(boolean deferFlush)
     {
         _deferFlush = deferFlush;
@@ -1525,7 +1558,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         }
 
         @Override
-        public void deliverToClient(final Consumer sub, final ServerMessage message,
+        public void deliverToClient(final ConsumerImpl sub, final ServerMessage message,
                                     final InstanceProperties props, final long deliveryTag)
         {
             registerMessageDelivered(message.getSize());

@@ -40,6 +40,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -79,6 +80,9 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
     private final CopyOnWriteArrayList<Action<? super ServerConnection>> _taskList =
             new CopyOnWriteArrayList<Action<? super ServerConnection>>();
+
+    private final CopyOnWriteArrayList<SessionModelListener> _sessionListeners =
+            new CopyOnWriteArrayList<SessionModelListener>();
 
     private volatile boolean _stopped;
 
@@ -383,6 +387,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public synchronized void registerSession(final Session ssn)
     {
         super.registerSession(ssn);
+        sessionAdded((ServerSession)ssn);
         if(_blocking)
         {
             ((ServerSession)ssn).block();
@@ -392,6 +397,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     @Override
     public synchronized void removeSession(final Session ssn)
     {
+        sessionRemoved((ServerSession)ssn);
         super.removeSession(ssn);
     }
 
@@ -550,6 +556,35 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     {
         return getConnectionDelegate().getClientId();
     }
+
+    @Override
+    public void addSessionListener(final SessionModelListener listener)
+    {
+        _sessionListeners.add(listener);
+    }
+
+    @Override
+    public void removeSessionListener(final SessionModelListener listener)
+    {
+        _sessionListeners.remove(listener);
+    }
+
+    private void sessionAdded(final AMQSessionModel<?,?> session)
+    {
+        for(SessionModelListener l : _sessionListeners)
+        {
+            l.sessionAdded(session);
+        }
+    }
+
+    private void sessionRemoved(final AMQSessionModel<?,?> session)
+    {
+        for(SessionModelListener l : _sessionListeners)
+        {
+            l.sessionRemoved(session);
+        }
+    }
+
 
     @Override
     public String getClientVersion()

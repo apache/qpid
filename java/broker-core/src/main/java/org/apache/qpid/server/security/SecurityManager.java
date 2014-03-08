@@ -21,7 +21,7 @@ package org.apache.qpid.server.security;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.consumer.Consumer;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 
 import org.apache.qpid.server.model.*;
@@ -354,7 +354,7 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void authoriseCreateConsumer(final Consumer consumer)
+    public void authoriseCreateConsumer(final ConsumerImpl consumer)
     {
         // TODO - remove cast to AMQQueue and allow testing of consumption from any MessageSource
         final AMQQueue queue = (AMQQueue) consumer.getMessageSource();

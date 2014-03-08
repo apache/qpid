@@ -29,10 +29,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.ConsumerListener;
 import org.apache.qpid.server.queue.QueueConsumer;
 
 final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> implements Session<SessionAdapter>
@@ -41,7 +42,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
 
     private AMQSessionModel _session;
-    private Map<Consumer, QueueConsumer> _consumerAdapters = new HashMap<Consumer, QueueConsumer>();
 
     @ManagedAttributeField
     private int _channelId;
@@ -50,6 +50,20 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     {
         super(Collections.<String,Object>emptyMap(),createAttributes(session), taskExecutor);
         _session = session;
+        _session.addConsumerListener(new ConsumerListener()
+        {
+            @Override
+            public void consumerAdded(final Consumer<?> consumer)
+            {
+                childAdded(consumer);
+            }
+
+            @Override
+            public void consumerRemoved(final Consumer<?> consumer)
+            {
+                childRemoved(consumer);
+            }
+        });
     }
 
     private static Map<String, Object> createAttributes(final AMQSessionModel session)
@@ -75,15 +89,12 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
     public Collection<org.apache.qpid.server.model.Consumer> getConsumers()
     {
-        synchronized (_consumerAdapters)
-        {
-            return new ArrayList<org.apache.qpid.server.model.Consumer>(_consumerAdapters.values());
-        }
+        return (Collection<Consumer>) _session.getConsumers();
     }
 
     public Collection<Publisher> getPublishers()
     {
-        return null;  //TODO
+        return Collections.emptySet();  //TODO
     }
 
     public String setName(final String currentName, final String desiredName)

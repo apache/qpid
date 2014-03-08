@@ -23,11 +23,11 @@ package org.apache.qpid.server.protocol.v0_8;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.consumer.Consumer;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -63,7 +63,7 @@ public class ExtractResendAndRequeueTest extends TestCase
     private static final int INITIAL_MSG_COUNT = 10;
     private AMQQueue _queue;
     private LinkedList<MessageInstance> _referenceList = new LinkedList<MessageInstance>();
-    private Consumer _consumer;
+    private ConsumerImpl _consumer;
     private boolean _queueDeleted;
 
     @Override
@@ -74,8 +74,8 @@ public class ExtractResendAndRequeueTest extends TestCase
         _queue = mock(AMQQueue.class);
         when(_queue.getName()).thenReturn(getName());
         when(_queue.isDeleted()).thenReturn(_queueDeleted);
-        _consumer = mock(Consumer.class);
-        when(_consumer.getConsumerNumber()).thenReturn(Consumer.CONSUMER_NUMBER_GENERATOR.getAndIncrement());
+        _consumer = mock(ConsumerImpl.class);
+        when(_consumer.getConsumerNumber()).thenReturn(ConsumerImpl.CONSUMER_NUMBER_GENERATOR.getAndIncrement());
 
 
         long id = 0;

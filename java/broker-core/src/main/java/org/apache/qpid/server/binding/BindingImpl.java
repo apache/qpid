@@ -94,6 +94,7 @@ public class BindingImpl
 
         //Perform ACLs
         queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
+        _queue.bindingCreated(this);
         _logSubject = new BindingLogSubject(_bindingKey,exchange,queue);
         getEventLogger().message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
                                                                       getArguments() != null

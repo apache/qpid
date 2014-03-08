@@ -21,10 +21,9 @@
 package org.apache.qpid.server.message;
 
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -50,23 +49,23 @@ public interface MessageInstance
 
     boolean acquiredByConsumer();
 
-    boolean isAcquiredBy(Consumer consumer);
+    boolean isAcquiredBy(ConsumerImpl consumer);
 
     void setRedelivered();
 
     boolean isRedelivered();
 
-    Consumer getDeliveredConsumer();
+    ConsumerImpl getDeliveredConsumer();
 
     void reject();
 
-    boolean isRejectedBy(Consumer consumer);
+    boolean isRejectedBy(ConsumerImpl consumer);
 
     boolean getDeliveredToConsumer();
 
     boolean expired();
 
-    boolean acquire(Consumer sub);
+    boolean acquire(ConsumerImpl sub);
 
     int getMaximumDeliveryCount();
 
@@ -160,7 +159,7 @@ public interface MessageInstance
         }
     }
 
-    public final class ConsumerAcquiredState<C extends Consumer> extends EntryState
+    public final class ConsumerAcquiredState<C extends ConsumerImpl> extends EntryState
     {
         private final C _consumer;
 

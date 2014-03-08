@@ -20,7 +20,6 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.consumer.Consumer;
 import org.apache.qpid.server.message.MessageInstance;
 
 public interface QueueEntry extends MessageInstance, Comparable<QueueEntry>

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
-public interface Consumer
+public interface ConsumerImpl
 {
     AtomicLong CONSUMER_NUMBER_GENERATOR = new AtomicLong(0);
 

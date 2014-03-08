@@ -29,10 +29,13 @@ import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.ConsumerListener;
+import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
@@ -41,9 +44,9 @@ import org.apache.qpid.server.util.StateChangeListener;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -175,12 +178,12 @@ public class MockConsumer implements ConsumerTarget
     }
 
     @Override
-    public void consumerAdded(final Consumer sub)
+    public void consumerAdded(final ConsumerImpl sub)
     {
     }
 
     @Override
-    public void consumerRemoved(final Consumer sub)
+    public void consumerRemoved(final ConsumerImpl sub)
     {
 
     }
@@ -336,6 +339,24 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
+        public Collection<Consumer<?>> getConsumers()
+        {
+            return null;
+        }
+
+        @Override
+        public void addConsumerListener(final ConsumerListener listener)
+        {
+
+        }
+
+        @Override
+        public void removeConsumerListener(final ConsumerListener listener)
+        {
+
+        }
+
+        @Override
         public void close(AMQConstant cause, String message)
         {
         }
@@ -472,6 +493,18 @@ public class MockConsumer implements ConsumerTarget
         public String getRemoteContainerName()
         {
             return null;
+        }
+
+        @Override
+        public void addSessionListener(final SessionModelListener listener)
+        {
+
+        }
+
+        @Override
+        public void removeSessionListener(final SessionModelListener listener)
+        {
+
         }
 
         @Override

@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import java.util.Collections;
 import junit.framework.AssertionFailedError;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
@@ -31,7 +32,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.consumer.Consumer;
 
 import static org.mockito.Mockito.when;
 
@@ -65,7 +65,7 @@ public class PriorityQueueTest extends AbstractQueueTestBase
         queue.enqueue(createMessage(9L, (byte) 0), null);
 
         // Register subscriber
-        queue.addConsumer(getConsumer(), null, null, "test", EnumSet.noneOf(Consumer.Option.class));
+        queue.addConsumer(getConsumer(), null, null, "test", EnumSet.noneOf(ConsumerImpl.Option.class));
         Thread.sleep(150);
 
         ArrayList<MessageInstance> msgs = getConsumer().getMessages();
