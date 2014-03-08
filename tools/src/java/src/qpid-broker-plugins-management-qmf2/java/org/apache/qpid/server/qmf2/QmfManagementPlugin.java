@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // Java Broker Management Imports
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 
 import org.apache.qpid.server.model.Broker;
@@ -186,7 +185,7 @@ public class QmfManagementPlugin extends AbstractPluginAdapter<QmfManagementPlug
     private void start()
     {
         // Log "QMF2 Management Startup" message.
-        CurrentActor.get().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
+        getBroker().getEventLogger().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
         // Wrap main startup logic in a try/catch block catching Exception. The idea is that if anything goes
         // wrong with QmfManagementPlugin startup it shouldn't fatally prevent the Broker from starting, though
@@ -247,7 +246,7 @@ public class QmfManagementPlugin extends AbstractPluginAdapter<QmfManagementPlug
             else if (_agent.isConnected())
             {
                 // Log QMF2 Management Ready message.
-                CurrentActor.get().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
+                getBroker().getEventLogger().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
             }
         }
         catch (Exception e) // Catch and log any Exception so we avoid Plugin failures stopping Broker startup.
@@ -268,7 +267,7 @@ public class QmfManagementPlugin extends AbstractPluginAdapter<QmfManagementPlug
         }
 
         // Log "QMF2 Management Stopped" message (may not get displayed).
-        CurrentActor.get().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
+        getBroker().getEventLogger().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
     /**
