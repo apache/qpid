@@ -225,6 +225,4 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     long getUnacknowledgedMessages();
 
-
-    void bindingCreated(Binding<BindingImpl> binding);
 }

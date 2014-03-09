@@ -958,11 +958,13 @@ public abstract class AbstractQueue
                 break;
             }
         }
+        childAdded(binding);
     }
 
     public void removeBinding(final BindingImpl binding)
     {
         _bindings.remove(binding);
+        childRemoved(binding);
     }
 
     public Collection<BindingImpl> getBindings()
@@ -3081,13 +3083,6 @@ public abstract class AbstractQueue
                                                         + entry.getKey());
             }
         }
-    }
-
-    @Override
-    public void bindingCreated(final Binding<BindingImpl> binding)
-    {
-        childAdded(binding);
-        binding.addChangeListener(_deletedChildListener);
     }
 
     private class DeletedChildListener implements ConfigurationChangeListener
