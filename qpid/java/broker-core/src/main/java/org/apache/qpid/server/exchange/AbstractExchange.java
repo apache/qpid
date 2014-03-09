@@ -676,6 +676,8 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             }
 
             queue.addBinding(b);
+            childAdded(b);
+
             doAddBinding(b);
 
             return true;
@@ -851,7 +853,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     {
         addBinding(bindingKey, (AMQQueue) queue, bindingArguments);
         final BindingImpl binding = getBinding(bindingKey, (AMQQueue) queue);
-        childAdded(binding);
         return binding;
     }
 
