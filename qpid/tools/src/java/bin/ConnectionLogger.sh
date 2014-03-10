@@ -18,6 +18,12 @@
 # under the License.
 #
 
+# Test if we're running on Cygwin.
+cygwin=false;
+case "`uname`" in
+  CYGWIN*) cygwin=true;;
+esac
+
 WHEREAMI=`dirname $0`
 if [ -z "$QMF2_HOME" ]; then
     export QMF2_HOME=`cd $WHEREAMI/../ && pwd`
@@ -26,6 +32,11 @@ fi
 QMF2_LIBS=$QMF2_HOME/build/lib
 
 CLASSPATH=$QMF2_LIBS/qpid-client-patch.jar:$CLASSPATH:$QMF2_LIBS/qmf2.jar
+
+# If we're on Cygwin we need to prepend the CLASSPATH with cygpath.
+if $cygwin; then
+  CLASSPATH=$(cygpath -wp $CLASSPATH)
+fi
 
 # Get the log level from the AMQJ_LOGGING_LEVEL environment variable.
 if [ -n "$AMQJ_LOGGING_LEVEL" ]; then
