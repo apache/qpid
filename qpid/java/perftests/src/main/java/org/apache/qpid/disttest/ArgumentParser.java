@@ -29,6 +29,12 @@ public class ArgumentParser
         for(String arg: args)
         {
             String[] splitArg = arg.split("=");
+            if (splitArg.length == 1 && splitArg[0].equals("-h"))
+            {
+                initialValues.put("-h", null);
+                continue;
+            }
+
             if(splitArg.length != 2)
             {
                 throw new IllegalArgumentException("arguments must have format <name>=<value>: " + arg);

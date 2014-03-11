@@ -33,6 +33,11 @@ public class Config
         _tests = Collections.emptyList();
     }
 
+    public Config(List<TestConfig> tests)
+    {
+        _tests = tests;
+    }
+
     public Config(TestConfig... tests)
     {
         _tests = Arrays.asList(tests);
@@ -63,7 +68,7 @@ public class Config
         return Collections.unmodifiableList(testInstances);
     }
 
-    List<TestConfig> getTestConfigs()
+    public List<TestConfig> getTestConfigs()
     {
         return Collections.unmodifiableList(_tests);
     }

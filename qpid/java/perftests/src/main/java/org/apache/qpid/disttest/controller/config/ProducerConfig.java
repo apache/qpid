@@ -40,9 +40,6 @@ public class ProducerConfig extends ParticipantConfig
     private long _startDelay;
     private String _messageProviderName;
 
-    /** used to ensure we only log about the overridden message size once */
-    private boolean _alreadyLoggedAboutOverriddenMessageSize;
-
     // For Gson
     public ProducerConfig()
     {
@@ -109,13 +106,7 @@ public class ProducerConfig extends ParticipantConfig
             try
             {
                 int overriddenMessageSize = Integer.valueOf(overriddenMessageSizeString);
-
-                if(!_alreadyLoggedAboutOverriddenMessageSize)
-                {
-                    LOGGER.info("Applied overridden maximum duration " + overriddenMessageSize);
-                    _alreadyLoggedAboutOverriddenMessageSize = true;
-                }
-
+                LOGGER.info("Applied overridden message size " + overriddenMessageSize);
                 return overriddenMessageSize;
             }
             catch (NumberFormatException e)

@@ -57,9 +57,13 @@ public class ClientRunner extends AbstractRunner
      */
     public void runClients()
     {
-        int numClients = Integer.parseInt(getCliOptions().get(NUM_OF_CLIENTS_PROP));
-
         Context context = getContext();
+        runClients(context);
+    }
+
+    public void runClients(Context context)
+    {
+        int numClients = Integer.parseInt(getCliOptions().get(NUM_OF_CLIENTS_PROP));
 
         for(int i = 1; i <= numClients; i++)
         {
