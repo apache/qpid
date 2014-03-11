@@ -40,7 +40,7 @@ if __FILE__ == $0
     request.reply_to = response_queue
     sender.send request
     response = receiver.fetch
-    puts "#{request.content} -> #{response.content}"
+    puts "#{request.content_object} -> #{response.content_object}"
   end
 
   connection.close

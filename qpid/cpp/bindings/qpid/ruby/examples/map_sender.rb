@@ -23,7 +23,7 @@ require 'qpid_messaging'
 
 broker  = ARGV[0] || "amqp:tcp:127.0.0.1:5672"
 address = ARGV[1] || "message_queue; {create: always}"
-options = ARGV[2] || []
+options = ARGV[2] || {}
 
 connection = Qpid::Messaging::Connection.new :url => broker, :options => options
 connection.open
@@ -34,18 +34,19 @@ begin
   message = Qpid::Messaging::Message.new
 
   content = {
-    :id      => 987654321,
+    "id"     => 987654321,
     :name    => "Widget",
     :percent => 0.99,
     :colors  => ["red", "green", "blue"]
   }
 
-  message.content = content
+  message.content_object = content
 
   sender.send message
 
 rescue Exception => error
   puts "Exception: #{error.message}"
+  puts error.backtrace
 end
 
 connection.close

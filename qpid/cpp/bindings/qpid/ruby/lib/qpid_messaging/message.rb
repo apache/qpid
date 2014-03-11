@@ -39,9 +39,8 @@ module Qpid
       def initialize(args = {})
         @message_impl = (args[:impl] if args[:impl]) || nil
         @message_impl = Cqpid::Message.new if @message_impl.nil?
-        @content = nil
         args = {} if args.nil?
-        self.content = args[:content] if args[:content]
+        self.content_object = args[:content] if args[:content]
       end
 
       def message_impl # :nodoc:
@@ -344,6 +343,29 @@ module Qpid
 
       # Returns the content's size in bytes.
       def content_size; @message_impl.getContentSize; end
+
+      # Sets the message content.
+      #
+      # ==== Options
+      #
+      # * +content+ - the content
+      #
+      # ==== Examples
+      #
+      #   # set a simple content for a message
+      #   msg.content_object = "This is a simple message."
+      #   # sets content that is automatically encoded
+      #   msg.content_object = {:foo => :bar}
+      #
+      def content_object=(content)
+        @message_impl.setContentObject(Qpid::Messaging.stringify(content))
+      end
+
+      # Returns the content of the +Message+.
+      #
+      def content_object
+        @message_impl.getContentObject()
+      end
 
     end
 

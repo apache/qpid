@@ -137,12 +137,12 @@ options[:properties].each_key {|key| message[key] = options[:properties][key]}
 
 (1..options[:count]).each do |count|
   if !options[:mapped].keys.empty?
-    message.content = options[:mapped]
+    message.content_object = options[:mapped]
   elsif options[:content]
-    message.content = options[:content]
+    message.content_object = options[:content]
   end
   message.durable = options[:durable]
-  message.content = options[:content] unless options[:content].nil?
+  message.content_object = options[:content] unless options[:content].nil?
   message.properties["spout-id"] = "#{count}"
   message.reply_to = options[:replyto] unless options[:replyto].nil? || options[:replyto].empty?
   sender.send message

@@ -36,12 +36,12 @@ if __FILE__ == $0
 
     if !address.nil?
       sender = session.create_sender address
-      response = Qpid::Messaging::Message.new :content => request.content.upcase
+      response = Qpid::Messaging::Message.new :content => request.content_object.upcase
       sender.send response
-      puts "Processed request: #{request.content} -> #{response.content}"
+      puts "Processed request: #{request.content_object} -> #{response.content_object}"
       session.acknowledge
     else
-      puts "Error: no reply address specified for request: #{request.content}"
+      puts "Error: no reply address specified for request: #{request.content_object}"
       session.reject request
     end
   end

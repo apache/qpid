@@ -64,6 +64,36 @@ module Qpid
         content.should == "My content"
       end
 
+      it "should store and retrieve string content properly" do
+        content = random_string(64)
+
+        @message.content_object = content
+        @message.content_object.should == content
+      end
+
+      it "should store and retrieve numeric content properly" do
+        content = rand(65536)
+
+        @message.content_object = content
+        @message.content_object.should == content
+      end
+
+      it "should store and retrieve map content properly" do
+        content = {}
+        (1..rand(128)).each { content["#{random_string(64)}"] = "#{random_string(64)}" }
+
+        @message.content = content
+        @message.content.should eq content
+      end
+
+      it "should store and retrieve list content properly" do
+        content = []
+        (1..rand(128)).each { content << "#{random_string(64)}" }
+
+        @message.content = content
+        @message.content.should eq content
+      end
+
       it "should properly encode a map when created" do
         message = Qpid::Messaging::Message.new :content => {"foo" => "bar"}
 

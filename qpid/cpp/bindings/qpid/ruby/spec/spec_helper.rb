@@ -18,3 +18,9 @@
 #
 
 require 'qpid_messaging'
+
+# Generates a random string of the specified length
+def random_string(length = 8)
+  (0...length).map{65.+(rand(25)).chr}.join
+end
+
