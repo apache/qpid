@@ -44,7 +44,7 @@ begin
   receiver = session.create_receiver address
 
   message = receiver.fetch
-  content = message.content
+  content = message.content_object
 
   print "content-type:#{message.content_type}"
   print "{"

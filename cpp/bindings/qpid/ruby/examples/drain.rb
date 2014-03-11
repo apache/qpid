@@ -93,11 +93,11 @@ begin
     message = receiver.fetch(options[:timeout])
     print "Message(properties="
     render_map message.properties
-    print ", content="
-    if message.content_type == "amqp/map"
-      print "'#{render_map message.content}')"
+    print ", content_object="
+    if message.content_object == "amqp/map"
+      print "'#{render_map message.content_object}')"
     else
-      print "'#{message.content}'"
+      print "'#{message.content_object}'"
     end
     print ")\n"
     session.acknowledge message

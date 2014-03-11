@@ -41,7 +41,7 @@ if __FILE__ == $0
 
   # Now receive the message
   message = receiver.fetch Qpid::Messaging::Duration::SECOND
-  puts "#{message.content}"
+  puts "#{message.content_object}"
   session.acknowledge
 
   connection.close
