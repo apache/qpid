@@ -33,7 +33,7 @@ QMF2_LIBS=$QMF2_HOME/build/lib
 
 CLASSPATH=$QMF2_LIBS/qpid-client-patch.jar:$CLASSPATH:$QMF2_LIBS/qmf2.jar
 
-# If we're on Cygwin we need to prepend the CLASSPATH with cygpath.
+# If we're on Cygwin we need to convert to Windows path.
 if $cygwin; then
   CLASSPATH=$(cygpath -wp $CLASSPATH)
 fi
