@@ -222,7 +222,7 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/ac
           <example>
             <title>Connection URL configured for SSL - SSL client-auth</title>
             <screen><![CDATA[
-amqp://guest:guest@clientid/?brokerlist='localhost:5671?trust_store='/path/to/app1_client_cert.ks'&key_store_password='secret''&ssl='true']]>
+amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1_client_cert.ks'&key_store_password='secret''&ssl='true']]>
             </screen>
           </example>
         </listitem>
