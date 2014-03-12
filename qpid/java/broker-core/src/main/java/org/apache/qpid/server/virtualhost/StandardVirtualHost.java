@@ -19,7 +19,6 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -29,7 +28,6 @@ import org.apache.qpid.server.store.DurableConfigurationStoreCreator;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.store.OperationalLoggingListener;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class StandardVirtualHost extends AbstractVirtualHost
 {
@@ -40,54 +38,19 @@ public class StandardVirtualHost extends AbstractVirtualHost
     StandardVirtualHost(VirtualHostRegistry virtualHostRegistry,
                         StatisticsGatherer brokerStatisticsGatherer,
                         org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                        VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
+                        VirtualHost virtualHost)
     {
-        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
+        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, virtualHost);
     }
 
 
 
-    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
+    private MessageStore initialiseMessageStore(VirtualHost virtualHost)
     {
         final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.STORE_TYPE);
         String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
-        MessageStore  messageStore = null;
-        if (storeType == null)
-        {
-            try
-            {
-                final Class<?> clazz = Class.forName(hostConfig.getMessageStoreClass());
-                final Object o = clazz.newInstance();
+        MessageStore messageStore = new MessageStoreCreator().createMessageStore(storeType);
 
-                if (!(o instanceof MessageStore))
-                {
-                    throw new ClassCastException(clazz + " does not implement " + MessageStore.class);
-                }
-
-                messageStore = (MessageStore) o;
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new ServerScopedRuntimeException("Failed to fina virtual host message store implementation, " +
-                                                       "check the classpath and the configuration", e);
-            }
-            catch (InstantiationException e)
-            {
-                throw new ServerScopedRuntimeException("Failed to initialise virtual host store, " +
-                                                       "check the configuration", e);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new ServerScopedRuntimeException("Failed to initialise virtual host store, " +
-                                                       "check the configuration", e);
-            }
-        }
-        else
-        {
-            messageStore = new MessageStoreCreator().createMessageStore(storeType);
-        }
-
-        final
         MessageStoreLogSubject
                 storeLogSubject = new MessageStoreLogSubject(getName(), messageStore.getClass().getSimpleName());
         OperationalLoggingListener.listen(messageStore, storeLogSubject, getEventLogger());
@@ -118,9 +81,9 @@ public class StandardVirtualHost extends AbstractVirtualHost
     }
 
 
-    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
+    protected void initialiseStorage(VirtualHost virtualHost)
     {
-        _messageStore = initialiseMessageStore(hostConfig, virtualHost);
+        _messageStore = initialiseMessageStore(virtualHost);
 
         _durableConfigurationStore = initialiseConfigurationStore(virtualHost);
 
@@ -132,7 +95,7 @@ public class StandardVirtualHost extends AbstractVirtualHost
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
         _messageStore.configureMessageStore(virtualHost, recoveryHandler, recoveryHandler);
 
-        initialiseModel(hostConfig);
+        initialiseModel();
 
         _messageStore.activate();
 

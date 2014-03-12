@@ -36,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -69,7 +68,6 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private String _storePath;
     private String _storeName;
     private MessageStore _messageStore;
-    private Configuration _configuration;
     private VirtualHost _virtualHost;
 
     private ConfigurationRecoveryHandler _recoveryHandler;
@@ -98,7 +96,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _storePath = TMP_FOLDER + File.separator + _storeName;
         FileUtils.delete(new File(_storePath), true);
         setTestSystemProperty("QPID_WORK", TMP_FOLDER);
-        _configuration = mock(Configuration.class);
+
         _recoveryHandler = mock(ConfigurationRecoveryHandler.class);
         _storedMessageRecoveryHandler = mock(StoredMessageRecoveryHandler.class);
         _logRecoveryHandler = mock(TransactionLogRecoveryHandler.class);
@@ -116,8 +114,6 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(_exchange.getId()).thenReturn(_exchangeId);
         when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
         when(_exchange.getEventLogger()).thenReturn(new EventLogger());
-        when(_configuration.getString(eq(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY), anyString())).thenReturn(
-                _storePath);
         when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);
 
         _bindingArgs = new HashMap<String, Object>();

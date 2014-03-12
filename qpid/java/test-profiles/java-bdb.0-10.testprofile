@@ -31,4 +31,5 @@ profile.excludes=JavaExcludes JavaPersistentExcludes Java010Excludes JavaBDBExcl
 broker.clean.between.tests=true
 broker.persistent=true
 broker.version=v0_10
+messagestore.type=BDB
 

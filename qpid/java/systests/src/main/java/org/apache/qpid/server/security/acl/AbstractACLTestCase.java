@@ -18,22 +18,22 @@
  */
 package org.apache.qpid.server.security.acl;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.naming.NamingException;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -98,23 +98,24 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
         }
     }
     
-    public void writeACLFile(final String vhost, final String...rules) throws ConfigurationException, IOException
+    public void writeACLFile(final String vhost, final String...rules) throws IOException
     {
         writeACLFileUtil(this, vhost, rules);
     }
 
-    public static void writeACLFileUtil(QpidBrokerTestCase testcase, String vhost, String...rules) throws ConfigurationException, IOException
+    public static void writeACLFileUtil(QpidBrokerTestCase testcase, String vhost, String...rules) throws IOException
     {
         File aclFile = File.createTempFile(testcase.getClass().getSimpleName(), testcase.getName());
         aclFile.deleteOnExit();
 
+        TestBrokerConfiguration config = testcase.getBrokerConfiguration();
         if (vhost == null)
         {
-            testcase.getBrokerConfiguration().addAclFileConfiguration(aclFile.getAbsolutePath());
+            config.addAclFileConfiguration(aclFile.getAbsolutePath());
         }
         else
         {
-            testcase.setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + vhost + ".security.acl", aclFile.getAbsolutePath());
+            config.setObjectAttribute(vhost, VirtualHost.SECURITY_ACL, aclFile.getAbsolutePath());
         }
 
         PrintWriter out = new PrintWriter(new FileWriter(aclFile));

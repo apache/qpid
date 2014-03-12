@@ -22,7 +22,7 @@
   "name": "Broker",
   "defaultVirtualHost" : "test",
   "storeVersion": 1,
-  "modelVersion": "1.0",
+  "modelVersion": "1.3",
   "authenticationproviders" : [ {
     "name" : "plain",
     "type" : "PlainPasswordFile",
@@ -59,6 +59,8 @@
   }],
   "virtualhosts" : [ {
     "name" : "test",
-    "configPath" : "${broker.virtualhosts-config}"
+    "type" : "STANDARD",
+    "storeType": "${messagestore.type}",
+    "storePath" : "${QPID_WORK}/test"
   } ]
 }

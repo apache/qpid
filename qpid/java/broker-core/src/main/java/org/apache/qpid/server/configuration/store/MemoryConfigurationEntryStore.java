@@ -545,7 +545,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             }
             else if (fieldNode.isObject())
             {
-                // ignore, in-line objects are not supported yet
+                attributes.put(fieldName, toObject(fieldNode) );
             }
             else
             {

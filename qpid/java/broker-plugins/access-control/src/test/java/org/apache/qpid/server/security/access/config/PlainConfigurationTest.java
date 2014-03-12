@@ -36,12 +36,6 @@ import org.apache.qpid.server.security.access.Operation;
 
 import static org.mockito.Mockito.mock;
 
-/**
- * These tests check that the ACL file parsing works correctly.
- *
- * For each message that can be returned in a {@link ConfigurationException}, an ACL file is created that should trigger this
- * particular message.
- */
 public class PlainConfigurationTest extends TestCase
 {
     private PlainConfiguration writeACLConfig(String...aclData) throws Exception

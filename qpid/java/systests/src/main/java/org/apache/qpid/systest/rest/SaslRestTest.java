@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -347,7 +346,7 @@ public class SaslRestTest extends QpidRestTestCase
         }
     }
 
-    private void configureBase64MD5FilePrincipalDatabase() throws IOException, ConfigurationException
+    private void configureBase64MD5FilePrincipalDatabase() throws IOException
     {
         // generate user password entry
         String passwordFileEntry;
@@ -357,7 +356,7 @@ public class SaslRestTest extends QpidRestTestCase
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new ConfigurationException(e);
+            throw new RuntimeException(e);
         }
 
         // store the entry in the file

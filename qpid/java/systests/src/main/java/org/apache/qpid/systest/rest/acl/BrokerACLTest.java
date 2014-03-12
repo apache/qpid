@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -58,7 +57,7 @@ public class BrokerACLTest extends QpidRestTestCase
     private String _secondaryAclFileContent = "";
 
     @Override
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER);

@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
-import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
@@ -49,28 +47,6 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory, DurableConf
     {
         return new JDBCMessageStore();
     }
-
-    @Override
-    public Map<String, Object> convertStoreConfiguration(Configuration storeConfiguration)
-    {
-        Map<String,Object> convertedMap = new HashMap<String,Object>();
-        convertedMap.put("jdbcBlobType", storeConfiguration.getString("sqlBlobType"));
-        convertedMap.put("jdbcVarbinaryType", storeConfiguration.getString("sqlVarbinaryType"));
-        if(storeConfiguration.containsKey("useBytesForBlob"))
-        {
-            convertedMap.put("jdbcUseBytesForBlob", storeConfiguration.getBoolean("useBytesForBlob"));
-        }
-        convertedMap.put("jdbcBigIntType", storeConfiguration.getString("sqlBigIntType"));
-        convertedMap.put("connectionPool", storeConfiguration.getString("pool.type"));
-        convertedMap.put("minConnectionsPerPartition", storeConfiguration.getInteger("pool.minConnectionsPerPartition",
-                null));
-        convertedMap.put("maxConnectionsPerPartition", storeConfiguration.getInteger("pool.maxConnectionsPerPartition",
-                null));
-        convertedMap.put("partitionCount", storeConfiguration.getInteger("pool.partitionCount", null));
-
-        return convertedMap;
-    }
-
 
     @Override
     public void validateAttributes(Map<String, Object> attributes)

@@ -184,7 +184,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         final int oldBdbPort = _clusterCreator.getBdbPortForBrokerPort(brokerPortNumberToBeMoved);
         final int newBdbPort = getNextAvailable(oldBdbPort + 1);
 
-        storeBean.updateAddress(_clusterCreator.getNodeNameForNodeAt(oldBdbPort), _clusterCreator.getIpAddressOfBrokerHost(), newBdbPort);
+        storeBean.updateAddress(_clusterCreator.getNodeNameForNodeAt(oldBdbPort), "localhost", newBdbPort);
 
         _clusterCreator.modifyClusterNodeBdbAddress(brokerPortNumberToBeMoved, newBdbPort);
 

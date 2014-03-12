@@ -20,11 +20,15 @@
  */
 package org.apache.qpid.test.client.timeouts;
 
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.SlowMessageStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -43,7 +47,6 @@ public class SyncWaitDelayTest extends QpidBrokerTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(SyncWaitDelayTest.class);
 
-    private String VIRTUALHOST = "test";
     protected long POST_COMMIT_DELAY = 1000L;
     protected long SYNC_WRITE_TIMEOUT = POST_COMMIT_DELAY + 1000;
 
@@ -54,12 +57,11 @@ public class SyncWaitDelayTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
-
-        final String prefix = "virtualhosts.virtualhost." + VIRTUALHOST;
-        setVirtualHostConfigurationProperty(prefix + ".type", StandardVirtualHostFactory.TYPE);
-        setVirtualHostConfigurationProperty(prefix + ".store.class", org.apache.qpid.server.store.SlowMessageStore.class.getName());
-        setVirtualHostConfigurationProperty(prefix + ".store.delays.commitTran.post", String.valueOf(POST_COMMIT_DELAY));
-
+        Map<String, Object> slowMessageStoreDelays = new HashMap<String,Object>();
+        slowMessageStoreDelays.put("postcommitTran", POST_COMMIT_DELAY);
+        TestBrokerConfiguration config = getBrokerConfiguration();
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.STORE_TYPE, SlowMessageStore.TYPE);
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, "slowMessageStoreDelays", slowMessageStoreDelays);
         super.setUp();
 
         //Set the syncWrite timeout to be just larger than the delay on the commitTran.

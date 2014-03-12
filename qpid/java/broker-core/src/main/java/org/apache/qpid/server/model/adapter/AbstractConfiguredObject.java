@@ -377,6 +377,25 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    <T extends ConfiguredObject<?>> Object getAttribute(String name, T parent, String parentAttributeName)
+    {
+        Object value = getActualAttribute(name);
+        if (value != null )
+        {
+            return value;
+        }
+        if (parent != null)
+        {
+            value = parent.getAttribute(parentAttributeName);
+            if (value != null)
+            {
+                return value;
+            }
+        }
+        return getDefaultAttribute(name);
+    }
+
+
     @Override
     public String getDescription()
     {

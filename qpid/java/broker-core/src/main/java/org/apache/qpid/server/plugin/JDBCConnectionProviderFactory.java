@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 

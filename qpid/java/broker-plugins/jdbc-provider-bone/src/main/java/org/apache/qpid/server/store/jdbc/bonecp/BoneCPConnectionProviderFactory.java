@@ -21,7 +21,6 @@
 package org.apache.qpid.server.store.jdbc.bonecp;
 
 import java.sql.SQLException;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;

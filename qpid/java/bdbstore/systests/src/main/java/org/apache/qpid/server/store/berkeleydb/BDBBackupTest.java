@@ -31,6 +31,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.Piper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -59,12 +60,8 @@ public class BDBBackupTest extends QpidBrokerTestCase
         super.setUp();
         _backupToDir = new File(SYSTEM_TMP_DIR + File.separator + getTestName());
         _backupToDir.mkdirs();
-
-        final String qpidWork = getBroker(DEFAULT_PORT).getWorkingDirectory();
-
-        // It would be preferable to lookup the store path using #getConfigurationStringProperty("virtualhosts...")
-        // but the config as known to QBTC does not pull-in the virtualhost section from its separate source file
-        _backupFromDir = new File(qpidWork + File.separator + TEST_VHOST + "-store");
+        Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(TEST_VHOST);
+        _backupFromDir = new File((String)virtualHostAttributes.get(VirtualHost.STORE_PATH));
         boolean fromDirExistsAndIsDir = _backupFromDir.isDirectory();
         assertTrue("backupFromDir " + _backupFromDir + " should already exist", fromDirExistsAndIsDir);
     }

@@ -30,6 +30,13 @@ import org.apache.qpid.server.model.Exchange;
 
 public class ExchangeRestTest extends QpidRestTestCase
 {
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        getRestTestHelper().createTestQueues();
+    }
+
     public void testGet() throws Exception
     {
         List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("/rest/exchange");
@@ -98,7 +105,7 @@ public class ExchangeRestTest extends QpidRestTestCase
     {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> bindings = (List<Map<String, Object>>) exchange.get("bindings");
-        for (String queueName : EXPECTED_QUEUES)
+        for (String queueName : RestTestHelper.EXPECTED_QUEUES)
         {
             Map<String, Object> binding = getRestTestHelper().find(Binding.NAME, queueName, bindings);
             Asserts.assertBinding(queueName, (String) exchange.get(Exchange.NAME), binding);

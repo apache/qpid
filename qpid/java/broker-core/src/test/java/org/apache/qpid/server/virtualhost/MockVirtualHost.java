@@ -23,7 +23,6 @@ package org.apache.qpid.server.virtualhost;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -69,11 +68,6 @@ public class MockVirtualHost implements VirtualHost
     }
 
     public DtxRegistry getDtxRegistry()
-    {
-        return null;
-    }
-
-    public VirtualHostConfiguration getConfiguration()
     {
         return null;
     }
@@ -369,5 +363,11 @@ public class MockVirtualHost implements VirtualHost
     public EventLogger getEventLogger()
     {
         return null;
+    }
+
+    @Override
+    public boolean getDefaultDeadLetterQueueEnabled()
+    {
+        return false;
     }
 }

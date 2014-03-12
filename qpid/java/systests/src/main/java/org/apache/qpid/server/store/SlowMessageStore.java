@@ -23,8 +23,8 @@ package org.apache.qpid.server.store;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
-import org.apache.log4j.Logger;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.VirtualHost;
@@ -44,6 +44,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     private DurableConfigurationStore _durableConfigurationStore = (DurableConfigurationStore) _realStore;
     private static final String PRE = "pre";
     private static final String POST = "post";
+    public static final String TYPE = "SLOW";
     private String DEFAULT_DELAY = "default";
 
     // ***** MessageStore Interface.
@@ -340,7 +341,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public String getStoreType()
     {
-        return "SLOW";
+        return TYPE;
     }
 
     @Override

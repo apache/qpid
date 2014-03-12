@@ -63,6 +63,6 @@ exclude.modules=none
 
 profile.clustered=false
 broker.config-store-type=json
-broker.virtualhosts-config="${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml"
+
 
 

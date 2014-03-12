@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.store.derby;
 
-import java.util.Collections;
 import java.util.Map;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
@@ -49,13 +47,6 @@ public class DerbyMessageStoreFactory implements MessageStoreFactory, DurableCon
     {
         return new DerbyMessageStore();
     }
-
-    @Override
-    public Map<String, Object> convertStoreConfiguration(Configuration configuration)
-    {
-        return Collections.emptyMap();
-    }
-
 
     @Override
     public void validateAttributes(Map<String, Object> attributes)

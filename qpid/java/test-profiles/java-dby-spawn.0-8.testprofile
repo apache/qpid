@@ -33,4 +33,4 @@ broker.persistent=true
 # Do not enable. Allow client to attempt 0-10 and negotiate downwards
 #
 #qpid.amqp.version=0-8
-
+messagestore.type=DERBY

@@ -31,7 +31,6 @@ import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
@@ -68,12 +67,12 @@ public class DefaultAccessControlTest extends TestCase
         _plugin = null;
     }
 
-    private void setUpGroupAccessControl() throws ConfigurationException
+    private void setUpGroupAccessControl()
     {
         configureAccessControl(createGroupRuleSet());
     }
 
-    private void configureAccessControl(final RuleSet rs) throws ConfigurationException
+    private void configureAccessControl(final RuleSet rs)
     {
         _plugin = new DefaultAccessControl(rs);
     }
@@ -98,7 +97,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * ACL plugin must always abstain if there is no  subject attached to the thread.
      */
-    public void testNoSubjectAlwaysAbstains() throws ConfigurationException
+    public void testNoSubjectAlwaysAbstains()
     {
         setUpGroupAccessControl();
         final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
@@ -109,7 +108,7 @@ public class DefaultAccessControlTest extends TestCase
      * Tests that an allow rule expressed with a username allows an operation performed by a thread running
      * with the same username.
      */
-    public void testUsernameAllowsOperation() throws ConfigurationException
+    public void testUsernameAllowsOperation()
     {
         setUpGroupAccessControl();
         Subject.doAs(TestPrincipalUtils.createTestSubject("user1"), new PrivilegedAction<Object>()
@@ -128,7 +127,7 @@ public class DefaultAccessControlTest extends TestCase
      * Tests that an allow rule expressed with an <b>ACL groupname</b> allows an operation performed by a thread running
      * by a user who belongs to the same group..
      */
-    public void testGroupMembershipAllowsOperation() throws ConfigurationException
+    public void testGroupMembershipAllowsOperation()
     {
         setUpGroupAccessControl();
 
@@ -141,7 +140,7 @@ public class DefaultAccessControlTest extends TestCase
      * Tests that a deny rule expressed with a <b>groupname</b> denies an operation performed by a thread running
      * by a user who belongs to the same group.
      */
-    public void testGroupMembershipDeniesOperation() throws ConfigurationException
+    public void testGroupMembershipDeniesOperation()
     {
         setUpGroupAccessControl();
         authoriseAndAssertResult(Result.DENIED, "user3", DENIED_GROUP);
@@ -150,7 +149,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * Tests that the catch all deny denies the operation and logs with the logging actor.
      */
-    public void testCatchAllRuleDeniesUnrecognisedUsername() throws ConfigurationException
+    public void testCatchAllRuleDeniesUnrecognisedUsername()
     {
         setUpGroupAccessControl();
         Subject.doAs(TestPrincipalUtils.createTestSubject("unknown", "unkgroup1", "unkgroup2"),
@@ -177,7 +176,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * Tests that a grant access method rule allows any access operation to be performed on any component
      */
-    public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnAllComponents() throws ConfigurationException
+    public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnAllComponents()
     {
         final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
@@ -203,7 +202,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * Tests that a grant access method rule allows any access operation to be performed on a specified component
      */
-    public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
+    public void testAuthoriseAccessMethodWhenAllAccessOperationsAllowedOnSpecifiedComponent()
     {
         final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
@@ -303,7 +302,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * Tests that a grant access method rule allows any access operation to be performed on a specified component
      */
-    public void testAuthoriseAccessMethodWhenSpecifiedAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
+    public void testAuthoriseAccessMethodWhenSpecifiedAccessOperationsAllowedOnSpecifiedComponent()
     {
         final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
@@ -340,7 +339,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * Tests that granting of all method rights on a method allows a specified operation to be performed on any component
      */
-    public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnSpecifiedMethodForAllComponents() throws ConfigurationException
+    public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnSpecifiedMethodForAllComponents()
     {
         final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
@@ -379,7 +378,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * Tests that granting of all method rights allows any operation to be performed on any component
      */
-    public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnAllMethodsInAllComponents() throws ConfigurationException
+    public void testAuthoriseAccessUpdateMethodWhenAllRightsGrantedOnAllMethodsInAllComponents()
     {
         final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
@@ -417,7 +416,7 @@ public class DefaultAccessControlTest extends TestCase
     /**
      * Tests that granting of access method rights with mask allows matching operations to be performed on the specified component
      */
-    public void testAuthoriseAccessMethodWhenMatchingAccessOperationsAllowedOnSpecifiedComponent() throws ConfigurationException
+    public void testAuthoriseAccessMethodWhenMatchingAccessOperationsAllowedOnSpecifiedComponent()
     {
         final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 

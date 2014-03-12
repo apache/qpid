@@ -30,12 +30,18 @@ import org.apache.qpid.server.model.Binding;
 public class BindingRestTest extends QpidRestTestCase
 {
 
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        getRestTestHelper().createTestQueues();
+    }
+
     public void testGetAllBindings() throws Exception
     {
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding");
+        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test");
         assertNotNull("Bindings cannot be null", bindings);
-        assertTrue("Unexpected number of bindings: " + bindings.size(),
-                bindings.size() >= EXPECTED_VIRTUALHOSTS.length * EXPECTED_QUEUES.length);
+        assertEquals("Unexpected number of bindings", RestTestHelper.EXPECTED_QUEUES.length, bindings.size());
         for (Map<String, Object> binding : bindings)
         {
             Asserts.assertBinding((String) binding.get(Binding.NAME), (String) binding.get(Binding.EXCHANGE), binding);
@@ -46,8 +52,8 @@ public class BindingRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test");
         assertNotNull("Bindings cannot be null", bindings);
-        assertEquals("Unexpected number of bindings", EXPECTED_QUEUES.length, bindings.size());
-        for (String queueName : EXPECTED_QUEUES)
+        assertEquals("Unexpected number of bindings", RestTestHelper.EXPECTED_QUEUES.length, bindings.size());
+        for (String queueName : RestTestHelper.EXPECTED_QUEUES)
         {
             Map<String, Object> searchAttributes = new HashMap<String, Object>();
             searchAttributes.put(Binding.NAME, queueName);
@@ -62,8 +68,8 @@ public class BindingRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct");
         assertNotNull("Bindings cannot be null", bindings);
-        assertEquals("Unexpected number of bindings", EXPECTED_QUEUES.length, bindings.size());
-        for (String queueName : EXPECTED_QUEUES)
+        assertEquals("Unexpected number of bindings", RestTestHelper.EXPECTED_QUEUES.length, bindings.size());
+        for (String queueName : RestTestHelper.EXPECTED_QUEUES)
         {
             Map<String, Object> binding = getRestTestHelper().find(Binding.NAME, queueName, bindings);
             Asserts.assertBinding(queueName, "amq.direct", binding);

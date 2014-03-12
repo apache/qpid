@@ -56,7 +56,8 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
-    String CONFIG_PATH                          = "configPath";
+    String SECURITY_ACL                         = "securityAcl";
+    String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
 
     // Attributes
 
@@ -123,7 +124,10 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     long getQueue_alertThresholdQueueDepthMessages();
 
     @ManagedAttribute
-    String getConfigPath();
+    String getSecurityAcl();
+
+    @ManagedAttribute
+    int getHouseKeepingThreadCount();
 
     @ManagedStatistic
     long getQueueCount();

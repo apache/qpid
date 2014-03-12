@@ -1,4 +1,4 @@
-package org.apache.qpid.server.store;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,26 +19,29 @@ package org.apache.qpid.server.store;/*
  *
  */
 
+package org.apache.qpid.server.store;
+
 import java.util.Map;
 
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 
-public class SlowMessageStoreFactory implements MessageStoreFactory
+public class TestableMemoryMessageStoreFactory implements MessageStoreFactory
 {
     @Override
     public String getType()
     {
-        return SlowMessageStore.TYPE;
+        return TestableMemoryMessageStore.TYPE;
     }
 
     @Override
     public MessageStore createMessageStore()
     {
-        return new SlowMessageStore();
+        return new TestableMemoryMessageStore();
     }
 
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
     }
+
 }

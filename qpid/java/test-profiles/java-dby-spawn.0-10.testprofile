@@ -29,3 +29,4 @@ messagestore.class.name=org.apache.qpid.server.store.derby.DerbyMessageStore
 profile.excludes=JavaPersistentExcludes JavaDerbyExcludes Java010Excludes
 broker.clean.between.tests=true
 broker.persistent=true
+messagestore.type=DERBY

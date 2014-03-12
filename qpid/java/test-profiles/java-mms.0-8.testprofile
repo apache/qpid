@@ -31,3 +31,4 @@ broker.virtualhosts-config=${QPID_HOME}/etc/virtualhosts-systests.xml
 #
 #qpid.amqp.version=0-8
 profile.excludes=JavaTransientExcludes XAExcludes JavaPre010Excludes
+messagestore.type=Memory

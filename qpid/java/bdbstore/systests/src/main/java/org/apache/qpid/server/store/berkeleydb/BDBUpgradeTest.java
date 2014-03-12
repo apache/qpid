@@ -22,6 +22,7 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
@@ -43,8 +44,10 @@ import javax.management.openmbean.TabularDataSupport;
 
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +83,8 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         assertNotNull("QPID_WORK must be set", QPID_WORK_ORIG);
-        _storeLocation = getWorkDirBaseDir() + File.separator + "test-store";
+        Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+        _storeLocation = (String)virtualHostAttributes.get(VirtualHost.STORE_PATH);
 
         //Clear the two target directories if they exist.
         File directory = new File(_storeLocation);

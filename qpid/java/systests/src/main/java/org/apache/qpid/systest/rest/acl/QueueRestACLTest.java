@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
@@ -38,7 +37,7 @@ public class QueueRestACLTest extends QpidRestTestCase
     private static final String DENIED_USER = "user2";
 
     @Override
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER);

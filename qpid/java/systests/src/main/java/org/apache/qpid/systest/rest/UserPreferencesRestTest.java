@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
@@ -63,7 +62,7 @@ public class UserPreferencesRestTest extends QpidRestTestCase
     }
 
     @Override
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         super.customizeConfiguration();
 

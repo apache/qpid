@@ -20,12 +20,7 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
@@ -51,35 +46,6 @@ public class BDBMessageStoreFactory implements MessageStoreFactory, DurableConfi
     public MessageStore createMessageStore()
     {
         return new BDBMessageStore();
-    }
-
-    @Override
-    public Map<String, Object> convertStoreConfiguration(Configuration storeConfiguration)
-    {
-        final List<Object> argumentNames = storeConfiguration.getList("envConfig.name");
-        final List<Object> argumentValues = storeConfiguration.getList("envConfig.value");
-        final int initialSize = argumentNames.size();
-
-        final Map<String,String> attributes = new HashMap<String,String>(initialSize);
-
-        for (int i = 0; i < argumentNames.size(); i++)
-        {
-            final String argName = argumentNames.get(i).toString();
-            final String argValue = argumentValues.get(i).toString();
-
-            attributes.put(argName, argValue);
-        }
-
-        if(initialSize != 0)
-        {
-            return Collections.singletonMap(BDBMessageStore.ENVIRONMENT_CONFIGURATION, (Object)attributes);
-        }
-        else
-        {
-            return Collections.emptyMap();
-        }
-
-
     }
 
     @Override

@@ -21,7 +21,6 @@ package org.apache.qpid.server.store.berkeleydb;
  */
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
@@ -54,13 +53,12 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
     BDBHAVirtualHost(VirtualHostRegistry virtualHostRegistry,
                      StatisticsGatherer brokerStatisticsGatherer,
                      org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                     VirtualHostConfiguration hostConfig,
                      VirtualHost virtualHost)
     {
-        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
+        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, virtualHost);
     }
 
-    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
+    protected void initialiseStorage(VirtualHost virtualHost)
     {
         _messageStore = new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
 
@@ -179,7 +177,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         @Override
         public void event(Event event)
         {
-            initialiseModel(getConfiguration());
+            initialiseModel();
         }
     }
 

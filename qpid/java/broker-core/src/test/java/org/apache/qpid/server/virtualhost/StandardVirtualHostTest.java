@@ -20,45 +20,46 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-
-import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-
-import org.apache.qpid.server.exchange.AbstractExchange;
-import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.test.utils.QpidTestCase;
-
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
+import org.apache.qpid.server.binding.BindingImpl;
+
+import org.apache.qpid.server.exchange.AbstractExchange;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.JsonFileConfigStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.util.FileUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 
 public class StandardVirtualHostTest extends QpidTestCase
 {
     private VirtualHostRegistry _virtualHostRegistry;
+    private File _storeFolder;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
         BrokerTestHelper.setUp();
+        _storeFolder = TestFileUtils.createTestDirectory(".tmp.store", true);
     }
 
     @Override
@@ -75,6 +76,7 @@ public class StandardVirtualHostTest extends QpidTestCase
         {
             BrokerTestHelper.tearDown();
             super.tearDown();
+            FileUtils.delete(_storeFolder, false);
         }
 
     }
@@ -106,25 +108,23 @@ public class StandardVirtualHostTest extends QpidTestCase
     {
         final String queueName = getName();
         final String customBinding = "custom-binding";
-        File config = writeConfigFile(queueName, queueName, null, false, new String[]{customBinding});
+        writeConfigFile(queueName, queueName, null, false, new String[]{customBinding});
 
         try
         {
-            createVirtualHost(queueName, config);
+            createVirtualHost(queueName);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
-        catch (ServerScopedRuntimeException e)
+        catch (IllegalConfigurationException e)
         {
-            Throwable cause = e.getCause();
-            assertNotNull(cause);
-            assertEquals("Attempt to bind queue '" + queueName + "' with binding key(s) [" + customBinding + "] without specifying an exchange", cause.getMessage());
+            // pass
         }
     }
 
     public void testVirtualHostBecomesActive() throws Exception
     {
-        File config = writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
-        VirtualHost vhost = createVirtualHost(getName(), config);
+        writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
+        VirtualHost vhost = createVirtualHost(getName());
         assertNotNull(vhost);
         assertEquals(State.ACTIVE, vhost.getState());
     }
@@ -132,15 +132,15 @@ public class StandardVirtualHostTest extends QpidTestCase
     public void testVirtualHostHavingStoreSetAsTypeBecomesActive() throws Exception
     {
         String virtualHostName = getName();
-        VirtualHost host = createVirtualHostUsingStoreType(virtualHostName);
+        VirtualHost host = createVirtualHost(virtualHostName);
         assertNotNull(host);
         assertEquals(State.ACTIVE, host.getState());
     }
 
     public void testVirtualHostBecomesStoppedOnClose() throws Exception
     {
-        File config = writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
-        VirtualHost vhost = createVirtualHost(getName(), config);
+        writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
+        VirtualHost vhost = createVirtualHost(getName());
         assertNotNull(vhost);
         assertEquals(State.ACTIVE, vhost.getState());
         vhost.close();
@@ -151,7 +151,7 @@ public class StandardVirtualHostTest extends QpidTestCase
     public void testVirtualHostHavingStoreSetAsTypeBecomesStoppedOnClose() throws Exception
     {
         String virtualHostName = getName();
-        VirtualHost host = createVirtualHostUsingStoreType(virtualHostName);
+        VirtualHost host = createVirtualHost(virtualHostName);
         assertNotNull(host);
         assertEquals(State.ACTIVE, host.getState());
         host.close();
@@ -166,33 +166,16 @@ public class StandardVirtualHostTest extends QpidTestCase
     {
         final String queueName = getName();
         final String exchangeName = "made-up-exchange";
-        File config = writeConfigFile(queueName, queueName, exchangeName, true, new String[0]);
+        writeConfigFile(queueName, queueName, exchangeName, true, new String[0]);
 
         try
         {
-            createVirtualHost(queueName, config);
+            createVirtualHost(queueName);
             fail("virtualhost creation should have failed due to illegal configuration");
         }
-        catch (ServerScopedRuntimeException e)
+        catch (IllegalConfigurationException e)
         {
-            Throwable cause = e.getCause();
-            assertNotNull(cause);
-            assertEquals("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName, cause.getMessage());
-        }
-    }
-
-    public void testCreateVirtualHostWithoutConfigurationInConfigFile() throws Exception
-    {
-        File config = writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
-        String hostName = getName() + "-not-existing";
-        try
-        {
-            createVirtualHost(hostName, config);
-            fail("virtualhost creation should have failed due to illegal configuration");
-        }
-        catch (RuntimeException e)
-        {
-            assertEquals("No configuration found for virtual host '" + hostName + "' in " + config.getAbsolutePath(), e.getMessage());
+            // pass
         }
     }
 
@@ -205,8 +188,8 @@ public class StandardVirtualHostTest extends QpidTestCase
         Map<String, String[]> bindingArguments = new HashMap<String, String[]>();
         bindingArguments.put("ping", new String[]{"x-filter-jms-selector=select=1", "x-qpid-no-local"});
         bindingArguments.put("pong", new String[]{"x-filter-jms-selector=select='pong'"});
-        File config = writeConfigFile(vhostName, queueName, exchangeName, false, new String[]{"ping","pong"}, bindingArguments);
-        VirtualHost vhost = createVirtualHost(vhostName, config);
+        writeConfigFile(vhostName, queueName, exchangeName, false, new String[]{"ping","pong"}, bindingArguments);
+        VirtualHost vhost = createVirtualHost(vhostName);
 
         ExchangeImpl exch = vhost.getExchange(getName() +".direct");
         Collection<BindingImpl> bindings = ((AbstractExchange)exch).getBindings();
@@ -246,8 +229,8 @@ public class StandardVirtualHostTest extends QpidTestCase
         String vhostName = getName();
         String queueName = getName();
 
-        File config = writeConfigFile(vhostName, queueName, exchangeName, false, routingKeys);
-        VirtualHost vhost = createVirtualHost(vhostName, config);
+        writeConfigFile(vhostName, queueName, exchangeName, false, routingKeys);
+        VirtualHost vhost = createVirtualHost(vhostName);
         assertNotNull("virtualhost should exist", vhost);
 
         AMQQueue queue = vhost.getQueue(queueName);
@@ -263,16 +246,19 @@ public class StandardVirtualHostTest extends QpidTestCase
     }
 
 
-    private VirtualHost createVirtualHost(String vhostName, File config) throws Exception
+    private VirtualHost createVirtualHost(String virtualHostName) throws Exception
     {
-        Broker broker = BrokerTestHelper.createBrokerMock();
+        Broker<?> broker = BrokerTestHelper.createBrokerMock();
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
-        VirtualHostConfiguration configuration = new  VirtualHostConfiguration(vhostName, config, broker);
-        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration,
-                mock(org.apache.qpid.server.model.VirtualHost.class));
+        org.apache.qpid.server.model.VirtualHost<?> model = mock(org.apache.qpid.server.model.VirtualHost.class);
+        when(model.getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIG_STORE_TYPE)).thenReturn(JsonFileConfigStore.TYPE);
+        when(model.getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIG_STORE_PATH)).thenReturn(_storeFolder.getAbsolutePath());
+        when(model.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TYPE)).thenReturn(TestMemoryMessageStore.TYPE);
+        when(model.getName()).thenReturn(virtualHostName);
+        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class),
+                new SecurityManager(broker, false), model);
         _virtualHostRegistry.registerVirtualHost(host);
-
         return host;
     }
 
@@ -285,95 +271,79 @@ public class StandardVirtualHostTest extends QpidTestCase
      * @param dontDeclare if true then don't declare the exchange, even if its name is non-null
      * @param routingKeys routingKeys to bind the queue with (empty array = none)
      * @return
+     * @throws Exception
      */
-    private File writeConfigFile(String vhostName, String queueName, String exchangeName, boolean dontDeclare, String[] routingKeys)
+    private void writeConfigFile(String vhostName, String queueName, String exchangeName, boolean dontDeclare, String[] routingKeys) throws Exception
     {
-        return writeConfigFile(vhostName, queueName, exchangeName, dontDeclare, routingKeys, null);
+        writeConfigFile(vhostName, queueName, exchangeName, dontDeclare, routingKeys, null);
     }
 
-    private File writeConfigFile(String vhostName, String queueName, String exchangeName, boolean dontDeclare, String[] routingKeys, Map<String, String[]> bindingArguments)
+    private void writeConfigFile(String vhostName, String queueName, String exchangeName, boolean dontDeclare,
+            String[] routingKeys, Map<String, String[]> bindingArguments) throws Exception
     {
-        File tmpFile = null;
-        try
+        Map<String, Object> data = new HashMap<String, Object>();
+        data.put("modelVersion", Model.MODEL_VERSION);
+        data.put("configVersion", org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION);
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.writeValue(new File(_storeFolder, vhostName + ".json"), data);
+
+        JsonFileConfigStore store = new JsonFileConfigStore();
+        org.apache.qpid.server.model.VirtualHost<?> virtualHost = mock(org.apache.qpid.server.model.VirtualHost.class);
+        when(virtualHost.getName()).thenReturn(vhostName);
+        when(virtualHost.getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIG_STORE_PATH)).thenReturn(_storeFolder.getAbsolutePath());
+        ConfigurationRecoveryHandler recoveryHandler = mock(ConfigurationRecoveryHandler.class);
+        when(recoveryHandler.completeConfigurationRecovery()).thenReturn(org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION);
+        store.configureConfigStore(virtualHost , recoveryHandler );
+
+        UUID exchangeId = UUIDGenerator.generateExchangeUUID(exchangeName == null? "amq.direct" : exchangeName, vhostName);
+        if(exchangeName != null && !dontDeclare)
         {
-            tmpFile = File.createTempFile(getName(), ".tmp");
-            tmpFile.deleteOnExit();
+            Map<String, Object> exchangeAttributes = new HashMap<String, Object>();
+            exchangeAttributes.put(org.apache.qpid.server.model.Exchange.NAME, exchangeName);
+            exchangeAttributes.put(org.apache.qpid.server.model.Exchange.TYPE, "direct");
+            exchangeAttributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
+            store.create(exchangeId, org.apache.qpid.server.model.Exchange.class.getSimpleName(), exchangeAttributes);
+        }
 
-            FileWriter fstream = new FileWriter(tmpFile);
-            BufferedWriter writer = new BufferedWriter(fstream);
+        UUID queueId = UUID.randomUUID();
+        Map<String, Object> queueAttributes = new HashMap<String, Object>();
+        queueAttributes.put(org.apache.qpid.server.model.Queue.NAME, queueName);
+        queueAttributes.put(org.apache.qpid.server.model.Queue.DURABLE, true);
+        store.create(queueId, org.apache.qpid.server.model.Queue.class.getSimpleName(), queueAttributes);
 
-            //extra outer tag to please Commons Configuration
+        Map<String, Object> bindingAttributes = new HashMap<String, Object>();
+        bindingAttributes.put(org.apache.qpid.server.model.Binding.NAME, queueName);
+        bindingAttributes.put(org.apache.qpid.server.model.Binding.QUEUE, queueId);
+        bindingAttributes.put(org.apache.qpid.server.model.Binding.EXCHANGE, exchangeId );
+        store.create(UUID.randomUUID(), org.apache.qpid.server.model.Binding.class.getSimpleName(), bindingAttributes);
 
-            writer.write("<virtualhosts>");
-            writer.write("  <default>" + vhostName + "</default>");
-            writer.write("  <virtualhost>");
-            writer.write("      <name>" + vhostName + "</name>");
-            writer.write("      <" + vhostName + ">");
-            writer.write("          <type>" + StandardVirtualHostFactory.TYPE + "</type>");
-            writer.write("              <store>");
-            writer.write("                <class>" + TestMemoryMessageStore.class.getName() + "</class>");
-            writer.write("              </store>");
-            if(exchangeName != null && !dontDeclare)
+        for (int i = 0; i < routingKeys.length; i++)
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(org.apache.qpid.server.model.Binding.NAME, routingKeys[i]);
+            attributes.put(org.apache.qpid.server.model.Binding.QUEUE, queueId);
+            attributes.put(org.apache.qpid.server.model.Binding.EXCHANGE, exchangeId );
+            if (bindingArguments != null && bindingArguments.containsKey(routingKeys[i]))
             {
-                writer.write("          <exchanges>");
-                writer.write("              <exchange>");
-                writer.write("                  <type>direct</type>");
-                writer.write("                  <name>" + exchangeName + "</name>");
-                writer.write("              </exchange>");
-                writer.write("          </exchanges>");
-            }
-            writer.write("          <queues>");
-            writer.write("              <queue>");
-            writer.write("                  <name>" + queueName + "</name>");
-            writer.write("                  <" + queueName + ">");
-            if(exchangeName != null)
-            {
-                writer.write("                      <exchange>" + exchangeName + "</exchange>");
-            }
-            for(String routingKey: routingKeys)
-            {
-                writer.write("                      <routingKey>" + routingKey + "</routingKey>\n");
-                if (bindingArguments!= null && bindingArguments.containsKey(routingKey))
+                String[] args = (String[])bindingArguments.get(routingKeys[i]);
+                Map<String, Object> arguments = new HashMap<String, Object>();
+                for (int j = 0; j < args.length; j++)
                 {
-                    writer.write("                      <" + routingKey + ">\n");
-                    String[] arguments = (String[])bindingArguments.get(routingKey);
-                    for (String argument : arguments)
+                    int pos = args[j].indexOf('=');
+                    if (pos == -1)
                     {
-                        writer.write("                          <bindingArgument>" + argument + "</bindingArgument>\n");
+                        arguments.put(args[j], null);
                     }
-                    writer.write("                      </" + routingKey + ">\n");
+                    else
+                    {
+                        arguments.put(args[j].substring(0, pos), args[j].substring(pos + 1));
+                    }
                 }
+                attributes.put(org.apache.qpid.server.model.Binding.ARGUMENTS, arguments );
             }
-            writer.write("                  </" + queueName + ">");
-            writer.write("              </queue>");
-            writer.write("          </queues>");
-            writer.write("      </" + vhostName + ">");
-            writer.write("  </virtualhost>");
-            writer.write("</virtualhosts>");
-
-            writer.flush();
-            writer.close();
+            store.create(UUID.randomUUID(), org.apache.qpid.server.model.Binding.class.getSimpleName(), attributes);
         }
-        catch (IOException e)
-        {
-            fail("Unable to create virtualhost configuration");
-        }
-
-        return tmpFile;
+        store.close();
     }
 
-    private VirtualHost createVirtualHostUsingStoreType(String virtualHostName) throws ConfigurationException, Exception
-    {
-        Broker broker = BrokerTestHelper.createBrokerMock();
-        _virtualHostRegistry = broker.getVirtualHostRegistry();
-
-        Configuration config = new PropertiesConfiguration();
-        VirtualHostConfiguration configuration = new  VirtualHostConfiguration(virtualHostName, config, broker);
-        final org.apache.qpid.server.model.VirtualHost virtualHost = mock(org.apache.qpid.server.model.VirtualHost.class);
-        when(virtualHost.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_TYPE))).thenReturn(TestMemoryMessageStore.TYPE);
-        VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class), new SecurityManager(mock(Broker.class), false), configuration,
-                virtualHost);
-        _virtualHostRegistry.registerVirtualHost(host);
-        return host;
-    }
 }

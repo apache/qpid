@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -32,7 +31,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -41,9 +39,6 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.configuration.ExchangeConfiguration;
-import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
@@ -75,7 +70,6 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public abstract class AbstractVirtualHost implements VirtualHost, IConnectionRegistry.RegistryChangeListener, EventListener
 {
@@ -96,8 +90,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     private final StatisticsGatherer _brokerStatisticsGatherer;
 
     private final SecurityManager _securityManager;
-
-    private final VirtualHostConfiguration _vhostConfig;
 
     private final QueueRegistry _queueRegistry;
 
@@ -131,23 +123,11 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     public AbstractVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                StatisticsGatherer brokerStatisticsGatherer,
                                SecurityManager parentSecurityManager,
-                               VirtualHostConfiguration hostConfig,
                                org.apache.qpid.server.model.VirtualHost virtualHost)
     {
-        if (hostConfig == null)
-        {
-            throw new IllegalArgumentException("HostConfig cannot be null");
-        }
-
-        if (hostConfig.getName() == null || hostConfig.getName().length() == 0)
-        {
-            throw new IllegalArgumentException("Illegal name (" + hostConfig.getName() + ") for virtualhost.");
-        }
-
         _virtualHostRegistry = virtualHostRegistry;
         _brokerStatisticsGatherer = brokerStatisticsGatherer;
-        _vhostConfig = hostConfig;
-        _name = _vhostConfig.getName();
+        _name = virtualHost.getName();
         _dtxRegistry = new DtxRegistry();
         _model = virtualHost;
         _eventLogger = virtualHostRegistry.getEventLogger();
@@ -156,12 +136,12 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _eventLogger.message(VirtualHostMessages.CREATED(_name));
 
-        _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"), _name);
+        _securityManager = new SecurityManager(parentSecurityManager, virtualHost.getSecurityAcl(), _name);
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
 
-        _houseKeepingTasks = new ScheduledThreadPoolExecutor(_vhostConfig.getHouseKeepingThreadCount());
+        _houseKeepingTasks = new ScheduledThreadPoolExecutor(virtualHost.getHouseKeepingThreadCount());
 
 
         _queueRegistry = new DefaultQueueRegistry(this);
@@ -176,7 +156,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         initialiseStatistics();
 
-        initialiseStorage(hostConfig, virtualHost);
+        initialiseStorage(virtualHost);
 
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
@@ -192,17 +172,11 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         }
     }
 
-    abstract protected void initialiseStorage(VirtualHostConfiguration hostConfig,
-                                              org.apache.qpid.server.model.VirtualHost virtualHost);
+    abstract protected void initialiseStorage(org.apache.qpid.server.model.VirtualHost<?> virtualHost);
 
     public IConnectionRegistry getConnectionRegistry()
     {
         return _connectionRegistry;
-    }
-
-    public VirtualHostConfiguration getConfiguration()
-    {
-        return _vhostConfig;
     }
 
     public UUID getId()
@@ -306,135 +280,11 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
 
-    protected void initialiseModel(VirtualHostConfiguration config)
+    protected void initialiseModel()
     {
-        _logger.debug("Loading configuration for virtualhost: " + config.getName());
-
+        _logger.debug("Loading configuration for virtualhost: " + _model.getName());
 
         _exchangeRegistry.initialise(_exchangeFactory);
-
-        List<String> exchangeNames = config.getExchanges();
-
-        for (String exchangeName : exchangeNames)
-        {
-            try
-            {
-                configureExchange(config.getExchangeConfiguration(exchangeName));
-            }
-            catch (UnknownExchangeException e)
-            {
-                throw new ServerScopedRuntimeException("Could not configure exchange " + exchangeName, e);
-            }
-            catch (ReservedExchangeNameException e)
-            {
-                throw new ServerScopedRuntimeException("Could not configure exchange " + exchangeName, e);
-            }
-            catch (AMQUnknownExchangeType e)
-            {
-                throw new ServerScopedRuntimeException("Could not configure exchange " + exchangeName, e);
-            }
-        }
-
-        String[] queueNames = config.getQueueNames();
-
-        for (Object queueNameObj : queueNames)
-        {
-            String queueName = String.valueOf(queueNameObj);
-            try
-            {
-                configureQueue(config.getQueueConfiguration(queueName));
-            }
-            catch (ConfigurationException e)
-            {
-                throw new ServerScopedRuntimeException("Could not configure queue " + queueName, e);
-            }
-        }
-    }
-
-    private void configureExchange(ExchangeConfiguration exchangeConfiguration)
-            throws UnknownExchangeException, ReservedExchangeNameException,
-                   AMQUnknownExchangeType
-    {
-        boolean durable = exchangeConfiguration.getDurable();
-        boolean autodelete = exchangeConfiguration.getAutoDelete();
-        try
-        {
-            Map<String,Object> attributes = new HashMap<String, Object>();
-
-            attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
-            attributes.put(org.apache.qpid.server.model.Exchange.NAME, exchangeConfiguration.getName());
-            attributes.put(org.apache.qpid.server.model.Exchange.TYPE, exchangeConfiguration.getType());
-            attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, durable);
-            attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
-                           autodelete ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
-            attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
-            ExchangeImpl newExchange = createExchange(attributes);
-        }
-        catch(ExchangeExistsException e)
-        {
-            _logger.info("Exchange " + exchangeConfiguration.getName() + " already defined. Configuration in XML file ignored");
-        }
-
-    }
-
-    private void configureQueue(QueueConfiguration queueConfiguration)
-            throws ConfigurationException
-    {
-        AMQQueue queue = _queueFactory.createAMQQueueImpl(queueConfiguration);
-        String queueName = queue.getName();
-
-        if (queue.isDurable())
-        {
-            DurableConfigurationStoreHelper.createQueue(getDurableConfigurationStore(), queue);
-        }
-
-        //get the exchange name (returns empty String if none was specified)
-        String exchangeName = queueConfiguration.getExchange();
-
-
-        if(ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equals(exchangeName))
-        {
-            //get routing keys in configuration (returns empty list if none are defined)
-            List<?> routingKeys = queueConfiguration.getRoutingKeys();
-            if(!(routingKeys.isEmpty() || (routingKeys.size()==1 && routingKeys.contains(queueName))))
-            {
-                throw new ConfigurationException("Attempt to bind queue '" + queueName + "' with binding key(s) " +
-                                                 routingKeys + " without specifying an exchange");
-            }
-        }
-        else
-        {
-            ExchangeImpl exchange = _exchangeRegistry.getExchange(exchangeName);
-            if (exchange == null)
-            {
-                throw new ConfigurationException("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName);
-            }
-
-            //get routing keys in configuration (returns empty list if none are defined)
-            List<?> routingKeys = queueConfiguration.getRoutingKeys();
-
-            for (Object routingKeyNameObj : routingKeys)
-            {
-                String routingKey = String.valueOf(routingKeyNameObj);
-
-                configureBinding(queue, exchange, routingKey, (Map) queueConfiguration.getBindingArguments(routingKey));
-            }
-
-            if (!routingKeys.contains(queueName))
-            {
-                //bind the queue to the named exchange using its name
-                configureBinding(queue, exchange, queueName, null);
-            }
-        }
-    }
-
-    private void configureBinding(AMQQueue queue, ExchangeImpl exchange, String routingKey, Map<String,Object> arguments)
-    {
-        if (_logger.isInfoEnabled())
-        {
-            _logger.info("Binding queue:" + queue + " with routing key '" + routingKey + "' to exchange:" + exchange.getName());
-        }
-        exchange.addBinding(routingKey, queue, arguments);
     }
 
     public String getName()
@@ -907,7 +757,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         try
         {
-            initialiseHouseKeeping(_vhostConfig.getHousekeepingCheckPeriod());
+            initialiseHouseKeeping(_model.getHousekeepingCheckPeriod());
             finalState = State.ACTIVE;
         }
         finally
@@ -981,10 +831,10 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
                     }
                     try
                     {
-                        session.checkTransactionStatus(_vhostConfig.getTransactionTimeoutOpenWarn(),
-                                _vhostConfig.getTransactionTimeoutOpenClose(),
-                                _vhostConfig.getTransactionTimeoutIdleWarn(),
-                                _vhostConfig.getTransactionTimeoutIdleClose());
+                        session.checkTransactionStatus(_model.getStoreTransactionOpenTimeoutWarn(),
+                                _model.getStoreTransactionOpenTimeoutClose(),
+                                _model.getStoreTransactionIdleTimeoutWarn(),
+                                _model.getStoreTransactionIdleTimeoutClose());
                     } catch (Exception e)
                     {
                         _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
@@ -1039,49 +889,55 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     @Override
     public long getDefaultAlertThresholdMessageAge()
     {
-        return getConfiguration().getMaximumMessageAge();
+        return _model.getQueue_alertThresholdMessageAge();
     }
 
     @Override
     public long getDefaultAlertThresholdMessageSize()
     {
-        return getConfiguration().getMaximumMessageSize();
+        return _model.getQueue_alertThresholdMessageSize();
     }
 
     @Override
     public long getDefaultAlertThresholdQueueDepthMessages()
     {
-        return getConfiguration().getMaximumMessageCount();
+        return _model.getQueue_alertThresholdQueueDepthMessages();
     }
 
     @Override
     public long getDefaultAlertThresholdQueueDepthBytes()
     {
-        return getConfiguration().getMaximumQueueDepth();
+        return _model.getQueue_alertThresholdQueueDepthBytes();
     }
 
     @Override
     public long getDefaultAlertRepeatGap()
     {
-        return getConfiguration().getMinimumAlertRepeatGap();
+        return _model.getQueue_alertRepeatGap();
     }
 
     @Override
     public long getDefaultQueueFlowControlSizeBytes()
     {
-        return getConfiguration().getCapacity();
+        return _model.getQueue_flowControlSizeBytes();
     }
 
     @Override
     public long getDefaultQueueFlowResumeSizeBytes()
     {
-        return getConfiguration().getFlowResumeCapacity();
+        return _model.getQueue_flowResumeSizeBytes();
     }
 
     @Override
     public int getDefaultMaximumDeliveryAttempts()
     {
-        return getConfiguration().getMaxDeliveryCount();
+        return _model.getQueue_maximumDeliveryAttempts();
+    }
+
+    @Override
+    public boolean getDefaultDeadLetterQueueEnabled()
+    {
+        return _model.isQueue_deadLetterQueueEnabled();
     }
 
     @Override

@@ -30,6 +30,7 @@ import org.apache.qpid.server.model.VirtualHost;
 public class
         QuotaMessageStore extends NullMessageStore
 {
+    public static final String TYPE = "QuotaMessageStore";
     private final AtomicLong _messageId = new AtomicLong(1);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
 

@@ -213,7 +213,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         when(virtualHost.getId()).thenReturn(virtualHostId);
         when(virtualHost.getType()).thenReturn(VirtualHost.class.getSimpleName());
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.CONFIG_PATH, "/path/to/host.xml");
+        attributes.put(VirtualHost.TYPE, "STANDARD");
         when(virtualHost.getAttributes()).thenReturn(attributes);
         when(_store.getEntry(virtualHostId)).thenReturn(virtualHost);
         when(_root.getChildrenIds()).thenReturn(new HashSet<UUID>(Arrays.asList(_portEntryId, virtualHostId)));

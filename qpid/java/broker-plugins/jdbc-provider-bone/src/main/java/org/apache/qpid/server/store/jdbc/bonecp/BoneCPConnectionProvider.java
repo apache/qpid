@@ -24,7 +24,6 @@ import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
 import java.sql.Connection;
 import java.sql.SQLException;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 

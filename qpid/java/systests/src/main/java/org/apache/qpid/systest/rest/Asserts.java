@@ -51,10 +51,10 @@ public class Asserts
                                 ConfiguredObject.DESCRIPTION,
                                 VirtualHost.SUPPORTED_QUEUE_TYPES,
                                 VirtualHost.STORE_PATH,
-                                VirtualHost.CONFIG_PATH,
                                 VirtualHost.TYPE,
                                 VirtualHost.CONFIG_STORE_PATH,
-                                VirtualHost.CONFIG_STORE_TYPE);
+                                VirtualHost.CONFIG_STORE_TYPE,
+                                VirtualHost.SECURITY_ACL);
 
         assertEquals("Unexpected value of attribute " + VirtualHost.NAME,
                      virtualHostName,
