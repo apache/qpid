@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,13 +18,38 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.store.berkeleydb;
 
-public interface HAMessageStore extends MessageStore
+import org.apache.qpid.server.store.StoreFuture;
+
+import com.sleepycat.je.Transaction;
+
+public interface Committer
 {
-    /**
-     * Used to indicate that a store requires to make itself unavailable for read and read/write
-     * operations.
-     */
-    void passivate();
+    void start();
+
+    StoreFuture commit(Transaction tx, boolean syncCommit);
+
+    void stop();
+
+    Committer IMMEDIATE_FUTURE_COMMITTER = new Committer()
+    {
+
+        @Override
+        public void start()
+        {
+        }
+
+        @Override
+        public StoreFuture commit(Transaction tx, boolean syncCommit)
+        {
+            return StoreFuture.IMMEDIATE_FUTURE;
+        }
+
+        @Override
+        public void stop()
+        {
+        }
+    };
+
 }

@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,29 +18,23 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.util;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.test.utils.QpidTestCase;
+import java.util.concurrent.ThreadFactory;
 
-import static org.mockito.Mockito.mock;
-
-public class HAMessageStoreSmokeTest extends QpidTestCase
+public final class DaemonThreadFactory implements ThreadFactory
 {
-    private final BDBHAMessageStore _store = new BDBHAMessageStore();
-
-    public void testMissingHAConfigThrowsException() throws Exception
+    private String _threadName;
+    public DaemonThreadFactory(String threadName)
     {
-        try
-        {
-            _store.configure(mock(VirtualHost.class));
-            fail("Expected an exception to be thrown");
-        }
-        catch (ServerScopedRuntimeException ce)
-        {
-            assertTrue(ce.getMessage().contains("BDB HA configuration key not found"));
-        }
+        _threadName = threadName;
+    }
+
+    @Override
+    public Thread newThread(Runnable r)
+    {
+        Thread thread = new Thread(r, _threadName);
+        thread.setDaemon(true);
+        return thread;
     }
 }

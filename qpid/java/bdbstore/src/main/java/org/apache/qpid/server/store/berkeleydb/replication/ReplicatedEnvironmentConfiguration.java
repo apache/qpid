@@ -18,18 +18,23 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.test.utils.QpidTestCase;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
-public class MessageStoreCreatorTest extends QpidTestCase
+import java.util.Map;
+
+public interface ReplicatedEnvironmentConfiguration
 {
-    public void testMessageStoreCreator()
-    {
-        MessageStoreCreator messageStoreCreator = new MessageStoreCreator();
-        String type = new BDBMessageStoreFactory().getType();
-        MessageStore store = messageStoreCreator.createMessageStore(type);
-        assertNotNull("Store of type " + type + " is not created", store);
-    }}
+    String getName();
+    String getGroupName();
+    String getHostPort();
+    String getHelperHostPort();
+    String getDurability();
+    boolean isCoalescingSync();
+    boolean isDesignatedPrimary();
+    int getPriority();
+    int getQuorumOverride();
+    String getStorePath();
+    Map<String, String> getParameters();
+    Map<String, String> getReplicationParameters();
+}

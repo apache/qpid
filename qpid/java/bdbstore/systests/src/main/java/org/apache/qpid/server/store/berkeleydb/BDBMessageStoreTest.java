@@ -20,11 +20,15 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -41,6 +45,8 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaDataType_0_8;
+import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
+import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreTest;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -73,7 +79,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     {
         MessageStore store = getVirtualHost().getMessageStore();
 
-        AbstractBDBMessageStore bdbStore = assertBDBStore(store);
+        BDBMessageStore bdbStore = assertBDBStore(store);
 
         // Create content ByteBuffers.
         // Split the content into 2 chunks for the 0-8 message, as per broker behaviour.
@@ -126,7 +132,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         /*
          * reload the store only (read-only)
          */
-        AbstractBDBMessageStore readOnlyStore = reloadStore(bdbStore);
+        BDBMessageStore readOnlyStore = reloadStore(bdbStore);
 
         /*
          * Read back and validate the 0-8 message metadata and content
@@ -225,14 +231,17 @@ public class BDBMessageStoreTest extends MessageStoreTest
      * Use this method instead of reloading the virtual host like other tests in order
      * to avoid the recovery handler deleting the message for not being on a queue.
      */
-    private AbstractBDBMessageStore reloadStore(AbstractBDBMessageStore messageStore) throws Exception
+    private BDBMessageStore reloadStore(BDBMessageStore messageStore) throws Exception
     {
         messageStore.close();
 
-        AbstractBDBMessageStore newStore = new BDBMessageStore();
-        newStore.configure(getVirtualHostModel(),true);
+        BDBMessageStore newStore = new BDBMessageStore();
 
-        newStore.startWithNoRecover();
+        MessageStoreRecoveryHandler recoveryHandler = mock(MessageStoreRecoveryHandler.class);
+        when(recoveryHandler.begin()).thenReturn(mock(StoredMessageRecoveryHandler.class));
+        newStore.configureMessageStore(getVirtualHostModel(), recoveryHandler, null);
+
+        newStore.activate();
 
         return newStore;
     }
@@ -287,7 +296,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     public void testGetContentWithOffset() throws Exception
     {
         MessageStore store = getVirtualHost().getMessageStore();
-        AbstractBDBMessageStore bdbStore = assertBDBStore(store);
+        BDBMessageStore bdbStore = assertBDBStore(store);
         StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(store);
         long messageid_0_8 = storedMessage_0_8.getMessageNumber();
 
@@ -347,7 +356,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     public void testMessageCreationAndRemoval() throws Exception
     {
         MessageStore store = getVirtualHost().getMessageStore();
-        AbstractBDBMessageStore bdbStore = assertBDBStore(store);
+        BDBMessageStore bdbStore = assertBDBStore(store);
 
         StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(store);
         long messageid_0_8 = storedMessage_0_8.getMessageNumber();
@@ -372,12 +381,12 @@ public class BDBMessageStoreTest extends MessageStoreTest
         assertEquals("Retrieved content when none was expected",
                         0, bdbStore.getContent(messageid_0_8, 0, dst));
     }
-    private AbstractBDBMessageStore assertBDBStore(MessageStore store)
+    private BDBMessageStore assertBDBStore(MessageStore store)
     {
 
         assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, store.getClass());
 
-        return (AbstractBDBMessageStore) store;
+        return (BDBMessageStore) store;
     }
 
     private StoredMessage<MessageMetaData> createAndStoreSingleChunkMessage_0_8(MessageStore store)
@@ -410,7 +419,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     {
         MessageStore log = getVirtualHost().getMessageStore();
 
-        AbstractBDBMessageStore bdbStore = assertBDBStore(log);
+        BDBMessageStore bdbStore = assertBDBStore(log);
 
         final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
@@ -460,7 +469,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     {
         MessageStore log = getVirtualHost().getMessageStore();
 
-        AbstractBDBMessageStore bdbStore = assertBDBStore(log);
+        BDBMessageStore bdbStore = assertBDBStore(log);
 
         final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
@@ -506,7 +515,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     public void testOnDelete() throws Exception
     {
         MessageStore log = getVirtualHost().getMessageStore();
-        AbstractBDBMessageStore bdbStore = assertBDBStore(log);
+        BDBMessageStore bdbStore = assertBDBStore(log);
         String storeLocation = bdbStore.getStoreLocation();
 
         File location = new File(storeLocation);
@@ -529,7 +538,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     {
         MessageStore log = getVirtualHost().getMessageStore();
 
-        AbstractBDBMessageStore bdbStore = assertBDBStore(log);
+        BDBMessageStore bdbStore = assertBDBStore(log);
 
         final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
         TransactionLogResource mockQueue = new TransactionLogResource()
