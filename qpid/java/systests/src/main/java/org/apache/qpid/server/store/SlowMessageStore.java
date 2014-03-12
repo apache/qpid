@@ -219,14 +219,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void update(ConfiguredObjectRecord... records) throws StoreException
-    {
-        doPreDelay("update");
-        _durableConfigurationStore.update(records);
-        doPostDelay("update");
-    }
-
-    @Override
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         doPreDelay("update");

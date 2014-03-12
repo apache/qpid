@@ -888,11 +888,6 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         update(false, id, type, attributes, null);
     }
 
-    public void update(ConfiguredObjectRecord... records) throws StoreException
-    {
-        update(false, records);
-    }
-
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);

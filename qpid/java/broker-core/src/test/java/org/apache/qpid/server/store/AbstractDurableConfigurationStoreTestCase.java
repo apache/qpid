@@ -23,6 +23,7 @@ package org.apache.qpid.server.store;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -55,6 +56,7 @@ import org.apache.qpid.server.store.Transaction.Record;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -201,7 +203,31 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         map.put(org.apache.qpid.server.model.Binding.ARGUMENTS,_bindingArgs);
 
         verify(_recoveryHandler).configuredObject(eq(binding.getId()), eq(BINDING),
-                eq(map));
+                                                  argThat(new IgnoreCreatedByMatcher(map)));
+    }
+
+    private static class IgnoreCreatedByMatcher extends ArgumentMatcher<Map<String,Object>>
+    {
+        private final Map<String,Object> _matchingMap;
+
+        private IgnoreCreatedByMatcher(final Map<String, Object> matchingMap)
+        {
+            _matchingMap = matchingMap;
+        }
+
+        @Override
+        public boolean matches(final Object argument)
+        {
+            if(argument instanceof Map)
+            {
+                Map<String,Object> arg = new HashMap<String, Object>((Map<String,Object>) argument);
+                arg.remove("createdBy");
+                arg.remove("createdTime");
+                return arg.equals(_matchingMap);
+
+            }
+            return false;
+        }
     }
 
     public void testUnbindQueue() throws Exception
@@ -373,6 +399,10 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(queue.getVirtualHost()).thenReturn(vh);
         final Map<String,Object> attributes = arguments == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(arguments);
         attributes.put(Queue.NAME, queueName);
+        if(alternateExchange != null)
+        {
+            attributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange);
+        }
         if(exclusive)
         {
             when(queue.getOwner()).thenReturn(queueOwner);
@@ -394,16 +424,24 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
                         }
                     });
 
+        when(queue.getActualAttributes()).thenReturn(attributes);
         return queue;
     }
 
     private ExchangeImpl createTestExchange()
     {
         ExchangeImpl exchange = mock(ExchangeImpl.class);
+        Map<String,Object> actualAttributes = new HashMap<String, Object>();
+        actualAttributes.put("id", _exchangeId);
+        actualAttributes.put("name", getName());
+        actualAttributes.put("type", getName() + "Type");
+        actualAttributes.put("lifetimePolicy", LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
+        when(exchange.getActualAttributes()).thenReturn(actualAttributes);
         when(exchange.getName()).thenReturn(getName());
         when(exchange.getTypeName()).thenReturn(getName() + "Type");
         when(exchange.isAutoDelete()).thenReturn(true);
         when(exchange.getId()).thenReturn(_exchangeId);
+
         return exchange;
     }
 

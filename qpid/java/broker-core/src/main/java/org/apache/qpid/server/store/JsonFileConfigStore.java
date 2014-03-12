@@ -461,12 +461,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void update(final ConfiguredObjectRecord... records) throws StoreException
-    {
-        update(false, records);
-    }
-
-    @Override
     public void update(final boolean createIfNecessary, final ConfiguredObjectRecord... records)
             throws StoreException
     {

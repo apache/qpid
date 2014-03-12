@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,10 +33,14 @@ import java.util.Set;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.*;
+
+import javax.security.auth.Subject;
 
 public class DurableConfigurationStoreHelper
 {
@@ -47,41 +52,18 @@ public class DurableConfigurationStoreHelper
 
     public static void updateQueue(DurableConfigurationStore store, AMQQueue queue)
     {
-        Map<String, Object> attributesMap = new LinkedHashMap<String, Object>();
-
-        if (queue.getAlternateExchange() != null)
-        {
-            attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
-        }
-
-        Collection<String> availableAttrs = queue.getAvailableAttributes();
-
-        for(String attrName : availableAttrs)
-        {
-            if(!QUEUE_ARGUMENTS_EXCLUDES.contains(attrName))
-            {
-                attributesMap.put(attrName, queue.getAttribute(attrName));
-            }
-        }
+        Map<String, Object> attributesMap = queue.getActualAttributes();
+        attributesMap.remove(ConfiguredObject.ID);
 
         store.update(queue.getId(), QUEUE, attributesMap);
     }
 
     public static void createQueue(DurableConfigurationStore store, AMQQueue<?> queue)
     {
-        Map<String, Object> attributesMap = new HashMap<String, Object>();
-        if (queue.getAlternateExchange() != null)
-        {
-            attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
-        }
 
-        for(String attrName : queue.getAvailableAttributes())
-        {
-            if(!QUEUE_ARGUMENTS_EXCLUDES.contains(attrName))
-            {
-                attributesMap.put(attrName, queue.getAttribute(attrName));
-            }
-        }
+        Map<String, Object> attributesMap = queue.getActualAttributes();
+        attributesMap.remove(ConfiguredObject.ID);
+
         store.create(queue.getId(), QUEUE, attributesMap);
     }
 
@@ -92,11 +74,8 @@ public class DurableConfigurationStoreHelper
 
     public static void createExchange(DurableConfigurationStore store, ExchangeImpl exchange)
     {
-        Map<String, Object> attributesMap = new HashMap<String, Object>();
-        attributesMap.put(Exchange.NAME, exchange.getName());
-        attributesMap.put(Exchange.TYPE, exchange.getTypeName());
-        attributesMap.put(Exchange.LIFETIME_POLICY, exchange.isAutoDelete() ? LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS.name()
-                : LifetimePolicy.PERMANENT.name());
+        Map<String, Object> attributesMap = exchange.getActualAttributes();
+        attributesMap.remove(ConfiguredObject.ID);
 
         store.create(exchange.getId(), EXCHANGE, attributesMap);
 
@@ -108,16 +87,17 @@ public class DurableConfigurationStoreHelper
         store.remove(exchange.getId(), EXCHANGE);
     }
 
-    public static void createBinding(DurableConfigurationStore store, BindingImpl binding)
+    public static void createBinding(DurableConfigurationStore store, final BindingImpl binding)
     {
-        Map<String, Object> attributesMap = new HashMap<String, Object>();
-        attributesMap.put(Binding.NAME, binding.getBindingKey());
-        attributesMap.put(Binding.EXCHANGE, binding.getExchange().getId());
-        attributesMap.put(Binding.QUEUE, binding.getAMQQueue().getId());
-        Map<String, Object> arguments = binding.getArguments();
-        if (arguments != null)
+        Map<String, Object> attributesMap = binding.getActualAttributes();
+        attributesMap.remove(ConfiguredObject.ID);
+        if(!attributesMap.containsKey(Binding.EXCHANGE))
         {
-            attributesMap.put(Binding.ARGUMENTS, arguments);
+            attributesMap.put(Binding.EXCHANGE, binding.getExchange());
+        }
+        if(!attributesMap.containsKey(Binding.QUEUE))
+        {
+            attributesMap.put(Binding.QUEUE, binding.getQueue());
         }
 
         store.create(binding.getId(), BINDING, attributesMap);

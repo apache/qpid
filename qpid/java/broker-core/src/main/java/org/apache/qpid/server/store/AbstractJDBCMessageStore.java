@@ -44,13 +44,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.Version;
 import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.JsonSerializer;
+import org.codehaus.jackson.map.Module;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializerProvider;
+import org.codehaus.jackson.map.module.SimpleModule;
 
 abstract public class AbstractJDBCMessageStore implements MessageStore, DurableConfigurationStore
 {
@@ -159,6 +167,28 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private static final String SELECT_FROM_CONFIGURED_OBJECTS = "SELECT id, object_type, attributes FROM " + CONFIGURED_OBJECTS_TABLE_NAME;
 
     protected static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+
+
+    private static final Module _module;
+    static
+    {
+        SimpleModule module= new SimpleModule("ConfiguredObjectSerializer", new Version(1,0,0,null));
+
+        final JsonSerializer<ConfiguredObject> serializer = new JsonSerializer<ConfiguredObject>()
+        {
+            @Override
+            public void serialize(final ConfiguredObject value,
+                                  final JsonGenerator jgen,
+                                  final SerializerProvider provider)
+                    throws IOException, JsonProcessingException
+            {
+                jgen.writeString(value.getId().toString());
+            }
+        };
+        module.addSerializer(ConfiguredObject.class, serializer);
+
+        _module = module;
+    }
 
     protected final EventManager _eventManager = new EventManager();
 
@@ -1994,7 +2024,10 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                                     else
                                     {
                                         final Map<String, Object> attributes = configuredObject.getAttributes();
-                                        byte[] attributesAsBytes = new ObjectMapper().writeValueAsBytes(attributes);
+                                        final ObjectMapper objectMapper = new ObjectMapper();
+                                        objectMapper.registerModule(_module);
+                                        byte[] attributesAsBytes = objectMapper.writeValueAsBytes(attributes);
+
                                         ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
                                         insertStmt.setBinaryStream(3, bis, attributesAsBytes.length);
                                     }
@@ -2129,12 +2162,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    @Override
-    public void update(ConfiguredObjectRecord... records) throws StoreException
-    {
-        update(false, records);
-    }
-
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.ACTIVATING))
@@ -2176,6 +2203,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 ResultSet rs = stmt.executeQuery();
                 try
                 {
+                    final ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.registerModule(_module);
                     if (rs.next())
                     {
                         PreparedStatement stmt2 = conn.prepareStatement(UPDATE_CONFIGURED_OBJECTS);
@@ -2184,7 +2213,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                             stmt2.setString(1, configuredObject.getType());
                             if (configuredObject.getAttributes() != null)
                             {
-                                byte[] attributesAsBytes = (new ObjectMapper()).writeValueAsBytes(
+                                byte[] attributesAsBytes = objectMapper.writeValueAsBytes(
                                         configuredObject.getAttributes());
                                 ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
                                 stmt2.setBinaryStream(2, bis, attributesAsBytes.length);
@@ -2215,7 +2244,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                             else
                             {
                                 final Map<String, Object> attributes = configuredObject.getAttributes();
-                                byte[] attributesAsBytes = new ObjectMapper().writeValueAsBytes(attributes);
+                                byte[] attributesAsBytes = objectMapper.writeValueAsBytes(attributes);
                                 ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
                                 insertStmt.setBinaryStream(3, bis, attributesAsBytes.length);
                             }

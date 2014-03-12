@@ -37,11 +37,6 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void update(ConfiguredObjectRecord... records)
-    {
-    }
-
-    @Override
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records)
     {
     }
