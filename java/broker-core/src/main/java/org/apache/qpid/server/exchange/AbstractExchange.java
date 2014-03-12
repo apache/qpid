@@ -55,6 +55,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -582,7 +583,13 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                   final AMQQueue queue,
                                   final Map<String, Object> arguments)
     {
-        return makeBinding(getBinding(bindingKey,queue).getId(), bindingKey, queue, arguments, false, true);
+        final BindingImpl existingBinding = getBinding(bindingKey, queue);
+        return makeBinding(existingBinding == null ? null : existingBinding.getId(),
+                           bindingKey,
+                           queue,
+                           arguments,
+                           false,
+                           true);
     }
 
     @Override
@@ -642,8 +649,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                 boolean restore,
                                 boolean force)
     {
-        assert queue != null;
-
         if (bindingKey == null)
         {
             bindingKey = "";
@@ -660,7 +665,16 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                                    bindingKey,
                                                    _virtualHost.getName());
         }
-        BindingImpl b = new BindingImpl(id, bindingKey, queue, this, arguments);
+
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(org.apache.qpid.server.model.Binding.NAME,bindingKey);
+        if(arguments != null)
+        {
+            attributes.put(org.apache.qpid.server.model.Binding.ARGUMENTS, arguments);
+        }
+
+        BindingImpl b = new BindingImpl(id, attributes, queue, this);
+
         BindingImpl existingMapping = _bindingsMap.putIfAbsent(new BindingIdentifier(bindingKey,queue), b);
         if (existingMapping == null || force)
         {

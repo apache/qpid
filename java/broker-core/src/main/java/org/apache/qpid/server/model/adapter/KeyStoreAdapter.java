@@ -91,11 +91,6 @@ public class KeyStoreAdapter extends AbstractKeyStoreAdapter<KeyStoreAdapter> im
                                    _certificateAlias, _keyManagerFactoryAlgorithm);
     }
 
-    @Override
-    public String getDescription()
-    {
-        return null;
-    }
 
     @Override
     public Collection<String> getAttributeNames()

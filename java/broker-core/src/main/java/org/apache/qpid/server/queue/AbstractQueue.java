@@ -2871,7 +2871,8 @@ public abstract class AbstractQueue
         if(childClass == Binding.class && otherParents.length == 1 && otherParents[0] instanceof Exchange)
         {
             final String bindingKey = (String) attributes.get("name");
-            ((ExchangeImpl)otherParents[0]).addBinding(bindingKey, this, attributes);
+            ((ExchangeImpl)otherParents[0]).addBinding(bindingKey, this,
+                                                       (Map<String,Object>) attributes.get(Binding.ARGUMENTS));
             for(Binding binding : _bindings)
             {
                 if(binding.getExchange() == otherParents[0] && binding.getName().equals(bindingKey))
