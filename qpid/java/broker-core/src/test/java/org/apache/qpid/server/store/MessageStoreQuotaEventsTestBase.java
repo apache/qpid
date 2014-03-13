@@ -93,7 +93,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         {
             if (_store != null)
             {
-               // _store.close();
+                _store.close();
             }
             FileUtils.delete(_storeLocation, true);
         }
