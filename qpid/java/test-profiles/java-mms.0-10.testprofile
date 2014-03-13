@@ -28,4 +28,3 @@ qpid.broker_default_amqp_protocol_excludes=AMQP_1_0
 broker.virtualhosts-config=${QPID_HOME}/etc/virtualhosts-systests.xml
 
 profile.excludes=JavaTransientExcludes Java010Excludes
-messagestore.type=Memory

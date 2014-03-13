@@ -25,7 +25,7 @@ broker.ready=BRK-1004
 broker.stopped=Exception
 qpid.broker_default_amqp_protocol_excludes=AMQP_1_0,AMQP_0_10,AMQP_0_9_1
 broker.virtualhosts-config=${QPID_HOME}/etc/virtualhosts-systests-bdb.xml
-messagestore.class.name=org.apache.qpid.server.store.berkeleydb.BDBMessageStore
+messagestore.type=BDB
 profile.excludes=JavaExcludes JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes
 broker.clean.between.tests=true
 broker.persistent=true
@@ -34,4 +34,3 @@ broker.version=v0_9
 # Do not enable. Allow client to attempt 0-10 and negotiate downwards
 #
 #qpid.amqp.version=0-9
-messagestore.type=BDB
