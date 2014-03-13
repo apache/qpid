@@ -174,6 +174,12 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 
         assertFalse("Expected node to NOT be set as designated primary", storeBean.getDesignatedPrimary());
         storeBean.setDesignatedPrimary(true);
+
+        long limit = System.currentTimeMillis() + 5000;
+        while( !storeBean.getDesignatedPrimary() && System.currentTimeMillis() < limit)
+        {
+            Thread.sleep(100);
+        }
         assertTrue("Expected node to now be set as designated primary", storeBean.getDesignatedPrimary());
 
         final Connection connection = getConnection(_brokerFailoverUrl);
