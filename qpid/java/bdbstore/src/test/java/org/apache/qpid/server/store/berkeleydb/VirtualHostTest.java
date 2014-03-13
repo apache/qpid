@@ -52,7 +52,6 @@ public class VirtualHostTest extends QpidTestCase
     private Broker<?> _broker;
     private StatisticsGatherer _statisticsGatherer;
     private RecovererProvider _recovererProvider;
-    private File _configFile;
     private File _bdbStorePath;
     private VirtualHost<?> _host;
     private ConfigurationEntryStore _store;
@@ -67,7 +66,6 @@ public class VirtualHostTest extends QpidTestCase
         TaskExecutor taslExecutor = mock(TaskExecutor.class);
         when(taslExecutor.isTaskExecutorThread()).thenReturn(true);
         when(_broker.getTaskExecutor()).thenReturn(taslExecutor);
-
 
         _statisticsGatherer = mock(StatisticsGatherer.class);
 
@@ -87,10 +85,6 @@ public class VirtualHostTest extends QpidTestCase
         }
         finally
         {
-            if (_configFile != null)
-            {
-                _configFile.delete();
-            }
             if (_bdbStorePath != null)
             {
                 FileUtils.delete(_bdbStorePath, true);
