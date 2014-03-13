@@ -19,14 +19,15 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreCreator;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.store.OperationalLoggingListener;
 
 public class StandardVirtualHost extends AbstractVirtualHost
@@ -47,9 +48,8 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
     private MessageStore initialiseMessageStore(VirtualHost virtualHost)
     {
-        final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.STORE_TYPE);
-        String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
-        MessageStore messageStore = new MessageStoreCreator().createMessageStore(storeType);
+        final String storeTypeAttr = (String) virtualHost.getAttribute(VirtualHost.STORE_TYPE);
+        MessageStore messageStore = MessageStoreFactory.FACTORY_LOADER.get(storeTypeAttr).createMessageStore();
 
         MessageStoreLogSubject
                 storeLogSubject = new MessageStoreLogSubject(getName(), messageStore.getClass().getSimpleName());

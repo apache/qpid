@@ -21,10 +21,13 @@
 package org.apache.qpid.server.plugin;
 
 import java.util.Map;
+
 import org.apache.qpid.server.store.MessageStore;
 
 public interface MessageStoreFactory extends Pluggable
 {
+    PluggableFactoryLoader<MessageStoreFactory> FACTORY_LOADER = new PluggableFactoryLoader<MessageStoreFactory>(MessageStoreFactory.class);
+
     String getType();
 
     MessageStore createMessageStore();

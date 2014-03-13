@@ -19,7 +19,6 @@
 
 package org.apache.qpid.server.plugin;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +55,7 @@ public class PluggableFactoryLoader<T extends Pluggable>
         return _factoriesMap.get(type);
     }
 
-    public Collection<String> getDescriptiveTypes()
+    public Set<String> getSupportedTypes()
     {
         return _types;
     }

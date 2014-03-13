@@ -22,7 +22,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -64,9 +63,7 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
@@ -105,8 +102,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     private static final String DEFAULT_INITIAL_CONTEXT = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
 
-    private static Map<String, String> supportedStoresClassToTypeMapping = new HashMap<String, String>();
-
     static
     {
         String initialContext = System.getProperty(Context.INITIAL_CONTEXT_FACTORY);
@@ -114,13 +109,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         if (initialContext == null || initialContext.length() == 0)
         {
             System.setProperty(Context.INITIAL_CONTEXT_FACTORY, DEFAULT_INITIAL_CONTEXT);
-        }
-
-        MessageStoreCreator messageStoreCreator = new MessageStoreCreator();
-        Collection<MessageStoreFactory> factories = messageStoreCreator.getFactories();
-        for (MessageStoreFactory messageStoreFactory : factories)
-        {
-            supportedStoresClassToTypeMapping.put(messageStoreFactory.createMessageStore().getClass().getName(), messageStoreFactory.getType());
         }
     }
 

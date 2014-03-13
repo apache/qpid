@@ -19,9 +19,8 @@ package org.apache.qpid.server.store.berkeleydb;/*
  *
  */
 
-import java.util.LinkedHashMap;
 import java.util.Map;
-import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
+
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -68,15 +67,6 @@ public class BDBHAVirtualHostFactory implements VirtualHostFactory
             throw new IllegalArgumentException("Attribute '"+ attrName
                                                +"' is required and must be of type "+clazz.getSimpleName()+".");
         }
-    }
-
-    @Override
-    public Map<String, Object> createVirtualHostConfiguration(VirtualHostAdapter virtualHostAdapter)
-    {
-        LinkedHashMap<String,Object> convertedMap = new LinkedHashMap<String, Object>();
-        convertedMap.put("store.environment-path", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_PATH));
-
-        return convertedMap;
     }
 
 }

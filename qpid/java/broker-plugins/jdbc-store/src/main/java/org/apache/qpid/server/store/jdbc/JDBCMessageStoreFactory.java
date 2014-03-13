@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store.jdbc;
 
 import java.util.Map;
+
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;

@@ -19,13 +19,12 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
-import java.util.LinkedHashMap;
+import java.util.Collection;
 import java.util.Map;
-import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
+
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MessageStoreCreator;
 
 public class StandardVirtualHostFactory implements VirtualHostFactory
 {
@@ -48,48 +47,35 @@ public class StandardVirtualHostFactory implements VirtualHostFactory
     }
 
 
-    public static final String STORE_TYPE_ATTRIBUTE = org.apache.qpid.server.model.VirtualHost.STORE_TYPE;
-    public static final String STORE_PATH_ATTRIBUTE = org.apache.qpid.server.model.VirtualHost.STORE_PATH;
-
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
 
         // need store type and path
-        Object storeType = attributes.get(STORE_TYPE_ATTRIBUTE);
-        if(!(storeType instanceof String))
-        {
+        Collection<String> knownTypes = MessageStoreFactory.FACTORY_LOADER.getSupportedTypes();
 
-            throw new IllegalArgumentException("Attribute '"+ STORE_TYPE_ATTRIBUTE
-                                               +"' is required and must be of type String.");
-        }
-        final MessageStoreCreator storeCreator = new MessageStoreCreator();
-        if(!storeCreator.isValidType((String)storeType))
+        Object storeType = attributes.get(org.apache.qpid.server.model.VirtualHost.STORE_TYPE);
+        if (storeType == null)
         {
-            throw new IllegalArgumentException("Attribute '"+ STORE_TYPE_ATTRIBUTE
-                                                +"' has value '"+storeType+"' which is not one of the valid values: "
-                                                + storeCreator.getStoreTypes() + ".");
-
+            throw new IllegalArgumentException("Attribute '"+ org.apache.qpid.server.model.VirtualHost.STORE_TYPE
+                    +"' is required. Known types are : " + knownTypes);
         }
-
-        for(MessageStoreFactory factory : storeCreator.getFactories())
+        else if (!(storeType instanceof String))
         {
-            if(factory.getType().equalsIgnoreCase((String)storeType))
-            {
-                factory.validateAttributes(attributes);
-            }
+            throw new IllegalArgumentException("Attribute '"+ org.apache.qpid.server.model.VirtualHost.STORE_TYPE
+                                               +"' is required and must be of type String. "
+                                               +"Known types are : " + knownTypes);
         }
+
+        MessageStoreFactory factory = MessageStoreFactory.FACTORY_LOADER.get((String)storeType);
+        if(factory == null)
+        {
+            throw new IllegalArgumentException("Attribute '"+ org.apache.qpid.server.model.VirtualHost.STORE_TYPE
+                                                +"' has value '" + storeType + "' which is not one of the valid values: "
+                                                + "Known types are : " + knownTypes);
+        }
+
+        factory.validateAttributes(attributes);
 
     }
-
-    @Override
-    public Map<String,Object> createVirtualHostConfiguration(VirtualHostAdapter virtualHostAdapter)
-    {
-        Map<String,Object> convertedMap = new LinkedHashMap<String, Object>();
-        convertedMap.put("store.type", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TYPE));
-        convertedMap.put("store.environment-path", virtualHostAdapter.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_PATH));
-
-        return convertedMap;
-    }
-
 }

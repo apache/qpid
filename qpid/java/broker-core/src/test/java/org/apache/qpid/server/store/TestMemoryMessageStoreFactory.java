@@ -22,6 +22,7 @@
 package org.apache.qpid.server.store;
 
 import java.util.Map;
+
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 
 public class TestMemoryMessageStoreFactory implements MessageStoreFactory

@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -36,12 +36,11 @@ import java.util.HashMap;
 public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final Logger _logger = Logger.getLogger(SlowMessageStore.class);
-    private static final String DELAYS = "delays";
     private HashMap<String, Long> _preDelays = new HashMap<String, Long>();
     private HashMap<String, Long> _postDelays = new HashMap<String, Long>();
     private long _defaultDelay = 0L;
-    private MessageStore _realStore = new MessageStoreCreator().createMessageStore("Memory");
-    private DurableConfigurationStore _durableConfigurationStore = (DurableConfigurationStore) _realStore;
+    private MessageStore _realStore = null;
+    private DurableConfigurationStore _durableConfigurationStore = null;
     private static final String PRE = "pre";
     private static final String POST = "post";
     public static final String TYPE = "SLOW";
@@ -55,59 +54,35 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 
         Object delaysAttr = virtualHost.getAttribute("slowMessageStoreDelays");
 
-        Map delays = (delaysAttr instanceof Map) ? (Map) delaysAttr : Collections.emptyMap();
+        @SuppressWarnings({ "unchecked" })
+        Map<String,Object> delays = (delaysAttr instanceof Map) ? (Map<String,Object>) delaysAttr : Collections.<String,Object>emptyMap();
         configureDelays(delays);
 
         final Object realStoreAttr = virtualHost.getAttribute("realStore");
-        String messageStoreClass = realStoreAttr == null ? null : realStoreAttr.toString();
+        String messageStoreType = realStoreAttr == null ? MemoryMessageStore.TYPE : realStoreAttr.toString();
 
+        
         if (delays.containsKey(DEFAULT_DELAY))
         {
             _defaultDelay = Long.parseLong(String.valueOf(delays.get(DEFAULT_DELAY)));
         }
 
-        if (messageStoreClass != null)
+        _realStore = MessageStoreFactory.FACTORY_LOADER.get(messageStoreType).createMessageStore();
+        
+        if (_realStore instanceof DurableConfigurationStore)
         {
-            try
-            {
-                Class<?> clazz = Class.forName(messageStoreClass);
-
-                Object o = clazz.newInstance();
-
-                if (!(o instanceof MessageStore))
-                {
-                    throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
-                                                 " does not.");
-                }
-                _realStore = (MessageStore) o;
-                if(o instanceof DurableConfigurationStore)
-                {
-                    _durableConfigurationStore = (DurableConfigurationStore)o;
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to find message store class", e);
-            }
-            catch (InstantiationException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to initialise message store class", e);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to access message store class", e);
-            }
+            _durableConfigurationStore = (DurableConfigurationStore)_realStore;
+            _durableConfigurationStore.configureConfigStore(virtualHost, recoveryHandler);
         }
-        _durableConfigurationStore.configureConfigStore(virtualHost, recoveryHandler);
 
     }
 
-    private void configureDelays(Map<Object, Object> config)
+    private void configureDelays(Map<String, Object> delays)
     {
 
-        for(Map.Entry<Object, Object> entry : config.entrySet())
+        for(Map.Entry<String, Object> entry : delays.entrySet())
         {
-            String key = String.valueOf(entry.getKey());
+            String key = entry.getKey();
             if (key.startsWith(PRE))
             {
                 _preDelays.put(key.substring(PRE.length()), Long.parseLong(String.valueOf(entry.getValue())));
