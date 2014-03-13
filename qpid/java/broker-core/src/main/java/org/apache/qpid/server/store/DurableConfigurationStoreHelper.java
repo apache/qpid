@@ -54,7 +54,10 @@ public class DurableConfigurationStoreHelper
     {
         Map<String, Object> attributesMap = queue.getActualAttributes();
         attributesMap.remove(ConfiguredObject.ID);
-
+        if(queue.getAlternateExchange() != null)
+        {
+            attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
+        }
         store.update(queue.getId(), QUEUE, attributesMap);
     }
 
@@ -63,6 +66,10 @@ public class DurableConfigurationStoreHelper
 
         Map<String, Object> attributesMap = queue.getActualAttributes();
         attributesMap.remove(ConfiguredObject.ID);
+        if(queue.getAlternateExchange() != null)
+        {
+            attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
+        }
 
         store.create(queue.getId(), QUEUE, attributesMap);
     }
