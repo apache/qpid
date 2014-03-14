@@ -38,6 +38,13 @@
     <url>http://svn.apache.org/viewvc/qpid/trunk/qpid/java</url>
   </scm>
 
+  <distributionManagement>
+    <site>
+      <id>${project.artifactId}-site</id>
+      <url>${project.baseUri}</url>
+    </site>
+  </distributionManagement>
+
   <properties>
     <!-- javac source/target properties -->
     <java.source>1.6</java.source>
@@ -359,6 +366,14 @@
             </reports>
           </reportSet>
         </reportSets>
+        <configuration>
+          <alwaysGenerateSurefireReport>false</alwaysGenerateSurefireReport>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jxr-plugin</artifactId>
       </plugin>
 
       <plugin>
