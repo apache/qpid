@@ -34,7 +34,7 @@ public class DefaultConnectionProviderFactory implements JDBCConnectionProviderF
 
     @Override
     public ConnectionProvider getConnectionProvider(String connectionUrl,
-                                                    VirtualHost virtualHost)
+                                                    VirtualHost virtualHost, boolean configStoreOnly)
     {
         return new DefaultConnectionProvider(connectionUrl);
     }

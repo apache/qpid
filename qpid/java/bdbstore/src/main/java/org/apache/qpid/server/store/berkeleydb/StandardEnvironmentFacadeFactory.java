@@ -26,30 +26,32 @@ import java.util.Map;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.MessageStore;
 
 public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
 
     @SuppressWarnings("unchecked")
     @Override
-    public EnvironmentFacade createEnvironmentFacade(VirtualHost virtualHost, boolean isMessageStore)
+    public EnvironmentFacade createEnvironmentFacade(VirtualHost<?> virtualHost, boolean isMessageStore)
     {
+        String name = virtualHost.getName();
+        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
         Map<String, String> envConfigMap = new HashMap<String, String>();
         envConfigMap.putAll(EnvironmentFacade.ENVCONFIG_DEFAULTS);
 
-        Object environmentConfigurationAttributes = virtualHost.getAttribute(BDBMessageStore.ENVIRONMENT_CONFIGURATION);
+        Object environmentConfigurationAttributes = messageStoreSettings.get(ENVIRONMENT_CONFIGURATION);
         if (environmentConfigurationAttributes instanceof Map)
         {
             envConfigMap.putAll((Map<String, String>) environmentConfigurationAttributes);
         }
 
-        String name = virtualHost.getName();
         final String defaultPath = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK) + File.separator + "bdbstore" + File.separator + name;
 
         String storeLocation;
         if(isMessageStore)
         {
-            storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+            storeLocation = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
             if(storeLocation == null)
             {
                 storeLocation = defaultPath;

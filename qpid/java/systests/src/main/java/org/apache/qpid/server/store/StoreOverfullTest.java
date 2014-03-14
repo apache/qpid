@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -62,10 +64,13 @@ public class StoreOverfullTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_TYPE, QuotaMessageStore.TYPE);
+        messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
+        messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
+
         TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.STORE_TYPE, QuotaMessageStore.TYPE);
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE, OVERFULL_SIZE);
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE, UNDERFULL_SIZE);
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
         super.setUp();
 

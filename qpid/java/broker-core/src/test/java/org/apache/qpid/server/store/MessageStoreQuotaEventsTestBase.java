@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.store;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -32,10 +35,6 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase implements EventListener, TransactionLogResource
 {
@@ -50,9 +49,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     private UUID _transactionResource;
 
     protected abstract MessageStore createStore() throws Exception;
-
-    protected abstract void applyStoreSpecificConfiguration(VirtualHost virtualHost);
-
+    protected abstract VirtualHost<?> createVirtualHost(String storeLocation);
     protected abstract int getNumberOfMessagesToFillStore();
 
     @Override
@@ -64,11 +61,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         FileUtils.delete(_storeLocation, true);
 
 
-        VirtualHost vhost = mock(VirtualHost.class);
-        when(vhost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storeLocation.getAbsolutePath());
-        when(vhost.getName()).thenReturn("test");
-
-        applyStoreSpecificConfiguration(vhost);
+        VirtualHost<?> vhost = createVirtualHost(_storeLocation.getAbsolutePath());
 
         _store = createStore();
         ((DurableConfigurationStore)_store).configureConfigStore(vhost, null);
@@ -81,6 +74,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         _events = new ArrayList<Event>();
         _store.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
+
 
     @Override
     public void tearDown() throws Exception

@@ -52,18 +52,17 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory, DurableConf
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        if(getType().equals(attributes.get(VirtualHost.STORE_TYPE)))
+        @SuppressWarnings("unchecked")
+        Map<String, Object> messageStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+
+        if(getType().equals(messageStoreSettings.get(MessageStore.STORE_TYPE)))
         {
-            Object connectionURL = attributes.get(JDBCMessageStore.CONNECTION_URL);
+            Object connectionURL = messageStoreSettings.get(JDBCMessageStore.CONNECTION_URL);
             if(!(connectionURL instanceof String))
             {
-                Object storePath = attributes.get(VirtualHost.STORE_PATH);
-                if(!(storePath instanceof String))
-                {
-                    throw new IllegalArgumentException("Attribute '"+ JDBCMessageStore.CONNECTION_URL
-                                                                   +"' is required and must be of type String.");
+                throw new IllegalArgumentException("Setting '"+ JDBCMessageStore.CONNECTION_URL
+                                                               +"' is required and must be of type String.");
 
-                }
             }
         }
         if(getType().equals(attributes.get(VirtualHost.CONFIG_STORE_TYPE)))

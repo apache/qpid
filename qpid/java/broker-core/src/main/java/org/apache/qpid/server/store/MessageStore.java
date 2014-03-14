@@ -28,6 +28,11 @@ import org.apache.qpid.server.model.VirtualHost;
  */
 public interface MessageStore
 {
+    String STORE_TYPE                           = "storeType";
+    String STORE_PATH                           = "storePath";
+    String UNDERFULL_SIZE                       = "storeUnderfullSize";
+    String OVERFULL_SIZE                        = "storeOverfullSize";
+
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.

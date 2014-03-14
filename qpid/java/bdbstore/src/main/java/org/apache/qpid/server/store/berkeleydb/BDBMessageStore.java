@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import com.sleepycat.bind.tuple.ByteBinding;
-import com.sleepycat.bind.tuple.IntegerBinding;
-import com.sleepycat.bind.tuple.LongBinding;
-import com.sleepycat.je.*;
-import com.sleepycat.je.Transaction;
-
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
@@ -36,16 +30,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.*;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.Event;
+import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.EventManager;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
+import org.apache.qpid.server.store.State;
+import org.apache.qpid.server.store.StateManager;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.StoredMemoryMessage;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
 import org.apache.qpid.server.store.berkeleydb.entry.Xid;
@@ -58,6 +68,21 @@ import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
 import org.apache.qpid.util.FileUtils;
+
+import com.sleepycat.bind.tuple.ByteBinding;
+import com.sleepycat.bind.tuple.IntegerBinding;
+import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.je.CheckpointConfig;
+import com.sleepycat.je.Cursor;
+import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseConfig;
+import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.LockConflictException;
+import com.sleepycat.je.LockMode;
+import com.sleepycat.je.OperationStatus;
+import com.sleepycat.je.Transaction;
 
 /**
  * BDBMessageStore implements a persistent {@link MessageStore} using the BDB high performance log.
@@ -72,8 +97,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private static final Logger LOGGER = Logger.getLogger(BDBMessageStore.class);
 
     public static final int VERSION = 7;
-    public static final String ENVIRONMENT_CONFIGURATION = "bdbEnvironmentConfig";
-
     private static final int LOCK_RETRY_ATTEMPTS = 5;
     private static String CONFIGURED_OBJECTS_DB_NAME = "CONFIGURED_OBJECTS";
     private static String MESSAGE_META_DATA_DB_NAME = "MESSAGE_METADATA";
@@ -119,7 +142,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     public BDBMessageStore(EnvironmentFacadeFactory environmentFacadeFactory)
     {
-        _type = environmentFacadeFactory.getType();;
+        _type = environmentFacadeFactory.getType();
         _environmentFacadeFactory = environmentFacadeFactory;
         _stateManager = new StateManager(_eventManager);
     }
@@ -218,8 +241,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private void configure(VirtualHost virtualHost, boolean isMessageStore) throws StoreException
     {
-        Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
-        Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
+        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
+        Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
+        Object underfullAttr = messageStoreSettings.get(MessageStore.UNDERFULL_SIZE);
 
         _persistentSizeHighThreshold = overfullAttr == null ? -1l :
                                        overfullAttr instanceof Number ? ((Number) overfullAttr).longValue() : Long.parseLong(overfullAttr.toString());

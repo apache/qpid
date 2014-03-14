@@ -45,6 +45,7 @@ import javax.management.openmbean.TabularDataSupport;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -75,7 +76,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
     private static final String QUEUE_NAME="myUpgradeQueue";
     private static final String NON_DURABLE_QUEUE_NAME="queue-non-durable";
     private static final String PRIORITY_QUEUE_NAME="myPriorityQueue";
-    private static final String QUEUE_WITH_DLQ_NAME="myQueueWithDLQ";   
+    private static final String QUEUE_WITH_DLQ_NAME="myQueueWithDLQ";
 
     private String _storeLocation;
 
@@ -84,7 +85,9 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
     {
         assertNotNull("QPID_WORK must be set", QPID_WORK_ORIG);
         Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
-        _storeLocation = (String)virtualHostAttributes.get(VirtualHost.STORE_PATH);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> messageStoreSettings = (Map<String, Object>) virtualHostAttributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        _storeLocation = (String)messageStoreSettings.get(MessageStore.STORE_PATH);
 
         //Clear the two target directories if they exist.
         File directory = new File(_storeLocation);
@@ -100,11 +103,6 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
 
         getBrokerConfiguration().addJmxManagementConfiguration();
         super.setUp();
-    }
-
-    private String getWorkDirBaseDir()
-    {
-        return QPID_WORK_ORIG + (isInternalBroker() ? "" : "/" + getPort());
     }
 
     /**
@@ -505,7 +503,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
 
         return send;
     }
-    
+
     /**
      * Generates a string of a given length consisting of the sequence 0,1,2,..,9,0,1,2.
      *

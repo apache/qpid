@@ -20,15 +20,16 @@
  */
 package org.apache.qpid.server.store.derby;
 
+import static org.mockito.Mockito.when;
+
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
 import org.apache.qpid.util.FileUtils;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
 
 public class DerbyMessageStoreTest extends MessageStoreTestCase
 {
@@ -63,7 +64,9 @@ public class DerbyMessageStoreTest extends MessageStoreTestCase
     protected void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception
     {
         _storeLocation = TMP_FOLDER + File.separator + getTestName();
-        when(virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storeLocation);
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, _storeLocation);
+        when(virtualHost.getMessageStoreSettings()).thenReturn(messageStoreSettings);
         deleteStoreIfExists();
     }
 

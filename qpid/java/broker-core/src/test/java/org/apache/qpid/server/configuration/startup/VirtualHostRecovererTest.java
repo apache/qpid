@@ -23,6 +23,7 @@ package org.apache.qpid.server.configuration.startup;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +35,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
@@ -54,8 +56,7 @@ public class VirtualHostRecovererTest extends TestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-
-        attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
         when(entry.getAttributes()).thenReturn(attributes);
 
         VirtualHost host = recoverer.create(null, entry, parent);
@@ -68,15 +69,9 @@ public class VirtualHostRecovererTest extends TestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.TYPE, "STANDARD");
-        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.TYPE};
-
-        checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
-
-        attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.STORE_TYPE, "MEMORY");
-        mandatoryAttributes = new String[]{VirtualHost.NAME, VirtualHost.STORE_TYPE};
+        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
+        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.TYPE, VirtualHost.MESSAGE_STORE_SETTINGS};
 
         checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
     }

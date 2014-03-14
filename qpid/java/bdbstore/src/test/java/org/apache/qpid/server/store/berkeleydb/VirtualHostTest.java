@@ -38,7 +38,9 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -101,33 +103,31 @@ public class VirtualHostTest extends QpidTestCase
         String nodeHostPort = "localhost:" + findFreePort();
         String helperHostPort = nodeHostPort;
         String durability = "NO_SYNC,SYNC,NONE";
-        String hostName = getName();
+        String virtualHostName = getName();
+
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.NODE_NAME, nodeName);
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.GROUP_NAME, groupName);
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS, nodeHostPort);
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.HELPER_ADDRESS, helperHostPort);
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.DURABILITY, durability);
+
+        messageStoreSettings.put(MessageStore.STORE_PATH, _bdbStorePath.getAbsolutePath());
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.REPLICATION_CONFIG,
+                Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
 
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
-        virtualHostAttributes.put("haNodeName", nodeName);
-        virtualHostAttributes.put("haGroupName", groupName);
-        virtualHostAttributes.put("haNodeAddress", nodeHostPort);
-        virtualHostAttributes.put("haHelperAddress", helperHostPort);
-        virtualHostAttributes.put("haDurability", durability);
-        virtualHostAttributes.put(VirtualHost.STORE_PATH, _bdbStorePath.getAbsolutePath());
-        virtualHostAttributes.put("haReplicationConfig",
-                Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
-        virtualHostAttributes.put(VirtualHost.NAME, hostName);
+        virtualHostAttributes.put(VirtualHost.NAME, virtualHostName);
         virtualHostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
+        virtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
         _host = createHost(virtualHostAttributes);
         _host.setDesiredState(State.INITIALISING, State.ACTIVE);
 
-        assertEquals("Unexpected host name", hostName, _host.getName());
+        assertEquals("Unexpected virtual host name", virtualHostName, _host.getName());
         assertEquals("Unexpected host type", BDBHAVirtualHostFactory.TYPE, _host.getType());
-        assertEquals("Unexpected store type", ReplicatedEnvironmentFacade.TYPE, _host.getAttribute(VirtualHost.STORE_TYPE));
 
-        assertEquals(nodeName, _host.getAttribute("haNodeName"));
-        assertEquals(groupName, _host.getAttribute("haGroupName"));
-        assertEquals(nodeHostPort, _host.getAttribute("haNodeAddress"));
-        assertEquals(helperHostPort, _host.getAttribute("haHelperAddress"));
-        assertEquals(durability, _host.getAttribute("haDurability"));
-        assertEquals("Unexpected store path", _bdbStorePath.getAbsolutePath(), _host.getAttribute(VirtualHost.STORE_PATH));
+        assertEquals(messageStoreSettings, _host.getMessageStoreSettings());
 
         BDBMessageStore messageStore = (BDBMessageStore) _host.getMessageStore();
         ReplicatedEnvironment environment = (ReplicatedEnvironment) messageStore.getEnvironmentFacade().getEnvironment();

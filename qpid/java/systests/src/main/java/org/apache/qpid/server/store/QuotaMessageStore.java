@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -50,14 +51,15 @@ public class
     @Override
     public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
     {
-        Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
+        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
+        Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
         _persistentSizeHighThreshold = overfullAttr == null
                                        ? Long.MAX_VALUE
                                        : overfullAttr instanceof Number
                                          ? ((Number)overfullAttr).longValue()
                                          : Long.parseLong(overfullAttr.toString());
 
-        Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
+        Object underfullAttr = messageStoreSettings.get(MessageStore.UNDERFULL_SIZE);
 
         _persistentSizeLowThreshold =  overfullAttr == null
                                        ? _persistentSizeHighThreshold

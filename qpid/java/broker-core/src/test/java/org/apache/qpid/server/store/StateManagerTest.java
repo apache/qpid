@@ -22,6 +22,7 @@ package org.apache.qpid.server.store;
 
 
 import java.util.EnumSet;
+
 import junit.framework.TestCase;
 
 public class StateManagerTest extends TestCase implements EventListener
@@ -115,7 +116,7 @@ public class StateManagerTest extends TestCase implements EventListener
         performValidTransition(StateManager.INITIALISE_COMPLETE);
         performValidTransition(StateManager.CLOSE_INITIALISED);
         performValidTransition(StateManager.CLOSE_COMPLETE);
-        
+
         _manager  = new StateManager(this);
         performValidTransition(StateManager.INITIALISE);
         performValidTransition(StateManager.INITIALISE_COMPLETE);
@@ -141,13 +142,13 @@ public class StateManagerTest extends TestCase implements EventListener
 
         performInvalidTransitions(StateManager.INITIALISE, State.INITIALISED);
         performInvalidTransitions(StateManager.INITIALISE_COMPLETE, State.ACTIVATING, State.CLOSING);
-        performInvalidTransitions(StateManager.ACTIVATE, State.ACTIVE);
+        performInvalidTransitions(StateManager.ACTIVATE, State.ACTIVE, State.CLOSING);
         performInvalidTransitions(StateManager.ACTIVATE_COMPLETE, State.QUIESCING, State.CLOSING, State.INITIALISED);
         performInvalidTransitions(StateManager.QUIESCE, State.QUIESCED);
         performInvalidTransitions(StateManager.QUIESCE_COMPLETE, State.ACTIVATING, State.CLOSING);
         performInvalidTransitions(StateManager.CLOSE_QUIESCED, State.CLOSED);
         performInvalidTransitions(StateManager.CLOSE_COMPLETE);
-        
+
     }
 
     private void performInvalidTransitions(StateManager.Transition preTransition, State... validEndStates)
@@ -156,7 +157,7 @@ public class StateManagerTest extends TestCase implements EventListener
         {
             performValidTransition(preTransition);
         }
-        
+
         EnumSet<State> endStates = EnumSet.allOf(State.class);
 
         if(validEndStates != null)
@@ -166,13 +167,13 @@ public class StateManagerTest extends TestCase implements EventListener
                 endStates.remove(state);
             }
         }
-        
+
         for(State invalidEndState : endStates)
         {
             performInvalidStateTransition(invalidEndState);
         }
 
-        
+
     }
 
     private void performInvalidStateTransition(State invalidEndState)

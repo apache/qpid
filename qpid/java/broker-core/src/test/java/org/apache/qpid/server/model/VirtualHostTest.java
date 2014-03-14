@@ -33,6 +33,7 @@ import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
@@ -88,7 +89,7 @@ public class VirtualHostTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-        attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
         attributes.put(VirtualHost.STATE, State.QUIESCED);
 
         VirtualHost host = createHost(attributes);
@@ -149,7 +150,7 @@ public class VirtualHostTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-        attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
 
         VirtualHost host = createHost(attributes);
         return host;

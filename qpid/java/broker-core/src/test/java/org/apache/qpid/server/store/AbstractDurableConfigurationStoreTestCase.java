@@ -84,16 +84,19 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private UUID _queueId;
     private UUID _exchangeId;
     private DurableConfigurationStore _configStore;
+    protected Map<String, Object> _messageStoreSettings;
 
     public void setUp() throws Exception
     {
         super.setUp();
 
+        _messageStoreSettings = new HashMap<String, Object>();
         _queueId = UUIDGenerator.generateRandomUUID();
         _exchangeId = UUIDGenerator.generateRandomUUID();
 
         _storeName = getName();
         _storePath = TMP_FOLDER + File.separator + _storeName;
+        _messageStoreSettings.put(MessageStore.STORE_PATH, _storePath);
         FileUtils.delete(new File(_storePath), true);
         setTestSystemProperty("QPID_WORK", TMP_FOLDER);
 
@@ -114,7 +117,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(_exchange.getId()).thenReturn(_exchangeId);
         when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
         when(_exchange.getEventLogger()).thenReturn(new EventLogger());
-        when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);
+        when(_virtualHost.getMessageStoreSettings()).thenReturn(_messageStoreSettings);
 
         _bindingArgs = new HashMap<String, Object>();
         String argKey = AMQPFilterTypes.JMS_SELECTOR.toString();

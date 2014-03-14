@@ -115,9 +115,12 @@ public class MessageStoreTest extends QpidTestCase
         String hostName = getName();
         _storePath = System.getProperty("QPID_WORK", TMP_FOLDER + File.separator + getTestName()) + File.separator + hostName;
 
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, _storePath);
+        messageStoreSettings.put(MessageStore.STORE_TYPE, getTestProfileMessageStoreType());
+
         _virtualHostModel = mock(org.apache.qpid.server.model.VirtualHost.class);
-        when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_PATH))).thenReturn(_storePath);
-        when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_TYPE))).thenReturn(getTestProfileMessageStoreType());
+        when(_virtualHostModel.getMessageStoreSettings()).thenReturn(messageStoreSettings);
         when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.TYPE))).thenReturn(StandardVirtualHostFactory.TYPE);
         when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.NAME))).thenReturn(hostName);
         when(_virtualHostModel.getType()).thenReturn(StandardVirtualHostFactory.TYPE);

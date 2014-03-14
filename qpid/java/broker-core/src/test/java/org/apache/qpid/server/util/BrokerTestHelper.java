@@ -42,6 +42,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
@@ -108,8 +109,10 @@ public class BrokerTestHelper
         when(virtualHost.getType()).thenReturn(StandardVirtualHostFactory.TYPE);
         when(virtualHost.getAttribute(org.apache.qpid.server.model.VirtualHost.TYPE)).thenReturn(StandardVirtualHostFactory.TYPE);
 
-        when(virtualHost.getStoreType()).thenReturn(TestableMemoryMessageStore.TYPE);
-        when(virtualHost.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TYPE)).thenReturn(TestableMemoryMessageStore.TYPE);
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_TYPE, TestableMemoryMessageStore.TYPE);
+
+        when(virtualHost.getMessageStoreSettings()).thenReturn(messageStoreSettings);
         when(virtualHost.getName()).thenReturn(name);
         return createVirtualHost(virtualHostRegistry, virtualHost);
     }

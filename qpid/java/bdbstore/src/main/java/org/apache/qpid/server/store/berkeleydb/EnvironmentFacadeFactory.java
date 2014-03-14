@@ -24,8 +24,9 @@ import org.apache.qpid.server.model.VirtualHost;
 
 public interface EnvironmentFacadeFactory
 {
+    public static final String ENVIRONMENT_CONFIGURATION = "bdbEnvironmentConfig";
 
-    EnvironmentFacade createEnvironmentFacade(VirtualHost virtualHost, boolean isMessageStore);
+    EnvironmentFacade createEnvironmentFacade(VirtualHost<?> virtualHost, boolean isMessageStore);
 
     String getType();
 

@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.binding.BindingImpl;
-
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -42,7 +41,9 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.JsonFileConfigStore;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -249,13 +250,18 @@ public class StandardVirtualHostTest extends QpidTestCase
     private VirtualHost createVirtualHost(String virtualHostName) throws Exception
     {
         Broker<?> broker = BrokerTestHelper.createBrokerMock();
+
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
         org.apache.qpid.server.model.VirtualHost<?> model = mock(org.apache.qpid.server.model.VirtualHost.class);
         when(model.getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIG_STORE_TYPE)).thenReturn(JsonFileConfigStore.TYPE);
         when(model.getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIG_STORE_PATH)).thenReturn(_storeFolder.getAbsolutePath());
-        when(model.getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TYPE)).thenReturn(TestMemoryMessageStore.TYPE);
+
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_TYPE, TestableMemoryMessageStore.TYPE);
+        when(model.getMessageStoreSettings()).thenReturn(messageStoreSettings);
         when(model.getName()).thenReturn(virtualHostName);
+
         VirtualHost host = new StandardVirtualHostFactory().createVirtualHost(_virtualHostRegistry, mock(StatisticsGatherer.class),
                 new SecurityManager(broker, false), model);
         _virtualHostRegistry.registerVirtualHost(host);

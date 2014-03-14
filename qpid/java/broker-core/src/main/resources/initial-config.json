@@ -21,7 +21,7 @@
 {
   "name": "Broker",
   "storeVersion": 1,
-  "modelVersion": "1.2",
+  "modelVersion": "1.4",
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
     "name" : "passwordFile",
@@ -55,8 +55,10 @@
   "virtualhosts" : [ {
     "name" : "default",
     "type" : "STANDARD",
-    "storeType" : "DERBY",
-    "storePath" : "${qpid.work_dir}/derbystore/default"
+    "messageStoreSettings" : {
+      "storeType" : "DERBY",
+      "storePath" : "${qpid.work_dir}/derbystore/default"
+    }
   } ],
   "plugins" : [ {
     "pluginType" : "MANAGEMENT-HTTP",

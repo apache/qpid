@@ -52,12 +52,15 @@ public class DerbyMessageStoreFactory implements MessageStoreFactory, DurableCon
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        if(getType().equals(attributes.get(VirtualHost.STORE_TYPE)))
+        @SuppressWarnings("unchecked")
+        Map<String, Object> messageStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+
+        if(getType().equals(messageStoreSettings.get(MessageStore.STORE_TYPE)))
         {
-            Object storePath = attributes.get(VirtualHost.STORE_PATH);
+            Object storePath = messageStoreSettings.get(MessageStore.STORE_PATH);
             if(!(storePath instanceof String))
             {
-                throw new IllegalArgumentException("Attribute '"+ VirtualHost.STORE_PATH
+                throw new IllegalArgumentException("Setting '"+ MessageStore.STORE_PATH
                                                                +"' is required and must be of type String.");
 
             }

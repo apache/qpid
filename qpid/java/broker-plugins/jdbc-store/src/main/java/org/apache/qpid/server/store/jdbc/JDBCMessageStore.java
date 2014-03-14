@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
@@ -37,6 +38,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.util.MapValueConverter;
 
 /**
  * An implementation of a {@link org.apache.qpid.server.store.MessageStore} that uses a JDBC database as the persistence
@@ -48,10 +50,14 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
     private static final Logger _logger = Logger.getLogger(JDBCMessageStore.class);
 
-
     public static final String TYPE = "JDBC";
     public static final String CONNECTION_URL = "connectionURL";
     public static final String CONFIG_CONNECTION_URL = "configConnectionURL";
+    public static final String CONNECTION_POOL = "connectionPool";
+    public static final String JDBC_BIG_INT_TYPE = "jdbcBigIntType";
+    public static final String JDBC_BYTES_FOR_BLOB = "jdbcBytesForBlob";
+    public static final String JDBC_VARBINARY_TYPE = "jdbcVarbinaryType";
+    public static final String JDBC_BLOB_TYPE = "jdbcBlobType";
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
@@ -280,19 +286,24 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
                                                        VirtualHost virtualHost)
         throws ClassNotFoundException, SQLException
     {
+        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
 
         String connectionURL;
-        if(!isConfigStoreOnly())
+        Object poolAttribute = null;
+        boolean configStoreOnly = isConfigStoreOnly();
+        if(!configStoreOnly)
         {
-            connectionURL = virtualHost.getAttribute(CONNECTION_URL) == null
-                                   ? String.valueOf(virtualHost.getAttribute(VirtualHost.STORE_PATH))
-                                   : String.valueOf(virtualHost.getAttribute(CONNECTION_URL));
+            connectionURL = messageStoreSettings.get(CONNECTION_URL) == null
+                                   ? String.valueOf(messageStoreSettings.get(MessageStore.STORE_PATH))
+                                   : String.valueOf(messageStoreSettings.get(CONNECTION_URL));
+            poolAttribute = messageStoreSettings.get(CONNECTION_POOL);
         }
         else
         {
             connectionURL = virtualHost.getAttribute(CONFIG_CONNECTION_URL) == null
                                                ? String.valueOf(virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH))
                                                : String.valueOf(virtualHost.getAttribute(CONFIG_CONNECTION_URL));
+            poolAttribute = virtualHost.getAttribute(CONNECTION_POOL);
 
         }
         JDBCDetails details = null;
@@ -312,8 +323,6 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             details = DERBY_DETAILS;
         }
 
-
-        Object poolAttribute = virtualHost.getAttribute("connectionPool");
         String connectionPoolType = poolAttribute == null ? "DEFAULT" : String.valueOf(poolAttribute);
 
         JDBCConnectionProviderFactory connectionProviderFactory =
@@ -324,12 +333,22 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             connectionProviderFactory = new DefaultConnectionProviderFactory();
         }
 
-        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, virtualHost);
+        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, virtualHost, configStoreOnly);
 
-        _blobType = getStringAttribute(virtualHost, "jdbcBlobType",details.getBlobType());
-        _varBinaryType = getStringAttribute(virtualHost, "jdbcVarbinaryType",details.getVarBinaryType());
-        _useBytesMethodsForBlob = getBooleanAttribute(virtualHost, "jdbcBytesForBlob",details.isUseBytesMethodsForBlob());
-        _bigIntType = getStringAttribute(virtualHost, "jdbcBigIntType", details.getBigintType());
+        if(!configStoreOnly)
+        {
+            _blobType = MapValueConverter.getStringAttribute(JDBC_BLOB_TYPE, messageStoreSettings, details.getBlobType());
+            _varBinaryType = MapValueConverter.getStringAttribute(JDBC_VARBINARY_TYPE, messageStoreSettings, details.getVarBinaryType());
+            _useBytesMethodsForBlob = MapValueConverter.getBooleanAttribute(JDBC_BYTES_FOR_BLOB, messageStoreSettings, details.isUseBytesMethodsForBlob());
+            _bigIntType = MapValueConverter.getStringAttribute(JDBC_BIG_INT_TYPE, messageStoreSettings, details.getBigintType());
+        }
+        else
+        {
+            _blobType = getStringAttribute(virtualHost, JDBC_BLOB_TYPE,details.getBlobType());
+            _varBinaryType = getStringAttribute(virtualHost, JDBC_VARBINARY_TYPE,details.getVarBinaryType());
+            _useBytesMethodsForBlob = getBooleanAttribute(virtualHost, JDBC_BYTES_FOR_BLOB,details.isUseBytesMethodsForBlob());
+            _bigIntType = getStringAttribute(virtualHost, JDBC_BIG_INT_TYPE, details.getBigintType());
+        }
     }
 
 

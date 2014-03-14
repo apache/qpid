@@ -42,6 +42,7 @@ import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -976,10 +977,13 @@ public class BrokerACLTest extends QpidRestTestCase
 
     private int createHost(String hostName) throws Exception
     {
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, getStoreLocation(hostName));
+        messageStoreSettings.put(MessageStore.STORE_TYPE, getTestProfileMessageStoreType());
+
         Map<String, Object> hostData = new HashMap<String, Object>();
         hostData.put(VirtualHost.NAME, hostName);
-        hostData.put(VirtualHost.STORE_PATH, getStoreLocation(hostName));
-        hostData.put(VirtualHost.STORE_TYPE, getTestProfileMessageStoreType());
+        hostData.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
         hostData.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
 
         return getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);

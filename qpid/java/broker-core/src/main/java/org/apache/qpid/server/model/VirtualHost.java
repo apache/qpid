@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.model;
 
+import java.security.AccessControlException;
+import java.util.Collection;
+import java.util.Map;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
-
-import java.security.AccessControlException;
-import java.util.Collection;
-import java.util.Map;
 
 @ManagedObject( managesChildren = true )
 public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
@@ -48,17 +48,19 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     String STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "storeTransactionIdleTimeoutWarn";
     String STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "storeTransactionOpenTimeoutClose";
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
-    String STORE_TYPE                           = "storeType";
-    String STORE_PATH                           = "storePath";
-    String CONFIG_STORE_TYPE                    = "configStoreType";
-    String CONFIG_STORE_PATH                    = "configStorePath";
     String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
     String SECURITY_ACL                         = "securityAcl";
     String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
+    String CONFIGURATION_STORE_SETTINGS         = "configurationStoreSettings";
+    String MESSAGE_STORE_SETTINGS               = "messageStoreSettings";
 
+    @Deprecated
+    String CONFIG_STORE_TYPE                    = "configStoreType";
+    @Deprecated
+    String CONFIG_STORE_PATH                    = "configStorePath";
     // Attributes
 
     int CURRENT_CONFIG_VERSION = 4;
@@ -85,16 +87,12 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     long getQueue_flowResumeSizeBytes();
 
     @ManagedAttribute
+    @Deprecated
     String getConfigStoreType();
 
     @ManagedAttribute
+    @Deprecated
     String getConfigStorePath();
-
-    @ManagedAttribute
-    String getStoreType();
-
-    @ManagedAttribute
-    String getStorePath();
 
     @ManagedAttribute
     long getStoreTransactionIdleTimeoutClose();
@@ -128,6 +126,12 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
 
     @ManagedAttribute
     int getHouseKeepingThreadCount();
+
+    @ManagedAttribute
+    Map<String, Object> getMessageStoreSettings();
+
+    @ManagedAttribute
+    Map<String, Object> getConfigurationStoreSettings();
 
     @ManagedStatistic
     long getQueueCount();

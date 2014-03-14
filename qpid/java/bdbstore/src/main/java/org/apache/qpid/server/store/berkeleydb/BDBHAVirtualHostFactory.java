@@ -23,6 +23,8 @@ import java.util.Map;
 
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -52,11 +54,18 @@ public class BDBHAVirtualHostFactory implements VirtualHostFactory
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        validateAttribute(org.apache.qpid.server.model.VirtualHost.STORE_PATH, String.class, attributes);
-        validateAttribute("haGroupName", String.class, attributes);
-        validateAttribute("haNodeName", String.class, attributes);
-        validateAttribute("haNodeAddress", String.class, attributes);
-        validateAttribute("haHelperAddress", String.class, attributes);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> messageStoreSettings = (Map<String, Object>)attributes.get(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS);
+        if (messageStoreSettings == null)
+        {
+            throw new IllegalArgumentException("Attribute '"+ org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS + "' is required.");
+        }
+
+        validateAttribute(MessageStore.STORE_PATH, String.class, messageStoreSettings);
+        validateAttribute(ReplicatedEnvironmentFacadeFactory.GROUP_NAME, String.class, messageStoreSettings);
+        validateAttribute(ReplicatedEnvironmentFacadeFactory.NODE_NAME, String.class, messageStoreSettings);
+        validateAttribute(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS, String.class, messageStoreSettings);
+        validateAttribute(ReplicatedEnvironmentFacadeFactory.HELPER_ADDRESS, String.class, messageStoreSettings);
     }
 
     private void validateAttribute(String attrName, Class<?> clazz, Map<String, Object> attributes)

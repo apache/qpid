@@ -20,12 +20,15 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.server.model.VirtualHost;
@@ -66,9 +69,11 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
     protected void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception
     {
         _connectionURL = "jdbc:derby:memory:/" + getTestName() + ";create=true";
-
-        when(virtualHost.getAttribute(eq("connectionURL"))).thenReturn(_connectionURL);
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(JDBCMessageStore.CONNECTION_URL, _connectionURL);
+        when(virtualHost.getMessageStoreSettings()).thenReturn(messageStoreSettings);
     }
+
 
     @Override
     protected MessageStore createMessageStore()

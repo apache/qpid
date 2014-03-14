@@ -49,6 +49,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ParameterizedTypeImpl;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
@@ -66,8 +67,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
         put(TYPE, String.class);
-        put(STORE_PATH, String.class);
-        put(STORE_TYPE, String.class);
         put(STATE, State.class);
 
         put(QUEUE_ALERT_REPEAT_GAP, Long.class);
@@ -85,6 +84,9 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         put(STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Long.class);
         put(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Long.class);
         put(STORE_TRANSACTION_OPEN_TIMEOUT_WARN, Long.class);
+
+        put(MESSAGE_STORE_SETTINGS, new ParameterizedTypeImpl(Map.class, String.class, Object.class));
+        put(CONFIGURATION_STORE_SETTINGS, new ParameterizedTypeImpl(Map.class, String.class, Object.class));
 
         put(CONFIG_STORE_TYPE, String.class);
         put(CONFIG_STORE_PATH, String.class);
@@ -126,19 +128,13 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         {
             throw new IllegalConfigurationException("Virtual host type must be specified");
         }
-    }
-
-    private void validateAttributes(String type)
-    {
         final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
         if(factory == null)
         {
             throw new IllegalArgumentException("Unknown virtual host type '"+ type +"'.  Valid types are: " + VirtualHostFactory.TYPES.get());
         }
         factory.validateAttributes(getActualAttributes());
-
     }
-
 
     public Collection<VirtualHostAlias> getAliases()
     {
@@ -737,14 +733,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
             {
                 // TODO
             }
-            else if(STORE_TYPE.equals(name))
-            {
-                return _virtualHost.getMessageStore().getStoreType();
-            }
-            else if(STORE_PATH.equals(name))
-            {
-                return _virtualHost.getMessageStore().getStoreLocation();
-            }
         }
         return super.getAttribute(name);
     }
@@ -832,18 +820,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     }
 
     @Override
-    public String getStoreType()
-    {
-        return _virtualHost.getMessageStore().getStoreType();
-    }
-
-    @Override
-    public String getStorePath()
-    {
-        return _virtualHost.getMessageStore().getStoreLocation();
-    }
-
-    @Override
     public long getStoreTransactionIdleTimeoutClose()
     {
         return (Long)getAttribute(VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
@@ -895,6 +871,20 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     public long getQueue_alertThresholdQueueDepthMessages()
     {
         return (Long)getAttribute(VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<String, Object> getMessageStoreSettings()
+    {
+        return (Map<String, Object>)getAttribute(VirtualHost.MESSAGE_STORE_SETTINGS);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<String, Object> getConfigurationStoreSettings()
+    {
+        return (Map<String, Object>)getAttribute(VirtualHost.CONFIGURATION_STORE_SETTINGS);
     }
 
     @Override
@@ -1118,4 +1108,5 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     {
         return super.getTaskExecutor();
     }
+
 }

@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.ConflationQueue;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.util.FileUtils;
 import org.codehaus.jackson.JsonGenerationException;
@@ -111,7 +112,10 @@ public class VirtualHostRestTest extends QpidRestTestCase
             restartBroker();
             Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostName);
             Asserts.assertVirtualHost(hostName, hostDetails);
-            assertEquals("Unexpected store type", storeType, hostDetails.get(VirtualHost.STORE_TYPE));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> messageStoreSettings = (Map<String, Object>) hostDetails.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+            assertEquals("Unexpected store type", storeType, messageStoreSettings.get(MessageStore.STORE_TYPE));
 
             assertNewVirtualHost(hostDetails);
         }
@@ -155,23 +159,30 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String hostToUpdate = TEST3_VIRTUALHOST;
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostToUpdate);
         Asserts.assertVirtualHost(hostToUpdate, hostDetails);
-        String configPath = (String)hostDetails.get(VirtualHost.STORE_PATH);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> attributes = (Map<String, Object>)hostDetails.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        String configPath = (String) attributes.get(MessageStore.STORE_PATH);
 
         String storeType = getTestProfileMessageStoreType();
         String storeLocation = getStoreLocation(hostToUpdate);
+        Map<String, Object> newMessageStoreSettings = new HashMap<String, Object>();
+        newMessageStoreSettings.put(MessageStore.STORE_TYPE, storeType);
+        newMessageStoreSettings.put(MessageStore.STORE_PATH, storeLocation);
+
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put(VirtualHost.NAME, hostToUpdate);
-        newAttributes.put(VirtualHost.STORE_TYPE, storeType);
-        newAttributes.put(VirtualHost.STORE_PATH, storeLocation);
+        newAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, newMessageStoreSettings);
 
         int response = getRestTestHelper().submitRequest("/rest/virtualhost/" + hostToUpdate, "PUT", newAttributes);
         assertEquals("Unexpected response code", 409, response);
 
         restartBroker();
 
-        hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostToUpdate);
-        Asserts.assertVirtualHost(hostToUpdate, hostDetails);
-        assertEquals("Unexpected config path", configPath, hostDetails.get(VirtualHost.STORE_PATH));
+        Map<String, Object> rereadHostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + hostToUpdate);
+        Asserts.assertVirtualHost(hostToUpdate, rereadHostDetails);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rereadMessageStoreSettings = (Map<String,Object>)rereadHostDetails.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        assertEquals("Unexpected config path", configPath, rereadMessageStoreSettings.get(MessageStore.STORE_PATH));
     }
 
     public void testPutCreateQueue() throws Exception
@@ -524,12 +535,15 @@ public class VirtualHostRestTest extends QpidRestTestCase
     private int tryCreateVirtualHost(String hostName, String storeType, String storePath, String configPath) throws IOException,
             JsonGenerationException, JsonMappingException
     {
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, storePath);
+        messageStoreSettings.put(MessageStore.STORE_TYPE, storeType);
+
 
         Map<String, Object> hostData = new HashMap<String, Object>();
         hostData.put(VirtualHost.NAME, hostName);
         hostData.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-        hostData.put(VirtualHost.STORE_PATH, storePath);
-        hostData.put(VirtualHost.STORE_TYPE, storeType);
+        hostData.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
         return getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
     }

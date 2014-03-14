@@ -19,10 +19,12 @@ package org.apache.qpid.server.configuration.startup;/*
  *
  */
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
@@ -128,6 +130,110 @@ public abstract class StoreUpgrader
             Map<String, Object> attributes = new HashMap<String, Object>(root.getAttributes());
             attributes.put(Broker.MODEL_VERSION, "1.3");
             changed.add(new ConfigurationEntry(root.getId(),root.getType(),attributes,root.getChildrenIds(),store));
+
+            store.save(changed.toArray(new ConfigurationEntry[changed.size()]));
+
+        }
+    };
+
+    final static StoreUpgrader UPGRADE_1_3 = new StoreUpgrader("1.3")
+    {
+        private final String[] HA_ATTRIBUTES =  {"haNodeName", "haGroupName", "haHelperAddress", "haCoalescingSync", "haNodeAddress","haDurability","haDesignatedPrimary","haReplicationConfig","bdbEnvironmentConfig"};
+        private final String[] JDBC_ATTRIBUTES =  {"connectionURL", "connectionPool", "jdbcBigIntType", "jdbcBytesForBlob", "jdbcVarbinaryType", "jdbcBlobType", "partitionCount", "maxConnectionsPerPartition", "minConnectionsPerPartition"};
+        private final String[] STORE_TYPES = {"BDB", "BDB-HA", "JDBC", "Memory", "DERBY"};
+
+        @Override
+        protected void doUpgrade(ConfigurationEntryStore store)
+        {
+            ConfigurationEntry root = store.getRootEntry();
+            Map<String, Collection<ConfigurationEntry>> children = root.getChildren();
+            Collection<ConfigurationEntry> vhosts = children.get("VirtualHost");
+            Collection<ConfigurationEntry> changed =  new ArrayList<ConfigurationEntry>();
+            for(ConfigurationEntry vhost : vhosts)
+            {
+                Map<String, Object> attributes = vhost.getAttributes();
+                Map<String, Object> newAttributes = new HashMap<String, Object>(attributes);
+                Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+                String storeType = (String) attributes.get("storeType");
+                String realStoreType = storeType;
+                for (String type : STORE_TYPES)
+                {
+                    if (type.equalsIgnoreCase(storeType))
+                    {
+                        realStoreType = type;
+                        break;
+                    }
+                }
+                if(attributes.containsKey("storeType"))
+                {
+                    newAttributes.remove("storeType");
+                    messageStoreSettings.put("storeType", realStoreType);
+                }
+                if (attributes.containsKey("storePath"))
+                {
+                    messageStoreSettings.put("storePath", newAttributes.remove("storePath"));
+                }
+                if (attributes.containsKey("storeUnderfullSize"))
+                {
+                    messageStoreSettings.put("storeUnderfullSize", newAttributes.remove("storeUnderfullSize"));
+                }
+                if (attributes.containsKey("storeOverfullSize"))
+                {
+                    messageStoreSettings.put("storeOverfullSize", newAttributes.remove("storeOverfullSize"));
+                }
+
+                if ("BDB_HA".equals(attributes.get("type")))
+                {
+                    for (String haAttribute : HA_ATTRIBUTES)
+                    {
+                        if(attributes.containsKey(haAttribute))
+                        {
+                            messageStoreSettings.put(haAttribute, newAttributes.remove(haAttribute));
+                        }
+                    }
+                    messageStoreSettings.remove("storeType");
+                }
+                else
+                {
+
+                    if ("JDBC".equalsIgnoreCase(realStoreType))
+                    {
+                        boolean removeAttribute = !"JDBC".equals(attributes.get("configStoreType"));
+                        for (String jdbcAttribute : JDBC_ATTRIBUTES)
+                        {
+                            if(attributes.containsKey(jdbcAttribute))
+                            {
+                                Object value = null;
+                                if (removeAttribute)
+                                {
+                                    value = newAttributes.remove(jdbcAttribute);
+                                }
+                                else
+                                {
+                                    value = newAttributes.get(jdbcAttribute);
+                                }
+                                messageStoreSettings.put(jdbcAttribute, value);
+                            }
+                        }
+                    }
+                    else if ("BDB".equals(realStoreType))
+                    {
+                        if(attributes.containsKey("bdbEnvironmentConfig"))
+                        {
+                            messageStoreSettings.put("bdbEnvironmentConfig", newAttributes.remove("bdbEnvironmentConfig"));
+                        }
+                    }
+                }
+
+                if (!messageStoreSettings.isEmpty())
+                {
+                    newAttributes.put("messageStoreSettings", messageStoreSettings);
+                    changed.add(new ConfigurationEntry(vhost.getId(),vhost.getType(), newAttributes, vhost.getChildrenIds(), store));
+                }
+            }
+            Map<String, Object> attributes = new HashMap<String, Object>(root.getAttributes());
+            attributes.put(Broker.MODEL_VERSION, "1.4");
+            changed.add(new ConfigurationEntry(root.getId(), root.getType(), attributes, root.getChildrenIds(),store));
 
             store.save(changed.toArray(new ConfigurationEntry[changed.size()]));
 

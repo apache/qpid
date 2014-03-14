@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 import java.util.Map;
 
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
 
@@ -32,47 +33,56 @@ import com.sleepycat.je.Durability.SyncPolicy;
 
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
-    
+    public static final String DURABILITY = "haDurability";
+    public static final String GROUP_NAME = "haGroupName";
+    public static final String HELPER_ADDRESS = "haHelperAddress";
+    public static final String NODE_ADDRESS = "haNodeAddress";
+    public static final String NODE_NAME = "haNodeName";
+    public static final String REPLICATION_CONFIG = "haReplicationConfig";
+    public static final String COALESCING_SYNC = "haCoalescingSync";
+    public static final String DESIGNATED_PRIMARY = "haDesignatedPrimary";
+
     private static final int DEFAULT_NODE_PRIORITY = 1;
     private static final Durability DEFAULT_DURABILITY = new Durability(SyncPolicy.NO_SYNC, SyncPolicy.NO_SYNC,
             ReplicaAckPolicy.SIMPLE_MAJORITY);
     private static final boolean DEFAULT_COALESCING_SYNC = true;
 
-    
-
     @Override
-    public EnvironmentFacade createEnvironmentFacade(final VirtualHost virtualHost, boolean isMessageStore)
+    public EnvironmentFacade createEnvironmentFacade(VirtualHost<?> virtualHost, boolean isMessageStore)
     {
+        final Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
         ReplicatedEnvironmentConfiguration configuration = new ReplicatedEnvironmentConfiguration()
         {
             @Override
             public boolean isDesignatedPrimary()
             {
-                return convertBoolean(virtualHost.getAttribute("haDesignatedPrimary"), false);
+                return convertBoolean(messageStoreSettings.get(DESIGNATED_PRIMARY), false);
             }
 
             @Override
             public boolean isCoalescingSync()
             {
-                return convertBoolean(virtualHost.getAttribute("haCoalescingSync"), DEFAULT_COALESCING_SYNC);
+                return convertBoolean(messageStoreSettings.get(COALESCING_SYNC), DEFAULT_COALESCING_SYNC);
             }
 
             @Override
             public String getStorePath()
             {
-                return (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+                return (String) messageStoreSettings.get(MessageStore.STORE_PATH);
             }
 
+            @SuppressWarnings("unchecked")
             @Override
             public Map<String, String> getParameters()
             {
-                return (Map<String, String>) virtualHost.getAttribute("bdbEnvironmentConfig");
+                return (Map<String, String>) messageStoreSettings.get(EnvironmentFacadeFactory.ENVIRONMENT_CONFIGURATION);
             }
 
+            @SuppressWarnings("unchecked")
             @Override
             public Map<String, String> getReplicationParameters()
             {
-                return (Map<String, String>) virtualHost.getAttribute("haReplicationConfig");
+                return (Map<String, String>) messageStoreSettings.get(REPLICATION_CONFIG);
             }
 
             @Override
@@ -87,36 +97,35 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
                 return DEFAULT_NODE_PRIORITY;
             }
 
-
-
             @Override
             public String getName()
             {
-                return (String)virtualHost.getAttribute("haNodeName");
+                return (String)messageStoreSettings.get(NODE_NAME);
             }
 
             @Override
             public String getHostPort()
             {
-                return (String)virtualHost.getAttribute("haNodeAddress");
+                return (String)messageStoreSettings.get(NODE_ADDRESS);
             }
 
             @Override
             public String getHelperHostPort()
             {
-                return (String)virtualHost.getAttribute("haHelperAddress");
+                return (String)messageStoreSettings.get(HELPER_ADDRESS);
             }
 
             @Override
             public String getGroupName()
             {
-                return (String)virtualHost.getAttribute("haGroupName");
+                return (String)messageStoreSettings.get(GROUP_NAME);
             }
 
             @Override
             public String getDurability()
             {
-                return virtualHost.getAttribute("haDurability") == null ? DEFAULT_DURABILITY.toString() : (String)virtualHost.getAttribute("haDurability");
+                String durability = (String)messageStoreSettings.get(DURABILITY);
+                return durability == null ? DEFAULT_DURABILITY.toString() : durability;
             }
         };
         return new ReplicatedEnvironmentFacade(configuration);

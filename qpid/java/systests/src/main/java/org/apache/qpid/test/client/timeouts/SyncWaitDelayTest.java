@@ -23,13 +23,6 @@ package org.apache.qpid.test.client.timeouts;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.SlowMessageStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
-
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -37,6 +30,14 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.SlowMessageStore;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This tests that when the commit takes a long time(due to POST_COMMIT_DELAY) that the commit does not timeout
@@ -59,9 +60,14 @@ public class SyncWaitDelayTest extends QpidBrokerTestCase
     {
         Map<String, Object> slowMessageStoreDelays = new HashMap<String,Object>();
         slowMessageStoreDelays.put("postcommitTran", POST_COMMIT_DELAY);
+
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_TYPE, SlowMessageStore.TYPE);
+        messageStoreSettings.put(SlowMessageStore.DELAYS, slowMessageStoreDelays);
+
         TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.STORE_TYPE, SlowMessageStore.TYPE);
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, "slowMessageStoreDelays", slowMessageStoreDelays);
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+
         super.setUp();
 
         //Set the syncWrite timeout to be just larger than the delay on the commitTran.

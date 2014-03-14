@@ -524,7 +524,7 @@ public class RestTestHelper
             String queueName = EXPECTED_QUEUES[i];
             Map<String, Object> queueData = new HashMap<String, Object>();
             queueData.put(Queue.NAME, queueName);
-            queueData.put(Queue.DURABLE, Boolean.TRUE);
+            queueData.put(Queue.DURABLE, Boolean.FALSE);
             submitRequest("/rest/queue/test/" + queueName, "PUT", queueData);
 
             Map<String, Object> bindingData = new HashMap<String, Object>();

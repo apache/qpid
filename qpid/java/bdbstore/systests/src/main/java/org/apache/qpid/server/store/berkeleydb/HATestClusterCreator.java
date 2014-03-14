@@ -43,8 +43,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
 
 import com.sleepycat.je.rep.ReplicationConfig;
@@ -101,19 +103,22 @@ public class HATestClusterCreator
                 _bdbHelperPort = bdbPort;
             }
 
-            TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
-            brokerConfiguration.addJmxManagementConfiguration();
             String nodeName = getNodeNameForNodeAt(bdbPort);
-            brokerConfiguration.setObjectAttribute(_virtualHostName, VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
-            brokerConfiguration.setObjectAttribute(_virtualHostName, VirtualHost.STORE_PATH, System.getProperty("QPID_WORK") + File.separator + brokerPort);
-            brokerConfiguration.setObjectAttribute(_virtualHostName, "haGroupName", _groupName);
-            brokerConfiguration.setObjectAttribute(_virtualHostName, "haNodeName", nodeName);
-            brokerConfiguration.setObjectAttribute(_virtualHostName, "haNodeAddress", getNodeHostPortForNodeAt(bdbPort));
-            brokerConfiguration.setObjectAttribute(_virtualHostName, "haHelperAddress", getHelperHostPort());
+            Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+            messageStoreSettings.put(MessageStore.STORE_PATH, System.getProperty("QPID_WORK") + File.separator + brokerPort);
+            messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.GROUP_NAME, _groupName);
+            messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.NODE_NAME, nodeName);
+            messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS, getNodeHostPortForNodeAt(bdbPort));
+            messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.HELPER_ADDRESS, getHelperHostPort());
             Map<String, String> repSettings = new HashMap<String, String>();
             repSettings.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
             repSettings.put(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES, "0");
-            brokerConfiguration.setObjectAttribute(_virtualHostName, "haReplicationConfig", repSettings );
+            messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.REPLICATION_CONFIG, repSettings );
+
+            TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
+            brokerConfiguration.addJmxManagementConfiguration();
+            brokerConfiguration.setObjectAttribute(_virtualHostName, VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
+            brokerConfiguration.setObjectAttribute(_virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
             brokerPort = _testcase.getNextAvailable(bdbPort + 1);
         }
@@ -127,7 +132,10 @@ public class HATestClusterCreator
             throw new IllegalArgumentException("Only two nodes groups have the concept of primary");
         }
         TestBrokerConfiguration config = _testcase.getBrokerConfiguration(_primaryBrokerPort);
-        config.setObjectAttribute("test", "haDesignatedPrimary", designatedPrimary);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> storeSetting = (Map<String, Object>) config.getObjectAttributes(_virtualHostName).get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        storeSetting.put(ReplicatedEnvironmentFacadeFactory.DESIGNATED_PRIMARY, designatedPrimary);
+        config.setObjectAttribute(_virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, storeSetting);
         config.setSaved(false);
     }
 
@@ -360,12 +368,15 @@ public class HATestClusterCreator
     public void modifyClusterNodeBdbAddress(int brokerPortNumberToBeMoved, int newBdbPort)
     {
         TestBrokerConfiguration config = _testcase.getBrokerConfiguration(brokerPortNumberToBeMoved);
-        config.setObjectAttribute(_virtualHostName, "haNodeAddress", "localhost:" + newBdbPort);
-        String oldBdbHostPort = (String)config.getObjectAttributes(_virtualHostName).get("haNodeAddress");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> storeSetting = (Map<String, Object>) config.getObjectAttributes(_virtualHostName).get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        String oldBdbHostPort = (String) storeSetting.get(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS);
         String[] oldHostAndPort = StringUtils.split(oldBdbHostPort, ":");
         String oldHost = oldHostAndPort[0];
         String newBdbHostPort = oldHost + ":" + newBdbPort;
-        config.setObjectAttribute(_virtualHostName, "haNodeAddress", newBdbHostPort);
+        storeSetting.put(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS, newBdbHostPort);
+        config.setObjectAttribute(_virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, storeSetting);
         config.setSaved(false);
     }
 

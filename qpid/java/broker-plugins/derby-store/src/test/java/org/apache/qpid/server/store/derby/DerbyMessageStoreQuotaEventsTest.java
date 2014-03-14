@@ -20,14 +20,16 @@
  */
 package org.apache.qpid.server.store.derby;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
 
 public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestBase
 {
@@ -50,17 +52,26 @@ public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTes
     }
 
     @Override
-    protected void applyStoreSpecificConfiguration(VirtualHost vhost)
-    {
-        _logger.debug("Applying store specific config. overfull-sze=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
-
-        when(vhost.getAttribute(eq(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE))).thenReturn(OVERFULL_SIZE);
-        when(vhost.getAttribute(eq(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE))).thenReturn(UNDERFULL_SIZE);
-    }
-
-    @Override
     protected MessageStore createStore() throws Exception
     {
         return new DerbyMessageStore();
     }
+
+    @Override
+    protected VirtualHost<?> createVirtualHost(String storeLocation)
+    {
+        _logger.debug("Applying store specific config. overfull-size=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
+
+        VirtualHost<?> vhost = mock(VirtualHost.class);
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, storeLocation);
+        messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
+        messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
+
+        when(vhost.getMessageStoreSettings()).thenReturn(messageStoreSettings );
+        when(vhost.getName()).thenReturn("test");
+
+        return vhost;
+    }
+
 }
