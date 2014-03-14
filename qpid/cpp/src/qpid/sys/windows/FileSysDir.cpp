@@ -79,7 +79,9 @@ void FileSysDir::forEachFile(Callback cb) const {
     // process everything that isn't a directory
     do {
         if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-            std::string fileName(findFileData.cFileName);
+            std::string fileName(dirPath);
+            fileName += "\\";
+            fileName += findFileData.cFileName;
             cb(fileName);
         }
     } while (FindNextFile(hFind, &findFileData) != 0);
