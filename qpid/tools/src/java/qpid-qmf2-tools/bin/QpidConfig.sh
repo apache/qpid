@@ -29,9 +29,7 @@ if [ -z "$QMF2_HOME" ]; then
     export QMF2_HOME=`cd $WHEREAMI/../ && pwd`
 fi
 
-QMF2_LIBS=$QMF2_HOME/build/lib
-
-CLASSPATH=$QMF2_LIBS/qpid-client-patch.jar:$CLASSPATH:$QMF2_LIBS/qmf2.jar
+CLASSPATH=$QMF2_HOME/lib/*:$CLASSPATH
 
 # If we're on Cygwin we need to convert to Windows path.
 if $cygwin; then
@@ -43,4 +41,4 @@ if [ -n "$AMQJ_LOGGING_LEVEL" ]; then
     PROPERTIES=-Damqj.logging.level=$AMQJ_LOGGING_LEVEL
 fi
 
-java -cp $CLASSPATH $PROPERTIES org.apache.qpid.qmf2.tools.QpidConfig "$@"
+java -cp "$CLASSPATH" $PROPERTIES org.apache.qpid.qmf2.tools.QpidConfig "$@"
