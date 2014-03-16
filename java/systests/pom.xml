@@ -185,8 +185,4 @@
 
   </dependencies>
 
-  <build>
-    <testSourceDirectory>src/main/java</testSourceDirectory>
-  </build>
-
 </project>

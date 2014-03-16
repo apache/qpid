@@ -108,6 +108,7 @@
     <module>qpid-test-utils</module>
     <module>systests</module>
     <module>perftests</module>
+    <module>qpid-perftests-systests</module>
 
     <module>perftests/visualisation-jfc</module>
     <module>bdbstore</module>
@@ -330,6 +331,15 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>build/**</exclude>
+            <exclude>resources/**</exclude>
+            <exclude>test-profiles/**</exclude>
+            <exclude>release-docs/**</exclude>
+            <exclude>lib/**</exclude>
+          </excludes>
+        </configuration>
       </plugin>
 
     </plugins>
@@ -387,6 +397,15 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <version>${apache-rat-plugin-version}</version>
+        <configuration>
+          <excludes>
+            <exclude>build/**</exclude>
+            <exclude>resources/**</exclude>
+            <exclude>test-profiles/**</exclude>
+            <exclude>release-docs/**</exclude>
+            <exclude>lib/**</exclude>
+          </excludes>
+        </configuration>
       </plugin>
 
     </plugins>

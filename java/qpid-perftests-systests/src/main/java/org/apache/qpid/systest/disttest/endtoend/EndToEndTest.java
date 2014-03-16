@@ -36,8 +36,8 @@ import org.apache.qpid.util.FileUtils;
 public class EndToEndTest extends QpidBrokerTestCase
 {
     private ControllerRunner _runner;
-    private static final String TEST_CONFIG = "perftests/src/test/java/org/apache/qpid/systest/disttest/endtoend/endtoend.json";
-    private static final String JNDI_CONFIG_FILE = "perftests/src/test/java/org/apache/qpid/systest/disttest/perftests.systests.properties";
+    private static final String TEST_CONFIG = "qpid-perftests-systests/src/main/java/org/apache/qpid/systest/disttest/endtoend/endtoend.json";
+    private static final String JNDI_CONFIG_FILE = "qpid-perftests-systests/src/main/java/org/apache/qpid/systest/disttest/perftests.systests.properties";
     private static final String RUN1 = "run1";
 
     public void testRunner() throws Exception

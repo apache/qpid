@@ -36,7 +36,7 @@
 
   <property name="modules.core"       value="qpid-test-utils common management/common amqp-1-0-common broker-core broker client amqp-1-0-client amqp-1-0-client-jms amqp-1-0-client-websocket tools"/>
   <property name="modules.examples"   value="client/example management/example amqp-1-0-client/example amqp-1-0-client-jms/example"/>
-  <property name="modules.tests"      value="systests perftests"/>
+  <property name="modules.tests"      value="systests perftests qpid-perftests-systests"/>
   <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>
   <property name="modules.jca"        value="jca"/>
   <property name="modules"            value="${modules.core} ${modules.examples}

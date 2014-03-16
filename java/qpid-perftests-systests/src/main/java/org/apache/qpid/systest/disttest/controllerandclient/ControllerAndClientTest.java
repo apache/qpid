@@ -32,7 +32,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.naming.NamingException;
 
-import org.apache.qpid.disttest.ConfigFileTestHelper;
+import org.apache.qpid.systest.disttest.ConfigFileTestHelper;
 import org.apache.qpid.disttest.client.Client;
 import org.apache.qpid.disttest.client.ClientState;
 import org.apache.qpid.disttest.controller.Controller;
