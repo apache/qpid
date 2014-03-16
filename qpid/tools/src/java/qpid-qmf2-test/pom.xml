@@ -137,7 +137,7 @@
               <systemProperties>
                 <systemProperty>
                   <key>log4j.configuration</key>
-                  <value>file://${basedir}/bin/log4j.xml</value>
+                  <value>file://${basedir}/log4j.xml</value>
                 </systemProperty>
               </systemProperties>
             </configuration>
