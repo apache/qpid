@@ -43,25 +43,4 @@
     <property name="qpid.logging.level" value="-Damqj.logging.level=warn"/>
     <property name="log4j.config" value="-Dlog4j.configuration=perftests.log4j"/>
     <property name="properties" value="perftests.properties"/>
-
-    <target name="release-bin" depends="release-bin-tasks"/>
-
-    <target name="libs-release" description="overridden to not copy depended-on modules or their dependencies, so that a perf tests release is not tied to a particular client version">
-        <!-- Copy the module dependencies -->
-        <echo message="${module.libs}"/>
-        <echo message="overridden to not copy qpid-client or its dependencies so that this release is not tied to a particular client version"/>
-
-        <copylist todir="${module.release}/lib" dir="${project.root}" files="${module.libs}"/>
-        <!-- Copy the jar for this module -->
-        <copy todir="${module.release}/lib" failonerror="true">
-            <fileset file="${module.jar}"/>
-        </copy>
-    </target>
-
-	<target name="copy-etc-release" description="override target from module.xml to set flatten=false">
-        <copy todir="${module.release}/etc" failonerror="false" flatten="false">
-            <fileset dir="${module.etc}"/>
-        </copy>
-    </target>
-
 </project>
