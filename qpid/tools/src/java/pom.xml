@@ -73,6 +73,7 @@
     <module>qpid-qmf2-rest</module>
     <module>qpid-qmf2-tools</module>
     <module>qpid-broker-plugins-management-qmf2</module>
+    <module>qpid-qmf2-test</module>
   </modules>
 
   <build>
