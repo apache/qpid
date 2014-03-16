@@ -25,16 +25,21 @@ This directory provides a set of Java and JavaScript based tools that allow inte
 The tools are based on QMF2 (Qpid Management Framework v2) and work with the C++ broker by default. In order
 to enable QMF2 support in the Java Broker you must compile the QMF plugin (see README-Java-Broker.txt)
 
-The main prerequisite is that The Qpid Java jar needs to be on your classpath - I tend to use qpid-all.jar but
-client only jars should be OK too, it's pretty much built on pure JMS.
+In order to build the Java QMF2 API, the Tools and the Java Broker QMF2 plugin simply do:
 
-In order to build the Java QMF2 API, the tools and the Java Broker QMF2 plugin simply do:
+mvn clean package
 
-ant all
+This will create the jar files for the various modules, and additionally create packaged release archives for
+the combined tools package and the broker plugin which can be extracted for installation and use.
 
-If you don't want the QMF2 plugin for the Java Broker simply do:
 
-ant
+There is fairly comprehensive JavaDoc available, which you can generate in a couple of ways:
+
+mvn javadoc:aggregate  - Builds the Javadoc for all the modules combined, output located at:
+qpid/tools/src/java/target/site/apidocs/index.html
+
+mvn javadoc:javadoc    - Builds the Javadoc for each module in turn individually, output located at:
+qpid/tools/src/java/<module>/target/site/apidocs/index.html
 
 
 N.B. At the moment the QMF2 API and tools use the "traditional" Qpid AMQP 0.10 JMS API. The intention is that
@@ -46,16 +51,18 @@ However there is no concrete schedule for this migration at this time.
 The tools are build on a Java JMS implementation of the QMF2 API specified at
 https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal
 
-When successfully build via "ant all" there is fairly comprehensive JavaDoc available in:
-qpid/tools/src/java/docs/api/index.html
+Once built as described earlier, the API jar is included in the overall tools bundle described below, and
+additionally the API jar itself file will be placed in:
+qpid/tools/src/java/qpid-qmf2/target
 
-Though looking at the source code for the tools (see "The Tools" below) might be a quicker way to get started.
+There is fairly comprehensive JavaDoc available, see earlier for build instructions.
 
+Looking at the source code for the tools (see "The Tools" below) might be a quicker way to get started.
 
 The source code for the Java QMF2 API can be found under:
-qpid/tools/src/java/src/main/java/org/apache/qpid/qmf2/console
-qpid/tools/src/java/src/main/java/org/apache/qpid/qmf2/agent
-qpid/tools/src/java/src/main/java/org/apache/qpid/qmf2/common
+qpid/tools/src/java/qpid-qmf2/src/main/java/org/apache/qpid/qmf2/console
+qpid/tools/src/java/qpid-qmf2/src/main/java/org/apache/qpid/qmf2/agent
+qpid/tools/src/java/qpid-qmf2/src/main/java/org/apache/qpid/qmf2/common
 
 console: contains the classes for the QMF2 "console", which is what most of the tools make use of
 agent: contains the classes for the QMF2 "agent", which it what exposes management services, this is
@@ -64,18 +71,25 @@ common: contains classes common to both the console and the agent.
 
 ************************************************ The Tools ************************************************
 
-There are executable shell scripts that should allow the Java based tools to be run fairly easily in:
-qpid/qpid-trunk/qpid/tools/src/java/bin
+A number of Java based tools are provided, and additionally a web based GUI with underlying REST api which
+are described later, utilising the core components from the API outlined above.
 
-The source code for the Java QMF2 API can be found under:
-qpid/tools/src/java/src/main/java/org/apache/qpid/qmf2/tools
+Once built as described earlier, the tools jar is included in the overall tools release tar.gz placed in:
+qpid/tools/src/java/qpid-qmf2-tools/target
+
+There are executable shell scripts included in the tools bundle that should allow the tools to be run fairly
+easily. To use them, extract the tar.gz release to your preferred installation location, and open the
+included bin/ directory.
+
+The source code for the Java QMF2 Tools can be found under:
+qpid/tools/src/java/qpid-qmf2-tools/src/main/java/org/apache/qpid/qmf2/tools
 
 The available tools are:
 QpidConfig: Is a Java port of the standard Python based qpid-config tool. This exercises most of the QMF2 API
             and is probably a good bet to see how things work if you want to use the API in your own projects.
 QpidCtrl: Is a Java port of the qpid-ctrl tool found in qpid/cpp/src/tests. This is a little known, but useful
           little tool that lets one send low-level QMF constructs from the command line. The JavaDoc is the
-          best place to look for example usage.
+          best place to look for example usage (see earlier for build instructions).
 QpidPrintEvents: Is a Java port of the Python qpid-printevents and illustrates the asynchronous delivery
                  of QMF2 notification events.
 QpidQueueStats: Is a Java port of the Python qpid-queue-stats. This was written mainly to illustrate the use
@@ -93,26 +107,26 @@ QueueFuse: Is a tool that monitors QMF Events looking for a QueueThresholdExceed
            messages off the offending queue, i.e. it acts rather like a fuse. It's mainly a bit of a toy, but
            it's a pretty good illustration of how to trigger QMF method invocation from QMF Events. It would
            be pretty easy to modify this to redirect messages to a different queue if a particular queue fills.
-QpidRestAPI: This is a Web Service that exposes QMF2 via a REST API see "The GUI" section below.
+QpidRestAPI: This is a Web Service that exposes QMF2 via a REST API, see "The GUI" section below for details.
 
 ************************************************* The GUI *************************************************
 
-There is a fairly comprehensive Web based GUI available for Qpid that works with the C++ Broker and also the
-Java Broker if the QMF plugin has been installed (see README-Java-Broker.txt).
+Included in the tools package, there is a fairly comprehensive Web based GUI available for Qpid that works
+with the C++ Broker and also the Java Broker if the QMF plugin has been installed (see README-Java-Broker.txt).
 
 The GUI is in the form of a pure client side "single page" Web App written in JavaScript that uses the
-QpidRestAPI to proxy the QMF API. QpidRestAPI also serves up the GUI.
+QpidRestAPI to proxy the QMF API, and also serve up the GUI.
 
-There is comprehensive JavaDoc for the QpidRestAPI, the most useful classes to look at are:
+There is comprehensive JavaDoc for the QpidRestAPI (see earlier for build instructions), where
+the most useful classes to look at are:
 QpidRestAPI: This describes the various command line options available.
 QpidServer: This provides documentation for the actual REST API itself, in effect the REST mapping for QMF
 
 QpidRestAPI provides a fairly complete REST mapping for QMF, it was primarily written as the back-end to
 the GUI, but there's no reason why it couldn't be used in its own right.
 
-
-To get started, the simplest and probably most common use case can be kicked of simply by firing up the
-REST API via:
+To get started, after you have extracted the tools release as described earlier, the simplest and probably
+most common use case can be kicked offby changing into the bin/ directory and firing up the REST API via:
 ./QpidRestAPI
 
 This will bind the HTTP port to 8080 on the "wildcard" address (0.0.0.0). The QMF connection will default to
@@ -147,7 +161,7 @@ Clearly if you want to be able to manage a number of brokers you'd probably pref
 them every time you fire up the GUI - particularly because the list gets wiped if you hit refresh :-)
 
 The good news is that the initial set of Console Connections is configurable via the file:
-qpid/tools/src/java/bin/qpid-web/web/ui/config.js
+qpid/tools/src/java/qpid-qmf2-tools/bin/qpid-web/web/ui/config.js
 
 
 This is a simple JSON file and it contains example Console Connection configuration including a fairly complex one
@@ -157,7 +171,7 @@ you'd like to be able to control.
 
 
 As mentioned above the default User Name and Password are admin and admin, these are set in the file
-qpid/tools/src/java/bin/qpid-web/authentication/account.properties
+qpid/tools/src/java/qpid-qmf2-tools/bin/qpid-web/authentication/account.properties
 
 
 It's worth pointing out that at the moment authentication is limited to basic uthentication. This is mainly
@@ -180,17 +194,10 @@ run qpid-config from.
 
 
 *********************************************** Important!! ***********************************************
-*  If your version of Qpid is older than 0.12 the QMF2 API won't work unless your setup is as follows:    *
+*  If your Qpid C++ broker is older than 0.10 the QMF2 API won't work unless your setup is as follows:    *
 *********************************************** Important!! ***********************************************
 
-For those who are running with Qpid 0.12 or above the patch described below isn't necessary.
-The default "api" ant target in build.xml builds everything except the patch, which is the preferred
-approach for later Qpid versions, though using the patched version of the older AMQMessageDelegate_0_10.java
-still works with Qpid 0.12 (but not with later Qpid versions).
-
-
-To be clear, if you are using Qpid Java jars 0.12 or above you do not need to use the patch described below
-even if you are talking to an earlier broker, however do note that if you are talking to a broker < Qpid 0.10
+Note that if you are talking to a broker < Qpid 0.10
 you need to set "--mgmt-qmf2 yes" when you start up qpidd if you want to get QMF2 Events and heartbeats pushed.
 This is particularly important to note if you are using the Qpid GUI, as in default mode its updates are
 triggered by the QMF2 heartbeats. If "--mgmt-qmf2 yes" isn't set on a 0.8 broker you'll see "Broker Disconnected"
@@ -202,39 +209,5 @@ where access to the broker configuration is not available.
 
 Note 1: This uses QMF2 so requires that the "--mgmt-qmf2 yes" option is applied to the broker (this is
         the default from Qpid 0.10 onwards)
-Note 2: In order to use QMF2 the app-id field needs to be set. There appears to be no way to set the AMQP
-        0-10 specific app-id field on a message which the broker's QMFv2 implementation currently requires.
 
-Gordon Sim has put together a patch for org.apache.qpid.client.message.AMQMessageDelegate_0_10
-Found in client/src/main/java/org/apache/qpid/client/message/AMQMessageDelegate_0_10.java
- 
-public void setStringProperty(String propertyName, String value) throws JMSException
-{
-       checkPropertyName(propertyName);
-       checkWritableProperties();
-       setApplicationHeader(propertyName, value);
-
-       if ("x-amqp-0-10.app-id".equals(propertyName))
-       {
-           _messageProps.setAppId(value.getBytes());
-       }
-}
- 
-The jira "https://issues.apache.org/jira/browse/QPID-3302." covers this.
-
-
-This has been fixed in Qpid 0.12, but I've included a patched version of AMQMessageDelegate_0_10.java
-in the build directory so that people using earlier versions can get up and running (the QMF2 library
-was initially developed using Qpid 0.10).
-
-
-The "api-patched" ant target in build.xml creates a qpid-client-patch.jar in addition to the qmf2.jar and qmf2test.jar
-
-It is assumed that the qpid-clientxxx.jar is already on your CLASSPATH so one would do:
-
-CLASSPATH=../../build/lib/qpid-client-patch.jar:$CLASSPATH:../../build/lib/qmf2.jar:../../build/lib/qmf2test.jar
-
-to put the patched AMQMessageDelegate_0_10 ahead of the unpatched one. This is already done for the scripts that
-call the various test and tool classes.
-
-
+Note 2: In order to use QMF2 the app-id field needs to be set. This requires the Qpid 0.12+ Java client
