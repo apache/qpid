@@ -23,7 +23,8 @@
 
 This directory provides a set of Java and JavaScript based tools that allow interaction with the Qpid brokers.
 The tools are based on QMF2 (Qpid Management Framework v2) and work with the C++ broker by default. In order
-to enable QMF2 support in the Java Broker you must compile the QMF plugin (see README-Java-Broker.txt)
+to enable QMF2 support in the Java Broker you must compile the QMF plugin (see the directory
+qpid-broker-plugins-management-qmf2 and contained README.txt).
 
 In order to build the Java QMF2 API, the Tools and the Java Broker QMF2 plugin simply do:
 
