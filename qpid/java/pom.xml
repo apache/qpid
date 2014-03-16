@@ -334,10 +334,8 @@
         <configuration>
           <excludes>
             <exclude>build/**</exclude>
-            <exclude>resources/**</exclude>
-            <exclude>test-profiles/**</exclude>
-            <exclude>release-docs/**</exclude>
             <exclude>lib/**</exclude>
+            <exclude>test-profiles/test_resources/ssl/**</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -400,10 +398,8 @@
         <configuration>
           <excludes>
             <exclude>build/**</exclude>
-            <exclude>resources/**</exclude>
-            <exclude>test-profiles/**</exclude>
-            <exclude>release-docs/**</exclude>
             <exclude>lib/**</exclude>
+            <exclude>test-profiles/test_resources/ssl/**</exclude>
           </excludes>
         </configuration>
       </plugin>
