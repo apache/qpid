@@ -19,61 +19,30 @@
 
 # Optional AMQP1.0 support. Requires proton toolkit.
 
-include(FindPkgConfig)
-
-pkg_check_modules(PROTON libqpid-proton)
-
-if (NOT PROTON_FOUND)
-    # if pkg-config is absent or fails to find proton then use
-    # PROTON_ROOT command line option or environment variable to locate
-    # local installed proton build.
-    if (NOT PROTON_ROOT)
-        set (PROTON_ROOT "$ENV{PROTON_ROOT}")
-    endif()
-    if (PROTON_ROOT)
-        find_package(proton PATHS ${PROTON_ROOT} NO_DEFAULT_PATH)
-
-        if (proton_FOUND EQUAL 1)
-            set(iFile "${PROTON_ROOT}/lib/proton.cmake/libqpid-proton.cmake")
-            if(EXISTS ${iFile})
-                include("${iFile}")
-            else()
-                message(FATAL_ERROR "PROTON_ROOT defined but file ${iFile} is missing")
-            endif()
-        else()
-            message(FATAL_ERROR "Proton package files not found in ${PROTON_ROOT}")
-        endif()
-    endif()
-endif()
+find_package(Proton 0.5)
 
 set (amqp_default ${amqp_force})
-set (minimum_version 0.5)
 set (maximum_version 0.6)
-if (PROTON_FOUND)
-    if (PROTON_VERSION LESS ${minimum_version})
-        message(STATUS "Qpid proton ${PROTON_VERSION} is too old, require ${minimum_version} - ${maximum_version}; amqp 1.0 support not enabled")
-    else (PROTON_VERSION LESS ${minimum_version})
-        if (PROTON_VERSION GREATER ${maximum_version})
-            message(STATUS "Qpid proton ${PROTON_VERSION} is too new, require ${minimum_version} - ${maximum_version}; amqp 1.0 support not enabled")
-        else (PROTON_VERSION GREATER ${maximum_version})
-            message(STATUS "Qpid proton found, amqp 1.0 support enabled")
-            set (amqp_default ON)
-            #remove when 0.5 no longer supported
-            if (NOT PROTON_VERSION EQUAL 0.5)
-               set (HAVE_PROTON_TRACER 1)
-            endif (NOT PROTON_VERSION EQUAL 0.5)
-        endif (PROTON_VERSION GREATER ${maximum_version})
-    endif (PROTON_VERSION LESS ${minimum_version})
-else (PROTON_FOUND)
+if (Proton_FOUND)
+    if (Proton_VERSION GREATER ${maximum_version})
+        message(WARNING "Qpid proton ${Proton_VERSION} is not a tested version and might not be compatible, ${maximum_version} is highest tested; build may not work")
+    endif (Proton_VERSION GREATER ${maximum_version})
+    message(STATUS "Qpid proton found, amqp 1.0 support enabled")
+    set (amqp_default ON)
+    #remove when 0.5 no longer supported
+    if (NOT Proton_VERSION EQUAL 0.5)
+        set (HAVE_PROTON_TRACER 1)
+    endif (NOT Proton_VERSION EQUAL 0.5)
+else ()
     message(STATUS "Qpid proton not found, amqp 1.0 support not enabled")
-endif (PROTON_FOUND)
+endif ()
 
 option(BUILD_AMQP "Build with support for AMQP 1.0" ${amqp_default})
 if (BUILD_AMQP)
 
-    if (NOT PROTON_FOUND)
+    if (NOT Proton_FOUND)
       message(FATAL_ERROR "Qpid proton not found, required for amqp 1.0 support")
-    endif (NOT PROTON_FOUND)
+    endif ()
 
     set (amqp_SOURCES
          qpid/broker/amqp/Authorise.h
@@ -129,11 +98,10 @@ if (BUILD_AMQP)
          qpid/broker/amqp/Translation.cpp
         )
 
-    include_directories(${PROTON_INCLUDE_DIRS})
-    link_directories(${PROTON_LIBRARY_DIRS})
+    include_directories(${Proton_INCLUDE_DIRS})
 
     add_library (amqp MODULE ${amqp_SOURCES})
-    target_link_libraries (amqp qpidtypes qpidbroker qpidcommon ${PROTON_LIBRARIES} ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    target_link_libraries (amqp qpidtypes qpidbroker qpidcommon ${Proton_LIBRARIES} ${Boost_PROGRAM_OPTIONS_LIBRARY})
     set_target_properties (amqp PROPERTIES
                            PREFIX ""
                            LINK_FLAGS "${CATCH_UNDEFINED}"
@@ -173,18 +141,6 @@ if (BUILD_AMQP)
     if (WIN32)
         list (APPEND amqp_SOURCES qpid/messaging/amqp/windows/SslTransport.cpp)
         list (APPEND amqpc_SOURCES qpid/messaging/amqp/windows/SslTransport.cpp)
-
-        set(proton_dll  "${PROTON_LIBRARY_DIRS}/${PROTON_LIBRARIES}.dll")
-        set(proton_dlld "${PROTON_LIBRARY_DIRS}/${PROTON_LIBRARIES}d.dll")
-
-        install (PROGRAMS  ${proton_dll}
-                DESTINATION ${QPID_INSTALL_BINDIR}
-                COMPONENT   ${QPID_COMPONENT_COMMON}
-                CONFIGURATIONS Release|MinSizeRel|RelWithDebInfo)
-        install (PROGRAMS  ${proton_dlld}
-                DESTINATION ${QPID_INSTALL_BINDIR}
-                COMPONENT   ${QPID_COMPONENT_COMMON}
-                CONFIGURATIONS Debug)
     endif (WIN32)
 else (BUILD_AMQP)
     # ensure that qpid build ignores proton
