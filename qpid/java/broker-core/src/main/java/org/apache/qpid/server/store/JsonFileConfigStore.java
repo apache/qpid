@@ -87,9 +87,12 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
     }
 
-    protected void setup(final VirtualHost virtualHost)
+    private void setup(final VirtualHost virtualHost)
     {
-        Object storePathAttr = virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> configurationStoreSettings = virtualHost.getConfigurationStoreSettings();
+
+        Object storePathAttr = configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
         if(!(storePathAttr instanceof String))
         {
             throw new StoreException("Cannot determine path for configuration storage");

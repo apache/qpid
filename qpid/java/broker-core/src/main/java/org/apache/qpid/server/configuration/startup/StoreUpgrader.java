@@ -139,8 +139,9 @@ public abstract class StoreUpgrader
     final static StoreUpgrader UPGRADE_1_3 = new StoreUpgrader("1.3")
     {
         private final String[] HA_ATTRIBUTES =  {"haNodeName", "haGroupName", "haHelperAddress", "haCoalescingSync", "haNodeAddress","haDurability","haDesignatedPrimary","haReplicationConfig","bdbEnvironmentConfig"};
-        private final String[] JDBC_ATTRIBUTES =  {"connectionURL", "connectionPool", "jdbcBigIntType", "jdbcBytesForBlob", "jdbcVarbinaryType", "jdbcBlobType", "partitionCount", "maxConnectionsPerPartition", "minConnectionsPerPartition"};
+        private final String[] JDBC_ATTRIBUTES =  {"connectionPool", "jdbcBigIntType", "jdbcBytesForBlob", "jdbcVarbinaryType", "jdbcBlobType", "partitionCount", "maxConnectionsPerPartition", "minConnectionsPerPartition"};
         private final String[] STORE_TYPES = {"BDB", "BDB-HA", "JDBC", "Memory", "DERBY"};
+        private final String[] CONFIGURATION_STORE_TYPES = {"BDB", "JSON", "JDBC", "Memory", "DERBY"};
 
         @Override
         protected void doUpgrade(ConfigurationEntryStore store)
@@ -154,6 +155,7 @@ public abstract class StoreUpgrader
                 Map<String, Object> attributes = vhost.getAttributes();
                 Map<String, Object> newAttributes = new HashMap<String, Object>(attributes);
                 Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+
                 String storeType = (String) attributes.get("storeType");
                 String realStoreType = storeType;
                 for (String type : STORE_TYPES)
@@ -195,41 +197,64 @@ public abstract class StoreUpgrader
                 }
                 else
                 {
-
                     if ("JDBC".equalsIgnoreCase(realStoreType))
                     {
-                        boolean removeAttribute = !"JDBC".equals(attributes.get("configStoreType"));
-                        for (String jdbcAttribute : JDBC_ATTRIBUTES)
+                        // storePath attribute might contain the connectionURL
+                        if (messageStoreSettings.containsKey("storePath"))
                         {
-                            if(attributes.containsKey(jdbcAttribute))
-                            {
-                                Object value = null;
-                                if (removeAttribute)
-                                {
-                                    value = newAttributes.remove(jdbcAttribute);
-                                }
-                                else
-                                {
-                                    value = newAttributes.get(jdbcAttribute);
-                                }
-                                messageStoreSettings.put(jdbcAttribute, value);
-                            }
+                            messageStoreSettings.put("connectionURL", messageStoreSettings.remove("storePath"));
                         }
+
+                        if (newAttributes.containsKey("connectionURL"))
+                        {
+                            messageStoreSettings.put("connectionURL", newAttributes.remove("connectionURL"));
+                        }
+
+                        copyJdbcStoreSettings(attributes, messageStoreSettings);
                     }
                     else if ("BDB".equals(realStoreType))
                     {
                         if(attributes.containsKey("bdbEnvironmentConfig"))
                         {
-                            messageStoreSettings.put("bdbEnvironmentConfig", newAttributes.remove("bdbEnvironmentConfig"));
+                            messageStoreSettings.put("bdbEnvironmentConfig", newAttributes.get("bdbEnvironmentConfig"));
                         }
                     }
                 }
 
+                //TODO: this might need throwing an exception if message store is not defined
                 if (!messageStoreSettings.isEmpty())
                 {
                     newAttributes.put("messageStoreSettings", messageStoreSettings);
-                    changed.add(new ConfigurationEntry(vhost.getId(),vhost.getType(), newAttributes, vhost.getChildrenIds(), store));
                 }
+
+                Map<String, Object> configurationStoreSettings = new HashMap<String, Object>();
+                String realConfigurationStoreType = copyConfigurationStoreSettings(newAttributes, configurationStoreSettings);
+
+                if (!configurationStoreSettings.isEmpty())
+                {
+                    newAttributes.put("configurationStoreSettings", configurationStoreSettings);
+                }
+
+                if ("JDBC".equalsIgnoreCase(realStoreType) || "JDBC".equalsIgnoreCase(realConfigurationStoreType))
+                {
+                    for (String jdbcAttribute : JDBC_ATTRIBUTES)
+                    {
+                        if(newAttributes.containsKey(jdbcAttribute))
+                        {
+                            newAttributes.remove(jdbcAttribute);
+                        }
+                    }
+                }
+
+                if ("BDB".equalsIgnoreCase(realStoreType) || "BDB".equalsIgnoreCase(realConfigurationStoreType))
+                {
+                    if(newAttributes.containsKey("bdbEnvironmentConfig"))
+                    {
+                        newAttributes.remove("bdbEnvironmentConfig");
+                    }
+                }
+
+                changed.add(new ConfigurationEntry(vhost.getId(), vhost.getType(), newAttributes, vhost.getChildrenIds(), store));
             }
             Map<String, Object> attributes = new HashMap<String, Object>(root.getAttributes());
             attributes.put(Broker.MODEL_VERSION, "1.4");
@@ -237,6 +262,64 @@ public abstract class StoreUpgrader
 
             store.save(changed.toArray(new ConfigurationEntry[changed.size()]));
 
+        }
+
+        private String copyConfigurationStoreSettings(Map<String, Object> newAttributes,
+                Map<String, Object> configurationStoreSettings)
+        {
+            String realConfigurationStoreType = null;
+            if(newAttributes.containsKey("configStoreType"))
+            {
+                String configurationStoreType = (String) newAttributes.get("configStoreType");
+                realConfigurationStoreType = configurationStoreType;
+                for (String type : CONFIGURATION_STORE_TYPES)
+                {
+                    if (type.equalsIgnoreCase(configurationStoreType))
+                    {
+                        realConfigurationStoreType = type;
+                        break;
+                    }
+                }
+                newAttributes.remove("configStoreType");
+                configurationStoreSettings.put("storeType", realConfigurationStoreType);
+                if ("JDBC".equalsIgnoreCase(realConfigurationStoreType))
+                {
+                    // storePath attribute might contain the connectionURL
+                    if (newAttributes.containsKey("configStorePath"))
+                    {
+                        configurationStoreSettings.put("connectionURL", newAttributes.remove("configStorePath"));
+                    }
+                    if (newAttributes.containsKey("configConnectionURL"))
+                    {
+                        configurationStoreSettings.put("connectionURL", newAttributes.remove("configConnectionURL"));
+                    }
+                    copyJdbcStoreSettings(newAttributes, configurationStoreSettings);
+                }
+                else if ("BDB".equals(realConfigurationStoreType))
+                {
+                    if(newAttributes.containsKey("bdbEnvironmentConfig"))
+                    {
+                        configurationStoreSettings.put("bdbEnvironmentConfig", newAttributes.get("bdbEnvironmentConfig"));
+                    }
+                }
+            }
+
+            if (newAttributes.containsKey("configStorePath"))
+            {
+                configurationStoreSettings.put("storePath", newAttributes.remove("configStorePath"));
+            }
+            return realConfigurationStoreType;
+        }
+
+        private void copyJdbcStoreSettings(Map<String, Object> attributes, Map<String, Object> messageStoreSettings)
+        {
+            for (String jdbcAttribute : JDBC_ATTRIBUTES)
+            {
+                if(attributes.containsKey(jdbcAttribute))
+                {
+                     messageStoreSettings.put(jdbcAttribute, attributes.get(jdbcAttribute));
+                }
+            }
         }
     };
 

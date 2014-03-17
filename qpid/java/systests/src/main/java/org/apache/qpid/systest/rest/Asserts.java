@@ -62,8 +62,6 @@ public class Asserts
                                 ConfiguredObject.DESCRIPTION,
                                 VirtualHost.SUPPORTED_QUEUE_TYPES,
                                 VirtualHost.TYPE,
-                                VirtualHost.CONFIG_STORE_PATH,
-                                VirtualHost.CONFIG_STORE_TYPE,
                                 VirtualHost.CONFIGURATION_STORE_SETTINGS,
                                 VirtualHost.SECURITY_ACL);
 

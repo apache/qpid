@@ -54,7 +54,7 @@ public class BDBMessageStoreFactory implements MessageStoreFactory, DurableConfi
     {
         @SuppressWarnings("unchecked")
         Map<String, Object> messageStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
-        if(getType().equals(messageStoreSettings.get(MessageStore.STORE_TYPE)))
+        if(messageStoreSettings != null && getType().equals(messageStoreSettings.get(MessageStore.STORE_TYPE)))
         {
             Object storePath = messageStoreSettings.get(MessageStore.STORE_PATH);
             if(!(storePath instanceof String))
@@ -64,12 +64,15 @@ public class BDBMessageStoreFactory implements MessageStoreFactory, DurableConfi
 
             }
         }
-        if(getType().equals(attributes.get(VirtualHost.CONFIG_STORE_TYPE)))
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> configurationStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.CONFIGURATION_STORE_SETTINGS);
+        if(configurationStoreSettings != null && getType().equals(configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE)))
         {
-            Object storePath = attributes.get(VirtualHost.CONFIG_STORE_PATH);
+            Object storePath = configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
             if(!(storePath instanceof String))
             {
-                throw new IllegalArgumentException("Attribute '"+ VirtualHost.CONFIG_STORE_PATH
+                throw new IllegalArgumentException("Setting '"+ DurableConfigurationStore.STORE_PATH
                                                                +"' is required and must be of type String.");
 
             }

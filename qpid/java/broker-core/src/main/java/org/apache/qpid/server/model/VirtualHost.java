@@ -57,12 +57,6 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     String CONFIGURATION_STORE_SETTINGS         = "configurationStoreSettings";
     String MESSAGE_STORE_SETTINGS               = "messageStoreSettings";
 
-    @Deprecated
-    String CONFIG_STORE_TYPE                    = "configStoreType";
-    @Deprecated
-    String CONFIG_STORE_PATH                    = "configStorePath";
-    // Attributes
-
     int CURRENT_CONFIG_VERSION = 4;
 
     @ManagedAttribute
@@ -85,14 +79,6 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
 
     @ManagedAttribute
     long getQueue_flowResumeSizeBytes();
-
-    @ManagedAttribute
-    @Deprecated
-    String getConfigStoreType();
-
-    @ManagedAttribute
-    @Deprecated
-    String getConfigStorePath();
 
     @ManagedAttribute
     long getStoreTransactionIdleTimeoutClose();

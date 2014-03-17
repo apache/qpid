@@ -25,15 +25,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 
 public interface JDBCConnectionProviderFactory extends Pluggable
 {
     String getType();
 
-    ConnectionProvider getConnectionProvider(String connectionUrl, VirtualHost virtualHost, boolean configStoreOnly)
+    ConnectionProvider getConnectionProvider(String connectionUrl, Map<String, Object> storeSettings)
             throws SQLException;
 
     static final class TYPES

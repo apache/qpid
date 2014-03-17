@@ -40,9 +40,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.JsonFileConfigStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -254,8 +254,10 @@ public class StandardVirtualHostTest extends QpidTestCase
         _virtualHostRegistry = broker.getVirtualHostRegistry();
 
         org.apache.qpid.server.model.VirtualHost<?> model = mock(org.apache.qpid.server.model.VirtualHost.class);
-        when(model.getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIG_STORE_TYPE)).thenReturn(JsonFileConfigStore.TYPE);
-        when(model.getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIG_STORE_PATH)).thenReturn(_storeFolder.getAbsolutePath());
+        Map<String, Object> configurationStoreSettings = new HashMap<String, Object>();
+        when(model.getConfigurationStoreSettings()).thenReturn(configurationStoreSettings);
+        configurationStoreSettings.put(DurableConfigurationStore.STORE_TYPE, JsonFileConfigStore.TYPE);
+        configurationStoreSettings.put(DurableConfigurationStore.STORE_PATH, _storeFolder.getAbsolutePath());
 
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
         messageStoreSettings.put(MessageStore.STORE_TYPE, TestableMemoryMessageStore.TYPE);
@@ -296,7 +298,11 @@ public class StandardVirtualHostTest extends QpidTestCase
         JsonFileConfigStore store = new JsonFileConfigStore();
         org.apache.qpid.server.model.VirtualHost<?> virtualHost = mock(org.apache.qpid.server.model.VirtualHost.class);
         when(virtualHost.getName()).thenReturn(vhostName);
-        when(virtualHost.getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIG_STORE_PATH)).thenReturn(_storeFolder.getAbsolutePath());
+        Map<String, Object> configurationStoreSettings = new HashMap<String, Object>();
+        when(virtualHost.getConfigurationStoreSettings()).thenReturn(configurationStoreSettings);
+        configurationStoreSettings.put(DurableConfigurationStore.STORE_TYPE, JsonFileConfigStore.TYPE);
+        configurationStoreSettings.put(DurableConfigurationStore.STORE_PATH, _storeFolder.getAbsolutePath());
+
         ConfigurationRecoveryHandler recoveryHandler = mock(ConfigurationRecoveryHandler.class);
         when(recoveryHandler.completeConfigurationRecovery()).thenReturn(org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION);
         store.configureConfigStore(virtualHost , recoveryHandler );

@@ -48,6 +48,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     private final ConfigurationRecoveryHandler _recoveryHandler = mock(ConfigurationRecoveryHandler.class);
     private VirtualHost _virtualHost;
     private JsonFileConfigStore _store;
+    private HashMap<String, Object> _configurationStoreSettings;
 
     @Override
     public void setUp() throws Exception
@@ -56,7 +57,10 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         removeStoreFile();
         _virtualHost = mock(VirtualHost.class);
         when(_virtualHost.getName()).thenReturn(getName());
-        when(_virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH)).thenReturn(TMP_FOLDER);
+        _configurationStoreSettings = new HashMap<String, Object>();
+        _configurationStoreSettings.put(JsonFileConfigStore.STORE_TYPE, JsonFileConfigStore.TYPE);
+        _configurationStoreSettings.put(JsonFileConfigStore.STORE_PATH, TMP_FOLDER);
+        when(_virtualHost.getConfigurationStoreSettings()).thenReturn(_configurationStoreSettings);
         _store = new JsonFileConfigStore();
     }
 
@@ -77,7 +81,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
     public void testNoStorePath() throws Exception
     {
-        when(_virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH)).thenReturn(null);
+        _configurationStoreSettings.put(JsonFileConfigStore.STORE_PATH, null);
         try
         {
             _store.configureConfigStore(_virtualHost, _recoveryHandler);
@@ -92,7 +96,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
     public void testInvalidStorePath() throws Exception
     {
-        when(_virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH)).thenReturn(System.getProperty("file.separator"));
+        _configurationStoreSettings.put(JsonFileConfigStore.STORE_PATH, System.getProperty("file.separator"));
         try
         {
             _store.configureConfigStore(_virtualHost, _recoveryHandler);

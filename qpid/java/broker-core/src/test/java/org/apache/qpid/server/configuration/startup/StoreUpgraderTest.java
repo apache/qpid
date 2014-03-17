@@ -74,6 +74,33 @@ public class StoreUpgraderTest extends TestCase
         verify(_store).save(expectedNewVirtualHost, expectNewRoot);
     }
 
+    public void testUpgrade13To14_DerbyConfigurationStore() throws Exception
+    {
+        HashMap<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put("name", "test");
+        virtualHostAttributes.put("type", "STANDARD");
+        virtualHostAttributes.put("configStoreType", "DERBy");
+        virtualHostAttributes.put("configStorePath", "/mystorepath");
+
+        doTest(_store, virtualHostAttributes);
+
+        ConfigurationEntry expectNewRoot = new ConfigurationEntry(_brokerId, Broker.class.getSimpleName(), Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, "1.4"), Collections.singleton(_virtualHostId), _store);
+        ConfigurationEntry expectedNewVirtualHost;
+        {
+            Map<String, Object> expectedNewVirtualHostConfigurationStoreSettings = new HashMap<String, Object>();
+            expectedNewVirtualHostConfigurationStoreSettings.put("storeType", "DERBY");
+            expectedNewVirtualHostConfigurationStoreSettings.put("storePath", "/mystorepath");
+
+            Map<String, Object> expectedNewVirtualHostAttributes = new HashMap<String, Object>();
+            expectedNewVirtualHostAttributes.put(VirtualHost.NAME, "test");
+            expectedNewVirtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
+            expectedNewVirtualHostAttributes.put(VirtualHost.CONFIGURATION_STORE_SETTINGS, expectedNewVirtualHostConfigurationStoreSettings);
+
+            expectedNewVirtualHost =  new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), expectedNewVirtualHostAttributes, Collections.<UUID>emptySet(), _store);
+        }
+        verify(_store).save(expectedNewVirtualHost, expectNewRoot);
+    }
+
     public void testUpgrade13To14_BdbHa() throws Exception
     {
         HashMap<String, Object> virtualHostAttributes = new HashMap<String, Object>();
@@ -155,6 +182,47 @@ public class StoreUpgraderTest extends TestCase
         verify(_store).save(expectedNewVirtualHost, expectNewRoot);
     }
 
+    public void testUpgrade13To14_BdbMessageStoreAndConfigurationStore() throws Exception
+    {
+        HashMap<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put("name", "test");
+        virtualHostAttributes.put("type", "STANDARD");
+        virtualHostAttributes.put("storeType", "BdB");
+        virtualHostAttributes.put("storePath", "/mystorepath");
+        virtualHostAttributes.put("storeUnderfullSize", 1000);
+        virtualHostAttributes.put("storeOverfullSize", 2000);
+        virtualHostAttributes.put("bdbEnvironmentConfig", Collections.singletonMap("envsettings", "envvalue"));
+        virtualHostAttributes.put("configStoreType", "BdB");
+        virtualHostAttributes.put("configStorePath", "/mystorepath2");
+
+        doTest(_store, virtualHostAttributes);
+
+        ConfigurationEntry expectNewRoot = new ConfigurationEntry(_brokerId, Broker.class.getSimpleName(), Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, "1.4"), Collections.singleton(_virtualHostId), _store);
+        ConfigurationEntry expectedNewVirtualHost;
+        {
+            Map<String, Object> expectedNewVirtualHostMessageSettings = new HashMap<String, Object>();
+            expectedNewVirtualHostMessageSettings.put("storeType", "BDB");
+            expectedNewVirtualHostMessageSettings.put("storePath", "/mystorepath");
+            expectedNewVirtualHostMessageSettings.put("storeUnderfullSize", 1000);
+            expectedNewVirtualHostMessageSettings.put("storeOverfullSize", 2000);
+            expectedNewVirtualHostMessageSettings.put("bdbEnvironmentConfig", Collections.singletonMap("envsettings", "envvalue"));
+
+            Map<String, Object> expectedNewVirtualHostConfigurationSettings = new HashMap<String, Object>();
+            expectedNewVirtualHostConfigurationSettings.put("storeType", "BDB");
+            expectedNewVirtualHostConfigurationSettings.put("storePath", "/mystorepath2");
+            expectedNewVirtualHostConfigurationSettings.put("bdbEnvironmentConfig", Collections.singletonMap("envsettings", "envvalue"));
+
+            Map<String, Object> expectedNewVirtualHostAttributes = new HashMap<String, Object>();
+            expectedNewVirtualHostAttributes.put(VirtualHost.NAME, "test");
+            expectedNewVirtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
+            expectedNewVirtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, expectedNewVirtualHostMessageSettings);
+            expectedNewVirtualHostAttributes.put(VirtualHost.CONFIGURATION_STORE_SETTINGS, expectedNewVirtualHostConfigurationSettings);
+
+            expectedNewVirtualHost =  new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), expectedNewVirtualHostAttributes, Collections.<UUID>emptySet(), _store);
+        }
+        verify(_store).save(expectedNewVirtualHost, expectNewRoot);
+    }
+
     public void testUpgrade13To14_JDBC() throws Exception
     {
         HashMap<String, Object> virtualHostAttributes = new HashMap<String, Object>();
@@ -192,6 +260,91 @@ public class StoreUpgraderTest extends TestCase
             expectedNewVirtualHostAttributes.put(VirtualHost.NAME, "test");
             expectedNewVirtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
             expectedNewVirtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, expectedNewVirtualHostMessageSettings);
+
+            expectedNewVirtualHost =  new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), expectedNewVirtualHostAttributes, Collections.<UUID>emptySet(), _store);
+        }
+        verify(_store).save(expectedNewVirtualHost, expectNewRoot);
+    }
+
+    public void testUpgrade13To14_JDBC_withStorePath() throws Exception
+    {
+        HashMap<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put("name", "test");
+        virtualHostAttributes.put("type", "STANDARD");
+        virtualHostAttributes.put("storeType", "JdBC");
+        virtualHostAttributes.put("storePath", "jdbc:test");
+
+        doTest(_store, virtualHostAttributes);
+
+        ConfigurationEntry expectNewRoot = new ConfigurationEntry(_brokerId, Broker.class.getSimpleName(), Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, "1.4"), Collections.singleton(_virtualHostId), _store);
+        ConfigurationEntry expectedNewVirtualHost;
+        {
+            Map<String, Object> expectedNewVirtualHostMessageSettings = new HashMap<String, Object>();
+            expectedNewVirtualHostMessageSettings.put("storeType", "JDBC");
+            expectedNewVirtualHostMessageSettings.put("connectionURL", "jdbc:test");
+
+            Map<String, Object> expectedNewVirtualHostAttributes = new HashMap<String, Object>();
+            expectedNewVirtualHostAttributes.put(VirtualHost.NAME, "test");
+            expectedNewVirtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
+            expectedNewVirtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, expectedNewVirtualHostMessageSettings);
+
+            expectedNewVirtualHost =  new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), expectedNewVirtualHostAttributes, Collections.<UUID>emptySet(), _store);
+        }
+        verify(_store).save(expectedNewVirtualHost, expectNewRoot);
+    }
+
+    public void testUpgrade13To14_JDBCConfigurationStoreAndMessageStore() throws Exception
+    {
+        HashMap<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put("name", "test");
+        virtualHostAttributes.put("type", "STANDARD");
+        virtualHostAttributes.put("storeType", "JdBC");
+        virtualHostAttributes.put("connectionURL", "jdbc:test");
+        virtualHostAttributes.put("connectionPool", "BONECP");
+        virtualHostAttributes.put("jdbcBigIntType", "NUMBER");
+        virtualHostAttributes.put("jdbcBytesForBlob", true);
+        virtualHostAttributes.put("jdbcVarbinaryType", "TEST");
+        virtualHostAttributes.put("jdbcBlobType", "BLOB");
+        virtualHostAttributes.put("partitionCount", 10);
+        virtualHostAttributes.put("maxConnectionsPerPartition", 8);
+        virtualHostAttributes.put("minConnectionsPerPartition", 2);
+        virtualHostAttributes.put("configStoreType", "JdBC");
+        virtualHostAttributes.put("configConnectionURL", "jdbc:test2");
+
+        doTest(_store, virtualHostAttributes);
+
+        ConfigurationEntry expectNewRoot = new ConfigurationEntry(_brokerId, Broker.class.getSimpleName(), Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, "1.4"), Collections.singleton(_virtualHostId), _store);
+        ConfigurationEntry expectedNewVirtualHost;
+        {
+            Map<String, Object> expectedNewVirtualHostMessageSettings = new HashMap<String, Object>();
+            expectedNewVirtualHostMessageSettings.put("storeType", "JDBC");
+            expectedNewVirtualHostMessageSettings.put("connectionURL", "jdbc:test");
+            expectedNewVirtualHostMessageSettings.put("connectionPool", "BONECP");
+            expectedNewVirtualHostMessageSettings.put("jdbcBigIntType", "NUMBER");
+            expectedNewVirtualHostMessageSettings.put("jdbcBytesForBlob", true);
+            expectedNewVirtualHostMessageSettings.put("jdbcVarbinaryType", "TEST");
+            expectedNewVirtualHostMessageSettings.put("jdbcBlobType", "BLOB");
+            expectedNewVirtualHostMessageSettings.put("partitionCount", 10);
+            expectedNewVirtualHostMessageSettings.put("maxConnectionsPerPartition", 8);
+            expectedNewVirtualHostMessageSettings.put("minConnectionsPerPartition", 2);
+
+            Map<String, Object> expectedNewVirtualHostConfigurationSettings = new HashMap<String, Object>();
+            expectedNewVirtualHostConfigurationSettings.put("storeType", "JDBC");
+            expectedNewVirtualHostConfigurationSettings.put("connectionURL", "jdbc:test2");
+            expectedNewVirtualHostConfigurationSettings.put("connectionPool", "BONECP");
+            expectedNewVirtualHostConfigurationSettings.put("jdbcBigIntType", "NUMBER");
+            expectedNewVirtualHostConfigurationSettings.put("jdbcBytesForBlob", true);
+            expectedNewVirtualHostConfigurationSettings.put("jdbcVarbinaryType", "TEST");
+            expectedNewVirtualHostConfigurationSettings.put("jdbcBlobType", "BLOB");
+            expectedNewVirtualHostConfigurationSettings.put("partitionCount", 10);
+            expectedNewVirtualHostConfigurationSettings.put("maxConnectionsPerPartition", 8);
+            expectedNewVirtualHostConfigurationSettings.put("minConnectionsPerPartition", 2);
+
+            Map<String, Object> expectedNewVirtualHostAttributes = new HashMap<String, Object>();
+            expectedNewVirtualHostAttributes.put(VirtualHost.NAME, "test");
+            expectedNewVirtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
+            expectedNewVirtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, expectedNewVirtualHostMessageSettings);
+            expectedNewVirtualHostAttributes.put(VirtualHost.CONFIGURATION_STORE_SETTINGS, expectedNewVirtualHostConfigurationSettings);
 
             expectedNewVirtualHost =  new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), expectedNewVirtualHostAttributes, Collections.<UUID>emptySet(), _store);
         }

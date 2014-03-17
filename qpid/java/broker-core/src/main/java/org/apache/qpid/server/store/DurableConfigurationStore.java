@@ -27,6 +27,8 @@ import org.apache.qpid.server.model.VirtualHost;
 
 public interface DurableConfigurationStore
 {
+    String STORE_TYPE                    = "storeType";
+    String STORE_PATH                    = "storePath";
 
     public static interface Source
     {

@@ -52,7 +52,6 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
     public static final String TYPE = "JDBC";
     public static final String CONNECTION_URL = "connectionURL";
-    public static final String CONFIG_CONNECTION_URL = "configConnectionURL";
     public static final String CONNECTION_POOL = "connectionPool";
     public static final String JDBC_BIG_INT_TYPE = "jdbcBigIntType";
     public static final String JDBC_BYTES_FOR_BLOB = "jdbcBytesForBlob";
@@ -286,26 +285,10 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
                                                        VirtualHost virtualHost)
         throws ClassNotFoundException, SQLException
     {
-        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
+        Map<String, Object> storeSettings = isConfigStoreOnly() ? virtualHost.getConfigurationStoreSettings() : virtualHost.getMessageStoreSettings();
+        String connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
+        Object poolAttribute = storeSettings.get(CONNECTION_POOL);
 
-        String connectionURL;
-        Object poolAttribute = null;
-        boolean configStoreOnly = isConfigStoreOnly();
-        if(!configStoreOnly)
-        {
-            connectionURL = messageStoreSettings.get(CONNECTION_URL) == null
-                                   ? String.valueOf(messageStoreSettings.get(MessageStore.STORE_PATH))
-                                   : String.valueOf(messageStoreSettings.get(CONNECTION_URL));
-            poolAttribute = messageStoreSettings.get(CONNECTION_POOL);
-        }
-        else
-        {
-            connectionURL = virtualHost.getAttribute(CONFIG_CONNECTION_URL) == null
-                                               ? String.valueOf(virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH))
-                                               : String.valueOf(virtualHost.getAttribute(CONFIG_CONNECTION_URL));
-            poolAttribute = virtualHost.getAttribute(CONNECTION_POOL);
-
-        }
         JDBCDetails details = null;
 
         String[] components = connectionURL.split(":",3);
@@ -323,7 +306,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             details = DERBY_DETAILS;
         }
 
-        String connectionPoolType = poolAttribute == null ? "DEFAULT" : String.valueOf(poolAttribute);
+        String connectionPoolType = poolAttribute == null ? DefaultConnectionProviderFactory.TYPE : String.valueOf(poolAttribute);
 
         JDBCConnectionProviderFactory connectionProviderFactory =
                 JDBCConnectionProviderFactory.FACTORIES.get(connectionPoolType);
@@ -333,54 +316,14 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             connectionProviderFactory = new DefaultConnectionProviderFactory();
         }
 
-        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, virtualHost, configStoreOnly);
-
-        if(!configStoreOnly)
-        {
-            _blobType = MapValueConverter.getStringAttribute(JDBC_BLOB_TYPE, messageStoreSettings, details.getBlobType());
-            _varBinaryType = MapValueConverter.getStringAttribute(JDBC_VARBINARY_TYPE, messageStoreSettings, details.getVarBinaryType());
-            _useBytesMethodsForBlob = MapValueConverter.getBooleanAttribute(JDBC_BYTES_FOR_BLOB, messageStoreSettings, details.isUseBytesMethodsForBlob());
-            _bigIntType = MapValueConverter.getStringAttribute(JDBC_BIG_INT_TYPE, messageStoreSettings, details.getBigintType());
-        }
-        else
-        {
-            _blobType = getStringAttribute(virtualHost, JDBC_BLOB_TYPE,details.getBlobType());
-            _varBinaryType = getStringAttribute(virtualHost, JDBC_VARBINARY_TYPE,details.getVarBinaryType());
-            _useBytesMethodsForBlob = getBooleanAttribute(virtualHost, JDBC_BYTES_FOR_BLOB,details.isUseBytesMethodsForBlob());
-            _bigIntType = getStringAttribute(virtualHost, JDBC_BIG_INT_TYPE, details.getBigintType());
-        }
+        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, storeSettings);
+        _blobType = MapValueConverter.getStringAttribute(JDBC_BLOB_TYPE, storeSettings, details.getBlobType());
+        _varBinaryType = MapValueConverter.getStringAttribute(JDBC_VARBINARY_TYPE, storeSettings, details.getVarBinaryType());
+        _useBytesMethodsForBlob = MapValueConverter.getBooleanAttribute(JDBC_BYTES_FOR_BLOB, storeSettings, details.isUseBytesMethodsForBlob());
+        _bigIntType = MapValueConverter.getStringAttribute(JDBC_BIG_INT_TYPE, storeSettings, details.getBigintType());
     }
 
-
-    private String getStringAttribute(VirtualHost virtualHost, String attributeName, String defaultVal)
-    {
-        Object attrValue = virtualHost.getAttribute(attributeName);
-        if(attrValue != null)
-        {
-            return attrValue.toString();
-        }
-        return defaultVal;
-    }
-
-    private boolean getBooleanAttribute(VirtualHost virtualHost, String attributeName, boolean defaultVal)
-    {
-        Object attrValue = virtualHost.getAttribute(attributeName);
-        if(attrValue != null)
-        {
-            if(attrValue instanceof Boolean)
-            {
-                return ((Boolean) attrValue).booleanValue();
-            }
-            else if(attrValue instanceof String)
-            {
-                return Boolean.parseBoolean((String)attrValue);
-            }
-
-        }
-        return defaultVal;
-    }
-
-
+    @Override
     protected void storedSizeChange(int contentSize)
     {
     }

@@ -24,7 +24,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -43,50 +42,14 @@ public class BoneCPConnectionProvider implements ConnectionProvider
 
     private final BoneCP _connectionPool;
 
-    public BoneCPConnectionProvider(String connectionUrl, VirtualHost virtualHost, boolean configStoreOnly) throws SQLException
+    public BoneCPConnectionProvider(String connectionUrl, Map<String, Object> storeSettings) throws SQLException
     {
         BoneCPConfig config = new BoneCPConfig();
         config.setJdbcUrl(connectionUrl);
-
-        if (configStoreOnly)
-        {
-            config.setMinConnectionsPerPartition(getIntegerAttribute(virtualHost, MIN_CONNECTIONS_PER_PARTITION, DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
-            config.setMaxConnectionsPerPartition(getIntegerAttribute(virtualHost, MAX_CONNECTIONS_PER_PARTITION, DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
-            config.setPartitionCount(getIntegerAttribute(virtualHost, PARTITION_COUNT,DEFAULT_PARTITION_COUNT));
-        }
-        else
-        {
-            Map<String, Object> storeSettings = virtualHost.getMessageStoreSettings();
-            config.setMinConnectionsPerPartition(MapValueConverter.getIntegerAttribute(MIN_CONNECTIONS_PER_PARTITION, storeSettings, DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
-            config.setMaxConnectionsPerPartition(MapValueConverter.getIntegerAttribute(MAX_CONNECTIONS_PER_PARTITION, storeSettings, DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
-            config.setPartitionCount(MapValueConverter.getIntegerAttribute(PARTITION_COUNT, storeSettings,DEFAULT_PARTITION_COUNT));
-        }
+        config.setMinConnectionsPerPartition(MapValueConverter.getIntegerAttribute(MIN_CONNECTIONS_PER_PARTITION, storeSettings, DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
+        config.setMaxConnectionsPerPartition(MapValueConverter.getIntegerAttribute(MAX_CONNECTIONS_PER_PARTITION, storeSettings, DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
+        config.setPartitionCount(MapValueConverter.getIntegerAttribute(PARTITION_COUNT, storeSettings, DEFAULT_PARTITION_COUNT));
         _connectionPool = new BoneCP(config);
-    }
-
-    private int getIntegerAttribute(VirtualHost virtualHost, String attributeName, int defaultVal)
-    {
-        Object attrValue = virtualHost.getAttribute(attributeName);
-        if(attrValue != null)
-        {
-            if(attrValue instanceof Number)
-            {
-                return ((Number) attrValue).intValue();
-            }
-            else if(attrValue instanceof String)
-            {
-                try
-                {
-                    return Integer.parseInt((String)attrValue);
-                }
-                catch (NumberFormatException e)
-                {
-                    return defaultVal;
-                }
-            }
-
-        }
-        return defaultVal;
     }
 
     @Override

@@ -54,7 +54,6 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory, DurableConf
     {
         @SuppressWarnings("unchecked")
         Map<String, Object> messageStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
-
         if(getType().equals(messageStoreSettings.get(MessageStore.STORE_TYPE)))
         {
             Object connectionURL = messageStoreSettings.get(JDBCMessageStore.CONNECTION_URL);
@@ -65,18 +64,16 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory, DurableConf
 
             }
         }
-        if(getType().equals(attributes.get(VirtualHost.CONFIG_STORE_TYPE)))
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> configurationStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.CONFIGURATION_STORE_SETTINGS);
+        if(configurationStoreSettings != null && getType().equals(configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE)))
         {
-            Object connectionURL = attributes.get(JDBCMessageStore.CONFIG_CONNECTION_URL);
+            Object connectionURL = configurationStoreSettings.get(JDBCMessageStore.CONNECTION_URL);
             if(!(connectionURL instanceof String))
             {
-                Object storePath = attributes.get(VirtualHost.CONFIG_STORE_PATH);
-                if(!(storePath instanceof String))
-                {
-                    throw new IllegalArgumentException("Attribute '"+ JDBCMessageStore.CONFIG_CONNECTION_URL
-                                                                   +"' is required and must be of type String.");
-
-                }
+                throw new IllegalArgumentException("Setting '"+ JDBCMessageStore.CONNECTION_URL
+                        +"' is required and must be of type String.");
             }
         }
     }

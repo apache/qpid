@@ -88,9 +88,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         put(MESSAGE_STORE_SETTINGS, new ParameterizedTypeImpl(Map.class, String.class, Object.class));
         put(CONFIGURATION_STORE_SETTINGS, new ParameterizedTypeImpl(Map.class, String.class, Object.class));
 
-        put(CONFIG_STORE_TYPE, String.class);
-        put(CONFIG_STORE_PATH, String.class);
-
     }});
 
     @SuppressWarnings("serial")
@@ -805,18 +802,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     public long getQueue_flowResumeSizeBytes()
     {
         return (Long)getAttribute(VirtualHost.QUEUE_FLOW_RESUME_SIZE_BYTES);
-    }
-
-    @Override
-    public String getConfigStoreType()
-    {
-        return (String) getAttribute(CONFIG_STORE_TYPE);
-    }
-
-    @Override
-    public String getConfigStorePath()
-    {
-        return (String) getAttribute(CONFIG_STORE_PATH);
     }
 
     @Override

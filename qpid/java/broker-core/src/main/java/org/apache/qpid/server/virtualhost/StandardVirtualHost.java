@@ -21,7 +21,6 @@ package org.apache.qpid.server.virtualhost;/*
 
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
@@ -59,11 +58,9 @@ public class StandardVirtualHost extends AbstractVirtualHost
         return messageStore;
     }
 
-    private DurableConfigurationStore initialiseConfigurationStore(VirtualHost virtualHost)
+    private DurableConfigurationStore initialiseConfigurationStore(String storeType)
     {
         DurableConfigurationStore configurationStore;
-        final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.CONFIG_STORE_TYPE);
-        String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
 
         if(storeType != null)
         {
@@ -88,7 +85,9 @@ public class StandardVirtualHost extends AbstractVirtualHost
         String storeType = (String) messageStoreSettings.get(MessageStore.STORE_TYPE);
         _messageStore = initialiseMessageStore(storeType);
 
-        _durableConfigurationStore = initialiseConfigurationStore(virtualHost);
+        Map<String, Object> configurationStoreSettings = virtualHost.getConfigurationStoreSettings();
+        String configurationStoreType = configurationStoreSettings == null ? null : (String) configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE);
+        _durableConfigurationStore = initialiseConfigurationStore(configurationStoreType);
 
         DurableConfigurationRecoverer configRecoverer =
                 new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),

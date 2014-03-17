@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
-import java.io.File;
+import static org.mockito.Mockito.when;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -34,9 +35,6 @@ import java.util.Set;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
 
 public class JDBCMessageStoreTest extends MessageStoreTestCase
 {

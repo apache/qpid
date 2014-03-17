@@ -132,12 +132,13 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         //Update to pick up QPID_WORK and use that as the default location not just derbyDB
 
         Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
+        Map<String, Object> configurationStoreSettings = virtualHost.getConfigurationStoreSettings();
         _driverClass = (Class<Driver>) Class.forName(SQL_DRIVER_NAME);
 
         String databasePath = null;
         if (isConfigStoreOnly())
         {
-            databasePath = (String) virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
+            databasePath = (String) configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
         }
         else
         {
