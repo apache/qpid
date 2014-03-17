@@ -38,8 +38,6 @@
     <dependency org="commons-cli" name="commons-cli" rev="1.2" transitive="false"/>
     <dependency org="commons-codec" name="commons-codec" rev="1.6" transitive="false"/>
     <dependency org="commons-collections" name="commons-collections" rev="3.2.1" transitive="false"/>
-    <dependency org="commons-configuration" name="commons-configuration" rev="1.8" transitive="false"/>
-    <dependency org="commons-digester" name="commons-digester" rev="1.8.1" transitive="false"/>
     <dependency org="commons-lang" name="commons-lang" rev="2.6" transitive="false"/>
     <dependency org="commons-logging" name="commons-logging" rev="1.1.1" transitive="false"/>
     <dependency org="org.apache.bcel" name="bcel" rev="5.2" transitive="false"/>
