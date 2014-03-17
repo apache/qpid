@@ -33,6 +33,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 
@@ -42,6 +43,23 @@ public class StoreUpgraderTest extends TestCase
     private final UUID _brokerId = UUID.randomUUID();
     private final UUID _virtualHostId = UUID.randomUUID();
     private ConfigurationEntryStore _store = mock(ConfigurationEntryStore.class);
+
+    public void testUpgrade13To14_RejectsConfigPath() throws Exception
+    {
+        HashMap<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put("name", "test");
+        virtualHostAttributes.put("type", "STANDARD");
+        virtualHostAttributes.put("configPath", "/mypath");
+        try
+        {
+            doTest(_store, virtualHostAttributes);
+            fail("Upgrade of virtual host with configuration XML is unsupported at the moment");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            // pass
+        }
+    }
 
     public void testUpgrade13To14_Derby() throws Exception
     {
@@ -89,6 +107,33 @@ public class StoreUpgraderTest extends TestCase
         {
             Map<String, Object> expectedNewVirtualHostConfigurationStoreSettings = new HashMap<String, Object>();
             expectedNewVirtualHostConfigurationStoreSettings.put("storeType", "DERBY");
+            expectedNewVirtualHostConfigurationStoreSettings.put("storePath", "/mystorepath");
+
+            Map<String, Object> expectedNewVirtualHostAttributes = new HashMap<String, Object>();
+            expectedNewVirtualHostAttributes.put(VirtualHost.NAME, "test");
+            expectedNewVirtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
+            expectedNewVirtualHostAttributes.put(VirtualHost.CONFIGURATION_STORE_SETTINGS, expectedNewVirtualHostConfigurationStoreSettings);
+
+            expectedNewVirtualHost =  new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), expectedNewVirtualHostAttributes, Collections.<UUID>emptySet(), _store);
+        }
+        verify(_store).save(expectedNewVirtualHost, expectNewRoot);
+    }
+
+    public void testUpgrade13To14_JsonConfigurationStore() throws Exception
+    {
+        HashMap<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put("name", "test");
+        virtualHostAttributes.put("type", "STANDARD");
+        virtualHostAttributes.put("configStoreType", "JsoN");
+        virtualHostAttributes.put("configStorePath", "/mystorepath");
+
+        doTest(_store, virtualHostAttributes);
+
+        ConfigurationEntry expectNewRoot = new ConfigurationEntry(_brokerId, Broker.class.getSimpleName(), Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, "1.4"), Collections.singleton(_virtualHostId), _store);
+        ConfigurationEntry expectedNewVirtualHost;
+        {
+            Map<String, Object> expectedNewVirtualHostConfigurationStoreSettings = new HashMap<String, Object>();
+            expectedNewVirtualHostConfigurationStoreSettings.put("storeType", "JSON");
             expectedNewVirtualHostConfigurationStoreSettings.put("storePath", "/mystorepath");
 
             Map<String, Object> expectedNewVirtualHostAttributes = new HashMap<String, Object>();
