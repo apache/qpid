@@ -236,6 +236,7 @@
 
             <!-- This must be a child of qpid home currently due to the horrible mechanics of QBTC  -->
             <test.output>${qpid.home.qbtc.output}</test.output>
+            <broker.clean.between.tests>true</broker.clean.between.tests>
           </systemPropertyVariables>
         </configuration>
       </plugin>
