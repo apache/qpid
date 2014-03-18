@@ -47,8 +47,6 @@ Current/pending:
                    svn r.1558592 2014-01-15 fixes an issue with using /dev/random as a source of random numbers for Journal serial numbers.
                    svn r.1558913 2014-01-16 replaces use of /dev/urandom with several calls to rand() to construct a 64-bit random number.
                    * Recommend rebuilding and testing for performance again with these two fixes. Marked POST.
-#  -    1036026  [LinearStore] Qpid linear store unable to create durable queue - framing-error: Queue <q-name>: create() failed: jexception 0x0000
-                   UNABLE TO REPRODUCE - but Frantizek has additional info
    -    1039522  Qpid crashes while recovering from linear store around apid::linearstore::journal::JournalFile::getFqFileName() including enq_rec::decode() threw JERR_JREC_BAD_RECTAIL
                    * Possible dup of 1039525
                    * May be fixed by QPID-5483 - waiting for needinfo, recommend rebuilding with QPID-5483 fix and re-testing. Marked POST.
@@ -56,18 +54,6 @@ Current/pending:
                    * Possible dup of 1039522
                    * May be fixed by QPID-5483 - waiting for needinfo, recommend rebuilding with QPID-5483 fix and re-testing. Marked POST.
 #  -    1049870  [LinearStore] auto-delete property does not survive restart
-#  5480 1053749  [linearstore] Recovery of store failure with "JERR_MAP_NOTFOUND: Key not found in map." error message
-                   svn r.1564877 2014-02-05: Proposed fix
-                   * Probability: 6 of 600 (1.0%) using tx-test-soak.sh
-                   * If broker is started a second time after failure, it starts correctly and test completes ok.
-                   * Problem: File is being recycled to EFP with still-locked enqueues in it (ie dequeued transactionally).
-                   * Problem: Record alignment check writes filler records to wrong file when decoding bad record moves across a file boundary
-                   * Test of fix failed on RHEL-7
-#  -    1064181  [linearstore] Qpidd closes transactional client session&connection with async_dequeue() failed
-                   * jexception 0x010b LinearFileController::getCurrentSerial() threw JERR_NULL
-#  -    1064230  [linearstore] Qpidd linearstore recovery sometimes fail to recover messages with recoverMessages() failed
-                   * jexception 0x0701 RecoveryManager::readNextRemainingRecord() threw JERR_JREC_BADRECTAIL
-                   * possible dup of 1063700
 
 Fixed/closed (in commit order):
 ===============================
@@ -104,9 +90,24 @@ NO-JIRA -        Added missing Apache copyright/license text
    5479 1053701  [linearstore] Using recovered store results in "JERR_JNLF_FILEOFFSOVFL: Attempted to increase submitted offset past file size. (JournalFile::submittedDblkCount)" error message
                    * Probability: 2 of 600 (0.3%) using tx-test-soak.sh
                    * Fixed by checkin for QPID-5480, no longer able to reproduce. VERIFIED
+   5480 1053749  [linearstore] Recovery of store failure with "JERR_MAP_NOTFOUND: Key not found in map." error message
+                   svn r.1564877 2014-02-05: Proposed fix
+                   * Probability: 6 of 600 (1.0%) using tx-test-soak.sh
+                   * If broker is started a second time after failure, it starts correctly and test completes ok.
+                   * Problem: File is being recycled to EFP with still-locked enqueues in it (ie dequeued transactionally).
+                   * Problem: Record alignment check writes filler records to wrong file when decoding bad record moves across a file boundary
    5603 1063700  [linearstore] broker restart fails under stress test
                    svn r.1574513 2014-03-05: Proposed fix. POST
                    * jexception 0x0701 RecoveryManager::readNextRemainingRecord() threw JERR_JREC_BADRECTAIL
+   5607 1064181  [linearstore] Qpidd closes transactional client session&connection with async_dequeue() failed
+                   svn r.1575009 2014-03-06 Proposed fix. POST
+                   * jexception 0x010b LinearFileController::getCurrentSerial() threw JERR_NULL
+   -    1064230  [linearstore] Qpidd linearstore recovery sometimes fail to recover messages with recoverMessages() failed
+                   * jexception 0x0701 RecoveryManager::readNextRemainingRecord() threw JERR_JREC_BADRECTAIL
+                   * possible dup of 1063700
+   -    1036026  [LinearStore] Qpid linear store unable to create durable queue - framing-error: Queue <q-name>: create() failed: jexception 0x0000
+                   * UNABLE TO REPRODUCE - but Frantizek has additional info
+                   * Retested after checkin 1575009, problem solved. VERIFIED
 
 Ordered checkin list:
 =====================
@@ -135,6 +136,7 @@ no.   svn r  Q-JIRA     RHBZ       Date
 19. 1564893    5361        - 2014-02-05
 20. 1564935    5361        - 2014-02-05
 21. 1574513    5603  1063700 2014-03-05
+22. 1575009    5607  1064181 2014-03-06
 
 See above sections for details on these checkins.
 

@@ -19,7 +19,6 @@
 # under the License.
 #
 
-
 # tx-test-soak
 #
 # Basic test methodology:
@@ -29,6 +28,8 @@
 # 4. Restart broker, recover messages
 # 5. Run qpid-txtest against broker in check mode, which checks that all expected messages are present.
 # 6. Wash, rinse, repeat... The number of runs is determined by ${NUM_RUNS}
+
+# NOTE: The following is based on typical development tree paths, not installed paths
 
 NUM_RUNS=1000
 BASE_DIR=${HOME}/RedHat
@@ -43,13 +44,18 @@ BROKER_MANAGEMENT="no" # "no" or "yes"
 TRUNCATE_INTERVAL=10
 MAX_DISK_PERC_USED=90
 
-# Consts (don't adjust these...)
+# Constants (don't adjust these)
 export BASE_DIR
 RELATIVE_BASE_DIR=`python -c "import os,os.path; print os.path.relpath(os.environ['BASE_DIR'], os.environ['PWD'])"`
+export PYTHONPATH=${BASE_DIR}/qpid/python:${BASE_DIR}/qpid/extras/qmf/src/py:${BASE_DIR}/qpid/tools/src/py
 LOG_FILE_NAME=log.txt
 QPIDD_FN=qpidd
 QPIDD=${CMAKE_BUILD_DIR}/src/${QPIDD_FN}
-TXTEST=${CMAKE_BUILD_DIR}/src/tests/qpid-txtest
+TXTEST_FN=qpid-txtest
+TXTEST=${CMAKE_BUILD_DIR}/src/tests/${TXTEST_FN}
+ANALYZE_FN=qpid_qls_analyze.py
+ANALYZE=${BASE_DIR}/qpid/tools/src/py/${ANALYZE_FN}
+ANALYZE_ARGS="--efp --show-recs --stats"
 QPIDD_BASE_ARGS="--load-module ${STORE_MODULE} -m ${BROKER_MANAGEMENT} --auth no --default-flow-stop-threshold 0 --default-flow-resume-threshold 0 --default-queue-limit 0 --store-dir ${BASE_DIR} --log-enable ${BROKER_LOG_LEVEL} --log-to-stderr no --log-to-stdout no"
 TXTEST_INIT_STR="--init yes --transfer no --check no"
 TXTEST_RUN_STR="--init no --transfer yes --check no"
@@ -181,6 +187,17 @@ check_ready_to_run() {
 	fi
 }
 
+# Analyze store files
+# $1: Log suffix flag: either "A" or "B". If "A", client is started in test mode, otherwise client evaluates recovery.
+analyze_store() {
+	${ANALYZE} ${ANALYZE_ARGS} ${BASE_DIR}/qls &> ${RESULT_DIR}/qls_analysis.$1.log
+	echo >> ${RESULT_DIR}/qls_analysis.$1.log
+	echo "----------------------------------------------------------" >> ${RESULT_DIR}/qls_analysis.$1.log
+	echo "With transactional reconsiliation:" >> ${RESULT_DIR}/qls_analysis.$1.log
+	echo >> ${RESULT_DIR}/qls_analysis.$1.log
+	${ANALYZE} ${ANALYZE_ARGS} --txn ${BASE_DIR}/qls &>> ${RESULT_DIR}/qls_analysis.$1.log
+}
+
 ulimit -c unlimited # Allow core files to be created
 
 RESULT_BASE_DIR_SUFFIX=`date "${TIMESTAMP_FORMAT}"`
@@ -219,7 +236,8 @@ for rn in `seq ${NUM_RUNS}`; do
 	sleep ${RUN_TIME}
 	kill_process ${SIG_KILL} ${QPIDD_PID}
 	sleep 2
-	tar -czf ${RESULT_DIR}/qls_B.tar.gz ${RELATIVE_BASE_DIR}/qls
+	analyze_store "A"
+	tar -czf ${RESULT_DIR}/qls_A.tar.gz ${RELATIVE_BASE_DIR}/qls
 
 	# === PART B: Recovery and check ===
 	start_broker "B"
@@ -234,11 +252,14 @@ for rn in `seq ${NUM_RUNS}`; do
 		kill_process ${SIG_KILL} ${PID}
 		sleep 2
 	fi
-	tar -czf ${RESULT_DIR}/qls_C.tar.gz ${RELATIVE_BASE_DIR}/qls
+	analyze_store "B"
+	tar -czf ${RESULT_DIR}/qls_B.tar.gz ${RELATIVE_BASE_DIR}/qls
 
 	# === Check for errors, cores and exceptions in logs ===
 	grep -Hn "jexception" ${RESULT_DIR}/qpidd.A.log | tee -a ${LOG_FILE}
 	grep -Hn "jexception" ${RESULT_DIR}/qpidd.B.log | tee -a ${LOG_FILE}
+	grep -Hn "Traceback (most recent call last):" ${RESULT_DIR}/qls_analysis.A.log | tee -a ${LOG_FILE}
+	grep -Hn "Traceback (most recent call last):" ${RESULT_DIR}/qls_analysis.B.log | tee -a ${LOG_FILE}
 	grep "${SUCCESS_MSG}" ${RESULT_DIR}/txtest.B.log &> /dev/null
 	if [[ "$?" != "0" ]]; then
 		echo "ERROR in run ${rn}" >> ${LOG_FILE}
