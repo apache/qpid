@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,13 +16,44 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
+
+"""
+qpid-qls-analyze
+
+Reads and analyzes a Qpid Linear Store (QLS) store directory.
+"""
 
 import argparse
 import os
 import os.path
-from qls import efp
-from qls import jrnl
+import qls.anal
+import qls.efp
+
+class QlsAnalyzerArgParser(argparse.ArgumentParser):
+    def __init__(self):
+        argparse.ArgumentParser.__init__(self, description = 'Qpid Linear Store Analyzer', prog = 'qpid-qls-analyze')
+        self.add_argument('qls_dir', metavar='DIR',
+                          help='Qpid Linear Store (QLS) directory to be analyzed')
+        self.add_argument('--efp', action='store_true',
+                          help='Analyze the Emtpy File Pool (EFP) and show stats')
+        self.add_argument('--show-recs', action='store_true',
+                          help='Show material records found during recovery')
+        self.add_argument('--show-all-recs', action='store_true',
+                          help='Show all records (including fillers) found during recovery')
+        self.add_argument('--show-xids', action='store_true',
+                          help='Show xid as hex number, otherwise show only xid length')
+        self.add_argument('--show-data', action='store_true',
+                          help='Show data, otherwise show only data length')
+        self.add_argument('--stats', action='store_true',
+                          help='Print journal record stats')
+        self.add_argument('--txn', action='store_true',
+                          help='Reconcile incomplete transactions')
+        self.add_argument('--version', action='version',
+                          version='%(prog)s ' + QqpdLinearStoreAnalyzer.QLS_ANALYZE_VERSION)
+    def parse_args(self, args=None, namespace=None):
+        args = argparse.ArgumentParser.parse_args(self, args, namespace)
+        # If required, perform additional validity checks here, raise errors if req'd
+        return args
 
 class QqpdLinearStoreAnalyzer(object):
     """
@@ -37,28 +68,10 @@ class QqpdLinearStoreAnalyzer(object):
         self.args = None
         self._process_args()
         self.qls_dir = os.path.abspath(self.args.qls_dir)
-        self.efp_manager = efp.EfpManager(self.qls_dir, self.args)
-        self.jrnl_recovery_mgr = jrnl.JournalRecoveryManager(self.qls_dir, self.args)
-    def _analyze_efp(self):
-        self.efp_manager.run(self.args)
-    def _analyze_journals(self):
-        self.jrnl_recovery_mgr.run(self.args)
+        self.efp_manager = qls.efp.EfpManager(self.qls_dir, None)
+        self.jrnl_recovery_mgr = qls.anal.JournalRecoveryManager(self.qls_dir, self.args)
     def _process_args(self):
-        parser = argparse.ArgumentParser(description = 'Qpid Linear Store Analyzer')
-        parser.add_argument('qls_dir', metavar='DIR',
-                            help='Qpid Linear Store (QLS) directory to be analyzed')
-        parser.add_argument('--efp', action='store_true',
-                            help='Analyze the Emtpy File Pool (EFP) and show stats')
-        parser.add_argument('--show-recs', action='store_true',
-                            help='Show material records found during recovery')
-        parser.add_argument('--show-all-recs', action='store_true',
-                            help='Show all records (including fillers) found during recovery')
-        parser.add_argument('--stats', action='store_true',
-                            help='Print journal record stats')
-        parser.add_argument('--txn', action='store_true',
-                            help='Reconcile incomplete transactions')
-        parser.add_argument('--version', action='version', version='%(prog)s ' +
-                            QqpdLinearStoreAnalyzer.QLS_ANALYZE_VERSION)
+        parser = QlsAnalyzerArgParser()
         self.args = parser.parse_args()
         if not os.path.exists(self.args.qls_dir):
             parser.error('Journal path "%s" does not exist' % self.args.qls_dir)
@@ -68,8 +81,8 @@ class QqpdLinearStoreAnalyzer(object):
         self.jrnl_recovery_mgr.report(self.args.stats)
     def run(self):
         if self.args.efp:
-            self._analyze_efp()
-        self._analyze_journals()
+            self.efp_manager.run(None)
+        self.jrnl_recovery_mgr.run()
 
 #==============================================================================
 # main program

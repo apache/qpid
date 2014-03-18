@@ -353,6 +353,8 @@ namespace journal {
          * \exception jerrno::JERR_JDIR_CLOSEDIR The directory handle could not be closed.
          */
         static void close_dir(DIR* dir, const std::string& dir_name, const std::string& fn_name);
+
+        static DIR* open_dir(const std::string& dir_name, const std::string& fn_name, const bool test_enoent);
     };
 
 }}}
