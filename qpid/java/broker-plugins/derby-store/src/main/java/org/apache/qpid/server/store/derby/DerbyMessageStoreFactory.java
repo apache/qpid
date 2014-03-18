@@ -68,7 +68,7 @@ public class DerbyMessageStoreFactory implements MessageStoreFactory, DurableCon
 
         @SuppressWarnings("unchecked")
         Map<String, Object> configurationStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.CONFIGURATION_STORE_SETTINGS);
-        if(getType().equals(configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE)))
+        if(configurationStoreSettings != null && getType().equals(configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE)))
         {
             Object storePath = configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
             if(!(storePath instanceof String))
