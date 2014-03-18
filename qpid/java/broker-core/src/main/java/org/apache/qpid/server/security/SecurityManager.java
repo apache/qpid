@@ -34,6 +34,7 @@ import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.OperationLoggingDetails;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.TaskPrincipal;
 
 import javax.security.auth.Subject;
@@ -64,6 +65,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SecurityManager implements ConfigurationChangeListener
@@ -181,6 +183,29 @@ public class SecurityManager implements ConfigurationChangeListener
     {
         Subject subject = Subject.getSubject(AccessController.getContext());
         return !(subject == null  || subject.getPrincipals(SystemPrincipal.class).isEmpty());
+    }
+
+    public static AuthenticatedPrincipal getCurrentUser()
+    {
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        final AuthenticatedPrincipal user;
+        if(subject != null)
+        {
+            Set<AuthenticatedPrincipal> principals = subject.getPrincipals(AuthenticatedPrincipal.class);
+            if(principals != null && !principals.isEmpty())
+            {
+                user = principals.iterator().next();
+            }
+            else
+            {
+                user = null;
+            }
+        }
+        else
+        {
+            user = null;
+        }
+        return user;
     }
 
     private static final class SystemPrincipal implements Principal

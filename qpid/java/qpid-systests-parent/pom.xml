@@ -39,6 +39,8 @@
     <test.working.directory>${basedir}/..</test.working.directory>
     <test.resource.directory>${basedir}/..</test.resource.directory>
     <test.systest.resource.directory>${basedir}</test.systest.resource.directory>
+    <!-- Jacoco skip workaround -->
+    <argLine></argLine>
   </properties>
 
   <dependencies>
@@ -70,6 +72,8 @@
   </dependencies>
 
   <build>
+    <testSourceDirectory>src/main/java</testSourceDirectory>
+
     <resources>
       <resource>
         <directory>src/main/resources</directory>
@@ -204,7 +208,27 @@
 
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+            <skip>true</skip>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+            <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 
 </project>

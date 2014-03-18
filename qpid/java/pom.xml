@@ -38,6 +38,13 @@
     <url>http://svn.apache.org/viewvc/qpid/trunk/qpid/java</url>
   </scm>
 
+  <distributionManagement>
+    <site>
+      <id>${project.artifactId}-site</id>
+      <url>${project.baseUri}</url>
+    </site>
+  </distributionManagement>
+
   <properties>
     <!-- javac source/target properties -->
     <java.source>1.6</java.source>
@@ -101,6 +108,7 @@
     <module>qpid-test-utils</module>
     <module>systests</module>
     <module>perftests</module>
+    <module>qpid-perftests-systests</module>
 
     <module>perftests/visualisation-jfc</module>
     <module>bdbstore</module>
@@ -323,6 +331,13 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>build/**</exclude>
+            <exclude>lib/**</exclude>
+            <exclude>test-profiles/test_resources/ssl/**</exclude>
+          </excludes>
+        </configuration>
       </plugin>
 
     </plugins>
@@ -359,6 +374,15 @@
             </reports>
           </reportSet>
         </reportSets>
+        <configuration>
+          <alwaysGenerateSurefireReport>false</alwaysGenerateSurefireReport>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <version>${maven-jxr-plugin-version}</version>
       </plugin>
 
       <plugin>
@@ -371,6 +395,13 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <version>${apache-rat-plugin-version}</version>
+        <configuration>
+          <excludes>
+            <exclude>build/**</exclude>
+            <exclude>lib/**</exclude>
+            <exclude>test-profiles/test_resources/ssl/**</exclude>
+          </excludes>
+        </configuration>
       </plugin>
 
     </plugins>

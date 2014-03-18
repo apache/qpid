@@ -53,6 +53,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -338,7 +339,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                                                                          "x-filter-jms-selector",
                                                                          "wibble"));
 
-        doThrow(new RuntimeException("Update Should not be called")).when(_store).update(any(ConfiguredObjectRecord[].class));
+        doThrow(new RuntimeException("Update Should not be called"))
+                .when(_store).update(anyBoolean(), any(ConfiguredObjectRecord[].class));
 
         _durableConfigurationRecoverer.completeConfigurationRecovery();
     }
@@ -442,12 +444,13 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
             public Object answer(InvocationOnMock invocation) throws Throwable
             {
                 Object[] args = invocation.getArguments();
+                final HashSet actual = new HashSet(Arrays.asList(args[1]));
                 assertEquals("Updated records are not as expected", new HashSet(Arrays.asList(
-                        expected)), new HashSet(Arrays.asList(args)));
+                        expected)), actual);
 
                 return null;
             }
-        }).when(_store).update(any(ConfiguredObjectRecord[].class));
+        }).when(_store).update(anyBoolean(), any(ConfiguredObjectRecord[].class));
     }
 
     private Map<String,Object> createBinding(String bindingKey, UUID exchangeId, UUID queueId, String... args)

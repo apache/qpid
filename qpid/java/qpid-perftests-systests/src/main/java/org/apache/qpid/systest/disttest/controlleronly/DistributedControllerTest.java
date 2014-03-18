@@ -38,7 +38,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 
-import org.apache.qpid.disttest.ConfigFileTestHelper;
+import org.apache.qpid.systest.disttest.ConfigFileTestHelper;
 import org.apache.qpid.disttest.controller.Controller;
 import org.apache.qpid.disttest.controller.config.Config;
 import org.apache.qpid.disttest.jms.ControllerJmsDelegate;

@@ -86,7 +86,6 @@ public interface DurableConfigurationStore
     void update(UUID id, String type, Map<String, Object> attributes) throws StoreException;
 
 
-    public void update(ConfiguredObjectRecord... records) throws StoreException;
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
 
 

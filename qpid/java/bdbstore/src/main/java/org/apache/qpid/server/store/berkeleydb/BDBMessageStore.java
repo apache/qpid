@@ -760,12 +760,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void update(ConfiguredObjectRecord... records) throws StoreException
-    {
-        update(false, records);
-    }
-
-    @Override
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         com.sleepycat.je.Transaction txn = _environmentFacade.getEnvironment().beginTransaction(null, null);

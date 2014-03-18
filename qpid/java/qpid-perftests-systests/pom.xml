@@ -6,9 +6,9 @@
   The ASF licenses this file to You under the Apache License, Version 2.0
   (the "License"); you may not use this file except in compliance with
   the License.  You may obtain a copy of the License at
-  
+
   http://www.apache.org/licenses/LICENSE-2.0
-  
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,15 +20,32 @@
 
   <parent>
     <groupId>org.apache.qpid</groupId>
-    <artifactId>qpid-java-build</artifactId>
+    <artifactId>qpid-systests-parent</artifactId>
     <version>0.28-SNAPSHOT</version>
+    <relativePath>../qpid-systests-parent/pom.xml</relativePath>
   </parent>
 
-  <artifactId>qpid-perftests</artifactId>
-  <name>Qpid Performance Tests</name>
-  <description>Performance testing configuration, code and tests</description>
+  <artifactId>qpid-perftests-systests</artifactId>
+  <name>Qpid Performance Test System Tests</name>
+  <description>System testing using the performance testing module</description>
+
+  <properties>
+    <test.systest.resource.directory>${basedir}/../systests</test.systest.resource.directory>
+  </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-perftests</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-systests</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- client deps -->
     <dependency>
       <groupId>org.apache.qpid</groupId>
@@ -69,29 +86,9 @@
       <scope>runtime</scope>
     </dependency>
 
-    <!-- test deps -->
-    <dependency>
-      <groupId>org.apache.qpid</groupId>
-      <artifactId>qpid-test-utils</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
-
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-      </resource>
-      <resource>
-        <directory>src/main/java</directory>
-        <excludes>
-          <exclude>**/*.java/</exclude>
-        </excludes>
-      </resource>
-    </resources>
-
     <testResources>
       <testResource>
         <directory>src/test/java</directory>

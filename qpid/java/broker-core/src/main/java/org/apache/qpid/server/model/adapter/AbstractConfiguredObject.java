@@ -84,8 +84,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private final Map<String, Object> _defaultAttributes = new HashMap<String, Object>();
     private final TaskExecutor _taskExecutor;
-    private final long _createdTime;
-    private final String _createdBy;
+
+    @ManagedAttributeField
+    private long _createdTime;
+
+    @ManagedAttributeField
+    private String _createdBy;
+
+    @ManagedAttributeField
+    private long _lastUpdatedTime;
+
+    @ManagedAttributeField
+    private String _lastUpdatedBy;
 
     @ManagedAttributeField
     private String _name;
@@ -197,8 +207,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
             }
         }
-        _createdTime = MapValueConverter.getLongAttribute(CREATED_TIME, attributes, System.currentTimeMillis());
-        _createdBy = MapValueConverter.getStringAttribute(CREATED_BY, attributes, getCurrentUserName());
+        if(!_attributes.containsKey(CREATED_BY))
+        {
+            final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
+            if(currentUser != null)
+            {
+                _attributes.put(CREATED_BY, currentUser);
+            }
+        }
+        if(!_attributes.containsKey(CREATED_TIME))
+        {
+            _attributes.put(CREATED_TIME, System.currentTimeMillis());
+        }
         for(Attribute<?,?> attr : _attributeTypes.values())
         {
             if(attr.getAnnotation().mandatory() && !(attributes.containsKey(attr.getName())|| defaults.containsKey(attr.getName())))
@@ -334,6 +354,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected void attributeSet(String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
+
+        final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
+        if(currentUser != null)
+        {
+            _attributes.put(LAST_UPDATED_BY, currentUser.getName());
+            _lastUpdatedBy = currentUser.getName();
+        }
+        final long currentTime = System.currentTimeMillis();
+        _attributes.put(LAST_UPDATED_TIME, currentTime);
+        _lastUpdatedTime = currentTime;
+
         synchronized (_changeListeners)
         {
             List<ConfigurationChangeListener> copy = new ArrayList<ConfigurationChangeListener>(_changeListeners);
@@ -678,13 +709,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public String getLastUpdatedBy()
     {
-        return null;
+        return _lastUpdatedBy;
     }
 
     @Override
     public long getLastUpdatedTime()
     {
-        return 0;
+        return _lastUpdatedTime;
     }
 
     @Override

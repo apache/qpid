@@ -31,7 +31,13 @@ namespace amqp {
 namespace {
 ConnectionImpl* create(const std::string& u, const qpid::types::Variant::Map& o)
 {
-    return new ConnectionHandle(u, o);
+    try {
+        return new ConnectionHandle(u, o);
+    } catch (const types::Exception& ) {
+        throw;
+    } catch (const qpid::Exception& e) {
+        throw messaging::ConnectionError( e.what() );
+    }
 }
 
 struct StaticInit
