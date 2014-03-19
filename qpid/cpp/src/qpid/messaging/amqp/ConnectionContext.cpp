@@ -572,7 +572,7 @@ void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn)
         pn_session_close(ssn->session);
         throw qpid::messaging::SessionError(text.str());
     } else if ((pn_session_state(ssn->session) & IS_CLOSED) == IS_CLOSED) {
-        throw qpid::messaging::SessionError("Session has ended");
+        throw qpid::messaging::SessionClosed();
     }
 }
 

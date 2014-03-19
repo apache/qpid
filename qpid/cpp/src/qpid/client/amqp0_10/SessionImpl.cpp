@@ -368,6 +368,8 @@ bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::messag
             throw qpid::messaging::UnauthorizedAccess(e.what());
         } catch (const qpid::SessionException& e) {
             throw qpid::messaging::SessionError(e.what());
+        } catch (const qpid::ClosedException&) {
+            throw qpid::messaging::SessionClosed();
         } catch (const qpid::ConnectionException& e) {
             throw qpid::messaging::ConnectionError(e.what());
         } catch (const qpid::ChannelException& e) {
