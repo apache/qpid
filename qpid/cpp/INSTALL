@@ -159,8 +159,7 @@ all of the above plus:
 
 NOTE: make sure to install the related '-devel' packages also!!!!
 
-NOTE: Python 3.x is know to NOT work - please use 2.7 or earlier.
-Ruby should be prior to version 2.
+NOTE: Python 3.x is known to NOT work - please use 2.7 or earlier.
 
 To build the QMF (Qpid Management Framework) bindings for Ruby and Python,
 the following must also be installed:
