@@ -17,51 +17,49 @@
 # under the License.
 #
 
-#
-# configure-windows.ps1
-# =====================
+Set-PSDebug -Trace 0
+Set-PSDebug -strict
+$ErrorActionPreference='Stop'
+
+$global:usageText = @("#
+# configure-windows.ps1 [studio-and-architecture [boost-root-directory]]
 #
 # This script configures a qpid\cpp developer build environment under Windows
 # to enable working with cpp\bindings\qpid\dotnet binding source code.
 #
-# * Supports multiple versions of Visual Studio (VS2008, VS2010, VS2012) 
-#   as CMake generator.
+# ARG PROCESSING
+# ==============
+# All arguments may be specified on the command line. If not then this
+# script will prompt the user for choices.
 #
-# * Supports 32-bit and/or 64-bit development platforms.
+#   * studio-and-architecture
+#     User chooses a version of Visual Studio and a target platform:
+#       2012-x86
+#       2012-x64
+#       2010-x86
+#       2010-x64
+#       2008-x86
+#       2008-x64 
 #
-# * User chooses in-source or out-of-source build directories.
+#   * boost-root-directory
+#     The path to the version of boost to be used in this build
 #
-#     - 'In-source' builds happen when CMake is run from directory qpid\cpp.
-#       Hundreds of CMake-generated output files are placed in qpid\cpp\src.
-#       These files go right on top of files that are part of the source tree
-#       in qpid\cpp\src.
-#       In-source builds support only one platform.
-#       Choose only a 32-bit or a 64-bit platform but not both.
+# CONFIGURATION OUTPUT
+# ====================
+# This script uses these build and install directories for the build:
+#       build_2008_x86  install_2008_x86
+#       build_2010_x86  install_2010_x86
+#       build_2008_x64  install_2008_x64
+#       build_2010_x64  install_2010_x64
 #
-#     - Out-of-source builds happen when the user chooses another directory
-#       under qpid in which to run CMake. Out-of-source builds are required
-#       in order to build both x86 and x64 targets using the same source tree.
-#       For each build platform (32-bit x86 or Win32, or 64-bit x64) the user
-#       specifies a build directory and a specific version of Boost.
-#       Many platform/Boost-version directories may reside side by side.
 #
-# * User chooses to run CMake or not.
-#
-#     - When a new build directory is created then the user is given the
-#       option of running CMake in that directory. Running CMake is a
-#       necessary step as CMake creates important source, solution, and
-#       project files.
-#
-#     - If a directory "looks like" is has already had CMake run in it
-#       then this script skips running CMake again.
-#
-# * User chooses to include Proton or not.
-#
-#     - Proton is included by having variable PROTON_ROOT reference the
-#       directory where proton was installed.
+# PROTON AMQP 1.0
+# ===============
+# Proton is included automatically by having previously executed proton's
+# ""make install"" to the install_xx_xxxx directory that qpid is about to use.
 #
 # Prerequisites
-#
+# =============
 #  1. Powershell must be installed.
 #  2. 32-bit and/or 64-bit Boost libraries must be installed in separate
 #     directories. A user system may have any number of Boost library
@@ -70,7 +68,7 @@
 #  3. CMake 2.8 (or later) must be installed. The cmake\bin directory
 #     must be in the user's path.
 #  4. Boost library specifications may or may not be in the user's path.
-#     The script author recommeds not to have Boost in the path and only
+#     The script author recommends not to have Boost in the path and only
 #     allow the Boost path to be specified by generated command procedures.
 #  5. Visual Studio build environment must be installed.
 #
@@ -78,88 +76,71 @@
 # Use case: Create a new build environment
 # ========================================
 #
-#  Required Boost:
+#  Required VS2010 Boost:
 #        32-bit library - C:\Boost
 #        64-bit library - D:\Boost_64
 #
 #  Required Qpid checkout tree
 #        C:\svn\qpid\...
 #
-#  Run this script. It will ask for four directories:
+#  Run this script, select VS2010 compiler, x86 platform:
 #
-#        Needed info        User clicks on or adds new
-#        ----------------   --------------------------
-#        32-bit Boost       C:\boost
-#        32-bit build dir   C:\svn\qpid\build32
-#        64-bit Boost       D:\Boost_64
-#        64-bit build dir   C:\svn\qpid\build64
+#    configure-windows.ps1 2010-x86 C:\Boost
 #
-#  In this example the build dirs are new. The script will prompt
-#  asking if CMake is to run in the build directories. User chooses Yes.
+#  This script will automatically create build directory
+#        C:\svn\qpid\build_2010_x86
 #
-#  Now this script runs CMake twice, once each with the 32-bit and 64-bit
-#  generators.
+#  Next this script runs CMake.
+#
 #  * This step creates qpid-cpp.sln and related project files.
-#      C:\svn\qpid\build32\qpid-cpp.sln
-#      C:\svn\qpid\build64\qpid-cpp.sln
+#      C:\svn\qpid\build_2010_x86\qpid-cpp.sln
 #
-#  This script generates other scripts as follows:
+#  This script generates several other helper scripts:
 #
-#   C:\svn\qpid\build32\start-devenv-messaging-x86-32bit.ps1
-#   C:\svn\qpid\build32\start-devenv-messaging-x86-32bit.bat
-#   C:\svn\qpid\build32\setenv-messaging-x86-32bit.bat
-#
-#   C:\svn\qpid\build64\start-devenv-messaging-x64-64bit.ps1
-#   C:\svn\qpid\build64\start-devenv-messaging-x64-64bit.bat
-#   C:\svn\qpid\build64\setenv-messaging-x64-64bit.bat
-#
-#  Next the user compiles solution qpid\build32\qpid-cpp.sln.
-#
-# Using the generated scripts:
-#
-# Case 1. Run an executable in 32-bit mode.
-#  1. Open a command prompt.
-#  2. > CD   c:\svn\qpid\build32
-#  3. > CALL setenv-messaging-x86-32bit.bat
-#  4. > CD   src\debug
-#  5. > run the chosen program
-#
-#  Note: Step #3 adds Boost to the user's path. This script selects the
-#        version of Boost to match the executables in src\debug.
-#
-# Case 2. Launch Visual Studio org.apache.qpid.messaging.sln in 64-bit mode.
-#  1. > CD c:\svn\qpid\build64
-#  2. > powershell start-devenv-messaging-x64-64bit.ps1
-#     or
-#  1. Double-click c:\svn\qpid\build64\start-devenv-messaging-x64-64bit.bat
-#
-#  Note: In this case the scripts set QPID_BUILD_ROOT to point to the out-of-
-#        source directory used by qpid-cpp.sln. Also the scripts put Boost in
-#        the path so that executables may run directly from Visual Studio.
-#
-
-Set-PSDebug -Trace 0
-Set-PSDebug -strict
-$ErrorActionPreference='Stop'
+#   C:\svn\qpid\build_2010_x86\start-devenv-messaging-x86-32bit.ps1
+#   C:\svn\qpid\build_2010_x86\start-devenv-messaging-x86-32bit.bat
+#   C:\svn\qpid\build_2010_x86\setenv-messaging-x86-32bit.bat
+#   C:\svn\qpid\build_2010_x86\run-cmake.bat
+#   C:\svn\qpid\build_2010_x86\run-qpid-devenv-debug.bat
+")
 
 #############################
 # global strings to be written to script files
 #
 $global:txtPath = '$env:PATH'
 $global:txtQR   = '$env:QPID_BUILD_ROOT'
-$global:txtPR   = '$env:PROTON_ROOT'
 $global:txtWH   = 'Write-Host'
 
 #############################
 # Visual Studio version selection dialog items and choice
 #
-[array]$global:VsVersionCmakeChoiceList = "Visual Studio 2012", "Visual Studio 2010", "Visual Studio 2008"
-$global:vsVersion = ''
-$global:cmakeGenerator = ''
-$global:vsSubdir = ''
-$global:cmakeCompiler = ''
-$global:cmakeCommandLine32 = ''
-$global:cmakeCommandLine64 = ''
+[array]$global:VsVersionCmakeChoiceList = `
+    "Visual Studio 2012 - x86", `
+    "Visual Studio 2012 - x64", `
+    "Visual Studio 2010 - x86", `
+    "Visual Studio 2010 - x64", `
+    "Visual Studio 2008 - x86", `
+    "Visual Studio 2008 - x64"
+$global:vsSelectedOption = ''
+$global:vsVersion = ''       # "Visual Studio 2010"
+$global:vsShortName = ''     # "2010"
+$global:cmakeGenerator = ''  # "Visual Studio 10"
+$global:vsSubdir = ''        # "msvc10"
+$global:cmakeCompiler = ''   # "-vc100"
+$global:build32or64 = ''     # "32" or "64"
+$global:buildPathSizeId = '' # "x86" or "x64"
+
+$global:cmakeCommandLine = ''
+
+$global:boostRootPath = ''
+
+#############################
+# Usage
+#
+function Usage
+{
+    Write-Host $global:usageText
+}
 
 #############################
 # Select-Folder
@@ -198,7 +179,7 @@ function AskYesOrNo ($Question="No question?", $Title="No Title?")
 #
 function SanityCheckBoostPath ($path=0)
 {
-    $result = $true
+    $result = 1
     $displayPath = ""
 
     if ($path -ne $null) {
@@ -208,46 +189,15 @@ function SanityCheckBoostPath ($path=0)
         foreach ($pattern in $toTest) {
             $target = Join-Path $path $pattern
             if (!(Test-Path -path $target)) {
-                $result = $false
+                $result = 0
             }
         }
     } else {
-        $result = $false
+        $result = 0
     }
 
     if (! $result) {
         Write-Host "The path ""$displayPath"" does not appear to be a Boost root path."
-    }
-    $result
-}
-
-
-#############################
-# SanityCheckProtonInstallPath
-#   A path is a "proton install path" if it contains
-#   both bin and include subdirectories.
-#
-function SanityCheckProtonInstallPath ($path=0)
-{
-    $result = $true
-    $displayPath = ""
-
-    if ($path -ne $null) {
-        $displayPath = $path
-
-        $toTest = ('include', 'bin')
-        foreach ($pattern in $toTest) {
-            $target = Join-Path $path $pattern
-            if (!(Test-Path -path $target)) {
-                $result = $false
-            }
-        }
-    } else {
-        $result = $false
-    }
-
-    if (! $result) {
-        Write-Host "The path ""$displayPath"" does not appear to be a Proton install root path."
     }
     $result
 }
@@ -260,7 +210,7 @@ function SanityCheckProtonInstallPath ($path=0)
 #
 function SanityCheckBuildPath ($path=0)
 {
-    $result = $true
+    $result = 1
     $displayPath = ""
     if ($path -ne $null) {
         $displayPath = $path
@@ -270,11 +220,11 @@ function SanityCheckBuildPath ($path=0)
         foreach ($pattern in $toTest) {
             $target = Join-Path $path $pattern
             if (!(Test-Path -path $target)) {
-                $result = $false
+                $result = 0
             }
         }
     } else {
-        $result = $false
+        $result = 0
     }
     if (! $result) {
         Write-Host "The path ""$displayPath"" does not appear to be a Qpid C++ build root path."
@@ -300,16 +250,14 @@ function WriteDotnetBindingSlnLauncherPs1
         [string] $nBits,
         [string] $outfileName,
         [string] $studioVersion,
-        [string] $studioSubdir,
-        [string] $protonRoot
+        [string] $studioSubdir
     )
 
     $out = @("#
 # Launch $slnName in $studioVersion $vsPlatform ($nBits-bit) environment
 #
-$global:txtPath  = ""$protonRoot\bin;$boostRoot\lib;$global:txtPath""
+$global:txtPath  = ""$boostRoot\lib;$global:txtPath""
 $global:txtQR    = ""$buildRoot""
-$global:txtPR    = ""$protonRoot""
 $global:txtWH      ""Launch $slnName in $studioVersion $vsPlatform ($nBits-bit) environment.""
 $cppDir\bindings\qpid\dotnet\$vsSubdir\$slnName
 ")
@@ -366,8 +314,7 @@ function WriteDotnetBindingEnvSetupBat
         [string] $outfileName,
         [string] $studioVersion,
         [string] $studioSubdir,
-		[string] $cmakeLine,
-        [string] $protonRoot
+		[string] $cmakeLine
     )
 
     $out = @("@ECHO OFF
@@ -383,9 +330,8 @@ REM The solution was generated with cmake command line:
 REM $cmakeLine
 ECHO %PATH% | FINDSTR /I boost > NUL
 IF %ERRORLEVEL% EQU 0 ECHO WARNING: Boost is defined in your path multiple times!
-SET PATH=$protonRoot\bin;$boostRoot\lib;%PATH%
+SET PATH=$boostRoot\lib;%PATH%
 SET QPID_BUILD_ROOT=$buildRoot
-SET PROTON_ROOT=$protonRoot
 ECHO Environment set for $slnName $studioVersion $vsPlatform $nBits-bit development.
 ")
     Write-Host "        $buildRoot\$outfileName"
@@ -393,32 +339,96 @@ ECHO Environment set for $slnName $studioVersion $vsPlatform $nBits-bit developm
 }
 
 #############################
-# Return the SelectedItem from the dropdown list and close the form.
+# WriteCmakeRerunnerBat
+#   Write a batch file that runs cmake again
 #
-function Return-DropDown {
+function WriteCmakeRerunnerBat
+{
+    param
+    (
+        [string] $slnName,
+        [string] $boostRoot,
+        [string] $buildRoot,
+        [string] $vsPlatform,
+        [string] $nBits,
+        [string] $outfileName,
+        [string] $studioVersion,
+        [string] $studioSubdir,
+		[string] $cmakeLine
+    )
+
+    $out = @("@ECHO OFF
+REM
+REM Call this command procedure from a command prompt to rerun cmake
+REM $studioVersion $vsPlatform ($nBits-bit)
+REM
+$cmakeLine
+")
+    Write-Host "        $buildRoot\$outfileName"
+    $out | Out-File "$buildRoot\$outfileName" -encoding ASCII
+}
+
+#############################
+# Given a visual studio selection from command line or selection list
+#  Return the visual studio and architecture settings or exit
+#
+function ParseStudioSelection 
+{
+    param
+    (
+        [string] $vsSelection
+    )
+    Write-Host "Checking studio version: $vsSelection"
+    if ($vsSelection.Contains("2012")) {
+        $global:vsVersion = "Visual Studio 2012"
+        $global:cmakeGenerator = "Visual Studio 11"
+        $global:vsSubdir = "msvc11"
+        $global:cmakeCompiler = "-vc110"
+        $global:vsShortName = "2012"
+    } elseif ($vsSelection.Contains("2010")) {
+        $global:vsVersion = "Visual Studio 2010"
+        $global:cmakeGenerator = "Visual Studio 10"
+        $global:vsSubdir = "msvc10"
+		$global:cmakeCompiler = "-vc100"
+        $global:vsShortName = "2010"
+	} elseif ($vsSelection.Contains("2008")) {
+        $global:vsVersion = "Visual Studio 2008"
+        $global:cmakeGenerator = "Visual Studio 9 2008"
+		$global:vsSubdir = "msvc9"
+		$global:cmakeCompiler = "-vc90"
+        $global:vsShortName = "2008"
+	} else {
+		Write-Host "Visual Studio must be 2008, 2010, or 2012"
+		exit
+	}
+    $global:vsSelectedOption = $vsSelection
+    
+    if ($vsSelection.Contains("x86")) {
+        $global:buildPathSizeId = "x86"
+        $global:build32or64 = "32"
+    } elseif ($vsSelection.Contains("x64")) {
+        $global:buildPathSizeId = "x64"
+        $global:build32or64 = "64"
+        # Promote CMAKE generator to 64 bit variant
+        $global:cmakeGenerator += " Win64"
+    } else {
+		Write-Host "Studio selection must contain x86 or x64"
+		exit
+    }
+}
+
+#############################
+# When the user presses 'select' then this function handles it.
+#  Return the visual studio and architecture.
+#  Close the form.
+#
+function SelectVisualStudio {
     if ($DropDown.SelectedItem -ne $null) {
-        $global:vsVersion = $DropDown.SelectedItem.ToString()
-        if ($global:vsVersion -eq 'Visual Studio 2012') {
-            $global:cmakeGenerator = "Visual Studio 11"
-            $global:vsSubdir = "msvc11"
-			$global:cmakeCompiler = "-vc110"
-        } else {
-			if ($global:vsVersion -eq 'Visual Studio 2010') {
-				$global:cmakeGenerator = "Visual Studio 10"
-				$global:vsSubdir = "msvc10"
-				$global:cmakeCompiler = "-vc100"
-			} else {
-				if ($global:vsVersion -eq 'Visual Studio 2008') {
-					$global:cmakeGenerator = "Visual Studio 9 2008"
-					$global:vsSubdir = "msvc9"
-					$global:cmakeCompiler = "-vc90"
-				} else {
-					Write-Host "Visual Studio must be 2008, 2010, or 2012"
-					exit
-				}
-			}
-		}
-        $Form.Close()
+        $vsVersion = $DropDown.SelectedItem.ToString()
+        
+        ParseStudioSelection $vsVersion 
+
+        $Form.Close() 2> $null
         Write-Host "Selected generator: $global:cmakeGenerator"
     }
 }
@@ -432,29 +442,24 @@ function SelectVisualStudioVersion {
 
     $Form.width = 350
     $Form.height = 150
-    $Form.Text = "Select Visual Studio Version"
+    $Form.Text = "Select Visual Studio Version and platform"
 
     $DropDown          = new-object System.Windows.Forms.ComboBox
     $DropDown.Location = new-object System.Drawing.Size(120,10)
     $DropDown.Size     = new-object System.Drawing.Size(150,30)
 
     ForEach ($Item in $global:VsVersionCmakeChoiceList) {
-        $DropDown.Items.Add($Item)
+        [void] $DropDown.Items.Add($Item)
     }
     $DropDown.SelectedIndex = 0
 
     $Form.Controls.Add($DropDown)
 
-#    $DropDownLabel.Location = new-object System.Drawing.Size(10,10)
-#    $DropDownLabel.size     = new-object System.Drawing.Size(100,20)
-#    $DropDownLabel.Text     = ""
-#    $Form.Controls.Add($DropDownLabel)
-
     $Button          = new-object System.Windows.Forms.Button
     $Button.Location = new-object System.Drawing.Size(120,50)
     $Button.Size     = new-object System.Drawing.Size(120,20)
     $Button.Text     = "Select"
-    $Button.Add_Click({Return-DropDown})
+    $Button.Add_Click({SelectVisualStudio})
     $form.Controls.Add($Button)
 
     $Form.Add_Shown({$Form.Activate()})
@@ -476,237 +481,143 @@ function SelectVisualStudioVersion {
 [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")       | Out-Null
 
 #############################
+# Get command line args
+#
+if ($args.Length -ge 1) {
+    if (($args[0].Contains("help")) -or ($args[0].Contains("-h"))) {
+        Usage
+        exit
+    }
+    
+    $vsVer = $args[0]
+    ParseStudioSelection $vsVer
+}
+
+if ($args.Length -ge 2) {
+    $global:boostRootPath = $args[1]
+}
+
+#############################
 # User dialog to select a version of Visual Studio as CMake generator
 #
-SelectVisualStudioVersion
-
-#############################
-# User dialog to get optional 32-bit boost, proton, and build paths
-#
-$boost32 = Select-Folder -message "Select 32-bit BOOST_ROOT folder for $global:vsVersion build. Press CANCEL to skip 32-bit processing."
-
-$defined32 = ($boost32 -ne $null) -and ($boost32 -ne '')
-if ($defined32) {
-    $found = SanityCheckBoostPath $boost32
-    if (! $found) {
-        exit
-    }
-}
-
-$make32 = $false
-if ($defined32) {
-
-    $proton32folder = Select-Folder -message "Select 32-bit Proton install folder for $global:vsVersion build."
-
-    $found = ($proton32folder -ne $null) -and ($proton32folder -ne '')
-    if ($found) {
-		$found = SanityCheckProtonInstallPath $proton32folder
-    }
-    if ($found) {
-        $proton32cmake = """-DPROTON_ROOT=$proton32folder"""
-    } else {
-        $proton32cmake = ""
-    }
-
-    $build32 = Select-Folder -message "Select 32-bit QPID_BUILD_ROOT folder for $global:vsVersion build." -path $projRoot
-
-    $found = ($build32 -ne $null) -and ($build32 -ne '')
-    if (! $found) {
-        Write-Host "You must select a build root folder for 32-bit builds"
-        exit
-    }
-    $found = SanityCheckBuildPath $build32
-    if ($found) {
-        Write-Host "Directory ""$build32"" is already set by CMake. CMake will not be re-run."
-    } else {
-        $make32 = AskYesOrNo "Run CMake in $build32 ?" "32-Bit Builds - Choose CMake run or not"
-    }
+if ($global:vsVersion -eq '') {
+    SelectVisualStudioVersion
 }
 
 #############################
-# User dialog to get optional 64-bit boost, proton,  and build paths
+# User dialog to get boost paths
 #
-$boost64 = Select-Folder -message "Select 64-bit BOOST_ROOT folder for $global:vsVersion build. Press CANCEL to skip 64-bit processing."
-
-$defined64 = ($boost64 -ne $null) -and ($boost64 -ne '')
-if ($defined64) {
-    $found = SanityCheckBoostPath $boost64
-    if (! $found) {
-        exit
-    }
-}
-
-$make64 = $false
-if ($defined64) {
-    $proton64folder = Select-Folder -message "Select 64-bit Proton install folder for $global:vsVersion build."
-
-    $found = ($proton64folder -ne $null) -and ($proton64folder -ne '')
-    if ($found) {
-		$found = SanityCheckProtonInstallPath $proton64folder
-    }
-    if ($found) {
-        $proton64cmake = """-DPROTON_ROOT=$proton64folder"""
-    } else {
-        $proton64cmake = ""
-    }
-
-    $build64 = Select-Folder -message "Select 64-bit QPID_BUILD_ROOT folder for $global:vsVersion build." -path $projRoot
-
-    $found = ($build64 -ne $null) -and ($build64 -ne '')
-    if (! $found) {
-        Write-Host "You must select a build root folder for 64-bit builds"
-        exit
-    }
-    $found = SanityCheckBuildPath $build64
-    if ($found) {
-        Write-Host "Directory ""$build64"" is already set by CMake. CMake will not be re-run."
-    } else {
-        $make64 = AskYesOrNo "Run CMake in $build64 ?" "64-Bit Builds - Choose CMake run or not"
-    }
+if ($global:boostRootPath -eq '') {
+    $global:boostRootPath = Select-Folder -message "Select BOOST_ROOT folder for $global:vsSelectedOption build. Press CANCEL to quit"
 }
 
 #############################
-# Conditionally run CMake
+# Decide to run cmake or not.
+#   If the build directory is absent the run cmake
+#   If the build directory already exists then it's the user's choice
 #
-# 32-bit X86
-#
-if ($make32) {
-    cd "$build32"
-	$global:cmakeCommandLine32 = "CMake -G ""$global:cmakeGenerator"" ""-DBUILD_DOCS=No"" ""-DCMAKE_INSTALL_PREFIX=$build32/install"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost32"" $proton32cmake $cppDir"
-    Write-Host "Running 32-bit CMake in $build32 : $global:cmakeCommandLine32"
-    CMake -G "$global:cmakeGenerator" "-DBUILD_DOCS=No" "-DCMAKE_INSTALL_PREFIX=$build32/install" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost32" $proton32cmake $cppDir
-} else {
-    Write-Host "Skipped 32-bit CMake."
+$make = 0
+$defined = ($global:boostRootPath -ne $null) -and ($global:boostRootPath -ne '')
+if ($defined) {
+    $found = SanityCheckBoostPath $global:boostRootPath
+    if (! $found) {
+        exit
+    }
+    
+    $build   = Join-Path $projRoot   "build_${global:vsShortName}_${global:buildPathSizeId}"
+    $install = Join-Path $projRoot "install_${global:vsShortName}_${global:buildPathSizeId}"
+        
+    $found = SanityCheckBuildPath $build
+    if ($found) {
+        $make = AskYesOrNo "build directory ""$build"" appears to have run cmake already. Run cmake again?"
+    } else {
+        $make = 1
+    }
 }
 
-#
-# 64-bit X64
-#
-if ($make64) {
-    cd "$build64"
-    Write-Host "Running 64-bit CMake in $build64"
-	$global:cmakeCommandLine64 = "CMake -G ""$global:cmakeGenerator Win64"" ""-DBUILD_DOCS=No"" ""-DCMAKE_INSTALL_PREFIX=$build64/install"" ""-DBoost_COMPILER=$global:cmakeCompiler"" ""-DBOOST_ROOT=$boost64"" $proton64cmake $cppDir"
-	Write-Host $global:cmakeCommandLine64
-    Write-Host ""
-    CMake -G "$global:cmakeGenerator Win64" "-DBUILD_DOCS=No" "-DCMAKE_INSTALL_PREFIX=$build64/install" "-DBoost_COMPILER=$global:cmakeCompiler" "-DBOOST_ROOT=$boost64" $proton64cmake $cppDir
-} else {
-    Write-Host "Skipped 64-bit CMake."
+if (! $make) {
+    exit
 }
+
+#############################
+# run CMake
+#
+if(!(Test-Path -Path $build)) {
+    New-Item -ItemType directory -Path $build
+}
+cd "$build"
+$global:cmakeCommandLine  = "CMake -G ""$global:cmakeGenerator"" "
+$global:cmakeCommandLine += """-DBUILD_DOCS=No"" "
+$global:cmakeCommandLine += """-DCMAKE_INSTALL_PREFIX=$install"" "
+$global:cmakeCommandLine += """-DBoost_COMPILER=$global:cmakeCompiler"" "
+$global:cmakeCommandLine += """-DBOOST_ROOT=$global:boostRootPath"" "
+$global:cmakeCommandLine +=  $cppDir
+Write-Host "Running CMake in $build : $global:cmakeCommandLine"
+& cmd /c "$global:cmakeCommandLine 2>&1"
+
 
 #############################
 # Emit scripts
 #
-# 32-bit scripts
+Write-Host "Writing helper scripts..."
+
+###########
+# Powershell script to launch org.apache.qpid.messaging.sln
 #
-if ($defined32) {
+WriteDotnetBindingSlnLauncherPs1     -slnName "org.apache.qpid.messaging.sln" `
+                                   -boostRoot "$global:boostRootPath" `
+                                   -buildRoot "$build" `
+                                      -cppDir "$cppDir" `
+                                  -vsPlatform $global:buildPathSizeId `
+                                       -nBits $global:build32or64 `
+                                 -outfileName "start-devenv-messaging-$global:vsSubdir-$global:buildPathSizeId-$global:build32or64-bit.ps1" `
+                               -studioVersion "$global:vsVersion" `
+                                -studioSubdir "$global:vsSubdir"
 
-    Write-Host "Writing 32-bit scripts..."
-
-    ###########
-    # Powershell script to launch org.apache.qpid.messaging.sln
-    #
-    WriteDotnetBindingSlnLauncherPs1     -slnName "org.apache.qpid.messaging.sln" `
-                                       -boostRoot "$boost32" `
-                                       -buildRoot "$build32" `
-                                          -cppDir "$cppDir" `
-                                      -vsPlatform "x86" `
-                                           -nBits "32" `
-                                     -outfileName "start-devenv-messaging-$global:vsSubdir-x86-32bit.ps1" `
-                                   -studioVersion "$global:vsVersion" `
-                                    -studioSubdir "$global:vsSubdir" `
-                                      -protonRoot "$proton32folder"
-
-
-    ###########
-    # Batch script (that you doubleclick) to launch powershell script
-    # that launches org.apache.qpid.messaging.sln.
-    #
-    WriteDotnetBindingSlnLauncherBat      -slnName "org.apache.qpid.messaging.sln" `
-                                        -buildRoot "$build32" `
-                                       -vsPlatform "x86" `
-                                            -nBits "32" `
-                                     -psScriptName "start-devenv-messaging-$global:vsSubdir-x86-32bit.ps1" `
-                                      -outfileName "start-devenv-messaging-$global:vsSubdir-x86-32bit.bat" `
-                                    -studioVersion "$global:vsVersion" `
-                                     -studioSubdir "$global:vsSubdir"
-
-    ###########
-    # Batch script (that you CALL from a command prompt)
-    # to establish the org.apache.qpid.messaging.sln build environment.
-    #
-    WriteDotnetBindingEnvSetupBat     -slnName "org.apache.qpid.messaging.sln" `
-                                    -boostRoot "$boost32" `
-                                    -buildRoot "$build32" `
-                                   -vsPlatform "x86" `
-                                        -nBits "32" `
-                                  -outfileName "setenv-messaging-$global:vsSubdir-x86-32bit.bat" `
-                                -studioVersion "$global:vsVersion" `
-                                 -studioSubdir "$global:vsSubdir" `
-								    -cmakeLine "$global:cmakeCommandLine32" `
-                                   -protonRoot "$proton32folder"
-
-} else {
-    Write-Host "Skipped writing 32-bit scripts."
-}
-
-#############################
-# 64-bit scripts
+###########
+# Batch script (that you doubleclick) to launch powershell script
+# that launches org.apache.qpid.messaging.sln.
 #
-if ($defined64) {
-
-    Write-Host "Writing 64-bit scripts..."
-
-    ###########
-    # Powershell script to launch org.apache.qpid.messaging.sln
-    #
-    WriteDotnetBindingSlnLauncherPs1     -slnName "org.apache.qpid.messaging.sln" `
-                                       -boostRoot "$boost64" `
-                                       -buildRoot "$build64" `
-                                          -cppDir "$cppDir" `
-                                      -vsPlatform "x64" `
-                                           -nBits "64" `
-                                     -outfileName "start-devenv-messaging-$global:vsSubdir-x64-64bit.ps1" `
-                                   -studioVersion "$global:vsVersion" `
-                                    -studioSubdir "$global:vsSubdir"
-
-
-    ###########
-    # Batch script (that you doubleclick) to launch powershell script
-    # that launches org.apache.qpid.messaging.sln.
-    #
-    WriteDotnetBindingSlnLauncherBat      -slnName "org.apache.qpid.messaging.sln" `
-                                        -buildRoot "$build64" `
-                                       -vsPlatform "x64" `
-                                            -nBits "64" `
-                                     -psScriptName "start-devenv-messaging-$global:vsSubdir-x64-64bit.ps1" `
-                                      -outfileName "start-devenv-messaging-$global:vsSubdir-x64-64bit.bat" `
-                                    -studioVersion "$global:vsVersion" `
-                                     -studioSubdir "$global:vsSubdir" `
-                                       -protonRoot "$proton64folder"
-
-    ###########
-    # Batch script (that you CALL from a command prompt)
-    # to establish the org.apache.qpid.messaging.sln build environment.
-    #
-    WriteDotnetBindingEnvSetupBat     -slnName "org.apache.qpid.messaging.sln" `
-                                    -boostRoot "$boost64" `
-                                    -buildRoot "$build64" `
-                                   -vsPlatform "x64" `
-                                        -nBits "64" `
-                                  -outfileName "setenv-messaging-$global:vsSubdir-x64-64bit.bat" `
+WriteDotnetBindingSlnLauncherBat      -slnName "org.apache.qpid.messaging.sln" `
+                                    -buildRoot "$build" `
+                                   -vsPlatform $global:buildPathSizeId `
+                                        -nBits $global:build32or64 `
+                                 -psScriptName "start-devenv-messaging-$global:vsSubdir-$global:buildPathSizeId-$global:build32or64-bit.ps1" `
+                                  -outfileName "start-devenv-messaging-$global:vsSubdir-$global:buildPathSizeId-$global:build32or64-bit.bat" `
                                 -studioVersion "$global:vsVersion" `
-                                 -studioSubdir "$global:vsSubdir" `
-								    -cmakeLine "$global:cmakeCommandLine64" `
-                                   -protonRoot "$proton64folder"
+                                 -studioSubdir "$global:vsSubdir"
 
-} else {
-    Write-Host "Skipped writing 64-bit scripts."
-}
+###########
+# Batch script (that you CALL from a command prompt)
+# to establish the org.apache.qpid.messaging.sln build environment.
+#
+WriteDotnetBindingEnvSetupBat     -slnName "org.apache.qpid.messaging.sln" `
+                                -boostRoot "$boost" `
+                                -buildRoot "$build" `
+                               -vsPlatform $global:buildPathSizeId `
+                                    -nBits $global:build32or64 `
+                              -outfileName "setenv-messaging-$global:vsSubdir-$global:buildPathSizeId-$global:build32or64-bit.bat" `
+                            -studioVersion "$global:vsVersion" `
+                             -studioSubdir "$global:vsSubdir" `
+                                -cmakeLine "$global:cmakeCommandLine"
 
+###########
+# Batch script to re-run cmake
+#
+WriteCmakeRerunnerBat             -slnName "org.apache.qpid.messaging.sln" `
+                                -boostRoot "$boost" `
+                                -buildRoot "$build" `
+                               -vsPlatform $global:buildPathSizeId `
+                                    -nBits $global:build32or64 `
+                              -outfileName "run-cmake.bat" `
+                            -studioVersion "$global:vsVersion" `
+                             -studioSubdir "$global:vsSubdir" `
+                                -cmakeLine "$global:cmakeCommandLine"
+                                
 #############################
 # Pause on exit. If user ran this script through a graphical launch and there's
 # an error then the window closes and the user never sees the error. This pause
 # gives him a chance to figure it out.
 #
 Write-Host "Press any key to continue ..."
-$x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+[void] $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
