@@ -19,7 +19,7 @@
 
 -->
 
-<!ENTITY qpidVersion "0.27">
+<!ENTITY qpidVersion "0.28">
 <!ENTITY qpidDownloadUrlDesc "the Apache Qpid project web site">
 <!ENTITY qpidDownloadUrl "http://qpid.apache.org/download.html">
 
