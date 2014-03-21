@@ -68,7 +68,6 @@
     <profile.excludes>JavaTransientExcludes Java010Excludes</profile.excludes>
     <profile.broker.version>v0_10</profile.broker.version>
     <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
-    <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</profile.broker.virtualhosts-config>
     <profile.broker.persistent>false</profile.broker.persistent>
     <profile.messagestore.type>Memory</profile.messagestore.type>
   </properties>
@@ -150,7 +149,6 @@
                 <echo>[profile.excludes] ${profile.excludes}</echo>
                 <echo>[profile.broker.version] ${profile.broker.version}</echo>
                 <echo>[profile.qpid.broker_default_amqp_protocol_excludes] ${profile.qpid.broker_default_amqp_protocol_excludes}</echo>
-                <echo>[profile.broker.virtualhosts-config] ${profile.broker.virtualhosts-config}</echo>
                 <echo>[profile.broker.persistent] ${profile.broker.persistent}</echo>
                 <echo>[profile.messagestore.type] ${profile.messagestore.type}</echo>
             </tasks>
@@ -229,7 +227,6 @@
             <test.excludes>Excludes JavaExcludes ${profile}.excludes ${profile.excludes}</test.excludes>
             <broker.version>${profile.broker.version}</broker.version>
             <qpid.broker_default_amqp_protocol_excludes>${profile.qpid.broker_default_amqp_protocol_excludes}</qpid.broker_default_amqp_protocol_excludes>
-            <broker.virtualhosts-config>${profile.broker.virtualhosts-config}</broker.virtualhosts-config>
             <broker.persistent>${profile.broker.persistent}</broker.persistent>
             <messagestore.type>${profile.messagestore.type}</messagestore.type>
             <profile>${profile}</profile>
@@ -423,7 +420,6 @@
         <profile.excludes>JavaTransientExcludes Java010Excludes</profile.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>false</profile.broker.persistent>
         <profile.messagestore.type>Memory</profile.messagestore.type>
       </properties>
@@ -442,7 +438,6 @@
         <profile.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>false</profile.broker.persistent>
         <profile.messagestore.type>Memory</profile.messagestore.type>
       </properties>
@@ -461,7 +456,6 @@
         <profile.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>false</profile.broker.persistent>
         <profile.messagestore.type>Memory</profile.messagestore.type>
       </properties>
@@ -480,7 +474,6 @@
         <profile.excludes>JavaPersistentExcludes Java010Excludes JavaBDBExcludes</profile.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-bdb.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.messagestore.type>BDB</profile.messagestore.type>
       </properties>
@@ -499,7 +492,6 @@
         <profile.excludes>JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes</profile.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-bdb.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.messagestore.type>BDB</profile.messagestore.type>
       </properties>
@@ -518,7 +510,6 @@
         <profile.excludes>JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes</profile.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-bdb.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.messagestore.type>BDB</profile.messagestore.type>
       </properties>
@@ -537,7 +528,6 @@
         <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes Java010Excludes</profile.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby-mem.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.messagestore.type>DERBY</profile.messagestore.type>
       </properties>
@@ -556,7 +546,6 @@
         <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby-mem.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.messagestore.type>DERBY</profile.messagestore.type>
       </properties>
@@ -575,7 +564,6 @@
         <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
-        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby-mem.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.messagestore.type>DERBY</profile.messagestore.type>
       </properties>

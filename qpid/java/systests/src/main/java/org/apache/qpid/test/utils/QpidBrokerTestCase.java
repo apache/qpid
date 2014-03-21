@@ -642,11 +642,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         return _output + File.separator + getTestQueueName() + "-" + port + "-config";
     }
 
-    public String getTestVirtualhostsFile(int port)
-    {
-        return _output + File.separator + getTestQueueName() + "-" + port + "-virtualhosts.xml";
-    }
-
     protected String getPathRelativeToWorkingDirectory(String file)
     {
         File configLocation = new File(file);
