@@ -303,9 +303,10 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     public void setPublishFrame(MessagePublishInfo info, final MessageDestination e)
     {
         String routingKey = info.getRoutingKey() == null ? null : info.getRoutingKey().asString();
-        SecurityManager securityManager = getVirtualHost().getSecurityManager();
+        VirtualHost virtualHost = getVirtualHost();
+        SecurityManager securityManager = virtualHost.getSecurityManager();
 
-        securityManager.authorisePublish(info.isImmediate(), routingKey, e.getName());
+        securityManager.authorisePublish(info.isImmediate(), routingKey, e.getName(), virtualHost.getName());
 
         _currentMessage = new IncomingMessage(info);
         _currentMessage.setMessageDestination(e);

@@ -32,6 +32,42 @@ public class OperationLoggingDetails extends ObjectProperties
     }
 
     @Override
+    public int hashCode()
+    {
+        return super.hashCode() + ((_description == null) ? 0 : _description.hashCode());
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+        if (!super.equals(obj))
+        {
+            return false;
+        }
+        if (getClass() != obj.getClass())
+        {
+            return false;
+        }
+        OperationLoggingDetails other = (OperationLoggingDetails) obj;
+        if (_description == null)
+        {
+            if (other._description != null)
+            {
+                return false;
+            }
+        }
+        else if (!_description.equals(other._description))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public String toString()
     {
         StringBuilder sb = new StringBuilder("(");

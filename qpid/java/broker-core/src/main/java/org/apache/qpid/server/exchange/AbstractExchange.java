@@ -612,7 +612,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         }
 
         // Check access
-        _virtualHost.getSecurityManager().authoriseUnbind(this, bindingKey, queue);
+        _virtualHost.getSecurityManager().authoriseUnbind(binding);
 
         BindingImpl b = _bindingsMap.remove(new BindingIdentifier(bindingKey,queue));
 

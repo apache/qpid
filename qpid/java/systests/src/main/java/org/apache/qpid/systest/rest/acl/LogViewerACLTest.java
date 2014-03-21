@@ -39,8 +39,7 @@ public class LogViewerACLTest extends QpidRestTestCase
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER);
 
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_USER + " ACCESS_LOGS BROKER",
                 "ACL DENY-LOG " + DENIED_USER + " ACCESS_LOGS BROKER",
                 "ACL DENY-LOG ALL ALL");

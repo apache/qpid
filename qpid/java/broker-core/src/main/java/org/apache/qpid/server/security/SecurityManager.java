@@ -18,27 +18,6 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.exchange.ExchangeImpl;
-
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.plugin.AccessControlFactory;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
-import org.apache.qpid.server.security.access.ObjectProperties;
-import org.apache.qpid.server.security.access.ObjectType;
-import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.access.OperationLoggingDetails;
-import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
-import org.apache.qpid.server.security.auth.TaskPrincipal;
-
-import javax.security.auth.Subject;
-
 import static org.apache.qpid.server.security.access.ObjectType.BROKER;
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
 import static org.apache.qpid.server.security.access.ObjectType.GROUP;
@@ -62,52 +41,46 @@ import java.security.AccessController;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.security.auth.Subject;
+
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.model.AccessControlProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.access.ObjectProperties;
+import org.apache.qpid.server.security.access.ObjectProperties.Property;
+import org.apache.qpid.server.security.access.ObjectType;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.access.OperationLoggingDetails;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.security.auth.TaskPrincipal;
+
 public class SecurityManager implements ConfigurationChangeListener
 {
-    private static final Logger _logger = Logger.getLogger(SecurityManager.class);
-
     private static final Subject SYSTEM = new Subject(true,
                                                      Collections.singleton(new SystemPrincipal()),
                                                      Collections.emptySet(),
                                                      Collections.emptySet());
 
+    private final ConcurrentHashMap<String, AccessControl> _plugins = new ConcurrentHashMap<String, AccessControl>();
+    private final boolean _managementMode;
+    private final Broker<?> _broker;
 
-    private ConcurrentHashMap<String, AccessControl> _globalPlugins = new ConcurrentHashMap<String, AccessControl>();
-    private ConcurrentHashMap<String, AccessControl> _hostPlugins = new ConcurrentHashMap<String, AccessControl>();
+    private final ConcurrentHashMap<PublishAccessCheckCacheEntry, PublishAccessCheck> _publishAccessCheckCache = new ConcurrentHashMap<SecurityManager.PublishAccessCheckCacheEntry, SecurityManager.PublishAccessCheck>();
 
-    private boolean _managementMode;
-
-    private Broker _broker;
-
-    /*
-     * Used by the Broker.
-     */
-    public SecurityManager(Broker broker, boolean managementMode)
+    public SecurityManager(Broker<?> broker, boolean managementMode)
     {
         _managementMode = managementMode;
         _broker = broker;
-    }
-
-    /*
-     * Used by the VirtualHost to allow deferring to the broker level security plugins if required.
-     */
-    public SecurityManager(SecurityManager parent, String aclFile, String vhostName)
-    {
-        _managementMode = parent._managementMode;
-        _broker = parent._broker;
-        if(!_managementMode)
-        {
-            configureVirtualHostAclPlugin(aclFile, vhostName);
-
-            // our global plugins are the parent's host plugins
-            _globalPlugins = parent._hostPlugins;
-        }
     }
 
     public static Subject getSubjectWithAddedSystemRights()
@@ -135,48 +108,9 @@ public class SecurityManager implements ConfigurationChangeListener
         return subject;
     }
 
-    private void configureVirtualHostAclPlugin(String aclFile, String vhostName)
-    {
-        if(aclFile != null)
-        {
-            Map<String, Object> attributes = new HashMap<String, Object>();
-
-            attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
-            attributes.put(FileAccessControlProviderConstants.PATH, aclFile);
-
-            for (AccessControlFactory provider : (new QpidServiceLoader<AccessControlFactory>()).instancesOf(AccessControlFactory.class))
-            {
-                AccessControl accessControl = provider.createInstance(attributes, _broker);
-                accessControl.open();
-                if(accessControl != null)
-                {
-                    String pluginTypeName = getPluginTypeName(accessControl);
-                    _hostPlugins.put(pluginTypeName, accessControl);
-
-                    if(_logger.isDebugEnabled())
-                    {
-                        _logger.debug("Added access control to host plugins with name: " + vhostName);
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        if(_logger.isDebugEnabled())
-        {
-            _logger.debug("Configured " + _hostPlugins.size() + " access control plugins");
-        }
-    }
-
     private String getPluginTypeName(AccessControl accessControl)
     {
         return accessControl.getClass().getName();
-    }
-
-    public static Logger getLogger()
-    {
-        return _logger;
     }
 
     public static boolean isSystemProcess()
@@ -234,71 +168,14 @@ public class SecurityManager implements ConfigurationChangeListener
             return true;
         }
 
-        Map<String, AccessControl> remainingPlugins = _globalPlugins.isEmpty()
-                ? Collections.<String, AccessControl>emptyMap()
-                : _hostPlugins.isEmpty() ? _globalPlugins : new HashMap<String, AccessControl>(_globalPlugins);
-
-        if(!_hostPlugins.isEmpty())
-        {
-            for (Entry<String, AccessControl> hostEntry : _hostPlugins.entrySet())
-            {
-                // Create set of global only plugins
-                AccessControl globalPlugin = remainingPlugins.get(hostEntry.getKey());
-                if (globalPlugin != null)
-                {
-                    remainingPlugins.remove(hostEntry.getKey());
-                }
-
-                Result host = checker.allowed(hostEntry.getValue());
-
-                if (host == Result.DENIED)
-                {
-                    // Something vetoed the access, we're done
-                    return false;
-                }
-
-                // host allow overrides global allow, so only check global on abstain or defer
-                if (host != Result.ALLOWED)
-                {
-                    if (globalPlugin == null)
-                    {
-                        if (host == Result.DEFER)
-                        {
-                            host = hostEntry.getValue().getDefault();
-                        }
-                        if (host == Result.DENIED)
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        Result global = checker.allowed(globalPlugin);
-                        if (global == Result.DEFER)
-                        {
-                            global = globalPlugin.getDefault();
-                        }
-                        if (global == Result.ABSTAIN && host == Result.DEFER)
-                        {
-                            global = hostEntry.getValue().getDefault();
-                        }
-                        if (global == Result.DENIED)
-                        {
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-
-        for (AccessControl plugin : remainingPlugins.values())
+        for (AccessControl plugin : _plugins.values())
         {
             Result remaining = checker.allowed(plugin);
-			if (remaining == Result.DEFER)
+            if (remaining == Result.DEFER)
             {
                 remaining = plugin.getDefault();
             }
-			if (remaining == Result.DENIED)
+            if (remaining == Result.DENIED)
             {
                 return false;
             }
@@ -308,28 +185,23 @@ public class SecurityManager implements ConfigurationChangeListener
         return true;
     }
 
-    public void authoriseCreateBinding(BindingImpl binding)
+    public void authoriseCreateBinding(final BindingImpl binding)
     {
-        final ExchangeImpl exch = binding.getExchange();
-        final AMQQueue queue = binding.getAMQQueue();
-        final String bindingKey = binding.getBindingKey();
-
-        boolean allowed =
-            checkAllPlugins(new AccessCheck()
+        boolean allowed = checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(BIND, EXCHANGE, new ObjectProperties(exch, queue, bindingKey));
+                return plugin.authorise(BIND, EXCHANGE, new ObjectProperties(binding));
             }
         });
 
         if(!allowed)
         {
-            throw new AccessControlException("Permission denied: binding " + bindingKey);
+            throw new AccessControlException("Permission denied: binding " + binding.getBindingKey());
         }
     }
 
-    public void authoriseMethod(final Operation operation, final String componentName, final String methodName)
+    public void authoriseMethod(final Operation operation, final String componentName, final String methodName, final String virtualHostName)
     {
         boolean allowed =  checkAllPlugins(new AccessCheck()
         {
@@ -339,8 +211,11 @@ public class SecurityManager implements ConfigurationChangeListener
                 properties.setName(methodName);
                 if (componentName != null)
                 {
-                    // Only set the property if there is a component name
-	                properties.put(ObjectProperties.Property.COMPONENT, componentName);
+                    properties.put(ObjectProperties.Property.COMPONENT, componentName);
+                }
+                if (virtualHostName != null)
+                {
+                    properties.put(ObjectProperties.Property.VIRTUALHOST_NAME, virtualHostName);
                 }
                 return plugin.authorise(operation, METHOD, properties);
             }
@@ -367,15 +242,19 @@ public class SecurityManager implements ConfigurationChangeListener
 
     public void authoriseCreateConnection(final AMQConnectionModel connection)
     {
+        final String virtualHostName = connection.getVirtualHostName();
         if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(Operation.ACCESS, VIRTUALHOST, ObjectProperties.EMPTY);
+                // We put the name into the properties under both name and virtualhost_name so the user may express predicates using either.
+                ObjectProperties properties = new ObjectProperties(virtualHostName);
+                properties.put(Property.VIRTUALHOST_NAME, virtualHostName);
+                return plugin.authorise(Operation.ACCESS, VIRTUALHOST, properties);
             }
         }))
         {
-            throw new AccessControlException("Permission denied: " + connection.getVirtualHostName());
+            throw new AccessControlException("Permission denied: " + virtualHostName);
         }
     }
 
@@ -403,10 +282,7 @@ public class SecurityManager implements ConfigurationChangeListener
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(CREATE, EXCHANGE, new ObjectProperties(exchange.isAutoDelete(),
-                                                                               exchange.isDurable(),
-                                                                               exchangeName,
-                                                                               exchange.getTypeName()));
+                return plugin.authorise(CREATE, EXCHANGE, new ObjectProperties(exchange));
             }
         }))
         {
@@ -421,11 +297,7 @@ public class SecurityManager implements ConfigurationChangeListener
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(CREATE, QUEUE, new ObjectProperties(queue.getAttribute(Queue.LIFETIME_POLICY) != LifetimePolicy.PERMANENT,
-                                                                            Boolean.TRUE.equals(queue.getAttribute(Queue.DURABLE)),
-                                                                            queue.getAttribute(Queue.EXCLUSIVE) != ExclusivityPolicy.NONE,
-                                                                            queueName,
-                                                                            queue.getOwner()));
+                return plugin.authorise(CREATE, QUEUE, new ObjectProperties(queue));
             }
         }))
         {
@@ -470,7 +342,7 @@ public class SecurityManager implements ConfigurationChangeListener
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(UPDATE, EXCHANGE, new ObjectProperties(exchange.getName()));
+                return plugin.authorise(UPDATE, EXCHANGE, new ObjectProperties(exchange));
             }
         }))
         {
@@ -484,7 +356,7 @@ public class SecurityManager implements ConfigurationChangeListener
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(DELETE, EXCHANGE, new ObjectProperties(exchange.getName()));
+                return plugin.authorise(DELETE, EXCHANGE, new ObjectProperties(exchange));
             }
         }))
         {
@@ -522,39 +394,15 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _immediatePublishPropsCache
-            = new ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>>();
-    private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _publishPropsCache
-            = new ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>>();
-
-    public void authorisePublish(final boolean immediate, String routingKey, String exchangeName)
+    public void authorisePublish(final boolean immediate, String routingKey, String exchangeName, String virtualHostName)
     {
-        if(routingKey == null)
+        PublishAccessCheckCacheEntry key = new PublishAccessCheckCacheEntry(immediate, routingKey, exchangeName, virtualHostName);
+        PublishAccessCheck check = _publishAccessCheckCache.get(key);
+        if (check == null)
         {
-            routingKey = "";
+            check = new PublishAccessCheck(new ObjectProperties(virtualHostName, exchangeName, routingKey, immediate));
+            _publishAccessCheckCache.putIfAbsent(key, check);
         }
-        if(exchangeName == null)
-        {
-            exchangeName = "";
-        }
-        PublishAccessCheck check;
-        ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> cache =
-                immediate ? _immediatePublishPropsCache : _publishPropsCache;
-
-        ConcurrentHashMap<String, PublishAccessCheck> exchangeMap = cache.get(exchangeName);
-        if(exchangeMap == null)
-        {
-            cache.putIfAbsent(exchangeName, new ConcurrentHashMap<String, PublishAccessCheck>());
-            exchangeMap = cache.get(exchangeName);
-        }
-
-            check = exchangeMap.get(routingKey);
-            if(check == null)
-            {
-                check = new PublishAccessCheck(new ObjectProperties(exchangeName, routingKey, immediate));
-                exchangeMap.put(routingKey, check);
-            }
-
         if(!checkAllPlugins(check))
         {
             throw new AccessControlException("Permission denied, publish to: exchange-name '" + exchangeName + "'");
@@ -575,17 +423,17 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void authoriseUnbind(final ExchangeImpl exch, final String routingKey, final AMQQueue queue)
+    public void authoriseUnbind(final BindingImpl binding)
     {
         if(! checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(UNBIND, EXCHANGE, new ObjectProperties(exch, queue, routingKey));
+                return plugin.authorise(UNBIND, EXCHANGE, new ObjectProperties(binding));
             }
         }))
         {
-            throw new AccessControlException("Permission denied: unbinding " + routingKey);
+            throw new AccessControlException("Permission denied: unbinding " + binding.getBindingKey());
         }
     }
 
@@ -618,29 +466,29 @@ public class SecurityManager implements ConfigurationChangeListener
         {
             if(newState == State.ACTIVE)
             {
-                synchronized (_hostPlugins)
+                synchronized (_plugins)
                 {
                     AccessControl accessControl = ((AccessControlProvider)object).getAccessControl();
                     String pluginTypeName = getPluginTypeName(accessControl);
 
-                    _hostPlugins.put(pluginTypeName, accessControl);
+                    _plugins.put(pluginTypeName, accessControl);
                 }
             }
             else if(newState == State.DELETED)
             {
-                synchronized (_hostPlugins)
+                synchronized (_plugins)
                 {
                     AccessControl control = ((AccessControlProvider)object).getAccessControl();
                     String pluginTypeName = getPluginTypeName(control);
 
                     // Remove the type->control mapping for this type key only if the
                     // given control is actually referred to.
-                    if(_hostPlugins.containsValue(control))
+                    if(_plugins.containsValue(control))
                     {
                         // If we are removing this control, check if another of the same
                         // type already exists on the broker and use it in instead.
                         AccessControl other = null;
-                        Collection<AccessControlProvider> providers = _broker.getAccessControlProviders();
+                        Collection<AccessControlProvider<?>> providers = _broker.getAccessControlProviders();
                         for(AccessControlProvider p : providers)
                         {
                             if(p == object || p.getState() != State.ACTIVE)
@@ -660,12 +508,12 @@ public class SecurityManager implements ConfigurationChangeListener
                         if(other != null)
                         {
                             //Another control of this type was found, use it instead
-                            _hostPlugins.replace(pluginTypeName, control, other);
+                            _plugins.replace(pluginTypeName, control, other);
                         }
                         else
                         {
                             //No other was found, remove the type entirely
-                            _hostPlugins.remove(pluginTypeName);
+                            _plugins.remove(pluginTypeName);
                         }
                     }
                 }
@@ -718,4 +566,90 @@ public class SecurityManager implements ConfigurationChangeListener
         });
     }
 
+    public static class PublishAccessCheckCacheEntry
+    {
+        private final boolean _immediate;
+        private final String _routingKey;
+        private final String _exchangeName;
+        private final String _virtualHostName;
+
+        public PublishAccessCheckCacheEntry(boolean immediate, String routingKey, String exchangeName, String virtualHostName)
+        {
+            super();
+            _immediate = immediate;
+            _routingKey = routingKey;
+            _exchangeName = exchangeName;
+            _virtualHostName = virtualHostName;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((_exchangeName == null) ? 0 : _exchangeName.hashCode());
+            result = prime * result + (_immediate ? 1231 : 1237);
+            result = prime * result + ((_routingKey == null) ? 0 : _routingKey.hashCode());
+            result = prime * result + ((_virtualHostName == null) ? 0 : _virtualHostName.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (obj == null)
+            {
+                return false;
+            }
+            if (getClass() != obj.getClass())
+            {
+                return false;
+            }
+            PublishAccessCheckCacheEntry other = (PublishAccessCheckCacheEntry) obj;
+            if (_exchangeName == null)
+            {
+                if (other._exchangeName != null)
+                {
+                    return false;
+                }
+            }
+            else if (!_exchangeName.equals(other._exchangeName))
+            {
+                return false;
+            }
+            if (_immediate != other._immediate)
+            {
+                return false;
+            }
+            if (_routingKey == null)
+            {
+                if (other._routingKey != null)
+                {
+                    return false;
+                }
+            }
+            else if (!_routingKey.equals(other._routingKey))
+            {
+                return false;
+            }
+            if (_virtualHostName == null)
+            {
+                if (other._virtualHostName != null)
+                {
+                    return false;
+                }
+            }
+            else if (!_virtualHostName.equals(other._virtualHostName))
+            {
+                return false;
+            }
+            return true;
+        }
+
+
+    }
 }
