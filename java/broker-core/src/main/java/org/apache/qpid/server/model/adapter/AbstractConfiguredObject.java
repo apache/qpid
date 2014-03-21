@@ -212,7 +212,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
             if(currentUser != null)
             {
-                _attributes.put(CREATED_BY, currentUser);
+                _attributes.put(CREATED_BY, currentUser.getName());
             }
         }
         if(!_attributes.containsKey(CREATED_TIME))
