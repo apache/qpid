@@ -46,8 +46,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER);
 
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_USER + " CREATE EXCHANGE",
                 "ACL DENY-LOG " + DENIED_USER + " CREATE EXCHANGE",
                 "ACL ALLOW-LOG " + ALLOWED_USER + " UPDATE EXCHANGE",

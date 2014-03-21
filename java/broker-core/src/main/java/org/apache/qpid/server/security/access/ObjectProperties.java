@@ -26,8 +26,10 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 
 /**
@@ -39,7 +41,7 @@ import org.apache.qpid.server.queue.AMQQueue;
  */
 public class ObjectProperties
 {
-    public static final String STAR= "*";
+    public static final String WILD_CARD = "*";
 
     public static final ObjectProperties EMPTY = new ObjectProperties();
 
@@ -65,7 +67,8 @@ public class ObjectProperties
         PACKAGE,
         CLASS,
         FROM_NETWORK,
-        FROM_HOSTNAME;
+        FROM_HOSTNAME,
+        VIRTUALHOST_NAME;
 
         private static final Map<String, Property> _canonicalNameToPropertyMap = new HashMap<String, ObjectProperties.Property>();
 
@@ -152,60 +155,49 @@ public class ObjectProperties
         {
             put(Property.OWNER, queue.getOwner());
         }
-
+        put(Property.VIRTUALHOST_NAME, queue.getParent(VirtualHost.class).getName());
     }
 
-    public ObjectProperties(ExchangeImpl exch, AMQQueue queue, String routingKey)
+    public ObjectProperties(BindingImpl binding)
     {
-        this(queue);
+        ExchangeImpl<?> exch = binding.getExchange();
+        AMQQueue<?> queue = binding.getAMQQueue();
+        String routingKey = binding.getBindingKey();
 
         setName(exch.getName());
 
-		put(Property.QUEUE_NAME, queue.getName());
+        put(Property.QUEUE_NAME, queue.getName());
         put(Property.ROUTING_KEY, routingKey);
+        put(Property.VIRTUALHOST_NAME, queue.getParent(VirtualHost.class).getName());
+
+        // The temporary attribute (inherited from the binding's queue) seems to exist to allow the user to
+        // express rules about the binding of temporary queues (whose names cannot be predicted).
+        put(Property.TEMPORARY, queue.getLifetimePolicy() != LifetimePolicy.PERMANENT);
+        put(Property.DURABLE, queue.isDurable());
     }
 
-    public ObjectProperties(String exchangeName, String routingKey, Boolean immediate)
+    public ObjectProperties(String virtualHostName, String exchangeName, String routingKey, Boolean immediate)
     {
-        this(exchangeName, routingKey);
+        super();
 
+        setName(exchangeName);
+
+        put(Property.ROUTING_KEY, routingKey);
         put(Property.IMMEDIATE, immediate);
+        put(Property.VIRTUALHOST_NAME, virtualHostName);
     }
 
-    public ObjectProperties(String exchangeName, String routingKey)
+    public ObjectProperties(ExchangeImpl<?> exchange)
     {
         super();
 
-        setName(exchangeName);
+        setName(exchange.getName());
 
-        put(Property.ROUTING_KEY, routingKey);
-    }
-
-    public ObjectProperties(Boolean autoDelete, Boolean durable, String exchangeName,
-            String exchangeType)
-    {
-        super();
-
-        setName(exchangeName);
-
-        put(Property.AUTO_DELETE, autoDelete);
-        put(Property.TEMPORARY, autoDelete);
-        put(Property.DURABLE, durable);
-        put(Property.TYPE, exchangeType);
-    }
-
-    public ObjectProperties(Boolean autoDelete, Boolean durable, Boolean exclusive,
-                            String queueName, String owner)
-    {
-        super();
-
-        setName(queueName);
-
-        put(Property.AUTO_DELETE, autoDelete);
-        put(Property.TEMPORARY, autoDelete);
-        put(Property.DURABLE, durable);
-        put(Property.EXCLUSIVE, exclusive);
-        put(Property.OWNER, owner);
+        put(Property.AUTO_DELETE, exchange.isAutoDelete());
+        put(Property.TEMPORARY, exchange.getLifetimePolicy() != LifetimePolicy.PERMANENT);
+        put(Property.DURABLE, exchange.isDurable());
+        put(Property.TYPE, exchange.getTypeName());
+        put(Property.VIRTUALHOST_NAME, exchange.getParent(VirtualHost.class).getName());
     }
 
     public ObjectProperties(Boolean exclusive, Boolean noAck, Boolean noLocal, Boolean nowait, AMQQueue queue)
@@ -283,8 +275,8 @@ public class ObjectProperties
     {
         return (StringUtils.isEmpty(ruleValue)
                 || StringUtils.equals(thisValue, ruleValue))
-                || ruleValue.equals(STAR)
-                || (ruleValue.endsWith(STAR)
+                || ruleValue.equals(WILD_CARD)
+                || (ruleValue.endsWith(WILD_CARD)
                         && thisValue != null
                         && thisValue.length() >= ruleValue.length() - 1
                         && thisValue.startsWith(ruleValue.substring(0, ruleValue.length() - 1)));

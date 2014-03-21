@@ -291,7 +291,7 @@ public class ServerSessionDelegate extends SessionDelegate
         final VirtualHost virtualHost = getVirtualHost(ssn);
         try
         {
-            virtualHost.getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName());
+            virtualHost.getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName(), virtualHost.getName());
         }
         catch (AccessControlException e)
         {

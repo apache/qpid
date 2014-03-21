@@ -49,8 +49,7 @@ public class AccessControlLoggingTest extends AbstractTestLogging
     public void setUp() throws Exception
     {
         // Write out ACL for this test
-        AbstractACLTestCase.writeACLFileUtil(this, "test",
-                "ACL ALLOW client ACCESS VIRTUALHOST",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW client ACCESS VIRTUALHOST",
                 "ACL ALLOW client CREATE QUEUE name='allow'",
                 "ACL ALLOW-LOG client CREATE QUEUE name='allow-log'",
                 "ACL DENY client CREATE QUEUE name='deny'",

@@ -49,7 +49,6 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStore;
@@ -1123,12 +1122,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
         }
         return configuration;
-    }
-
-    @Override
-    public SecurityManager getSecurityManager()
-    {
-        return _virtualHost.getSecurityManager();
     }
 
     @Override

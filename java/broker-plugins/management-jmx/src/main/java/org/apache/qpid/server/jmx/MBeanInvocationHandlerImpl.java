@@ -60,15 +60,15 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private MBeanServer _mbs;
 
     private final boolean _managementRightsInferAllAccess;
-    private final Broker _broker;
+    private final Broker<?> _broker;
 
-    MBeanInvocationHandlerImpl(Broker broker)
+    MBeanInvocationHandlerImpl(Broker<?> broker)
     {
         _managementRightsInferAllAccess = Boolean.valueOf(System.getProperty(BrokerProperties.PROPERTY_MANAGEMENT_RIGHTS_INFER_ALL_ACCESS, "true"));
         _broker = broker;
     }
 
-    public static MBeanServerForwarder newProxyInstance(Broker broker)
+    public static MBeanServerForwarder newProxyInstance(Broker<?> broker)
     {
         final InvocationHandler handler = new MBeanInvocationHandlerImpl(broker);
         final Class<?>[] interfaces = new Class[] { MBeanServerForwarder.class };
@@ -195,28 +195,23 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         String methodName;
         // Get the component, type and impact, which may be null
         String type = getType(method, args);
-        String vhost = getVirtualHost(method, args);
+        String virtualHostName = getVirtualHost(method, args);
         int impact = getImpact(method, args);
 
-        // Get the security manager for the virtual host (if set)
-        SecurityManager security;
-        if (vhost == null)
+        if (virtualHostName != null)
         {
-            security = _broker.getSecurityManager();
-        }
-        else
-        {
-            VirtualHost virtualHost = _broker.findVirtualHostByName(vhost);
+            VirtualHost<?> virtualHost = _broker.findVirtualHostByName(virtualHostName);
             if (virtualHost == null)
             {
-                throw new IllegalArgumentException("Virtual host with name '" + vhost + "' is not found.");
+                throw new IllegalArgumentException("Virtual host with name '" + virtualHostName + "' is not found.");
             }
-            security = virtualHost.getSecurityManager();
         }
 
         methodName = getMethodName(method, args);
         Operation operation = (isAccessMethod(methodName) || impact == MBeanOperationInfo.INFO) ? Operation.ACCESS : Operation.UPDATE;
-        security.authoriseMethod(operation, type, methodName);
+
+        SecurityManager security = _broker.getSecurityManager();
+        security.authoriseMethod(operation, type, methodName, virtualHostName);
 
         if (_managementRightsInferAllAccess)
         {

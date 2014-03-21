@@ -485,10 +485,10 @@ public class MessageServlet extends AbstractServlet
 
     }
 
-    private void authorizeMethod(String methodName, VirtualHost host)
+    private void authorizeMethod(String methodName, VirtualHost<?> vhost)
     {
-        SecurityManager securityManager = host.getSecurityManager();
-        securityManager.authoriseMethod(Operation.UPDATE, "VirtualHost.Queue", methodName);
+        SecurityManager securityManager = getBroker().getSecurityManager();
+        securityManager.authoriseMethod(Operation.UPDATE, "VirtualHost.Queue", methodName, vhost.getName());
     }
 
 }

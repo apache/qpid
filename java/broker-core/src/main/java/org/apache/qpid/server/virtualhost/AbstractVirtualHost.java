@@ -156,7 +156,7 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
         _eventLogger.message(VirtualHostMessages.CREATED(_name));
 
-        _securityManager = new SecurityManager(parentSecurityManager, _vhostConfig.getConfig().getString("security.acl"), _name);
+        _securityManager = parentSecurityManager;
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
