@@ -59,7 +59,7 @@ public class SaslServlet extends AbstractServlet
     private static final String ATTR_ID = "SaslServlet.ID";
     private static final String ATTR_SASL_SERVER = "SaslServlet.SaslServer";
     private static final String ATTR_EXPIRY = "SaslServlet.Expiry";
-    private static final long SASL_EXCHANGE_EXPIRY = 1000L;
+    private static final long SASL_EXCHANGE_EXPIRY = 3000L;
 
     public SaslServlet()
     {
@@ -260,7 +260,17 @@ public class SaslServlet extends AbstractServlet
             session.removeAttribute(ATTR_ID);
             session.removeAttribute(ATTR_SASL_SERVER);
             session.removeAttribute(ATTR_EXPIRY);
+            if(challenge != null && challenge.length != 0)
+            {
+                Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
+                outputObject.put("challenge", new String(Base64.encodeBase64(challenge)));
 
+                final PrintWriter writer = response.getWriter();
+
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+                mapper.writeValue(writer, outputObject);
+            }
             response.setStatus(HttpServletResponse.SC_OK);
         }
         else

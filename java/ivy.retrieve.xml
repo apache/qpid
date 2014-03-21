@@ -72,6 +72,7 @@
     <dependency org="xalan" name="xalan" rev="2.7.0" transitive="false"/>
     <dependency org="velocity" name="velocity" rev="1.4" transitive="false"/>
     <dependency org="velocity" name="velocity-dep" rev="1.4" transitive="false"/>
+    <dependency org="org.webjars" name="cryptojs" rev="3.1.2" transitive="false"/>
     <dependency org="org.dojotoolkit" name="dojo" rev="1.9.1" transitive="false">
       <artifact name="dojo" type="zip"/>
     </dependency>
