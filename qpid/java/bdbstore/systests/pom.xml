@@ -33,6 +33,7 @@
     <test.log4j.configuration.file>${project.basedir}${file.separator}..${file.separator}..${file.separator}test-profiles${file.separator}log4j-test.xml</test.log4j.configuration.file>
     <test.working.directory>${basedir}/../..</test.working.directory>
     <test.resource.directory>${basedir}/../..</test.resource.directory>
+    <test.systest.resource.directory>${basedir}/../../systests</test.systest.resource.directory>
   </properties>
 
   <dependencies>
@@ -65,6 +66,66 @@
       <groupId>com.sleepycat</groupId>
       <artifactId>je</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-bdbstore</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <!--version specified in parent pluginManagement -->
+        <executions>
+          <!-- copy the bdbstore bin contents to where the tests expect them -->
+          <execution>
+            <id>copy-bdbstore-bin-resources</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${qpid.home}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/..</directory>
+                  <includes>
+                    <include>bin/</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <!-- fix the fact that the maven-resources-plugin copy-resources doesn't maintain file permissions in unix -->
+          <execution>
+            <id>fix-bdb-script-permissions</id>
+            <phase>package</phase>
+            <configuration>
+              <target>
+                <chmod perm="755">
+                  <fileset dir="${qpid.home}">
+                    <include name="bin/**"/>
+                  </fileset>
+                </chmod>
+              </target>
+            </configuration>
+            <goals><goal>run</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>
