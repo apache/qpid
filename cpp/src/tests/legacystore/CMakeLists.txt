@@ -36,30 +36,6 @@ if (BUILD_TESTING_UNITTESTS)
 set (qpid_test_boost_libs
      ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 
-#
-# define_legacystore_test
-# macro to accept the name of a single source file and to create a
-#  unit test executable that runs the source.
-#
-MACRO (define_legacystore_test theSourceFile)
-add_executable (legacystore_${theSourceFile}
-            ${theSourceFile}
-            unit_test
-            ${platform_test_additions})
-target_link_libraries (legacystore_${theSourceFile}
-                       ${qpid_test_boost_libs}
-                       qpidmessaging qpidtypes qpidbroker qpidcommon legacystore_shared)
-set_target_properties (legacystore_${theSourceFile} PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
-remember_location(legacystore_${theSourceFile})
-
-add_test (legacystore_${theSourceFile} ${test_wrap} --boost-test -- ${legacystore_${theSourceFile}_LOCATION})
-ENDMACRO (define_legacystore_test)
-
-define_legacystore_test (SimpleTest)
-define_legacystore_test (OrderingTest)
-define_legacystore_test (TransactionalTest)
-define_legacystore_test (TwoPhaseCommitTest)
-
 # Journal tests
 MACRO (define_journal_test mainSourceFile)
 if ("${ARGV1}" STREQUAL "LONG")
