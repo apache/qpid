@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-define(["dojo/_base/xhr", "dojox/encoding/base64", "dojox/encoding/digests/_base", "dojox/encoding/digests/MD5"],
-    function (xhr, base64, digestsBase, MD5) {
+define(["dojo/_base/xhr", "dojox/encoding/base64", "dojox/encoding/digests/_base", "dojox/encoding/digests/MD5", "dojox/uuid/generateRandomUuid", "dojo/request/script"],
+    function (xhr, base64, digestsBase, MD5, uuid, script) {
 
 var encodeUTF8 = function encodeUTF8(str) {
     var byteArray = [];
@@ -83,34 +83,32 @@ var saslPlain = function saslPlain(user, password, callbackFunction)
 
 var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFunction)
 {
-
-    // Using dojo.xhrGet, as very little information is being sent
-    dojo.xhrPost({
-        // The URL of the request
-        url: "rest/sasl",
-        content: {
-            mechanism: saslMechanism
-        },
-        handleAs: "json",
-        failOk: true
-    }).then(function(data)
-            {
-
-                var challengeBytes = base64.decode(data.challenge);
-                var wa=[];
-                var bitLength = challengeBytes.length*8;
-                for(var i=0; i<bitLength; i+=8)
+            dojo.xhrPost({
+                // The URL of the request
+                url: "rest/sasl",
+                content: {
+                    mechanism: saslMechanism
+                },
+                handleAs: "json",
+                failOk: true
+            }).then(function(data)
                 {
-                    wa[i>>5] |= (challengeBytes[i/8] & 0xFF)<<(i%32);
-                }
-                var challengeStr = digestsBase.wordToString(wa).substring(0,challengeBytes.length);
 
-                var digest =  user + " " + MD5._hmac(challengeStr, password, digestsBase.outputTypes.Hex);
-                var id = data.id;
+                    var challengeBytes = base64.decode(data.challenge);
+                    var wa=[];
+                    var bitLength = challengeBytes.length*8;
+                    for(var i=0; i<bitLength; i+=8)
+                    {
+                        wa[i>>5] |= (challengeBytes[i/8] & 0xFF)<<(i%32);
+                    }
+                    var challengeStr = digestsBase.wordToString(wa).substring(0,challengeBytes.length);
 
-                var response = base64.encode(encodeUTF8( digest ));
+                    var digest =  user + " " + MD5._hmac(challengeStr, password, digestsBase.outputTypes.Hex);
+                    var id = data.id;
 
-                dojo.xhrPost({
+                    var response = base64.encode(encodeUTF8( digest ));
+
+                    dojo.xhrPost({
                         // The URL of the request
                         url: "rest/sasl",
                         content: {
@@ -121,19 +119,162 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
                         failOk: true
                     }).then(callbackFunction, errorHandler);
 
-            },
-            function(error)
-            {
-                if(error.status == 403)
+                },
+                function(error)
                 {
-                    alert("Authentication Failed");
-                }
-                else
-                {
-                    alert(error);
-                }
-            });
+                    if(error.status == 403)
+                    {
+                        alert("Authentication Failed");
+                    }
+                    else
+                    {
+                        alert(error);
+                    }
+                });
+
+
+
 };
+
+        var saslScramSha1 = function saslScramSha1(user, password, saslMechanism, callbackFunction)
+        {
+
+            script.get("webjars/cryptojs/3.1.2/rollups/hmac-sha1.js").then( function()
+            {
+                script.get("webjars/cryptojs/3.1.2/components/enc-base64-min.js").then ( function()
+                {
+
+                    var toBase64 = function toBase64( input )
+                    {
+                        var result = [];
+                        for(var i = 0; i < input.length; i++)
+                        {
+                            result[i] = input.charCodeAt(i);
+                        }
+                        return base64.encode( result )
+                    };
+
+                    var fromBase64 = function fromBase64( input )
+                    {
+                        var decoded = base64.decode( input );
+                        var result = "";
+                        for(var i = 0; i < decoded.length; i++)
+                        {
+                            result+= String.fromCharCode(decoded[i]);
+                        }
+                        return result;
+                    };
+
+                    var xor = function xor(lhs, rhs) {
+                        var words = [];
+                        for(var i = 0; i < lhs.words.length; i++)
+                        {
+                            words.push(lhs.words[i]^rhs.words[i]);
+                        }
+                        return CryptoJS.lib.WordArray.create(words);
+                    };
+
+                    var hasNonAscii = function hasNonAscii(name) {
+                        for(var i = 0; i < name.length; i++) {
+                            if(name.charCodeAt(i) > 127) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    var generateSaltedPassword = function generateSaltedPassword(salt, password, iterationCount)
+                    {
+                        var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA1, password);
+
+                        hmac.update(salt);
+                        hmac.update(CryptoJS.enc.Hex.parse("00000001"));
+
+                        var result = hmac.finalize();
+                        var previous = null;
+                        for(var i = 1 ;i < iterationCount; i++)
+                        {
+                            hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA1, password);
+                            hmac.update( previous != null ? previous : result );
+                            previous = hmac.finalize();
+                            result = xor(result, previous);
+                        }
+                        return result;
+
+                    };
+
+                    GS2_HEADER = "n,,";
+
+                    if(!hasNonAscii(user)) {
+
+                        user = user.replace(/=/g, "=3D");
+                        user = user.replace(/,/g, "=2C");
+
+                        clientNonce = uuid();
+                        clientFirstMessageBare = "n=" + user + ",r=" + clientNonce;
+                        dojo.xhrPost({
+                            // The URL of the request
+                            url: "rest/sasl",
+                            content: {
+                                mechanism: saslMechanism,
+                                response: toBase64(GS2_HEADER + clientFirstMessageBare)
+                            },
+                            handleAs: "json",
+                            failOk: true
+                        }).then(function (data) {
+                            var serverFirstMessage = fromBase64(data.challenge);
+                            var id = data.id;
+
+                            var parts = serverFirstMessage.split(",");
+                            nonce = parts[0].substring(2);
+                            if (!nonce.substr(0, clientNonce.length) == clientNonce) {
+                                alert("Authentication error - server nonce does not start with client nonce")
+                            }
+                            else {
+                                var salt = CryptoJS.enc.Base64.parse(parts[1].substring(2));
+                                var iterationCount = parts[2].substring(2);
+                                var saltedPassword = generateSaltedPassword(salt, password, iterationCount)
+                                var clientFinalMessageWithoutProof = "c=" + toBase64(GS2_HEADER) + ",r=" + nonce;
+                                var authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
+                                var clientKey = CryptoJS.HmacSHA1("Client Key", saltedPassword);
+                                var storedKey = CryptoJS.SHA1(clientKey);
+                                var clientSignature = CryptoJS.HmacSHA1(authMessage, storedKey);
+                                var clientProof = xor(clientKey, clientSignature);
+                                var serverKey = CryptoJS.HmacSHA1("Server Key", saltedPassword);
+                                serverSignature = CryptoJS.HmacSHA1(authMessage, serverKey);
+                                dojo.xhrPost({
+                                    // The URL of the request
+                                    url: "rest/sasl",
+                                    content: {
+                                        id: id,
+                                        response: toBase64(clientFinalMessageWithoutProof
+                                            + ",p=" + clientProof.toString(CryptoJS.enc.Base64))
+                                    },
+                                    handleAs: "json",
+                                    failOk: true
+                                }).then(function (data) {
+                                    var serverFinalMessage = fromBase64(data.challenge);
+                                    if (serverSignature.toString(CryptoJS.enc.Base64) == serverFinalMessage.substring(2)) {
+                                        callbackFunction();
+                                    }
+                                    else {
+                                        errorHandler("Server signature did not match");
+                                    }
+
+
+                                }, errorHandler);
+                            }
+
+                        }, errorHandler);
+                    }
+                    else
+                    {
+                        alert("Username '"+name+"' is invalid");
+                    }
+
+                    }, errorHandler);
+                }, errorHandler);
+        };
 
 var containsMechanism = function containsMechanism(mechanisms, mech)
 {
@@ -157,7 +298,11 @@ SaslClient.authenticate = function(username, password, callbackFunction)
     }).then(function(data)
             {
                var mechMap = data.mechanisms;
-               if (containsMechanism(mechMap, "CRAM-MD5"))
+               if(containsMechanism(mechMap, "SCRAM-SHA-1"))
+               {
+                   saslScramSha1(username, password, "SCRAM-SHA-1", callbackFunction)
+               }
+               else if (containsMechanism(mechMap, "CRAM-MD5"))
                {
                    saslCramMD5(username, password, "CRAM-MD5", callbackFunction);
                }

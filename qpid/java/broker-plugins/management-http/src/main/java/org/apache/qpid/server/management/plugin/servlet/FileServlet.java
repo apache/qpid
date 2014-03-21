@@ -89,6 +89,10 @@ public class FileServlet extends HttpServlet
         }
 
         URL resourceURL = getClass().getResource(_resourcePathPrefix + filename);
+        if(resourceURL == null)
+        {
+            resourceURL = getClass().getResource("/META-INF" + _resourcePathPrefix + filename);
+        }
         if(resourceURL != null)
         {
             response.setStatus(HttpServletResponse.SC_OK);

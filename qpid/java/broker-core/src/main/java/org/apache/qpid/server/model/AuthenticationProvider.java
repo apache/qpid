@@ -55,4 +55,6 @@ public interface AuthenticationProvider<X extends AuthenticationProvider<X>> ext
      * @param preferencesProvider
      */
     void setPreferencesProvider(PreferencesProvider preferencesProvider);
+
+    void recoverUser(User user);
 }
