@@ -25,9 +25,7 @@
   <title>Access Control Lists</title>
   <para>
     In Qpid, Access Control Lists (ACLs) specify which actions can be performed by each authenticated user.
-    To enable, an <emphasis>Access Control Provider</emphasis> needs to be configured on the <emphasis>Broker</emphasis>
-    level or/and ACL configuration should be provided on a <emphasis>Virtual Host</emphasis> level.
-    The first imposes the ACL broker wide, and the second is applied to individual virtual hosts.
+    To enable, an <emphasis>Access Control Provider</emphasis> needs to be configured on the <emphasis>Broker</emphasis>.
     The <emphasis>Access Control Provider</emphasis> of type "AclFile" uses local file to specify the ACL rules.
     By convention, this file should have a .acl extension.
   </para>
@@ -41,12 +39,7 @@
 
   <para>Only one <emphasis>Access Control Provider</emphasis> can be used by the Broker.
     If several <emphasis>Access Control Providers</emphasis> are configured on Broker level
-    only one of them will be used (the latest one). <xref linkend="Java-Broker-Virtual-Hosts-Configuration-File-ACL"/>
-    shows how to configure ACL on <emphasis>Virtual Host</emphasis> using virtual host configuration xml.
-    If both Broker <emphasis>Access Control Provider</emphasis> and <emphasis>Virtual Host</emphasis> ACL are configured,
-    the <emphasis>Virtual Host</emphasis> ACL is used for authorization of operations on <emphasis>Virtual Host</emphasis> and
-    Virtual Host objects and Broker level ACL is used to authorization of operations on Broker and Broker children
-    (excluding Virtual Hosts having ACL configured).
+    only one of them will be used (the latest one).
   </para>
 
  <para>
@@ -114,6 +107,20 @@
       properties.  Most projects probably won't need this degree of flexibility.  A reasonable approach is to choose to apply permissions
       at a certain level of abstraction (e.g. QUEUE) and apply them consistently across the whole system.
     </para>
+    <note>
+        <para>
+        Some rules can be restricted to the virtual host if property virtualhost_name is specified.
+        <example>
+        <title>Restrict rules to specific virtual hosts</title>
+        <programlisting>
+      ACL ALLOW bob CREATE QUEUE virtualhost_name="test"
+      ACL ALLOW bob ALL EXCHANGE virtualhost_name="prod"
+    </programlisting>
+        </example>
+        In the example above the first rule allows user "bob" to create queues on virtual host "test" only.
+        The second rule allows user "bob" any action with exchanges on virtual host "prod".
+        </para>
+    </note>
   </section>
 
   <section role="h4" id="Java-Broker-Security-ACLs-Syntax">
@@ -125,7 +132,7 @@
        ACL rules follow this syntax:
     </para>
     <programlisting>
-     ACL {permission} {&lt;group-name&gt;|&lt;user-name>&gt;|ALL} {action|ALL} [object|ALL] [property="&lt;property-value&gt;"]
+     ACL {permission} {&lt;group-name&gt;|&lt;user-name&gt;|ALL} {action|ALL} [object|ALL] [property="&lt;property-value&gt;"]
     </programlisting>
 
     <para>
@@ -163,90 +170,144 @@
   </table>
   <table id="table-Java-Broker-Security-ACLs-Syntax_actions">
     <title>List of ACL actions</title>
-    <tgroup cols="2">
+    <tgroup cols="4">
+    <thead>
+        <row>
+          <entry><para>Action</para></entry>
+          <entry><para>Description</para></entry>
+          <entry><para>Supported object types</para></entry>
+          <entry><para>Supported properties</para></entry>
+        </row>
+      </thead>
       <tbody>
         <row>
           <entry> <command>CONSUME</command> </entry>
           <entry> <para> Applied when subscriptions are created </para> </entry>
+          <entry><para>QUEUE</para></entry>
+          <entry><para>name, autodelete, temporary, durable, exclusive, alternate, owner, virtualhost_name</para></entry>
         </row>
         <row>
           <entry> <command>PUBLISH</command> </entry>
           <entry> <para> Applied on a per message basis on publish message transfers</para> </entry>
+          <entry><para>EXCHANGE</para></entry>
+          <entry><para>name, routingkey, immediate, virtualhost_name</para></entry>
         </row>
         <row>
           <entry> <command>CREATE</command> </entry>
           <entry> <para> Applied when an object is created, such as bindings, queues, exchanges</para> </entry>
+          <entry><para>EXCHANGE, QUEUE, USER, GROUP</para></entry>
+          <entry><para>see properties on the corresponding object type</para></entry>
         </row>
         <row>
           <entry> <command>ACCESS</command> </entry>
           <entry> <para> Applied when an object is read or accessed</para> </entry>
+          <entry><para>VIRTUALHOST, MANAGEMENT</para></entry>
+          <entry><para>name (for VIRTUALHOST only)</para></entry>
         </row>
         <row>
           <entry> <command>BIND</command> </entry>
           <entry> <para> Applied when queues are bound to exchanges</para> </entry>
+          <entry><para>EXCHANGE</para></entry>
+          <entry><para>name, routingKey, queuename, virtualhost_name, temporary, durable</para></entry>
         </row>
         <row>
           <entry> <command>UNBIND</command> </entry>
           <entry> <para> Applied when queues are unbound from exchanges</para> </entry>
+          <entry><para>EXCHANGE</para></entry>
+          <entry><para>name, routingKey, queuename, virtualhost_name, temporary, durable</para></entry>
         </row>
         <row>
           <entry> <command>DELETE</command> </entry>
           <entry> <para> Applied when objects are deleted </para> </entry>
+          <entry><para>EXCHANGE, QUEUE, USER, GROUP</para></entry>
+          <entry><para>see properties on the corresponding object type</para></entry>
         </row>
         <row>
           <entry> <command>PURGE</command> </entry> <entry>
           <para>Applied when purge the contents of a queue</para> </entry>
+          <entry><para>QUEUE</para></entry>
+          <entry><para> </para></entry>
         </row>
         <row>
           <entry> <command>UPDATE</command> </entry>
           <entry> <para> Applied when an object is updated </para> </entry>
+          <entry><para>EXCHANGE, QUEUE, USER, GROUP</para></entry>
+          <entry><para>see EXCHANGE and QUEUE properties</para></entry>
         </row>
         <row>
           <entry> <command>CONFIGURE</command> </entry>
-          <entry> <para> Applied when an object is configured via REST management interfaces(Java Broker only).</para> </entry>
+          <entry> <para> Applied when an object is configured via REST management interfaces.</para> </entry>
+          <entry><para>BROKER</para></entry>
+          <entry><para> </para></entry>
+        </row>
+        <row>
+          <entry><command>ACCESS_LOGS</command> </entry>
+          <entry><para>Allows/denies to the specific user an operation to download broker log file(s) over REST interfaces</para> </entry>
+          <entry><para>BROKER</para></entry>
+          <entry><para> </para></entry>
         </row>
       </tbody>
     </tgroup>
   </table>
   <table id="table-Java-Broker-Security-ACLs-Syntax_objects">
     <title>List of ACL objects</title>
-    <tgroup cols="2">
+    <tgroup cols="4">
+      <thead>
+        <row>
+          <entry><para>Object type</para></entry>
+          <entry><para>Description</para></entry>
+          <entry><para>Supported actions</para></entry>
+          <entry><para>Supported properties</para></entry>
+        </row>
+      </thead>
       <tbody>
         <row>
           <entry> <command>VIRTUALHOST</command> </entry>
-          <entry> <para>A virtualhost (Java Broker only)</para> </entry>
+          <entry> <para>A virtualhost</para> </entry>
+          <entry><para>ALL, ACCESS</para> </entry>
+          <entry><para>name</para> </entry>
         </row>
         <row>
           <entry> <command>MANAGEMENT </command> </entry>
-          <entry> <para>Management - for web and JMX (Java Broker only)</para> </entry>
+          <entry> <para>Management - for web and JMX</para> </entry>
+          <entry><para>ALL, ACCESS</para> </entry>
+          <entry><para> </para></entry>
         </row>
         <row>
           <entry> <command>QUEUE</command> </entry>
           <entry> <para>A queue </para> </entry>
+          <entry><para>ALL, CREATE, DELETE, PURGE, CONSUME, UPDATE</para></entry>
+          <entry><para>name, autodelete, temporary, durable, exclusive, alternate, owner, virtualhost_name</para></entry>
         </row>
         <row>
           <entry> <command>EXCHANGE</command> </entry>
-        <entry> <para>An exchange </para> </entry>
+          <entry><para>An exchange</para></entry>
+          <entry><para>ALL, ACCESS, CREATE, DELETE, BIND, UNBIND, PUBLISH, UPDATE</para></entry>
+          <entry><para>name, autodelete, temporary, durable, type, virtualhost_name, queuename(only for BIND and UNBIND), routingkey(only for BIND and UNBIND, PUBLISH)</para></entry>
         </row>
         <row>
           <entry> <command>USER</command> </entry>
-          <entry> <para>A user (Java Broker only)</para> </entry>
+          <entry> <para>A user</para> </entry>
+          <entry><para>ALL, CREATE, DELETE, UPDATE</para></entry>
+          <entry><para>name</para></entry>
         </row>
         <row>
           <entry> <command>GROUP</command> </entry>
-          <entry> <para>A group (Java Broker only)</para> </entry>
+          <entry> <para>A group</para> </entry>
+          <entry><para>ALL, CREATE, DELETE, UPDATE</para></entry>
+          <entry><para>name</para></entry>
         </row>
         <row>
           <entry> <command>METHOD</command> </entry>
-          <entry> <para>Management or agent or broker method (Java Broker only)</para> </entry>
-        </row>
-        <row>
-          <entry> <command>LINK</command> </entry>
-          <entry> <para>A federation or inter-broker link (not currently used in Java Broker)</para> </entry>
+          <entry> <para>Management or agent or broker method</para> </entry>
+          <entry><para>ALL, ACCESS, UPDATE</para></entry>
+          <entry><para>name, component, virtualhost_name</para></entry>
         </row>
         <row>
           <entry> <command>BROKER</command> </entry>
           <entry> <para>The broker</para> </entry>
+          <entry><para>ALL, CONFIGURE, ACCESS_LOGS</para></entry>
+          <entry><para> </para></entry>
         </row>
       </tbody>
     </tgroup>
@@ -266,10 +327,6 @@
         <row>
           <entry> <command>routingkey</command> </entry>
           <entry> <para> String. Specifies routing key </para> </entry>
-        </row>
-        <row>
-          <entry> <command>passive</command> </entry>
-          <entry> <para> Boolean. Indicates the presence of a <parameter>passive</parameter> flag </para> </entry>
         </row>
         <row>
           <entry> <command>autodelete</command> </entry>
@@ -297,15 +354,7 @@
         </row>
         <row>
           <entry> <command>component</command> </entry>
-          <entry> <para> String. JMX component name (Java Broker only)</para> </entry>
-        </row>
-        <row>
-          <entry> <command>schemapackage</command> </entry>
-          <entry> <para> String. QMF schema package name (Not used in Java Broker)</para> </entry>
-        </row>
-        <row>
-          <entry> <command>schemaclass</command> </entry>
-          <entry> <para> String. QMF schema class name (Not used in Java Broker)</para> </entry>
+          <entry> <para> String. JMX component name</para> </entry>
         </row>
         <row>
           <entry> <command>from_network</command> </entry>
@@ -321,9 +370,6 @@
               The address ranges are specified using either Classless Inter-Domain Routing notation
               (e.g. 192.168.1.0/24; see <ulink url="http://tools.ietf.org/html/rfc4632">RFC 4632</ulink>)
               or wildcards (e.g. 192.169.1.*).
-            </para>
-            <para>
-              Java Broker only.
             </para>
           </entry>
         </row>
@@ -354,8 +400,21 @@
               $JAVA_HOME/lib/security/java.security. The latter is preferred because it is JVM
               vendor-independent.
             </para>
+          </entry>
+        </row>
+        <row>
+          <entry><command>virtualhost_name</command></entry>
+          <entry>
             <para>
-              Java Broker only.
+              String. A name of virtual host to which the rule is applied.
+            </para>
+          </entry>
+        </row>
+        <row>
+          <entry><command>immediate</command></entry>
+          <entry>
+            <para>
+              Boolean. A property can be used to restrict PUBLISH action to publishing only messages with given immediate flag.
             </para>
           </entry>
         </row>
@@ -363,28 +422,24 @@
     </tgroup>
   </table>
   <table id="table-Java-Broker-Security-ACLs-Syntax_javacomponents">
-    <title>List of ACL rules</title>
-    <tgroup cols="3">
+    <title>List of ACL JMX Components</title>
+    <tgroup cols="2">
       <tbody>
         <row>
           <entry> <command>UserManagement</command> </entry>
           <entry> <para>User maintainance; create/delete/view users, change passwords etc</para> </entry>
-          <entry> <para>permissionable at broker level only</para> </entry>
         </row>
         <row>
           <entry> <command>ConfigurationManagement</command> </entry>
           <entry> <para>Dynammically reload configuration from disk.</para> </entry>
-          <entry> <para>permissionable at broker level only</para> </entry>
         </row>
         <row>
           <entry> <command>LoggingManagement</command> </entry>
           <entry> <para>Dynammically control Qpid logging level</para> </entry>
-          <entry> <para>permissionable at broker level only</para> </entry>
         </row>
         <row>
           <entry> <command>ServerInformation</command> </entry>
           <entry> <para>Read-only information regarding the Qpid: version number etc</para> </entry>
-          <entry> <para>permissionable at broker level only</para> </entry>
         </row>
         <row>
           <entry> <command>VirtualHost.Queue</command> </entry>
