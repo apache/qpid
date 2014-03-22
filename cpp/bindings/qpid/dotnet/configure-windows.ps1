@@ -129,6 +129,8 @@ $global:vsSubdir = ''        # "msvc10"
 $global:cmakeCompiler = ''   # "-vc100"
 $global:build32or64 = ''     # "32" or "64"
 $global:buildPathSizeId = '' # "x86" or "x64"
+$global:vsEnvironment = ''   # ""%VS100COMNTOOLS%..\..\vcvarsall.bat" x86"
+$global:vsBuildTarget = ''   # "Debug|Win32"
 
 $global:cmakeCommandLine = ''
 
@@ -314,7 +316,7 @@ function WriteDotnetBindingEnvSetupBat
         [string] $outfileName,
         [string] $studioVersion,
         [string] $studioSubdir,
-		[string] $cmakeLine
+        [string] $cmakeLine
     )
 
     $out = @("@ECHO OFF
@@ -354,7 +356,7 @@ function WriteCmakeRerunnerBat
         [string] $outfileName,
         [string] $studioVersion,
         [string] $studioSubdir,
-		[string] $cmakeLine
+        [string] $cmakeLine
     )
 
     $out = @("@ECHO OFF
@@ -363,6 +365,35 @@ REM Call this command procedure from a command prompt to rerun cmake
 REM $studioVersion $vsPlatform ($nBits-bit)
 REM
 $cmakeLine
+")
+    Write-Host "        $buildRoot\$outfileName"
+    $out | Out-File "$buildRoot\$outfileName" -encoding ASCII
+}
+
+#############################
+# WriteMakeInstallBat
+#   Write a batch file that runs "make install" for debug build
+#
+function WriteMakeInstallBat
+{
+    param
+    (
+        [string] $buildRoot,
+        [string] $outfileName,
+        [string] $varfileName,
+        [string] $vsEnvironment,
+        [string] $vsBuildTarget
+    )
+
+    $out = @("@ECHO OFF
+REM
+REM Call this command procedure from a command prompt to run 'make install'
+REM
+setlocal
+call $varfileName
+call $vsEnvironment
+devenv qpid-cpp.sln /build $vsBuildTarget /project INSTALL
+endlocal
 ")
     Write-Host "        $buildRoot\$outfileName"
     $out | Out-File "$buildRoot\$outfileName" -encoding ASCII
@@ -385,35 +416,42 @@ function ParseStudioSelection
         $global:vsSubdir = "msvc11"
         $global:cmakeCompiler = "-vc110"
         $global:vsShortName = "2012"
+        $global:vsEnvironment = """%VS110COMNTOOLS%..\..\VC\vcvarsall.bat"""
     } elseif ($vsSelection.Contains("2010")) {
         $global:vsVersion = "Visual Studio 2010"
         $global:cmakeGenerator = "Visual Studio 10"
         $global:vsSubdir = "msvc10"
-		$global:cmakeCompiler = "-vc100"
+        $global:cmakeCompiler = "-vc100"
         $global:vsShortName = "2010"
-	} elseif ($vsSelection.Contains("2008")) {
+        $global:vsEnvironment = """%VS100COMNTOOLS%..\..\VC\vcvarsall.bat"""
+    } elseif ($vsSelection.Contains("2008")) {
         $global:vsVersion = "Visual Studio 2008"
         $global:cmakeGenerator = "Visual Studio 9 2008"
-		$global:vsSubdir = "msvc9"
-		$global:cmakeCompiler = "-vc90"
+        $global:vsSubdir = "msvc9"
+        $global:cmakeCompiler = "-vc90"
         $global:vsShortName = "2008"
-	} else {
-		Write-Host "Visual Studio must be 2008, 2010, or 2012"
-		exit
-	}
+        $global:vsEnvironment = """%VS90COMNTOOLS%..\..\VC\vcvarsall.bat"""
+    } else {
+        Write-Host "Visual Studio must be 2008, 2010, or 2012"
+        exit
+    }
     $global:vsSelectedOption = $vsSelection
     
     if ($vsSelection.Contains("x86")) {
         $global:buildPathSizeId = "x86"
         $global:build32or64 = "32"
+        $global:vsEnvironment += " x86"
+        $global:vsBuildTarget = """Debug|Win32"""
     } elseif ($vsSelection.Contains("x64")) {
         $global:buildPathSizeId = "x64"
         $global:build32or64 = "64"
+        $global:vsEnvironment += " amd64"
+        $global:vsBuildTarget = """Debug|x64"""
         # Promote CMAKE generator to 64 bit variant
         $global:cmakeGenerator += " Win64"
     } else {
-		Write-Host "Studio selection must contain x86 or x64"
-		exit
+        Write-Host "Studio selection must contain x86 or x64"
+        exit
     }
 }
 
@@ -551,6 +589,7 @@ $global:cmakeCommandLine += """-DBUILD_DOCS=No"" "
 $global:cmakeCommandLine += """-DCMAKE_INSTALL_PREFIX=$install"" "
 $global:cmakeCommandLine += """-DBoost_COMPILER=$global:cmakeCompiler"" "
 $global:cmakeCommandLine += """-DBOOST_ROOT=$global:boostRootPath"" "
+$global:cmakeCommandLine += """-DINSTALL_QMFGEN=No"" "
 $global:cmakeCommandLine +=  $cppDir
 Write-Host "Running CMake in $build : $global:cmakeCommandLine"
 & cmd /c "$global:cmakeCommandLine 2>&1"
@@ -592,7 +631,7 @@ WriteDotnetBindingSlnLauncherBat      -slnName "org.apache.qpid.messaging.sln" `
 # to establish the org.apache.qpid.messaging.sln build environment.
 #
 WriteDotnetBindingEnvSetupBat     -slnName "org.apache.qpid.messaging.sln" `
-                                -boostRoot "$boost" `
+                                -boostRoot "$global:boostRootPath" `
                                 -buildRoot "$build" `
                                -vsPlatform $global:buildPathSizeId `
                                     -nBits $global:build32or64 `
@@ -605,7 +644,7 @@ WriteDotnetBindingEnvSetupBat     -slnName "org.apache.qpid.messaging.sln" `
 # Batch script to re-run cmake
 #
 WriteCmakeRerunnerBat             -slnName "org.apache.qpid.messaging.sln" `
-                                -boostRoot "$boost" `
+                                -boostRoot ""$global:boostRootPath"" `
                                 -buildRoot "$build" `
                                -vsPlatform $global:buildPathSizeId `
                                     -nBits $global:build32or64 `
@@ -614,6 +653,15 @@ WriteCmakeRerunnerBat             -slnName "org.apache.qpid.messaging.sln" `
                              -studioSubdir "$global:vsSubdir" `
                                 -cmakeLine "$global:cmakeCommandLine"
                                 
+###########
+# Batch script to do command line "make install"
+#
+WriteMakeInstallBat             -buildRoot "$build" `
+                              -outfileName "make-install.bat" `
+                              -varfileName "setenv-messaging-$global:vsSubdir-$global:buildPathSizeId-$global:build32or64-bit.bat" `
+                            -vsEnvironment $global:vsEnvironment `
+                            -vsBuildTarget $global:vsBuildTarget
+
 #############################
 # Pause on exit. If user ran this script through a graphical launch and there's
 # an error then the window closes and the user never sees the error. This pause
