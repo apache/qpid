@@ -25,12 +25,16 @@ import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPrepare
 import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.PRIORITY_QUEUE_NAME;
 import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_NAME;
 import static org.apache.qpid.server.store.berkeleydb.BDBStoreUpgradeTestPreparer.QUEUE_WITH_DLQ_NAME;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.UUID;
 
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -167,8 +171,11 @@ public abstract class AbstractUpgradeTestCase extends QpidTestCase
         return count.longValue();
     }
 
-    public String getVirtualHostName()
+    public VirtualHost getVirtualHost()
     {
-        return getName();
+        VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getName()).thenReturn(getName());
+        when(virtualHost.getId()).thenReturn(UUID.randomUUID());
+        return virtualHost;
     }
 }

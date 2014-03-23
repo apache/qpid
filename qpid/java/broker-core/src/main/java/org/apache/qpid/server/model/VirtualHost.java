@@ -27,6 +27,7 @@ import org.apache.qpid.server.store.MessageStore;
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 @ManagedObject( managesChildren = true )
 public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
@@ -180,6 +181,8 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
 
     // TODO - remove this
     TaskExecutor getTaskExecutor();
+
+    Exchange getExchange(UUID id);
 
     MessageStore getMessageStore();
 

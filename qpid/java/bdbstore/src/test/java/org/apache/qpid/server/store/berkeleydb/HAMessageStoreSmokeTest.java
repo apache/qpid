@@ -19,7 +19,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -34,7 +33,8 @@ public class HAMessageStoreSmokeTest extends QpidTestCase
     {
         try
         {
-            _store.configure(mock(VirtualHost.class));
+            _store.setVirtualHost(mock(VirtualHost.class));
+            _store.configure();
             fail("Expected an exception to be thrown");
         }
         catch (ServerScopedRuntimeException ce)

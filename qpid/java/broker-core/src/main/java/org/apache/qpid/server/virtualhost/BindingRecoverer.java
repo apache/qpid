@@ -28,9 +28,11 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
 
@@ -49,11 +51,9 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
     }
 
     @Override
-    public UnresolvedObject<BindingImpl> createUnresolvedObject(final UUID id,
-                                                            final String type,
-                                                            final Map<String, Object> attributes)
+    public UnresolvedObject<BindingImpl> createUnresolvedObject(ConfiguredObjectRecord record)
     {
-        return new UnresolvedBinding(id, attributes);
+        return new UnresolvedBinding(record);
     }
 
     @Override
@@ -76,12 +76,11 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
         private ExchangeImpl _exchange;
         private AMQQueue _queue;
 
-        public UnresolvedBinding(final UUID id,
-                                 final Map<String, Object> attributeMap)
+        public UnresolvedBinding(final ConfiguredObjectRecord record)
         {
-            _bindingId = id;
-            _exchangeId = UUID.fromString(String.valueOf(attributeMap.get(org.apache.qpid.server.model.Binding.EXCHANGE)));
-            _queueId = UUID.fromString(String.valueOf(attributeMap.get(org.apache.qpid.server.model.Binding.QUEUE)));
+            _bindingId = record.getId();
+            _exchangeId = record.getParents().get(Exchange.class.getSimpleName()).getId();
+            _queueId = record.getParents().get(Queue.class.getSimpleName()).getId();
             _exchange = _exchangeRegistry.getExchange(_exchangeId);
             if(_exchange == null)
             {
@@ -93,8 +92,8 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
                 _unresolvedDependencies.add(new QueueDependency());
             }
 
-            _bindingName = (String) attributeMap.get(org.apache.qpid.server.model.Binding.NAME);
-            _bindingArgumentsMap = (Map<String, Object>) attributeMap.get(org.apache.qpid.server.model.Binding.ARGUMENTS);
+            _bindingName = (String) record.getAttributes().get(org.apache.qpid.server.model.Binding.NAME);
+            _bindingArgumentsMap = (Map<String, Object>) record.getAttributes().get(org.apache.qpid.server.model.Binding.ARGUMENTS);
         }
 
         @Override

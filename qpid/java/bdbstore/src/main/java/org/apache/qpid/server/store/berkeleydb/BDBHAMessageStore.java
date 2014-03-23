@@ -37,7 +37,6 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.TaskPrincipal;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.HAMessageStore;
@@ -124,9 +123,10 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
     private Map<String, String> _repConfig;
 
     @Override
-    public void configure(VirtualHost virtualHost)
+    public void configure()
     {
         //Mandatory configuration
+        VirtualHost virtualHost = getVirtualHost();
         _groupName = getValidatedStringAttribute(virtualHost, "haGroupName");
         _nodeName = getValidatedStringAttribute(virtualHost, "haNodeName");
         _nodeHostPort = getValidatedStringAttribute(virtualHost, "haNodeAddress");
@@ -159,7 +159,7 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
                     + "! Please set highAvailability.coalescingSync to false in store configuration.");
         }
 
-        super.configure(virtualHost);
+        super.configure();
     }
 
 
@@ -207,13 +207,13 @@ public class BDBHAMessageStore extends AbstractBDBMessageStore implements HAMess
 
 
     @Override
-    protected void setupStore(File storePath, String name) throws DatabaseException
+    protected void setupStore(File storePath) throws DatabaseException
     {
-        super.setupStore(storePath, name);
+        super.setupStore(storePath);
 
         if(_coalescingSync)
         {
-            _commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + name, getEnvironment());
+            _commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + getVirtualHost().getName(), getEnvironment());
             _commitThreadWrapper.startCommitThread();
         }
     }

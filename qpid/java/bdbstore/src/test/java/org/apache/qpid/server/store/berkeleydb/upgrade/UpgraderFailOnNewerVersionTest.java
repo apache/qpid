@@ -43,7 +43,7 @@ public class UpgraderFailOnNewerVersionTest extends AbstractUpgradeTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _upgrader = new Upgrader(_environment, getVirtualHostName());
+        _upgrader = new Upgrader(_environment, getVirtualHost());
     }
 
     private int getStoreVersion()

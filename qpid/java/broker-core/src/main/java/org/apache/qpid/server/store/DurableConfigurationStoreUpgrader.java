@@ -25,11 +25,12 @@ import java.util.UUID;
 
 public interface DurableConfigurationStoreUpgrader
 {
-    void configuredObject(UUID id, String type, Map<String, Object> attributes);
+    void configuredObject(ConfiguredObjectRecord record);
 
     void complete();
 
     void setNextUpgrader(DurableConfigurationStoreUpgrader upgrader);
 
     Map<UUID, ConfiguredObjectRecord> getUpdatedRecords();
+    Map<UUID, ConfiguredObjectRecord> getDeletedRecords();
 }

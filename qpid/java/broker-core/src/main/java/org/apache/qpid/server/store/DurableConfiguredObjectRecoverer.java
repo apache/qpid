@@ -26,8 +26,7 @@ import java.util.UUID;
 public interface DurableConfiguredObjectRecoverer
 {
     public void load(final DurableConfigurationRecoverer durableConfigurationRecoverer,
-                     final UUID id,
-                     final Map<String, Object> attributes);
+                     final ConfiguredObjectRecord record);
 
     public String getType();
 }

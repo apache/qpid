@@ -39,6 +39,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -74,7 +75,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
 
     private static final Logger _logger = Logger.getLogger(UpgradeFrom4To5.class);
 
-    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, String virtualHostName)
+    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, VirtualHost virtualHost)
     {
         Transaction transaction = null;
         reportStarting(environment, 4);

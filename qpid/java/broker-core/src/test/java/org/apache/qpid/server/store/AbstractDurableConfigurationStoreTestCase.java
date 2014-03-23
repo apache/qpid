@@ -21,7 +21,6 @@
 package org.apache.qpid.server.store;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
@@ -43,6 +42,8 @@ import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -67,6 +68,10 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private static final String EXCHANGE = org.apache.qpid.server.model.Exchange.class.getSimpleName();
     private static final String BINDING = org.apache.qpid.server.model.Binding.class.getSimpleName();
     private static final String QUEUE = Queue.class.getSimpleName();
+
+    private static final UUID ANY_UUID = UUID.randomUUID();
+    private static final Map ANY_MAP = new HashMap();
+
 
     private String _storePath;
     private String _storeName;
@@ -117,9 +122,16 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(_exchange.getId()).thenReturn(_exchangeId);
         when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
         when(_exchange.getEventLogger()).thenReturn(new EventLogger());
+
+        ConfiguredObjectRecord exchangeRecord = mock(ConfiguredObjectRecord.class);
+        when(exchangeRecord.getId()).thenReturn(_exchangeId);
+        when(exchangeRecord.getType()).thenReturn(Exchange.class.getSimpleName());
+        when(_exchange.asObjectRecord()).thenReturn(exchangeRecord);
+
         when(_configuration.getString(eq(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY), anyString())).thenReturn(
                 _storePath);
         when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);
+
 
         _bindingArgs = new HashMap<String, Object>();
         String argKey = AMQPFilterTypes.JMS_SELECTOR.toString();
@@ -149,8 +161,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
 
         reopenStore();
-        verify(_recoveryHandler).configuredObject(eq(_exchangeId), eq(EXCHANGE),
-                eq(map( org.apache.qpid.server.model.Exchange.NAME, getName(),
+        verify(_recoveryHandler).configuredObject(matchesRecord(_exchangeId, EXCHANGE,
+                map( org.apache.qpid.server.model.Exchange.NAME, getName(),
                         org.apache.qpid.server.model.Exchange.TYPE, getName()+"Type",
                         org.apache.qpid.server.model.Exchange.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS.name())));
     }
@@ -183,7 +195,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         DurableConfigurationStoreHelper.removeExchange(_configStore, exchange);
 
         reopenStore();
-        verify(_recoveryHandler, never()).configuredObject(any(UUID.class), anyString(), anyMap());
+        verify(_recoveryHandler, never()).configuredObject(any(ConfiguredObjectRecord.class));
     }
 
     public void testBindQueue() throws Exception
@@ -191,41 +203,85 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
         BindingImpl binding = new BindingImpl(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
                 _exchange, _bindingArgs);
+        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
         DurableConfigurationStoreHelper.createBinding(_configStore, binding);
 
         reopenStore();
 
         Map<String,Object> map = new HashMap<String, Object>();
-        map.put(org.apache.qpid.server.model.Binding.EXCHANGE, _exchange.getId().toString());
-        map.put(org.apache.qpid.server.model.Binding.QUEUE, queue.getId().toString());
-        map.put(org.apache.qpid.server.model.Binding.NAME, ROUTING_KEY);
-        map.put(org.apache.qpid.server.model.Binding.ARGUMENTS,_bindingArgs);
+        map.put(Binding.NAME, ROUTING_KEY);
+        map.put(Binding.ARGUMENTS,_bindingArgs);
 
-        verify(_recoveryHandler).configuredObject(eq(binding.getId()), eq(BINDING),
-                                                  argThat(new IgnoreCreatedByMatcher(map)));
+        Map<String,UUID> parents = new HashMap<String, UUID>();
+
+        parents.put(Exchange.class.getSimpleName(), _exchange.getId());
+        parents.put(Queue.class.getSimpleName(), queue.getId());
+
+        verify(_recoveryHandler).configuredObject(matchesRecord(binding.getId(), BINDING, map, parents));
     }
 
-    private static class IgnoreCreatedByMatcher extends ArgumentMatcher<Map<String,Object>>
+
+    private ConfiguredObjectRecord matchesRecord(UUID id,
+                                                 String type,
+                                                 Map<String, Object> attributes,
+                                                 final Map<String, UUID> parents)
+    {
+        return argThat(new ConfiguredObjectMatcher(id, type, attributes, parents));
+    }
+
+    private ConfiguredObjectRecord matchesRecord(UUID id, String type, Map<String, Object> attributes)
+    {
+        return argThat(new ConfiguredObjectMatcher(id, type, attributes, ANY_MAP));
+    }
+
+    private static class ConfiguredObjectMatcher extends ArgumentMatcher<ConfiguredObjectRecord>
     {
         private final Map<String,Object> _matchingMap;
+        private final UUID _id;
+        private final String _name;
+        private final Map<String,UUID> _parents;
 
-        private IgnoreCreatedByMatcher(final Map<String, Object> matchingMap)
+        private ConfiguredObjectMatcher(final UUID id, final String type, final Map<String, Object> matchingMap, Map<String,UUID> parents)
         {
+            _id = id;
+            _name = type;
             _matchingMap = matchingMap;
+            _parents = parents;
         }
 
         @Override
         public boolean matches(final Object argument)
         {
-            if(argument instanceof Map)
+            if(argument instanceof ConfiguredObjectRecord)
             {
-                Map<String,Object> arg = new HashMap<String, Object>((Map<String,Object>) argument);
+                ConfiguredObjectRecord binding = (ConfiguredObjectRecord) argument;
+
+                Map<String,Object> arg = new HashMap<String, Object>(binding.getAttributes());
                 arg.remove("createdBy");
                 arg.remove("createdTime");
-                return arg.equals(_matchingMap);
-
+                return (_id == ANY_UUID || _id.equals(binding.getId()))
+                       && _name.equals(binding.getType())
+                       && (_matchingMap == ANY_MAP || arg.equals(_matchingMap))
+                       && (_parents == ANY_MAP || matchesParents(binding));
             }
             return false;
+        }
+
+        private boolean matchesParents(ConfiguredObjectRecord binding)
+        {
+            Map<String, ConfiguredObjectRecord> bindingParents = binding.getParents();
+            if(bindingParents.size() != _parents.size())
+            {
+                return false;
+            }
+            for(Map.Entry<String,UUID> entry : _parents.entrySet())
+            {
+                if(!bindingParents.get(entry.getKey()).getId().equals(entry.getValue()))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
@@ -239,9 +295,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         DurableConfigurationStoreHelper.removeBinding(_configStore, binding);
         reopenStore();
 
-        verify(_recoveryHandler, never()).configuredObject(any(UUID.class),
-                eq(BINDING),
-                anyMap());
+        verify(_recoveryHandler, never()).configuredObject(matchesRecord(ANY_UUID, BINDING,
+                                                                         ANY_MAP));
     }
 
     public void testCreateQueueAMQQueue() throws Exception
@@ -254,7 +309,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
         queueAttributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER.name());
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(matchesRecord(_queueId, QUEUE, queueAttributes));
     }
 
     public void testCreateQueueAMQQueueFieldTable() throws Exception
@@ -276,7 +331,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER.name());
         queueAttributes.putAll(attributes);
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(matchesRecord(_queueId, QUEUE, queueAttributes));
     }
 
     public void testCreateQueueAMQQueueWithAlternateExchange() throws Exception
@@ -294,7 +349,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER.name());
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(matchesRecord(_queueId, QUEUE, queueAttributes));
     }
 
     private ExchangeImpl createTestAlternateExchange()
@@ -327,7 +382,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.putAll(attributes);
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(matchesRecord(_queueId, QUEUE, queueAttributes));
 
     }
 
@@ -354,7 +409,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.putAll(attributes);
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
 
-        verify(_recoveryHandler).configuredObject(eq(_queueId), eq(QUEUE), eq(queueAttributes));
+        verify(_recoveryHandler).configuredObject(matchesRecord(_queueId, QUEUE, queueAttributes));
     }
 
     public void testRemoveQueue() throws Exception
@@ -369,9 +424,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         // remove queue
         DurableConfigurationStoreHelper.removeQueue(_configStore,queue);
         reopenStore();
-        verify(_recoveryHandler, never()).configuredObject(any(UUID.class),
-                eq(org.apache.qpid.server.model.Queue.class.getName()),
-                anyMap());
+        verify(_recoveryHandler, never()).configuredObject(any(ConfiguredObjectRecord.class));
     }
 
     private AMQQueue createTestQueue(String queueName,
@@ -424,6 +477,12 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
                     });
 
         when(queue.getActualAttributes()).thenReturn(attributes);
+
+        ConfiguredObjectRecord objectRecord = mock(ConfiguredObjectRecord.class);
+        when(objectRecord.getId()).thenReturn(_queueId);
+        when(objectRecord.getType()).thenReturn(Queue.class.getSimpleName());
+        when(objectRecord.getAttributes()).thenReturn(attributes);
+        when(queue.asObjectRecord()).thenReturn(objectRecord);
         return queue;
     }
 
@@ -440,6 +499,13 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchange.getTypeName()).thenReturn(getName() + "Type");
         when(exchange.isAutoDelete()).thenReturn(true);
         when(exchange.getId()).thenReturn(_exchangeId);
+        ConfiguredObjectRecord exchangeRecord = mock(ConfiguredObjectRecord.class);
+        when(exchangeRecord.getId()).thenReturn(_exchangeId);
+        when(exchangeRecord.getType()).thenReturn(Exchange.class.getSimpleName());
+        Map<String,Object> actualAttributesExceptId = new HashMap<String, Object>(actualAttributes);
+        actualAttributesExceptId.remove("id");
+        when(exchangeRecord.getAttributes()).thenReturn(actualAttributesExceptId);
+        when(exchange.asObjectRecord()).thenReturn(exchangeRecord);
 
         return exchange;
     }

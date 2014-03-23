@@ -19,7 +19,6 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.VirtualHost;
@@ -32,29 +31,23 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void update(UUID id, String type, Map<String, Object> attributes)
-    {
-    }
-
-    @Override
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records)
     {
     }
 
-
     @Override
-    public void remove(UUID id, String type)
+    public UUID[] remove(final ConfiguredObjectRecord... objects)
     {
+        final UUID[] removed = new UUID[objects.length];
+        for(int i = 0; i < objects.length; i++)
+        {
+            removed[i] = objects[i].getId();
+        }
+        return removed;
     }
 
     @Override
-    public UUID[] removeConfiguredObjects(final UUID... objects)
-    {
-        return objects;
-    }
-
-    @Override
-    public void create(UUID id, String type, Map<String, Object> attributes)
+    public void create(ConfiguredObjectRecord record)
     {
     }
 

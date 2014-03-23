@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessControlException;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 
 import org.apache.qpid.server.model.*;
@@ -37,6 +38,7 @@ import org.apache.qpid.server.configuration.updater.SetAttributeTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
@@ -542,6 +544,61 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public String toString()
     {
         return getClass().getSimpleName() + " [id=" + _id + ", name=" + getName() + "]";
+    }
+
+    public ConfiguredObjectRecord asObjectRecord()
+    {
+        return new ConfiguredObjectRecord()
+        {
+            @Override
+            public UUID getId()
+            {
+                return AbstractConfiguredObject.this.getId();
+            }
+
+            @Override
+            public String getType()
+            {
+                return getCategoryClass().getSimpleName();
+            }
+
+            @Override
+            public Map<String, Object> getAttributes()
+            {
+                return Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Map<String, Object>>()
+                {
+                    @Override
+                    public Map<String, Object> run()
+                    {
+                        Map<String,Object> actualAttributes = new HashMap<String, Object>(getActualAttributes());
+                        for(Map.Entry<String,Object> entry : actualAttributes.entrySet())
+                        {
+                            if(entry.getValue() instanceof ConfiguredObject)
+                            {
+                                entry.setValue(((ConfiguredObject)entry.getValue()).getId());
+                            }
+                        }
+                        actualAttributes.remove(ID);
+                        return actualAttributes;
+                    }
+                });
+            }
+
+            @Override
+            public Map<String, ConfiguredObjectRecord> getParents()
+            {
+                Map<String, ConfiguredObjectRecord> parents = new LinkedHashMap<String, ConfiguredObjectRecord>();
+                for(Class<? extends ConfiguredObject> parentClass : Model.getInstance().getParentTypes(getCategoryClass()))
+                {
+                    ConfiguredObject parent = getParent(parentClass);
+                    if(parent != null)
+                    {
+                        parents.put(parentClass.getSimpleName(), parent.asObjectRecord());
+                    }
+                }
+                return parents;
+            }
+        };
     }
 
     @SuppressWarnings("unchecked")

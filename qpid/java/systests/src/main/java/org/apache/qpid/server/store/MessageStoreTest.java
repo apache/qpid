@@ -190,6 +190,12 @@ public class MessageStoreTest extends QpidTestCase
         try
         {
             _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, _broker),new VirtualHostRegistry(_broker.getEventLogger()),getVirtualHostModel());
+            when(_virtualHostModel.getId()).thenReturn(_virtualHost.getId());
+
+            ConfiguredObjectRecord objectRecord = mock(ConfiguredObjectRecord.class);
+            when(objectRecord.getId()).thenReturn(_virtualHost.getId());
+            when(objectRecord.getType()).thenReturn(org.apache.qpid.server.model.VirtualHost.class.getSimpleName());
+            when(_virtualHostModel.asObjectRecord()).thenReturn(objectRecord);
         }
         catch (Exception e)
         {

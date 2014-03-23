@@ -32,6 +32,7 @@ import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.berkeleydb.BDBConfiguredObjectRecord;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
@@ -80,7 +81,7 @@ public class ConfiguredObjectBinding extends TupleBinding<ConfiguredObjectRecord
         _uuid = uuid;
     }
 
-    public ConfiguredObjectRecord entryToObject(TupleInput tupleInput)
+    public BDBConfiguredObjectRecord entryToObject(TupleInput tupleInput)
     {
         String type = tupleInput.readString();
         String json = tupleInput.readString();
@@ -88,7 +89,7 @@ public class ConfiguredObjectBinding extends TupleBinding<ConfiguredObjectRecord
         try
         {
             Map<String,Object> value = mapper.readValue(json, Map.class);
-            ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecord(_uuid, type, value);
+            BDBConfiguredObjectRecord configuredObject = new BDBConfiguredObjectRecord(_uuid, type, value);
             return configuredObject;
         }
         catch (IOException e)

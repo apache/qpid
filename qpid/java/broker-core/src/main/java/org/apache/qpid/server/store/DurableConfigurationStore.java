@@ -50,41 +50,33 @@ public interface DurableConfigurationStore
     /**
      * Makes the specified object persistent.
      *
-     * @param id The id of the object to persist.
-     * @param type The type of the object to persist
-     * @param attributes the attributes of the object to persist
+     * @param object The object to persist.
      *
      * @throws StoreException If the operation fails for any reason.
      */
-    void create(UUID id, String type, Map<String, Object> attributes) throws StoreException;
+    void create(ConfiguredObjectRecord object) throws StoreException;
 
     /**
-     * Removes the specified persistent configured object.
+     * Removes the specified persistent configured objects.
      *
-     * @param id The id of the object to remove.
-     * @param type The type of the object to remove
+     * @param objects The objects to remove.
      *
      * @throws StoreException If the operation fails for any reason.
      */
-    void remove(UUID id, String type) throws StoreException;
-
-    public UUID[] removeConfiguredObjects(UUID... objects) throws StoreException;
+    public UUID[] remove(ConfiguredObjectRecord... objects) throws StoreException;
 
 
     /**
-     * Updates the specified object in the persistent store, IF it is already present. If the object
-     * is not present in the store, it will not be added.
+     * Updates the specified objects in the persistent store, IF it is already present. If the object
+     * is not present in the store, it will only be added if createIfNecessary is set to true, otherwise an exception
+     * will be thrown.
      *
-     * @param id The id of the object to update.
-     * @param type The type of the object to update
-     * @param attributes the updated attributes
+     * @param createIfNecessary if false then will fail if the object does not exist.
+     * @param records the records to update
      *
      * @throws StoreException If the operation fails for any reason.
      */
-    void update(UUID id, String type, Map<String, Object> attributes) throws StoreException;
-
-
-    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
+    void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
 
 
     void close() throws Exception;
