@@ -256,6 +256,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _name;
     }
 
+    public Class<? extends ConfiguredObject> getCategoryClass()
+    {
+        return getCategory(getClass());
+    }
+
     public State getDesiredState()
     {
         return null;  //TODO
