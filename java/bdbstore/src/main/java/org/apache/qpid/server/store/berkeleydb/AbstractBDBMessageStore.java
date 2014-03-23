@@ -41,8 +41,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.message.EnqueueableMessage;
@@ -51,16 +49,11 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.*;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
+import org.apache.qpid.server.store.berkeleydb.entry.HierarchyKey;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
 import org.apache.qpid.server.store.berkeleydb.entry.Xid;
-import org.apache.qpid.server.store.berkeleydb.tuple.ConfiguredObjectBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.ContentBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.MessageMetaDataBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.PreparedTransactionBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.QueueEntryBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.*;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
 import org.apache.qpid.util.FileUtils;
 
@@ -70,7 +63,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
     private static final int LOCK_RETRY_ATTEMPTS = 5;
 
-    public static final int VERSION = 7;
+    public static final int VERSION = 8;
 
     private static final Map<String, String> ENVCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
     {{
@@ -83,6 +76,8 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     private Environment _environment;
 
     private static String CONFIGURED_OBJECTS = "CONFIGURED_OBJECTS";
+    private static String CONFIGURED_OBJECT_HIERARCHY = "CONFIGURED_OBJECT_HIERARCHY";
+
     private static String MESSAGEMETADATADB_NAME = "MESSAGE_METADATA";
     private static String MESSAGECONTENTDB_NAME = "MESSAGE_CONTENT";
     private static String DELIVERYDB_NAME = "QUEUE_ENTRIES";
@@ -92,6 +87,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     private static String CONFIG_VERSION_DB = "CONFIG_VERSION";
 
     private Database _configuredObjectsDb;
+    private Database _configuredObjectHierarchyDb;
     private Database _configVersionDb;
     private Database _messageMetaDataDb;
     private Database _messageContentDb;
@@ -146,6 +142,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     private Map<String, String> _envConfigMap;
     private VirtualHost _virtualHost;
 
+
     public AbstractBDBMessageStore()
     {
         _stateManager = new StateManager(_eventManager);
@@ -183,7 +180,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
     private void completeInitialisation()
     {
-        configure(_virtualHost);
+        configure();
 
         _stateManager.attainState(State.INITIALISED);
     }
@@ -221,27 +218,24 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     /**
      * Called after instantiation in order to configure the message store.
      *
-     *
-     *
-     * @param virtualHost The virtual host using this store
      * @return whether a new store environment was created or not (to indicate whether recovery is necessary)
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    public void configure(VirtualHost virtualHost)
+    public void configure()
     {
-        configure(virtualHost, _messageRecoveryHandler != null);
+        configure(_messageRecoveryHandler != null);
     }
 
-    public void configure(VirtualHost virtualHost, boolean isMessageStore)
+    public void configure(boolean isMessageStore)
     {
-        String name = virtualHost.getName();
+        String name = _virtualHost.getName();
         final String defaultPath = System.getProperty("QPID_WORK") + File.separator + "bdbstore" + File.separator + name;
 
         String storeLocation;
         if(isMessageStore)
         {
-            storeLocation = (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+            storeLocation = (String) _virtualHost.getAttribute(VirtualHost.STORE_PATH);
             if(storeLocation == null)
             {
                 storeLocation = defaultPath;
@@ -249,15 +243,15 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
         else // we are acting only as the durable config store
         {
-            storeLocation = (String) virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
+            storeLocation = (String) _virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH);
             if(storeLocation == null)
             {
                 storeLocation = defaultPath;
             }
         }
 
-        Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
-        Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
+        Object overfullAttr = _virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
+        Object underfullAttr = _virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
 
         _persistentSizeHighThreshold = overfullAttr == null ? -1l :
                                        overfullAttr instanceof Number ? ((Number) overfullAttr).longValue() : Long.parseLong(overfullAttr.toString());
@@ -285,7 +279,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         _envConfigMap = new HashMap<String, String>();
         _envConfigMap.putAll(ENVCONFIG_DEFAULTS);
 
-        Object bdbEnvConfigAttr = virtualHost.getAttribute("bdbEnvironmentConfig");
+        Object bdbEnvConfigAttr = _virtualHost.getAttribute("bdbEnvironmentConfig");
         if(bdbEnvConfigAttr instanceof Map)
         {
             _envConfigMap.putAll((Map)bdbEnvConfigAttr);
@@ -293,27 +287,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
         LOGGER.info("Configuring BDB message store");
 
-        setupStore(environmentPath, name);
-    }
-
-    protected Map<String,String> getConfigMap(Map<String, String> defaultConfig, Configuration config, String prefix) throws ConfigurationException
-    {
-        final List<Object> argumentNames = config.getList(prefix + ".name");
-        final List<Object> argumentValues = config.getList(prefix + ".value");
-        final int initialSize = argumentNames.size() + defaultConfig.size();
-
-        final Map<String,String> attributes = new HashMap<String,String>(initialSize);
-        attributes.putAll(defaultConfig);
-
-        for (int i = 0; i < argumentNames.size(); i++)
-        {
-            final String argName = argumentNames.get(i).toString();
-            final String argValue = argumentValues.get(i).toString();
-
-            attributes.put(argName, argValue);
-        }
-
-        return Collections.unmodifiableMap(attributes);
+        setupStore(environmentPath);
     }
 
     @Override
@@ -337,11 +311,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         _stateManager.attainState(State.ACTIVE);
     }
 
-    protected void setupStore(File storePath, String name)
+    protected void setupStore(File storePath)
     {
         _environment = createEnvironment(storePath);
 
-        new Upgrader(_environment, name).upgradeIfNecessary();
+        new Upgrader(_environment, _virtualHost).upgradeIfNecessary();
 
         openDatabases();
 
@@ -355,6 +329,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         return _environment;
     }
 
+    protected final VirtualHost getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
     private void openDatabases() throws DatabaseException
     {
         DatabaseConfig dbConfig = new DatabaseConfig();
@@ -365,6 +344,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         dbConfig.setReadOnly(false);
 
         _configuredObjectsDb = openDatabase(CONFIGURED_OBJECTS, dbConfig);
+        _configuredObjectHierarchyDb = openDatabase(CONFIGURED_OBJECT_HIERARCHY, dbConfig);
         _configVersionDb = openDatabase(CONFIG_VERSION_DB, dbConfig);
         _messageMetaDataDb = openDatabase(MESSAGEMETADATADB_NAME, dbConfig);
         _messageContentDb = openDatabase(MESSAGECONTENTDB_NAME, dbConfig);
@@ -411,11 +391,17 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             _messageContentDb.close();
         }
 
-         if (_configuredObjectsDb != null)
-         {
-             LOGGER.info("Closing configurable objects database");
-             _configuredObjectsDb.close();
-         }
+        if (_configuredObjectsDb != null)
+        {
+            LOGGER.info("Closing configurable objects database");
+            _configuredObjectsDb.close();
+        }
+
+        if (_configuredObjectHierarchyDb != null)
+        {
+            LOGGER.info("Closing configurable object hierarchy database");
+            _configuredObjectHierarchyDb.close();
+        }
 
         if (_deliveryDb != null)
         {
@@ -555,24 +541,60 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
 
     private void loadConfiguredObjects(ConfigurationRecoveryHandler crh) throws DatabaseException
     {
-        Cursor cursor = null;
+        Cursor objectsCursor = null;
+        Cursor hierarchyCursor = null;
         try
         {
-            cursor = _configuredObjectsDb.openCursor(null, null);
+            objectsCursor = _configuredObjectsDb.openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
-            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+
+            Map<UUID, BDBConfiguredObjectRecord> configuredObjects =
+                    new HashMap<UUID, BDBConfiguredObjectRecord>();
+
+            while (objectsCursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
 
-                ConfiguredObjectRecord configuredObject = new ConfiguredObjectBinding(id).entryToObject(value);
-                crh.configuredObject(configuredObject.getId(),configuredObject.getType(),configuredObject.getAttributes());
+                BDBConfiguredObjectRecord configuredObject =
+                        (BDBConfiguredObjectRecord) new ConfiguredObjectBinding(id).entryToObject(value);
+                configuredObjects.put(configuredObject.getId(), configuredObject);
             }
+
+            // set parents
+            hierarchyCursor = _configuredObjectHierarchyDb.openCursor(null, null);
+            while (hierarchyCursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                HierarchyKey hk = HierarchyKeyBinding.getInstance().entryToObject(key);
+                UUID parentId = UUIDTupleBinding.getInstance().entryToObject(value);
+                BDBConfiguredObjectRecord child = configuredObjects.get(hk.getChildId());
+                if(child != null)
+                {
+                    ConfiguredObjectRecord parent = configuredObjects.get(parentId);
+                    if(parent != null)
+                    {
+                        child.addParent(hk.getParentType(), parent);
+                    }
+                    else if(hk.getParentType().equals("Exchange"))
+                    {
+                        // TODO - remove this hack for the pre-defined exchanges
+                        child.addParent(hk.getParentType(), new BDBConfiguredObjectRecord(parentId, "Exchange", Collections.<String,Object>emptyMap()));
+                    }
+                }
+            }
+
+            for (ConfiguredObjectRecord record : configuredObjects.values())
+            {
+                crh.configuredObject(record);
+            }
+
+
 
         }
         finally
         {
-            closeCursorSafely(cursor);
+            closeCursorSafely(objectsCursor);
+            closeCursorSafely(hierarchyCursor);
         }
     }
 
@@ -842,39 +864,28 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     }
 
     @Override
-    public void create(UUID id, String type, Map<String, Object> attributes) throws StoreException
+    public void create(ConfiguredObjectRecord configuredObject) throws StoreException
     {
+
         if (_stateManager.isInState(State.ACTIVE))
         {
-            ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecord(id, type, attributes);
-            storeConfiguredObjectEntry(configuredObject);
+            com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
+
+            storeConfiguredObjectEntry(txn, configuredObject);
+
+            txn.commit();
         }
     }
 
-    @Override
-    public void remove(UUID id, String type) throws StoreException
-    {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("public void remove(id = " + id + ", type="+type+"): called");
-        }
-        OperationStatus status = removeConfiguredObject(null, id);
-        if (status == OperationStatus.NOTFOUND)
-        {
-            throw new StoreException("Configured object of type " + type + " with id " + id + " not found");
-        }
-    }
-
-    @Override
-    public UUID[] removeConfiguredObjects(final UUID... objects) throws StoreException
+    public UUID[] remove(final ConfiguredObjectRecord... objects) throws StoreException
     {
         com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
         Collection<UUID> removed = new ArrayList<UUID>(objects.length);
-        for(UUID id : objects)
+        for(ConfiguredObjectRecord record : objects)
         {
-            if(removeConfiguredObject(txn, id) == OperationStatus.SUCCESS)
+            if(removeConfiguredObject(txn, record) == OperationStatus.SUCCESS)
             {
-                removed.add(id);
+                removed.add(record.getId());
             }
         }
 
@@ -882,51 +893,49 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         return removed.toArray(new UUID[removed.size()]);
     }
 
-    @Override
-    public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
-    {
-        update(false, id, type, attributes, null);
-    }
-
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         com.sleepycat.je.Transaction txn = _environment.beginTransaction(null, null);
         for(ConfiguredObjectRecord record : records)
         {
-            update(createIfNecessary, record.getId(), record.getType(), record.getAttributes(), txn);
+            update(createIfNecessary, record, txn);
         }
         txn.commit();
     }
 
-    private void update(boolean createIfNecessary, UUID id, String type, Map<String, Object> attributes, com.sleepycat.je.Transaction txn) throws
+    private void update(boolean createIfNecessary, ConfiguredObjectRecord record, com.sleepycat.je.Transaction txn) throws
                                                                                                                                            StoreException
     {
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("Updating " +type + ", id: " + id);
+            LOGGER.debug("Updating " + record.getType() + ", id: " + record.getId());
         }
 
         try
         {
             DatabaseEntry key = new DatabaseEntry();
             UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
-            keyBinding.objectToEntry(id, key);
+            keyBinding.objectToEntry(record.getId(), key);
 
             DatabaseEntry value = new DatabaseEntry();
             DatabaseEntry newValue = new DatabaseEntry();
             ConfiguredObjectBinding configuredObjectBinding = ConfiguredObjectBinding.getInstance();
 
             OperationStatus status = _configuredObjectsDb.get(txn, key, value, LockMode.DEFAULT);
-            if (status == OperationStatus.SUCCESS || (createIfNecessary && status == OperationStatus.NOTFOUND))
+            final boolean isNewRecord = status == OperationStatus.NOTFOUND;
+            if (status == OperationStatus.SUCCESS || (createIfNecessary && isNewRecord))
             {
-                ConfiguredObjectRecord newQueueRecord = new ConfiguredObjectRecord(id, type, attributes);
 
                 // write the updated entry to the store
-                configuredObjectBinding.objectToEntry(newQueueRecord, newValue);
+                configuredObjectBinding.objectToEntry(record, newValue);
                 status = _configuredObjectsDb.put(txn, key, newValue);
                 if (status != OperationStatus.SUCCESS)
                 {
                     throw new StoreException("Error updating queue details within the store: " + status);
+                }
+                if(isNewRecord)
+                {
+                    writeHierarchyRecords(txn, record);
                 }
             }
             else if (status != OperationStatus.NOTFOUND)
@@ -1441,17 +1450,19 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
     /**
      * Makes the specified configured object persistent.
      *
+     *
+     * @param txn
      * @param configuredObject     Details of the configured object to store.
      * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason.
      */
-    private void storeConfiguredObjectEntry(ConfiguredObjectRecord configuredObject) throws StoreException
+    private void storeConfiguredObjectEntry(final Transaction txn, ConfiguredObjectRecord configuredObject) throws StoreException
     {
         if (_stateManager.isInState(State.ACTIVE))
         {
             LOGGER.debug("Storing configured object: " + configuredObject);
             DatabaseEntry key = new DatabaseEntry();
-            UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
-            keyBinding.objectToEntry(configuredObject.getId(), key);
+            UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
+            uuidBinding.objectToEntry(configuredObject.getId(), key);
 
             DatabaseEntry value = new DatabaseEntry();
             ConfiguredObjectBinding queueBinding = ConfiguredObjectBinding.getInstance();
@@ -1459,12 +1470,13 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             queueBinding.objectToEntry(configuredObject, value);
             try
             {
-                OperationStatus status = _configuredObjectsDb.put(null, key, value);
+                OperationStatus status = _configuredObjectsDb.put(txn, key, value);
                 if (status != OperationStatus.SUCCESS)
                 {
                     throw new StoreException("Error writing configured object " + configuredObject + " to database: "
                             + status);
                 }
+                writeHierarchyRecords(txn, configuredObject);
             }
             catch (DatabaseException e)
             {
@@ -1474,16 +1486,49 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
         }
     }
 
-    private OperationStatus removeConfiguredObject(Transaction tx, UUID id) throws StoreException
+    private void writeHierarchyRecords(final Transaction txn, final ConfiguredObjectRecord configuredObject)
     {
+        OperationStatus status;
+        HierarchyKeyBinding hierarchyBinding = HierarchyKeyBinding.getInstance();
+        DatabaseEntry hierarchyKey = new DatabaseEntry();
+        DatabaseEntry hierarchyValue = new DatabaseEntry();
 
+        for(Map.Entry<String, ConfiguredObjectRecord> parent : configuredObject.getParents().entrySet())
+        {
+
+            hierarchyBinding.objectToEntry(new HierarchyKey(configuredObject.getId(), parent.getKey()), hierarchyKey);
+            UUIDTupleBinding.getInstance().objectToEntry(parent.getValue().getId(), hierarchyValue);
+            status = _configuredObjectHierarchyDb.put(txn, hierarchyKey, hierarchyValue);
+            if (status != OperationStatus.SUCCESS)
+            {
+                throw new StoreException("Error writing configured object " + configuredObject + " parent record to database: "
+                                         + status);
+            }
+        }
+    }
+
+    private OperationStatus removeConfiguredObject(Transaction tx, ConfiguredObjectRecord record) throws StoreException
+    {
+        UUID id = record.getId();
+        Map<String, ConfiguredObjectRecord> parents = record.getParents();
         LOGGER.debug("Removing configured object: " + id);
         DatabaseEntry key = new DatabaseEntry();
         UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
         uuidBinding.objectToEntry(id, key);
         try
         {
-            return _configuredObjectsDb.delete(tx, key);
+            OperationStatus status = _configuredObjectsDb.delete(tx, key);
+            if(status == OperationStatus.SUCCESS)
+            {
+                for(String parentType : parents.keySet())
+                {
+                    DatabaseEntry hierarchyKey = new DatabaseEntry();
+                    HierarchyKeyBinding keyBinding = HierarchyKeyBinding.getInstance();
+                    keyBinding.objectToEntry(new HierarchyKey(record.getId(), parentType), hierarchyKey);
+                    _configuredObjectHierarchyDb.delete(tx, hierarchyKey);
+                }
+            }
+            return status;
         }
         catch (DatabaseException e)
         {
@@ -1859,4 +1904,10 @@ public abstract class AbstractBDBMessageStore implements MessageStore, DurableCo
             }
         }
     }
+
+    void setVirtualHost(final VirtualHost virtualHost)
+    {
+        _virtualHost = virtualHost;
+    }
+
 }

@@ -27,7 +27,7 @@ public interface ConfigurationRecoveryHandler
 {
     void beginConfigurationRecovery(DurableConfigurationStore store, int configVersion);
 
-    void configuredObject(UUID id, String type, Map<String, Object> attributes);
+    void configuredObject(ConfiguredObjectRecord object);
 
     /**
      *

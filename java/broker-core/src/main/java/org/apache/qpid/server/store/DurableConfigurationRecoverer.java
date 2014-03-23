@@ -23,6 +23,7 @@ package org.apache.qpid.server.store;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -76,19 +77,19 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
     }
 
     @Override
-    public void configuredObject(final UUID id, final String type, final Map<String, Object> attributes)
+    public void configuredObject(ConfiguredObjectRecord record)
     {
-        _upgrader.configuredObject(id, type, attributes);
+        _upgrader.configuredObject(record);
     }
 
-    void onConfiguredObject(final UUID id, final String type, final Map<String, Object> attributes)
+    void onConfiguredObject(ConfiguredObjectRecord record)
     {
-        DurableConfiguredObjectRecoverer recoverer = getRecoverer(type);
+        DurableConfiguredObjectRecoverer recoverer = getRecoverer(record.getType());
         if(recoverer == null)
         {
-            throw new IllegalConfigurationException("Unknown type for configured object: " + type);
+            throw new IllegalConfigurationException("Unknown type for configured object: " + record.getType());
         }
-        recoverer.load(this, id, attributes);
+        recoverer.load(this, record);
     }
 
     private DurableConfiguredObjectRecoverer getRecoverer(final String type)
@@ -111,19 +112,12 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
     private void applyUpgrade()
     {
 
-        final Collection<ConfiguredObjectRecord> updates = new ArrayList<ConfiguredObjectRecord>();
-        final Collection<UUID> deletes = new ArrayList<UUID>();
-        for(Map.Entry<UUID,ConfiguredObjectRecord> entry : _upgrader.getUpdatedRecords().entrySet())
-        {
-            if(entry.getValue() != null)
-            {
-                updates.add(entry.getValue());
-            }
-            else
-            {
-                deletes.add(entry.getKey());
-            }
-        }
+        final Collection<ConfiguredObjectRecord> updates = new HashSet<ConfiguredObjectRecord>(_upgrader.getUpdatedRecords().values());
+        final Collection<ConfiguredObjectRecord> deletes = new HashSet<ConfiguredObjectRecord>(_upgrader.getDeletedRecords().values());
+
+        // Due to the way the upgraders work it is possible that the updates list may contain nulls
+        updates.remove(null);
+        deletes.remove(null);
 
         if(!updates.isEmpty())
         {
@@ -131,7 +125,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
         }
         if(!deletes.isEmpty())
         {
-            _store.removeConfiguredObjects(deletes.toArray(new UUID[deletes.size()]));
+            _store.remove(deletes.toArray(new ConfiguredObjectRecord[deletes.size()]));
         }
 
     }

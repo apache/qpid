@@ -1166,8 +1166,15 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         }
     }
 
+    @Override
     public TaskExecutor getTaskExecutor()
     {
         return super.getTaskExecutor();
+    }
+
+    @Override
+    public Exchange getExchange(UUID id)
+    {
+        return _virtualHost.getExchange(id);
     }
 }

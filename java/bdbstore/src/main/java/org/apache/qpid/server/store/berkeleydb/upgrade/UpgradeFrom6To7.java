@@ -27,6 +27,7 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.OperationStatus;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.StoreException;
 
 public class UpgradeFrom6To7 extends AbstractStoreUpgrade
@@ -35,7 +36,7 @@ public class UpgradeFrom6To7 extends AbstractStoreUpgrade
     private static final int DEFAULT_CONFIG_VERSION = 0;
 
     @Override
-    public void performUpgrade(Environment environment, UpgradeInteractionHandler handler, String virtualHostName)
+    public void performUpgrade(Environment environment, UpgradeInteractionHandler handler, VirtualHost virtualHost)
     {
         reportStarting(environment, 6);
         DatabaseConfig dbConfig = new DatabaseConfig();

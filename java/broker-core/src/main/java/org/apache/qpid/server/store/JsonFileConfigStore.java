@@ -26,14 +26,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
@@ -106,7 +99,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());
         for(ConfiguredObjectRecord record : records)
         {
-            recoveryHandler.configuredObject(record.getId(), record.getType(), record.getAttributes());
+            recoveryHandler.configuredObject(record);
         }
         int oldConfigVersion = _configVersion;
         _configVersion = recoveryHandler.completeConfigurationRecovery();
@@ -311,20 +304,21 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             }
 
         }
+        Map<String,UUID> parentMap = new HashMap<String, UUID>();
         if(parentId != null)
         {
-            data.put(parentClass.getSimpleName().toLowerCase(),parentId);
+            parentMap.put(parentClass.getSimpleName(),parentId);
             for(Class<? extends ConfiguredObject> otherParent : MODEL.getParentTypes(clazz))
             {
                 if(otherParent != parentClass)
                 {
                     final String otherParentAttr = otherParent.getSimpleName().toLowerCase();
-                    Object otherParentId = data.get(otherParentAttr);
+                    Object otherParentId = data.remove(otherParentAttr);
                     if(otherParentId instanceof String)
                     {
                         try
                         {
-                            data.put(otherParentAttr, UUID.fromString((String) otherParentId));
+                            parentMap.put(otherParent.getSimpleName(), UUID.fromString((String) otherParentId));
                         }
                         catch(IllegalArgumentException e)
                         {
@@ -336,7 +330,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             }
         }
 
-        _objectsById.put(id, new ConfiguredObjectRecord(id, type, data));
+        _objectsById.put(id, new ConfiguredObjectRecordImpl(id, type, data, parentMap));
         List<UUID> idsForType = _idsByType.get(type);
         if(idsForType == null)
         {
@@ -348,28 +342,27 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public synchronized void create(final UUID id, final String type, final Map<String, Object> attributes) throws
-                                                                                                            StoreException
+    public synchronized void create(ConfiguredObjectRecord record) throws StoreException
     {
-        if(_objectsById.containsKey(id))
+        if(_objectsById.containsKey(record.getId()))
         {
-            throw new StoreException("Object with id " + id + " already exists");
+            throw new StoreException("Object with id " + record.getId() + " already exists");
         }
-        else if(!CLASS_NAME_MAPPING.containsKey(type))
+        else if(!CLASS_NAME_MAPPING.containsKey(record.getType()))
         {
-            throw new StoreException("Cannot create object of unknown type " + type);
+            throw new StoreException("Cannot create object of unknown type " + record.getType());
         }
         else
         {
-            ConfiguredObjectRecord record = new ConfiguredObjectRecord(id, type, attributes);
-            _objectsById.put(id, record);
-            List<UUID> idsForType = _idsByType.get(type);
+
+            _objectsById.put(record.getId(), record);
+            List<UUID> idsForType = _idsByType.get(record.getType());
             if(idsForType == null)
             {
                 idsForType = new ArrayList<UUID>();
-                _idsByType.put(type, idsForType);
+                _idsByType.put(record.getType(), idsForType);
             }
-            idsForType.add(id);
+            idsForType.add(record.getId());
             save();
         }
     }
@@ -424,7 +417,21 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         Map<String,Object> map = new LinkedHashMap<String, Object>();
         map.put("id", id);
         map.putAll(record.getAttributes());
-        map.remove(MODEL.getParentTypes(type).iterator().next().getSimpleName().toLowerCase());
+
+        Collection<Class<? extends ConfiguredObject>> parentTypes = MODEL.getParentTypes(type);
+        if(parentTypes.size() > 1)
+        {
+            Iterator<Class<? extends ConfiguredObject>> iter = parentTypes.iterator();
+            // skip the first parent, which is given by structure
+            iter.next();
+            // for all other parents add a fake attribute with name being the parent type in lower case, and the value
+            // being the parents id
+            while(iter.hasNext())
+            {
+                String parentType = iter.next().getSimpleName();
+                map.put(parentType.toLowerCase(), record.getParents().get(parentType).getId());
+            }
+        }
 
         Collection<Class<? extends ConfiguredObject>> childClasses =
                 new ArrayList<Class<? extends ConfiguredObject>>(MODEL.getChildTypes(type));
@@ -442,17 +449,9 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                     for(UUID childId : childIds)
                     {
                         ConfiguredObjectRecord childRecord = _objectsById.get(childId);
-                        final String parentArg = type.getSimpleName().toLowerCase();
-                        final Object parent = childRecord.getAttributes().get(parentArg);
-                        String parentId;
-                        if(parent instanceof ConfiguredObject)
-                        {
-                            parentId = ((ConfiguredObject)parent).getId().toString();
-                        }
-                        else
-                        {
-                            parentId = String.valueOf(parent);
-                        }
+
+                        final ConfiguredObjectRecord parent = childRecord.getParents().get(type.getSimpleName());
+                        String parentId = parent.getId().toString();
                         if(id.toString().equals(parentId))
                         {
                             entities.add(build(childClass,childId));
@@ -470,34 +469,22 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void remove(final UUID id, final String type) throws StoreException
-    {
-        removeConfiguredObjects(id);
-    }
-
-    @Override
-    public synchronized UUID[] removeConfiguredObjects(final UUID... objects) throws StoreException
+    public synchronized UUID[] remove(final ConfiguredObjectRecord... objects) throws StoreException
     {
         List<UUID> removedIds = new ArrayList<UUID>();
-        for(UUID id : objects)
+        for(ConfiguredObjectRecord requestedRecord : objects)
         {
-            ConfiguredObjectRecord record = _objectsById.remove(id);
+            ConfiguredObjectRecord record = _objectsById.remove(requestedRecord.getId());
             if(record != null)
             {
-                removedIds.add(id);
-                _idsByType.get(record.getType()).remove(id);
+                removedIds.add(record.getId());
+                _idsByType.get(record.getType()).remove(record.getId());
             }
         }
         save();
         return removedIds.toArray(new UUID[removedIds.size()]);
     }
 
-    @Override
-    public void update(final UUID id, final String type, final Map<String, Object> attributes) throws
-                                                                                               StoreException
-    {
-        update(false, new ConfiguredObjectRecord(id, type, attributes));
-    }
 
     @Override
     public void update(final boolean createIfNecessary, final ConfiguredObjectRecord... records)
@@ -583,5 +570,59 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         return map;
     }
 
+    private class ConfiguredObjectRecordImpl implements ConfiguredObjectRecord
+    {
+
+        private final UUID _id;
+        private final String _type;
+        private final Map<String, Object> _attributes;
+        private final Map<String, UUID> _parents;
+
+        private ConfiguredObjectRecordImpl(final UUID id, final String type, final Map<String, Object> attributes,
+                                           final Map<String, UUID> parents)
+        {
+            _id = id;
+            _type = type;
+            _attributes = attributes;
+            _parents = parents;
+        }
+
+        @Override
+        public UUID getId()
+        {
+            return _id;
+        }
+
+        @Override
+        public String getType()
+        {
+            return _type;
+        }
+
+        @Override
+        public Map<String, Object> getAttributes()
+        {
+            return _attributes;
+        }
+
+        @Override
+        public Map<String, ConfiguredObjectRecord> getParents()
+        {
+            Map<String,ConfiguredObjectRecord> parents = new HashMap<String, ConfiguredObjectRecord>();
+            for(Map.Entry<String,UUID> entry : _parents.entrySet())
+            {
+                ConfiguredObjectRecord value = _objectsById.get(entry.getValue());
+
+                if(value == null && entry.getKey().equals("Exchange"))
+                {
+                    // TODO - remove this hack for the defined exchanges
+                    value = new ConfiguredObjectRecordImpl(entry.getValue(),entry.getKey(),Collections.<String,Object>emptyMap(), Collections.<String,UUID>emptyMap());
+                }
+
+                parents.put(entry.getKey(), value);
+            }
+            return parents;
+        }
+    }
 
 }

@@ -25,7 +25,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import org.apache.qpid.server.store.StoreException;
+
+import org.apache.qpid.server.store.*;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -41,12 +42,6 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaDataType_0_8;
-import org.apache.qpid.server.store.MessageStoreTest;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StorableMessageMetaData;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.Transaction;
-import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
@@ -55,6 +50,8 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Subclass of MessageStoreTest which runs the standard tests from the superclass against
@@ -230,7 +227,8 @@ public class BDBMessageStoreTest extends MessageStoreTest
         messageStore.close();
 
         AbstractBDBMessageStore newStore = new BDBMessageStore();
-        newStore.configure(getVirtualHostModel(),true);
+        newStore.setVirtualHost(getVirtualHostModel());
+        newStore.configure(true);
 
         newStore.startWithNoRecover();
 

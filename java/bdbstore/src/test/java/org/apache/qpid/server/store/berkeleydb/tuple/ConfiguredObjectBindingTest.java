@@ -29,6 +29,7 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 
 public class ConfiguredObjectBindingTest extends TestCase
 {
@@ -46,7 +47,7 @@ public class ConfiguredObjectBindingTest extends TestCase
     {
         super.setUp();
         _configuredObjectBinding = ConfiguredObjectBinding.getInstance();
-        _object = new ConfiguredObjectRecord(UUIDGenerator.generateRandomUUID(), DUMMY_TYPE_STRING,
+        _object = new ConfiguredObjectRecordImpl(UUIDGenerator.generateRandomUUID(), DUMMY_TYPE_STRING,
                 DUMMY_ATTRIBUTES_MAP);
     }
 

@@ -184,38 +184,22 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         return _realStore.addMessage(metaData);
     }
 
-
     @Override
-    public void create(UUID id, String type, Map<String, Object> attributes) throws StoreException
+    public void create(ConfiguredObjectRecord record) throws StoreException
     {
         doPreDelay("create");
-        _durableConfigurationStore.create(id, type, attributes);
+        _durableConfigurationStore.create(record);
         doPostDelay("create");
     }
 
-    @Override
-    public void remove(UUID id, String type) throws StoreException
-    {
-        doPreDelay("remove");
-        _durableConfigurationStore.remove(id, type);
-        doPostDelay("remove");
-    }
 
     @Override
-    public UUID[] removeConfiguredObjects(final UUID... objects) throws StoreException
+    public UUID[] remove(final ConfiguredObjectRecord... objects) throws StoreException
     {
         doPreDelay("remove");
-        UUID[] removed = _durableConfigurationStore.removeConfiguredObjects(objects);
+        UUID[] removed = _durableConfigurationStore.remove(objects);
         doPostDelay("remove");
         return removed;
-    }
-
-    @Override
-    public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
-    {
-        doPreDelay("update");
-        _durableConfigurationStore.update(id, type, attributes);
-        doPostDelay("update");
     }
 
     @Override

@@ -28,6 +28,7 @@ public abstract class NonNullUpgrader implements DurableConfigurationStoreUpgrad
 {
     private DurableConfigurationStoreUpgrader _nextUpgrader;
     private final Map<UUID, ConfiguredObjectRecord> _updates = new HashMap<UUID, ConfiguredObjectRecord>();
+    private final Map<UUID, ConfiguredObjectRecord> _deletes = new HashMap<UUID, ConfiguredObjectRecord>();
 
     public final void setNextUpgrader(final DurableConfigurationStoreUpgrader upgrader)
     {
@@ -50,6 +51,10 @@ public abstract class NonNullUpgrader implements DurableConfigurationStoreUpgrad
     {
         return _updates;
     }
+    protected Map<UUID, ConfiguredObjectRecord> getDeleteMap()
+    {
+        return _deletes;
+    }
 
     @Override
     public final Map<UUID, ConfiguredObjectRecord> getUpdatedRecords()
@@ -59,4 +64,11 @@ public abstract class NonNullUpgrader implements DurableConfigurationStoreUpgrad
         return updates;
     }
 
+    @Override
+    public final Map<UUID, ConfiguredObjectRecord> getDeletedRecords()
+    {
+        final Map<UUID, ConfiguredObjectRecord> deletes = new HashMap<UUID, ConfiguredObjectRecord>(_deletes);
+        deletes.putAll(_nextUpgrader.getDeletedRecords());
+        return deletes;
+    }
 }

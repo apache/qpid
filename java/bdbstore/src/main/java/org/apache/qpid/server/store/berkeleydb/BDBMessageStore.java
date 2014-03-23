@@ -46,11 +46,11 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     private CommitThreadWrapper _commitThreadWrapper;
 
     @Override
-    protected void setupStore(File storePath, String name) throws DatabaseException
+    protected void setupStore(File storePath) throws DatabaseException
     {
-        super.setupStore(storePath, name);
+        super.setupStore(storePath);
 
-        _commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + name, getEnvironment());
+        _commitThreadWrapper = new CommitThreadWrapper("Commit-Thread-" + getVirtualHost().getName(), getEnvironment());
         _commitThreadWrapper.startCommitThread();
     }
 
