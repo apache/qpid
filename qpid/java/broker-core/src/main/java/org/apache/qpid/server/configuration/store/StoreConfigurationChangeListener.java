@@ -87,7 +87,7 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
 
     private ConfigurationEntry toConfigurationEntry(ConfiguredObject object)
     {
-        Class<? extends ConfiguredObject> objectType = getConfiguredObjectType(object);
+        Class<? extends ConfiguredObject> objectType = object.getCategoryClass();
         Set<UUID> childrenIds = getChildrenIds(object, objectType);
         ConfigurationEntry entry = new ConfigurationEntry(object.getId(), objectType.getSimpleName(),
                 object.getActualAttributes(), childrenIds, _store);
@@ -118,98 +118,6 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
             }
         }
         return childrenIds;
-    }
-
-    private Class<? extends ConfiguredObject> getConfiguredObjectType(ConfiguredObject object)
-    {
-        if (object instanceof Broker)
-        {
-            return Broker.class;
-        }
-        else if (object instanceof VirtualHost)
-        {
-            return VirtualHost.class;
-        }
-        else if (object instanceof Port)
-        {
-            return Port.class;
-        }
-        else if (object instanceof AuthenticationProvider)
-        {
-            return AuthenticationProvider.class;
-        }
-        return getConfiguredObjectTypeFromImplementedInterfaces(object.getClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    private Class<? extends ConfiguredObject> getConfiguredObjectTypeFromImplementedInterfaces(Class<?> objectClass)
-    {
-        // get all implemented interfaces extending ConfiguredObject
-        Set<Class<?>> interfaces = getImplementedInterfacesExtendingSuper(objectClass, ConfiguredObject.class);
-
-        if (interfaces.size() == 0)
-        {
-            throw new StoreException("Can not identify the configured object type");
-        }
-
-        if (interfaces.size() == 1)
-        {
-            return (Class<? extends ConfiguredObject>)interfaces.iterator().next();
-        }
-
-        Set<Class<?>> superInterfaces = new HashSet<Class<?>>();
-
-        // find all super interfaces
-        for (Class<?> interfaceClass : interfaces)
-        {
-            for (Class<?> interfaceClass2 : interfaces)
-            {
-                if (interfaceClass != interfaceClass2)
-                {
-                    if (interfaceClass.isAssignableFrom(interfaceClass2))
-                    {
-                        superInterfaces.add(interfaceClass);
-                    }
-                }
-            }
-        }
-
-        // remove super interfaces
-        for (Class<?> superInterface : superInterfaces)
-        {
-            interfaces.remove(superInterface);
-        }
-
-        if (interfaces.size() == 1)
-        {
-            return (Class<? extends ConfiguredObject>)interfaces.iterator().next();
-        }
-        else
-        {
-            throw new StoreException("Can not identify the configured object type as an it implements"
-                    + " more than one configured object interfaces: " + interfaces);
-        }
-
-    }
-
-    private Set<Class<?>> getImplementedInterfacesExtendingSuper(Class<?> classInstance, Class<?> superInterface)
-    {
-        Set<Class<?>> interfaces = new HashSet<Class<?>>();
-        Class<?>[] classInterfaces = classInstance.getInterfaces();
-        for (Class<?> interfaceClass : classInterfaces)
-        {
-            if (interfaceClass!= superInterface && superInterface.isAssignableFrom(interfaceClass))
-            {
-                interfaces.add(interfaceClass);
-            }
-        }
-        Class<?> superClass = classInstance.getSuperclass();
-        if (superClass != null)
-        {
-            Set<Class<?>> superClassInterfaces = getImplementedInterfacesExtendingSuper(superClass, superInterface);
-            interfaces.addAll(superClassInterfaces);
-        }
-        return interfaces;
     }
 
     @Override
