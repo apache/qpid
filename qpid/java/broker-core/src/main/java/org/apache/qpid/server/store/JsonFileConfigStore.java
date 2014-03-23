@@ -38,10 +38,17 @@ import java.util.UUID;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.VirtualHost;
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.Version;
 import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.JsonSerializer;
+import org.codehaus.jackson.map.Module;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jackson.map.SerializerProvider;
+import org.codehaus.jackson.map.module.SimpleModule;
 
 public class JsonFileConfigStore implements DurableConfigurationStore
 {
@@ -61,8 +68,30 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     private String _backupFileName;
     private int _configVersion;
 
+    private static final Module _module;
+    static
+    {
+        SimpleModule module= new SimpleModule("ConfiguredObjectSerializer", new Version(1,0,0,null));
+
+        final JsonSerializer<ConfiguredObject> serializer = new JsonSerializer<ConfiguredObject>()
+        {
+            @Override
+            public void serialize(final ConfiguredObject value,
+                                  final JsonGenerator jgen,
+                                  final SerializerProvider provider)
+                    throws IOException, JsonProcessingException
+            {
+                jgen.writeString(value.getId().toString());
+            }
+        };
+        module.addSerializer(ConfiguredObject.class, serializer);
+
+        _module = module;
+    }
+
     public JsonFileConfigStore()
     {
+        _objectMapper.registerModule(_module);
         _objectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
     }
 
@@ -414,7 +443,17 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                     {
                         ConfiguredObjectRecord childRecord = _objectsById.get(childId);
                         final String parentArg = type.getSimpleName().toLowerCase();
-                        if(id.toString().equals(String.valueOf(childRecord.getAttributes().get(parentArg))))
+                        final Object parent = childRecord.getAttributes().get(parentArg);
+                        String parentId;
+                        if(parent instanceof ConfiguredObject)
+                        {
+                            parentId = ((ConfiguredObject)parent).getId().toString();
+                        }
+                        else
+                        {
+                            parentId = String.valueOf(parent);
+                        }
+                        if(id.toString().equals(parentId))
                         {
                             entities.add(build(childClass,childId));
                         }
