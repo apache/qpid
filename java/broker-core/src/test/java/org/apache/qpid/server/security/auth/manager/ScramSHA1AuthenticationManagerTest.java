@@ -191,7 +191,7 @@ public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
     {
         try
         {
-            _authManager.createUser(getTestName()+"£", "password", Collections.<String, String>emptyMap());
+            _authManager.createUser(getTestName()+Character.toString((char)0xa3), "password", Collections.<String, String>emptyMap());
             fail("Expected exception when attempting to create a user with a non ascii name");
         }
         catch(IllegalArgumentException e)
