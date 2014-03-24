@@ -47,7 +47,7 @@ under the License.
     <para>
       This approach relies on an external <firstterm>cluster resource manager</firstterm>
       to detect failures, choose the new primary and handle network partitions. <ulink
-      url="https://fedorahosted.org/cluster/wiki/RGManager">Rgmanager</ulink> is supported
+      url="https://fedorahosted.org/cluster/wiki/RGManager">rgmanager</ulink> is supported
       initially, but others may be supported in the future.
     </para>
     <section id="ha-at-least-once">
@@ -81,7 +81,7 @@ under the License.
 	<footnote>
 	  <para>
 	  Clients must use "at-least-once" reliability to enable re-send of unacknowledged
-	  messages. This is the default behavior, no options need be set to enable it. For
+	  messages. This is the default behaviour, no options need be set to enable it. For
 	  details of client addressing options see &#34;Using the Qpid Messaging API&#34;
 	  in <citetitle>Programming in Apache Qpid</citetitle>.
 	  </para>
@@ -102,7 +102,7 @@ under the License.
       </para>
       <para>
 	When a new primary is promoted after a fail-over it is initially in
-	"recovering" mode. In this mode, it delays acknowledgment of messages
+	"recovering" mode. In this mode, it delays acknowledgement of messages
 	on behalf of all the backups that were connected to the previous
 	primary. This protects those messages against a failure of the new
 	primary until the backups have a chance to connect and catch up.
@@ -277,18 +277,15 @@ ssl_addr = "ssl:" host [":" port]'
 	    <entry><literal>ha-public-url <replaceable>URL</replaceable></literal> </entry>
 	    <entry>
 	      <para>
-		The URL <footnoteref linkend="ha-url-grammar"/> is advertised to
-		clients as the "known-hosts" for fail-over.  It can be a list or
-		a single virtual IP address. A virtual IP address is recommended.
+		This option is only needed for backwards compatibility if you
+		have been using the <literal>amq.failover</literal> exchange.
+		This exchange is now obsolete, it is recommended to use a
+		virtual IP address instead.
 	      </para>
 	      <para>
-		Using this option you can put client and broker traffic on
-		separate networks, which is recommended.
-	      </para>
-	      <para>
-		Note: When HA clustering is enabled the broker option
-		<literal>known-hosts-url</literal> is ignored and over-ridden by
-		the <literal>ha-public-url</literal> setting.
+		If set, this URL is advertized by the
+		<literal>amq.failover</literal> exchange and overrides the
+		broker option <literal>known-hosts-url</literal>
 	      </para>
 	    </entry>
 	  </row>
@@ -426,7 +423,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 -->
 
 <cluster name="qpid-test" config_version="18">
-  <!-- The cluster has 3 nodes. Each has a unique nodid and one vote
+  <!-- The cluster has 3 nodes. Each has a unique nodeid and one vote
        for quorum. -->
   <clusternodes>
     <clusternode name="node1.example.com" nodeid="1"/>
@@ -498,20 +495,17 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
     <para>
       The <literal>resources</literal> section also defines a virtual IP
-      address for clients.
+      address for clients: <literal>20.0.20.200</literal>.
     </para>
     <para>
-      To take advantage of the virtual IP addresses, <filename>qpidd.conf</filename>
-      should contain these  lines:
+      <filename>qpidd.conf</filename> should contain these  lines:
     </para>
     <programlisting>
       ha-cluster=yes
-      ha-public-url=20.0.10.200
       ha-brokers-url=20.0.20.1,20.0.20.2,20.0.20.3
     </programlisting>
     <para>
-      This configuration allows clients to connect to a single address:
-      20.0.10.200.  The brokers connect to each other directly via the addresses
+      The brokers connect to each other directly via the addresses
       listed in <command>ha-brokers-url</command>. Note the client and broker
       addresses are on separate sub-nets, this is recommended but not required.
     </para>
@@ -622,10 +616,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       Clients can only connect to the primary broker. Backup brokers reject any
       connection attempt by a client. Clients rejected by a backup broker will
-      automatically fail-over until they connect to the primary. if
-      <literal>ha-public-url</literal> contains multiple addresses, the client
-      will them all in rotation. If it is a virtual IP address the clients will
-      retry on the same address until it is reconnected.
+      automatically fail-over until they connect to the primary.
     </para>
     <para>
       Clients are configured with the URL for the cluster (details below for
@@ -704,10 +695,10 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	Heartbeats are disabled by default. You can enable them by specifying a
 	heartbeat interval (in seconds) for the connection via the
 	<literal>heartbeat</literal> option. For example:
-	<programlisting>
-	  qpid::messaging::Connection c("node1,node2,node3","{reconnect:true,heartbeat:10}");
-	</programlisting>
       </para>
+      <programlisting>
+	qpid::messaging::Connection c("node1,node2,node3","{reconnect:true,heartbeat:10}");
+      </programlisting>
     </section>
     <section id="ha-python-client">
       <title>Python clients</title>
@@ -886,6 +877,3 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   </section>
 
 </section>
-
-<!-- LocalWords:  scalability rgmanager multicast RGManager mailto LVQ qpidd IP dequeued Transactional username API
--->
