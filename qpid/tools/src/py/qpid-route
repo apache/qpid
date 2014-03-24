@@ -239,7 +239,9 @@ class RouteManager:
                 if url.name() not in self.brokerList:
                     print "    %s..." % url.name(),
                     try:
-                        b = self.qmf.addBroker(url, config._connTimeout)
+                        url.authName = self.local.authName
+                        url.authPass = self.local.authPass
+                        b = self.qmf.addBroker(url, config._connTimeout, **config._conn_options)
                         self.brokerList[url.name()] = b
                         added = True
                         print "Ok"
