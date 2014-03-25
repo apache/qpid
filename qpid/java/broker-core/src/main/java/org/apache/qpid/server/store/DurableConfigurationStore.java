@@ -23,8 +23,6 @@ package org.apache.qpid.server.store;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.VirtualHost;
-
 public interface DurableConfigurationStore
 {
     String STORE_TYPE                    = "storeType";
@@ -38,16 +36,17 @@ public interface DurableConfigurationStore
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
-     *
-     *
-     *
-     *
-     *
-     * @param virtualHost
-     * @param recoveryHandler  Handler to be called as the store recovers on start up
+     * @param virtualHostName host name
+     * @param storeSettings store settings
      */
-    void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler);
+    void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings) throws StoreException;
 
+    /**
+     * Recovers configuration from the store using given recovery handler
+     *
+     * @param recoveryHandler recovery handler
+     */
+    void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler) throws StoreException;
 
     /**
      * Makes the specified object persistent.
@@ -86,8 +85,8 @@ public interface DurableConfigurationStore
     void update(UUID id, String type, Map<String, Object> attributes) throws StoreException;
 
 
-    public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
+    void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
 
 
-    void close() throws Exception;
+    void closeConfigurationStore() throws StoreException;
 }

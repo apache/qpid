@@ -28,9 +28,10 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.util.FileUtils;
 import org.mockito.InOrder;
 
 import static org.mockito.Matchers.any;
@@ -46,36 +47,34 @@ import static org.mockito.Mockito.when;
 public class JsonFileConfigStoreTest extends QpidTestCase
 {
     private final ConfigurationRecoveryHandler _recoveryHandler = mock(ConfigurationRecoveryHandler.class);
-    private VirtualHost _virtualHost;
+
     private JsonFileConfigStore _store;
     private HashMap<String, Object> _configurationStoreSettings;
+    private String _virtualHostName;
+    private File _storeLocation;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        removeStoreFile();
-        _virtualHost = mock(VirtualHost.class);
-        when(_virtualHost.getName()).thenReturn(getName());
+        _virtualHostName = getName();
+        _storeLocation = TestFileUtils.createTestDirectory("json", true);
         _configurationStoreSettings = new HashMap<String, Object>();
         _configurationStoreSettings.put(JsonFileConfigStore.STORE_TYPE, JsonFileConfigStore.TYPE);
-        _configurationStoreSettings.put(JsonFileConfigStore.STORE_PATH, TMP_FOLDER);
-        when(_virtualHost.getConfigurationStoreSettings()).thenReturn(_configurationStoreSettings);
+        _configurationStoreSettings.put(JsonFileConfigStore.STORE_PATH, _storeLocation.getAbsolutePath());
         _store = new JsonFileConfigStore();
     }
 
     @Override
     public void tearDown() throws Exception
     {
-        removeStoreFile();
-    }
-
-    private void removeStoreFile()
-    {
-        File file = new File(TMP_FOLDER, getName() + ".json");
-        if(file.exists())
+        try
         {
-            file.delete();
+            super.tearDown();
+        }
+        finally
+        {
+            FileUtils.delete(_storeLocation, true);
         }
     }
 
@@ -84,7 +83,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _configurationStoreSettings.put(JsonFileConfigStore.STORE_PATH, null);
         try
         {
-            _store.configureConfigStore(_virtualHost, _recoveryHandler);
+            _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
             fail("Store should not successfully configure if there is no path set");
         }
         catch (ServerScopedRuntimeException e)
@@ -99,7 +98,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _configurationStoreSettings.put(JsonFileConfigStore.STORE_PATH, System.getProperty("file.separator"));
         try
         {
-            _store.configureConfigStore(_virtualHost, _recoveryHandler);
+            _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
             fail("Store should not successfully configure if there is an invalid path set");
         }
         catch (ServerScopedRuntimeException e)
@@ -110,12 +109,13 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
     public void testStartFromNoStore() throws Exception
     {
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
+        _store.recoverConfigurationStore(_recoveryHandler);
         InOrder inorder = inOrder(_recoveryHandler);
         inorder.verify(_recoveryHandler).beginConfigurationRecovery(eq(_store), eq(0));
         inorder.verify(_recoveryHandler,never()).configuredObject(any(UUID.class),anyString(),anyMap());
         inorder.verify(_recoveryHandler).completeConfigurationRecovery();
-        _store.close();
+        _store.closeConfigurationStore();
     }
 
     public void testUpdatedConfigVersionIsRetained() throws Exception
@@ -123,10 +123,12 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         final int NEW_CONFIG_VERSION = 42;
         when(_recoveryHandler.completeConfigurationRecovery()).thenReturn(NEW_CONFIG_VERSION);
 
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
-        _store.close();
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
+        _store.recoverConfigurationStore(_recoveryHandler);
+        _store.closeConfigurationStore();
 
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
+        _store.recoverConfigurationStore(_recoveryHandler);
         InOrder inorder = inOrder(_recoveryHandler);
 
         // first time the config version should be the initial version - 0
@@ -135,27 +137,28 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         // second time the config version should be the updated version
         inorder.verify(_recoveryHandler).beginConfigurationRecovery(eq(_store), eq(NEW_CONFIG_VERSION));
 
-        _store.close();
+        _store.closeConfigurationStore();
     }
 
     public void testCreateObject() throws Exception
     {
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         final UUID queueId = new UUID(0, 1);
         final String queueType = Queue.class.getSimpleName();
         final Map<String,Object> queueAttr = Collections.singletonMap("name", (Object) "q1");
 
         _store.create(queueId, queueType, queueAttr);
-        _store.close();
+        _store.closeConfigurationStore();
 
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
+        _store.recoverConfigurationStore(_recoveryHandler);
         verify(_recoveryHandler).configuredObject(eq(queueId), eq(queueType), eq(queueAttr));
-        _store.close();
+        _store.closeConfigurationStore();
     }
 
     public void testCreateAndUpdateObject() throws Exception
     {
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         final UUID queueId = new UUID(0, 1);
         final String queueType = Queue.class.getSimpleName();
         Map<String,Object> queueAttr = Collections.singletonMap("name", (Object) "q1");
@@ -167,17 +170,18 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         queueAttr.put("owner", "theowner");
         _store.update(queueId, queueType, queueAttr);
 
-        _store.close();
+        _store.closeConfigurationStore();
 
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
+        _store.recoverConfigurationStore(_recoveryHandler);
         verify(_recoveryHandler).configuredObject(eq(queueId), eq(queueType), eq(queueAttr));
-        _store.close();
+        _store.closeConfigurationStore();
     }
 
 
     public void testCreateAndRemoveObject() throws Exception
     {
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         final UUID queueId = new UUID(0, 1);
         final String queueType = Queue.class.getSimpleName();
         Map<String,Object> queueAttr = Collections.singletonMap("name", (Object) "q1");
@@ -187,16 +191,17 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
         _store.remove(queueId, queueType);
 
-        _store.close();
+        _store.closeConfigurationStore();
 
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
+        _store.recoverConfigurationStore(_recoveryHandler);
         verify(_recoveryHandler, never()).configuredObject(any(UUID.class), anyString(), anyMap());
-        _store.close();
+        _store.closeConfigurationStore();
     }
 
     public void testCreateUnknownObjectType() throws Exception
     {
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         try
         {
             _store.create(UUID.randomUUID(), "wibble", Collections.<String, Object>emptyMap());
@@ -210,7 +215,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
     public void testTwoObjectsWithSameId() throws Exception
     {
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         final UUID id = UUID.randomUUID();
         _store.create(id, "Queue", Collections.<String, Object>emptyMap());
         try
@@ -227,11 +232,11 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
     public void testChangeTypeOfObject() throws Exception
     {
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         final UUID id = UUID.randomUUID();
         _store.create(id, "Queue", Collections.<String, Object>emptyMap());
-        _store.close();
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.closeConfigurationStore();
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
 
         try
         {
@@ -246,21 +251,21 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
     public void testLockFileGuaranteesExclusiveAccess() throws Exception
     {
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
 
         JsonFileConfigStore secondStore = new JsonFileConfigStore();
 
         try
         {
-            secondStore.configureConfigStore(_virtualHost, _recoveryHandler);
+            secondStore.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
             fail("Should not be able to open a second store with the same path");
         }
         catch(ServerScopedRuntimeException e)
         {
             // pass
         }
-        _store.close();
-        secondStore.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.closeConfigurationStore();
+        secondStore.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
 
 
     }
@@ -268,7 +273,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     public void testCreatedNestedObjects() throws Exception
     {
 
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         final UUID queueId = new UUID(0, 1);
         final UUID queue2Id = new UUID(1, 1);
 
@@ -290,14 +295,15 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _store.update(true,
                 new ConfiguredObjectRecord(bindingId, "Binding", bindingAttributes),
                 new ConfiguredObjectRecord(binding2Id, "Binding", binding2Attributes));
-        _store.close();
-        _store.configureConfigStore(_virtualHost, _recoveryHandler);
+        _store.closeConfigurationStore();
+        _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
+        _store.recoverConfigurationStore(_recoveryHandler);
         verify(_recoveryHandler).configuredObject(eq(queueId), eq("Queue"), eq(EMPTY_ATTR));
         verify(_recoveryHandler).configuredObject(eq(queue2Id), eq("Queue"), eq(EMPTY_ATTR));
         verify(_recoveryHandler).configuredObject(eq(exchangeId), eq("Exchange"), eq(EMPTY_ATTR));
         verify(_recoveryHandler).configuredObject(eq(bindingId),eq("Binding"), eq(bindingAttributes));
         verify(_recoveryHandler).configuredObject(eq(binding2Id),eq("Binding"), eq(binding2Attributes));
-        _store.close();
+        _store.closeConfigurationStore();
 
     }
 

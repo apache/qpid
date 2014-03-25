@@ -75,18 +75,12 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         _messageStore.addEventListener(new AfterInitialisationListener(), Event.AFTER_INIT);
         _messageStore.addEventListener(new BeforePassivationListener(), Event.BEFORE_PASSIVATE);
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
-        DurableConfigurationRecoverer configRecoverer =
-                new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
-                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()), getEventLogger());
-
-        _messageStore.configureConfigStore(
-                virtualHost, configRecoverer
+        _messageStore.openConfigurationStore(
+                virtualHost.getName(), virtualHost.getMessageStoreSettings()
         );
 
-        _messageStore.configureMessageStore(
-                virtualHost, recoveryHandler,
-                recoveryHandler
+        _messageStore.openMessageStore(
+                virtualHost.getName(), virtualHost.getMessageStoreSettings()
         );
 
         // Make the virtualhost model object a replication group listener
@@ -105,7 +99,8 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
             try
             {
                 _inVhostInitiatedClose = true;
-                getMessageStore().close();
+                _messageStore.closeMessageStore();
+                _messageStore.closeConfigurationStore();
             }
             catch (Exception e)
             {
@@ -214,7 +209,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
             if (LOGGER.isInfoEnabled())
             {
                 LOGGER.info("Received BDB event indicating transition to state " + state
-                        + " when current message store state is " + _messageStore._stateManager.getState());
+                        + " when current message store state is " + _messageStore._messageStoreStateManager.getState());
             }
 
             switch (state)
@@ -243,7 +238,14 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
             try
             {
                 _messageStore.getEnvironmentFacade().getEnvironment().flushLog(true);
-                _messageStore.activate();
+
+                DurableConfigurationRecoverer configRecoverer =
+                        new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
+                                                          new DefaultUpgraderProvider(BDBHAVirtualHost.this, getExchangeRegistry()), getEventLogger());
+                _messageStore.recoverConfigurationStore(configRecoverer);
+
+                VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(BDBHAVirtualHost.this);
+                _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
             }
             catch (Exception e)
             {
@@ -256,9 +258,9 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
             try
             {
                 //TODO: move this this into the store method passivate()
-                if (_messageStore._stateManager.isNotInState(org.apache.qpid.server.store.State.INITIALISED))
+                if (_messageStore._messageStoreStateManager.isNotInState(org.apache.qpid.server.store.State.INITIALISED))
                 {
-                    _messageStore._stateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);
+                    _messageStore._messageStoreStateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);
                 }
             }
             catch (Exception e)

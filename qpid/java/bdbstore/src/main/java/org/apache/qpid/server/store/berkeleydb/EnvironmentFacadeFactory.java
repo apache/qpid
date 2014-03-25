@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.model.VirtualHost;
+import java.util.Map;
 
 public interface EnvironmentFacadeFactory
 {
     public static final String ENVIRONMENT_CONFIGURATION = "bdbEnvironmentConfig";
 
-    EnvironmentFacade createEnvironmentFacade(VirtualHost<?> virtualHost, boolean isMessageStore);
+    EnvironmentFacade createEnvironmentFacade(String virtualHostName, Map<String, Object> storeSettings);
 
     String getType();
 

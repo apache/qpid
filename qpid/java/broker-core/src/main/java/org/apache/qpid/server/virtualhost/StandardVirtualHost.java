@@ -92,14 +92,17 @@ public class StandardVirtualHost extends AbstractVirtualHost
         DurableConfigurationRecoverer configRecoverer =
                 new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
                                                   new DefaultUpgraderProvider(this, getExchangeRegistry()), getEventLogger());
-        _durableConfigurationStore.configureConfigStore(virtualHost, configRecoverer);
+        _durableConfigurationStore.openConfigurationStore(virtualHost.getName(), _durableConfigurationStore == _messageStore ? messageStoreSettings: configurationStoreSettings);
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
-        _messageStore.configureMessageStore(virtualHost, recoveryHandler, recoveryHandler);
+        _messageStore.openMessageStore(virtualHost.getName(), virtualHost.getMessageStoreSettings());
 
+        _durableConfigurationStore.recoverConfigurationStore(configRecoverer);
+
+        // If store does not have entries for standard exchanges (amq.*), the following will create them.
         initialiseModel();
 
-        _messageStore.activate();
+        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
+        _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
 
         attainActivation();
     }
@@ -115,5 +118,6 @@ public class StandardVirtualHost extends AbstractVirtualHost
     {
         return _durableConfigurationStore;
     }
+
 
 }

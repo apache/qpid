@@ -22,7 +22,6 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.util.Map;
 
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
@@ -48,9 +47,8 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
     private static final boolean DEFAULT_COALESCING_SYNC = true;
 
     @Override
-    public EnvironmentFacade createEnvironmentFacade(VirtualHost<?> virtualHost, boolean isMessageStore)
+    public EnvironmentFacade createEnvironmentFacade(String virtualHostName, final Map<String, Object> messageStoreSettings)
     {
-        final Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
         ReplicatedEnvironmentConfiguration configuration = new ReplicatedEnvironmentConfiguration()
         {
             @Override

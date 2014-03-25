@@ -57,7 +57,7 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     String CONFIGURATION_STORE_SETTINGS         = "configurationStoreSettings";
     String MESSAGE_STORE_SETTINGS               = "messageStoreSettings";
 
-    int CURRENT_CONFIG_VERSION = 4;
+    int CURRENT_CONFIG_VERSION = 5;
 
     @ManagedAttribute
     Collection<String> getSupportedExchangeTypes();

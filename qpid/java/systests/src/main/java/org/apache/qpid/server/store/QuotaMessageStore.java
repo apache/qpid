@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.server.model.VirtualHost;
 
 public class
         QuotaMessageStore extends NullMessageStore
@@ -49,9 +48,15 @@ public class
     }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
+    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
     {
-        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
+
+    }
+
+    @Override
+    public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings)
+    {
+        _stateManager.attainState(State.INITIALISING);
         Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
         _persistentSizeHighThreshold = overfullAttr == null
                                        ? Long.MAX_VALUE
@@ -72,18 +77,11 @@ public class
         {
             _persistentSizeLowThreshold = _persistentSizeHighThreshold;
         }
-        _stateManager.attainState(State.INITIALISING);
-    }
-
-    @Override
-    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
-    {
         _stateManager.attainState(State.INITIALISED);
     }
 
     @Override
-    public void activate()
+    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
         _stateManager.attainState(State.ACTIVATING);
         _stateManager.attainState(State.ACTIVE);
@@ -153,7 +151,7 @@ public class
     }
 
     @Override
-    public void close()
+    public void closeMessageStore()
     {
         if (_closed.compareAndSet(false, true))
         {

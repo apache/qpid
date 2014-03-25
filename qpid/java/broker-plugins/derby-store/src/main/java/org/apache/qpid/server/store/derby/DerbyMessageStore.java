@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
@@ -125,28 +124,13 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
     }
 
     @Override
-    protected void implementationSpecificConfiguration(String name,
-                                                       VirtualHost virtualHost)
+    protected void implementationSpecificConfiguration(String name, Map<String, Object> messageStoreSettings)
             throws ClassNotFoundException
     {
         //Update to pick up QPID_WORK and use that as the default location not just derbyDB
-
-        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
-        Map<String, Object> configurationStoreSettings = virtualHost.getConfigurationStoreSettings();
         _driverClass = (Class<Driver>) Class.forName(SQL_DRIVER_NAME);
 
-        String databasePath = null;
-        if (isConfigStoreOnly())
-        {
-            databasePath = (String) configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
-        }
-        else
-        {
-            if (messageStoreSettings != null)
-            {
-                databasePath = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
-            }
-        }
+        String databasePath =  (String) messageStoreSettings.get(MessageStore.STORE_PATH);;
 
         if(databasePath == null)
         {

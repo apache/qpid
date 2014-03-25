@@ -32,13 +32,16 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.FanoutExchange;
 import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueFactory;
@@ -59,19 +62,21 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
 
 public class DurableConfigurationRecovererTest extends QpidTestCase
 {
+    private static final String VIRTUAL_HOST_NAME = "test";
     private static final UUID QUEUE_ID = new UUID(0,0);
-    private static final UUID TOPIC_EXCHANGE_ID = new UUID(0,1);
-    private static final UUID DIRECT_EXCHANGE_ID = new UUID(0,2);
+    private static final UUID TOPIC_EXCHANGE_ID = UUIDGenerator.generateExchangeUUID(TopicExchange.TYPE.getDefaultExchangeName(), VIRTUAL_HOST_NAME);
+    private static final UUID DIRECT_EXCHANGE_ID = UUIDGenerator.generateExchangeUUID(DirectExchange.TYPE.getDefaultExchangeName(), VIRTUAL_HOST_NAME);
     private static final String CUSTOM_EXCHANGE_NAME = "customExchange";
 
     private DurableConfigurationRecoverer _durableConfigurationRecoverer;
-    private ExchangeImpl _directExchange;
-    private ExchangeImpl _topicExchange;
+    private ExchangeImpl<?> _directExchange;
+    private ExchangeImpl<?> _topicExchange;
+    private ExchangeImpl<?> _matchExchange;
+    private ExchangeImpl<?> _fanoutExchange;
     private VirtualHost _vhost;
     private DurableConfigurationStore _store;
     private ExchangeFactory _exchangeFactory;
@@ -83,21 +88,19 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     {
         super.setUp();
 
+        _exchangeFactory = mock(ExchangeFactory.class);
 
-        _directExchange = mock(ExchangeImpl.class);
-        when(_directExchange.getExchangeType()).thenReturn(DirectExchange.TYPE);
+        _directExchange = createAndRegisterDefaultExchangeWithFactory(DirectExchange.TYPE);
+        _topicExchange = createAndRegisterDefaultExchangeWithFactory(TopicExchange.TYPE);
+        _matchExchange = createAndRegisterDefaultExchangeWithFactory(HeadersExchange.TYPE);
+        _fanoutExchange = createAndRegisterDefaultExchangeWithFactory(FanoutExchange.TYPE);
 
-
-        _topicExchange = mock(ExchangeImpl.class);
-        when(_topicExchange.getExchangeType()).thenReturn(TopicExchange.TYPE);
-
-        AMQQueue queue = mock(AMQQueue.class);
+        AMQQueue<?> queue = mock(AMQQueue.class);
 
         _vhost = mock(VirtualHost.class);
+        when(_vhost.getName()).thenReturn(VIRTUAL_HOST_NAME);
 
         _exchangeRegistry = mock(ExchangeRegistry.class);
-        when(_exchangeRegistry.getExchange(eq(DIRECT_EXCHANGE_ID))).thenReturn(_directExchange);
-        when(_exchangeRegistry.getExchange(eq(TOPIC_EXCHANGE_ID))).thenReturn(_topicExchange);
 
         when(_vhost.getQueue(eq(QUEUE_ID))).thenReturn(queue);
 
@@ -165,7 +168,6 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                     }
                 });
 
-        _exchangeFactory = mock(ExchangeFactory.class);
 
 
         DurableConfiguredObjectRecoverer[] recoverers = {
@@ -185,6 +187,19 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _store = mock(DurableConfigurationStore.class);
 
+    }
+
+    private ExchangeImpl<?> createAndRegisterDefaultExchangeWithFactory(ExchangeType<?> exchangeType) throws AMQUnknownExchangeType, UnknownExchangeException
+    {
+        ExchangeImpl exchange = mock(ExchangeImpl.class);
+        when(exchange.getExchangeType()).thenReturn(exchangeType);
+        Map<String, Object> directExchangeAttrsWithId = new HashMap<String, Object>();
+        directExchangeAttrsWithId.put(org.apache.qpid.server.model.Exchange.ID, UUIDGenerator.generateExchangeUUID(exchangeType.getDefaultExchangeName(), VIRTUAL_HOST_NAME));
+        directExchangeAttrsWithId.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
+        directExchangeAttrsWithId.put(org.apache.qpid.server.model.Exchange.TYPE, exchangeType.getType());
+        directExchangeAttrsWithId.put(org.apache.qpid.server.model.Exchange.NAME, exchangeType.getDefaultExchangeName());
+        when(_exchangeFactory.restoreExchange(directExchangeAttrsWithId)).thenReturn(exchange);
+        return exchange;
     }
 
     public void testUpgradeEmptyStore() throws Exception
@@ -275,11 +290,28 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
             public ExchangeImpl answer(final InvocationOnMock invocation) throws Throwable
             {
                 Map arguments = attributesCaptor.getValue();
-                if(CUSTOM_EXCHANGE_NAME.equals(arguments.get(org.apache.qpid.server.model.Exchange.NAME))
+                String exchangeName = (String) arguments.get(org.apache.qpid.server.model.Exchange.NAME);
+                if(CUSTOM_EXCHANGE_NAME.equals(exchangeName)
                     && HeadersExchange.TYPE.getType().equals(arguments.get(org.apache.qpid.server.model.Exchange.TYPE))
-                    && customExchangeId.equals(arguments.get(org.apache.qpid.server.model.Exchange.ID)))
+                    && customExchangeId.equals((UUID) arguments.get(org.apache.qpid.server.model.Exchange.ID)))
                 {
                     return customExchange;
+                }
+                else if ("amq.topic".equals(exchangeName))
+                {
+                    return _topicExchange;
+                }
+                else if ("amq.direct".equals(exchangeName))
+                {
+                    return _directExchange;
+                }
+                else if ("amq.fanout".equals(exchangeName))
+                {
+                    return _fanoutExchange;
+                }
+                else if ("amq.match".equals(exchangeName))
+                {
+                    return _matchExchange;
                 }
                 else
                 {
@@ -410,11 +442,28 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
             public ExchangeImpl answer(final InvocationOnMock invocation) throws Throwable
             {
                 Map arguments = attributesCaptor.getValue();
-                if(CUSTOM_EXCHANGE_NAME.equals(arguments.get(org.apache.qpid.server.model.Exchange.NAME))
+                String exchangeName = (String) arguments.get(org.apache.qpid.server.model.Exchange.NAME);
+                if(CUSTOM_EXCHANGE_NAME.equals(exchangeName)
                    && HeadersExchange.TYPE.getType().equals(arguments.get(org.apache.qpid.server.model.Exchange.TYPE))
                    && exchangeId.equals(arguments.get(org.apache.qpid.server.model.Exchange.ID)))
                 {
                     return customExchange;
+                }
+                else if ("amq.topic".equals(exchangeName))
+                {
+                    return _topicExchange;
+                }
+                else if ("amq.direct".equals(exchangeName))
+                {
+                    return _directExchange;
+                }
+                else if ("amq.fanout".equals(exchangeName))
+                {
+                    return _fanoutExchange;
+                }
+                else if ("amq.match".equals(exchangeName))
+                {
+                    return _matchExchange;
                 }
                 else
                 {

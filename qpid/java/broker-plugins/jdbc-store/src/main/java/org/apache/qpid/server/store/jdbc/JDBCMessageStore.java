@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -259,18 +258,24 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     @Override
     protected void doClose()
     {
-        while(!_transactions.isEmpty())
-        {
-            RecordedJDBCTransaction txn = _transactions.get(0);
-            txn.abortTran();
-        }
         try
         {
-            _connectionProvider.close();
+            while(!_transactions.isEmpty())
+            {
+                RecordedJDBCTransaction txn = _transactions.get(0);
+                txn.abortTran();
+            }
         }
-        catch (SQLException e)
+        finally
         {
-            throw new StoreException("Unable to close connection provider ", e);
+            try
+            {
+                _connectionProvider.close();
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Unable to close connection provider ", e);
+            }
         }
     }
 
@@ -281,11 +286,9 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     }
 
 
-    protected void implementationSpecificConfiguration(String name,
-                                                       VirtualHost virtualHost)
+    protected void implementationSpecificConfiguration(String name, Map<String, Object> storeSettings)
         throws ClassNotFoundException, SQLException
     {
-        Map<String, Object> storeSettings = isConfigStoreOnly() ? virtualHost.getConfigurationStoreSettings() : virtualHost.getMessageStoreSettings();
         String connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
         Object poolAttribute = storeSettings.get(CONNECTION_POOL);
 

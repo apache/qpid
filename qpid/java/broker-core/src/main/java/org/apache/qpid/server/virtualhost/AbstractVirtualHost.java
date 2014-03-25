@@ -68,6 +68,7 @@ import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -572,10 +573,10 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         //Close MessageStore
         if (getMessageStore() != null)
         {
-            //Remove MessageStore Interface should not throw Exception
+            // TODO Remove MessageStore Interface should not throw Exception
             try
             {
-                getMessageStore().close();
+                getMessageStore().closeMessageStore();
             }
             catch (Exception e)
             {
@@ -584,14 +585,13 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         }
         if (getDurableConfigurationStore() != null)
         {
-            //Remove MessageStore Interface should not throw Exception
             try
             {
-                getDurableConfigurationStore().close();
+                getDurableConfigurationStore().closeConfigurationStore();
             }
-            catch (Exception e)
+            catch (StoreException e)
             {
-                _logger.error("Failed to close message store", e);
+                _logger.error("Failed to close configuration store", e);
             }
         }
     }

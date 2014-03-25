@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -101,27 +102,6 @@ public class StandardVirtualHostTest extends QpidTestCase
         customBindingTestImpl(new String[0]);
     }
 
-    /**
-     * Tests that specifying custom routing keys for a queue in the configuration file results in failure
-     * to create the vhost (since this is illegal, only queue names are used with the default exchange)
-     */
-    public void testSpecifyingCustomBindingForDefaultExchangeThrowsException() throws Exception
-    {
-        final String queueName = getName();
-        final String customBinding = "custom-binding";
-        writeConfigFile(queueName, queueName, null, false, new String[]{customBinding});
-
-        try
-        {
-            createVirtualHost(queueName);
-            fail("virtualhost creation should have failed due to illegal configuration");
-        }
-        catch (IllegalConfigurationException e)
-        {
-            // pass
-        }
-    }
-
     public void testVirtualHostBecomesActive() throws Exception
     {
         writeConfigFile(getName(), getName(), getName() +".direct", false, new String[0]);
@@ -145,6 +125,7 @@ public class StandardVirtualHostTest extends QpidTestCase
         assertNotNull(vhost);
         assertEquals(State.ACTIVE, vhost.getState());
         vhost.close();
+        _virtualHostRegistry.unregisterVirtualHost(vhost);
         assertEquals(State.STOPPED, vhost.getState());
         assertEquals(0, vhost.getHouseKeepingActiveCount());
     }
@@ -156,6 +137,7 @@ public class StandardVirtualHostTest extends QpidTestCase
         assertNotNull(host);
         assertEquals(State.ACTIVE, host.getState());
         host.close();
+        _virtualHostRegistry.unregisterVirtualHost(host);
         assertEquals(State.STOPPED, host.getState());
         assertEquals(0, host.getHouseKeepingActiveCount());
     }
@@ -296,16 +278,11 @@ public class StandardVirtualHostTest extends QpidTestCase
         objectMapper.writeValue(new File(_storeFolder, vhostName + ".json"), data);
 
         JsonFileConfigStore store = new JsonFileConfigStore();
-        org.apache.qpid.server.model.VirtualHost<?> virtualHost = mock(org.apache.qpid.server.model.VirtualHost.class);
-        when(virtualHost.getName()).thenReturn(vhostName);
         Map<String, Object> configurationStoreSettings = new HashMap<String, Object>();
-        when(virtualHost.getConfigurationStoreSettings()).thenReturn(configurationStoreSettings);
         configurationStoreSettings.put(DurableConfigurationStore.STORE_TYPE, JsonFileConfigStore.TYPE);
         configurationStoreSettings.put(DurableConfigurationStore.STORE_PATH, _storeFolder.getAbsolutePath());
 
-        ConfigurationRecoveryHandler recoveryHandler = mock(ConfigurationRecoveryHandler.class);
-        when(recoveryHandler.completeConfigurationRecovery()).thenReturn(org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION);
-        store.configureConfigStore(virtualHost , recoveryHandler );
+        store.openConfigurationStore(vhostName, configurationStoreSettings);
 
         UUID exchangeId = UUIDGenerator.generateExchangeUUID(exchangeName == null? "amq.direct" : exchangeName, vhostName);
         if(exchangeName != null && !dontDeclare)
@@ -355,7 +332,7 @@ public class StandardVirtualHostTest extends QpidTestCase
             }
             store.create(UUID.randomUUID(), org.apache.qpid.server.model.Binding.class.getSimpleName(), attributes);
         }
-        store.close();
+        store.closeConfigurationStore();
     }
 
 }

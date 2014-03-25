@@ -67,12 +67,17 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void configureConfigStore(final VirtualHost virtualHost, final ConfigurationRecoveryHandler recoveryHandler)
+    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
     {
-        _name = virtualHost.getName();
+        _name = virtualHostName;
 
-        setup(virtualHost);
+        setup(storeSettings);
         load();
+    }
+
+    @Override
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    {
         recoveryHandler.beginConfigurationRecovery(this,_configVersion);
         List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());
         for(ConfiguredObjectRecord record : records)
@@ -87,11 +92,8 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
     }
 
-    private void setup(final VirtualHost virtualHost)
+    private void setup(final Map<String, Object> configurationStoreSettings)
     {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> configurationStoreSettings = virtualHost.getConfigurationStoreSettings();
-
         Object storePathAttr = configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
         if(!(storePathAttr instanceof String))
         {
@@ -510,11 +512,16 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         save();
     }
 
-    public void close() throws Exception
+    @Override
+    public void closeConfigurationStore()
     {
         try
         {
             releaseFileLock();
+        }
+        catch (IOException e)
+        {
+            throw new StoreException("Failed to release lock", e);
         }
         finally
         {

@@ -27,11 +27,11 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -49,7 +49,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     private UUID _transactionResource;
 
     protected abstract MessageStore createStore() throws Exception;
-    protected abstract VirtualHost<?> createVirtualHost(String storeLocation);
+    protected abstract Map<String, Object> createStoreSettings(String storeLocation);
     protected abstract int getNumberOfMessagesToFillStore();
 
     @Override
@@ -61,14 +61,14 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         FileUtils.delete(_storeLocation, true);
 
 
-        VirtualHost<?> vhost = createVirtualHost(_storeLocation.getAbsolutePath());
+        Map<String, Object> storeSettings = createStoreSettings(_storeLocation.getAbsolutePath());
 
         _store = createStore();
-        ((DurableConfigurationStore)_store).configureConfigStore(vhost, null);
+        ((DurableConfigurationStore)_store).openConfigurationStore("test", storeSettings);
         MessageStoreRecoveryHandler recoveryHandler = mock(MessageStoreRecoveryHandler.class);
         when(recoveryHandler.begin()).thenReturn(mock(StoredMessageRecoveryHandler.class));
-        _store.configureMessageStore(vhost, recoveryHandler, null);
-        _store.activate();
+        _store.openMessageStore("test", storeSettings);
+        _store.recoverMessageStore(recoveryHandler, null);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();
@@ -87,7 +87,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         {
             if (_store != null)
             {
-                _store.close();
+                _store.closeMessageStore();
             }
             FileUtils.delete(_storeLocation, true);
         }

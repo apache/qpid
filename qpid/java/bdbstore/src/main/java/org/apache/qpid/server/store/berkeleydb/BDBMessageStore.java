@@ -30,12 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -102,25 +100,20 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private static String MESSAGE_META_DATA_DB_NAME = "MESSAGE_METADATA";
     private static String MESSAGE_CONTENT_DB_NAME = "MESSAGE_CONTENT";
     private static String DELIVERY_DB_NAME = "QUEUE_ENTRIES";
+
+    //TODO: Add upgrader to remove BRIDGES and LINKS
     private static String BRIDGEDB_NAME = "BRIDGES";
     private static String LINKDB_NAME = "LINKS";
     private static String XID_DB_NAME = "XIDS";
     private static String CONFIG_VERSION_DB_NAME = "CONFIG_VERSION";
-    private static final String[] DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, MESSAGE_META_DATA_DB_NAME,
-            MESSAGE_CONTENT_DB_NAME, DELIVERY_DB_NAME, BRIDGEDB_NAME, LINKDB_NAME, XID_DB_NAME, CONFIG_VERSION_DB_NAME };
-
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
+    private static final String[] CONFIGURATION_STORE_DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, CONFIG_VERSION_DB_NAME };
+    private static final String[] MESSAGE_STORE_DATABASE_NAMES = new String[] { MESSAGE_META_DATA_DB_NAME, MESSAGE_CONTENT_DB_NAME, DELIVERY_DB_NAME, BRIDGEDB_NAME, LINKDB_NAME, XID_DB_NAME };
 
     private EnvironmentFacade _environmentFacade;
     private final AtomicLong _messageId = new AtomicLong(0);
 
-    protected final StateManager _stateManager;
-
-    private MessageStoreRecoveryHandler _messageRecoveryHandler;
-
-    private TransactionLogRecoveryHandler _tlogRecoveryHandler;
-
-    private ConfigurationRecoveryHandler _configRecoveryHandler;
+    protected final StateManager _messageStoreStateManager;
+    private final StateManager _configurationStoreStateManager;
 
     private long _totalStoreSize;
     private boolean _limitBusted;
@@ -129,11 +122,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private final EventManager _eventManager = new EventManager();
     private final String _type;
-    private VirtualHost _virtualHost;
 
     private final EnvironmentFacadeFactory _environmentFacadeFactory;
 
     private volatile Committer _committer;
+
+    private String _virtualHostName;
+
 
     public BDBMessageStore()
     {
@@ -144,7 +139,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         _type = environmentFacadeFactory.getType();
         _environmentFacadeFactory = environmentFacadeFactory;
-        _stateManager = new StateManager(_eventManager);
+        _messageStoreStateManager = new StateManager(_eventManager);
+        _configurationStoreStateManager = new StateManager(new EventManager());
     }
 
     @Override
@@ -154,94 +150,47 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
+    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
     {
-        _stateManager.attainState(State.INITIALISING);
+        _configurationStoreStateManager.attainState(State.INITIALISING);
 
-        _configRecoveryHandler = recoveryHandler;
-        _virtualHost = virtualHost;
+        _virtualHostName = virtualHostName;
+        if (_environmentFacade == null)
+        {
+            _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(_virtualHostName, storeSettings);
+        }
+        _configurationStoreStateManager.attainState(State.INITIALISED);
     }
 
     @Override
-    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws StoreException
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
     {
-        if(_stateManager.isInState(State.INITIAL))
-        {
-            // Is acting as a message store, but not a durable config store
-            _stateManager.attainState(State.INITIALISING);
-        }
+        _configurationStoreStateManager.attainState(State.ACTIVATING);
 
-        _messageRecoveryHandler = messageRecoveryHandler;
-        _tlogRecoveryHandler = tlogRecoveryHandler;
-        _virtualHost = virtualHost;
-
-
-        completeInitialisation();
-    }
-
-    private void completeInitialisation() throws StoreException
-    {
-        configure(_virtualHost, _messageRecoveryHandler != null);
-
-        _stateManager.attainState(State.INITIALISED);
-    }
-
-    private void startActivation() throws StoreException
-    {
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
         dbConfig.setAllowCreate(true);
         try
         {
-            new Upgrader(_environmentFacade.getEnvironment(), _virtualHost.getName()).upgradeIfNecessary();
-            _environmentFacade.openDatabases(dbConfig, DATABASE_NAMES);
-            _totalStoreSize = getSizeOnDisk();
+            new Upgrader(_environmentFacade.getEnvironment(), _virtualHostName).upgradeIfNecessary();
+            _environmentFacade.openDatabases(dbConfig, CONFIGURATION_STORE_DATABASE_NAMES);
         }
         catch(DatabaseException e)
         {
             throw _environmentFacade.handleDatabaseException("Cannot configure store", e);
         }
+        recoverConfig(recoveryHandler);
 
+        _configurationStoreStateManager.attainState(State.ACTIVE);
     }
 
     @Override
-    public synchronized void activate() throws StoreException
+    public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings) throws StoreException
     {
-        // check if acting as a durable config store, but not a message store
-        if(_stateManager.isInState(State.INITIALISING))
-        {
-            completeInitialisation();
-        }
+        _messageStoreStateManager.attainState(State.INITIALISING);
 
-        _stateManager.attainState(State.ACTIVATING);
-        startActivation();
+        _virtualHostName = virtualHostName;
 
-        if(_configRecoveryHandler != null)
-        {
-            recoverConfig(_configRecoveryHandler);
-        }
-        if(_messageRecoveryHandler != null)
-        {
-            recoverMessages(_messageRecoveryHandler);
-        }
-        if(_tlogRecoveryHandler != null)
-        {
-            recoverQueueEntries(_tlogRecoveryHandler);
-        }
-
-        _stateManager.attainState(State.ACTIVE);
-    }
-
-    @Override
-    public org.apache.qpid.server.store.Transaction newTransaction() throws StoreException
-    {
-        return new BDBTransaction();
-    }
-
-    private void configure(VirtualHost virtualHost, boolean isMessageStore) throws StoreException
-    {
-        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
         Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
         Object underfullAttr = messageStoreSettings.get(MessageStore.UNDERFULL_SIZE);
 
@@ -250,16 +199,56 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         _persistentSizeLowThreshold = underfullAttr == null ? _persistentSizeHighThreshold :
                                        underfullAttr instanceof Number ? ((Number) underfullAttr).longValue() : Long.parseLong(underfullAttr.toString());
 
-
         if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
         {
             _persistentSizeLowThreshold = _persistentSizeHighThreshold;
         }
 
-        _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(virtualHost, isMessageStore);
+        if (_environmentFacade == null)
+        {
+            _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(_virtualHostName, messageStoreSettings);
+        }
 
-        _committer = _environmentFacade.createCommitter(virtualHost.getName());
+        _committer = _environmentFacade.createCommitter(_virtualHostName);
         _committer.start();
+
+        _messageStoreStateManager.attainState(State.INITIALISED);
+    }
+
+    @Override
+    public synchronized void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler) throws StoreException
+    {
+        _messageStoreStateManager.attainState(State.ACTIVATING);
+        DatabaseConfig dbConfig = new DatabaseConfig();
+        dbConfig.setTransactional(true);
+        dbConfig.setAllowCreate(true);
+        try
+        {
+            new Upgrader(_environmentFacade.getEnvironment(), _virtualHostName).upgradeIfNecessary();
+            _environmentFacade.openDatabases(dbConfig, MESSAGE_STORE_DATABASE_NAMES);
+            _totalStoreSize = getSizeOnDisk();
+        }
+        catch(DatabaseException e)
+        {
+            throw _environmentFacade.handleDatabaseException("Cannot activate message store", e);
+        }
+
+        if(messageRecoveryHandler != null)
+        {
+            recoverMessages(messageRecoveryHandler);
+        }
+        if(transactionLogRecoveryHandler != null)
+        {
+            recoverQueueEntries(transactionLogRecoveryHandler);
+        }
+
+        _messageStoreStateManager.attainState(State.ACTIVE);
+    }
+
+    @Override
+    public org.apache.qpid.server.store.Transaction newTransaction() throws StoreException
+    {
+        return new BDBTransaction();
     }
 
     @Override
@@ -283,35 +272,59 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      * @throws Exception If the close fails.
      */
     @Override
-    public void close() throws StoreException
+    public void closeMessageStore() throws StoreException
     {
-        if (_closed.compareAndSet(false, true))
+        _messageStoreStateManager.attainState(State.CLOSING);
+        try
         {
-            _stateManager.attainState(State.CLOSING);
-            try
+            if (_committer != null)
             {
-                try
-                {
-                    _committer.stop();
-                }
-                finally
-                {
-                    closeEnvironment();
-                }
+                _committer.stop();
             }
-            catch(DatabaseException e)
-            {
-                throw new StoreException("Exception occured on message store close", e);
-            }
-            _stateManager.attainState(State.CLOSED);
         }
+        finally
+        {
+            if (_configurationStoreStateManager.isInState(State.CLOSED) || _configurationStoreStateManager.isInState(State.INITIAL))
+            {
+                closeEnvironment();
+            }
+        }
+        _messageStoreStateManager.attainState(State.CLOSED);
+    }
+
+    @Override
+    public void closeConfigurationStore() throws StoreException
+    {
+        _configurationStoreStateManager.attainState(State.CLOSING);
+        try
+        {
+            if (_committer != null)
+            {
+                _committer.stop();
+            }
+        }
+        finally
+        {
+            if (_messageStoreStateManager.isInState(State.CLOSED) || _messageStoreStateManager.isInState(State.INITIAL))
+            {
+                closeEnvironment();
+            }
+        }
+        _configurationStoreStateManager.attainState(State.CLOSED);
     }
 
     private void closeEnvironment()
     {
         if (_environmentFacade != null)
         {
-            _environmentFacade.close();
+            try
+            {
+                _environmentFacade.close();
+            }
+            catch(DatabaseException e)
+            {
+                throw new StoreException("Exception occured on message store close", e);
+            }
         }
     }
 
@@ -704,7 +717,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public void create(UUID id, String type, Map<String, Object> attributes) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
             ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecord(id, type, attributes);
             storeConfiguredObjectEntry(configuredObject);
@@ -774,7 +787,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("Updating " +type + ", id: " + id);
+            LOGGER.debug("Updating " + type + ", id: " + id);
         }
 
         try
@@ -1286,7 +1299,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      */
     private void storeConfiguredObjectEntry(ConfiguredObjectRecord configuredObject) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
             LOGGER.debug("Storing configured object: " + configuredObject);
             DatabaseEntry key = new DatabaseEntry();

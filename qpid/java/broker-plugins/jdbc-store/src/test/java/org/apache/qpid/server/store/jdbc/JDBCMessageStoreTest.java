@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
-import static org.mockito.Mockito.when;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -32,7 +30,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
 
@@ -55,21 +52,21 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
 
     public void testOnDelete() throws Exception
     {
-        String[] expectedTables = JDBCMessageStore.ALL_TABLES;
+        Set<String> expectedTables = JDBCMessageStore.MESSAGE_STORE_TABLE_NAMES;
         assertTablesExist(expectedTables, true);
-        getStore().close();
+        getStore().closeMessageStore();
         assertTablesExist(expectedTables, true);
         getStore().onDelete();
         assertTablesExist(expectedTables, false);
     }
 
     @Override
-    protected void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception
+    protected Map<String, Object> getStoreSettings()
     {
         _connectionURL = "jdbc:derby:memory:/" + getTestName() + ";create=true";
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
         messageStoreSettings.put(JDBCMessageStore.CONNECTION_URL, _connectionURL);
-        when(virtualHost.getMessageStoreSettings()).thenReturn(messageStoreSettings);
+        return messageStoreSettings;
     }
 
 
@@ -79,7 +76,7 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
         return new JDBCMessageStore();
     }
 
-    private void assertTablesExist(String[] expectedTables, boolean exists) throws SQLException
+    private void assertTablesExist(Set<String> expectedTables, boolean exists) throws SQLException
     {
         Set<String> existingTables = getTableNames();
         for (String tableName : expectedTables)

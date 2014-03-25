@@ -37,15 +37,16 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.codehaus.jackson.JsonGenerationException;
@@ -79,13 +80,13 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private static final String CONFIGURED_OBJECTS_TABLE_NAME = "QPID_CONFIGURED_OBJECTS";
     private static final int DEFAULT_CONFIG_VERSION = 0;
 
-    public static String[] ALL_TABLES = new String[] { DB_VERSION_TABLE_NAME, LINKS_TABLE_NAME, BRIDGES_TABLE_NAME, XID_ACTIONS_TABLE_NAME,
-        XID_TABLE_NAME, QUEUE_ENTRY_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME, META_DATA_TABLE_NAME, CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURATION_VERSION_TABLE_NAME };
+    public static final Set<String> CONFIGURATION_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURATION_VERSION_TABLE_NAME));
+    public static final Set<String> MESSAGE_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(DB_VERSION_TABLE_NAME, META_DATA_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME, QUEUE_ENTRY_TABLE_NAME, BRIDGES_TABLE_NAME, LINKS_TABLE_NAME, XID_TABLE_NAME, XID_ACTIONS_TABLE_NAME));
+
 
     private static final int DB_VERSION = 7;
 
     private final AtomicLong _messageId = new AtomicLong(0);
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     private static final String CREATE_DB_VERSION_TABLE = "CREATE TABLE "+ DB_VERSION_TABLE_NAME + " ( version int not null )";
     private static final String INSERT_INTO_DB_VERSION = "INSERT INTO "+ DB_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
@@ -192,69 +193,90 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     protected final EventManager _eventManager = new EventManager();
 
-    protected final StateManager _stateManager;
+    protected final StateManager _messageStoreStateManager;
 
-    private MessageStoreRecoveryHandler _messageRecoveryHandler;
-    private TransactionLogRecoveryHandler _tlogRecoveryHandler;
-    private ConfigurationRecoveryHandler _configRecoveryHandler;
-    private VirtualHost _virtualHost;
+    private StateManager _configurationStoreStateManager;
+    private boolean _initialized;
 
     public AbstractJDBCMessageStore()
     {
-        _stateManager = new StateManager(_eventManager);
+        _messageStoreStateManager = new StateManager(_eventManager);
+        _configurationStoreStateManager = new StateManager(new EventManager());
     }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler configRecoveryHandler)
+    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
     {
-        _stateManager.attainState(State.INITIALISING);
-        _configRecoveryHandler = configRecoveryHandler;
-        _virtualHost = virtualHost;
-
+        _configurationStoreStateManager.attainState(State.INITIALISING);
+        initialiseIfNecessary(virtualHostName, storeSettings);
+        _configurationStoreStateManager.attainState(State.INITIALISED);
     }
 
-    @Override
-    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
+    private void initialiseIfNecessary(String virtualHostName, Map<String, Object> storeSettings)
     {
-        if(_stateManager.isInState(State.INITIAL))
-        {
-            _stateManager.attainState(State.INITIALISING);
-        }
-
-        _virtualHost = virtualHost;
-        _tlogRecoveryHandler = tlogRecoveryHandler;
-        _messageRecoveryHandler = recoveryHandler;
-
-        completeInitialisation();
-    }
-
-    private void completeInitialisation()
-    {
-        commonConfiguration();
-
-        _stateManager.attainState(State.INITIALISED);
-    }
-
-    @Override
-    public void activate()
-    {
-        if(_stateManager.isInState(State.INITIALISING))
-        {
-            completeInitialisation();
-        }
-        _stateManager.attainState(State.ACTIVATING);
-
-        // this recovers durable exchanges, queues, and bindings
-        if(_configRecoveryHandler != null)
-        {
-            recoverConfiguration(_configRecoveryHandler);
-        }
-        if(_messageRecoveryHandler != null)
+        if (!_initialized)
         {
             try
             {
-                recoverMessages(_messageRecoveryHandler);
+                implementationSpecificConfiguration(virtualHostName, storeSettings);
+            }
+            catch (ClassNotFoundException e)
+            {
+               throw new StoreException("Cannot find driver class", e);
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Unexpected exception occured", e);
+            }
+            _initialized =true;
+        }
+    }
+
+    @Override
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    {
+        _configurationStoreStateManager.attainState(State.ACTIVATING);
+
+        try
+        {
+            createOrOpenConfigurationStoreDatabase();
+            recoveryHandler.beginConfigurationRecovery(this, getConfigVersion());
+            loadConfiguredObjects(recoveryHandler);
+            setConfigVersion(recoveryHandler.completeConfigurationRecovery());
+        }
+        catch (SQLException e)
+        {
+            throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
+        }
+        _configurationStoreStateManager.attainState(State.ACTIVE);
+    }
+
+    @Override
+    public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings)
+    {
+        _messageStoreStateManager.attainState(State.INITIALISING);
+        initialiseIfNecessary(virtualHostName, messageStoreSettings);
+        _messageStoreStateManager.attainState(State.INITIALISED);
+    }
+
+    @Override
+    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    {
+        _messageStoreStateManager.attainState(State.ACTIVATING);
+        try
+        {
+            createOrOpenMessageStoreDatabase();
+            upgradeIfNecessary();
+        }
+        catch (SQLException e)
+        {
+            throw new StoreException("Unable to activate message store ", e);
+        }
+        if(messageRecoveryHandler != null)
+        {
+            try
+            {
+                recoverMessages(messageRecoveryHandler);
             }
             catch (SQLException e)
             {
@@ -262,11 +284,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                                                        "persistent store ", e);
             }
         }
-        if(_tlogRecoveryHandler != null)
+        if(transactionLogRecoveryHandler != null)
         {
             try
             {
-                TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
+                TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(transactionLogRecoveryHandler);
                 recoverXids(dtxrh);
             }
             catch (SQLException e)
@@ -277,25 +299,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
         }
 
-        _stateManager.attainState(State.ACTIVE);
-    }
-
-    private void commonConfiguration()
-    {
-        try
-        {
-            implementationSpecificConfiguration(_virtualHost.getName(), _virtualHost);
-            createOrOpenDatabase();
-            upgradeIfNecessary();
-        }
-        catch (ClassNotFoundException e)
-        {
-            throw new StoreException("Unable to configure message store ", e);
-        }
-        catch (SQLException e)
-        {
-            throw new StoreException("Unable to configure message store ", e);
-        }
+        _messageStoreStateManager.attainState(State.ACTIVE);
     }
 
     protected void upgradeIfNecessary() throws SQLException
@@ -370,8 +374,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    protected abstract void implementationSpecificConfiguration(String name,
-                                                                VirtualHost virtualHost) throws ClassNotFoundException, SQLException;
+    protected abstract void implementationSpecificConfiguration(String name, Map<String, Object> messageStoreSettings) throws ClassNotFoundException, SQLException;
 
     abstract protected Logger getLogger();
 
@@ -381,13 +384,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     abstract protected String getSqlBigIntType();
 
-    protected void createOrOpenDatabase() throws SQLException
+    protected void createOrOpenMessageStoreDatabase() throws SQLException
     {
         Connection conn = newAutoCommitConnection();
 
         createVersionTable(conn);
-        createConfigVersionTable(conn);
-        createConfiguredObjectsTable(conn);
         createQueueEntryTable(conn);
         createMetaDataTable(conn);
         createMessageContentTable(conn);
@@ -395,6 +396,16 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         createBridgeTable(conn);
         createXidTable(conn);
         createXidActionTable(conn);
+        conn.close();
+    }
+
+    protected void createOrOpenConfigurationStoreDatabase() throws SQLException
+    {
+        Connection conn = newAutoCommitConnection();
+
+        createConfigVersionTable(conn);
+        createConfiguredObjectsTable(conn);
+
         conn.close();
     }
 
@@ -645,21 +656,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    protected void recoverConfiguration(ConfigurationRecoveryHandler recoveryHandler)
-    {
-        try
-        {
-            recoveryHandler.beginConfigurationRecovery(this, getConfigVersion());
-            loadConfiguredObjects(recoveryHandler);
-
-            setConfigVersion(recoveryHandler.completeConfigurationRecovery());
-        }
-        catch (SQLException e)
-        {
-            throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
-        }
-    }
-
     private void setConfigVersion(int version) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
@@ -722,16 +718,29 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void close()
+    public void closeMessageStore()
     {
-        if (_closed.compareAndSet(false, true))
+        _messageStoreStateManager.attainState(State.CLOSING);
+
+        if (_configurationStoreStateManager.isInState(State.CLOSED) || _configurationStoreStateManager.isInState(State.INITIAL))
         {
-            _stateManager.attainState(State.CLOSING);
-
             doClose();
-
-            _stateManager.attainState(State.CLOSED);
         }
+
+        _messageStoreStateManager.attainState(State.CLOSED);
+    }
+
+    @Override
+    public void closeConfigurationStore()
+    {
+        _configurationStoreStateManager.attainState(State.CLOSING);
+
+        if (_messageStoreStateManager.isInState(State.CLOSED) || _messageStoreStateManager.isInState(State.INITIAL))
+        {
+            doClose();
+        }
+
+        _configurationStoreStateManager.attainState(State.CLOSED);
     }
 
 
@@ -819,7 +828,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     @Override
     public void create(UUID id, String type, Map<String,Object> attributes) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
             insertConfiguredObject(new ConfiguredObjectRecord(id, type, attributes));
         }
@@ -839,7 +848,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     @Override
     public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
             ConfiguredObjectRecord queueConfiguredObject = loadConfiguredObject(id);
             if (queueConfiguredObject != null)
@@ -1151,11 +1160,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             throw new StoreException("Error writing xid ", e);
         }
 
-    }
-
-    protected boolean isConfigStoreOnly()
-    {
-        return _messageRecoveryHandler == null;
     }
 
     private static final class ConnectionWrapper
@@ -1995,7 +1999,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     private void insertConfiguredObject(ConfiguredObjectRecord configuredObject) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
             try
             {
@@ -2141,7 +2145,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     private void updateConfiguredObject(final ConfiguredObjectRecord configuredObject) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
             try
             {
@@ -2164,7 +2168,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.ACTIVATING))
+        if (_configurationStoreStateManager.isInState(State.ACTIVE) || _configurationStoreStateManager.isInState(State.ACTIVATING))
         {
             try
             {
@@ -2405,12 +2409,20 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             Connection conn = newAutoCommitConnection();
             try
             {
-                for (String tableName : ALL_TABLES)
+                List<String> tables = new ArrayList<String>();
+                tables.addAll(CONFIGURATION_STORE_TABLE_NAMES);
+                tables.addAll(MESSAGE_STORE_TABLE_NAMES);
+
+                for (String tableName : tables)
                 {
                     Statement stmt = conn.createStatement();
                     try
                     {
                         stmt.execute("DROP TABLE " +  tableName);
+                    }
+                    catch(SQLException e)
+                    {
+                        getLogger().warn("Failed to drop table '" + tableName + "' :" + e);
                     }
                     finally
                     {

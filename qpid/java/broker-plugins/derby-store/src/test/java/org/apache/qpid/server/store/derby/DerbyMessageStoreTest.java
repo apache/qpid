@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.server.store.derby;
 
-import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -53,7 +51,7 @@ public class DerbyMessageStoreTest extends MessageStoreTestCase
         File location = new File(_storeLocation);
         assertTrue("Store does not exist at " + _storeLocation, location.exists());
 
-        getStore().close();
+        getStore().closeMessageStore();
         assertTrue("Store does not exist at " + _storeLocation, location.exists());
 
         getStore().onDelete();
@@ -61,13 +59,13 @@ public class DerbyMessageStoreTest extends MessageStoreTestCase
     }
 
     @Override
-    protected void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception
+    protected Map<String, Object> getStoreSettings() throws Exception
     {
         _storeLocation = TMP_FOLDER + File.separator + getTestName();
+        deleteStoreIfExists();
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
         messageStoreSettings.put(MessageStore.STORE_PATH, _storeLocation);
-        when(virtualHost.getMessageStoreSettings()).thenReturn(messageStoreSettings);
-        deleteStoreIfExists();
+        return messageStoreSettings;
     }
 
     private void deleteStoreIfExists()

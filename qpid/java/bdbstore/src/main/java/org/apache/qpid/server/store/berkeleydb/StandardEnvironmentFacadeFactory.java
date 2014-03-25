@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 
 public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactory
@@ -34,38 +32,19 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
 
     @SuppressWarnings("unchecked")
     @Override
-    public EnvironmentFacade createEnvironmentFacade(VirtualHost<?> virtualHost, boolean isMessageStore)
+    public EnvironmentFacade createEnvironmentFacade(String virtualHostName, Map<String, Object> messageStoreSettings)
     {
-        String name = virtualHost.getName();
-        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
         Map<String, String> envConfigMap = new HashMap<String, String>();
         envConfigMap.putAll(EnvironmentFacade.ENVCONFIG_DEFAULTS);
 
-        final String defaultPath = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK) + File.separator + "bdbstore" + File.separator + name;
+        final String defaultPath = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK) + File.separator + "bdbstore" + File.separator + virtualHostName;
 
-        String storeLocation;
-        if(isMessageStore)
+        Object environmentConfigurationAttributes = messageStoreSettings.get(ENVIRONMENT_CONFIGURATION);
+        if (environmentConfigurationAttributes instanceof Map)
         {
-            Object environmentConfigurationAttributes = messageStoreSettings.get(ENVIRONMENT_CONFIGURATION);
-            if (environmentConfigurationAttributes instanceof Map)
-            {
-                envConfigMap.putAll((Map<String, String>) environmentConfigurationAttributes);
-            }
-
-            storeLocation = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
+            envConfigMap.putAll((Map<String, String>) environmentConfigurationAttributes);
         }
-        else // we are acting only as the durable config store
-        {
-            Map<String, Object> configurationStoreSettings = virtualHost.getConfigurationStoreSettings();
-
-            Object environmentConfigurationAttributes = configurationStoreSettings.get(ENVIRONMENT_CONFIGURATION);
-            if (environmentConfigurationAttributes instanceof Map)
-            {
-                envConfigMap.putAll((Map<String, String>) environmentConfigurationAttributes);
-            }
-
-            storeLocation = (String) configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
-        }
+        String storeLocation = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
         if(storeLocation == null)
         {
             storeLocation = defaultPath;

@@ -40,6 +40,7 @@ import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
@@ -198,7 +199,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         String returnedPayloadString_0_10 = new String(recoveredContent.array());
         assertEquals("Message Payload has changed", bodyText, returnedPayloadString_0_10);
 
-        readOnlyStore.close();
+        readOnlyStore.closeMessageStore();
     }
 
     private DeliveryProperties createDeliveryProperties_0_10()
@@ -233,15 +234,16 @@ public class BDBMessageStoreTest extends MessageStoreTest
      */
     private BDBMessageStore reloadStore(BDBMessageStore messageStore) throws Exception
     {
-        messageStore.close();
+        messageStore.closeMessageStore();
 
         BDBMessageStore newStore = new BDBMessageStore();
 
         MessageStoreRecoveryHandler recoveryHandler = mock(MessageStoreRecoveryHandler.class);
         when(recoveryHandler.begin()).thenReturn(mock(StoredMessageRecoveryHandler.class));
-        newStore.configureMessageStore(getVirtualHostModel(), recoveryHandler, null);
+        VirtualHost<?> virtualHost = getVirtualHostModel();
+        newStore.openMessageStore(virtualHost.getName(), virtualHost.getMessageStoreSettings());
 
-        newStore.activate();
+        newStore.recoverMessageStore(recoveryHandler, null);
 
         return newStore;
     }
@@ -521,7 +523,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         File location = new File(storeLocation);
         assertTrue("Store does not exist at " + storeLocation, location.exists());
 
-        bdbStore.close();
+        bdbStore.closeMessageStore();
         assertTrue("Store does not exist at " + storeLocation, location.exists());
 
         bdbStore.onDelete();

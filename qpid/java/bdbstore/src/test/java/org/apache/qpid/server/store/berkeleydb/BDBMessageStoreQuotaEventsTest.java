@@ -20,15 +20,11 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
 
@@ -62,20 +58,17 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
 
 
     @Override
-    protected VirtualHost<?> createVirtualHost(String storeLocation)
+    protected Map<String, Object>createStoreSettings(String storeLocation)
     {
         _logger.debug("Applying store specific config. overfull-size=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
 
-        VirtualHost<?> vhost = mock(VirtualHost.class);
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
         messageStoreSettings.put(MessageStore.STORE_PATH, storeLocation);
         messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
         messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
         Map<String,String> envMap = Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
         messageStoreSettings.put(EnvironmentFacadeFactory.ENVIRONMENT_CONFIGURATION, envMap);
-        when(vhost.getMessageStoreSettings()).thenReturn(messageStoreSettings);
-        when(vhost.getName()).thenReturn("test");
-        return vhost;
+        return messageStoreSettings;
     }
 
     @Override

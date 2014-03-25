@@ -20,16 +20,23 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
@@ -38,19 +45,38 @@ import org.apache.qpid.server.store.NonNullUpgrader;
 import org.apache.qpid.server.store.NullUpgrader;
 import org.apache.qpid.server.store.UpgraderProvider;
 
-import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
-
 public class DefaultUpgraderProvider implements UpgraderProvider
 {
+    private static final Logger LOGGER = Logger.getLogger(DefaultUpgraderProvider.class);
+
     public static final String EXCLUSIVE = "exclusive";
+    public static final String NAME = "name";
     private final ExchangeRegistry _exchangeRegistry;
     private final VirtualHost _virtualHost;
+
+    @SuppressWarnings("serial")
+    private static final Map<String, String> DEFAULT_EXCHANGES = Collections.unmodifiableMap(new HashMap<String, String>()
+    {{
+        put("amq.direct", "direct");
+        put("amq.topic", "topic");
+        put("amq.fanout", "fanout");
+        put("amq.match", "headers");
+    }});
+
+    private final Map<String, UUID> _defaultExchangeIds;
 
     public DefaultUpgraderProvider(final VirtualHost virtualHost,
                                    final ExchangeRegistry exchangeRegistry)
     {
         _virtualHost = virtualHost;
         _exchangeRegistry = exchangeRegistry;
+        Map<String, UUID> defaultExchangeIds = new HashMap<String, UUID>();
+        for (String exchangeName : DEFAULT_EXCHANGES.keySet())
+        {
+            UUID id = UUIDGenerator.generateExchangeUUID(exchangeName, _virtualHost.getName());
+            defaultExchangeIds.put(exchangeName, id);
+        }
+        _defaultExchangeIds = Collections.unmodifiableMap(defaultExchangeIds);
     }
 
     public DurableConfigurationStoreUpgrader getUpgrader(final int configVersion, DurableConfigurationRecoverer recoverer)
@@ -66,6 +92,8 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 currentUpgrader = addUpgrader(currentUpgrader, new Version2Upgrader());
             case 3:
                 currentUpgrader = addUpgrader(currentUpgrader, new Version3Upgrader());
+            case 4:
+                currentUpgrader = addUpgrader(currentUpgrader, new Version4Upgrader());
             case CURRENT_CONFIG_VERSION:
                 currentUpgrader = addUpgrader(currentUpgrader, new NullUpgrader(recoverer));
                 break;
@@ -131,6 +159,11 @@ public class DefaultUpgraderProvider implements UpgraderProvider
             }
             else
             {
+                if (_defaultExchangeIds.get("amq.topic").equals(exchangeId))
+                {
+                    return true;
+                }
+
                 return _exchangeRegistry.getExchange(exchangeId) != null
                        && _exchangeRegistry.getExchange(exchangeId).getExchangeType() == TopicExchange.TYPE;
             }
@@ -209,6 +242,10 @@ public class DefaultUpgraderProvider implements UpgraderProvider
         private boolean unknownExchange(final String exchangeIdString)
         {
             UUID exchangeId = UUID.fromString(exchangeIdString);
+            if (_defaultExchangeIds.containsValue(exchangeId))
+            {
+                return false;
+            }
             ConfiguredObjectRecord localRecord = getUpdateMap().get(exchangeId);
             return !((localRecord != null && localRecord.getType().equals(Exchange.class.getSimpleName()))
                      || _exchangeRegistry.getExchange(exchangeId) != null);
@@ -306,6 +343,52 @@ public class DefaultUpgraderProvider implements UpgraderProvider
         @Override
         public void complete()
         {
+            getNextUpgrader().complete();
+        }
+    }
+
+    private class Version4Upgrader extends NonNullUpgrader
+    {
+        private Map<String, String> _missingAmqpExchanges = new HashMap<String, String>(DEFAULT_EXCHANGES);
+
+        @Override
+        public void configuredObject(UUID id, String type, Map<String, Object> attributes)
+        {
+            if(Exchange.class.getSimpleName().equals(type))
+            {
+                String name = (String)attributes.get(NAME);
+                _missingAmqpExchanges.remove(name);
+            }
+
+            getNextUpgrader().configuredObject(id,type,attributes);
+        }
+
+        @Override
+        public void complete()
+        {
+            for (Entry<String, String> entry : _missingAmqpExchanges.entrySet())
+            {
+                String name = entry.getKey();
+                String type = entry.getValue();
+                UUID id = _defaultExchangeIds.get(name);
+
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Creating amqp exchange " + name + " with id " + id);
+                }
+
+                Map<String, Object> attributes = new HashMap<String, Object>();
+                attributes.put(org.apache.qpid.server.model.Exchange.NAME, name);
+                attributes.put(org.apache.qpid.server.model.Exchange.TYPE, type);
+
+                attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
+
+                getUpdateMap().put(id, new ConfiguredObjectRecord(id, Exchange.class.getSimpleName(), attributes));
+
+                getNextUpgrader().configuredObject(id, Exchange.class.getSimpleName(), attributes);
+
+            }
+
             getNextUpgrader().complete();
         }
     }
