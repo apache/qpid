@@ -94,8 +94,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
     public void testCreateGroup() throws Exception
     {
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_GROUP + " CREATE GROUP",
                 "ACL DENY-LOG " + DENIED_GROUP + " CREATE GROUP");
 
@@ -121,8 +120,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
     public void testDeleteGroup() throws Exception
     {
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_GROUP + " DELETE GROUP",
                 "ACL DENY-LOG " + DENIED_GROUP + " DELETE GROUP");
 
@@ -148,8 +146,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
     public void testUpdateGroupAddMember() throws Exception
     {
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_GROUP + " UPDATE GROUP",
                 "ACL DENY-LOG " + DENIED_GROUP + " UPDATE GROUP");
 
@@ -169,8 +166,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
     public void testUpdateGroupDeleteMember() throws Exception
     {
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_GROUP + " UPDATE GROUP",
                 "ACL DENY-LOG " + DENIED_GROUP + " UPDATE GROUP");
 

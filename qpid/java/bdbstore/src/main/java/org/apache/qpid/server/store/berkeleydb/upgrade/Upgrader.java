@@ -26,6 +26,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 
@@ -45,12 +47,12 @@ public class Upgrader
     static final String VERSION_DB_NAME = "DB_VERSION";
 
     private Environment _environment;
-    private String _virtualHostName;
+    private ConfiguredObject<?> _parent;
 
-    public Upgrader(Environment environment, String virtualHostName)
+    public Upgrader(Environment environment, ConfiguredObject<?> parent)
     {
         _environment = environment;
-        _virtualHostName = virtualHostName;
+        _parent = parent;
     }
 
     public void upgradeIfNecessary()
@@ -158,7 +160,7 @@ public class Upgrader
                                                         + "UpgradeFrom"+fromVersion+"To"+toVersion);
             Constructor<StoreUpgrade> ctr = upgradeClass.getConstructor();
             StoreUpgrade upgrade = ctr.newInstance();
-            upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER, _virtualHostName);
+            upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER, _parent);
         }
         catch (ClassNotFoundException e)
         {

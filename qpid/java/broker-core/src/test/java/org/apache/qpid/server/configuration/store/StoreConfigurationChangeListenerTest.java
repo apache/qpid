@@ -63,7 +63,9 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
     {
         notifyBrokerStarted();
         Broker broker = mock(Broker.class);
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
         VirtualHost child = mock(VirtualHost.class);
+        when(child.getCategoryClass()).thenReturn(VirtualHost.class);
         _listener.childAdded(broker, child);
         verify(_store).save(any(ConfigurationEntry.class), any(ConfigurationEntry.class));
     }
@@ -72,7 +74,9 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
     {
         notifyBrokerStarted();
         Broker broker = mock(Broker.class);
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
         VirtualHost child = mock(VirtualHost.class);
+        when(child.getCategoryClass()).thenReturn(VirtualHost.class);
         _listener.childRemoved(broker, child);
         verify(_store).save(any(ConfigurationEntry.class));
     }
@@ -81,6 +85,7 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
     {
         notifyBrokerStarted();
         Broker broker = mock(Broker.class);
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
         _listener.attributeSet(broker, Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES, null, 1);
         verify(_store).save(any(ConfigurationEntry.class));
     }

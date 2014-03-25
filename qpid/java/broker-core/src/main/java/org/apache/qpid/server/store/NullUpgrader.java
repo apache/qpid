@@ -34,9 +34,9 @@ public final class NullUpgrader implements DurableConfigurationStoreUpgrader
     }
 
     @Override
-    public void configuredObject(final UUID id, final String type, final Map<String, Object> attributes)
+    public void configuredObject(final ConfiguredObjectRecord record)
     {
-        _durableConfigurationRecoverer.onConfiguredObject(id, type, attributes);
+        _durableConfigurationRecoverer.onConfiguredObject(record);
     }
 
     @Override
@@ -52,6 +52,12 @@ public final class NullUpgrader implements DurableConfigurationStoreUpgrader
 
     @Override
     public Map<UUID, ConfiguredObjectRecord> getUpdatedRecords()
+    {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<UUID, ConfiguredObjectRecord> getDeletedRecords()
     {
         return Collections.emptyMap();
     }

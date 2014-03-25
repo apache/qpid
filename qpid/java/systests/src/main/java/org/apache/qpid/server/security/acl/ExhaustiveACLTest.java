@@ -39,20 +39,20 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
 
     /**
      * Creates a queue.
-     * 
+     *
      * Connects to the broker as a particular user and create the named queue on a virtual host, with the provided
      * parameters. Uses a new {@link Connection} and {@link Session} and closes them afterwards.
      */
 	private void createQueue(String vhost, String user, String name, boolean autoDelete, boolean durable) throws Exception
 	{
-		Connection conn = getConnection(vhost, user, "guest");	
+		Connection conn = getConnection(vhost, user, "guest");
 		Session sess = conn.createSession(true, Session.SESSION_TRANSACTED);
 		conn.start();
 		((AMQSession<?, ?>) sess).createQueue(new AMQShortString(name), autoDelete, durable, false);
 		sess.commit();
 		conn.close();
 	}
-	
+
 	/**
 	 * Calls {@link #createQueue(String, String, String, boolean, boolean)} with the provided parameters and checks that
 	 * no exceptions were thrown.
@@ -61,7 +61,7 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
 	{
 		try
 		{
-			createQueue(vhost, user, name, autoDelete, durable);			
+			createQueue(vhost, user, name, autoDelete, durable);
 		}
 		catch (AMQException e)
 		{
@@ -72,7 +72,7 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
 
 	/**
 	 * Calls {@link #createQueue(String, String, String, boolean, boolean)} with the provided parameters and checks that
-	 * the exception thrown was an {@link AMQConstant#ACCESS_REFUSED} or 403 error code. 
+	 * the exception thrown was an {@link AMQConstant#ACCESS_REFUSED} or 403 error code.
 	 */
 	private void createQueueFailure(String vhost, String user, String name, boolean autoDelete, boolean durable) throws Exception
 	{
@@ -87,67 +87,64 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
 			assertEquals("Should be an ACCESS_REFUSED error", 403, e.getErrorCode().getCode());
 		}
 	}
-	
+
     public void setUpAuthoriseCreateQueueAutodelete() throws Exception
     {
-        writeACLFile("test",
-					 "acl allow client access virtualhost",
+        writeACLFile("acl allow client access virtualhost",
 					 "acl allow server access virtualhost",
 					 "acl allow client create queue name=\"temp.true.*\" autodelete=true",
 					 "acl allow client create queue name=\"temp.false.*\" autodelete=false",
-					 "acl deny client create queue",	
-					 "acl allow client delete queue",				 
+					 "acl deny client create queue",
+					 "acl allow client delete queue",
 					 "acl deny all create queue"
             );
     }
-    
+
     /**
      * Test creation of temporary queues, with the autodelete property set to true.
      */
     public void testAuthoriseCreateQueueAutodelete() throws Exception
 	{
-		createQueueSuccess("test", "client", "temp.true.00", true, false); 
+		createQueueSuccess("test", "client", "temp.true.00", true, false);
 		createQueueSuccess("test", "client", "temp.true.01", true, false);
 		createQueueSuccess("test", "client", "temp.true.02", true, true);
-		createQueueSuccess("test", "client", "temp.false.03", false, false); 
+		createQueueSuccess("test", "client", "temp.false.03", false, false);
 		createQueueSuccess("test", "client", "temp.false.04", false, false);
 		createQueueSuccess("test", "client", "temp.false.05", false, true);
-		createQueueFailure("test", "client", "temp.true.06", false, false); 
+		createQueueFailure("test", "client", "temp.true.06", false, false);
 		createQueueFailure("test", "client", "temp.false.07", true, false);
-		createQueueFailure("test", "server", "temp.true.08", true, false); 
+		createQueueFailure("test", "server", "temp.true.08", true, false);
 		createQueueFailure("test", "client", "temp.other.09", false, false);
     }
-	
+
     public void setUpAuthoriseCreateQueue() throws Exception
     {
-        writeACLFile("test",
-                     "acl allow client access virtualhost",
+        writeACLFile("acl allow client access virtualhost",
                      "acl allow server access virtualhost",
                      "acl allow client create queue name=\"create.*\""
             );
     }
-    
+
     /**
      * Tests creation of named queues.
      *
-     * If a named queue is specified 
+     * If a named queue is specified
      */
     public void testAuthoriseCreateQueue() throws Exception
     {
         createQueueSuccess("test", "client", "create.00", true, true);
         createQueueSuccess("test", "client", "create.01", true, false);
         createQueueSuccess("test", "client", "create.02", false, true);
-        createQueueSuccess("test", "client", "create.03", true, false); 
+        createQueueSuccess("test", "client", "create.03", true, false);
         createQueueFailure("test", "server", "create.04", true, true);
         createQueueFailure("test", "server", "create.05", true, false);
         createQueueFailure("test", "server", "create.06", false, true);
-        createQueueFailure("test", "server", "create.07", true, false); 
+        createQueueFailure("test", "server", "create.07", true, false);
     }
-	
+
     public void setUpAuthoriseCreateQueueBoth() throws Exception
     {
-        writeACLFile("test",
-                     "acl allow all access virtualhost",
+        writeACLFile("acl allow all access virtualhost",
                      "acl allow client create queue name=\"create.*\"",
                      "acl allow all create queue temporary=true"
             );
@@ -156,16 +153,16 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
     /**
      * Tests creation of named queues.
      *
-     * If a named queue is specified 
+     * If a named queue is specified
      */
     public void testAuthoriseCreateQueueBoth() throws Exception
     {
         createQueueSuccess("test", "client", "create.00", true, false);
         createQueueSuccess("test", "client", "create.01", false, false);
         createQueueFailure("test", "server", "create.02", false, false);
-        createQueueFailure("test", "guest", "create.03", false, false); 
+        createQueueFailure("test", "guest", "create.03", false, false);
         createQueueSuccess("test", "client", "tmp.00", true, false);
-        createQueueSuccess("test", "server", "tmp.01", true, false); 
+        createQueueSuccess("test", "server", "tmp.01", true, false);
         createQueueSuccess("test", "guest", "tmp.02", true, false);
     }
 }

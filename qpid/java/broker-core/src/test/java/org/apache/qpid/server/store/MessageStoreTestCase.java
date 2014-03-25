@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.Transaction.Record;
@@ -65,7 +66,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         _store = createMessageStore();
 
         _store.openMessageStore("test", _storeSettings);
-        _store.recoverMessageStore(_messageStoreRecoveryHandler, _logRecoveryHandler);
+        _store.recoverMessageStore(mock(ConfiguredObject.class), _messageStoreRecoveryHandler, _logRecoveryHandler);
     }
 
     protected abstract Map<String, Object> getStoreSettings() throws Exception;
@@ -106,7 +107,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
 
         _store = createMessageStore();
         _store.openMessageStore("test", _storeSettings);
-        _store.recoverMessageStore(_messageStoreRecoveryHandler, _logRecoveryHandler);
+        _store.recoverMessageStore(mock(ConfiguredObject.class), _messageStoreRecoveryHandler, _logRecoveryHandler);
     }
     private Record getTestRecord(long messageNumber)
     {

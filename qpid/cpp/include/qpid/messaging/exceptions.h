@@ -151,6 +151,16 @@ struct QPID_MESSAGING_CLASS_EXTERN SessionError : public MessagingException
     QPID_MESSAGING_EXTERN SessionError(const std::string&);
 };
 
+/**
+ * Thrown to indicate that the sesion was closed by this client (probably in
+ * a different thread) whilst we were waiting on it. This is not really an
+ * error condition but there is no other way to return this.
+ */
+struct QPID_MESSAGING_CLASS_EXTERN SessionClosed : public SessionError
+{
+  QPID_MESSAGING_EXTERN SessionClosed();
+};
+
 struct QPID_MESSAGING_CLASS_EXTERN TransactionError : public SessionError
 {
     QPID_MESSAGING_EXTERN TransactionError(const std::string&);

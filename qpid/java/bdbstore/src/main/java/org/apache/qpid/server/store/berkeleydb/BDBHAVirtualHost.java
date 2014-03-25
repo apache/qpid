@@ -242,10 +242,10 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                 DurableConfigurationRecoverer configRecoverer =
                         new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
                                                           new DefaultUpgraderProvider(BDBHAVirtualHost.this, getExchangeRegistry()), getEventLogger());
-                _messageStore.recoverConfigurationStore(configRecoverer);
+                _messageStore.recoverConfigurationStore(getModel(), configRecoverer);
 
                 VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(BDBHAVirtualHost.this);
-                _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
+                _messageStore.recoverMessageStore(getModel(), recoveryHandler, recoveryHandler);
             }
             catch (Exception e)
             {

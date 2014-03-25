@@ -18,12 +18,6 @@
  */
 package org.apache.qpid.server.security.acl;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.url.URLSyntaxException;
-
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -37,8 +31,14 @@ import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 import javax.naming.NamingException;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.url.URLSyntaxException;
+
 /**
- * Tests the V2 ACLs.  The tests perform basic AMQP operations like creating queues or excahnges and publishing and consuming messages, using
+ * Tests the V2 ACLs.  The tests perform basic AMQP operations like creating queues or exchanges and publishing and consuming messages, using
  * JMS to contact the broker.
  */
 public class ExternalACLTest extends AbstractACLTestCase
@@ -46,65 +46,113 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpAccessAuthorizedSuccess() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST");
     }
 
     public void testAccessAuthorizedSuccess() throws Exception
     {
-        try
-        {
-            Connection conn = getConnection("test", "client", "guest");
-            Session sess = conn.createSession(true, Session.SESSION_TRANSACTED);
-            conn.start();
-
-            //Do something to show connection is active.
-            sess.rollback();
-
-            conn.close();
-        }
-        catch (Exception e)
-        {
-            fail("Connection was not created due to:" + e);
-        }
+        Connection conn = getConnection("test", "client", "guest");
+        conn.close();
     }
 
     public void setUpAccessNoRightsFailure() throws Exception
     {
-        writeACLFile("test", "ACL DENY-LOG client ACCESS VIRTUALHOST");
+        writeACLFile("ACL DENY-LOG client ACCESS VIRTUALHOST");
     }
 
     public void testAccessNoRightsFailure() throws Exception
     {
         try
         {
-            Connection conn = getConnection("test", "guest", "guest");
-            Session sess = conn.createSession(true, Session.SESSION_TRANSACTED);
-            conn.start();
-            sess.rollback();
-
+            getConnection("test", "client", "guest");
             fail("Connection was created.");
         }
         catch (JMSException e)
         {
-            // JMSException -> linkedException -> cause = AMQException (403 or 320)
-            Exception linkedException = e.getLinkedException();
-            assertNotNull("There was no linked exception", linkedException);
-            Throwable cause = linkedException.getCause();
-            assertNotNull("Cause was null", cause);
-            assertTrue("Wrong linked exception type", cause instanceof AMQException);
-            AMQConstant errorCode = isBroker010() ? AMQConstant.CONNECTION_FORCED : AMQConstant.ACCESS_REFUSED;
-            assertEquals("Incorrect error code received", errorCode, ((AMQException) cause).getErrorCode());
+            assertAccessDeniedException(e);
         }
     }
 
+    private void assertAccessDeniedException(JMSException e)
+    {
+        assertEquals("Unexpected exception message", "Error creating connection: Permission denied: test", e.getMessage());
+
+        // JMSException -> linkedException -> cause = AMQException (403 or 320)
+        Exception linkedException = e.getLinkedException();
+        assertNotNull("There was no linked exception", linkedException);
+        Throwable cause = linkedException.getCause();
+        assertNotNull("Cause was null", cause);
+        assertTrue("Wrong linked exception type", cause instanceof AMQException);
+        AMQConstant errorCode = isBroker010() ? AMQConstant.CONNECTION_FORCED : AMQConstant.ACCESS_REFUSED;
+        assertEquals("Incorrect error code received", errorCode, ((AMQException) cause).getErrorCode());
+    }
+
+    public void setUpAccessVirtualHostWithName() throws Exception
+    {
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST name='test'", "ACL DENY-LOG guest ACCESS VIRTUALHOST name='test'",
+                           "ACL ALLOW-LOG server ACCESS VIRTUALHOST name='*'");
+    }
+
+    public void testAccessVirtualHostWithName() throws Exception
+    {
+        Connection conn = getConnection("test", "client", "guest");
+        conn.close();
+
+        try
+        {
+            getConnection("test", "guest", "guest");
+            fail("Access should be denied");
+        }
+        catch (JMSException e)
+        {
+            assertAccessDeniedException(e);
+        }
+
+        Connection conn2 = getConnection("test", "server", "guest");
+        conn2.close();
+    }
+
+    public void setUpClientCreateVirtualHostQueue() throws Exception
+    {
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client CREATE QUEUE virtualhost_name='test'",
+                     "ACL ALLOW-LOG client CONSUME QUEUE",
+                     "ACL ALLOW-LOG client BIND EXCHANGE",
+                     "ACL ALLOW-LOG guest ACCESS VIRTUALHOST",
+                     "ACL DENY-LOG  guest CREATE QUEUE virtualhost_name='test'");
+    }
+
+    public void testClientCreateVirtualHostQueue() throws NamingException, JMSException, AMQException, Exception
+    {
+        Connection conn = getConnection("test", "client", "guest");
+        Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Destination dest = sess.createQueue(getTestQueueName());
+        sess.createConsumer(dest);
+        conn.close();
+
+        try
+        {
+            conn = getConnection("test", "guest", "guest");
+            sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            sess.createConsumer(dest);
+
+            fail("Queue creation for user 'guest' is denied");
+        }
+        catch (JMSException e)
+        {
+            check403Exception(e.getLinkedException());
+        }
+    }
+
+
     public void setUpClientDeleteQueueSuccess() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                             "ACL ALLOW-LOG client CREATE QUEUE durable=\"true\"" ,
-                             "ACL ALLOW-LOG client CONSUME QUEUE name=\"clientid:kipper\"",
-                             "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.topic\" durable=true routingKey=kipper",
-                             "ACL ALLOW-LOG client DELETE QUEUE durable=\"true\"",
-                             "ACL ALLOW-LOG client UNBIND EXCHANGE name=\"amq.topic\" durable=true routingKey=kipper");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client CREATE QUEUE durable=\"true\"",
+                     "ACL ALLOW-LOG client CONSUME QUEUE name=\"clientid:kipper\"" ,
+                     "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.topic\" durable=true routingKey=kipper",
+                     "ACL ALLOW-LOG client DELETE QUEUE durable=\"true\"",
+                     "ACL ALLOW-LOG client UNBIND EXCHANGE name=\"amq.topic\" durable=true routingKey=kipper");
     }
 
     public void testClientDeleteQueueSuccess() throws Exception
@@ -128,12 +176,12 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpClientDeleteQueueFailure() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                             "ACL ALLOW-LOG client CREATE QUEUE durable=\"true\"" ,
-                             "ACL ALLOW-LOG client CONSUME QUEUE name=\"clientid:kipper\"",
-                             "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.topic\" durable=true routingKey=kipper",
-                             "ACL DENY-LOG client DELETE QUEUE durable=\"true\"",
-                             "ACL DENY-LOG client UNBIND EXCHANGE name=\"amq.topic\" durable=true routingKey=kipper");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client CREATE QUEUE durable=\"true\"",
+                     "ACL ALLOW-LOG client CONSUME QUEUE name=\"clientid:kipper\"" ,
+                     "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.topic\" durable=true routingKey=kipper",
+                     "ACL DENY-LOG client DELETE QUEUE durable=\"true\"",
+                     "ACL DENY-LOG client UNBIND EXCHANGE name=\"amq.topic\" durable=true routingKey=kipper");
     }
 
     public void testClientDeleteQueueFailure() throws Exception
@@ -177,10 +225,10 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpClientConsumeFromNamedQueueValid() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                             "ACL ALLOW-LOG client CREATE QUEUE name=\"example.RequestQueue\"" ,
-                             "ACL ALLOW-LOG client CONSUME QUEUE name=\"example.RequestQueue\"",
-                             "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.direct\" routingKey=\"example.RequestQueue\"");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client CREATE QUEUE name=\"example.RequestQueue\"",
+                     "ACL ALLOW-LOG client CONSUME QUEUE name=\"example.RequestQueue\"" ,
+                     "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.direct\" routingKey=\"example.RequestQueue\"");
     }
 
 
@@ -197,10 +245,10 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpClientConsumeFromNamedQueueFailure() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                "ACL ALLOW-LOG client CREATE QUEUE" ,
-                "ACL ALLOW-LOG client BIND EXCHANGE",
-                "ACL DENY-LOG client CONSUME QUEUE name=\"IllegalQueue\"");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client CREATE QUEUE",
+                     "ACL ALLOW-LOG client BIND EXCHANGE" ,
+                     "ACL DENY-LOG client CONSUME QUEUE name=\"IllegalQueue\"");
     }
 
     public void testClientConsumeFromNamedQueueFailure() throws NamingException, Exception
@@ -224,11 +272,11 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpClientCreateTemporaryQueueSuccess() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                             "ACL ALLOW-LOG client CREATE QUEUE temporary=\"true\"" ,
-                             "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.direct\" temporary=true",
-                             "ACL ALLOW-LOG client DELETE QUEUE temporary=\"true\"",
-                             "ACL ALLOW-LOG client UNBIND EXCHANGE name=\"amq.direct\" temporary=true");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client CREATE QUEUE temporary=\"true\"",
+                     "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.direct\" temporary=true" ,
+                     "ACL ALLOW-LOG client DELETE QUEUE temporary=\"true\"",
+                     "ACL ALLOW-LOG client UNBIND EXCHANGE name=\"amq.direct\" temporary=true");
     }
 
     public void testClientCreateTemporaryQueueSuccess() throws JMSException, URLSyntaxException, Exception
@@ -243,8 +291,8 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpClientCreateTemporaryQueueFailed() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                             "ACL DENY-LOG client CREATE QUEUE temporary=\"true\"");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL DENY-LOG client CREATE QUEUE temporary=\"true\"");
     }
 
     public void testClientCreateTemporaryQueueFailed() throws NamingException, Exception
@@ -268,9 +316,8 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpClientCreateNamedQueueFailure() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                             "ACL ALLOW-LOG client CREATE QUEUE name=\"ValidQueue\"",
-                             "ACL ALLOW-LOG client CONSUME QUEUE");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client CREATE QUEUE name=\"ValidQueue\"");
     }
 
     public void testClientCreateNamedQueueFailure() throws NamingException, JMSException, AMQException, Exception
@@ -294,10 +341,10 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpClientPublishUsingTransactionSuccess() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                             "ACL ALLOW-LOG client CREATE QUEUE" ,
-                             "ACL ALLOW-LOG client BIND EXCHANGE",
-                             "ACL ALLOW-LOG client PUBLISH EXCHANGE name=\"amq.direct\" routingKey=\"example.RequestQueue\"");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client CREATE QUEUE",
+                     "ACL ALLOW-LOG client BIND EXCHANGE" ,
+                     "ACL ALLOW-LOG client PUBLISH EXCHANGE name=\"amq.direct\" routingKey=\"example.RequestQueue\"");
     }
 
     public void testClientPublishUsingTransactionSuccess() throws Exception
@@ -329,19 +376,18 @@ public class ExternalACLTest extends AbstractACLTestCase
         // We tolerate a dependency from this test to that file because its
         // contents are expected to change rarely.
 
-        writeACLFile("test", "ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST",
-                             "# Server side",
-                             "ACL ALLOW-LOG server CREATE QUEUE name=\"example.RequestQueue\"" ,
-                             "ACL ALLOW-LOG server BIND EXCHANGE",
-                             "ACL ALLOW-LOG server PUBLISH EXCHANGE name=\"amq.direct\" routingKey=\"TempQueue*\"",
-                             "ACL ALLOW-LOG server CONSUME QUEUE name=\"example.RequestQueue\"",
-                             "# Client side",
-                             "ACL ALLOW-LOG client PUBLISH EXCHANGE name=\"amq.direct\" routingKey=\"example.RequestQueue\"",
-                             "ACL ALLOW-LOG client CONSUME QUEUE temporary=true",
-                             "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.direct\" temporary=true",
-                             "ACL ALLOW-LOG client UNBIND EXCHANGE name=\"amq.direct\" temporary=true",
-                             "ACL ALLOW-LOG client CREATE QUEUE temporary=true",
-                             "ACL ALLOW-LOG client DELETE QUEUE temporary=true");
+        writeACLFile("ACL ALLOW-LOG messaging-users ACCESS VIRTUALHOST", "# Server side",
+                     "ACL ALLOW-LOG server CREATE QUEUE name=\"example.RequestQueue\"",
+                     "ACL ALLOW-LOG server BIND EXCHANGE" ,
+                     "ACL ALLOW-LOG server PUBLISH EXCHANGE name=\"amq.direct\" routingKey=\"TempQueue*\"",
+                     "ACL ALLOW-LOG server CONSUME QUEUE name=\"example.RequestQueue\"",
+                     "# Client side",
+                     "ACL ALLOW-LOG client PUBLISH EXCHANGE name=\"amq.direct\" routingKey=\"example.RequestQueue\"",
+                     "ACL ALLOW-LOG client CONSUME QUEUE temporary=true",
+                     "ACL ALLOW-LOG client BIND EXCHANGE name=\"amq.direct\" temporary=true",
+                     "ACL ALLOW-LOG client UNBIND EXCHANGE name=\"amq.direct\" temporary=true",
+                     "ACL ALLOW-LOG client CREATE QUEUE temporary=true",
+                     "ACL ALLOW-LOG client DELETE QUEUE temporary=true");
     }
 
 
@@ -386,9 +432,9 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpClientDeleteQueueSuccessWithOnlyAllPermissions() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
-                             "ACL ALLOW-LOG client ALL QUEUE",
-                             "ACL ALLOW-LOG client ALL EXCHANGE");
+        writeACLFile("ACL ALLOW-LOG client ACCESS VIRTUALHOST",
+                     "ACL ALLOW-LOG client ALL QUEUE",
+                     "ACL ALLOW-LOG client ALL EXCHANGE");
     }
 
     public void testClientDeleteQueueSuccessWithOnlyAllPermissions() throws Exception
@@ -412,7 +458,7 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpFirewallAllow() throws Exception
     {
-        writeACLFile("test", "ACL ALLOW client ACCESS VIRTUALHOST from_network=\"127.0.0.1\"");
+        writeACLFile("ACL ALLOW client ACCESS VIRTUALHOST from_network=\"127.0.0.1\"");
     }
 
     public void testFirewallAllow() throws Exception
@@ -423,7 +469,7 @@ public class ExternalACLTest extends AbstractACLTestCase
 
     public void setUpFirewallDeny() throws Exception
     {
-        writeACLFile("test", "ACL DENY client ACCESS VIRTUALHOST from_network=\"127.0.0.1\"");
+        writeACLFile("ACL DENY client ACCESS VIRTUALHOST from_network=\"127.0.0.1\"");
     }
 
     public void testFirewallDeny() throws Exception

@@ -30,6 +30,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
@@ -229,17 +230,16 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 0);
 
-        _durableConfigurationRecoverer.configuredObject(new UUID(1, 0),
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                            "org.apache.qpid.server.model.Binding",
                                                            createBinding("key",
-                                                                         DIRECT_EXCHANGE_ID,
-                                                                         QUEUE_ID,
                                                                          "x-filter-jms-selector",
-                                                                         "wibble"));
+                                                                         "wibble"),
+                                                           createBindingParents(DIRECT_EXCHANGE_ID, QUEUE_ID)));
 
         final ConfiguredObjectRecord[] expected = {
-                new ConfiguredObjectRecord(new UUID(1, 0), "Binding",
-                        createBinding("key", DIRECT_EXCHANGE_ID, QUEUE_ID))
+                new ConfiguredObjectRecordImpl(new UUID(1, 0), "Binding",
+                        createBinding("key"))
         };
 
         verifyCorrectUpdates(expected);
@@ -254,32 +254,30 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 0);
 
-        _durableConfigurationRecoverer.configuredObject(new UUID(1, 0),
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                            "org.apache.qpid.server.model.Binding",
                                                            createBinding("key",
-                                                                         DIRECT_EXCHANGE_ID,
-                                                                         QUEUE_ID,
                                                                          "x-filter-jms-selector",
                                                                          "wibble",
                                                                          "not-a-selector",
-                                                                         "moo"));
+                                                                         "moo"),
+                                                           createBindingParents(DIRECT_EXCHANGE_ID, QUEUE_ID)));
 
 
         final UUID customExchangeId = new UUID(3,0);
 
-        _durableConfigurationRecoverer.configuredObject(new UUID(2, 0),
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(2, 0),
                                                            "org.apache.qpid.server.model.Binding",
                                                            createBinding("key",
-                                                                         customExchangeId,
-                                                                         QUEUE_ID,
                                                                          "x-filter-jms-selector",
                                                                          "wibble",
                                                                          "not-a-selector",
-                                                                         "moo"));
+                                                                         "moo"),
+                                                           createBindingParents(customExchangeId,QUEUE_ID)));
 
-        _durableConfigurationRecoverer.configuredObject(customExchangeId,
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(customExchangeId,
                                                            "org.apache.qpid.server.model.Exchange",
-                                                           createExchange(CUSTOM_EXCHANGE_NAME, HeadersExchange.TYPE));
+                                                           createExchange(CUSTOM_EXCHANGE_NAME, HeadersExchange.TYPE)));
 
         final ExchangeImpl customExchange = mock(ExchangeImpl.class);
 
@@ -323,10 +321,10 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
 
         final ConfiguredObjectRecord[] expected = {
-                new ConfiguredObjectRecord(new UUID(1, 0), "org.apache.qpid.server.model.Binding",
-                        createBinding("key", DIRECT_EXCHANGE_ID, QUEUE_ID, "not-a-selector", "moo")),
-                new ConfiguredObjectRecord(new UUID(2, 0), "org.apache.qpid.server.model.Binding",
-                        createBinding("key", customExchangeId, QUEUE_ID, "not-a-selector", "moo"))
+                new ConfiguredObjectRecordImpl(new UUID(1, 0), "org.apache.qpid.server.model.Binding",
+                        createBinding("key", "not-a-selector", "moo")),
+                new ConfiguredObjectRecordImpl(new UUID(2, 0), "org.apache.qpid.server.model.Binding",
+                        createBinding("key", "not-a-selector", "moo"))
         };
 
         verifyCorrectUpdates(expected);
@@ -340,17 +338,16 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 0);
 
-        _durableConfigurationRecoverer.configuredObject(new UUID(1, 0),
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                            "org.apache.qpid.server.model.Binding",
                                                            createBinding("key",
-                                                                         TOPIC_EXCHANGE_ID,
-                                                                         QUEUE_ID,
                                                                          "x-filter-jms-selector",
-                                                                         "wibble"));
+                                                                         "wibble"),
+                                                           createBindingParents(TOPIC_EXCHANGE_ID,QUEUE_ID)));
 
         final ConfiguredObjectRecord[] expected = {
-                new ConfiguredObjectRecord(new UUID(1, 0), "Binding",
-                        createBinding("key", TOPIC_EXCHANGE_ID, QUEUE_ID, "x-filter-jms-selector", "wibble"))
+                new ConfiguredObjectRecordImpl(new UUID(1, 0), "Binding",
+                        createBinding("key", "x-filter-jms-selector", "wibble"))
         };
 
         verifyCorrectUpdates(expected);
@@ -363,16 +360,15 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
 
-        _durableConfigurationRecoverer.configuredObject(new UUID(1, 0),
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                            "Binding",
                                                            createBinding("key",
-                                                                         DIRECT_EXCHANGE_ID,
-                                                                         QUEUE_ID,
                                                                          "x-filter-jms-selector",
-                                                                         "wibble"));
+                                                                         "wibble"),
+                                                           createBindingParents(DIRECT_EXCHANGE_ID,QUEUE_ID)));
 
         doThrow(new RuntimeException("Update Should not be called"))
-                .when(_store).update(anyBoolean(), any(ConfiguredObjectRecord[].class));
+                .when(_store).update(anyBoolean(), any(ConfiguredObjectRecordImpl[].class));
 
         _durableConfigurationRecoverer.completeConfigurationRecovery();
     }
@@ -382,13 +378,13 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
 
 
-        _durableConfigurationRecoverer.configuredObject(new UUID(1, 0),
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                         "Binding",
                                                         createBinding("key",
-                                                                      new UUID(3,0),
-                                                                      QUEUE_ID,
                                                                       "x-filter-jms-selector",
-                                                                      "wibble"));
+                                                                      "wibble"),
+                                                        createBindingParents(new UUID(3,0),
+                                                                             QUEUE_ID)));
 
         try
         {
@@ -410,8 +406,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         try
         {
             final Map<String, Object> emptyArguments = Collections.emptyMap();
-            _durableConfigurationRecoverer.configuredObject(new UUID(1, 0),
-                                                            "Wibble", emptyArguments);
+            _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
+                                                            "Wibble", emptyArguments));
             _durableConfigurationRecoverer.completeConfigurationRecovery();
             fail("Expected resolution to fail due to unknown object type");
         }
@@ -474,11 +470,11 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
 
-        _durableConfigurationRecoverer.configuredObject(queueId, Queue.class.getSimpleName(),
-                                                        createQueue("testQueue", exchangeId));
-        _durableConfigurationRecoverer.configuredObject(exchangeId,
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(queueId, Queue.class.getSimpleName(),
+                                                        createQueue("testQueue", exchangeId)));
+        _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(exchangeId,
                                                         org.apache.qpid.server.model.Exchange.class.getSimpleName(),
-                                                        createExchange(CUSTOM_EXCHANGE_NAME, HeadersExchange.TYPE));
+                                                        createExchange(CUSTOM_EXCHANGE_NAME, HeadersExchange.TYPE)));
 
         _durableConfigurationRecoverer.completeConfigurationRecovery();
 
@@ -499,16 +495,14 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
                 return null;
             }
-        }).when(_store).update(anyBoolean(), any(ConfiguredObjectRecord[].class));
+        }).when(_store).update(anyBoolean(), any(ConfiguredObjectRecordImpl[].class));
     }
 
-    private Map<String,Object> createBinding(String bindingKey, UUID exchangeId, UUID queueId, String... args)
+    private Map<String,Object> createBinding(String bindingKey, String... args)
     {
         Map<String, Object> binding = new LinkedHashMap<String, Object>();
 
         binding.put("name", bindingKey);
-        binding.put(Binding.EXCHANGE, exchangeId.toString());
-        binding.put(Binding.QUEUE, queueId.toString());
         Map<String,String> argumentMap = new LinkedHashMap<String, String>();
         if(args != null && args.length != 0)
         {
@@ -528,6 +522,15 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         }
         binding.put(Binding.ARGUMENTS, argumentMap);
         return binding;
+    }
+
+    private Map<String,ConfiguredObjectRecord> createBindingParents(UUID exchangeId, UUID queueId)
+    {
+        Map<String,ConfiguredObjectRecord> parents = new HashMap<String, ConfiguredObjectRecord>();
+        parents.put("Exchange", new ConfiguredObjectRecordImpl(exchangeId,"Exchange",Collections.<String,Object>emptyMap()));
+        parents.put("Queue", new ConfiguredObjectRecordImpl(queueId,"Queue",Collections.<String,Object>emptyMap()));
+
+        return parents;
     }
 
 

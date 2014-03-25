@@ -28,6 +28,7 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -50,11 +51,9 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
     }
 
     @Override
-    public UnresolvedObject<ExchangeImpl> createUnresolvedObject(final UUID id,
-                                                             final String type,
-                                                             final Map<String, Object> attributes)
+    public UnresolvedObject<ExchangeImpl> createUnresolvedObject(final ConfiguredObjectRecord record)
     {
-        return new UnresolvedExchange(id, attributes);
+        return new UnresolvedExchange(record.getId(), record.getAttributes());
     }
 
     private class UnresolvedExchange implements UnresolvedObject<ExchangeImpl>

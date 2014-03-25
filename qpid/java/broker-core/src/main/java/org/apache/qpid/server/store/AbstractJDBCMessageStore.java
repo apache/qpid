@@ -24,6 +24,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -37,6 +39,8 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +53,7 @@ import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.transport.ConnectionOpen;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
@@ -71,20 +76,22 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private static final String META_DATA_TABLE_NAME = "QPID_MESSAGE_METADATA";
     private static final String MESSAGE_CONTENT_TABLE_NAME = "QPID_MESSAGE_CONTENT";
 
-    private static final String LINKS_TABLE_NAME = "QPID_LINKS";
-    private static final String BRIDGES_TABLE_NAME = "QPID_BRIDGES";
 
     private static final String XID_TABLE_NAME = "QPID_XIDS";
     private static final String XID_ACTIONS_TABLE_NAME = "QPID_XID_ACTIONS";
 
     private static final String CONFIGURED_OBJECTS_TABLE_NAME = "QPID_CONFIGURED_OBJECTS";
+    private static final String CONFIGURED_OBJECT_HIERARCHY_TABLE_NAME = "QPID_CONFIGURED_OBJECT_HIERARCHY";
+
     private static final int DEFAULT_CONFIG_VERSION = 0;
 
     public static final Set<String> CONFIGURATION_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURATION_VERSION_TABLE_NAME));
-    public static final Set<String> MESSAGE_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(DB_VERSION_TABLE_NAME, META_DATA_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME, QUEUE_ENTRY_TABLE_NAME, BRIDGES_TABLE_NAME, LINKS_TABLE_NAME, XID_TABLE_NAME, XID_ACTIONS_TABLE_NAME));
+    public static final Set<String> MESSAGE_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(DB_VERSION_TABLE_NAME,
+                                                                                                  META_DATA_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME,
+                                                                                                    QUEUE_ENTRY_TABLE_NAME,
+                                                                                                    XID_TABLE_NAME, XID_ACTIONS_TABLE_NAME));
 
-
-    private static final int DB_VERSION = 7;
+    private static final int DB_VERSION = 8;
 
     private final AtomicLong _messageId = new AtomicLong(0);
 
@@ -116,34 +123,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private static final String DELETE_FROM_META_DATA = "DELETE FROM " + META_DATA_TABLE_NAME + " WHERE message_id = ?";
     private static final String SELECT_ALL_FROM_META_DATA = "SELECT message_id, meta_data FROM " + META_DATA_TABLE_NAME;
 
-    private static final String SELECT_FROM_LINKS =
-            "SELECT create_time, arguments FROM " + LINKS_TABLE_NAME + " WHERE id_lsb = ? and id_msb";
-    private static final String DELETE_FROM_LINKS = "DELETE FROM " + LINKS_TABLE_NAME
-                                                    + " WHERE id_lsb = ? and id_msb = ?";
-    private static final String SELECT_ALL_FROM_LINKS = "SELECT id_lsb, id_msb, create_time, "
-                                                        + "arguments FROM " + LINKS_TABLE_NAME;
-    private static final String FIND_LINK = "SELECT id_lsb, id_msb FROM " + LINKS_TABLE_NAME + " WHERE id_lsb = ? and"
-                                            + " id_msb = ?";
-    private static final String INSERT_INTO_LINKS = "INSERT INTO " + LINKS_TABLE_NAME + "( id_lsb, "
-                                                  + "id_msb, create_time, arguments ) values (?, ?, ?, ?)";
-    private static final String SELECT_FROM_BRIDGES =
-            "SELECT create_time, link_id_lsb, link_id_msb, arguments FROM "
-            + BRIDGES_TABLE_NAME + " WHERE id_lsb = ? and id_msb = ?";
-    private static final String DELETE_FROM_BRIDGES = "DELETE FROM " + BRIDGES_TABLE_NAME
-                                                      + " WHERE id_lsb = ? and id_msb = ?";
-    private static final String SELECT_ALL_FROM_BRIDGES = "SELECT id_lsb, id_msb, "
-                                                          + " create_time,"
-                                                          + " link_id_lsb, link_id_msb, "
-                                                        + "arguments FROM " + BRIDGES_TABLE_NAME
-                                                        + " WHERE link_id_lsb = ? and link_id_msb = ?";
-    private static final String FIND_BRIDGE = "SELECT id_lsb, id_msb FROM " + BRIDGES_TABLE_NAME +
-                                              " WHERE id_lsb = ? and id_msb = ?";
-    private static final String INSERT_INTO_BRIDGES = "INSERT INTO " + BRIDGES_TABLE_NAME + "( id_lsb, id_msb, "
-                                                    + "create_time, "
-                                                    + "link_id_lsb, link_id_msb, "
-                                                    + "arguments )"
-                                                    + " values (?, ?, ?, ?, ?, ?)";
-
     private static final String INSERT_INTO_XIDS =
             "INSERT INTO "+ XID_TABLE_NAME +" ( format, global_id, branch_id ) values (?, ?, ?)";
     private static final String DELETE_FROM_XIDS = "DELETE FROM " + XID_TABLE_NAME
@@ -166,6 +145,14 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private static final String FIND_CONFIGURED_OBJECT = "SELECT object_type, attributes FROM " + CONFIGURED_OBJECTS_TABLE_NAME
             + " where id = ?";
     private static final String SELECT_FROM_CONFIGURED_OBJECTS = "SELECT id, object_type, attributes FROM " + CONFIGURED_OBJECTS_TABLE_NAME;
+
+
+    private static final String INSERT_INTO_CONFIGURED_OBJECT_HIERARCHY = "INSERT INTO " + CONFIGURED_OBJECT_HIERARCHY_TABLE_NAME
+                                                                          + " ( child_id, parent_type, parent_id) VALUES (?,?,?)";
+
+    private static final String DELETE_FROM_CONFIGURED_OBJECT_HIERARCHY = "DELETE FROM " + CONFIGURED_OBJECT_HIERARCHY_TABLE_NAME
+                                                                          + " where child_id = ?";
+    private static final String SELECT_FROM_CONFIGURED_OBJECT_HIERARCHY = "SELECT child_id, parent_type, parent_id FROM " + CONFIGURED_OBJECT_HIERARCHY_TABLE_NAME;
 
     protected static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
@@ -197,6 +184,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     private StateManager _configurationStoreStateManager;
     private boolean _initialized;
+
 
     public AbstractJDBCMessageStore()
     {
@@ -233,13 +221,13 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
     {
         _configurationStoreStateManager.attainState(State.ACTIVATING);
-
         try
         {
             createOrOpenConfigurationStoreDatabase();
+            upgradeIfVersionTableExists(parent);
             recoveryHandler.beginConfigurationRecovery(this, getConfigVersion());
             loadConfiguredObjects(recoveryHandler);
             setConfigVersion(recoveryHandler.completeConfigurationRecovery());
@@ -251,6 +239,25 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         _configurationStoreStateManager.attainState(State.ACTIVE);
     }
 
+    private void upgradeIfVersionTableExists(ConfiguredObject<?> parent)
+            throws SQLException {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+            if (tableExists(DB_VERSION_TABLE_NAME, conn))
+            {
+                upgradeIfNecessary(parent);
+            }
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                conn.close();
+            }
+        }
+    }
+
     @Override
     public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings)
     {
@@ -260,13 +267,13 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
         _messageStoreStateManager.attainState(State.ACTIVATING);
         try
         {
             createOrOpenMessageStoreDatabase();
-            upgradeIfNecessary();
+            upgradeIfNecessary(parent);
         }
         catch (SQLException e)
         {
@@ -302,7 +309,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         _messageStoreStateManager.attainState(State.ACTIVE);
     }
 
-    protected void upgradeIfNecessary() throws SQLException
+    protected void upgradeIfNecessary(ConfiguredObject<?> parent) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
         try
@@ -323,6 +330,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                     {
                         case 6:
                             upgradeFromV6();
+                        case 7:
+                            upgradeFromV7(parent);
                         case DB_VERSION:
                             return;
                         default:
@@ -349,6 +358,135 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private void upgradeFromV6() throws SQLException
     {
         updateDbVersion(7);
+    }
+
+
+    private void upgradeFromV7(ConfiguredObject<?> parent) throws SQLException
+    {
+        Connection connection = newConnection();
+        try
+        {
+            Map<UUID,Map<String,Object>> bindingsToUpdate = new HashMap<UUID, Map<String, Object>>();
+            List<UUID> others = new ArrayList<UUID>();
+            final ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(_module);
+
+            PreparedStatement stmt = connection.prepareStatement(SELECT_FROM_CONFIGURED_OBJECTS);
+            try
+            {
+                ResultSet rs = stmt.executeQuery();
+                try
+                {
+                    while (rs.next())
+                    {
+                        UUID id = UUID.fromString(rs.getString(1));
+                        String objectType = rs.getString(2);
+                        Map<String,Object> attributes = objectMapper.readValue(getBlobAsString(rs, 3),Map.class);
+                        if(objectType.endsWith("Binding"))
+                        {
+                            bindingsToUpdate.put(id,attributes);
+                        }
+                        else
+                        {
+                            others.add(id);
+                        }
+                    }
+                }
+                catch (JsonMappingException e)
+                {
+                    throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
+                }
+                catch (JsonParseException e)
+                {
+                    throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
+                }
+                catch (IOException e)
+                {
+                    throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+            stmt = connection.prepareStatement(INSERT_INTO_CONFIGURED_OBJECT_HIERARCHY);
+            try
+            {
+                for (UUID id : others)
+                {
+                    stmt.setString(1, id.toString());
+                    stmt.setString(2, "VirtualHost");
+                    stmt.setString(3, parent.getId().toString());
+                    stmt.execute();
+                }
+                for(Map.Entry<UUID, Map<String,Object>> bindingEntry : bindingsToUpdate.entrySet())
+                {
+                    stmt.setString(1, bindingEntry.getKey().toString());
+                    stmt.setString(2,"Queue");
+                    stmt.setString(3, bindingEntry.getValue().remove("queue").toString());
+                    stmt.execute();
+
+                    stmt.setString(1, bindingEntry.getKey().toString());
+                    stmt.setString(2,"Exchange");
+                    stmt.setString(3, bindingEntry.getValue().remove("exchange").toString());
+                    stmt.execute();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+            stmt = connection.prepareStatement(UPDATE_CONFIGURED_OBJECTS);
+            try
+            {
+                for(Map.Entry<UUID, Map<String,Object>> bindingEntry : bindingsToUpdate.entrySet())
+                {
+                    stmt.setString(1, "Binding");
+                    byte[] attributesAsBytes = objectMapper.writeValueAsBytes(bindingEntry.getValue());
+
+                    ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
+                    stmt.setBinaryStream(2, bis, attributesAsBytes.length);
+                    stmt.setString(3, bindingEntry.getKey().toString());
+                    stmt.execute();
+                }
+            }
+            catch (JsonMappingException e)
+            {
+                throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
+            }
+            catch (JsonGenerationException e)
+            {
+                throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
+            }
+            catch (IOException e)
+            {
+                throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
+            }
+            finally
+            {
+                stmt.close();
+            }
+            stmt = connection.prepareStatement(UPDATE_DB_VERSION);
+            try
+            {
+                stmt.setInt(1, 8);
+                stmt.execute();
+            }
+            finally
+            {
+                stmt.close();
+            }
+            connection.commit();
+        }
+        finally
+        {
+            connection.close();
+        }
     }
 
     private void updateDbVersion(int newVersion) throws SQLException
@@ -392,8 +530,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         createQueueEntryTable(conn);
         createMetaDataTable(conn);
         createMessageContentTable(conn);
-        createLinkTable(conn);
-        createBridgeTable(conn);
         createXidTable(conn);
         createXidActionTable(conn);
         conn.close();
@@ -405,6 +541,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
         createConfigVersionTable(conn);
         createConfiguredObjectsTable(conn);
+        createConfiguredObjectHierarchyTable(conn);
 
         conn.close();
     }
@@ -480,6 +617,23 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
+    private void createConfiguredObjectHierarchyTable(final Connection conn) throws SQLException
+    {
+        if(!tableExists(CONFIGURED_OBJECT_HIERARCHY_TABLE_NAME, conn))
+        {
+            Statement stmt = conn.createStatement();
+            try
+            {
+                stmt.execute("CREATE TABLE " + CONFIGURED_OBJECT_HIERARCHY_TABLE_NAME
+                             + " ( child_id VARCHAR(36) not null, parent_type varchar(255), parent_id VARCHAR(36),  PRIMARY KEY (child_id, parent_type))");
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+    }
+
 
 
     private void createQueueEntryTable(final Connection conn) throws SQLException
@@ -546,45 +700,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    private void createLinkTable(final Connection conn) throws SQLException
-    {
-        if(!tableExists(LINKS_TABLE_NAME, conn))
-        {
-            Statement stmt = conn.createStatement();
-            try
-            {
-                stmt.execute("CREATE TABLE "+ LINKS_TABLE_NAME +" ( id_lsb " + getSqlBigIntType() + " not null,"
-                                                + " id_msb " + getSqlBigIntType() + " not null,"
-                                                 + " create_time " + getSqlBigIntType() + " not null,"
-                                                 + " arguments "+getSqlBlobType()+",  PRIMARY KEY ( id_lsb, id_msb ))");
-            }
-            finally
-            {
-                stmt.close();
-            }
-        }
-    }
 
-    private void createBridgeTable(final Connection conn) throws SQLException
-    {
-        if(!tableExists(BRIDGES_TABLE_NAME, conn))
-        {
-            Statement stmt = conn.createStatement();
-            try
-            {
-                stmt.execute("CREATE TABLE "+ BRIDGES_TABLE_NAME +" ( id_lsb " + getSqlBigIntType() + " not null,"
-                + " id_msb " + getSqlBigIntType() + " not null,"
-                + " create_time " + getSqlBigIntType() + " not null,"
-                + " link_id_lsb " + getSqlBigIntType() + " not null,"
-                + " link_id_msb " + getSqlBigIntType() + " not null,"
-                + " arguments "+getSqlBlobType()+",  PRIMARY KEY ( id_lsb, id_msb ))");
-            }
-            finally
-            {
-                stmt.close();
-            }
-        }
-    }
 
     private void createXidTable(final Connection conn) throws SQLException
     {
@@ -826,38 +942,28 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
 
     @Override
-    public void create(UUID id, String type, Map<String,Object> attributes) throws StoreException
+    public void create(ConfiguredObjectRecord object) throws StoreException
     {
         if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
-            insertConfiguredObject(new ConfiguredObjectRecord(id, type, attributes));
-        }
-
-    }
-
-    @Override
-    public void remove(UUID id, String type) throws StoreException
-    {
-        int results = removeConfiguredObject(id);
-        if (results == 0)
-        {
-            throw new StoreException(type + " with id " + id + " not found");
-        }
-    }
-
-    @Override
-    public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
-    {
-        if (_configurationStoreStateManager.isInState(State.ACTIVE))
-        {
-            ConfiguredObjectRecord queueConfiguredObject = loadConfiguredObject(id);
-            if (queueConfiguredObject != null)
+            try
             {
-                ConfiguredObjectRecord newQueueRecord = new ConfiguredObjectRecord(id, type, attributes);
-                updateConfiguredObject(newQueueRecord);
+                Connection conn = newConnection();
+                try
+                {
+                    insertConfiguredObject(object, conn);
+                    conn.commit();
+                }
+                finally
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Error creating ConfiguredObject " + object);
             }
         }
-
     }
 
     /**
@@ -1997,66 +2103,65 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         _eventManager.addEventListener(eventListener, events);
     }
 
-    private void insertConfiguredObject(ConfiguredObjectRecord configuredObject) throws StoreException
+    private void insertConfiguredObject(ConfiguredObjectRecord configuredObject, final Connection conn) throws StoreException
     {
         if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
             try
             {
-                Connection conn = newAutoCommitConnection();
+                PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
                 try
                 {
-                    PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
+                    stmt.setString(1, configuredObject.getId().toString());
+                    ResultSet rs = stmt.executeQuery();
+                    boolean exists;
                     try
                     {
-                        stmt.setString(1, configuredObject.getId().toString());
-                        ResultSet rs = stmt.executeQuery();
-                        try
-                        {
-                            // If we don't have any data in the result set then we can add this configured object
-                            if (!rs.next())
-                            {
-                                PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_CONFIGURED_OBJECTS);
-                                try
-                                {
-                                    insertStmt.setString(1, configuredObject.getId().toString());
-                                    insertStmt.setString(2, configuredObject.getType());
-                                    if(configuredObject.getAttributes() == null)
-                                    {
-                                        insertStmt.setNull(3, Types.BLOB);
-                                    }
-                                    else
-                                    {
-                                        final Map<String, Object> attributes = configuredObject.getAttributes();
-                                        final ObjectMapper objectMapper = new ObjectMapper();
-                                        objectMapper.registerModule(_module);
-                                        byte[] attributesAsBytes = objectMapper.writeValueAsBytes(attributes);
-
-                                        ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
-                                        insertStmt.setBinaryStream(3, bis, attributesAsBytes.length);
-                                    }
-                                    insertStmt.execute();
-                                }
-                                finally
-                                {
-                                    insertStmt.close();
-                                }
-                            }
-                        }
-                        finally
-                        {
-                            rs.close();
-                        }
+                        exists = rs.next();
+                        
                     }
                     finally
                     {
-                        stmt.close();
+                        rs.close();
                     }
+                    // If we don't have any data in the result set then we can add this configured object
+                    if (!exists)
+                    {
+                        PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_CONFIGURED_OBJECTS);
+                        try
+                        {
+                            insertStmt.setString(1, configuredObject.getId().toString());
+                            insertStmt.setString(2, configuredObject.getType());
+                            if(configuredObject.getAttributes() == null)
+                            {
+                                insertStmt.setNull(3, Types.BLOB);
+                            }
+                            else
+                            {
+                                final Map<String, Object> attributes = configuredObject.getAttributes();
+                                final ObjectMapper objectMapper = new ObjectMapper();
+                                objectMapper.registerModule(_module);
+                                byte[] attributesAsBytes = objectMapper.writeValueAsBytes(attributes);
+                                
+                                ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
+                                insertStmt.setBinaryStream(3, bis, attributesAsBytes.length);
+                            }
+                            insertStmt.execute();
+                        }
+                        finally
+                        {
+                            insertStmt.close();
+                        }
+                        
+                        writeHierarchy(configuredObject, conn);
+                    }
+                    
                 }
                 finally
                 {
-                    conn.close();
+                    stmt.close();
                 }
+                
             }
             catch (JsonMappingException e)
             {
@@ -2075,31 +2180,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 throw new StoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
             }
         }
+
     }
 
-    private int removeConfiguredObject(UUID id) throws StoreException
-    {
-        int results = 0;
-        try
-        {
-            Connection conn = newAutoCommitConnection();
-            try
-            {
-                results = removeConfiguredObject(id, conn);
-            }
-            finally
-            {
-                conn.close();
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new StoreException("Error deleting of configured object with id " + id + " from database: " + e.getMessage(), e);
-        }
-        return results;
-    }
-
-    public UUID[] removeConfiguredObjects(UUID... objects) throws StoreException
+    @Override
+    public UUID[] remove(ConfiguredObjectRecord... objects) throws StoreException
     {
         Collection<UUID> removed = new ArrayList<UUID>(objects.length);
         try
@@ -2108,11 +2193,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             Connection conn = newAutoCommitConnection();
             try
             {
-                for(UUID id : objects)
+                for(ConfiguredObjectRecord record : objects)
                 {
-                    if(removeConfiguredObject(id, conn) != 0)
+                    if(removeConfiguredObject(record.getId(), conn) != 0)
                     {
-                        removed.add(id);
+                        removed.add(record.getId());
                     }
                 }
             }
@@ -2130,7 +2215,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     private int removeConfiguredObject(final UUID id, final Connection conn) throws SQLException
     {
-        final int results;PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_CONFIGURED_OBJECTS);
+        final int results;
+        PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_CONFIGURED_OBJECTS);
         try
         {
             stmt.setString(1, id.toString());
@@ -2140,30 +2226,18 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         {
             stmt.close();
         }
-        return results;
-    }
-
-    private void updateConfiguredObject(final ConfiguredObjectRecord configuredObject) throws StoreException
-    {
-        if (_configurationStoreStateManager.isInState(State.ACTIVE))
+        stmt = conn.prepareStatement(DELETE_FROM_CONFIGURED_OBJECT_HIERARCHY);
+        try
         {
-            try
-            {
-                Connection conn = newAutoCommitConnection();
-                try
-                {
-                    updateConfiguredObject(configuredObject, false, conn);
-                }
-                finally
-                {
-                    conn.close();
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
-            }
+            stmt.setString(1, id.toString());
+            stmt.executeUpdate();
         }
+        finally
+        {
+            stmt.close();
+        }
+
+        return results;
     }
 
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
@@ -2258,6 +2332,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         {
                             insertStmt.close();
                         }
+                        writeHierarchy(configuredObject, conn);
                     }
                 }
                 finally
@@ -2284,72 +2359,31 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    private ConfiguredObjectRecord loadConfiguredObject(final UUID id) throws StoreException
+    private void writeHierarchy(final ConfiguredObjectRecord configuredObject, final Connection conn) throws SQLException, StoreException
     {
-        ConfiguredObjectRecord result = null;
+        PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_CONFIGURED_OBJECT_HIERARCHY);
         try
         {
-            Connection conn = newAutoCommitConnection();
-            try
+            for(Map.Entry<String,ConfiguredObjectRecord> parentEntry : configuredObject.getParents().entrySet())
             {
-                PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
-                try
-                {
-                    stmt.setString(1, id.toString());
-                    ResultSet rs = stmt.executeQuery();
-                    try
-                    {
-                        if (rs.next())
-                        {
-                            String type = rs.getString(1);
-                            String attributes = getBlobAsString(rs, 2);
-                            result = new ConfiguredObjectRecord(id, type,
-                                    (new ObjectMapper()).readValue(attributes,Map.class));
-                        }
-                    }
-                    finally
-                    {
-                        rs.close();
-                    }
-                }
-                finally
-                {
-                    stmt.close();
-                }
-            }
-            finally
-            {
-                conn.close();
+                insertStmt.setString(1, configuredObject.getId().toString());
+                insertStmt.setString(2, parentEntry.getKey());
+                insertStmt.setString(3, parentEntry.getValue().getId().toString());
+
+                insertStmt.execute();
             }
         }
-        catch (JsonMappingException e)
+        finally
         {
-            throw new StoreException("Error loading of configured object with id " + id + " from database: "
-                            + e.getMessage(), e);
+            insertStmt.close();
         }
-        catch (JsonParseException e)
-        {
-            throw new StoreException("Error loading of configured object with id " + id + " from database: "
-                                + e.getMessage(), e);
-        }
-        catch (IOException e)
-        {
-            throw new StoreException("Error loading of configured object with id " + id + " from database: "
-                            + e.getMessage(), e);
-        }
-        catch (SQLException e)
-        {
-            throw new StoreException("Error loading of configured object with id " + id + " from database: "
-                    + e.getMessage(), e);
-        }
-        return result;
     }
 
     private void loadConfiguredObjects(ConfigurationRecoveryHandler recoveryHandler) throws SQLException,
                                                                                             StoreException
     {
         Connection conn = newAutoCommitConnection();
-
+        Map<UUID, ConfiguredObjectRecordImpl> configuredObjects = new HashMap<UUID, ConfiguredObjectRecordImpl>();
         final ObjectMapper objectMapper = new ObjectMapper();
         try
         {
@@ -2364,8 +2398,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         String id = rs.getString(1);
                         String objectType = rs.getString(2);
                         String attributes = getBlobAsString(rs, 3);
-                        recoveryHandler.configuredObject(UUID.fromString(id), objectType,
-                                objectMapper.readValue(attributes,Map.class));
+                        final ConfiguredObjectRecordImpl configuredObjectRecord =
+                                new ConfiguredObjectRecordImpl(UUID.fromString(id), objectType,
+                                                               objectMapper.readValue(attributes, Map.class));
+                        configuredObjects.put(configuredObjectRecord.getId(),configuredObjectRecord);
+
                     }
                 }
                 catch (JsonMappingException e)
@@ -2389,10 +2426,52 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             {
                 stmt.close();
             }
+            stmt = conn.prepareStatement(SELECT_FROM_CONFIGURED_OBJECT_HIERARCHY);
+            try
+            {
+                ResultSet rs = stmt.executeQuery();
+                try
+                {
+                    while (rs.next())
+                    {
+                        UUID childId = UUID.fromString(rs.getString(1));
+                        String parentType = rs.getString(2);
+                        UUID parentId = UUID.fromString(rs.getString(3));
+
+                        ConfiguredObjectRecordImpl child = configuredObjects.get(childId);
+                        ConfiguredObjectRecordImpl parent = configuredObjects.get(parentId);
+
+                        if(child != null && parent != null)
+                        {
+                            child.addParent(parentType, parent);
+                        }
+                        else if(child != null && child.getType().endsWith("Binding") && parentType.equals("Exchange"))
+                        {
+                            // TODO - remove this hack for amq. exchanges
+                            child.addParent(parentType, new ConfiguredObjectRecordImpl(parentId, parentType, Collections.<String,Object>emptyMap()));
+                        }
+
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+
         }
         finally
         {
             conn.close();
+        }
+
+        for(ConfiguredObjectRecord record : configuredObjects.values())
+        {
+            recoveryHandler.configuredObject(record);
         }
     }
 
@@ -2441,4 +2520,51 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
+
+    private static final class ConfiguredObjectRecordImpl implements ConfiguredObjectRecord
+    {
+
+        private final UUID _id;
+        private final String _type;
+        private final Map<String, Object> _attributes;
+        private final Map<String, ConfiguredObjectRecord> _parents = new HashMap<String, ConfiguredObjectRecord>();
+
+        private ConfiguredObjectRecordImpl(final UUID id,
+                                           final String type,
+                                           final Map<String, Object> attributes)
+        {
+            _id = id;
+            _type = type;
+            _attributes = Collections.unmodifiableMap(attributes);
+        }
+
+        @Override
+        public UUID getId()
+        {
+            return _id;
+        }
+
+        @Override
+        public String getType()
+        {
+            return _type;
+        }
+
+        private void addParent(String parentType, ConfiguredObjectRecord parent)
+        {
+            _parents.put(parentType, parent);
+        }
+
+        @Override
+        public Map<String, Object> getAttributes()
+        {
+            return _attributes;
+        }
+
+        @Override
+        public Map<String, ConfiguredObjectRecord> getParents()
+        {
+            return Collections.unmodifiableMap(_parents);
+        }
+    }
 }

@@ -39,6 +39,7 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStoreUpgrader;
 import org.apache.qpid.server.store.NonNullUpgrader;
@@ -133,9 +134,9 @@ public class DefaultUpgraderProvider implements UpgraderProvider
         }
 
         @Override
-        public void configuredObject(final UUID id, final String type, Map<String, Object> attributes)
+        public void configuredObject(final ConfiguredObjectRecord record)
         {
-            _records.put(id, new ConfiguredObjectRecord(id, type, attributes));
+            _records.put(record.getId(), record);
         }
 
         private void removeSelectorArguments(Map<String, Object> binding)
@@ -147,9 +148,9 @@ public class DefaultUpgraderProvider implements UpgraderProvider
             binding.put(Binding.ARGUMENTS, arguments);
         }
 
-        private boolean isTopicExchange(Map<String, Object> binding)
+        private boolean isTopicExchange(ConfiguredObjectRecord entry)
         {
-            UUID exchangeId = UUID.fromString((String)binding.get(Binding.EXCHANGE));
+            UUID exchangeId = entry.getParents().get("Exchange").getId();
 
             if(_records.containsKey(exchangeId))
             {
@@ -188,17 +189,17 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 String type = record.getType();
                 Map<String, Object> attributes = record.getAttributes();
                 UUID id = record.getId();
-                if(type.equals(Binding.class.getName()) && hasSelectorArguments(attributes) && !isTopicExchange(attributes))
+                if(type.equals(Binding.class.getName()) && hasSelectorArguments(attributes) && !isTopicExchange(record))
                 {
                     attributes = new LinkedHashMap<String, Object>(attributes);
                     removeSelectorArguments(attributes);
 
-                    record = new ConfiguredObjectRecord(id, type, attributes);
+                    record = new ConfiguredObjectRecordImpl(id, type, attributes, record.getParents());
                     getUpdateMap().put(id, record);
                     entry.setValue(record);
 
                 }
-                getNextUpgrader().configuredObject(id, type, attributes);
+                getNextUpgrader().configuredObject(record);
             }
 
             getNextUpgrader().complete();
@@ -212,12 +213,14 @@ public class DefaultUpgraderProvider implements UpgraderProvider
      */
     private class Version1Upgrader extends NonNullUpgrader
     {
-        @Override
-        public void configuredObject(final UUID id, String type, final Map<String, Object> attributes)
-        {
-            type = type.substring(1+type.lastIndexOf('.'));
-            getUpdateMap().put(id, new ConfiguredObjectRecord(id, type, attributes));
 
+
+        @Override
+        public void configuredObject(final ConfiguredObjectRecord record)
+        {
+            String type = record.getType().substring(1 + record.getType().lastIndexOf('.'));
+            getUpdateMap().put(record.getId(),
+                               new ConfiguredObjectRecordImpl(record.getId(), type, record.getAttributes(), record.getParents()));
         }
 
         @Override
@@ -226,22 +229,24 @@ public class DefaultUpgraderProvider implements UpgraderProvider
             for(Map.Entry<UUID, ConfiguredObjectRecord> entry : getUpdateMap().entrySet())
             {
                 final ConfiguredObjectRecord record = entry.getValue();
-                if(isBinding(record.getType()) && (unknownExchange((String) record.getAttributes().get(Binding.EXCHANGE))
-                                                   || unknownQueue((String) record.getAttributes().get(Binding.QUEUE))))
+                final ConfiguredObjectRecord exchangeParent = record.getParents().get(Exchange.class.getSimpleName());
+                final ConfiguredObjectRecord queueParent = record.getParents().get(Queue.class.getSimpleName());
+                if(isBinding(record.getType()) && (exchangeParent == null || unknownExchange(exchangeParent.getId())
+                                                   || queueParent == null || unknownQueue(queueParent.getId())))
                 {
+                    getDeleteMap().put(entry.getKey(), entry.getValue());
                     entry.setValue(null);
                 }
                 else
                 {
-                    getNextUpgrader().configuredObject(record.getId(), record.getType(), record.getAttributes());
+                    getNextUpgrader().configuredObject(record);
                 }
             }
             getNextUpgrader().complete();
         }
 
-        private boolean unknownExchange(final String exchangeIdString)
+        private boolean unknownExchange(final UUID exchangeId)
         {
-            UUID exchangeId = UUID.fromString(exchangeIdString);
             if (_defaultExchangeIds.containsValue(exchangeId))
             {
                 return false;
@@ -251,9 +256,8 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                      || _exchangeRegistry.getExchange(exchangeId) != null);
         }
 
-        private boolean unknownQueue(final String queueIdString)
+        private boolean unknownQueue(final UUID queueId)
         {
-            UUID queueId = UUID.fromString(queueIdString);
             ConfiguredObjectRecord localRecord = getUpdateMap().get(queueId);
             return !((localRecord != null  && localRecord.getType().equals(Queue.class.getSimpleName()))
                      || _virtualHost.getQueue(queueId) != null);
@@ -277,22 +281,24 @@ public class DefaultUpgraderProvider implements UpgraderProvider
             private static final String ARGUMENTS = "arguments";
 
             @Override
-            public void configuredObject(UUID id, String type, Map<String, Object> attributes)
+            public void configuredObject(ConfiguredObjectRecord record)
             {
-                if(Queue.class.getSimpleName().equals(type))
+
+                if(Queue.class.getSimpleName().equals(record.getType()))
                 {
                     Map<String, Object> newAttributes = new LinkedHashMap<String, Object>();
-                    if(attributes.get(ARGUMENTS) instanceof Map)
+                    if(record.getAttributes().get(ARGUMENTS) instanceof Map)
                     {
-                        newAttributes.putAll(QueueArgumentsConverter.convertWireArgsToModel((Map<String, Object>) attributes
+                        newAttributes.putAll(QueueArgumentsConverter.convertWireArgsToModel((Map<String, Object>) record.getAttributes()
                                 .get(ARGUMENTS)));
                     }
-                    newAttributes.putAll(attributes);
-                    attributes = newAttributes;
-                    getUpdateMap().put(id, new ConfiguredObjectRecord(id,type,attributes));
+                    newAttributes.putAll(record.getAttributes());
+
+                    record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), newAttributes, record.getParents());
+                    getUpdateMap().put(record.getId(), record);
                 }
 
-                getNextUpgrader().configuredObject(id,type,attributes);
+                getNextUpgrader().configuredObject(record);
             }
 
             @Override
@@ -311,16 +317,17 @@ public class DefaultUpgraderProvider implements UpgraderProvider
     {
 
         @Override
-        public void configuredObject(UUID id, String type, Map<String, Object> attributes)
+        public void configuredObject(ConfiguredObjectRecord record)
         {
-            if(Queue.class.getSimpleName().equals(type))
+
+            if(Queue.class.getSimpleName().equals(record.getType()))
             {
-                Map<String, Object> newAttributes = new LinkedHashMap<String, Object>(attributes);
-                if(attributes.get(EXCLUSIVE) instanceof Boolean)
+                Map<String, Object> newAttributes = new LinkedHashMap<String, Object>(record.getAttributes());
+                if(record.getAttributes().get(EXCLUSIVE) instanceof Boolean)
                 {
-                    boolean isExclusive = (Boolean) attributes.get(EXCLUSIVE);
+                    boolean isExclusive = (Boolean) record.getAttributes().get(EXCLUSIVE);
                     newAttributes.put(EXCLUSIVE, isExclusive ? "CONTAINER" : "NONE");
-                    if(!isExclusive && attributes.containsKey("owner"))
+                    if(!isExclusive && record.getAttributes().containsKey("owner"))
                     {
                         newAttributes.remove("owner");
                     }
@@ -329,15 +336,16 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 {
                     newAttributes.remove("owner");
                 }
-                if(!attributes.containsKey("durable"))
+                if(!record.getAttributes().containsKey("durable"))
                 {
                     newAttributes.put("durable","true");
                 }
-                attributes = newAttributes;
-                getUpdateMap().put(id, new ConfiguredObjectRecord(id,type,attributes));
+
+                record = new ConfiguredObjectRecordImpl(record.getId(),record.getType(),newAttributes, record.getParents());
+                getUpdateMap().put(record.getId(), record);
             }
 
-            getNextUpgrader().configuredObject(id,type,attributes);
+            getNextUpgrader().configuredObject(record);
         }
 
         @Override
@@ -352,15 +360,16 @@ public class DefaultUpgraderProvider implements UpgraderProvider
         private Map<String, String> _missingAmqpExchanges = new HashMap<String, String>(DEFAULT_EXCHANGES);
 
         @Override
-        public void configuredObject(UUID id, String type, Map<String, Object> attributes)
+        public void configuredObject(ConfiguredObjectRecord record)
         {
-            if(Exchange.class.getSimpleName().equals(type))
+            if(Exchange.class.getSimpleName().equals(record.getType()))
             {
+                Map<String, Object> attributes = record.getAttributes();
                 String name = (String)attributes.get(NAME);
                 _missingAmqpExchanges.remove(name);
             }
 
-            getNextUpgrader().configuredObject(id,type,attributes);
+            getNextUpgrader().configuredObject(record);
         }
 
         @Override
@@ -383,9 +392,11 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
                 attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
 
-                getUpdateMap().put(id, new ConfiguredObjectRecord(id, Exchange.class.getSimpleName(), attributes));
+                ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(_virtualHost.getId(), org.apache.qpid.server.model.VirtualHost.class.getSimpleName(), Collections.<String, Object>emptyMap());
+                ConfiguredObjectRecord record = new ConfiguredObjectRecordImpl(id, Exchange.class.getSimpleName(), attributes, Collections.singletonMap(virtualHostRecord.getType(), virtualHostRecord));
+                getUpdateMap().put(id, record);
 
-                getNextUpgrader().configuredObject(id, Exchange.class.getSimpleName(), attributes);
+                getNextUpgrader().configuredObject(record);
 
             }
 

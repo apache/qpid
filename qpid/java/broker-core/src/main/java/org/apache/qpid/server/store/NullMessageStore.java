@@ -22,6 +22,8 @@ package org.apache.qpid.server.store;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.ConfiguredObject;
+
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
 {
     @Override
@@ -30,12 +32,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
-    {
-    }
-
-    @Override
-    public void update(UUID id, String type, Map<String, Object> attributes)
+    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
     {
     }
 
@@ -44,20 +41,19 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     {
     }
 
-
     @Override
-    public void remove(UUID id, String type)
+    public UUID[] remove(final ConfiguredObjectRecord... objects)
     {
+        final UUID[] removed = new UUID[objects.length];
+        for(int i = 0; i < objects.length; i++)
+        {
+            removed[i] = objects[i].getId();
+        }
+        return removed;
     }
 
     @Override
-    public UUID[] removeConfiguredObjects(final UUID... objects)
-    {
-        return objects;
-    }
-
-    @Override
-    public void create(UUID id, String type, Map<String, Object> attributes)
+    public void create(ConfiguredObjectRecord record)
     {
     }
 
@@ -95,7 +91,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
     }
 

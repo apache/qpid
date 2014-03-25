@@ -22,7 +22,9 @@ package org.apache.qpid.server.store.berkeleydb.upgrade;
 
 import com.sleepycat.je.Environment;
 
+import org.apache.qpid.server.model.ConfiguredObject;
+
 public interface StoreUpgrade
 {
-    void performUpgrade(Environment environment, UpgradeInteractionHandler handler, String virtualHostName);
+    void performUpgrade(Environment environment, UpgradeInteractionHandler handler, ConfiguredObject<?> parent);
 }

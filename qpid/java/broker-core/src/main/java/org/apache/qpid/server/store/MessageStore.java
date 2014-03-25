@@ -22,6 +22,8 @@ package org.apache.qpid.server.store;
 
 import java.util.Map;
 
+import org.apache.qpid.server.model.ConfiguredObject;
+
 /**
  * MessageStore defines the interface to a storage area, which can be used to preserve the state of messages.
  *
@@ -43,11 +45,11 @@ public interface MessageStore
 
     /**
      * Called after opening to recover messages and transactions with given recovery handlers
-     *
+     * @param parent TODO
      * @param messageRecoveryHandler
      * @param transactionLogRecoveryHandler
      */
-    void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler);
+    void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler);
 
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
 

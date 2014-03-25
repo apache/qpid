@@ -24,9 +24,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.Connection;
@@ -45,12 +43,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Abstract test case for ACLs.
- * 
+ *
  * This base class contains convenience methods to manage ACL files and implements a mechanism that allows each
  * test method to run its own setup code before the broker starts.
- * 
- * TODO move the pre broker-startup setup method invocation code to {@link QpidBrokerTestCase}
- * 
+ *
  * @see ExternalACLTest
  * @see ExternalACLJMXTest
  * @see ExhaustiveACLTest
@@ -80,7 +76,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
         {
             throw (Exception) e.getTargetException();
         }
-        
+
         super.setUp();
     }
 
@@ -97,26 +93,18 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
             //that we provoked with authentication failures, where the test passes - we can ignore on con close
         }
     }
-    
-    public void writeACLFile(final String vhost, final String...rules) throws IOException
+
+    public void writeACLFile(final String...rules) throws IOException
     {
-        writeACLFileUtil(this, vhost, rules);
+        writeACLFileUtil(this, rules);
     }
 
-    public static void writeACLFileUtil(QpidBrokerTestCase testcase, String vhost, String...rules) throws IOException
+    public static void writeACLFileUtil(QpidBrokerTestCase testcase, String...rules) throws IOException
     {
         File aclFile = File.createTempFile(testcase.getClass().getSimpleName(), testcase.getName());
         aclFile.deleteOnExit();
 
-        TestBrokerConfiguration config = testcase.getBrokerConfiguration();
-        if (vhost == null)
-        {
-            config.addAclFileConfiguration(aclFile.getAbsolutePath());
-        }
-        else
-        {
-            config.setObjectAttribute(vhost, VirtualHost.SECURITY_ACL, aclFile.getAbsolutePath());
-        }
+        testcase.getBrokerConfiguration().addAclFileConfiguration(aclFile.getAbsolutePath());
 
         PrintWriter out = new PrintWriter(new FileWriter(aclFile));
         out.println(String.format("# %s", testcase.getName()));
@@ -128,7 +116,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
     }
 
     /**
-     * Creates a connection to the broker, and sets a connection listener to prevent failover and an exception listener 
+     * Creates a connection to the broker, and sets a connection listener to prevent failover and an exception listener
      * with a {@link CountDownLatch} to synchronise in the {@link #check403Exception(Throwable)} method and allow the
      * {@link #tearDown()} method to complete properly.
      */
@@ -138,8 +126,8 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
 
         //Prevent Failover
         connection.setConnectionListener(this);
-        
-        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+
+        //QPID-2081: use a latch to sync on exception causing connection close, to work
         //around the connection close race during tearDown() causing sporadic failures
         _exceptionReceived = new CountDownLatch(1);
 
@@ -196,8 +184,8 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
         assertNotNull("There was no linked exception", t);
         assertTrue("Wrong linked exception type : " + t.getClass(), t instanceof AMQException);
         assertEquals("Incorrect error code received", 403, ((AMQException) t).getErrorCode().getCode());
-    
-        //use the latch to ensure the control thread waits long enough for the exception thread 
+
+        //use the latch to ensure the control thread waits long enough for the exception thread
         //to have done enough to mark the connection closed before teardown commences
         assertTrue("Timed out waiting for conneciton to report close", _exceptionReceived.await(2, TimeUnit.SECONDS));
     }

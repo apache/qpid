@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.model.ConfiguredObject;
 
 public class
         QuotaMessageStore extends NullMessageStore
@@ -81,7 +82,7 @@ public class
     }
 
     @Override
-    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
         _stateManager.attainState(State.ACTIVATING);
         _stateManager.attainState(State.ACTIVE);

@@ -96,13 +96,13 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
         _messageStore.openMessageStore(virtualHost.getName(), virtualHost.getMessageStoreSettings());
 
-        _durableConfigurationStore.recoverConfigurationStore(configRecoverer);
+        _durableConfigurationStore.recoverConfigurationStore(getModel(), configRecoverer);
 
         // If store does not have entries for standard exchanges (amq.*), the following will create them.
         initialiseModel();
 
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
-        _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
+        _messageStore.recoverMessageStore(getModel(), recoveryHandler, recoveryHandler);
 
         attainActivation();
     }

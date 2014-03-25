@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.model.ConfiguredObject;
 
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
 abstract public class AbstractMemoryMessageStore extends NullMessageStore
@@ -83,7 +84,7 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
     {
 
     }
@@ -96,7 +97,7 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     }
 
     @Override
-    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
         _stateManager.attainState(State.ACTIVATING);
 

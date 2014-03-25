@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueFactory;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
 
@@ -58,11 +59,9 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
     }
 
     @Override
-    public UnresolvedObject<AMQQueue> createUnresolvedObject(final UUID id,
-                                                             final String type,
-                                                             final Map<String, Object> attributes)
+    public UnresolvedObject<AMQQueue> createUnresolvedObject(final ConfiguredObjectRecord record)
     {
-        return new UnresolvedQueue(id, type, attributes);
+        return new UnresolvedQueue(record.getId(), record.getAttributes());
     }
 
     private class UnresolvedQueue implements UnresolvedObject<AMQQueue>
@@ -75,7 +74,6 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
         private ExchangeImpl _alternateExchange;
 
         public UnresolvedQueue(final UUID id,
-                               final String type,
                                final Map<String, Object> attributes)
         {
             _attributes = attributes;

@@ -43,36 +43,7 @@
     </para>
   </section>
 
-    <section id="Java-Broker-Virtual-Hosts-Configuration-File-ACL">
-        <title>Configuring ACL</title>
-        <para><xref linkend="Java-Broker-Security-ACLs"/> provides the details of ACL, rules, formats, etc.</para>
-        <para>
-        To apply an ACL on a single virtualhost named <replaceable>test</replaceable>, add the following to the virtualhosts.xml:
-        </para>
-
-        <programlisting>
-&lt;virtualhost&gt;
-...
-    &lt;name&gt;test&lt;/name&gt;
-    &lt;test&gt;
-      ...
-      &lt;security&gt;                          <co id="Java-Broker-Virtual-Hosts-Configuration-Security-ACL-1"/>
-        ...
-        &lt;acl&gt;<replaceable>${conf}/vhost_test.acl</replaceable>&lt;/acl&gt; <co  id="Java-Broker-Virtual-Hosts-Configuration-Security-ACL-2"/>
-        ...
-      &lt;/security&gt;
-      ...
-    &lt;/test&gt;
-&lt;/virtualhost&gt;
-        </programlisting>
-        <calloutlist>
-            <callout arearefs="Java-Broker-Virtual-Hosts-Configuration-Security-ACL-1"><para>A security section of configuration is used to declare the ACL</para></callout>
-            <callout arearefs="Java-Broker-Virtual-Hosts-Configuration-Security-ACL-2"><para>A path to an ACL file is configured (assuming that <replaceable>conf</replaceable> has been set to a suitable
-      location such as ${QPID_HOME}/etc)</para></callout>
-        </calloutlist>
-    </section>
-
-    <section role="h3" id="Java-Broker-Stores-Memory-Store-Configuration">
+  <section role="h3" id="Java-Broker-Stores-Memory-Store-Configuration">
         <title>Configuring MemoryMessageStore</title>
         <para>
         An example of MemoryMessageStore configuration for a virtual host is shown below:

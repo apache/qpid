@@ -26,8 +26,9 @@ import java.util.Map;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
+
+import java.util.UUID;
 
 @ManagedObject( managesChildren = true )
 public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
@@ -173,14 +174,10 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
 
     void executeTransaction(TransactionalOperation op);
 
-    /**
-     * A temporary hack to expose host security manager.
-     * TODO We need to add and implement an authorization provider configured object instead
-     */
-    SecurityManager getSecurityManager();
-
     // TODO - remove this
     TaskExecutor getTaskExecutor();
+
+    Exchange getExchange(UUID id);
 
     MessageStore getMessageStore();
 

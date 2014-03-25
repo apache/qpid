@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
@@ -85,8 +86,11 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         _preferencesProvider = preferencesProvider;
     }
 
-
-
+    @Override
+    public void recoverUser(final User user)
+    {
+        throw new IllegalConfigurationException("Cannot associate  " + user + " with authentication provider " + this);
+    }
 
     @Override
     public String setName(final String currentName, final String desiredName)

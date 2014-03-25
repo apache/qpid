@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
-import java.security.PrivilegedAction;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import java.util.Set;
@@ -35,12 +31,8 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.*;
-
-import javax.security.auth.Subject;
 
 public class DurableConfigurationStoreHelper
 {
@@ -58,7 +50,7 @@ public class DurableConfigurationStoreHelper
         {
             attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
         }
-        store.update(queue.getId(), QUEUE, attributesMap);
+        store.update(false, new ConfiguredObjectRecordImpl(queue.getId(), QUEUE, attributesMap));
     }
 
     public static void createQueue(DurableConfigurationStore store, AMQQueue<?> queue)
@@ -71,49 +63,33 @@ public class DurableConfigurationStoreHelper
             attributesMap.put(Queue.ALTERNATE_EXCHANGE, queue.getAlternateExchange().getId());
         }
 
-        store.create(queue.getId(), QUEUE, attributesMap);
+        store.create(new ConfiguredObjectRecordImpl(queue.getId(), QUEUE, attributesMap));
     }
 
     public static void removeQueue(DurableConfigurationStore store, AMQQueue queue)
     {
-        store.remove(queue.getId(), QUEUE);
+        store.remove(queue.asObjectRecord());
     }
 
     public static void createExchange(DurableConfigurationStore store, ExchangeImpl exchange)
     {
-        Map<String, Object> attributesMap = exchange.getActualAttributes();
-        attributesMap.remove(ConfiguredObject.ID);
-
-        store.create(exchange.getId(), EXCHANGE, attributesMap);
-
+        store.create(exchange.asObjectRecord());
     }
-
 
     public static void removeExchange(DurableConfigurationStore store, ExchangeImpl exchange)
     {
-        store.remove(exchange.getId(), EXCHANGE);
+        store.remove(exchange.asObjectRecord());
     }
 
     public static void createBinding(DurableConfigurationStore store, final BindingImpl binding)
     {
-        Map<String, Object> attributesMap = binding.getActualAttributes();
-        attributesMap.remove(ConfiguredObject.ID);
-        if(!attributesMap.containsKey(Binding.EXCHANGE))
-        {
-            attributesMap.put(Binding.EXCHANGE, binding.getExchange());
-        }
-        if(!attributesMap.containsKey(Binding.QUEUE))
-        {
-            attributesMap.put(Binding.QUEUE, binding.getQueue());
-        }
-
-        store.create(binding.getId(), BINDING, attributesMap);
+        store.create(binding.asObjectRecord());
     }
 
 
     public static void removeBinding(DurableConfigurationStore store, BindingImpl binding)
     {
-        store.remove(binding.getId(), BINDING);
+        store.remove(binding.asObjectRecord());
     }
 
 }

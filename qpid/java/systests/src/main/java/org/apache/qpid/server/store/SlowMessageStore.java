@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 
 public class SlowMessageStore implements MessageStore, DurableConfigurationStore
@@ -64,9 +64,9 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
     {
-        _realDurableConfigurationStore.recoverConfigurationStore(recoveryHandler);
+        _realDurableConfigurationStore.recoverConfigurationStore(parent, recoveryHandler);
     }
 
     private void configureDelays(Map<String, Object> delays)
@@ -183,7 +183,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         _realDurableConfigurationStore.closeConfigurationStore();
     }
 
-
     @Override
     public <M extends StorableMessageMetaData> StoredMessage<M> addMessage(M metaData)
     {
@@ -191,36 +190,21 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void create(UUID id, String type, Map<String, Object> attributes) throws StoreException
+    public void create(ConfiguredObjectRecord record) throws StoreException
     {
         doPreDelay("create");
-        _realDurableConfigurationStore.create(id, type, attributes);
+        _realDurableConfigurationStore.create(record);
         doPostDelay("create");
     }
 
-    @Override
-    public void remove(UUID id, String type) throws StoreException
-    {
-        doPreDelay("remove");
-        _realDurableConfigurationStore.remove(id, type);
-        doPostDelay("remove");
-    }
 
     @Override
-    public UUID[] removeConfiguredObjects(final UUID... objects) throws StoreException
+    public UUID[] remove(final ConfiguredObjectRecord... objects) throws StoreException
     {
         doPreDelay("remove");
-        UUID[] removed = _realDurableConfigurationStore.removeConfiguredObjects(objects);
+        UUID[] removed = _realDurableConfigurationStore.remove(objects);
         doPostDelay("remove");
         return removed;
-    }
-
-    @Override
-    public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
-    {
-        doPreDelay("update");
-        _realDurableConfigurationStore.update(id, type, attributes);
-        doPostDelay("update");
     }
 
     @Override
@@ -310,9 +294,9 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
-       _realMessageStore.recoverMessageStore(messageRecoveryHandler, transactionLogRecoveryHandler);
+       _realMessageStore.recoverMessageStore(parent, messageRecoveryHandler, transactionLogRecoveryHandler);
     }
 
     @Override

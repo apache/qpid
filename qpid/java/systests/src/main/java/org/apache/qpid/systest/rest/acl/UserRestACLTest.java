@@ -96,8 +96,7 @@ public class UserRestACLTest extends QpidRestTestCase
 
     public void testAddUser() throws Exception
     {
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_GROUP + " CREATE USER",
                 "ACL DENY-LOG " + DENIED_GROUP + " CREATE USER");
 
@@ -121,8 +120,7 @@ public class UserRestACLTest extends QpidRestTestCase
 
     public void testDeleteUser() throws Exception
     {
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_GROUP + " DELETE USER",
                 "ACL DENY-LOG " + DENIED_GROUP + " DELETE USER");
 
@@ -142,8 +140,7 @@ public class UserRestACLTest extends QpidRestTestCase
 
     public void testUpdateUser() throws Exception
     {
-        AbstractACLTestCase.writeACLFileUtil(this, null,
-                "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
                 "ACL ALLOW-LOG " + ALLOWED_GROUP + " UPDATE USER",
                 "ACL DENY-LOG " + DENIED_GROUP + " UPDATE USER");
 

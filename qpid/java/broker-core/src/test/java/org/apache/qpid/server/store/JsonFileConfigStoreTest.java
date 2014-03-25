@@ -27,16 +27,19 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -52,6 +55,10 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     private HashMap<String, Object> _configurationStoreSettings;
     private String _virtualHostName;
     private File _storeLocation;
+
+
+    private static final UUID ANY_UUID = UUID.randomUUID();
+    private static final Map<String, Object> ANY_MAP = new HashMap<String, Object>();
 
     @Override
     public void setUp() throws Exception
@@ -110,10 +117,10 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     public void testStartFromNoStore() throws Exception
     {
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
+        _store.recoverConfigurationStore(mock(ConfiguredObject.class), _recoveryHandler);
         InOrder inorder = inOrder(_recoveryHandler);
         inorder.verify(_recoveryHandler).beginConfigurationRecovery(eq(_store), eq(0));
-        inorder.verify(_recoveryHandler,never()).configuredObject(any(UUID.class),anyString(),anyMap());
+        inorder.verify(_recoveryHandler,never()).configuredObject(any(ConfiguredObjectRecord.class));
         inorder.verify(_recoveryHandler).completeConfigurationRecovery();
         _store.closeConfigurationStore();
     }
@@ -124,11 +131,11 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         when(_recoveryHandler.completeConfigurationRecovery()).thenReturn(NEW_CONFIG_VERSION);
 
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
+        _store.recoverConfigurationStore(mock(ConfiguredObject.class), _recoveryHandler);
         _store.closeConfigurationStore();
 
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
+        _store.recoverConfigurationStore(mock(ConfiguredObject.class), _recoveryHandler);
         InOrder inorder = inOrder(_recoveryHandler);
 
         // first time the config version should be the initial version - 0
@@ -147,12 +154,12 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         final String queueType = Queue.class.getSimpleName();
         final Map<String,Object> queueAttr = Collections.singletonMap("name", (Object) "q1");
 
-        _store.create(queueId, queueType, queueAttr);
+        _store.create(new ConfiguredObjectRecordImpl(queueId, queueType, queueAttr));
         _store.closeConfigurationStore();
 
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        verify(_recoveryHandler).configuredObject(eq(queueId), eq(queueType), eq(queueAttr));
+        _store.recoverConfigurationStore(mock(ConfiguredObject.class), _recoveryHandler);
+        verify(_recoveryHandler).configuredObject(matchesRecord(queueId, queueType, queueAttr));
         _store.closeConfigurationStore();
     }
 
@@ -163,18 +170,18 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         final String queueType = Queue.class.getSimpleName();
         Map<String,Object> queueAttr = Collections.singletonMap("name", (Object) "q1");
 
-        _store.create(queueId, queueType, queueAttr);
+        _store.create(new ConfiguredObjectRecordImpl(queueId, queueType, queueAttr));
 
 
         queueAttr = new HashMap<String,Object>(queueAttr);
         queueAttr.put("owner", "theowner");
-        _store.update(queueId, queueType, queueAttr);
+        _store.update(false, new ConfiguredObjectRecordImpl(queueId, queueType, queueAttr));
 
         _store.closeConfigurationStore();
 
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        verify(_recoveryHandler).configuredObject(eq(queueId), eq(queueType), eq(queueAttr));
+        _store.recoverConfigurationStore(mock(ConfiguredObject.class), _recoveryHandler);
+        verify(_recoveryHandler).configuredObject(matchesRecord(queueId, queueType, queueAttr));
         _store.closeConfigurationStore();
     }
 
@@ -186,16 +193,17 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         final String queueType = Queue.class.getSimpleName();
         Map<String,Object> queueAttr = Collections.singletonMap("name", (Object) "q1");
 
-        _store.create(queueId, queueType, queueAttr);
+        final ConfiguredObjectRecordImpl record = new ConfiguredObjectRecordImpl(queueId, queueType, queueAttr);
+        _store.create(record);
 
 
-        _store.remove(queueId, queueType);
+        _store.remove(record);
 
         _store.closeConfigurationStore();
 
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        verify(_recoveryHandler, never()).configuredObject(any(UUID.class), anyString(), anyMap());
+        _store.recoverConfigurationStore(mock(ConfiguredObject.class), _recoveryHandler);
+        verify(_recoveryHandler, never()).configuredObject(any(ConfiguredObjectRecord.class));
         _store.closeConfigurationStore();
     }
 
@@ -204,7 +212,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         try
         {
-            _store.create(UUID.randomUUID(), "wibble", Collections.<String, Object>emptyMap());
+            _store.create(new ConfiguredObjectRecordImpl(UUID.randomUUID(), "wibble", Collections.<String, Object>emptyMap()));
             fail("Should not be able to create instance of type wibble");
         }
         catch (StoreException e)
@@ -217,10 +225,10 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     {
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         final UUID id = UUID.randomUUID();
-        _store.create(id, "Queue", Collections.<String, Object>emptyMap());
+        _store.create(new ConfiguredObjectRecordImpl(id, "Queue", Collections.<String, Object>emptyMap()));
         try
         {
-            _store.create(id, "Exchange", Collections.<String, Object>emptyMap());
+            _store.create(new ConfiguredObjectRecordImpl(id, "Exchange", Collections.<String, Object>emptyMap()));
             fail("Should not be able to create two objects with same id");
         }
         catch (StoreException e)
@@ -234,13 +242,13 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     {
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
         final UUID id = UUID.randomUUID();
-        _store.create(id, "Queue", Collections.<String, Object>emptyMap());
+        _store.create(new ConfiguredObjectRecordImpl(id, "Queue", Collections.<String, Object>emptyMap()));
         _store.closeConfigurationStore();
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
 
         try
         {
-            _store.update(id, "Exchange", Collections.<String, Object>emptyMap());
+            _store.update(false, new ConfiguredObjectRecordImpl(id, "Exchange", Collections.<String, Object>emptyMap()));
             fail("Should not be able to update object to different type");
         }
         catch (StoreException e)
@@ -279,32 +287,76 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
         final Map<String, Object> EMPTY_ATTR = Collections.emptyMap();
         final UUID exchangeId = new UUID(0, 2);
-        final Map<String, Object> bindingAttributes = new HashMap<String, Object>();
-        bindingAttributes.put(Binding.EXCHANGE, exchangeId);
-        bindingAttributes.put(Binding.QUEUE, queueId);
-        final Map<String, Object> binding2Attributes = new HashMap<String, Object>();
-        binding2Attributes.put(Binding.EXCHANGE, exchangeId);
-        binding2Attributes.put(Binding.QUEUE, queue2Id);
 
         final UUID bindingId = new UUID(0, 3);
         final UUID binding2Id = new UUID(1, 3);
 
-        _store.create(queueId, "Queue", EMPTY_ATTR);
-        _store.create(queue2Id, "Queue", EMPTY_ATTR);
-        _store.create(exchangeId, "Exchange", EMPTY_ATTR);
-        _store.update(true,
-                new ConfiguredObjectRecord(bindingId, "Binding", bindingAttributes),
-                new ConfiguredObjectRecord(binding2Id, "Binding", binding2Attributes));
+        final ConfiguredObjectRecordImpl queueRecord = new ConfiguredObjectRecordImpl(queueId, "Queue", EMPTY_ATTR);
+        _store.create(queueRecord);
+        final ConfiguredObjectRecordImpl queue2Record = new ConfiguredObjectRecordImpl(queue2Id, "Queue", EMPTY_ATTR);
+        _store.create(queue2Record);
+        final ConfiguredObjectRecordImpl exchangeRecord = new ConfiguredObjectRecordImpl(exchangeId, "Exchange", EMPTY_ATTR);
+        _store.create(exchangeRecord);
+        Map<String,ConfiguredObjectRecord> bindingParents = new HashMap<String, ConfiguredObjectRecord>();
+        bindingParents.put("Exchange", exchangeRecord);
+        bindingParents.put("Queue", queueRecord);
+        final ConfiguredObjectRecordImpl bindingRecord =
+                new ConfiguredObjectRecordImpl(bindingId, "Binding", EMPTY_ATTR, bindingParents);
+
+
+        Map<String,ConfiguredObjectRecord> binding2Parents = new HashMap<String, ConfiguredObjectRecord>();
+        binding2Parents.put("Exchange", exchangeRecord);
+        binding2Parents.put("Queue", queue2Record);
+        final ConfiguredObjectRecordImpl binding2Record =
+                new ConfiguredObjectRecordImpl(binding2Id, "Binding", EMPTY_ATTR, binding2Parents);
+        _store.update(true, bindingRecord, binding2Record);
         _store.closeConfigurationStore();
         _store.openConfigurationStore(_virtualHostName, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        verify(_recoveryHandler).configuredObject(eq(queueId), eq("Queue"), eq(EMPTY_ATTR));
-        verify(_recoveryHandler).configuredObject(eq(queue2Id), eq("Queue"), eq(EMPTY_ATTR));
-        verify(_recoveryHandler).configuredObject(eq(exchangeId), eq("Exchange"), eq(EMPTY_ATTR));
-        verify(_recoveryHandler).configuredObject(eq(bindingId),eq("Binding"), eq(bindingAttributes));
-        verify(_recoveryHandler).configuredObject(eq(binding2Id),eq("Binding"), eq(binding2Attributes));
+        _store.recoverConfigurationStore(mock(ConfiguredObject.class), _recoveryHandler);
+        verify(_recoveryHandler).configuredObject(matchesRecord(queueId, "Queue", EMPTY_ATTR));
+        verify(_recoveryHandler).configuredObject(matchesRecord(queue2Id, "Queue", EMPTY_ATTR));
+        verify(_recoveryHandler).configuredObject(matchesRecord(exchangeId, "Exchange", EMPTY_ATTR));
+        verify(_recoveryHandler).configuredObject(matchesRecord(bindingId, "Binding", EMPTY_ATTR));
+        verify(_recoveryHandler).configuredObject(matchesRecord(binding2Id, "Binding", EMPTY_ATTR));
         _store.closeConfigurationStore();
 
+    }
+
+    private ConfiguredObjectRecord matchesRecord(UUID id, String type, Map<String, Object> attributes)
+    {
+        return argThat(new ConfiguredObjectMatcher(id, type, attributes));
+    }
+
+    private static class ConfiguredObjectMatcher extends ArgumentMatcher<ConfiguredObjectRecord>
+    {
+        private final Map<String,Object> _matchingMap;
+        private final UUID _id;
+        private final String _name;
+
+        private ConfiguredObjectMatcher(final UUID id, final String type, final Map<String, Object> matchingMap)
+        {
+            _id = id;
+            _name = type;
+            _matchingMap = matchingMap;
+        }
+
+        @Override
+        public boolean matches(final Object argument)
+        {
+            if(argument instanceof ConfiguredObjectRecord)
+            {
+                ConfiguredObjectRecord binding = (ConfiguredObjectRecord) argument;
+
+                Map<String,Object> arg = new HashMap<String, Object>(binding.getAttributes());
+                arg.remove("createdBy");
+                arg.remove("createdTime");
+                return (_id == ANY_UUID || _id.equals(binding.getId()))
+                       && _name.equals(binding.getType())
+                       && (_matchingMap == ANY_MAP || arg.equals(_matchingMap));
+
+            }
+            return false;
+        }
     }
 
 }

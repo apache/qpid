@@ -101,17 +101,9 @@ jdir::clear_dir(const std::string& dirname/*, const std::string&
 */
         , const bool create_flag)
 {
-    DIR* dir = ::opendir(dirname.c_str());
-    if (!dir)
-    {
-        if (errno == 2 && create_flag) // ENOENT (No such file or dir)
-        {
-            create_dir(dirname);
-            return;
-        }
-        std::ostringstream oss;
-        oss << "dir=\"" << dirname << "\"" << FORMAT_SYSERR(errno);
-        throw jexception(jerrno::JERR_JDIR_OPENDIR, oss.str(), "jdir", "clear_dir");
+    DIR* dir = open_dir(dirname, "clear_dir", true);
+    if (!dir && create_flag) {
+        create_dir(dirname);
     }
 //#ifndef RHM_JOWRITE
     struct dirent* entry;
@@ -161,13 +153,7 @@ jdir::push_down(const std::string& dirname, const std::string& target_dir/*, con
 {
     std::string bak_dir_name = create_bak_dir(dirname/*, bak_dir_base*/);
 
-    DIR* dir = ::opendir(dirname.c_str());
-    if (!dir)
-    {
-        std::ostringstream oss;
-        oss << "dir=\"" << dirname << "\"" << FORMAT_SYSERR(errno);
-        throw jexception(jerrno::JERR_JDIR_OPENDIR, oss.str(), "jdir", "push_down");
-    }
+    DIR* dir = open_dir(dirname, "push_down", false);
     // Copy contents of targetDirName into bak dir
     struct dirent* entry;
     while ((entry = ::readdir(dir)) != 0)
@@ -251,60 +237,49 @@ jdir::delete_dir(const std::string& dirname, bool children_only)
 {
     struct dirent* entry;
     struct stat s;
-    DIR* dir = ::opendir(dirname.c_str());
-    if (!dir)
+    DIR* dir = open_dir(dirname, "delete_dir", true); // true = allow dir does not exist, return 0
+    if (!dir) return;
+    while ((entry = ::readdir(dir)) != 0)
     {
-        if (errno == ENOENT) // dir does not exist.
-            return;
-
-        std::ostringstream oss;
-        oss << "dir=\"" << dirname << "\"" << FORMAT_SYSERR(errno);
-        throw jexception(jerrno::JERR_JDIR_OPENDIR, oss.str(), "jdir", "delete_dir");
-    }
-    else
-    {
-        while ((entry = ::readdir(dir)) != 0)
+        // Ignore . and ..
+        if (std::strcmp(entry->d_name, ".") != 0 && std::strcmp(entry->d_name, "..") != 0)
         {
-            // Ignore . and ..
-            if (std::strcmp(entry->d_name, ".") != 0 && std::strcmp(entry->d_name, "..") != 0)
+            std::string full_name(dirname + "/" + entry->d_name);
+            if (::lstat(full_name.c_str(), &s))
             {
-                std::string full_name(dirname + "/" + entry->d_name);
-                if (::lstat(full_name.c_str(), &s))
+                ::closedir(dir);
+                std::ostringstream oss;
+                oss << "stat: file=\"" << full_name << "\"" << FORMAT_SYSERR(errno);
+                throw jexception(jerrno::JERR_JDIR_STAT, oss.str(), "jdir", "delete_dir");
+            }
+            if (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode)) // This is a file or slink
+            {
+                if(::unlink(full_name.c_str()))
                 {
                     ::closedir(dir);
                     std::ostringstream oss;
-                    oss << "stat: file=\"" << full_name << "\"" << FORMAT_SYSERR(errno);
-                    throw jexception(jerrno::JERR_JDIR_STAT, oss.str(), "jdir", "delete_dir");
-                }
-                if (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode)) // This is a file or slink
-                {
-                    if(::unlink(full_name.c_str()))
-                    {
-                        ::closedir(dir);
-                        std::ostringstream oss;
-                        oss << "unlink: file=\"" << entry->d_name << "\"" << FORMAT_SYSERR(errno);
-                        throw jexception(jerrno::JERR_JDIR_UNLINK, oss.str(), "jdir", "delete_dir");
-                    }
-                }
-                else if (S_ISDIR(s.st_mode)) // This is a dir
-                {
-                    delete_dir(full_name);
-                }
-                else // all other types, throw up!
-                {
-                    ::closedir(dir);
-                    std::ostringstream oss;
-                    oss << "file=\"" << entry->d_name << "\" is not a dir, file or slink.";
-                    oss << " (mode=0x" << std::hex << s.st_mode << std::dec << ")";
-                    throw jexception(jerrno::JERR_JDIR_BADFTYPE, oss.str(), "jdir", "delete_dir");
+                    oss << "unlink: file=\"" << entry->d_name << "\"" << FORMAT_SYSERR(errno);
+                    throw jexception(jerrno::JERR_JDIR_UNLINK, oss.str(), "jdir", "delete_dir");
                 }
             }
+            else if (S_ISDIR(s.st_mode)) // This is a dir
+            {
+                delete_dir(full_name);
+            }
+            else // all other types, throw up!
+            {
+                ::closedir(dir);
+                std::ostringstream oss;
+                oss << "file=\"" << entry->d_name << "\" is not a dir, file or slink.";
+                oss << " (mode=0x" << std::hex << s.st_mode << std::dec << ")";
+                throw jexception(jerrno::JERR_JDIR_BADFTYPE, oss.str(), "jdir", "delete_dir");
+            }
         }
+    }
 
 // FIXME: Find out why this fails with false alarms/errors from time to time...
 // While commented out, there is no error capture from reading dir entries.
 //        check_err(errno, dir, dirname, "delete_dir");
-    }
     // Now dir is empty, close and delete it
     close_dir(dir, dirname, "delete_dir");
 
@@ -321,14 +296,8 @@ jdir::delete_dir(const std::string& dirname, bool children_only)
 std::string
 jdir::create_bak_dir(const std::string& dirname)
 {
-    DIR* dir = ::opendir(dirname.c_str());
+    DIR* dir = open_dir(dirname, "create_bak_dir", false);
     long dir_num = 0L;
-    if (!dir)
-    {
-        std::ostringstream oss;
-        oss << "dir=\"" << dirname << "\"" << FORMAT_SYSERR(errno);
-        throw jexception(jerrno::JERR_JDIR_OPENDIR, oss.str(), "jdir", "create_bak_dir");
-    }
     struct dirent* entry;
     while ((entry = ::readdir(dir)) != 0)
     {
@@ -407,25 +376,23 @@ void
 jdir::read_dir(const std::string& name, std::vector<std::string>& dir_list, const bool incl_dirs, const bool incl_files, const bool incl_links, const bool return_fqfn) {
     struct stat s;
     if (is_dir(name)) {
-        DIR* dir = ::opendir(name.c_str());
-        if (dir != 0) {
-            struct dirent* entry;
-            while ((entry = ::readdir(dir)) != 0) {
-                if (std::strcmp(entry->d_name, ".") != 0 && std::strcmp(entry->d_name, "..") != 0) { // Ignore . and ..
-                    std::string full_name(name + "/" + entry->d_name);
-                    if (::stat(full_name.c_str(), &s))
-                    {
-                        ::closedir(dir);
-                        std::ostringstream oss;
-                        oss << "stat: file=\"" << full_name << "\"" << FORMAT_SYSERR(errno);
-                        throw jexception(jerrno::JERR_JDIR_STAT, oss.str(), "jdir", "delete_dir");
-                    }
-                    if ((S_ISREG(s.st_mode) && incl_files) || (S_ISDIR(s.st_mode) && incl_dirs) || (S_ISLNK(s.st_mode) && incl_links)) {
-                        if (return_fqfn) {
-                            dir_list.push_back(name + "/" + entry->d_name);
-                        } else {
-                            dir_list.push_back(entry->d_name);
-                        }
+        DIR* dir = open_dir(name, "read_dir", false);
+        struct dirent* entry;
+        while ((entry = ::readdir(dir)) != 0) {
+            if (std::strcmp(entry->d_name, ".") != 0 && std::strcmp(entry->d_name, "..") != 0) { // Ignore . and ..
+                std::string full_name(name + "/" + entry->d_name);
+                if (::stat(full_name.c_str(), &s))
+                {
+                    ::closedir(dir);
+                    std::ostringstream oss;
+                    oss << "stat: file=\"" << full_name << "\"" << FORMAT_SYSERR(errno);
+                    throw jexception(jerrno::JERR_JDIR_STAT, oss.str(), "jdir", "delete_dir");
+                }
+                if ((S_ISREG(s.st_mode) && incl_files) || (S_ISDIR(s.st_mode) && incl_dirs) || (S_ISLNK(s.st_mode) && incl_links)) {
+                    if (return_fqfn) {
+                        dir_list.push_back(name + "/" + entry->d_name);
+                    } else {
+                        dir_list.push_back(entry->d_name);
                     }
                 }
             }
@@ -455,6 +422,21 @@ jdir::close_dir(DIR* dir, const std::string& dir_name, const std::string& fn_nam
         oss << "dir=\"" << dir_name << "\"" << FORMAT_SYSERR(errno);
         throw jexception(jerrno::JERR_JDIR_CLOSEDIR, oss.str(), "jdir", fn_name);
     }
+}
+
+DIR*
+jdir::open_dir(const std::string& dir_name, const std::string& fn_name, const bool test_enoent)
+{
+    DIR* dir = ::opendir(dir_name.c_str());
+    if (!dir) {
+        if (test_enoent && errno == ENOENT) {
+            return 0;
+        }
+        std::ostringstream oss;
+        oss << "dir=\"" << dir_name << "\"" << FORMAT_SYSERR(errno);
+        throw jexception(jerrno::JERR_JDIR_OPENDIR, oss.str(), "jdir", fn_name);
+    }
+    return dir;
 }
 
 std::ostream&

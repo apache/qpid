@@ -87,7 +87,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
     public void testPerformUpgrade() throws Exception
     {
         UpgradeFrom5To6 upgrade = new UpgradeFrom5To6();
-        upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER, getVirtualHostName());
+        upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER, getVirtualHost());
 
         assertDatabaseRecordCounts();
         assertContent();
@@ -101,7 +101,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         corruptDatabase();
 
         UpgradeFrom5To6 upgrade = new UpgradeFrom5To6();
-        upgrade.performUpgrade(_environment, new StaticAnswerHandler(UpgradeInteractionResponse.YES), getVirtualHostName());
+        upgrade.performUpgrade(_environment, new StaticAnswerHandler(UpgradeInteractionResponse.YES), getVirtualHost());
 
         assertDatabaseRecordCounts();
 
@@ -117,7 +117,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
 
         UpgradeInteractionHandler discardMessageInteractionHandler = new StaticAnswerHandler(UpgradeInteractionResponse.NO);
 
-        upgrade.performUpgrade(_environment, discardMessageInteractionHandler, getVirtualHostName());
+        upgrade.performUpgrade(_environment, discardMessageInteractionHandler, getVirtualHost());
 
         assertDatabaseRecordCount(NEW_METADATA_DB_NAME, 12);
         assertDatabaseRecordCount(NEW_CONTENT_DB_NAME, 12);
@@ -135,7 +135,7 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         {
             populateOldXidEntries(environment);
             UpgradeFrom5To6 upgrade = new UpgradeFrom5To6();
-            upgrade.performUpgrade(environment, UpgradeInteractionHandler.DEFAULT_HANDLER, getVirtualHostName());
+            upgrade.performUpgrade(environment, UpgradeInteractionHandler.DEFAULT_HANDLER, getVirtualHost());
             assertXidEntries(environment);
         }
         finally
@@ -171,11 +171,11 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
         NewRecordImpl[] newDequeues = newTransaction.getDequeues();
         assertEquals("Unxpected new enqueus number", 1, newEnqueues.length);
         NewRecordImpl enqueue = newEnqueues[0];
-        assertEquals("Unxpected queue id", UUIDGenerator.generateQueueUUID("TEST1", getVirtualHostName()), enqueue.getId());
+        assertEquals("Unxpected queue id", UUIDGenerator.generateQueueUUID("TEST1", getVirtualHost().getName()), enqueue.getId());
         assertEquals("Unxpected message id", 1, enqueue.getMessageNumber());
         assertEquals("Unxpected new dequeues number", 1, newDequeues.length);
         NewRecordImpl dequeue = newDequeues[0];
-        assertEquals("Unxpected queue id", UUIDGenerator.generateQueueUUID("TEST2", getVirtualHostName()), dequeue.getId());
+        assertEquals("Unxpected queue id", UUIDGenerator.generateQueueUUID("TEST2", getVirtualHost().getName()), dequeue.getId());
         assertEquals("Unxpected message id", 2, dequeue.getMessageNumber());
     }
 
@@ -347,13 +347,13 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
             {
                 String exchangeName = (String) deserialized.get(Exchange.NAME);
                 assertNotNull(exchangeName);
-                assertEquals("Unexpected key", key, UUIDGenerator.generateExchangeUUID(exchangeName, getVirtualHostName()));
+                assertEquals("Unexpected key", key, UUIDGenerator.generateExchangeUUID(exchangeName, getVirtualHost().getName()));
             }
             else if (type.equals(Queue.class.getName()))
             {
                 String queueName = (String) deserialized.get(Queue.NAME);
                 assertNotNull(queueName);
-                assertEquals("Unexpected key", key, UUIDGenerator.generateQueueUUID(queueName, getVirtualHostName()));
+                assertEquals("Unexpected key", key, UUIDGenerator.generateQueueUUID(queueName, getVirtualHost().getName()));
             }
             else if (type.equals(Binding.class.getName()))
             {
@@ -368,15 +368,15 @@ public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
     private Map<String, Object> createExpectedQueueBindingMapAndID(String queue, String bindingName, String exchangeName, Map<String, String> argumentMap, List<UUID> expectedBindingIDs)
     {
         Map<String, Object> expectedQueueBinding = new HashMap<String, Object>();
-        expectedQueueBinding.put(Binding.QUEUE, UUIDGenerator.generateQueueUUID(queue, getVirtualHostName()).toString());
+        expectedQueueBinding.put(Binding.QUEUE, UUIDGenerator.generateQueueUUID(queue, getVirtualHost().getName()).toString());
         expectedQueueBinding.put(Binding.NAME, bindingName);
-        expectedQueueBinding.put(Binding.EXCHANGE, UUIDGenerator.generateExchangeUUID(exchangeName, getVirtualHostName()).toString());
+        expectedQueueBinding.put(Binding.EXCHANGE, UUIDGenerator.generateExchangeUUID(exchangeName, getVirtualHost().getName()).toString());
         if (argumentMap != null)
         {
             expectedQueueBinding.put(Binding.ARGUMENTS, argumentMap);
         }
 
-        expectedBindingIDs.add(UUIDGenerator.generateBindingUUID(exchangeName, queue, bindingName, getVirtualHostName()));
+        expectedBindingIDs.add(UUIDGenerator.generateBindingUUID(exchangeName, queue, bindingName, getVirtualHost().getName()));
 
         return expectedQueueBinding;
     }

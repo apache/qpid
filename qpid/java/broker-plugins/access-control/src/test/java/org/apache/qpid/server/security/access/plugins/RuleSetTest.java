@@ -21,23 +21,25 @@
 
 package org.apache.qpid.server.security.access.plugins;
 
-import java.security.Principal;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import javax.security.auth.Subject;
 
-import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLoggerProvider;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
+import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.access.config.Rule;
 import org.apache.qpid.server.security.access.config.RuleSet;
 import org.apache.qpid.server.security.auth.TestPrincipalUtils;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * This test checks that the {@link RuleSet} object which forms the core of the access control plugin performs correctly.
@@ -51,6 +53,9 @@ import static org.mockito.Mockito.mock;
  */
 public class RuleSetTest extends QpidTestCase
 {
+    private static final String DENIED_VH = "deniedVH";
+    private static final String ALLOWED_VH = "allowedVH";
+
     private RuleSet _ruleSet; // Object under test
 
     private static final String TEST_USER = "user";
@@ -60,6 +65,8 @@ public class RuleSetTest extends QpidTestCase
     private String _exchangeName = "amq.direct";
     private String _exchangeType = "direct";
     private Subject _testSubject = TestPrincipalUtils.createTestSubject(TEST_USER);
+    private AMQQueue<?> _queue;
+    private VirtualHost<?> _virtualHost;
 
     @Override
     public void setUp() throws Exception
@@ -67,6 +74,11 @@ public class RuleSetTest extends QpidTestCase
         super.setUp();
 
         _ruleSet = new RuleSet(mock(EventLoggerProvider.class));
+
+        _virtualHost = mock(VirtualHost.class);
+        _queue = mock(AMQQueue.class);
+        when(_queue.getName()).thenReturn(_queueName);
+        when(_queue.getParent(VirtualHost.class)).thenReturn(_virtualHost);
     }
 
     @Override
@@ -83,10 +95,8 @@ public class RuleSetTest extends QpidTestCase
 
     public void assertDenyGrantAllow(Subject subject, Operation operation, ObjectType objectType, ObjectProperties properties)
     {
-        final Principal identity = subject.getPrincipals().iterator().next();
-
         assertEquals(Result.DENIED, _ruleSet.check(subject, operation, objectType, properties));
-        _ruleSet.grant(0, identity.getName(), Permission.ALLOW, operation, objectType, properties);
+        _ruleSet.grant(0, TEST_USER, Permission.ALLOW, operation, objectType, properties);
         assertEquals(1, _ruleSet.getRuleCount());
         assertEquals(Result.ALLOWED, _ruleSet.check(subject, operation, objectType, properties));
     }
@@ -98,22 +108,97 @@ public class RuleSetTest extends QpidTestCase
         assertEquals(_ruleSet.getDefault(), _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
     }
 
-    public void testVirtualHostAccess() throws Exception
+    public void testVirtualHostAccessAllowPermissionWithVirtualHostName() throws Exception
     {
-        assertDenyGrantAllow(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST);
+        _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH));
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH)));
+        assertEquals(Result.DEFER, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(DENIED_VH)));
     }
+
+    public void testVirtualHostAccessAllowPermissionWithNameSetToWildCard() throws Exception
+    {
+        _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ObjectProperties.WILD_CARD));
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH)));
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(DENIED_VH)));
+    }
+
+    public void testVirtualHostAccessAllowPermissionWithNoName() throws Exception
+    {
+        _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH)));
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(DENIED_VH)));
+    }
+
+    public void testVirtualHostAccessDenyPermissionWithNoName() throws Exception
+    {
+        _ruleSet.grant(0, TEST_USER, Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(Result.DENIED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH)));
+        assertEquals(Result.DENIED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(DENIED_VH)));
+    }
+
+    public void testVirtualHostAccessDenyPermissionWithNameSetToWildCard() throws Exception
+    {
+        _ruleSet.grant(0, TEST_USER, Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ObjectProperties.WILD_CARD));
+        assertEquals(Result.DENIED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH)));
+        assertEquals(Result.DENIED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(DENIED_VH)));
+    }
+
+    public void testVirtualHostAccessAllowDenyPermissions() throws Exception
+    {
+        _ruleSet.grant(0, TEST_USER, Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(DENIED_VH));
+        _ruleSet.grant(1, TEST_USER, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH));
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH)));
+        assertEquals(Result.DENIED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(DENIED_VH)));
+    }
+
+    public void testVirtualHostAccessAllowPermissionWithVirtualHostNameOtherPredicate() throws Exception
+    {
+        ObjectProperties properties = new ObjectProperties();
+        properties.put(Property.VIRTUALHOST_NAME, ALLOWED_VH);
+
+        _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, properties);
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, properties));
+        assertEquals(Result.DEFER, _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(DENIED_VH)));
+    }
+
 
     public void testQueueCreateNamed() throws Exception
     {
         assertDenyGrantAllow(_testSubject, Operation.CREATE, ObjectType.QUEUE, new ObjectProperties(_queueName));
     }
 
-    public void testQueueCreatenamedNullRoutingKey()
+    public void testQueueCreateNamedVirtualHost() throws Exception
+    {
+        _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.CREATE, ObjectType.QUEUE, new ObjectProperties(Property.VIRTUALHOST_NAME, ALLOWED_VH));
+
+        when(_virtualHost.getName()).thenReturn(ALLOWED_VH);
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.QUEUE, new ObjectProperties(_queue)));
+
+        when(_virtualHost.getName()).thenReturn(DENIED_VH);
+        assertEquals(Result.DEFER, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.QUEUE, new ObjectProperties(_queue)));
+    }
+
+    public void testQueueCreateNamedNullRoutingKey()
     {
         ObjectProperties properties = new ObjectProperties(_queueName);
         properties.put(ObjectProperties.Property.ROUTING_KEY, (String) null);
 
         assertDenyGrantAllow(_testSubject, Operation.CREATE, ObjectType.QUEUE, properties);
+    }
+
+    public void testExchangeCreateNamedVirtualHost()
+    {
+        _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.CREATE, ObjectType.EXCHANGE, new ObjectProperties(Property.VIRTUALHOST_NAME, ALLOWED_VH));
+
+        ExchangeImpl<?> exchange = mock(ExchangeImpl.class);
+        when(exchange.getParent(VirtualHost.class)).thenReturn(_virtualHost);
+        when(exchange.getTypeName()).thenReturn(_exchangeType);
+        when(_virtualHost.getName()).thenReturn(ALLOWED_VH);
+
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.EXCHANGE, new ObjectProperties(exchange)));
+
+        when(_virtualHost.getName()).thenReturn(DENIED_VH);
+        assertEquals(Result.DEFER, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.EXCHANGE, new ObjectProperties(exchange)));
     }
 
     public void testExchangeCreate()

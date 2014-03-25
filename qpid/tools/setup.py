@@ -19,8 +19,22 @@
 #
 from distutils.core import setup
 
+pypi_long_description = """
+
+===========
+qpidtoollibs
+===========
+
+qpidtoollibs provides a useful BrokerAgent object for managing a Qpid broker
+using Qpid Management Framework (QMF).
+
+This library depends on the qpid.messaging python client to send AMQP messaging
+containing QMF commands to the Qpid broker.
+
+"""
+
 setup(name="qpid-tools",
-      version="0.27",
+      version="0.29",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       package_dir={'' : 'src/py'},
@@ -35,4 +49,8 @@ setup(name="qpid-tools",
                "src/py/qmf-tool"],
       url="http://qpid.apache.org/",
       license="Apache Software License",
-      description="Diagnostic and management tools for Apache Qpid brokers.")
+      description="Diagnostic and management tools for Apache Qpid brokers.",
+      long_description=pypi_long_description,
+      install_requires=[
+          "qpid-python >= 0.26",
+      ])

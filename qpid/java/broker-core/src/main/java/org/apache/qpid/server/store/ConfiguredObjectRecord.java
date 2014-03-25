@@ -20,69 +20,16 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class ConfiguredObjectRecord
+public interface ConfiguredObjectRecord
 {
-    private UUID _id;
-    private String _type;
-    private Map<String,Object> _attributes;
+    UUID getId();
 
-    public ConfiguredObjectRecord(UUID id, String type, Map<String,Object> attributes)
-    {
-        super();
-        _id = id;
-        _type = type;
-        _attributes = Collections.unmodifiableMap(new LinkedHashMap<String,Object>(attributes));
-    }
+    String getType();
 
-    public UUID getId()
-    {
-        return _id;
-    }
+    Map<String,Object> getAttributes();
 
-    public String getType()
-   {
-        return _type;
-    }
-
-    public Map<String,Object> getAttributes()
-    {
-        return _attributes;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "ConfiguredObjectRecord [id=" + _id + ", type=" + _type + ", attributes=" + _attributes + "]";
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if(this == o)
-        {
-            return true;
-        }
-        if(o == null || getClass() != o.getClass())
-        {
-            return false;
-        }
-
-        ConfiguredObjectRecord that = (ConfiguredObjectRecord) o;
-
-        return _type.equals(that._type) && _id.equals(that._id) && _attributes.equals(that._attributes);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = _id.hashCode();
-        result = 31 * result + _type.hashCode();
-        result = 31 * result + _attributes.hashCode();
-        return result;
-    }
+    Map<String, ConfiguredObjectRecord> getParents();
 }

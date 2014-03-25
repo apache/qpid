@@ -22,3 +22,5 @@ org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactor
 org.apache.qpid.server.security.auth.manager.KerberosAuthenticationManagerFactory
 org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory
 org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManagerFactory
+org.apache.qpid.server.security.auth.manager.ScramSHA1AuthenticationManagerFactory
+

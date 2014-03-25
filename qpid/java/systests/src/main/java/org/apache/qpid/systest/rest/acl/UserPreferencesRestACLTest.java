@@ -76,7 +76,7 @@ public class UserPreferencesRestACLTest extends QpidRestTestCase
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER);
 
-        AbstractACLTestCase.writeACLFileUtil(this, null, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT", "ACL ALLOW-LOG " + ALLOWED_USER
+        AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT", "ACL ALLOW-LOG " + ALLOWED_USER
                 + " UPDATE USER", "ACL DENY-LOG " + DENIED_USER + " UPDATE USER", "ACL DENY-LOG ALL ALL");
 
         TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();

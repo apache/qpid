@@ -25,6 +25,8 @@ import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -54,11 +57,13 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.store.berkeleydb.entry.HierarchyKey;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
 import org.apache.qpid.server.store.berkeleydb.entry.Xid;
 import org.apache.qpid.server.store.berkeleydb.tuple.ConfiguredObjectBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.ContentBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.HierarchyKeyBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.MessageMetaDataBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.PreparedTransactionBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.QueueEntryBinding;
@@ -94,9 +99,11 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final Logger LOGGER = Logger.getLogger(BDBMessageStore.class);
 
-    public static final int VERSION = 7;
+    public static final int VERSION = 8;
     private static final int LOCK_RETRY_ATTEMPTS = 5;
     private static String CONFIGURED_OBJECTS_DB_NAME = "CONFIGURED_OBJECTS";
+    private static String CONFIGURED_OBJECT_HIERARCHY_DB_NAME = "CONFIGURED_OBJECT_HIERARCHY";
+
     private static String MESSAGE_META_DATA_DB_NAME = "MESSAGE_METADATA";
     private static String MESSAGE_CONTENT_DB_NAME = "MESSAGE_CONTENT";
     private static String DELIVERY_DB_NAME = "QUEUE_ENTRIES";
@@ -106,7 +113,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private static String LINKDB_NAME = "LINKS";
     private static String XID_DB_NAME = "XIDS";
     private static String CONFIG_VERSION_DB_NAME = "CONFIG_VERSION";
-    private static final String[] CONFIGURATION_STORE_DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, CONFIG_VERSION_DB_NAME };
+    private static final String[] CONFIGURATION_STORE_DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, CONFIG_VERSION_DB_NAME , CONFIGURED_OBJECT_HIERARCHY_DB_NAME};
     private static final String[] MESSAGE_STORE_DATABASE_NAMES = new String[] { MESSAGE_META_DATA_DB_NAME, MESSAGE_CONTENT_DB_NAME, DELIVERY_DB_NAME, BRIDGEDB_NAME, LINKDB_NAME, XID_DB_NAME };
 
     private EnvironmentFacade _environmentFacade;
@@ -163,7 +170,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
     {
         _configurationStoreStateManager.attainState(State.ACTIVATING);
 
@@ -172,7 +179,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         dbConfig.setAllowCreate(true);
         try
         {
-            new Upgrader(_environmentFacade.getEnvironment(), _virtualHostName).upgradeIfNecessary();
+            new Upgrader(_environmentFacade.getEnvironment(), parent).upgradeIfNecessary();
             _environmentFacade.openDatabases(dbConfig, CONFIGURATION_STORE_DATABASE_NAMES);
         }
         catch(DatabaseException e)
@@ -216,7 +223,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public synchronized void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler) throws StoreException
+    public synchronized void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler) throws StoreException
     {
         _messageStoreStateManager.attainState(State.ACTIVATING);
         DatabaseConfig dbConfig = new DatabaseConfig();
@@ -224,13 +231,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         dbConfig.setAllowCreate(true);
         try
         {
-            new Upgrader(_environmentFacade.getEnvironment(), _virtualHostName).upgradeIfNecessary();
+            new Upgrader(_environmentFacade.getEnvironment(), parent).upgradeIfNecessary();
             _environmentFacade.openDatabases(dbConfig, MESSAGE_STORE_DATABASE_NAMES);
             _totalStoreSize = getSizeOnDisk();
         }
         catch(DatabaseException e)
         {
-            throw _environmentFacade.handleDatabaseException("Cannot activate message store", e);
+            throw _environmentFacade.handleDatabaseException("Cannot upgrade message store or open datatbases", e);
         }
 
         if(messageRecoveryHandler != null)
@@ -352,10 +359,11 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @SuppressWarnings("resource")
     private void updateConfigVersion(int newConfigVersion) throws StoreException
     {
+        Transaction txn = null;
         Cursor cursor = null;
         try
         {
-            Transaction txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
+            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
             cursor = getConfigVersionDb().openCursor(txn, null);
             DatabaseEntry key = new DatabaseEntry();
             ByteBinding.byteToEntry((byte) 0,key);
@@ -373,10 +381,12 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             cursor.close();
             cursor = null;
             txn.commit();
+            txn = null;
         }
         finally
         {
             closeCursorSafely(cursor);
+            abortTransactionIgnoringException("Error setting config version", txn);;
         }
 
     }
@@ -412,24 +422,57 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private void loadConfiguredObjects(ConfigurationRecoveryHandler crh) throws DatabaseException, StoreException
     {
-        Cursor cursor = null;
+        Cursor objectsCursor = null;
+        Cursor hierarchyCursor = null;
         try
         {
-            cursor = getConfiguredObjectsDb().openCursor(null, null);
+            objectsCursor = getConfiguredObjectsDb().openCursor(null, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
-            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+
+            Map<UUID, BDBConfiguredObjectRecord> configuredObjects =
+                    new HashMap<UUID, BDBConfiguredObjectRecord>();
+
+            while (objectsCursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
 
-                ConfiguredObjectRecord configuredObject = new ConfiguredObjectBinding(id).entryToObject(value);
-                crh.configuredObject(configuredObject.getId(),configuredObject.getType(),configuredObject.getAttributes());
+                BDBConfiguredObjectRecord configuredObject =
+                        (BDBConfiguredObjectRecord) new ConfiguredObjectBinding(id).entryToObject(value);
+                configuredObjects.put(configuredObject.getId(), configuredObject);
             }
 
+            // set parents
+            hierarchyCursor = getConfiguredObjectHierarchyDb().openCursor(null, null);
+            while (hierarchyCursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                HierarchyKey hk = HierarchyKeyBinding.getInstance().entryToObject(key);
+                UUID parentId = UUIDTupleBinding.getInstance().entryToObject(value);
+                BDBConfiguredObjectRecord child = configuredObjects.get(hk.getChildId());
+                if(child != null)
+                {
+                    ConfiguredObjectRecord parent = configuredObjects.get(parentId);
+                    if(parent != null)
+                    {
+                        child.addParent(hk.getParentType(), parent);
+                    }
+                    else if(hk.getParentType().equals("Exchange"))
+                    {
+                        // TODO - remove this hack for the pre-defined exchanges
+                        child.addParent(hk.getParentType(), new BDBConfiguredObjectRecord(parentId, "Exchange", Collections.<String,Object>emptyMap()));
+                    }
+                }
+            }
+
+            for (ConfiguredObjectRecord record : configuredObjects.values())
+            {
+                crh.configuredObject(record);
+            }
         }
         finally
         {
-            closeCursorSafely(cursor);
+            closeCursorSafely(objectsCursor);
+            closeCursorSafely(hierarchyCursor);
         }
     }
 
@@ -447,7 +490,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
         }
     }
-
 
     private void recoverMessages(MessageStoreRecoveryHandler msrh) throws StoreException
     {
@@ -568,9 +610,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         dtxrh.completeDtxRecordRecovery();
     }
 
-    public void removeMessage(long messageId, boolean sync) throws StoreException
+    void removeMessage(long messageId, boolean sync) throws StoreException
     {
-
         boolean complete = false;
         com.sleepycat.je.Transaction tx = null;
 
@@ -715,116 +756,130 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void create(UUID id, String type, Map<String, Object> attributes) throws StoreException
+    public void create(ConfiguredObjectRecord configuredObject) throws StoreException
     {
         if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
-            ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecord(id, type, attributes);
-            storeConfiguredObjectEntry(configuredObject);
-        }
-    }
-
-    @Override
-    public void remove(UUID id, String type) throws StoreException
-    {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("public void remove(id = " + id + ", type="+type+"): called");
-        }
-        OperationStatus status = removeConfiguredObject(null, id);
-        if (status == OperationStatus.NOTFOUND)
-        {
-            throw new StoreException("Configured object of type " + type + " with id " + id + " not found");
-        }
-    }
-
-    @Override
-    public UUID[] removeConfiguredObjects(final UUID... objects) throws StoreException
-    {
-        com.sleepycat.je.Transaction txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
-        Collection<UUID> removed = new ArrayList<UUID>(objects.length);
-        for(UUID id : objects)
-        {
-            if(removeConfiguredObject(txn, id) == OperationStatus.SUCCESS)
+            com.sleepycat.je.Transaction txn = null;
+            try
             {
-                removed.add(id);
+                txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
+                storeConfiguredObjectEntry(txn, configuredObject);
+                txn.commit();
+                txn = null;
+            }
+            catch (DatabaseException e)
+            {
+                throw _environmentFacade.handleDatabaseException("Error creating configured object " + configuredObject
+                        + " in database: " + e.getMessage(), e);
+            }
+            finally
+            {
+                if (txn != null)
+                {
+                    abortTransactionIgnoringException("Error creating configured object", txn);
+                }
             }
         }
-        commitTransaction(txn);
-        return removed.toArray(new UUID[removed.size()]);
-    }
-
-    private void commitTransaction(com.sleepycat.je.Transaction txn) throws StoreException
-    {
-        try
-        {
-            txn.commit();
-        }
-        catch(DatabaseException e)
-        {
-            throw _environmentFacade.handleDatabaseException("Cannot commit transaction on configured objects removal", e);
-        }
     }
 
     @Override
-    public void update(UUID id, String type, Map<String, Object> attributes) throws StoreException
+    public UUID[] remove(final ConfiguredObjectRecord... objects) throws StoreException
     {
-        update(false, id, type, attributes, null);
+        com.sleepycat.je.Transaction txn = null;
+        try
+        {
+            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
+            
+            Collection<UUID> removed = new ArrayList<UUID>(objects.length);
+            for(ConfiguredObjectRecord record : objects)
+            {
+                if(removeConfiguredObject(txn, record) == OperationStatus.SUCCESS)
+                {
+                    removed.add(record.getId());
+                }
+            }
+            
+            txn.commit();
+            txn = null;
+            return removed.toArray(new UUID[removed.size()]);
+        }
+        catch (DatabaseException e)
+        {
+            throw _environmentFacade.handleDatabaseException("Error deleting configured objects from database", e);
+        }
+        finally
+        {
+            if (txn != null)
+            {
+                abortTransactionIgnoringException("Error deleting configured objects", txn);
+            }
+        }
+
     }
 
     @Override
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
-        com.sleepycat.je.Transaction txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
-        for(ConfiguredObjectRecord record : records)
-        {
-            update(createIfNecessary, record.getId(), record.getType(), record.getAttributes(), txn);
-        }
-        commitTransaction(txn);
-    }
-
-    private void update(boolean createIfNecessary, UUID id, String type, Map<String, Object> attributes, com.sleepycat.je.Transaction txn) throws StoreException
-    {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("Updating " + type + ", id: " + id);
-        }
-
+        com.sleepycat.je.Transaction txn = null;
         try
         {
-            DatabaseEntry key = new DatabaseEntry();
-            UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
-            keyBinding.objectToEntry(id, key);
-
-            DatabaseEntry value = new DatabaseEntry();
-            DatabaseEntry newValue = new DatabaseEntry();
-            ConfiguredObjectBinding configuredObjectBinding = ConfiguredObjectBinding.getInstance();
-
-            OperationStatus status = getConfiguredObjectsDb().get(txn, key, value, LockMode.DEFAULT);
-            if (status == OperationStatus.SUCCESS || (createIfNecessary && status == OperationStatus.NOTFOUND))
+            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
+            for(ConfiguredObjectRecord record : records)
             {
-                ConfiguredObjectRecord newQueueRecord = new ConfiguredObjectRecord(id, type, attributes);
-
-                // write the updated entry to the store
-                configuredObjectBinding.objectToEntry(newQueueRecord, newValue);
-                status = getConfiguredObjectsDb().put(txn, key, newValue);
-                if (status != OperationStatus.SUCCESS)
-                {
-                    throw new StoreException("Error updating configuration details within the store: " + status);
-                }
+                update(createIfNecessary, record, txn);
             }
-            else if (status != OperationStatus.NOTFOUND)
-            {
-                throw new StoreException("Error finding configuration details within the store: " + status);
-            }
+            txn.commit();
+            txn = null;
         }
         catch (DatabaseException e)
         {
+            throw _environmentFacade.handleDatabaseException("Error updating configuration details within the store: " + e,e);
+        }
+        finally
+        {
             if (txn != null)
             {
-                abortTransactionIgnoringException("Error updating configuration details within the store: " + e.getMessage(), txn);
+                abortTransactionIgnoringException("Error updating configuration details within the store", txn);
             }
-            throw _environmentFacade.handleDatabaseException("Error updating configuration details within the store: " + e,e);
+        }
+
+    }
+
+    private void update(boolean createIfNecessary, ConfiguredObjectRecord record, com.sleepycat.je.Transaction txn) throws StoreException
+    {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Updating " + record.getType() + ", id: " + record.getId());
+        }
+
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
+        keyBinding.objectToEntry(record.getId(), key);
+
+        DatabaseEntry value = new DatabaseEntry();
+        DatabaseEntry newValue = new DatabaseEntry();
+        ConfiguredObjectBinding configuredObjectBinding = ConfiguredObjectBinding.getInstance();
+
+        OperationStatus status = getConfiguredObjectsDb().get(txn, key, value, LockMode.DEFAULT);
+        final boolean isNewRecord = status == OperationStatus.NOTFOUND;
+        if (status == OperationStatus.SUCCESS || (createIfNecessary && isNewRecord))
+        {
+            // write the updated entry to the store
+            configuredObjectBinding.objectToEntry(record, newValue);
+            status = getConfiguredObjectsDb().put(txn, key, newValue);
+            if (status != OperationStatus.SUCCESS)
+            {
+                throw new StoreException("Error updating configuration details within the store: " + status);
+            }
+            if(isNewRecord)
+            {
+                writeHierarchyRecords(txn, record);
+            }
+        }
+        else if (status != OperationStatus.NOTFOUND)
+        {
+            throw new StoreException("Error finding configuration details within the store: " + status);
         }
     }
 
@@ -1018,7 +1073,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      *
      * @throws StoreException If the operation fails for any reason.
      */
-    public void abortTran(final com.sleepycat.je.Transaction tx) throws StoreException
+    private void abortTran(final com.sleepycat.je.Transaction tx) throws StoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -1091,7 +1146,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      *
      * @return A fresh message id.
      */
-    public long getNewMessageId()
+    private long getNewMessageId()
     {
         return _messageId.incrementAndGet();
     }
@@ -1106,7 +1161,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      *
      * @throws StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    protected void addContent(final com.sleepycat.je.Transaction tx, long messageId, int offset,
+    private void addContent(final com.sleepycat.je.Transaction tx, long messageId, int offset,
                                       ByteBuffer contentBody) throws StoreException
     {
         DatabaseEntry key = new DatabaseEntry();
@@ -1183,7 +1238,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      *
      * @throws StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    public StorableMessageMetaData getMessageMetaData(long messageId) throws StoreException
+    StorableMessageMetaData getMessageMetaData(long messageId) throws StoreException
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -1226,7 +1281,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      *
      * @throws StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    public int getContent(long messageId, int offset, ByteBuffer dst) throws StoreException
+    int getContent(long messageId, int offset, ByteBuffer dst) throws StoreException
     {
         DatabaseEntry contentKeyEntry = new DatabaseEntry();
         LongBinding.longToEntry(messageId, contentKeyEntry);
@@ -1291,20 +1346,17 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
     }
 
-    /**
-     * Makes the specified configured object persistent.
-     *
-     * @param configuredObject     Details of the configured object to store.
-     * @throws StoreException If the operation fails for any reason.
-     */
-    private void storeConfiguredObjectEntry(ConfiguredObjectRecord configuredObject) throws StoreException
+    private void storeConfiguredObjectEntry(final Transaction txn, ConfiguredObjectRecord configuredObject) throws StoreException
     {
         if (_configurationStoreStateManager.isInState(State.ACTIVE))
         {
-            LOGGER.debug("Storing configured object: " + configuredObject);
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Storing configured object: " + configuredObject);
+            }
             DatabaseEntry key = new DatabaseEntry();
-            UUIDTupleBinding keyBinding = UUIDTupleBinding.getInstance();
-            keyBinding.objectToEntry(configuredObject.getId(), key);
+            UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
+            uuidBinding.objectToEntry(configuredObject.getId(), key);
 
             DatabaseEntry value = new DatabaseEntry();
             ConfiguredObjectBinding queueBinding = ConfiguredObjectBinding.getInstance();
@@ -1312,12 +1364,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             queueBinding.objectToEntry(configuredObject, value);
             try
             {
-                OperationStatus status = getConfiguredObjectsDb().put(null, key, value);
+                OperationStatus status = getConfiguredObjectsDb().put(txn, key, value);
                 if (status != OperationStatus.SUCCESS)
                 {
                     throw new StoreException("Error writing configured object " + configuredObject + " to database: "
                             + status);
                 }
+                writeHierarchyRecords(txn, configuredObject);               
             }
             catch (DatabaseException e)
             {
@@ -1326,25 +1379,53 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
         }
     }
-
-    private OperationStatus removeConfiguredObject(Transaction tx, UUID id) throws StoreException
+    
+    private void writeHierarchyRecords(final Transaction txn, final ConfiguredObjectRecord configuredObject)
     {
+        OperationStatus status;
+        HierarchyKeyBinding hierarchyBinding = HierarchyKeyBinding.getInstance();
+        DatabaseEntry hierarchyKey = new DatabaseEntry();
+        DatabaseEntry hierarchyValue = new DatabaseEntry();
 
-        LOGGER.debug("Removing configured object: " + id);
-        DatabaseEntry key = new DatabaseEntry();
-        UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
-        uuidBinding.objectToEntry(id, key);
-        try
+        for(Map.Entry<String, ConfiguredObjectRecord> parent : configuredObject.getParents().entrySet())
         {
-            return getConfiguredObjectsDb().delete(tx, key);
-        }
-        catch (DatabaseException e)
-        {
-            throw _environmentFacade.handleDatabaseException("Error deleting of configured object with id " + id + " from database", e);
+
+            hierarchyBinding.objectToEntry(new HierarchyKey(configuredObject.getId(), parent.getKey()), hierarchyKey);
+            UUIDTupleBinding.getInstance().objectToEntry(parent.getValue().getId(), hierarchyValue);
+            status = getConfiguredObjectHierarchyDb().put(txn, hierarchyKey, hierarchyValue);
+            if (status != OperationStatus.SUCCESS)
+            {
+                throw new StoreException("Error writing configured object " + configuredObject + " parent record to database: "
+                                         + status);
+            }
         }
     }
 
-
+    private OperationStatus removeConfiguredObject(Transaction tx, ConfiguredObjectRecord record) throws StoreException
+    {
+        UUID id = record.getId();
+        Map<String, ConfiguredObjectRecord> parents = record.getParents();
+ 
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Removing configured object: " + id);
+        }
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
+        uuidBinding.objectToEntry(id, key);
+        OperationStatus status = getConfiguredObjectsDb().delete(tx, key);
+        if(status == OperationStatus.SUCCESS)
+        {
+            for(String parentType : parents.keySet())
+            {
+                DatabaseEntry hierarchyKey = new DatabaseEntry();
+                HierarchyKeyBinding keyBinding = HierarchyKeyBinding.getInstance();
+                keyBinding.objectToEntry(new HierarchyKey(record.getId(), parentType), hierarchyKey);
+                getConfiguredObjectHierarchyDb().delete(tx, hierarchyKey);
+            }
+        }
+        return status;
+    }
 
     private class StoredBDBMessage implements StoredMessage<StorableMessageMetaData>
     {
@@ -1687,14 +1768,19 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         return _type;
     }
 
-    private Database getMessageContentDb()
-    {
-        return _environmentFacade.getOpenDatabase(MESSAGE_CONTENT_DB_NAME);
-    }
-
     private Database getConfiguredObjectsDb()
     {
         return _environmentFacade.getOpenDatabase(CONFIGURED_OBJECTS_DB_NAME);
+    }
+
+    private Database getConfiguredObjectHierarchyDb()
+    {
+        return _environmentFacade.getOpenDatabase(CONFIGURED_OBJECT_HIERARCHY_DB_NAME);
+    }
+
+    private Database getMessageContentDb()
+    {
+        return _environmentFacade.getOpenDatabase(MESSAGE_CONTENT_DB_NAME);
     }
 
     private Database getConfigVersionDb()

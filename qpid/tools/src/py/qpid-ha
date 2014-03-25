@@ -106,9 +106,9 @@ class StatusCmd(Command):
             if not ha_broker.status in ["active", "recovering"]: raise ExitStatus(1)
         if opts.expect:
             if opts.expect != ha_broker.status: raise ExitStatus(1)
-        if opts.all:
+        brokers = filter(None, re.sub(r'(^amqps?:)|(tcp:)', "", ha_broker.brokersUrl).split(","))
+        if opts.all and brokers:
             opts.all=False
-            brokers = re.sub(r'(^amqp:)|(tcp:)', "", ha_broker.brokersUrl).split(",")
             for b in brokers:
                 opts.broker = b
                 try:

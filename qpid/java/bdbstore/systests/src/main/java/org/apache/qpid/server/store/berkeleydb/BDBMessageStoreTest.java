@@ -236,6 +236,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
     {
         messageStore.closeMessageStore();
 
+
         BDBMessageStore newStore = new BDBMessageStore();
 
         MessageStoreRecoveryHandler recoveryHandler = mock(MessageStoreRecoveryHandler.class);
@@ -243,7 +244,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         VirtualHost<?> virtualHost = getVirtualHostModel();
         newStore.openMessageStore(virtualHost.getName(), virtualHost.getMessageStoreSettings());
 
-        newStore.recoverMessageStore(recoveryHandler, null);
+        newStore.recoverMessageStore(getVirtualHostModel(), recoveryHandler, null);
 
         return newStore;
     }

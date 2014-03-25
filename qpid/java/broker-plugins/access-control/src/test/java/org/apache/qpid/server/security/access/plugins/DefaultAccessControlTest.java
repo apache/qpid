@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -181,7 +183,7 @@ public class DefaultAccessControlTest extends TestCase
         final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
         // grant user4 access right on any method in any component
-        rs.grant(1, "user4", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, new ObjectProperties(ObjectProperties.STAR));
+        rs.grant(1, "user4", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, new ObjectProperties(ObjectProperties.WILD_CARD));
         configureAccessControl(rs);
         Subject.doAs(TestPrincipalUtils.createTestSubject("user4"), new PrivilegedAction<Object>()
         {
@@ -207,7 +209,7 @@ public class DefaultAccessControlTest extends TestCase
         final RuleSet rs = new RuleSet(mock(EventLoggerProvider.class));
 
         // grant user5 access right on any methods in "Test" component
-        ObjectProperties ruleProperties = new ObjectProperties(ObjectProperties.STAR);
+        ObjectProperties ruleProperties = new ObjectProperties(ObjectProperties.WILD_CARD);
         ruleProperties.put(ObjectProperties.Property.COMPONENT, "Test");
         rs.grant(1, "user5", Permission.ALLOW, Operation.ACCESS, ObjectType.METHOD, ruleProperties);
         configureAccessControl(rs);
@@ -234,6 +236,7 @@ public class DefaultAccessControlTest extends TestCase
     public void testAccess() throws Exception
     {
         final Subject subject = TestPrincipalUtils.createTestSubject("user1");
+        final String testVirtualHost = getName();
         final InetAddress inetAddress = InetAddress.getLocalHost();
         final InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 1);
 
@@ -249,13 +252,12 @@ public class DefaultAccessControlTest extends TestCase
             {
                 RuleSet mockRuleSet = mock(RuleSet.class);
 
-
-
                 DefaultAccessControl accessControl = new DefaultAccessControl(mockRuleSet);
 
-                accessControl.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+                ObjectProperties properties = new ObjectProperties(testVirtualHost);
+                accessControl.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, properties);
 
-                verify(mockRuleSet).check(subject, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY, inetAddress);
+                verify(mockRuleSet).check(subject, Operation.ACCESS, ObjectType.VIRTUALHOST, properties, inetAddress);
                 return null;
             }
         });

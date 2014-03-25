@@ -32,6 +32,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
 
 public class AuthenticationProviderRecoverer implements ConfiguredObjectRecoverer<AuthenticationProvider>
@@ -68,9 +69,24 @@ public class AuthenticationProviderRecoverer implements ConfiguredObjectRecovere
             Map<String, Collection<ConfigurationEntry>> childEntries,
             String type)
     {
-        ConfiguredObjectRecoverer<?> recoverer = recovererProvider.getRecoverer(type);
+        ConfiguredObjectRecoverer<?> recoverer = null;
+
+        if(authenticationProvider instanceof RecovererProvider)
+        {
+            recoverer = ((RecovererProvider)authenticationProvider).getRecoverer(type);
+        }
+
+        if(recoverer == null)
+        {
+            recoverer = recovererProvider.getRecoverer(type);
+        }
+
         if (recoverer == null)
         {
+            if(authenticationProvider instanceof RecovererProvider)
+            {
+                ((RecovererProvider)authenticationProvider).getRecoverer(type);
+            }
             throw new IllegalConfigurationException("Cannot recover entry for the type '" + type + "' from broker");
         }
         Collection<ConfigurationEntry> entries = childEntries.get(type);
@@ -84,6 +100,10 @@ public class AuthenticationProviderRecoverer implements ConfiguredObjectRecovere
             if (object instanceof PreferencesProvider)
             {
                 authenticationProvider.setPreferencesProvider((PreferencesProvider)object);
+            }
+            else if(object instanceof User)
+            {
+                authenticationProvider.recoverUser((User)object);
             }
             else
             {

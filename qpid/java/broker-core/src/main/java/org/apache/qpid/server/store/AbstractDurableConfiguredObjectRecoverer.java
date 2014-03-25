@@ -27,10 +27,9 @@ public abstract class AbstractDurableConfiguredObjectRecoverer<T> implements Dur
 {
     @Override
     public void load(final DurableConfigurationRecoverer durableConfigurationRecoverer,
-                     final UUID id,
-                     final Map<String, Object> attributes)
+                     final ConfiguredObjectRecord record)
     {
-        final UnresolvedObject obj = createUnresolvedObject(id, getType(), attributes);
+        final UnresolvedObject obj = createUnresolvedObject(record);
         UnresolvedDependency[] dependencies = obj.getUnresolvedDependencies();
         for(final UnresolvedDependency dependency : dependencies)
         {
@@ -53,7 +52,7 @@ public abstract class AbstractDurableConfiguredObjectRecoverer<T> implements Dur
                                                                             dependency.resolve(o);
                                                                             if(obj.getUnresolvedDependencies().length == 0)
                                                                             {
-                                                                                durableConfigurationRecoverer.resolve(getType(), id, obj.resolve());
+                                                                                durableConfigurationRecoverer.resolve(getType(), record.getId(), obj.resolve());
                                                                             }
                                                                         }
                                                                     });
@@ -61,17 +60,15 @@ public abstract class AbstractDurableConfiguredObjectRecoverer<T> implements Dur
         }
         if(obj.getUnresolvedDependencies().length == 0)
         {
-            durableConfigurationRecoverer.resolve(getType(), id, obj.resolve());
+            durableConfigurationRecoverer.resolve(getType(), record.getId(), obj.resolve());
         }
         else
         {
-            durableConfigurationRecoverer.addUnresolvedObject(getType(), id, obj);
+            durableConfigurationRecoverer.addUnresolvedObject(getType(), record.getId(), obj);
         }
 
     }
 
-    public abstract UnresolvedObject<T> createUnresolvedObject(final UUID id,
-                                                    final String type,
-                                                    final Map<String, Object> attributes);
+    public abstract UnresolvedObject<T> createUnresolvedObject(final ConfiguredObjectRecord record);
 
 }
