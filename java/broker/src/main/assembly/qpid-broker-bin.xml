@@ -17,11 +17,10 @@
       <directoryMode>0755</directoryMode>
     </fileSet>
     <fileSet>
-      <directory>${project.build.directory}/generated-licenses/</directory>
+      <directory>${project.build.outputDirectory}/META-INF/</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
         <include>LICENSE</include>
-        <include>THIRDPARTY</include>
         <include>NOTICE</include>
         <include>README</include>
       </includes>
