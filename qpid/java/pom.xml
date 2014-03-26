@@ -51,14 +51,13 @@
     <java.target>1.6</java.target>
 
     <readme.text>Documentation for the Qpid components can be accessed on our website at:${line.separator}http://qpid.apache.org/documentation.html</readme.text>
-    <notice.text>Apache Qpid${line.separator}Copyright ${project.inceptionYear}-2014${line.separator}Apache Software Foundation${line.separator}This product includes software developed at Apache Software Foundation (http://www.apache.org/)</notice.text>
 
     <!-- enforcer plugin config properties -->
     <supported-test-profiles-regex>(java-mms.0-9|java-mms.0-9-1|java-mms.0-10|java-bdb.0-9|java-bdb.0-9-1|java-bdb.0-10|java-dby.0-9|java-dby.0-9-1|java-dby.0-10|java-dby-mem.0-9|java-dby-mem.0-9-1|java-dby-mem.0-10)</supported-test-profiles-regex>
 
     <!-- plugin properties-->
-    <license-maven-plugin-output-dir>${project.build.directory}/generated-licenses</license-maven-plugin-output-dir>
-    <skipLicensing>false</skipLicensing>
+    <license-maven-plugin-output-dir>${project.build.directory}/license-maven-plugin</license-maven-plugin-output-dir>
+    <third-party-license-info-file>${license-maven-plugin-output-dir}/THIRD_PARTY_LICENSE_INFO</third-party-license-info-file>
 
     <!-- test profile properties and defaults-->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
@@ -125,6 +124,7 @@
   </modules>
 
   <dependencies>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -168,19 +168,6 @@
             </configuration>
           </execution>
           <execution>
-            <id>generate-notice-and-readme</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <tasks>
-                <echo file="${license-maven-plugin-output-dir}/README" message="${readme.text}" />
-                <echo file="${license-maven-plugin-output-dir}/NOTICE" message="${notice.text}" />
-            </tasks>
-            </configuration>
-          </execution>
-          <execution>
              <id>create-qbtc-output-dir</id>
              <phase>pre-integration-test</phase>
              <goals>
@@ -191,6 +178,32 @@
                  <mkdir dir="${qpid.home.qbtc.output}"/>
                </target>
              </configuration>
+          </execution>
+          <execution>
+            <id>generate-qpid-packaging-artifacts</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <!--  Generate the Qpid README file -->
+                <echo file="${project.build.outputDirectory}/META-INF/README" message="${readme.text}" />
+                <!--  Take a copy of the maven dependencies file for processing -->
+                <copy file="${project.build.outputDirectory}/META-INF/DEPENDENCIES"
+                      tofile="${third-party-license-info-file}" failonerror="false"/>
+                <!--  Strip out the unwanted qpid specific dependency info -->
+                <replaceregexp file="${third-party-license-info-file}" flags="gm" replace="">
+                  <!-- Regex to remove the maven comments, the qpid project name & the qpid project dependencies -->
+                  <regexp id="stripqpidcontentregexp" pattern="(^\/\/\ .*\n|^Qpid\ .*\n|^.*\-.*Qpid.*\s.*Apache.*\.txt\)\n)"/>
+                </replaceregexp>
+                <!--  Append it to the end of the license file -->
+                <concat destfile="${project.build.outputDirectory}/META-INF/LICENSE" append="true">
+                    <header filtering="no">${line.separator}3RD PARTY DEPENDENCIES AND LICENSING</header>
+                    <path path="${third-party-license-info-file}"/>
+                </concat>
+              </target>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -286,19 +299,13 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>license-maven-plugin</artifactId>
         <configuration>
-          <skipUpdateProjectLicense>${skipLicensing}</skipUpdateProjectLicense>
-          <skipDownloadLicenses>${skipLicensing}</skipDownloadLicenses>
-          <skipAddThirdParty>${skipLicensing}</skipAddThirdParty>
-          <includedScopes>compile,system</includedScopes>
-          <licenseName>apache_v2</licenseName>
           <failIfWarning>true</failIfWarning>
-          <outputDirectory>${license-maven-plugin-output-dir}</outputDirectory>
-          <licenseFile>${license-maven-plugin-output-dir}/LICENSE</licenseFile>
-          <licensesOutputDirectory>${license-maven-plugin-output-dir}/licenses</licensesOutputDirectory>
-          <licensesOutputFile>${license-maven-plugin-output-dir}/licenses.xml</licensesOutputFile>
-          <thirdPartyFilename>THIRDPARTY</thirdPartyFilename>
+          <includedScopes>compile,system</includedScopes>
           <excludedGroups>org.apache.qpid</excludedGroups>
+          <outputDirectory>${license-maven-plugin-output-dir}</outputDirectory>
+          <thirdPartyFilename>THIRDPARTY</thirdPartyFilename>
           <fileTemplate>/org/codehaus/mojo/license/third-party-file-groupByLicense.ftl</fileTemplate>
+          <licensesOutputFile>${license-maven-plugin-output-dir}/licenses.xml</licensesOutputFile>
           <includedLicenses>
             <includedLicense>Apache Software License, Version 2.0</includedLicense>
             <includedLicense>The MIT License</includedLicense>
@@ -310,19 +317,16 @@
           <licenseMerges>
             <licenseMerge>Apache Software License, Version 2.0|The Apache Software License, Version 2.0|Apache Software License - Version 2.0|Apache v2|Apache 2</licenseMerge>
             <licenseMerge>The MIT License|MIT License</licenseMerge>
+            <licenseMerge>BSD License|New BSD</licenseMerge>
           </licenseMerges>
-          <useMissingFile>true</useMissingFile>
-          <useRepositoryMissingFiles>false</useRepositoryMissingFiles>
         </configuration>
         <executions>
           <execution>
-            <id>generate-license-files</id>
+            <id>check-third-party-licensing</id>
+            <phase>prepare-package</phase>
             <goals>
-              <goal>update-project-license</goal>
-              <goal>download-licenses</goal>
               <goal>add-third-party</goal>
             </goals>
-            <phase>generate-resources</phase>
           </execution>
         </executions>
       </plugin>
