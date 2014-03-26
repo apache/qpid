@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
@@ -37,7 +38,7 @@ public class BDBMessageStoreFactory implements MessageStoreFactory, DurableConfi
     @Override
     public String getType()
     {
-        return BDBMessageStore.TYPE;
+        return StandardEnvironmentFacade.TYPE;
     }
 
     @Override
@@ -71,7 +72,7 @@ public class BDBMessageStoreFactory implements MessageStoreFactory, DurableConfi
 
         if(initialSize != 0)
         {
-            return Collections.singletonMap("bdbEnvironmentConfig", (Object)attributes);
+            return Collections.singletonMap(BDBMessageStore.ENVIRONMENT_CONFIGURATION, (Object)attributes);
         }
         else
         {

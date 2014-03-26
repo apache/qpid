@@ -20,16 +20,13 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.server.model.VirtualHost;
 
-public class MessageStoreCreatorTest extends QpidTestCase
+public interface EnvironmentFacadeFactory
 {
-    public void testMessageStoreCreator()
-    {
-        MessageStoreCreator messageStoreCreator = new MessageStoreCreator();
-        String type = new BDBMessageStoreFactory().getType();
-        MessageStore store = messageStoreCreator.createMessageStore(type);
-        assertNotNull("Store of type " + type + " is not created", store);
-    }}
+
+    EnvironmentFacade createEnvironmentFacade(VirtualHost virtualHost, boolean isMessageStore);
+
+    String getType();
+
+}

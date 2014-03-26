@@ -21,12 +21,14 @@
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
 import com.sleepycat.je.Cursor;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.berkeleydb.AbstractBDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
@@ -39,6 +41,8 @@ import com.sleepycat.je.OperationStatus;
 
 public class Upgrader
 {
+    private static final Logger LOGGER = Logger.getLogger(Upgrader.class);
+
     static final String VERSION_DB_NAME = "DB_VERSION";
 
     private Environment _environment;
@@ -64,7 +68,8 @@ public class Upgrader
 
             if(versionDb.count() == 0L)
             {
-                int sourceVersion = isEmpty ? AbstractBDBMessageStore.VERSION: identifyOldStoreVersion();
+
+                int sourceVersion = isEmpty ? BDBMessageStore.VERSION: identifyOldStoreVersion();
                 DatabaseEntry key = new DatabaseEntry();
                 IntegerBinding.intToEntry(sourceVersion, key);
                 DatabaseEntry value = new DatabaseEntry();
@@ -74,11 +79,17 @@ public class Upgrader
             }
 
             int version = getSourceVersion(versionDb);
-            if(version > AbstractBDBMessageStore.VERSION)
+
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Source message store version is " + version);
+            }
+
+            if(version > BDBMessageStore.VERSION)
             {
                 throw new StoreException("Database version " + version
                                             + " is higher than the most recent known version: "
-                                            + AbstractBDBMessageStore.VERSION);
+                                            + BDBMessageStore.VERSION);
             }
             performUpgradeFromVersion(version, versionDb);
         }
@@ -125,8 +136,9 @@ public class Upgrader
     }
 
     void performUpgradeFromVersion(int sourceVersion, Database versionDb)
+            throws StoreException
     {
-        while(sourceVersion != AbstractBDBMessageStore.VERSION)
+        while(sourceVersion != BDBMessageStore.VERSION)
         {
             upgrade(sourceVersion, ++sourceVersion);
             DatabaseEntry key = new DatabaseEntry();
@@ -137,7 +149,7 @@ public class Upgrader
         }
     }
 
-    void upgrade(final int fromVersion, final int toVersion)
+    void upgrade(final int fromVersion, final int toVersion) throws StoreException
     {
         try
         {
@@ -178,7 +190,7 @@ public class Upgrader
 
     private int identifyOldStoreVersion() throws DatabaseException
     {
-        int version = 0;
+        int version = BDBMessageStore.VERSION;
         for (String databaseName : _environment.getDatabaseNames())
         {
             if (databaseName.contains("_v"))

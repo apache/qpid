@@ -20,16 +20,18 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.log4j.Logger;
 
-public class MessageStoreCreatorTest extends QpidTestCase
+import com.sleepycat.je.ExceptionEvent;
+import com.sleepycat.je.ExceptionListener;
+
+public class LoggingAsyncExceptionListener implements ExceptionListener
 {
-    public void testMessageStoreCreator()
+    private static final Logger LOGGER  = Logger.getLogger(LoggingAsyncExceptionListener.class);
+
+    @Override
+    public void exceptionThrown(ExceptionEvent event)
     {
-        MessageStoreCreator messageStoreCreator = new MessageStoreCreator();
-        String type = new BDBMessageStoreFactory().getType();
-        MessageStore store = messageStoreCreator.createMessageStore(type);
-        assertNotNull("Store of type " + type + " is not created", store);
-    }}
+        LOGGER.error("Asynchronous exception thrown by BDB thread '" + event.getThreadName() + "'", event.getException());
+    }
+}

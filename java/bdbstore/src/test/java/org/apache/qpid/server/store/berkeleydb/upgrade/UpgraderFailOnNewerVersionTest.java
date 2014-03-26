@@ -26,7 +26,7 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.OperationStatus;
-import org.apache.qpid.server.store.berkeleydb.AbstractBDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class UpgraderFailOnNewerVersionTest extends AbstractUpgradeTestCase
@@ -94,7 +94,7 @@ public class UpgraderFailOnNewerVersionTest extends AbstractUpgradeTestCase
         catch(ServerScopedRuntimeException ex)
         {
             assertEquals("Incorrect exception thrown", "Database version 999 is higher than the most recent known version: "
-                                                        + AbstractBDBMessageStore.VERSION, ex.getMessage());
+                                                        + BDBMessageStore.VERSION, ex.getMessage());
         }
     }
 
