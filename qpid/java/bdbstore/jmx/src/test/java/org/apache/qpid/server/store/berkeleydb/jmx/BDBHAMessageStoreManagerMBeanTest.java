@@ -37,10 +37,9 @@ import javax.management.openmbean.TabularData;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 {
@@ -53,7 +52,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     private static final String TEST_STORE_NAME = "testStoreName";
     private static final boolean TEST_DESIGNATED_PRIMARY_FLAG = false;
 
-    private BDBHAMessageStore _store;
+    private ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
     private BDBHAMessageStoreManagerMBean _mBean;
     private AMQManagedObject _mBeanParent;
 
@@ -62,10 +61,10 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     {
         super.setUp();
 
-        _store = mock(BDBHAMessageStore.class);
+        _replicatedEnvironmentFacade = mock(ReplicatedEnvironmentFacade.class);
         _mBeanParent = mock(AMQManagedObject.class);
         when(_mBeanParent.getRegistry()).thenReturn(mock(ManagedObjectRegistry.class));
-        _mBean = new BDBHAMessageStoreManagerMBean(_store, _mBeanParent);
+        _mBean = new BDBHAMessageStoreManagerMBean(TEST_STORE_NAME, _replicatedEnvironmentFacade, _mBeanParent);
     }
 
     @Override
@@ -76,64 +75,62 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testObjectName() throws Exception
     {
-        when(_store.getName()).thenReturn(TEST_STORE_NAME);
-
         String expectedObjectName = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(TEST_STORE_NAME);
         assertEquals(expectedObjectName, _mBean.getObjectName().toString());
     }
 
     public void testGroupName() throws Exception
     {
-        when(_store.getGroupName()).thenReturn(TEST_GROUP_NAME);
+        when(_replicatedEnvironmentFacade.getGroupName()).thenReturn(TEST_GROUP_NAME);
 
         assertEquals(TEST_GROUP_NAME, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_GROUP_NAME));
     }
 
     public void testNodeName() throws Exception
     {
-        when(_store.getNodeName()).thenReturn(TEST_NODE_NAME);
+        when(_replicatedEnvironmentFacade.getNodeName()).thenReturn(TEST_NODE_NAME);
 
         assertEquals(TEST_NODE_NAME, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_NAME));
     }
 
     public void testNodeHostPort() throws Exception
     {
-        when(_store.getNodeHostPort()).thenReturn(TEST_NODE_HOST_PORT);
+        when(_replicatedEnvironmentFacade.getHostPort()).thenReturn(TEST_NODE_HOST_PORT);
 
         assertEquals(TEST_NODE_HOST_PORT, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_HOST_PORT));
     }
 
     public void testHelperHostPort() throws Exception
     {
-        when(_store.getHelperHostPort()).thenReturn(TEST_HELPER_HOST_PORT);
+        when(_replicatedEnvironmentFacade.getHelperHostPort()).thenReturn(TEST_HELPER_HOST_PORT);
 
         assertEquals(TEST_HELPER_HOST_PORT, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_HELPER_HOST_PORT));
     }
 
     public void testDurability() throws Exception
     {
-        when(_store.getDurability()).thenReturn(TEST_DURABILITY);
+        when(_replicatedEnvironmentFacade.getDurability()).thenReturn(TEST_DURABILITY);
 
         assertEquals(TEST_DURABILITY, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_DURABILITY));
     }
 
     public void testCoalescingSync() throws Exception
     {
-        when(_store.isCoalescingSync()).thenReturn(true);
+        when(_replicatedEnvironmentFacade.isCoalescingSync()).thenReturn(true);
 
         assertEquals(true, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_COALESCING_SYNC));
     }
 
     public void testNodeState() throws Exception
     {
-        when(_store.getNodeState()).thenReturn(TEST_NODE_STATE);
+        when(_replicatedEnvironmentFacade.getNodeState()).thenReturn(TEST_NODE_STATE);
 
         assertEquals(TEST_NODE_STATE, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_STATE));
     }
 
     public void testDesignatedPrimaryFlag() throws Exception
     {
-        when(_store.isDesignatedPrimary()).thenReturn(TEST_DESIGNATED_PRIMARY_FLAG);
+        when(_replicatedEnvironmentFacade.isDesignatedPrimary()).thenReturn(TEST_DESIGNATED_PRIMARY_FLAG);
 
         assertEquals(TEST_DESIGNATED_PRIMARY_FLAG, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_DESIGNATED_PRIMARY));
     }
@@ -141,29 +138,29 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     public void testGroupMembersForGroupWithOneNode() throws Exception
     {
         List<Map<String, String>> members = Collections.singletonList(createTestNodeResult());
-        when(_store.getGroupMembers()).thenReturn(members);
+        when(_replicatedEnvironmentFacade.getGroupMembers()).thenReturn(members);
 
         final TabularData resultsTable = _mBean.getAllNodesInGroup();
 
-        assertTableHasHeadingsNamed(resultsTable, BDBHAMessageStore.GRP_MEM_COL_NODE_NAME, BDBHAMessageStore.GRP_MEM_COL_NODE_HOST_PORT);
+        assertTableHasHeadingsNamed(resultsTable, ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT);
 
         final int numberOfDataRows = resultsTable.size();
         assertEquals("Unexpected number of data rows", 1 ,numberOfDataRows);
         final CompositeData row = (CompositeData) resultsTable.values().iterator().next();
-        assertEquals(TEST_NODE_NAME, row.get(BDBHAMessageStore.GRP_MEM_COL_NODE_NAME));
-        assertEquals(TEST_NODE_HOST_PORT, row.get(BDBHAMessageStore.GRP_MEM_COL_NODE_HOST_PORT));
+        assertEquals(TEST_NODE_NAME, row.get(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME));
+        assertEquals(TEST_NODE_HOST_PORT, row.get(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT));
     }
 
     public void testRemoveNodeFromReplicationGroup() throws Exception
     {
         _mBean.removeNodeFromGroup(TEST_NODE_NAME);
 
-        verify(_store).removeNodeFromGroup(TEST_NODE_NAME);
+        verify(_replicatedEnvironmentFacade).removeNodeFromGroup(TEST_NODE_NAME);
     }
 
     public void testRemoveNodeFromReplicationGroupWithError() throws Exception
     {
-        doThrow(new StoreException("mocked exception")).when(_store).removeNodeFromGroup(TEST_NODE_NAME);
+        doThrow(new RuntimeException("mocked exception")).when(_replicatedEnvironmentFacade).removeNodeFromGroup(TEST_NODE_NAME);
 
         try
         {
@@ -180,12 +177,12 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     {
         _mBean.setDesignatedPrimary(true);
 
-        verify(_store).setDesignatedPrimary(true);
+        verify(_replicatedEnvironmentFacade).setDesignatedPrimary(true);
     }
 
     public void testSetAsDesignatedPrimaryWithError() throws Exception
     {
-        doThrow(new StoreException("mocked exception")).when(_store).setDesignatedPrimary(true);
+        doThrow(new RuntimeException("mocked exception")).when(_replicatedEnvironmentFacade).setDesignatedPrimary(true);
 
         try
         {
@@ -205,7 +202,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
         _mBean.updateAddress(TEST_NODE_NAME, newHostName, newPort);
 
-        verify(_store).updateAddress(TEST_NODE_NAME, newHostName, newPort);
+        verify(_replicatedEnvironmentFacade).updateAddress(TEST_NODE_NAME, newHostName, newPort);
     }
 
     private void assertTableHasHeadingsNamed(final TabularData resultsTable, String... headingNames)
@@ -220,8 +217,8 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     private Map<String, String> createTestNodeResult()
     {
         Map<String, String> items = new HashMap<String, String>();
-        items.put(BDBHAMessageStore.GRP_MEM_COL_NODE_NAME, TEST_NODE_NAME);
-        items.put(BDBHAMessageStore.GRP_MEM_COL_NODE_HOST_PORT, TEST_NODE_HOST_PORT);
+        items.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, TEST_NODE_NAME);
+        items.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT, TEST_NODE_HOST_PORT);
         return items;
     }
 }

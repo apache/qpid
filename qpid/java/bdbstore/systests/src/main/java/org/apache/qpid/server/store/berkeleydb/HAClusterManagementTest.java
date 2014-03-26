@@ -38,6 +38,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -143,7 +144,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
 
             CompositeData row = groupMembers.get(new Object[] {nodeName});
             assertNotNull("Table does not contain row for node name " + nodeName, row);
-            assertEquals(nodeHostPort, row.get(BDBHAMessageStore.GRP_MEM_COL_NODE_HOST_PORT));
+            assertEquals(nodeHostPort, row.get(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT));
         }
     }
 

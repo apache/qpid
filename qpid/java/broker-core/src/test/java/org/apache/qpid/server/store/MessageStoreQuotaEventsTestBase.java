@@ -29,6 +29,7 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -71,7 +72,10 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
         _store = createStore();
         ((DurableConfigurationStore)_store).configureConfigStore(vhost, null);
-        _store.configureMessageStore(vhost, mock(MessageStoreRecoveryHandler.class), null);
+        MessageStoreRecoveryHandler recoveryHandler = mock(MessageStoreRecoveryHandler.class);
+        when(recoveryHandler.begin()).thenReturn(mock(StoredMessageRecoveryHandler.class));
+        _store.configureMessageStore(vhost, recoveryHandler, null);
+        _store.activate();
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();

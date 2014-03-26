@@ -28,11 +28,12 @@ import org.apache.qpid.server.jmx.MBeanProvider;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
 /**
  * This provide will create a {@link BDBHAMessageStoreManagerMBean} if the child is a virtual
- * host and of type {@link BDBHAMessageStore#TYPE}.
+ * host and of type {@link ReplicatedEnvironmentFacade#TYPE}.
  *
  */
 public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
@@ -48,7 +49,7 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
     public boolean isChildManageableByMBean(ConfiguredObject child)
     {
         return (child instanceof VirtualHost
-            && BDBHAMessageStore.TYPE.equals(child.getAttribute(VirtualHost.STORE_TYPE)));
+            && ReplicatedEnvironmentFacade.TYPE.equals(child.getAttribute(VirtualHost.STORE_TYPE)));
     }
 
     @Override
@@ -56,14 +57,15 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
     {
         VirtualHost virtualHostChild = (VirtualHost) child;
 
-        BDBHAMessageStore messageStore = (BDBHAMessageStore) virtualHostChild.getMessageStore();
+        BDBMessageStore messageStore = (BDBMessageStore) virtualHostChild.getMessageStore();
 
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Creating mBean for child " + child);
         }
 
-        return new BDBHAMessageStoreManagerMBean(messageStore, (ManagedObject) parent);
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = (ReplicatedEnvironmentFacade)messageStore.getEnvironmentFacade();
+        return new BDBHAMessageStoreManagerMBean(virtualHostChild.getName(), replicatedEnvironmentFacade, (ManagedObject) parent);
     }
 
     @Override

@@ -20,6 +20,7 @@ package org.apache.qpid.server.store.berkeleydb;
  *
  */
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
@@ -31,15 +32,22 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.OperationalLoggingListener;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.DefaultUpgraderProvider;
 import org.apache.qpid.server.virtualhost.State;
 import org.apache.qpid.server.virtualhost.VirtualHostConfigRecoveryHandler;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
+import com.sleepycat.je.rep.StateChangeEvent;
+import com.sleepycat.je.rep.StateChangeListener;
+
 public class BDBHAVirtualHost extends AbstractVirtualHost
 {
-    private BDBHAMessageStore _messageStore;
+    private static final Logger LOGGER = Logger.getLogger(BDBHAVirtualHost.class);
+
+    private BDBMessageStore _messageStore;
 
     private boolean _inVhostInitiatedClose;
 
@@ -52,11 +60,9 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
     }
 
-
-
     protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
     {
-        _messageStore = new BDBHAMessageStore();
+        _messageStore = new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
 
         final MessageStoreLogSubject storeLogSubject =
                 new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
@@ -84,6 +90,11 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
                 virtualHost, recoveryHandler,
                 recoveryHandler
         );
+
+        // Make the virtualhost model object a replication group listener
+        ReplicatedEnvironmentFacade environmentFacade = (ReplicatedEnvironmentFacade) _messageStore.getEnvironmentFacade();
+        environmentFacade.setStateChangeListener(new BDBHAMessageStoreStateChangeListener());
+
     }
 
 
@@ -192,6 +203,72 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
             }
 
         }
+    }
+
+    private class BDBHAMessageStoreStateChangeListener implements StateChangeListener
+    {
+
+        @Override
+        public void stateChange(StateChangeEvent stateChangeEvent) throws RuntimeException
+        {
+            com.sleepycat.je.rep.ReplicatedEnvironment.State state = stateChangeEvent.getState();
+
+            if (LOGGER.isInfoEnabled())
+            {
+                LOGGER.info("Received BDB event indicating transition to state " + state
+                        + " when current message store state is " + _messageStore._stateManager.getState());
+            }
+
+            switch (state)
+            {
+            case MASTER:
+                activate();
+                break;
+            case REPLICA:
+                passivate();
+                break;
+            case DETACHED:
+                LOGGER.error("BDB replicated node in detached state, therefore passivating.");
+                passivate();
+                break;
+            case UNKNOWN:
+                LOGGER.warn("BDB replicated node in unknown state (hopefully temporarily)");
+                break;
+            default:
+                LOGGER.error("Unexpected state change: " + state);
+                throw new IllegalStateException("Unexpected state change: " + state);
+            }
+        }
+
+        private void activate()
+        {
+            try
+            {
+                _messageStore.getEnvironmentFacade().getEnvironment().flushLog(true);
+                _messageStore.activate();
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Failed to activate on hearing MASTER change event", e);
+            }
+        }
+
+        private void passivate()
+        {
+            try
+            {
+                //TODO: move this this into the store method passivate()
+                if (_messageStore._stateManager.isNotInState(org.apache.qpid.server.store.State.INITIALISED))
+                {
+                    _messageStore._stateManager.attainState(org.apache.qpid.server.store.State.INITIALISED);
+                }
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Failed to passivate on hearing REPLICA or DETACHED change event", e);
+            }
+        }
+
     }
 
 }
