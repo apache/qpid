@@ -21,7 +21,7 @@ include(FindPackageHandleStandardArgs)
 include(FindPackageMessage)
 
 # First try to find the Installed Proton config (Proton 0.7 and later)
-find_package(Proton CONFIG QUIET)
+find_package(Proton QUIET NO_MODULE)
 if (Proton_FOUND)
     find_package_message(Proton "Found Proton: ${Proton_LIBRARIES} (found version \"${Proton_VERSION}\")" "$Proton_DIR ${Proton_LIBRARIES} $Proton_VERSION")
     return()
@@ -29,7 +29,7 @@ endif ()
 
 # Now look for the cooky Proton config installed with some earlier
 # versions of Proton
-find_package(proton CONFIG QUIET)
+find_package(proton QUIET NO_MODULE)
 if (proton_FOUND)
     include("${proton_DIR}/libqpid-proton.cmake")
     set (Proton_VERSION ${PROTON_VERSION})
@@ -44,12 +44,17 @@ endif ()
 find_package(PkgConfig QUIET)
 
 if (PKG_CONFIG_FOUND)
+    # Check for cmake 2.6
+    if (NOT ${CMAKE_VERSION} VERSION_LESS "2.8.0")
+        set (FindPkgQUIET QUIET)
+    endif()
+
     if (NOT Proton_FIND_VERSION)
-        pkg_check_modules(Proton libqpid-proton QUIET)
+        pkg_check_modules(Proton ${FindPkgQUIET} libqpid-proton)
     elseif(NOT Proton_FIND_VERSION_EXACT)
-        pkg_check_modules(Proton libqpid-proton>=${Proton_FIND_VERSION} QUIET)
+        pkg_check_modules(Proton ${FindPkgQUIET} libqpid-proton>=${Proton_FIND_VERSION})
     else()
-        pkg_check_modules(Proton libqpid-proton=${Proton_FIND_VERSION} QUIET)
+        pkg_check_modules(Proton ${FindPkgQUIET} libqpid-proton=${Proton_FIND_VERSION})
     endif()
     if (Proton_FOUND)
         find_package_message(Proton "Found Proton: ${Proton_LIBRARIES} (found version \"${Proton_VERSION}\")" "$Proton_DIR ${Proton_LIBRARIES} $Proton_VERSION")
@@ -58,4 +63,6 @@ if (PKG_CONFIG_FOUND)
 endif()
 
 # Proton not found print a standard error message
-find_package_handle_standard_args(Proton CONFIG_MODE)
+if (NOT ${CMAKE_VERSION} VERSION_LESS "2.8.0")
+    find_package_handle_standard_args(Proton CONFIG_MODE)
+endif()
