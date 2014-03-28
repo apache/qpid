@@ -53,7 +53,7 @@
     <readme.text>Documentation for the Qpid components can be accessed on our website at:${line.separator}http://qpid.apache.org/documentation.html</readme.text>
 
     <!-- enforcer plugin config properties -->
-    <supported-test-profiles-regex>(java-mms.0-9|java-mms.0-9-1|java-mms.0-10|java-bdb.0-9|java-bdb.0-9-1|java-bdb.0-10|java-dby.0-9|java-dby.0-9-1|java-dby.0-10|java-dby-mem.0-9|java-dby-mem.0-9-1|java-dby-mem.0-10)</supported-test-profiles-regex>
+    <supported-test-profiles-regex>(java-mms.0-9|java-mms.0-9-1|java-mms.0-10|java-bdb.0-9|java-bdb.0-9-1|java-bdb.0-10|java-dby.0-9|java-dby.0-9-1|java-dby.0-10|java-dby-mem.0-9|java-dby-mem.0-9-1|java-dby-mem.0-10|cpp)</supported-test-profiles-regex>
 
     <!-- plugin properties-->
     <license-maven-plugin-output-dir>${project.build.directory}/license-maven-plugin</license-maven-plugin-output-dir>
@@ -653,6 +653,54 @@
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.messagestore.class.name>org.apache.qpid.server.store.derby.DerbyMessageStore</profile.messagestore.class.name>
       </properties>
+    </profile>
+
+    <profile>
+      <id>cpp</id>
+      <activation>
+        <property>
+          <name>profile</name>
+          <value>cpp</value>
+        </property>
+      </activation>
+      <properties>
+        <profile>cpp</profile>
+        <profile.broker.language>cpp</profile.broker.language>
+        <profile.broker.type>spawned</profile.broker.type>
+        <profile.broker.stopped>Exception constructed</profile.broker.stopped>
+        <profile.broker.ready>Listening on TCP</profile.broker.ready>
+        <profile.broker.command>${cpp-broker-dir}/qpidd -p @PORT --data-dir ${qpid.work}/@PORT -t --auth no --no-module-dir</profile.broker.command>
+        <profile.broker.command.windows></profile.broker.command.windows>
+        <profile.test.excludes>Excludes CPPExcludes ${profile}.excludes ${profile.specific.excludes} cpp.excludes</profile.test.excludes>
+        <profile.specific.excludes>CPPPrefetchExcludes CPPTransientExcludes</profile.specific.excludes>
+        <profile.broker.version>v0_10</profile.broker.version>
+        <profile.broker.persistent>true</profile.broker.persistent>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-cpp-broker-dir-defined</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireProperty>
+                      <property>cpp-broker-dir</property>
+                      <message>You must set a the CPP broker directory property for this profile. (e.g. -Dcpp-broker-dir=/somedir/cpp/src)</message>
+                    </requireProperty>
+                  </rules>
+                  <fail>true</fail>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
 
   </profiles>
