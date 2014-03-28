@@ -57,7 +57,7 @@ public class AMQQueueFactory implements QueueFactory
     {
         _virtualHost = virtualHost;
         _queueRegistry = queueRegistry;
-    }   
+    }
 
     @Override
     public AMQQueue restoreQueue(Map<String, Object> attributes)
@@ -75,7 +75,7 @@ public class AMQQueueFactory implements QueueFactory
     private AMQQueue createOrRestoreQueue(Map<String, Object> attributes, boolean createInStore)
     {
         String queueName = MapValueConverter.getStringAttribute(Queue.NAME,attributes);
-        boolean createDLQ = shouldCreateDLQ(attributes, _virtualHost.getDefaultDeadLetterQueueEnabled());
+        boolean createDLQ = createInStore && shouldCreateDLQ(attributes, _virtualHost.getDefaultDeadLetterQueueEnabled());
         if (createDLQ)
         {
             validateDLNames(queueName);

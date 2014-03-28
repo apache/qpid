@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.model.ConfiguredObject;
 
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
 abstract public class AbstractMemoryMessageStore extends NullMessageStore
@@ -70,39 +68,8 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
         }
     };
 
-    private final StateManager _stateManager;
     private final EventManager _eventManager = new EventManager();
 
-    public AbstractMemoryMessageStore()
-    {
-        _stateManager = new StateManager(_eventManager);
-    }
-
-    @Override
-    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
-    {
-    }
-
-    @Override
-    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
-    {
-
-    }
-
-    @Override
-    public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings)
-    {
-        _stateManager.attainState(State.INITIALISING);
-        _stateManager.attainState(State.INITIALISED);
-    }
-
-    @Override
-    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
-    {
-        _stateManager.attainState(State.ACTIVATING);
-
-        _stateManager.attainState(State.ACTIVE);
-    }
 
     @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
@@ -123,13 +90,6 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     public boolean isPersistent()
     {
         return false;
-    }
-
-    @Override
-    public void closeMessageStore()
-    {
-        _stateManager.attainState(State.CLOSING);
-        _stateManager.attainState(State.CLOSED);
     }
 
     @Override

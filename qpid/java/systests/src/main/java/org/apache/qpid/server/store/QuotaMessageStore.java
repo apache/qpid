@@ -21,43 +21,27 @@
 package org.apache.qpid.server.store;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.server.model.ConfiguredObject;
 
-public class
-        QuotaMessageStore extends NullMessageStore
+public class QuotaMessageStore extends NullMessageStore
 {
     public static final String TYPE = "QuotaMessageStore";
     private final AtomicLong _messageId = new AtomicLong(1);
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     private long _totalStoreSize;;
     private boolean _limitBusted;
     private long _persistentSizeLowThreshold;
     private long _persistentSizeHighThreshold;
 
-    private final StateManager _stateManager;
     private final EventManager _eventManager = new EventManager();
 
-    public QuotaMessageStore()
-    {
-        _stateManager = new StateManager(_eventManager);
-    }
-
-    @Override
-    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
-    {
-
-    }
 
     @Override
     public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings)
     {
-        _stateManager.attainState(State.INITIALISING);
         Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
         _persistentSizeHighThreshold = overfullAttr == null
                                        ? Long.MAX_VALUE
@@ -78,15 +62,8 @@ public class
         {
             _persistentSizeLowThreshold = _persistentSizeHighThreshold;
         }
-        _stateManager.attainState(State.INITIALISED);
     }
 
-    @Override
-    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
-    {
-        _stateManager.attainState(State.ACTIVATING);
-        _stateManager.attainState(State.ACTIVE);
-    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -152,16 +129,6 @@ public class
     }
 
     @Override
-    public void closeMessageStore()
-    {
-        if (_closed.compareAndSet(false, true))
-        {
-            _stateManager.attainState(State.CLOSING);
-            _stateManager.attainState(State.CLOSED);
-        }
-    }
-
-    @Override
     public void addEventListener(EventListener eventListener, Event... events)
     {
         _eventManager.addEventListener(eventListener, events);
@@ -191,6 +158,6 @@ public class
     @Override
     public String getStoreType()
     {
-        return "QUOTA";
+        return TYPE;
     }
 }

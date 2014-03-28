@@ -32,7 +32,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -45,7 +44,10 @@ import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
+import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
+import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
@@ -120,7 +122,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     private final EventLogger _eventLogger;
 
-
     public AbstractVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                StatisticsGatherer brokerStatisticsGatherer,
                                SecurityManager parentSecurityManager,
@@ -174,6 +175,8 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     }
 
     abstract protected void initialiseStorage(org.apache.qpid.server.model.VirtualHost<?> virtualHost);
+
+    abstract protected MessageStoreLogSubject getMessageStoreLogSubject();
 
     public IConnectionRegistry getConnectionRegistry()
     {
@@ -283,8 +286,6 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
 
     protected void initialiseModel()
     {
-        _logger.debug("Loading configuration for virtualhost: " + _model.getName());
-
         _exchangeRegistry.initialise(_exchangeFactory);
     }
 
@@ -568,17 +569,15 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         _eventLogger.message(VirtualHostMessages.CLOSED(getName()));
     }
 
-    protected void closeStorage()
+    private void closeStorage()
     {
-        //Close MessageStore
         if (getMessageStore() != null)
         {
-            // TODO Remove MessageStore Interface should not throw Exception
             try
             {
                 getMessageStore().closeMessageStore();
             }
-            catch (Exception e)
+            catch (StoreException e)
             {
                 _logger.error("Failed to close message store", e);
             }
@@ -588,21 +587,24 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
             try
             {
                 getDurableConfigurationStore().closeConfigurationStore();
+                MessageStoreLogSubject configurationStoreSubject = getConfigurationStoreLogSubject();
+                if (configurationStoreSubject != null)
+                {
+                    getEventLogger().message(configurationStoreSubject, ConfigStoreMessages.CLOSE());
+                }
             }
             catch (StoreException e)
             {
                 _logger.error("Failed to close configuration store", e);
             }
         }
+        getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CLOSED());
     }
 
-
-    protected Logger getLogger()
+    protected MessageStoreLogSubject getConfigurationStoreLogSubject()
     {
-        return _logger;
+        return null;
     }
-
-
 
     public VirtualHostRegistry getVirtualHostRegistry()
     {
@@ -739,9 +741,11 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
         {
             case PERSISTENT_MESSAGE_SIZE_OVERFULL:
                 block();
+                _eventLogger.message(getMessageStoreLogSubject(), MessageStoreMessages.OVERFULL());
                 break;
             case PERSISTENT_MESSAGE_SIZE_UNDERFULL:
                 unblock();
+                _eventLogger.message(getMessageStoreLogSubject(), MessageStoreMessages.UNDERFULL());
                 break;
         }
     }
@@ -952,4 +956,5 @@ public abstract class AbstractVirtualHost implements VirtualHost, IConnectionReg
     {
         return _model;
     }
+
 }

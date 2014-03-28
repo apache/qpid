@@ -72,6 +72,7 @@ public interface MessageStore
 
     String getStoreLocation();
 
+    // TODO dead method - remove??
     String getStoreType();
 
     void onDelete();

@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
-import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.FileUtils;
@@ -168,16 +167,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         //FIXME this the _vhost name should not be added here, but derby wont use an empty directory as was possibly just created.
         _connectionURL = "jdbc:derby" + (databasePath.equals(MEMORY_STORE_LOCATION) ? databasePath: ":" + databasePath+ "/") + name + ";create=true";
 
-
-
-        _eventManager.addEventListener(new EventListener()
-                                        {
-                                            @Override
-                                            public void event(Event event)
-                                            {
-                                                setInitialSize();
-                                            }
-                                        }, Event.BEFORE_ACTIVATE);
+        setInitialSize();
 
     }
 

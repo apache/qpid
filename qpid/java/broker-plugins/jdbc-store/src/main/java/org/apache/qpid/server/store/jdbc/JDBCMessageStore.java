@@ -289,12 +289,12 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     protected void implementationSpecificConfiguration(String name, Map<String, Object> storeSettings)
         throws ClassNotFoundException, SQLException
     {
-        String connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
+        _connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
         Object poolAttribute = storeSettings.get(CONNECTION_POOL);
 
         JDBCDetails details = null;
 
-        String[] components = connectionURL.split(":",3);
+        String[] components = _connectionURL.split(":",3);
         if(components.length >= 2)
         {
             String vendor = components[1];
@@ -303,7 +303,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
         if(details == null)
         {
-            getLogger().info("Do not recognize vendor from connection URL: " + connectionURL);
+            getLogger().info("Do not recognize vendor from connection URL: " + _connectionURL);
 
             // TODO - is there a better default than derby
             details = DERBY_DETAILS;
@@ -319,7 +319,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             connectionProviderFactory = new DefaultConnectionProviderFactory();
         }
 
-        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, storeSettings);
+        _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL, storeSettings);
         _blobType = MapValueConverter.getStringAttribute(JDBC_BLOB_TYPE, storeSettings, details.getBlobType());
         _varBinaryType = MapValueConverter.getStringAttribute(JDBC_VARBINARY_TYPE, storeSettings, details.getVarBinaryType());
         _useBytesMethodsForBlob = MapValueConverter.getBooleanAttribute(JDBC_BYTES_FOR_BLOB, storeSettings, details.isUseBytesMethodsForBlob());
@@ -334,7 +334,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     @Override
     public String getStoreLocation()
     {
-        return "";
+        return _connectionURL;
     }
 
     @Override
