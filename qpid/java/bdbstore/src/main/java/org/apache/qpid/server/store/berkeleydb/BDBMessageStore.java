@@ -56,6 +56,7 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory.EnvironmentFacadeTask;
 import org.apache.qpid.server.store.berkeleydb.entry.HierarchyKey;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
@@ -69,6 +70,7 @@ import org.apache.qpid.server.store.berkeleydb.tuple.QueueEntryBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.util.FileUtils;
 
 import com.sleepycat.bind.tuple.ByteBinding;
@@ -152,39 +154,43 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
         {
             if (_environmentFacade == null)
             {
-                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(virtualHostName, storeSettings);
+                String[] databaseNames = null;
+                if (MapValueConverter.getBooleanAttribute(IS_MESSAGE_STORE_TOO, storeSettings, false))
+                {
+                    databaseNames = new String[CONFIGURATION_STORE_DATABASE_NAMES.length + MESSAGE_STORE_DATABASE_NAMES.length];
+                    System.arraycopy(CONFIGURATION_STORE_DATABASE_NAMES, 0, databaseNames, 0, CONFIGURATION_STORE_DATABASE_NAMES.length);
+                    System.arraycopy(MESSAGE_STORE_DATABASE_NAMES, 0, databaseNames, CONFIGURATION_STORE_DATABASE_NAMES.length, MESSAGE_STORE_DATABASE_NAMES.length);
+                }
+                else
+                {
+                    databaseNames = CONFIGURATION_STORE_DATABASE_NAMES;
+                }
+                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(storeSettings, new UpgradeTask(parent), new OpenDatabasesTask(databaseNames));
+            }
+            else
+            {
+                throw new IllegalStateException("The database have been already opened as message store");
             }
         }
     }
 
     @Override
-    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
     {
         checkConfigurationStoreOpen();
 
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        dbConfig.setAllowCreate(true);
-        try
-        {
-            new Upgrader(_environmentFacade.getEnvironment(), parent).upgradeIfNecessary();
-            _environmentFacade.openDatabases(dbConfig, CONFIGURATION_STORE_DATABASE_NAMES);
-        }
-        catch(DatabaseException e)
-        {
-            throw _environmentFacade.handleDatabaseException("Cannot configure store", e);
-        }
+
         recoverConfig(recoveryHandler);
     }
 
     @Override
-    public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings) throws StoreException
+    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings) throws StoreException
     {
         if (_messageStoreOpen.compareAndSet(false, true))
         {
@@ -204,33 +210,18 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
             if (_environmentFacade == null)
             {
-                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(virtualHostName, messageStoreSettings);
+                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(messageStoreSettings, new UpgradeTask(parent), new OpenDatabasesTask(MESSAGE_STORE_DATABASE_NAMES), new DiskSpaceTask());
             }
 
-            _committer = _environmentFacade.createCommitter(virtualHostName);
+            _committer = _environmentFacade.createCommitter(parent.getName());
             _committer.start();
-
         }
     }
 
     @Override
-    public synchronized void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler) throws StoreException
+    public synchronized void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler) throws StoreException
     {
         checkMessageStoreOpen();
-
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        dbConfig.setAllowCreate(true);
-        try
-        {
-            new Upgrader(_environmentFacade.getEnvironment(), parent).upgradeIfNecessary();
-            _environmentFacade.openDatabases(dbConfig, MESSAGE_STORE_DATABASE_NAMES);
-            _totalStoreSize = getSizeOnDisk();
-        }
-        catch(DatabaseException e)
-        {
-            throw _environmentFacade.handleDatabaseException("Cannot upgrade message store or open datatbases", e);
-        }
 
         if(messageRecoveryHandler != null)
         {
@@ -1843,4 +1834,72 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         return _environmentFacade.getOpenDatabase(XID_DB_NAME);
     }
 
+    class UpgradeTask implements EnvironmentFacadeTask
+    {
+
+        private ConfiguredObject<?> _parent;
+
+        public UpgradeTask(ConfiguredObject<?> parent)
+        {
+            _parent = parent;
+        }
+
+        @Override
+        public void execute(EnvironmentFacade facade)
+        {
+            try
+            {
+                new Upgrader(facade.getEnvironment(), _parent).upgradeIfNecessary();
+            }
+            catch(DatabaseException e)
+            {
+                throw facade.handleDatabaseException("Cannot upgrade store", e);
+            }
+        }
+    }
+
+    class OpenDatabasesTask implements EnvironmentFacadeTask
+    {
+        private String[] _names;
+
+        public OpenDatabasesTask(String[] names)
+        {
+            _names = names;
+        }
+
+        @Override
+        public void execute(EnvironmentFacade facade)
+        {
+            try
+            {
+                DatabaseConfig dbConfig = new DatabaseConfig();
+                dbConfig.setTransactional(true);
+                dbConfig.setAllowCreate(true);
+                facade.openDatabases(dbConfig, _names);
+            }
+            catch(DatabaseException e)
+            {
+                throw facade.handleDatabaseException("Cannot open databases", e);
+            }
+        }
+
+    }
+
+    class DiskSpaceTask implements EnvironmentFacadeTask
+    {
+
+        @Override
+        public void execute(EnvironmentFacade facade)
+        {
+            try
+            {
+                _totalStoreSize = facade.getEnvironment().getStats(null).getTotalLogSize();
+            }
+            catch(DatabaseException e)
+            {
+                throw facade.handleDatabaseException("Cannot evaluate disk store size", e);
+            }
+        }
+
+    }
 }

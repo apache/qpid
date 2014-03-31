@@ -47,7 +47,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
     private static final boolean DEFAULT_COALESCING_SYNC = true;
 
     @Override
-    public EnvironmentFacade createEnvironmentFacade(String virtualHostName, final Map<String, Object> messageStoreSettings)
+    public EnvironmentFacade createEnvironmentFacade(final Map<String, Object> messageStoreSettings, EnvironmentFacadeTask... initialisationTasks)
     {
         ReplicatedEnvironmentConfiguration configuration = new ReplicatedEnvironmentConfiguration()
         {
@@ -126,7 +126,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
                 return durability == null ? DEFAULT_DURABILITY.toString() : durability;
             }
         };
-        return new ReplicatedEnvironmentFacade(configuration);
+        return new ReplicatedEnvironmentFacade(configuration, initialisationTasks);
 
     }
 

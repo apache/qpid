@@ -46,10 +46,14 @@ public abstract class MessageStoreTestCase extends QpidTestCase
 
     private MessageStore _store;
     private Map<String, Object> _storeSettings;
+    private ConfiguredObject<?> _parent;
 
     public void setUp() throws Exception
     {
         super.setUp();
+
+        _parent = mock(ConfiguredObject.class);
+        when(_parent.getName()).thenReturn("test");
 
         _storedMessageRecoveryHandler = mock(StoredMessageRecoveryHandler.class);
         _logRecoveryHandler = mock(TransactionLogRecoveryHandler.class);
@@ -65,8 +69,8 @@ public abstract class MessageStoreTestCase extends QpidTestCase
 
         _store = createMessageStore();
 
-        _store.openMessageStore("test", _storeSettings);
-        _store.recoverMessageStore(mock(ConfiguredObject.class), _messageStoreRecoveryHandler, _logRecoveryHandler);
+        _store.openMessageStore(_parent, _storeSettings);
+        _store.recoverMessageStore(_messageStoreRecoveryHandler, _logRecoveryHandler);
     }
 
     protected abstract Map<String, Object> getStoreSettings() throws Exception;
@@ -106,8 +110,8 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         _store.closeMessageStore();
 
         _store = createMessageStore();
-        _store.openMessageStore("test", _storeSettings);
-        _store.recoverMessageStore(mock(ConfiguredObject.class), _messageStoreRecoveryHandler, _logRecoveryHandler);
+        _store.openMessageStore(_parent, _storeSettings);
+        _store.recoverMessageStore(_messageStoreRecoveryHandler, _logRecoveryHandler);
     }
     private Record getTestRecord(long messageNumber)
     {

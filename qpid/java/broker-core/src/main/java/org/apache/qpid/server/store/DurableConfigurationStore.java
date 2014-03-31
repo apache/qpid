@@ -29,6 +29,8 @@ public interface DurableConfigurationStore
 {
     String STORE_TYPE                    = "storeType";
     String STORE_PATH                    = "storePath";
+    String IS_MESSAGE_STORE_TOO          = "isMessageStoreToo";
+
 
     public static interface Source
     {
@@ -38,17 +40,16 @@ public interface DurableConfigurationStore
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
-     * @param virtualHostName host name
+     * @param parent host name
      * @param storeSettings store settings
      */
-    void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings) throws StoreException;
+    void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings) throws StoreException;
 
     /**
      * Recovers configuration from the store using given recovery handler
-     * @param parent parent 
      * @param recoveryHandler recovery handler
      */
-    void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler) throws StoreException;
+    void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler) throws StoreException;
 
     /**
      * Makes the specified object persistent.
@@ -81,6 +82,6 @@ public interface DurableConfigurationStore
      */
     void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
 
-
     void closeConfigurationStore() throws StoreException;
+
 }

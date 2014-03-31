@@ -1,4 +1,3 @@
-package org.apache.qpid.server.store.berkeleydb;
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,7 +18,9 @@ package org.apache.qpid.server.store.berkeleydb;
  * under the License.
  *
  */
+package org.apache.qpid.server.store.berkeleydb;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -65,10 +66,11 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         _messageStore = new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
         getEventLogger().message(_messageStoreLogSubject, MessageStoreMessages.CREATED());
 
-        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>(virtualHost.getMessageStoreSettings());
+        messageStoreSettings.put(DurableConfigurationStore.IS_MESSAGE_STORE_TOO, true);
 
-        _messageStore.openConfigurationStore(virtualHost.getName(), messageStoreSettings);
-        _messageStore.openMessageStore(virtualHost.getName(), messageStoreSettings);
+        _messageStore.openConfigurationStore(virtualHost, messageStoreSettings);
+        _messageStore.openMessageStore(virtualHost, messageStoreSettings);
 
         getEventLogger().message(_messageStoreLogSubject, MessageStoreMessages.STORE_LOCATION(_messageStore.getStoreLocation()));
 
@@ -96,15 +98,17 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         {
             _messageStore.getEnvironmentFacade().getEnvironment().flushLog(true);
 
+            DefaultUpgraderProvider upgraderProvider = new DefaultUpgraderProvider(this);
+
             DurableConfigurationRecoverer configRecoverer =
                     new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
-                                                      new DefaultUpgraderProvider(BDBHAVirtualHost.this, getExchangeRegistry()), getEventLogger());
-            _messageStore.recoverConfigurationStore(getModel(), configRecoverer);
+                            upgraderProvider, getEventLogger());
+            _messageStore.recoverConfigurationStore(configRecoverer);
 
             initialiseModel();
 
             VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(BDBHAVirtualHost.this, getMessageStoreLogSubject());
-            _messageStore.recoverMessageStore(getModel(), recoveryHandler, recoveryHandler);
+            _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
 
             attainActivation();
         }

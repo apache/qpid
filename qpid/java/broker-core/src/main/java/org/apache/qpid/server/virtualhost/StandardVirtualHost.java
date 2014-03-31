@@ -1,4 +1,4 @@
-package org.apache.qpid.server.virtualhost;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,9 @@ package org.apache.qpid.server.virtualhost;/*
  * under the License.
  *
  */
+package org.apache.qpid.server.virtualhost;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -27,6 +29,7 @@ import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreCreator;
@@ -83,18 +86,21 @@ public class StandardVirtualHost extends AbstractVirtualHost
         String configurationStoreType = configurationStoreSettings == null ? null : (String) configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE);
         _durableConfigurationStore = initialiseConfigurationStore(configurationStoreType);
         boolean combinedStores = _durableConfigurationStore == _messageStore;
+        if (combinedStores)
+        {
+            configurationStoreSettings = new HashMap<String,Object>(messageStoreSettings);
+            configurationStoreSettings.put(DurableConfigurationStore.IS_MESSAGE_STORE_TOO, true);
+        }
+
         if (!combinedStores)
         {
             _configurationStoreLogSubject = new MessageStoreLogSubject(getName(), _durableConfigurationStore.getClass().getSimpleName());
             getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.CREATED());
         }
 
-        DurableConfigurationRecoverer configRecoverer =
-                new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
-                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()), getEventLogger());
-        _durableConfigurationStore.openConfigurationStore(virtualHost.getName(), combinedStores ? messageStoreSettings: configurationStoreSettings);
+        _durableConfigurationStore.openConfigurationStore(virtualHost, configurationStoreSettings);
 
-        _messageStore.openMessageStore(virtualHost.getName(), virtualHost.getMessageStoreSettings());
+        _messageStore.openMessageStore(virtualHost, virtualHost.getMessageStoreSettings());
 
         getEventLogger().message(_messageStoreLogSubject, MessageStoreMessages.STORE_LOCATION(_messageStore.getStoreLocation()));
 
@@ -103,13 +109,16 @@ public class StandardVirtualHost extends AbstractVirtualHost
             getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.STORE_LOCATION(configurationStoreSettings.toString()));
         }
 
-        _durableConfigurationStore.recoverConfigurationStore(getModel(), configRecoverer);
+        DurableConfigurationRecoverer configRecoverer = new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
+                new DefaultUpgraderProvider(this), getEventLogger());
+
+        _durableConfigurationStore.recoverConfigurationStore(configRecoverer);
 
         // If store does not have entries for standard exchanges (amq.*), the following will create them.
         initialiseModel();
 
         VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getMessageStoreLogSubject());
-        _messageStore.recoverMessageStore(getModel(), recoveryHandler, recoveryHandler);
+        _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
 
         attainActivation();
     }

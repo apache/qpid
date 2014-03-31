@@ -26,8 +26,12 @@ public interface EnvironmentFacadeFactory
 {
     public static final String ENVIRONMENT_CONFIGURATION = "bdbEnvironmentConfig";
 
-    EnvironmentFacade createEnvironmentFacade(String virtualHostName, Map<String, Object> storeSettings);
+    EnvironmentFacade createEnvironmentFacade(Map<String, Object> storeSettings, EnvironmentFacadeTask... initialisationTasks);
 
     String getType();
 
+    public static interface EnvironmentFacadeTask
+    {
+        void execute(EnvironmentFacade facade);
+    }
 }

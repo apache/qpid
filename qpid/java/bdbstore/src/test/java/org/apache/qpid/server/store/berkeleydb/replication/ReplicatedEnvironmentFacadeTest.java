@@ -31,8 +31,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -65,15 +63,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     private File _storePath;
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
-    private VirtualHost _virtualHost = mock(VirtualHost.class);
 
     public void setUp() throws Exception
     {
         super.setUp();
-
-        TaskExecutor taskExecutor = mock(TaskExecutor.class);
-        when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
-        when(_virtualHost.getTaskExecutor()).thenReturn(taskExecutor);
 
         _storePath = TestFileUtils.createTestDirectory("bdb", true);
 
@@ -302,7 +295,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
             State desiredState, StateChangeListener stateChangeListener)
     {
         ReplicatedEnvironmentConfiguration config = createReplicatedEnvironmentConfiguration(nodeName, nodeHostPort, designatedPrimary);
-        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(config);
+        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(config, null);
         ref.setStateChangeListener(stateChangeListener);
         _nodes.put(nodeName, ref);
         return ref;

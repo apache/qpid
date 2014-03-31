@@ -53,20 +53,20 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     private Map<EventListener, Event[]> _eventListeners = new ConcurrentHashMap<EventListener, Event[]>();
 
     @Override
-    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
         if (storeSettings != null && storeSettings.get(REAL_STORE) != null)
         {
             final String realStore = (String) storeSettings.get(REAL_STORE);
             _realDurableConfigurationStore = new DurableConfigurationStoreCreator().createMessageStore(realStore);
-            _realDurableConfigurationStore.openConfigurationStore(virtualHostName, storeSettings);
+            _realDurableConfigurationStore.openConfigurationStore(parent, storeSettings);
         }
     }
 
     @Override
-    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
     {
-        _realDurableConfigurationStore.recoverConfigurationStore(parent, recoveryHandler);
+        _realDurableConfigurationStore.recoverConfigurationStore(recoveryHandler);
     }
 
     private void configureDelays(Map<String, Object> delays)
@@ -134,7 +134,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings)
+    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings)
     {
         Object delaysAttr = messageStoreSettings.get(DELAYS);
 
@@ -160,7 +160,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
                 it.remove();
             }
         }
-        _realMessageStore.openMessageStore(virtualHostName, messageStoreSettings);
+        _realMessageStore.openMessageStore(parent, messageStoreSettings);
 
         if (_realDurableConfigurationStore == null)
         {
@@ -294,9 +294,9 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
-       _realMessageStore.recoverMessageStore(parent, messageRecoveryHandler, transactionLogRecoveryHandler);
+       _realMessageStore.recoverMessageStore(messageRecoveryHandler, transactionLogRecoveryHandler);
     }
 
     @Override

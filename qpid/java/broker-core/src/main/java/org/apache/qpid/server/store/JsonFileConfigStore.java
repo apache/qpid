@@ -89,16 +89,16 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
-        _name = virtualHostName;
+        _name = parent.getName();
 
         setup(storeSettings);
         load();
     }
 
     @Override
-    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
     {
         recoveryHandler.beginConfigurationRecovery(this,_configVersion);
         List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());

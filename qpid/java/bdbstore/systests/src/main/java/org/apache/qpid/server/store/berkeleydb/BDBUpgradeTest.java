@@ -362,7 +362,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
 
     /**
      *
-     * TODO Raise Jira and resolve so this test can be reenabled.
+     * TODO (QPID-5650) Resolve so this test can be reenabled.
      *
      * Test that the queue configured to have a DLQ was recovered and has the alternate exchange
      * and max delivery count, the DLE exists, the DLQ exists with no max delivery count, the

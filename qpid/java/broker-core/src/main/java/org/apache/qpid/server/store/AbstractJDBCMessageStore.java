@@ -183,11 +183,20 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
 
     @Override
-    public void openConfigurationStore(String virtualHostName, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
         {
-            initialiseIfNecessary(virtualHostName, storeSettings);
+            initialiseIfNecessary(parent.getName(), storeSettings);
+            try
+            {
+                createOrOpenConfigurationStoreDatabase();
+                upgradeIfVersionTableExists(parent);
+            }
+            catch(SQLException e)
+            {
+                throw new StoreException("Cannot create databases or upgrade", e);
+            }
         }
     }
 
@@ -212,14 +221,12 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void recoverConfigurationStore(ConfiguredObject<?> parent, ConfigurationRecoveryHandler recoveryHandler)
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
     {
         checkConfigurationStoreOpen();
 
         try
         {
-            createOrOpenConfigurationStoreDatabase();
-            upgradeIfVersionTableExists(parent);
             recoveryHandler.beginConfigurationRecovery(this, getConfigVersion());
             loadConfiguredObjects(recoveryHandler);
             setConfigVersion(recoveryHandler.completeConfigurationRecovery());
@@ -266,27 +273,28 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings)
+    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings)
     {
         if (_messageStoreOpen.compareAndSet(false,  true))
         {
-            initialiseIfNecessary(virtualHostName, messageStoreSettings);
+            initialiseIfNecessary(parent.getName(), messageStoreSettings);
+            try
+            {
+                createOrOpenMessageStoreDatabase();
+                upgradeIfNecessary(parent);
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Unable to activate message store ", e);
+            }
         }
     }
 
     @Override
-    public void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
         checkMessageStoreOpen();
-        try
-        {
-            createOrOpenMessageStoreDatabase();
-            upgradeIfNecessary(parent);
-        }
-        catch (SQLException e)
-        {
-            throw new StoreException("Unable to activate message store ", e);
-        }
+
         if(messageRecoveryHandler != null)
         {
             try

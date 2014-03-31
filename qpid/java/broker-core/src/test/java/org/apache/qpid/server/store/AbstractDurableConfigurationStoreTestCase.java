@@ -488,8 +488,10 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         closeConfigStore();
         _configStore = createConfigStore();
 
-        _configStore.openConfigurationStore("testName", _configurationStoreSettings);
-        _configStore.recoverConfigurationStore(mock(ConfiguredObject.class), _recoveryHandler);
+        ConfiguredObject<?> parent = mock(ConfiguredObject.class);
+        when(parent.getName()).thenReturn("testName");
+        _configStore.openConfigurationStore(parent, _configurationStoreSettings);
+        _configStore.recoverConfigurationStore(_recoveryHandler);
     }
 
     protected abstract DurableConfigurationStore createConfigStore() throws Exception;

@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.model.ConfiguredObject;
 
 public class QuotaMessageStore extends NullMessageStore
 {
@@ -40,7 +41,7 @@ public class QuotaMessageStore extends NullMessageStore
 
 
     @Override
-    public void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings)
+    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings)
     {
         Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
         _persistentSizeHighThreshold = overfullAttr == null

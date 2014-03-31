@@ -38,18 +38,17 @@ public interface MessageStore
     /**
      * Called after instantiation in order to open and initialize the message store. A particular implementation can define
      * whatever parameters it wants.
-     * @param virtualHostName virtual host name
+     * @param parent virtual host name
      * @param messageStoreSettings store settings
      */
-    void openMessageStore(String virtualHostName, Map<String, Object> messageStoreSettings);
+    void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings);
 
     /**
      * Called after opening to recover messages and transactions with given recovery handlers
-     * @param parent TODO
      * @param messageRecoveryHandler
      * @param transactionLogRecoveryHandler
      */
-    void recoverMessageStore(ConfiguredObject<?> parent, MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler);
+    void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler);
 
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
 

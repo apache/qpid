@@ -30,7 +30,6 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.model.Binding;
@@ -52,7 +51,6 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
     public static final String EXCLUSIVE = "exclusive";
     public static final String NAME = "name";
-    private final ExchangeRegistry _exchangeRegistry;
     private final VirtualHost _virtualHost;
 
     @SuppressWarnings("serial")
@@ -66,11 +64,9 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
     private final Map<String, UUID> _defaultExchangeIds;
 
-    public DefaultUpgraderProvider(final VirtualHost virtualHost,
-                                   final ExchangeRegistry exchangeRegistry)
+    public DefaultUpgraderProvider(final VirtualHost virtualHost)
     {
         _virtualHost = virtualHost;
-        _exchangeRegistry = exchangeRegistry;
         Map<String, UUID> defaultExchangeIds = new HashMap<String, UUID>();
         for (String exchangeName : DEFAULT_EXCHANGES.keySet())
         {
@@ -150,7 +146,12 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
         private boolean isTopicExchange(ConfiguredObjectRecord entry)
         {
-            UUID exchangeId = entry.getParents().get("Exchange").getId();
+            ConfiguredObjectRecord exchangeRecord = entry.getParents().get("Exchange");
+            if (exchangeRecord == null)
+            {
+                return false;
+            }
+            UUID exchangeId = exchangeRecord.getId();
 
             if(_records.containsKey(exchangeId))
             {
@@ -165,8 +166,8 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                     return true;
                 }
 
-                return _exchangeRegistry.getExchange(exchangeId) != null
-                       && _exchangeRegistry.getExchange(exchangeId).getExchangeType() == TopicExchange.TYPE;
+                return _virtualHost.getExchange(exchangeId) != null
+                       && _virtualHost.getExchange(exchangeId).getExchangeType() == TopicExchange.TYPE;
             }
 
         }
@@ -253,7 +254,7 @@ public class DefaultUpgraderProvider implements UpgraderProvider
             }
             ConfiguredObjectRecord localRecord = getUpdateMap().get(exchangeId);
             return !((localRecord != null && localRecord.getType().equals(Exchange.class.getSimpleName()))
-                     || _exchangeRegistry.getExchange(exchangeId) != null);
+                     || _virtualHost.getExchange(exchangeId) != null);
         }
 
         private boolean unknownQueue(final UUID queueId)

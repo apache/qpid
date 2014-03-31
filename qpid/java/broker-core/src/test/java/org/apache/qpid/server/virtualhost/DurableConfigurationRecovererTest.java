@@ -184,7 +184,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         }
         _durableConfigurationRecoverer =
                 new DurableConfigurationRecoverer(_vhost.getName(), recovererMap,
-                                                  new DefaultUpgraderProvider(_vhost, _exchangeRegistry), new EventLogger());
+                                                  new DefaultUpgraderProvider(_vhost), new EventLogger());
 
         _store = mock(DurableConfigurationStore.class);
 

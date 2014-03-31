@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory.EnvironmentFacadeTask;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -42,7 +43,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
 
     private Environment _environment;
 
-    public StandardEnvironmentFacade(String storePath, Map<String, String> attributes)
+    public StandardEnvironmentFacade(String storePath, Map<String, String> attributes, EnvironmentFacadeTask[] initialisationTasks)
     {
         _storePath = storePath;
 
@@ -74,6 +75,13 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
 
         _environment = new Environment(environmentPath, envConfig);
+        if (initialisationTasks != null)
+        {
+            for (EnvironmentFacadeTask task : initialisationTasks)
+            {
+                task.execute(this);
+            }
+        }
     }
 
     @Override

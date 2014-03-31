@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.store.MessageStore;
 
 public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactory
@@ -32,12 +30,10 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
 
     @SuppressWarnings("unchecked")
     @Override
-    public EnvironmentFacade createEnvironmentFacade(String virtualHostName, Map<String, Object> messageStoreSettings)
+    public EnvironmentFacade createEnvironmentFacade(Map<String, Object> messageStoreSettings, EnvironmentFacadeTask... initialisationTasks)
     {
         Map<String, String> envConfigMap = new HashMap<String, String>();
         envConfigMap.putAll(EnvironmentFacade.ENVCONFIG_DEFAULTS);
-
-        final String defaultPath = System.getProperty(BrokerProperties.PROPERTY_QPID_WORK) + File.separator + "bdbstore" + File.separator + virtualHostName;
 
         Object environmentConfigurationAttributes = messageStoreSettings.get(ENVIRONMENT_CONFIGURATION);
         if (environmentConfigurationAttributes instanceof Map)
@@ -45,12 +41,7 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
             envConfigMap.putAll((Map<String, String>) environmentConfigurationAttributes);
         }
         String storeLocation = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
-        if(storeLocation == null)
-        {
-            storeLocation = defaultPath;
-        }
-
-        return new StandardEnvironmentFacade(storeLocation, envConfigMap);
+        return new StandardEnvironmentFacade(storeLocation, envConfigMap, initialisationTasks);
     }
 
     @Override
