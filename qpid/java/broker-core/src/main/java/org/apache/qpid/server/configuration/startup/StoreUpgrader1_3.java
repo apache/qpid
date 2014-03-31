@@ -23,10 +23,11 @@ package org.apache.qpid.server.configuration.startup;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
@@ -37,6 +38,7 @@ import org.apache.qpid.server.model.Broker;
 @SuppressWarnings("serial")
 public final class StoreUpgrader1_3 extends StoreUpgrader
 {
+
     public static final String VERSION = "1.3";
 
     private Map<String, VirtualHostEntryUpgrader> _vhostUpgraderMap = new HashMap<String, VirtualHostEntryUpgrader>()
@@ -83,228 +85,68 @@ public final class StoreUpgrader1_3 extends StoreUpgrader
         store.save(changed.toArray(new ConfigurationEntry[changed.size()]));
     }
 
-    public interface VirtualHostEntryUpgrader
+    private interface VirtualHostEntryUpgrader
     {
         ConfigurationEntry upgrade(ConfigurationEntryStore store, ConfigurationEntry vhost);
     }
 
-    public class BdbHaVirtualHostUpgrader implements VirtualHostEntryUpgrader
+    private class StandardVirtualHostUpgrader implements VirtualHostEntryUpgrader
     {
-        private final String[] HA_ATTRIBUTES =
-            { "storePath", "haNodeName", "haGroupName", "haHelperAddress", "haCoalescingSync", "haNodeAddress", "haDurability",
-              "haDesignatedPrimary", "haReplicationConfig", "bdbEnvironmentConfig" };
-
-        @Override
-        public ConfigurationEntry upgrade(ConfigurationEntryStore store, ConfigurationEntry vhost)
-        {
-            Map<String, Object> attributes = vhost.getAttributes();
-            Map<String, Object> newAttributes = new HashMap<String, Object>(attributes);
-            Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-
-            for (String haAttribute : HA_ATTRIBUTES)
-            {
-                if (attributes.containsKey(haAttribute))
-                {
-                    messageStoreSettings.put(haAttribute, newAttributes.remove(haAttribute));
-                }
-            }
-
-            if (attributes.containsKey("storeUnderfullSize"))
-            {
-                messageStoreSettings.put("storeUnderfullSize", newAttributes.remove("storeUnderfullSize"));
-            }
-            if (attributes.containsKey("storeOverfullSize"))
-            {
-                messageStoreSettings.put("storeOverfullSize", newAttributes.remove("storeOverfullSize"));
-            }
-            newAttributes.remove("storeType");
-            newAttributes.put("messageStoreSettings", messageStoreSettings);
-            return new ConfigurationEntry(vhost.getId(), vhost.getType(), newAttributes, vhost.getChildrenIds(), store);
-        }
-
-    }
-
-    public interface StoreEntryUpgrader
-    {
-        Map<String, Object> upgrade(Map<String, Object> attributes);
-
-        Set<String> getNamesToBeDeleted();
-    }
-
-    public class GenericMessageStoreEntryUpgrader implements StoreEntryUpgrader
-    {
-        private Map<String, String> _oldToNewNamesMap;
-        private String _storeType;
-
-        public GenericMessageStoreEntryUpgrader(String storeType, Map<String, String> oldToNewNamesMap)
-        {
-            _oldToNewNamesMap = oldToNewNamesMap;
-            _storeType = storeType;
-        }
-
-        @Override
-        public Map<String, Object> upgrade(Map<String, Object> attributes)
-        {
-            Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-            for (Map.Entry<String, String> nameMapEntry : _oldToNewNamesMap.entrySet())
-            {
-                String attributeName = nameMapEntry.getKey();
-                if (attributes.containsKey(attributeName))
-                {
-                    messageStoreSettings.put(nameMapEntry.getValue(), attributes.get(attributeName));
-                }
-            }
-            messageStoreSettings.put("storeType", _storeType);
-            return messageStoreSettings;
-        }
-
-        @Override
-        public Set<String> getNamesToBeDeleted()
-        {
-            Set<String> names = new HashSet<String>(_oldToNewNamesMap.keySet());
-            names.add("storeType");
-            return names;
-        }
-
-    }
-
-    public class JDBCMessageStoreEntryUpgrader implements StoreEntryUpgrader
-    {
-        private final String[] JDBC_ATTRIBUTES =
-            { "connectionURL", "connectionPool", "jdbcBigIntType", "jdbcBytesForBlob", "jdbcVarbinaryType", "jdbcBlobType",
-              "partitionCount", "maxConnectionsPerPartition", "minConnectionsPerPartition" };
-
-        @Override
-        public Map<String, Object> upgrade(Map<String, Object> attributes)
-        {
-            Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-
-            if (attributes.containsKey("storePath"))
-            {
-                messageStoreSettings.put("connectionURL", attributes.get("storePath"));
-            }
-
-            copyJdbcStoreSettings(attributes, messageStoreSettings);
-
-            messageStoreSettings.put("storeType", "JDBC");
-            return messageStoreSettings;
-        }
-
-        @Override
-        public Set<String> getNamesToBeDeleted()
-        {
-            Set<String> names = new HashSet<String>();
-            names.addAll(Arrays.asList(JDBC_ATTRIBUTES));
-            names.add("storePath");
-            names.add("storeType");
-            return names;
-        }
-
-        private void copyJdbcStoreSettings(Map<String, Object> attributes, Map<String, Object> messageStoreSettings)
-        {
-            for (String jdbcAttribute : JDBC_ATTRIBUTES)
-            {
-                if (attributes.containsKey(jdbcAttribute))
-                {
-                    messageStoreSettings.put(jdbcAttribute, attributes.get(jdbcAttribute));
-                }
-            }
-        }
-
-    }
-
-    public class JDBCConfigurationStoreEntryUpgrader implements StoreEntryUpgrader
-    {
-
-        private final String[] JDBC_ATTRIBUTES =
-            { "connectionPool", "jdbcBigIntType", "jdbcBytesForBlob", "jdbcVarbinaryType", "jdbcBlobType", "partitionCount",
-              "maxConnectionsPerPartition", "minConnectionsPerPartition" };
-
-        @Override
-        public Map<String, Object> upgrade(Map<String, Object> attributes)
-        {
-            Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-
-            if (attributes.containsKey("configStorePath"))
-            {
-                messageStoreSettings.put("connectionURL", attributes.get("configStorePath"));
-            }
-
-            if (attributes.containsKey("configConnectionURL"))
-            {
-                messageStoreSettings.put("connectionURL", attributes.get("configConnectionURL"));
-            }
-
-            copyJdbcStoreSettings(attributes, messageStoreSettings);
-
-            messageStoreSettings.put("storeType", "JDBC");
-            return messageStoreSettings;
-        }
-
-        @Override
-        public Set<String> getNamesToBeDeleted()
-        {
-            Set<String> names = new HashSet<String>();
-            names.addAll(Arrays.asList(JDBC_ATTRIBUTES));
-            names.add("configStorePath");
-            names.add("configStoreType");
-            names.add("configConnectionURL");
-            return names;
-        }
-
-        private void copyJdbcStoreSettings(Map<String, Object> attributes, Map<String, Object> messageStoreSettings)
-        {
-            for (String jdbcAttribute : JDBC_ATTRIBUTES)
-            {
-                if (attributes.containsKey(jdbcAttribute))
-                {
-                    messageStoreSettings.put(jdbcAttribute, attributes.get(jdbcAttribute));
-                }
-            }
-        }
-    }
-
-    public class StandardVirtualHostUpgrader implements VirtualHostEntryUpgrader
-    {
-        Map<String, StoreEntryUpgrader> _messageStoreEntryUpgrader = new HashMap<String, StoreEntryUpgrader>()
+        Map<String, AttributesTransformer> _messageStoreAttributeTransformers = new HashMap<String, AttributesTransformer>()
         {{
-            put("JDBC", new JDBCMessageStoreEntryUpgrader());
-            put("BDB", new GenericMessageStoreEntryUpgrader("BDB", new HashMap<String, String>()
-            {{
-                put("storePath", "storePath");
-                put("bdbEnvironmentConfig", "bdbEnvironmentConfig");
-                put("storeUnderfullSize", "storeUnderfullSize");
-                put("storeOverfullSize", "storeOverfullSize");
-            }}));
-            put("DERBY", new GenericMessageStoreEntryUpgrader("DERBY", new HashMap<String, String>()
-            {{
-                put("storePath", "storePath");
-                put("storeUnderfullSize", "storeUnderfullSize");
-                put("storeOverfullSize", "storeOverfullSize");
-            }}));
-            put("MEMORY", new GenericMessageStoreEntryUpgrader("Memory", Collections.<String, String> emptyMap()));
+            put("DERBY", new AttributesTransformer().
+                    addAttributeTransformer("storePath", copyAttribute()).
+                    addAttributeTransformer("storeUnderfullSize", copyAttribute()).
+                    addAttributeTransformer("storeOverfullSize", copyAttribute()).
+                    addAttributeTransformer("storeType", mutateAttributeValue("DERBY")));
+            put("MEMORY",  new AttributesTransformer().
+                    addAttributeTransformer("storeType", mutateAttributeValue("Memory")));
+            put("BDB", new AttributesTransformer().
+                    addAttributeTransformer("storePath", copyAttribute()).
+                    addAttributeTransformer("storeUnderfullSize", copyAttribute()).
+                    addAttributeTransformer("storeOverfullSize", copyAttribute()).
+                    addAttributeTransformer("bdbEnvironmentConfig", copyAttribute()).
+                    addAttributeTransformer("storeType", mutateAttributeValue("BDB")));
+            put("JDBC", new AttributesTransformer().
+                    addAttributeTransformer("storePath", mutateAttributeName("connectionURL")).
+                    addAttributeTransformer("connectionURL", copyAttribute()).
+                    addAttributeTransformer("connectionPool", copyAttribute()).
+                    addAttributeTransformer("jdbcBigIntType", copyAttribute()).
+                    addAttributeTransformer("jdbcBytesForBlob", copyAttribute()).
+                    addAttributeTransformer("jdbcBlobType", copyAttribute()).
+                    addAttributeTransformer("jdbcVarbinaryType", copyAttribute()).
+                    addAttributeTransformer("partitionCount", copyAttribute()).
+                    addAttributeTransformer("maxConnectionsPerPartition", copyAttribute()).
+                    addAttributeTransformer("minConnectionsPerPartition", copyAttribute()).
+                    addAttributeTransformer("storeType", mutateAttributeValue("JDBC")));
         }};
-        Map<String, StoreEntryUpgrader> _configurationStoreEntryUpgrader = new HashMap<String, StoreEntryUpgrader>()
+
+        Map<String, AttributesTransformer> _configurationStoreAttributeTransformers = new HashMap<String, AttributesTransformer>()
         {{
-            put("JDBC", new JDBCConfigurationStoreEntryUpgrader());
-            put("DERBY", new GenericMessageStoreEntryUpgrader("DERBY", new HashMap<String, String>()
-            {{
-                put("configStorePath", "storePath");
-                put("configStoreType", "storeType");
-            }}));
-            put("BDB", new GenericMessageStoreEntryUpgrader("BDB", new HashMap<String, String>()
-            {{
-                put("configStoreType", "storeType");
-                put("configStorePath", "storePath");
-                put("bdbEnvironmentConfig", "bdbEnvironmentConfig");
-            }}));
-            put("MEMORY", new GenericMessageStoreEntryUpgrader("Memory",
-                                            Collections.<String, String> singletonMap("configStoreType", "storeType")));
-            put("JSON", new GenericMessageStoreEntryUpgrader("JSON", new HashMap<String, String>()
-            {{
-                put("configStorePath", "storePath");
-                put("configStoreType", "storeType");
-            }}));
+            put("DERBY", new AttributesTransformer().
+                    addAttributeTransformer("configStorePath", mutateAttributeName("storePath")).
+                    addAttributeTransformer("configStoreType", mutateAttributeName("storeType"), mutateAttributeValue("DERBY")));
+            put("MEMORY",  new AttributesTransformer().
+                    addAttributeTransformer("configStoreType", mutateAttributeValue("Memory")));
+            put("JSON", new AttributesTransformer().
+                    addAttributeTransformer("configStorePath", mutateAttributeName("storePath")).
+                    addAttributeTransformer("configStoreType", mutateAttributeName("storeType"), mutateAttributeValue("JSON")));
+            put("BDB", new AttributesTransformer().
+                    addAttributeTransformer("configStorePath", mutateAttributeName("storePath")).
+                    addAttributeTransformer("bdbEnvironmentConfig", copyAttribute()).
+                    addAttributeTransformer("configStoreType", mutateAttributeName("storeType"), mutateAttributeValue("BDB")));
+            put("JDBC", new AttributesTransformer().
+                    addAttributeTransformer("configStorePath", mutateAttributeName("connectionURL")).
+                    addAttributeTransformer("configConnectionURL", mutateAttributeName("connectionURL")).
+                    addAttributeTransformer("connectionPool", copyAttribute()).
+                    addAttributeTransformer("jdbcBigIntType", copyAttribute()).
+                    addAttributeTransformer("jdbcBytesForBlob", copyAttribute()).
+                    addAttributeTransformer("jdbcBlobType", copyAttribute()).
+                    addAttributeTransformer("jdbcVarbinaryType", copyAttribute()).
+                    addAttributeTransformer("partitionCount", copyAttribute()).
+                    addAttributeTransformer("maxConnectionsPerPartition", copyAttribute()).
+                    addAttributeTransformer("minConnectionsPerPartition", copyAttribute()).
+                    addAttributeTransformer("configStoreType", mutateAttributeName("storeType"), mutateAttributeValue("JDBC")));
         }};
 
         @Override
@@ -314,32 +156,233 @@ public final class StoreUpgrader1_3 extends StoreUpgrader
             Map<String, Object> newAttributes = new HashMap<String, Object>(attributes);
 
             String capitalisedStoreType = String.valueOf(attributes.get("storeType")).toUpperCase();
-            StoreEntryUpgrader messageStoreSettingsUpgrader = _messageStoreEntryUpgrader.get(capitalisedStoreType);
+            AttributesTransformer vhAttrsToMessageStoreSettings = _messageStoreAttributeTransformers.get(capitalisedStoreType);
             Map<String, Object> messageStoreSettings = null;
-            if (messageStoreSettingsUpgrader != null)
+            if (vhAttrsToMessageStoreSettings != null)
             {
-                messageStoreSettings = messageStoreSettingsUpgrader.upgrade(attributes);
+                messageStoreSettings = vhAttrsToMessageStoreSettings.upgrade(attributes);
             }
 
             if (attributes.containsKey("configStoreType"))
             {
                 String capitaliseConfigStoreType = ((String) attributes.get("configStoreType")).toUpperCase();
-                StoreEntryUpgrader configurationStoreSettingsUpgrader = _configurationStoreEntryUpgrader
+                AttributesTransformer vhAttrsToConfigurationStoreSettings = _configurationStoreAttributeTransformers
                         .get(capitaliseConfigStoreType);
-                Map<String, Object> configurationStoreSettings = configurationStoreSettingsUpgrader.upgrade(attributes);
-                newAttributes.keySet().removeAll(configurationStoreSettingsUpgrader.getNamesToBeDeleted());
+                Map<String, Object> configurationStoreSettings = vhAttrsToConfigurationStoreSettings.upgrade(attributes);
+                newAttributes.keySet().removeAll(vhAttrsToConfigurationStoreSettings.getNamesToBeDeleted());
                 newAttributes.put("configurationStoreSettings", configurationStoreSettings);
             }
 
-            if (messageStoreSettingsUpgrader != null)
+            if (vhAttrsToMessageStoreSettings != null)
             {
-                newAttributes.keySet().removeAll(messageStoreSettingsUpgrader.getNamesToBeDeleted());
+                newAttributes.keySet().removeAll(vhAttrsToMessageStoreSettings.getNamesToBeDeleted());
                 newAttributes.put("messageStoreSettings", messageStoreSettings);
             }
 
             return new ConfigurationEntry(vhost.getId(), vhost.getType(), newAttributes, vhost.getChildrenIds(), store);
         }
+    }
 
+    private class BdbHaVirtualHostUpgrader implements VirtualHostEntryUpgrader
+    {
+
+        private final AttributesTransformer haAttributesTransformer =  new AttributesTransformer().
+                addAttributeTransformer("storePath", copyAttribute()).
+                addAttributeTransformer("storeUnderfullSize", copyAttribute()).
+                addAttributeTransformer("storeOverfullSize", copyAttribute()).
+                addAttributeTransformer("haNodeName", copyAttribute()).
+                addAttributeTransformer("haGroupName", copyAttribute()).
+                addAttributeTransformer("haHelperAddress", copyAttribute()).
+                addAttributeTransformer("haCoalescingSync", copyAttribute()).
+                addAttributeTransformer("haNodeAddress", copyAttribute()).
+                addAttributeTransformer("haDurability", copyAttribute()).
+                addAttributeTransformer("haDesignatedPrimary", copyAttribute()).
+                addAttributeTransformer("haReplicationConfig", copyAttribute()).
+                addAttributeTransformer("bdbEnvironmentConfig", copyAttribute()).
+                addAttributeTransformer("storeType", removeAttribute());
+
+        @Override
+        public ConfigurationEntry upgrade(ConfigurationEntryStore store, ConfigurationEntry vhost)
+        {
+            Map<String, Object> attributes = vhost.getAttributes();
+
+            Map<String, Object> messageStoreSettings = haAttributesTransformer.upgrade(attributes);
+
+            Map<String, Object> newAttributes = new HashMap<String, Object>(attributes);
+            newAttributes.keySet().removeAll(haAttributesTransformer.getNamesToBeDeleted());
+            newAttributes.put("messageStoreSettings", messageStoreSettings);
+
+            return new ConfigurationEntry(vhost.getId(), vhost.getType(), newAttributes, vhost.getChildrenIds(), store);
+        }
+    }
+
+    private class AttributesTransformer
+    {
+        private final Map<String, List<AttributeTransformer>> _transformers = new HashMap<String, List<AttributeTransformer>>();
+        private Set<String> _namesToBeDeleted = new HashSet<String>();
+
+        public AttributesTransformer addAttributeTransformer(String string, AttributeTransformer... attributeTransformers)
+        {
+            _transformers.put(string, Arrays.asList(attributeTransformers));
+            return this;
+        }
+
+        public Map<String, Object> upgrade(Map<String, Object> attributes)
+        {
+            Map<String, Object> settings = new HashMap<String, Object>();
+            for (Entry<String, List<AttributeTransformer>> entry : _transformers.entrySet())
+            {
+                String attributeName = entry.getKey();
+                if (attributes.containsKey(attributeName))
+                {
+                    Object attributeValue = attributes.get(attributeName);
+                    MutatableEntry newEntry = new MutatableEntry(attributeName, attributeValue);
+
+                    List<AttributeTransformer> transformers = entry.getValue();
+                    for (AttributeTransformer attributeTransformer : transformers)
+                    {
+                        newEntry = attributeTransformer.transform(newEntry);
+                        if (newEntry == null)
+                        {
+                            break;
+                        }
+                    }
+                    if (newEntry != null)
+                    {
+                        settings.put(newEntry.getKey(), newEntry.getValue());
+                    }
+
+                    _namesToBeDeleted.add(attributeName);
+                }
+            }
+            return settings;
+        }
+
+        public Set<String> getNamesToBeDeleted()
+        {
+            return _namesToBeDeleted;
+        }
+    }
+
+    private AttributeTransformer copyAttribute()
+    {
+        return CopyAttribute.INSTANCE;
+    }
+
+    private AttributeTransformer removeAttribute()
+    {
+        return RemoveAttribute.INSTANCE;
+    }
+
+    private AttributeTransformer mutateAttributeValue(Object newValue)
+    {
+        return new MutateAttributeValue(newValue);
+    }
+
+    private AttributeTransformer mutateAttributeName(String newName)
+    {
+        return new MutateAttributeName(newName);
+    }
+
+    private interface AttributeTransformer
+    {
+        MutatableEntry transform(MutatableEntry entry);
+    }
+
+    private static class CopyAttribute implements AttributeTransformer
+    {
+        private static final CopyAttribute INSTANCE = new CopyAttribute();
+
+        private CopyAttribute()
+        {
+        }
+
+        @Override
+        public MutatableEntry transform(MutatableEntry entry)
+        {
+            return entry;
+        }
+    }
+
+    private static class RemoveAttribute implements AttributeTransformer
+    {
+        private static final RemoveAttribute INSTANCE = new RemoveAttribute();
+
+        private RemoveAttribute()
+        {
+        }
+
+        @Override
+        public MutatableEntry transform(MutatableEntry entry)
+        {
+            return null;
+        }
+    }
+
+    private class MutateAttributeName implements AttributeTransformer
+    {
+        private final String _newName;
+
+        public MutateAttributeName(String newName)
+        {
+            _newName = newName;
+        }
+
+        @Override
+        public MutatableEntry transform(MutatableEntry entry)
+        {
+            entry.setKey(_newName);
+            return entry;
+        }
+    }
+
+    private static class MutateAttributeValue implements AttributeTransformer
+    {
+        private final Object _newValue;
+
+        public MutateAttributeValue(Object newValue)
+        {
+            _newValue = newValue;
+        }
+
+        @Override
+        public MutatableEntry transform(MutatableEntry entry)
+        {
+            entry.setValue(_newValue);
+            return entry;
+        }
+    }
+
+    private static class MutatableEntry
+    {
+        private String _key;
+        private Object _value;
+
+        public MutatableEntry(String key, Object value)
+        {
+            _key = key;
+            _value = value;
+        }
+
+        public String getKey()
+        {
+            return _key;
+        }
+
+        public void setKey(String key)
+        {
+            _key = key;
+        }
+
+        public Object getValue()
+        {
+            return _value;
+        }
+
+        public void setValue(Object value)
+        {
+            _value = value;
+        }
     }
 
 }
