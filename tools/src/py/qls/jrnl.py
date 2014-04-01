@@ -63,7 +63,7 @@ class RecordHeader(object):
             if self.serial != file_header.serial:
                 return False
         return True
-    def to_string(self):
+    def to_rh_string(self):
         """Return string representation of this header"""
         if self.is_empty():
             return '0x%08x: <empty>' % (self.file_offset)
@@ -80,7 +80,7 @@ class RecordHeader(object):
         return warn_str
     def __str__(self):
         """Return string representation of this header"""
-        return RecordHeader.to_string(self)
+        return self.to_rh_string()
 
 class RecordTail(object):
     FORMAT = '<4sL2Q'
@@ -121,7 +121,7 @@ class RecordTail(object):
         return '[%c cs=0x%08x rid=0x%x]' % (magic_char, self.checksum, self.record_id)
     def __str__(self):
         """Return a string representation of the this RecordTail instance"""
-        return RecordTail.to_string(self)
+        return self.to_string()
 
 class FileHeader(RecordHeader):
     FORMAT = '<2H4x5QH'
@@ -176,13 +176,13 @@ class FileHeader(RecordHeader):
         return time.strftime(fstr, now)
     def to_string(self):
         """Return a string representation of the this FileHeader instance"""
-        return '%s fnum=0x%x fro=0x%08x p=%d s=%dk t=%s %s' % (RecordHeader.to_string(self), self.file_num,
+        return '%s fnum=0x%x fro=0x%08x p=%d s=%dk t=%s %s' % (self.to_rh_string(), self.file_num,
                                                              self.first_record_offset, self.partition_num,
                                                              self.efp_data_size_kb, self.timestamp_str(),
                                                              self._get_warnings())
     def __str__(self):
         """Return a string representation of the this FileHeader instance"""
-        return FileHeader.to_string(self)
+        return self.to_string()
 
 class EnqueueRecord(RecordHeader):
     FORMAT = '<2Q'
@@ -198,12 +198,12 @@ class EnqueueRecord(RecordHeader):
         self.data_complete = False
         self.record_tail = None
     def checksum_encode(self): # encode excluding record tail
-        bytes = RecordHeader.encode(self) + struct.pack(self.FORMAT, self.xid_size, self.data_size)
+        cs_bytes = RecordHeader.encode(self) + struct.pack(self.FORMAT, self.xid_size, self.data_size)
         if self.xid is not None:
-            bytes += self.xid
+            cs_bytes += self.xid
         if self.data is not None:
-            bytes += self.data
-        return bytes
+            cs_bytes += self.data
+        return cs_bytes
     def is_external(self):
         return self.user_flags & EnqueueRecord.EXTERNAL_FLAG_MASK > 0
     def is_transient(self):
@@ -253,7 +253,7 @@ class EnqueueRecord(RecordHeader):
             record_tail_str = ''
         else:
             record_tail_str = self.record_tail.to_string()
-        return '%s %s %s %s %s %s' % (RecordHeader.to_string(self),
+        return '%s %s %s %s %s %s' % (self.to_rh_string(),
                                       qls.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
                                       qls.utils.format_data(self.data, self.data_size, show_data_flag),
                                       record_tail_str, self._print_flags(), self._get_warnings())
@@ -272,7 +272,7 @@ class EnqueueRecord(RecordHeader):
         return fstr
     def __str__(self):
         """Return a string representation of the this EnqueueRecord instance"""
-        return EnqueueRecord.to_string(self, False, False)
+        return self.to_string(False, False)
 
 class DequeueRecord(RecordHeader):
     FORMAT = '<2Q'
@@ -328,7 +328,7 @@ class DequeueRecord(RecordHeader):
             record_tail_str = ''
         else:
             record_tail_str = self.record_tail.to_string()
-        return '%s drid=0x%x %s %s %s %s' % (RecordHeader.to_string(self), self.dequeue_record_id,
+        return '%s drid=0x%x %s %s %s %s' % (self.to_rh_string(), self.dequeue_record_id,
                                              qls.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
                                              record_tail_str, self._print_flags(), self._get_warnings())
     def _print_flags(self):
@@ -341,7 +341,7 @@ class DequeueRecord(RecordHeader):
         return ''
     def __str__(self):
         """Return a string representation of the this DequeueRecord instance"""
-        return DequeueRecord.to_string(self, False)
+        return self.to_string(False)
 
 class TransactionRecord(RecordHeader):
     FORMAT = '<Q'
@@ -387,12 +387,12 @@ class TransactionRecord(RecordHeader):
             record_tail_str = ''
         else:
             record_tail_str = self.record_tail.to_string()
-        return '%s %s %s %s' % (RecordHeader.to_string(self),
+        return '%s %s %s %s' % (self.to_rh_string(),
                                 qls.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
                                 record_tail_str, self._get_warnings())
     def __str__(self):
         """Return a string representation of the this TransactionRecord instance"""
-        return TransactionRecord.to_string(self, False)
+        return self.to_string(False)
 
 # =============================================================================
 
