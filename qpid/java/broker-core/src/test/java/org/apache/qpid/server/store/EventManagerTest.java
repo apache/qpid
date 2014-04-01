@@ -22,8 +22,8 @@ package org.apache.qpid.server.store;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.apache.qpid.server.store.Event.AFTER_ACTIVATE;
-import static org.apache.qpid.server.store.Event.BEFORE_ACTIVATE;
+import static org.apache.qpid.server.store.Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL;
+import static org.apache.qpid.server.store.Event.PERSISTENT_MESSAGE_SIZE_OVERFULL;
 import junit.framework.TestCase;
 
 public class EventManagerTest extends TestCase
@@ -33,28 +33,28 @@ public class EventManagerTest extends TestCase
 
     public void testEventListenerFires()
     {
-        _eventManager.addEventListener(_mockListener, BEFORE_ACTIVATE);
-        _eventManager.notifyEvent(BEFORE_ACTIVATE);
-        verify(_mockListener).event(BEFORE_ACTIVATE);
+        _eventManager.addEventListener(_mockListener, PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        _eventManager.notifyEvent(PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        verify(_mockListener).event(PERSISTENT_MESSAGE_SIZE_OVERFULL);
     }
 
     public void testEventListenerDoesntFire()
     {
-        _eventManager.addEventListener(_mockListener, BEFORE_ACTIVATE);
-        _eventManager.notifyEvent(AFTER_ACTIVATE);
+        _eventManager.addEventListener(_mockListener, PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
         verifyZeroInteractions(_mockListener);
     }
 
     public void testEventListenerFiresMultipleTimes()
     {
-        _eventManager.addEventListener(_mockListener, BEFORE_ACTIVATE);
-        _eventManager.addEventListener(_mockListener, AFTER_ACTIVATE);
+        _eventManager.addEventListener(_mockListener, PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        _eventManager.addEventListener(_mockListener, PERSISTENT_MESSAGE_SIZE_UNDERFULL);
 
-        _eventManager.notifyEvent(BEFORE_ACTIVATE);
-        verify(_mockListener).event(BEFORE_ACTIVATE);
+        _eventManager.notifyEvent(PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        verify(_mockListener).event(PERSISTENT_MESSAGE_SIZE_OVERFULL);
 
-        _eventManager.notifyEvent(AFTER_ACTIVATE);
-        verify(_mockListener).event(AFTER_ACTIVATE);
+        _eventManager.notifyEvent(PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+        verify(_mockListener).event(PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
 
     public void testMultipleListenersFireForSameEvent()
@@ -62,11 +62,11 @@ public class EventManagerTest extends TestCase
         final EventListener mockListener1 = mock(EventListener.class);
         final EventListener mockListener2 = mock(EventListener.class);
 
-        _eventManager.addEventListener(mockListener1, BEFORE_ACTIVATE);
-        _eventManager.addEventListener(mockListener2, BEFORE_ACTIVATE);
-        _eventManager.notifyEvent(BEFORE_ACTIVATE);
+        _eventManager.addEventListener(mockListener1, PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        _eventManager.addEventListener(mockListener2, PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        _eventManager.notifyEvent(PERSISTENT_MESSAGE_SIZE_OVERFULL);
 
-        verify(mockListener1).event(BEFORE_ACTIVATE);
-        verify(mockListener2).event(BEFORE_ACTIVATE);
+        verify(mockListener1).event(PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        verify(mockListener2).event(PERSISTENT_MESSAGE_SIZE_OVERFULL);
     }
 }

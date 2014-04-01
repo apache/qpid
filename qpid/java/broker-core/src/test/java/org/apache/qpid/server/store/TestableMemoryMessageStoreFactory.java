@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,41 +18,30 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration;
 
-import org.apache.commons.configuration.Configuration;
+package org.apache.qpid.server.store;
 
+import java.util.Map;
 
-public class ExchangeConfiguration
+import org.apache.qpid.server.plugin.MessageStoreFactory;
+
+public class TestableMemoryMessageStoreFactory implements MessageStoreFactory
 {
-
-    private Configuration _config;
-    private String _name;
-
-    public ExchangeConfiguration(String name, Configuration subset)
-    {
-        _name = name;
-        _config = subset;
-    }
-
-    public String getName()
-    {
-        return _name;
-    }
-
+    @Override
     public String getType()
     {
-        return _config.getString("type","direct");
+        return TestableMemoryMessageStore.TYPE;
     }
 
-    public boolean getDurable()
+    @Override
+    public MessageStore createMessageStore()
     {
-        return _config.getBoolean("durable", false);
+        return new TestableMemoryMessageStore();
     }
 
-    public boolean getAutoDelete()
+    @Override
+    public void validateAttributes(Map<String, Object> attributes)
     {
-        return _config.getBoolean("autodelete",false);
     }
 
 }

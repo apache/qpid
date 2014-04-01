@@ -19,10 +19,8 @@ package org.apache.qpid.server.store;/*
  *
  */
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import org.apache.commons.configuration.Configuration;
+
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 
 public class SlowMessageStoreFactory implements MessageStoreFactory
@@ -30,50 +28,13 @@ public class SlowMessageStoreFactory implements MessageStoreFactory
     @Override
     public String getType()
     {
-        return "SLOW";
+        return SlowMessageStore.TYPE;
     }
 
     @Override
     public MessageStore createMessageStore()
     {
         return new SlowMessageStore();
-    }
-
-    @Override
-    public Map<String, Object> convertStoreConfiguration(Configuration storeConfiguration)
-    {
-        Map<String, Object> convertedMap = new HashMap<String, Object>();
-        Configuration delaysConfig = storeConfiguration.subset("delays");
-
-        @SuppressWarnings("unchecked")
-        Iterator<String> delays = delaysConfig.getKeys();
-
-        Map<String,Long> delaysMap = new HashMap<String, Long>();
-
-        while (delays.hasNext())
-        {
-            String key = delays.next();
-
-            if (key.endsWith("pre"))
-            {
-                delaysMap.put("pre"+key.substring(0, key.length() - 4), delaysConfig.getLong(key));
-            }
-            else if (key.endsWith("post"))
-            {
-                delaysMap.put("post"+key.substring(0, key.length() - 5), delaysConfig.getLong(key));
-            }
-        }
-
-        if(!delaysMap.isEmpty())
-        {
-            convertedMap.put("slowMessageStoreDelays",delaysMap);
-        }
-
-
-        convertedMap.put("realStore", storeConfiguration.getString("realStore", null));
-
-
-        return convertedMap;
     }
 
     @Override

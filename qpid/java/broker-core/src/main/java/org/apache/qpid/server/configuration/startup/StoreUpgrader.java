@@ -1,4 +1,4 @@
-package org.apache.qpid.server.configuration.startup;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,16 +19,20 @@ package org.apache.qpid.server.configuration.startup;/*
  *
  */
 
+package org.apache.qpid.server.configuration.startup;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
 
 public abstract class StoreUpgrader
 {
+
 
     private static Map<String, StoreUpgrader> _upgraders = new HashMap<String, StoreUpgrader>();
 
@@ -134,7 +138,9 @@ public abstract class StoreUpgrader
         }
     };
 
-    private StoreUpgrader(String version)
+    final static StoreUpgrader UPGRADE_1_3 = new StoreUpgrader1_3("1.3");
+
+    protected StoreUpgrader(String version)
     {
         _upgraders.put(version, this);
     }

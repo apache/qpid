@@ -22,7 +22,6 @@ package org.apache.qpid.systest.rest.acl;
 
 import java.io.IOException;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
@@ -34,7 +33,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     private static final String DENIED_USER = "user2";
 
     @Override
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER);

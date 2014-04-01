@@ -31,7 +31,18 @@ import java.util.Map;
 import javax.jms.JMSException;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.ExclusivityPolicy;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -50,11 +61,9 @@ public class Asserts
                                 ConfiguredObject.LAST_UPDATED_TIME,
                                 ConfiguredObject.DESCRIPTION,
                                 VirtualHost.SUPPORTED_QUEUE_TYPES,
-                                VirtualHost.STORE_PATH,
-                                VirtualHost.CONFIG_PATH,
                                 VirtualHost.TYPE,
-                                VirtualHost.CONFIG_STORE_PATH,
-                                VirtualHost.CONFIG_STORE_TYPE);
+                                VirtualHost.CONFIGURATION_STORE_SETTINGS,
+                                VirtualHost.SECURITY_ACL);
 
         assertEquals("Unexpected value of attribute " + VirtualHost.NAME,
                      virtualHostName,
@@ -146,7 +155,7 @@ public class Asserts
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) queueData.get(Asserts.STATISTICS_ATTRIBUTE);
 
-        Asserts.assertAttributesPresent(statistics, 
+        Asserts.assertAttributesPresent(statistics,
                                         "bindingCount",
                                         "consumerCount",
                                         "consumerCountWithCredit",
@@ -226,7 +235,7 @@ public class Asserts
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) connectionData.get(STATISTICS_ATTRIBUTE);
- 
+
 
         assertAttributesPresent(statistics,
                                 "bytesIn",

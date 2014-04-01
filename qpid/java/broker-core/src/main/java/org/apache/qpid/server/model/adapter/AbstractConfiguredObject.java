@@ -39,7 +39,6 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 import javax.security.auth.Subject;
@@ -415,6 +414,25 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    <T extends ConfiguredObject<?>> Object getAttribute(String name, T parent, String parentAttributeName)
+    {
+        Object value = getActualAttribute(name);
+        if (value != null )
+        {
+            return value;
+        }
+        if (parent != null)
+        {
+            value = parent.getAttribute(parentAttributeName);
+            if (value != null)
+            {
+                return value;
+            }
+        }
+        return getDefaultAttribute(name);
+    }
+
+
     @Override
     public String getDescription()
     {
@@ -546,10 +564,19 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return getClass().getSimpleName() + " [id=" + _id + ", name=" + getName() + "]";
     }
 
+
     public ConfiguredObjectRecord asObjectRecord()
     {
         return new ConfiguredObjectRecord()
         {
+
+            @Override
+            public String toString()
+            {
+                return getClass().getSimpleName() + "[name=" + getName() + ", categoryClass=" + getCategoryClass() + ", type="
+                        + getType() + ", id=" + getId() + "]";
+            }
+
             @Override
             public UUID getId()
             {
@@ -598,8 +625,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
                 return parents;
             }
+
         };
     }
+
 
     @SuppressWarnings("unchecked")
     @Override

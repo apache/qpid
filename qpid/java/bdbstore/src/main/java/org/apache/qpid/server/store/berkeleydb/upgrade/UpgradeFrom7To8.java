@@ -26,7 +26,8 @@ import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.je.*;
-import org.apache.qpid.server.model.VirtualHost;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.berkeleydb.BDBConfiguredObjectRecord;
@@ -46,7 +47,7 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 {
 
     @Override
-    public void performUpgrade(Environment environment, UpgradeInteractionHandler handler, VirtualHost virtualHost)
+    public void performUpgrade(Environment environment, UpgradeInteractionHandler handler, ConfiguredObject<?> parent)
     {
         reportStarting(environment, 7);
 
@@ -78,7 +79,7 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 
                 if(!type.endsWith("Binding"))
                 {
-                    UUIDTupleBinding.getInstance().objectToEntry(virtualHost.getId(),value);
+                    UUIDTupleBinding.getInstance().objectToEntry(parent.getId(),value);
                     TupleOutput tupleOutput = new TupleOutput();
                     tupleOutput.writeLong(id.getMostSignificantBits());
                     tupleOutput.writeLong(id.getLeastSignificantBits());

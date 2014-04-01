@@ -60,6 +60,7 @@ import org.codehaus.jackson.node.ArrayNode;
 
 public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 {
+
     public static final String STORE_TYPE = "memory";
 
     private static final String DEFAULT_BROKER_NAME = "Broker";
@@ -545,7 +546,11 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             }
             else if (fieldNode.isObject())
             {
-                // ignore, in-line objects are not supported yet
+                if (attributes == null)
+                {
+                    attributes = new HashMap<String, Object>();
+                }
+                attributes.put(fieldName, toObject(fieldNode) );
             }
             else
             {

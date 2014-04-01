@@ -104,4 +104,11 @@ public class BDBConfiguredObjectRecord implements ConfiguredObjectRecord
         result = 31 * result + (_type != null ? _type.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString()
+    {
+        return "BDBConfiguredObjectRecord [id=" + _id + ", type=" + _type + ", name=" + (_attributes == null ? null : _attributes.get("name")) + ", parents=" + _parents + "]";
+    }
+
 }

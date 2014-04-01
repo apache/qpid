@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.server.model;
 
+import java.security.AccessControlException;
+import java.util.Collection;
+import java.util.Map;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.store.MessageStore;
 
-import java.security.AccessControlException;
-import java.util.Collection;
-import java.util.Map;
 import java.util.UUID;
 
 @ManagedObject( managesChildren = true )
@@ -48,19 +49,16 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     String STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "storeTransactionIdleTimeoutWarn";
     String STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "storeTransactionOpenTimeoutClose";
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
-    String STORE_TYPE                           = "storeType";
-    String STORE_PATH                           = "storePath";
-    String CONFIG_STORE_TYPE                    = "configStoreType";
-    String CONFIG_STORE_PATH                    = "configStorePath";
     String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
-    String CONFIG_PATH                          = "configPath";
+    String SECURITY_ACL                         = "securityAcl";
+    String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
+    String CONFIGURATION_STORE_SETTINGS         = "configurationStoreSettings";
+    String MESSAGE_STORE_SETTINGS               = "messageStoreSettings";
 
-    // Attributes
-
-    int CURRENT_CONFIG_VERSION = 4;
+    int CURRENT_CONFIG_VERSION = 5;
 
     @ManagedAttribute
     Collection<String> getSupportedExchangeTypes();
@@ -82,18 +80,6 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
 
     @ManagedAttribute
     long getQueue_flowResumeSizeBytes();
-
-    @ManagedAttribute
-    String getConfigStoreType();
-
-    @ManagedAttribute
-    String getConfigStorePath();
-
-    @ManagedAttribute
-    String getStoreType();
-
-    @ManagedAttribute
-    String getStorePath();
 
     @ManagedAttribute
     long getStoreTransactionIdleTimeoutClose();
@@ -123,7 +109,16 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     long getQueue_alertThresholdQueueDepthMessages();
 
     @ManagedAttribute
-    String getConfigPath();
+    String getSecurityAcl();
+
+    @ManagedAttribute
+    int getHouseKeepingThreadCount();
+
+    @ManagedAttribute
+    Map<String, Object> getMessageStoreSettings();
+
+    @ManagedAttribute
+    Map<String, Object> getConfigurationStoreSettings();
 
     @ManagedStatistic
     long getQueueCount();

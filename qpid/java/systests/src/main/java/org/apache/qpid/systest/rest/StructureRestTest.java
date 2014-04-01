@@ -30,6 +30,13 @@ import org.apache.qpid.test.utils.TestBrokerConfiguration;
 public class StructureRestTest extends QpidRestTestCase
 {
 
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        getRestTestHelper().createTestQueues();
+    }
+
     public void testGet() throws Exception
     {
         Map<String, Object> structure = getRestTestHelper().getJsonAsMap("/rest/structure");
@@ -53,49 +60,51 @@ public class StructureRestTest extends QpidRestTestCase
             Map<String, Object> host = getRestTestHelper().find("name", hostName, virtualhosts);
             assertNotNull("Host " + hostName + " is not found ", host);
             assertNode(host, hostName);
+        }
+
+        String hostName = "test";
+        Map<String, Object> host = getRestTestHelper().find("name", hostName, virtualhosts);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> queues = (List<Map<String, Object>>) host.get("queues");
+        assertNotNull("Host " + hostName + " queues are not found ", queues);
+        for (String queueName : RestTestHelper.EXPECTED_QUEUES)
+        {
+            Map<String, Object> queue = getRestTestHelper().find("name", queueName, queues);
+            assertNotNull(hostName + " queue " + queueName + " is not found ", queue);
+            assertNode(queue, queueName);
 
             @SuppressWarnings("unchecked")
-            List<Map<String, Object>> queues = (List<Map<String, Object>>) host.get("queues");
-            assertNotNull("Host " + hostName + " queues are not found ", queues);
-            for (String queueName : EXPECTED_QUEUES)
+            List<Map<String, Object>> bindings = (List<Map<String, Object>>) queue.get("bindings");
+            assertNotNull(hostName + " queue " + queueName + " bindings are not found ", queues);
+            for (Map<String, Object> binding : bindings)
             {
-                Map<String, Object> queue = getRestTestHelper().find("name", queueName, queues);
-                assertNotNull(hostName + " queue " + queueName + " is not found ", queue);
-                assertNode(queue, queueName);
-
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> bindings = (List<Map<String, Object>>) queue.get("bindings");
-                assertNotNull(hostName + " queue " + queueName + " bindings are not found ", queues);
-                for (Map<String, Object> binding : bindings)
-                {
-                    assertNode(binding, queueName);
-                }
-            }
-
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> exchanges = (List<Map<String, Object>>) host.get("exchanges");
-            assertNotNull("Host " + hostName + " exchanges are not found ", exchanges);
-            for (String exchangeName : EXPECTED_EXCHANGES)
-            {
-                Map<String, Object> exchange = getRestTestHelper().find("name", exchangeName, exchanges);
-                assertNotNull("Exchange " + exchangeName + " is not found ", exchange);
-                assertNode(exchange, exchangeName);
-                if (ExchangeDefaults.DIRECT_EXCHANGE_NAME.equalsIgnoreCase(exchangeName) ||
-                    ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equalsIgnoreCase(exchangeName))
-                {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> bindings = (List<Map<String, Object>>) exchange.get("bindings");
-                    assertNotNull(hostName + " exchange " + exchangeName + " bindings are not found ", bindings);
-                    for (String queueName : EXPECTED_QUEUES)
-                    {
-                        Map<String, Object> binding = getRestTestHelper().find("name", queueName, bindings);
-                        assertNotNull(hostName + " exchange " + exchangeName + " binding  " + queueName + " is not found", binding);
-                        assertNode(binding, queueName);
-                    }
-                }
+                assertNode(binding, queueName);
             }
         }
 
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> exchanges = (List<Map<String, Object>>) host.get("exchanges");
+        assertNotNull("Host " + hostName + " exchanges are not found ", exchanges);
+        for (String exchangeName : EXPECTED_EXCHANGES)
+        {
+            Map<String, Object> exchange = getRestTestHelper().find("name", exchangeName, exchanges);
+            assertNotNull("Exchange " + exchangeName + " is not found ", exchange);
+            assertNode(exchange, exchangeName);
+            if (ExchangeDefaults.DIRECT_EXCHANGE_NAME.equalsIgnoreCase(exchangeName) ||
+                ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equalsIgnoreCase(exchangeName))
+            {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> bindings = (List<Map<String, Object>>) exchange.get("bindings");
+                assertNotNull(hostName + " exchange " + exchangeName + " bindings are not found ", bindings);
+                for (String queueName : RestTestHelper.EXPECTED_QUEUES)
+                {
+                    Map<String, Object> binding = getRestTestHelper().find("name", queueName, bindings);
+                    assertNotNull(hostName + " exchange " + exchangeName + " binding  " + queueName + " is not found", binding);
+                    assertNode(binding, queueName);
+                }
+            }
+        }
 
         String httpPortName = TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT;
         Map<String, Object> portData = getRestTestHelper().find(Port.NAME, httpPortName, ports);

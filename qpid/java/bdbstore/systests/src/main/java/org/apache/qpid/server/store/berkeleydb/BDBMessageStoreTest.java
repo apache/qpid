@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -38,18 +37,20 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
-import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
-import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
+import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaDataType_0_8;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreTest;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -198,7 +199,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         String returnedPayloadString_0_10 = new String(recoveredContent.array());
         assertEquals("Message Payload has changed", bodyText, returnedPayloadString_0_10);
 
-        readOnlyStore.close();
+        readOnlyStore.closeMessageStore();
     }
 
     private DeliveryProperties createDeliveryProperties_0_10()
@@ -233,14 +234,17 @@ public class BDBMessageStoreTest extends MessageStoreTest
      */
     private BDBMessageStore reloadStore(BDBMessageStore messageStore) throws Exception
     {
-        messageStore.close();
+        messageStore.closeMessageStore();
+
 
         BDBMessageStore newStore = new BDBMessageStore();
+
         MessageStoreRecoveryHandler recoveryHandler = mock(MessageStoreRecoveryHandler.class);
         when(recoveryHandler.begin()).thenReturn(mock(StoredMessageRecoveryHandler.class));
-        newStore.configureMessageStore(getVirtualHostModel(), recoveryHandler, null);
+        VirtualHost<?> virtualHost = getVirtualHostModel();
+        newStore.openMessageStore(virtualHost, virtualHost.getMessageStoreSettings());
 
-        newStore.activate();
+        newStore.recoverMessageStore(recoveryHandler, null);
 
         return newStore;
     }
@@ -520,7 +524,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         File location = new File(storeLocation);
         assertTrue("Store does not exist at " + storeLocation, location.exists());
 
-        bdbStore.close();
+        bdbStore.closeMessageStore();
         assertTrue("Store does not exist at " + storeLocation, location.exists());
 
         bdbStore.onDelete();

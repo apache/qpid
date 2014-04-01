@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
@@ -54,53 +50,29 @@ public class BDBMessageStoreFactory implements MessageStoreFactory, DurableConfi
     }
 
     @Override
-    public Map<String, Object> convertStoreConfiguration(Configuration storeConfiguration)
-    {
-        final List<Object> argumentNames = storeConfiguration.getList("envConfig.name");
-        final List<Object> argumentValues = storeConfiguration.getList("envConfig.value");
-        final int initialSize = argumentNames.size();
-
-        final Map<String,String> attributes = new HashMap<String,String>(initialSize);
-
-        for (int i = 0; i < argumentNames.size(); i++)
-        {
-            final String argName = argumentNames.get(i).toString();
-            final String argValue = argumentValues.get(i).toString();
-
-            attributes.put(argName, argValue);
-        }
-
-        if(initialSize != 0)
-        {
-            return Collections.singletonMap(BDBMessageStore.ENVIRONMENT_CONFIGURATION, (Object)attributes);
-        }
-        else
-        {
-            return Collections.emptyMap();
-        }
-
-
-    }
-
-    @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        if(getType().equals(attributes.get(VirtualHost.STORE_TYPE)))
+        @SuppressWarnings("unchecked")
+        Map<String, Object> messageStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        if(messageStoreSettings != null && getType().equals(messageStoreSettings.get(MessageStore.STORE_TYPE)))
         {
-            Object storePath = attributes.get(VirtualHost.STORE_PATH);
+            Object storePath = messageStoreSettings.get(MessageStore.STORE_PATH);
             if(!(storePath instanceof String))
             {
-                throw new IllegalArgumentException("Attribute '"+ VirtualHost.STORE_PATH
+                throw new IllegalArgumentException("Setting '"+ MessageStore.STORE_PATH
                                                                +"' is required and must be of type String.");
 
             }
         }
-        if(getType().equals(attributes.get(VirtualHost.CONFIG_STORE_TYPE)))
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> configurationStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.CONFIGURATION_STORE_SETTINGS);
+        if(configurationStoreSettings != null && getType().equals(configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE)))
         {
-            Object storePath = attributes.get(VirtualHost.CONFIG_STORE_PATH);
+            Object storePath = configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
             if(!(storePath instanceof String))
             {
-                throw new IllegalArgumentException("Attribute '"+ VirtualHost.CONFIG_STORE_PATH
+                throw new IllegalArgumentException("Setting '"+ DurableConfigurationStore.STORE_PATH
                                                                +"' is required and must be of type String.");
 
             }

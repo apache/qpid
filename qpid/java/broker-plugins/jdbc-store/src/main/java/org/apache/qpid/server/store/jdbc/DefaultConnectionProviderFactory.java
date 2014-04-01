@@ -20,21 +20,23 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
-import org.apache.qpid.server.model.VirtualHost;
+import java.util.Map;
+
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 
 public class DefaultConnectionProviderFactory implements JDBCConnectionProviderFactory
 {
 
+    public static final String TYPE = "DEFAULT";
+
     @Override
     public String getType()
     {
-        return "NONE";
+        return TYPE;
     }
 
     @Override
-    public ConnectionProvider getConnectionProvider(String connectionUrl,
-                                                    VirtualHost virtualHost)
+    public ConnectionProvider getConnectionProvider(String connectionUrl, Map<String, Object> settings)
     {
         return new DefaultConnectionProvider(connectionUrl);
     }

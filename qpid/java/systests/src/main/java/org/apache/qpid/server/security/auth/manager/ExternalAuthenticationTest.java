@@ -38,7 +38,6 @@ import java.util.Map;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -328,12 +327,12 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         return getConnection(new AMQConnectionURL(url));
     }
 
-    private void setCommonBrokerSSLProperties(boolean needClientAuth) throws ConfigurationException
+    private void setCommonBrokerSSLProperties(boolean needClientAuth)
     {
         setCommonBrokerSSLProperties(needClientAuth, Collections.singleton(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE));
     }
 
-    private void setCommonBrokerSSLProperties(boolean needClientAuth, Collection<String> trustStoreNames) throws ConfigurationException
+    private void setCommonBrokerSSLProperties(boolean needClientAuth, Collection<String> trustStoreNames)
     {
         TestBrokerConfiguration config = getBrokerConfiguration();
 

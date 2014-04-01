@@ -20,25 +20,22 @@
  */
 package org.apache.qpid.systest.rest;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE;
+import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE_PASSWORD;
+import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
+import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE;
-import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE_PASSWORD;
-import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
-import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BrokerRestHttpsClientCertAuthTest extends QpidRestTestCase
 {
@@ -56,7 +53,7 @@ public class BrokerRestHttpsClientCertAuthTest extends QpidRestTestCase
     }
 
     @Override
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         super.customizeConfiguration();
         getRestTestHelper().setUseSslAuth(true);

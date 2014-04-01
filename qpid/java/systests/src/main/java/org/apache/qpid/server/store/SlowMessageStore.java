@@ -21,92 +21,60 @@
 package org.apache.qpid.server.store;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
-import java.nio.ByteBuffer;
-import java.util.HashMap;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 
 public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final Logger _logger = Logger.getLogger(SlowMessageStore.class);
-    private static final String DELAYS = "delays";
+
+    public static final String TYPE = "SLOW";
+    public static final String DELAYS = "delays";
+    public static final String REAL_STORE = "realStore";
+
+    private static final String DEFAULT_DELAY = "default";
+    private static final String PRE = "pre";
+    private static final String POST = "post";
+
     private HashMap<String, Long> _preDelays = new HashMap<String, Long>();
     private HashMap<String, Long> _postDelays = new HashMap<String, Long>();
     private long _defaultDelay = 0L;
-    private MessageStore _realStore = new MessageStoreCreator().createMessageStore("Memory");
-    private DurableConfigurationStore _durableConfigurationStore = (DurableConfigurationStore) _realStore;
-    private static final String PRE = "pre";
-    private static final String POST = "post";
-    private String DEFAULT_DELAY = "default";
+    private MessageStore _realMessageStore = null;
+    private DurableConfigurationStore _realDurableConfigurationStore = null;
 
-    // ***** MessageStore Interface.
+    private Map<EventListener, Event[]> _eventListeners = new ConcurrentHashMap<EventListener, Event[]>();
 
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
+    @Override
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
-        _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
-
-        Object delaysAttr = virtualHost.getAttribute("slowMessageStoreDelays");
-
-        Map delays = (delaysAttr instanceof Map) ? (Map) delaysAttr : Collections.emptyMap();
-        configureDelays(delays);
-
-        final Object realStoreAttr = virtualHost.getAttribute("realStore");
-        String messageStoreClass = realStoreAttr == null ? null : realStoreAttr.toString();
-
-        if (delays.containsKey(DEFAULT_DELAY))
+        if (storeSettings != null && storeSettings.get(REAL_STORE) != null)
         {
-            _defaultDelay = Long.parseLong(String.valueOf(delays.get(DEFAULT_DELAY)));
+            final String realStore = (String) storeSettings.get(REAL_STORE);
+            _realDurableConfigurationStore = new DurableConfigurationStoreCreator().createMessageStore(realStore);
+            _realDurableConfigurationStore.openConfigurationStore(parent, storeSettings);
         }
-
-        if (messageStoreClass != null)
-        {
-            try
-            {
-                Class<?> clazz = Class.forName(messageStoreClass);
-
-                Object o = clazz.newInstance();
-
-                if (!(o instanceof MessageStore))
-                {
-                    throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
-                                                 " does not.");
-                }
-                _realStore = (MessageStore) o;
-                if(o instanceof DurableConfigurationStore)
-                {
-                    _durableConfigurationStore = (DurableConfigurationStore)o;
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to find message store class", e);
-            }
-            catch (InstantiationException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to initialise message store class", e);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new ServerScopedRuntimeException("Unable to access message store class", e);
-            }
-        }
-        _durableConfigurationStore.configureConfigStore(virtualHost, recoveryHandler);
-
     }
 
-    private void configureDelays(Map<Object, Object> config)
+    @Override
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    {
+        _realDurableConfigurationStore.recoverConfigurationStore(recoveryHandler);
+    }
+
+    private void configureDelays(Map<String, Object> delays)
     {
 
-        for(Map.Entry<Object, Object> entry : config.entrySet())
+        for(Map.Entry<String, Object> entry : delays.entrySet())
         {
-            String key = String.valueOf(entry.getKey());
+            String key = entry.getKey();
             if (key.startsWith(PRE))
             {
                 _preDelays.put(key.substring(PRE.length()), Long.parseLong(String.valueOf(entry.getValue())));
@@ -165,30 +133,67 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         }
     }
 
-
-    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
+    @Override
+    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings)
     {
-        _realStore.configureMessageStore(virtualHost, messageRecoveryHandler, tlogRecoveryHandler);
+        Object delaysAttr = messageStoreSettings.get(DELAYS);
+
+        @SuppressWarnings({ "unchecked" })
+        Map<String,Object> delays = (delaysAttr instanceof Map) ? (Map<String,Object>) delaysAttr : Collections.<String,Object>emptyMap();
+        configureDelays(delays);
+
+        if (delays.containsKey(DEFAULT_DELAY))
+        {
+            _defaultDelay = Long.parseLong(String.valueOf(delays.get(DEFAULT_DELAY)));
+        }
+
+        final Object realStoreAttr = messageStoreSettings.get(REAL_STORE) == null ? MemoryMessageStore.TYPE : messageStoreSettings.get(REAL_STORE);
+        final String realStore = (String) realStoreAttr;
+        _realMessageStore = MessageStoreFactory.FACTORY_LOADER.get(realStore).createMessageStore();
+
+        if (!_eventListeners.isEmpty())
+        {
+            for (Iterator<Map.Entry<EventListener, Event[]>> it = _eventListeners.entrySet().iterator(); it.hasNext();)
+            {
+                Map.Entry<EventListener, Event[]> entry = it.next();
+                _realMessageStore.addEventListener(entry.getKey(), entry.getValue());
+                it.remove();
+            }
+        }
+        _realMessageStore.openMessageStore(parent, messageStoreSettings);
+
+        if (_realDurableConfigurationStore == null)
+        {
+            _realDurableConfigurationStore = (DurableConfigurationStore) _realMessageStore;
+        }
+
     }
 
-    public void close()
+    @Override
+    public void closeMessageStore()
     {
         doPreDelay("close");
-        _realStore.close();
+        _realMessageStore.closeMessageStore();
         doPostDelay("close");
     }
 
+    @Override
+    public void closeConfigurationStore()
+    {
+        _realDurableConfigurationStore.closeConfigurationStore();
+    }
+
+    @Override
     public <M extends StorableMessageMetaData> StoredMessage<M> addMessage(M metaData)
     {
-        return _realStore.addMessage(metaData);
+        return _realMessageStore.addMessage(metaData);
     }
 
     @Override
     public void create(ConfiguredObjectRecord record) throws StoreException
     {
         doPreDelay("create");
-        _durableConfigurationStore.create(record);
+        _realDurableConfigurationStore.create(record);
         doPostDelay("create");
     }
 
@@ -197,7 +202,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     public UUID[] remove(final ConfiguredObjectRecord... objects) throws StoreException
     {
         doPreDelay("remove");
-        UUID[] removed = _durableConfigurationStore.remove(objects);
+        UUID[] removed = _realDurableConfigurationStore.remove(objects);
         doPostDelay("remove");
         return removed;
     }
@@ -206,37 +211,23 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
         doPreDelay("update");
-        _durableConfigurationStore.update(createIfNecessary, records);
+        _realDurableConfigurationStore.update(createIfNecessary, records);
         doPostDelay("update");
     }
 
+    @Override
     public Transaction newTransaction()
     {
         doPreDelay("beginTran");
-        Transaction txn = new SlowTransaction(_realStore.newTransaction());
+        Transaction txn = new SlowTransaction(_realMessageStore.newTransaction());
         doPostDelay("beginTran");
         return txn;
     }
 
-
+    @Override
     public boolean isPersistent()
     {
-        return _realStore.isPersistent();
-    }
-
-    public void storeMessageHeader(Long messageNumber, ServerMessage message)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void storeContent(Long messageNumber, long offset, ByteBuffer body)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public ServerMessage getMessage(Long messageNumber)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _realMessageStore.isPersistent();
     }
 
     private class SlowTransaction implements Transaction
@@ -248,6 +239,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             _underlying = underlying;
         }
 
+        @Override
         public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             doPreDelay("enqueueMessage");
@@ -255,6 +247,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             doPostDelay("enqueueMessage");
         }
 
+        @Override
         public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             doPreDelay("dequeueMessage");
@@ -262,6 +255,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             doPostDelay("dequeueMessage");
         }
 
+        @Override
         public void commitTran()
         {
             doPreDelay("commitTran");
@@ -269,6 +263,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             doPostDelay("commitTran");
         }
 
+        @Override
         public StoreFuture commitTranAsync()
         {
             doPreDelay("commitTran");
@@ -277,6 +272,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             return future;
         }
 
+        @Override
         public void abortTran()
         {
             doPreDelay("abortTran");
@@ -284,11 +280,13 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             doPostDelay("abortTran");
         }
 
+        @Override
         public void removeXid(long format, byte[] globalId, byte[] branchId)
         {
             _underlying.removeXid(format, globalId, branchId);
         }
 
+        @Override
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
         {
             _underlying.recordXid(format, globalId, branchId, enqueues, dequeues);
@@ -296,33 +294,40 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void activate()
+    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
-       _realStore.activate();
+       _realMessageStore.recoverMessageStore(messageRecoveryHandler, transactionLogRecoveryHandler);
     }
 
     @Override
     public void addEventListener(EventListener eventListener, Event... events)
     {
-        _realStore.addEventListener(eventListener, events);
+        if (_realMessageStore == null)
+        {
+            _eventListeners .put(eventListener, events);
+        }
+        else
+        {
+            _realMessageStore.addEventListener(eventListener, events);
+        }
     }
 
     @Override
     public String getStoreLocation()
     {
-        return _realStore.getStoreLocation();
+        return _realMessageStore.getStoreLocation();
     }
 
     @Override
     public String getStoreType()
     {
-        return "SLOW";
+        return TYPE;
     }
 
     @Override
     public void onDelete()
     {
-        _realStore.onDelete();
+        _realMessageStore.onDelete();
     }
 
 }

@@ -28,8 +28,8 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
-
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -49,6 +49,7 @@ public class PriorityQueueListTest extends QpidTestCase
 
     protected void setUp()
     {
+        BrokerTestHelper.setUp();
         QueueEntry[] entries = new QueueEntry[PRIORITIES.length];
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
@@ -79,6 +80,19 @@ public class PriorityQueueListTest extends QpidTestCase
         _priority4message2 = entries[3];
         _priority5message1 = entries[1];
         _priority5message2 = entries[2];
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            BrokerTestHelper.tearDown();
+        }
     }
 
     public void testPriorityQueueEntryCompareToItself()

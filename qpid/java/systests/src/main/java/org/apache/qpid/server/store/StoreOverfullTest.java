@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -37,7 +39,9 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class StoreOverfullTest extends QpidBrokerTestCase
 {
@@ -60,9 +64,13 @@ public class StoreOverfullTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.store.class", QuotaMessageStore.class.getName());
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.store.overfull-size", String.valueOf(OVERFULL_SIZE));
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.store.underfull-size", String.valueOf(UNDERFULL_SIZE));
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_TYPE, QuotaMessageStore.TYPE);
+        messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
+        messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
+
+        TestBrokerConfiguration config = getBrokerConfiguration();
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
         super.setUp();
 

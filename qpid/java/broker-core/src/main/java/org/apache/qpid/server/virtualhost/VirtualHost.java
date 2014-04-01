@@ -28,7 +28,6 @@ import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -48,8 +47,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
                                      EventLoggerProvider
 {
     IConnectionRegistry getConnectionRegistry();
-
-    VirtualHostConfiguration getConfiguration();
 
     String getName();
 
@@ -136,6 +133,8 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
     long getDefaultQueueFlowResumeSizeBytes();
 
     int getDefaultMaximumDeliveryAttempts();
+
+    boolean getDefaultDeadLetterQueueEnabled();
 
     TaskExecutor getTaskExecutor();
 

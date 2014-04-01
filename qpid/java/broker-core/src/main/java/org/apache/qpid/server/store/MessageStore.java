@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.model.VirtualHost;
+import java.util.Map;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 
 /**
  * MessageStore defines the interface to a storage area, which can be used to preserve the state of messages.
@@ -28,22 +30,25 @@ import org.apache.qpid.server.model.VirtualHost;
  */
 public interface MessageStore
 {
-    /**
-     * Called after instantiation in order to configure the message store. A particular implementation can define
-     * whatever parameters it wants.
-     *
-     *
-     *
-     *
-     * @param virtualHost
-     * @param messageRecoveryHandler  Handler to be called as the store recovers on start up
-     * @param tlogRecoveryHandler
-     * @throws Exception If any error occurs that means the store is unable to configure itself.
-     */
-    void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                               TransactionLogRecoveryHandler tlogRecoveryHandler);
+    String STORE_TYPE                           = "storeType";
+    String STORE_PATH                           = "storePath";
+    String UNDERFULL_SIZE                       = "storeUnderfullSize";
+    String OVERFULL_SIZE                        = "storeOverfullSize";
 
-    void activate();
+    /**
+     * Called after instantiation in order to open and initialize the message store. A particular implementation can define
+     * whatever parameters it wants.
+     * @param parent virtual host name
+     * @param messageStoreSettings store settings
+     */
+    void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings);
+
+    /**
+     * Called after opening to recover messages and transactions with given recovery handlers
+     * @param messageRecoveryHandler
+     * @param transactionLogRecoveryHandler
+     */
+    void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler);
 
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
 
@@ -59,15 +64,14 @@ public interface MessageStore
 
     /**
      * Called to close and cleanup any resources used by the message store.
-     *
-     * @throws Exception If the close fails.
      */
-    void close();
+    void closeMessageStore();
 
     void addEventListener(EventListener eventListener, Event... events);
 
     String getStoreLocation();
 
+    // TODO dead method - remove??
     String getStoreType();
 
     void onDelete();

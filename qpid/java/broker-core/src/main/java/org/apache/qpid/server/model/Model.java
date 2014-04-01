@@ -34,10 +34,11 @@ public class Model
      *
      * 1.0 Initial version
      * 1.1 Addition of mandatory virtual host type / different types of virtual host
-     *
+     * 1.3 Truststore/Keystore type => trustStoreType / type => keyStoreType
+     * 1.4 Separate messageStoreSettings from virtualhost
      */
     public static final int MODEL_MAJOR_VERSION = 1;
-    public static final int MODEL_MINOR_VERSION = 3;
+    public static final int MODEL_MINOR_VERSION = 4;
     public static final String MODEL_VERSION = MODEL_MAJOR_VERSION + "." + MODEL_MINOR_VERSION;
 
     private static final Model MODEL_INSTANCE = new Model();

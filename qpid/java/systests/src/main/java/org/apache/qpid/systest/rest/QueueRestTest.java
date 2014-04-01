@@ -83,10 +83,8 @@ public class QueueRestTest extends QpidRestTestCase
     {
         String queueName = getTestQueueName();
         List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/queue/test");
-        assertEquals("Unexpected number of queues", EXPECTED_QUEUES.length + 1, queues.size());
-        String[] expectedQueues = new String[EXPECTED_QUEUES.length + 1];
-        System.arraycopy(EXPECTED_QUEUES, 0, expectedQueues, 0, EXPECTED_QUEUES.length);
-        expectedQueues[EXPECTED_QUEUES.length] = queueName;
+        assertEquals("Unexpected number of queues", 1, queues.size());
+        String[] expectedQueues = new String[]{queueName};
 
         for (String name : expectedQueues)
         {

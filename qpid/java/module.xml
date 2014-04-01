@@ -418,6 +418,7 @@
     <propertyref name="java.naming.factory.initial"/>
     <propertyref name="java.naming.provider.url"/>
     <propertyref name="messagestore.class.name" />
+    <propertyref name="messagestore.type" />
     <propertyref name="max_prefetch"/>
 
     <propertyref name="QPID_HOME"/>

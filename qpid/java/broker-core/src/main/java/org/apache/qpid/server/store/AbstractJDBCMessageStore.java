@@ -21,11 +21,7 @@
 package org.apache.qpid.server.store;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -36,16 +32,24 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.transport.ConnectionOpen;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
@@ -77,15 +81,15 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     private static final int DEFAULT_CONFIG_VERSION = 0;
 
-    public static String[] ALL_TABLES =
-            new String[]{DB_VERSION_TABLE_NAME, XID_ACTIONS_TABLE_NAME,
-                    XID_TABLE_NAME, QUEUE_ENTRY_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME, META_DATA_TABLE_NAME,
-                    CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURED_OBJECT_HIERARCHY_TABLE_NAME, CONFIGURATION_VERSION_TABLE_NAME};
+    public static final Set<String> CONFIGURATION_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURATION_VERSION_TABLE_NAME));
+    public static final Set<String> MESSAGE_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(DB_VERSION_TABLE_NAME,
+                                                                                                  META_DATA_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME,
+                                                                                                    QUEUE_ENTRY_TABLE_NAME,
+                                                                                                    XID_TABLE_NAME, XID_ACTIONS_TABLE_NAME));
 
     private static final int DB_VERSION = 8;
 
     private final AtomicLong _messageId = new AtomicLong(0);
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     private static final String CREATE_DB_VERSION_TABLE = "CREATE TABLE "+ DB_VERSION_TABLE_NAME + " ( version int not null )";
     private static final String INSERT_INTO_DB_VERSION = "INSERT INTO "+ DB_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
@@ -172,69 +176,130 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     protected final EventManager _eventManager = new EventManager();
 
-    protected final StateManager _stateManager;
+    private final AtomicBoolean _messageStoreOpen = new AtomicBoolean();
+    private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
 
-    private MessageStoreRecoveryHandler _messageRecoveryHandler;
-    private TransactionLogRecoveryHandler _tlogRecoveryHandler;
-    private ConfigurationRecoveryHandler _configRecoveryHandler;
-    private VirtualHost _virtualHost;
+    private boolean _initialized;
 
-    public AbstractJDBCMessageStore()
-    {
-        _stateManager = new StateManager(_eventManager);
-    }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler configRecoveryHandler)
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
-        _stateManager.attainState(State.INITIALISING);
-        _configRecoveryHandler = configRecoveryHandler;
-        _virtualHost = virtualHost;
-
+        if (_configurationStoreOpen.compareAndSet(false,  true))
+        {
+            initialiseIfNecessary(parent.getName(), storeSettings);
+            try
+            {
+                createOrOpenConfigurationStoreDatabase();
+                upgradeIfVersionTableExists(parent);
+            }
+            catch(SQLException e)
+            {
+                throw new StoreException("Cannot create databases or upgrade", e);
+            }
+        }
     }
 
-    @Override
-    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
+    private void initialiseIfNecessary(String virtualHostName, Map<String, Object> storeSettings)
     {
-        if(_stateManager.isInState(State.INITIAL))
-        {
-            _stateManager.attainState(State.INITIALISING);
-        }
-
-        _virtualHost = virtualHost;
-        _tlogRecoveryHandler = tlogRecoveryHandler;
-        _messageRecoveryHandler = recoveryHandler;
-
-        completeInitialisation();
-    }
-
-    private void completeInitialisation()
-    {
-        commonConfiguration();
-
-        _stateManager.attainState(State.INITIALISED);
-    }
-
-    @Override
-    public void activate()
-    {
-        if(_stateManager.isInState(State.INITIALISING))
-        {
-            completeInitialisation();
-        }
-        _stateManager.attainState(State.ACTIVATING);
-
-        // this recovers durable exchanges, queues, and bindings
-        if(_configRecoveryHandler != null)
-        {
-            recoverConfiguration(_configRecoveryHandler);
-        }
-        if(_messageRecoveryHandler != null)
+        if (!_initialized)
         {
             try
             {
-                recoverMessages(_messageRecoveryHandler);
+                implementationSpecificConfiguration(virtualHostName, storeSettings);
+            }
+            catch (ClassNotFoundException e)
+            {
+               throw new StoreException("Cannot find driver class", e);
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Unexpected exception occured", e);
+            }
+            _initialized = true;
+        }
+    }
+
+    @Override
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    {
+        checkConfigurationStoreOpen();
+
+        try
+        {
+            recoveryHandler.beginConfigurationRecovery(this, getConfigVersion());
+            loadConfiguredObjects(recoveryHandler);
+            setConfigVersion(recoveryHandler.completeConfigurationRecovery());
+        }
+        catch (SQLException e)
+        {
+            throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
+        }
+    }
+
+    private void checkConfigurationStoreOpen()
+    {
+        if (!_configurationStoreOpen.get())
+        {
+            throw new IllegalStateException("Configuration store is not open");
+        }
+    }
+
+    private void checkMessageStoreOpen()
+    {
+        if (!_messageStoreOpen.get())
+        {
+            throw new IllegalStateException("Message store is not open");
+        }
+    }
+
+    private void upgradeIfVersionTableExists(ConfiguredObject<?> parent)
+            throws SQLException {
+        Connection conn = newAutoCommitConnection();
+        try
+        {
+            if (tableExists(DB_VERSION_TABLE_NAME, conn))
+            {
+                upgradeIfNecessary(parent);
+            }
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                conn.close();
+            }
+        }
+    }
+
+    @Override
+    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings)
+    {
+        if (_messageStoreOpen.compareAndSet(false,  true))
+        {
+            initialiseIfNecessary(parent.getName(), messageStoreSettings);
+            try
+            {
+                createOrOpenMessageStoreDatabase();
+                upgradeIfNecessary(parent);
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Unable to activate message store ", e);
+            }
+        }
+    }
+
+    @Override
+    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
+    {
+        checkMessageStoreOpen();
+
+        if(messageRecoveryHandler != null)
+        {
+            try
+            {
+                recoverMessages(messageRecoveryHandler);
             }
             catch (SQLException e)
             {
@@ -242,11 +307,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                                                        "persistent store ", e);
             }
         }
-        if(_tlogRecoveryHandler != null)
+        if(transactionLogRecoveryHandler != null)
         {
             try
             {
-                TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(_tlogRecoveryHandler);
+                TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh = recoverQueueEntries(transactionLogRecoveryHandler);
                 recoverXids(dtxrh);
             }
             catch (SQLException e)
@@ -256,29 +321,9 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             }
 
         }
-
-        _stateManager.attainState(State.ACTIVE);
     }
 
-    private void commonConfiguration()
-    {
-        try
-        {
-            implementationSpecificConfiguration(_virtualHost.getName(), _virtualHost);
-            createOrOpenDatabase();
-            upgradeIfNecessary();
-        }
-        catch (ClassNotFoundException e)
-        {
-            throw new StoreException("Unable to configure message store ", e);
-        }
-        catch (SQLException e)
-        {
-            throw new StoreException("Unable to configure message store ", e);
-        }
-    }
-
-    protected void upgradeIfNecessary() throws SQLException
+    protected void upgradeIfNecessary(ConfiguredObject<?> parent) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
         try
@@ -300,7 +345,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         case 6:
                             upgradeFromV6();
                         case 7:
-                            upgradeFromV7();
+                            upgradeFromV7(parent);
                         case DB_VERSION:
                             return;
                         default:
@@ -330,7 +375,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
 
-    private void upgradeFromV7() throws SQLException
+    private void upgradeFromV7(ConfiguredObject<?> parent) throws SQLException
     {
         Connection connection = newConnection();
         try
@@ -390,7 +435,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 {
                     stmt.setString(1, id.toString());
                     stmt.setString(2, "VirtualHost");
-                    stmt.setString(3, _virtualHost.getId().toString());
+                    stmt.setString(3, parent.getId().toString());
                     stmt.execute();
                 }
                 for(Map.Entry<UUID, Map<String,Object>> bindingEntry : bindingsToUpdate.entrySet())
@@ -481,8 +526,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    protected abstract void implementationSpecificConfiguration(String name,
-                                                                VirtualHost virtualHost) throws ClassNotFoundException, SQLException;
+    protected abstract void implementationSpecificConfiguration(String name, Map<String, Object> messageStoreSettings) throws ClassNotFoundException, SQLException;
 
     abstract protected Logger getLogger();
 
@@ -492,19 +536,27 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     abstract protected String getSqlBigIntType();
 
-    protected void createOrOpenDatabase() throws SQLException
+    protected void createOrOpenMessageStoreDatabase() throws SQLException
     {
         Connection conn = newAutoCommitConnection();
 
         createVersionTable(conn);
-        createConfigVersionTable(conn);
-        createConfiguredObjectsTable(conn);
-        createConfiguredObjectHierarchyTable(conn);
         createQueueEntryTable(conn);
         createMetaDataTable(conn);
         createMessageContentTable(conn);
         createXidTable(conn);
         createXidActionTable(conn);
+        conn.close();
+    }
+
+    protected void createOrOpenConfigurationStoreDatabase() throws SQLException
+    {
+        Connection conn = newAutoCommitConnection();
+
+        createConfigVersionTable(conn);
+        createConfiguredObjectsTable(conn);
+        createConfiguredObjectHierarchyTable(conn);
+
         conn.close();
     }
 
@@ -596,8 +648,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-
-
     private void createQueueEntryTable(final Connection conn) throws SQLException
     {
         if(!tableExists(QUEUE_ENTRY_TABLE_NAME, conn))
@@ -661,8 +711,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
 
     }
-
-
 
     private void createXidTable(final Connection conn) throws SQLException
     {
@@ -734,21 +782,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    protected void recoverConfiguration(ConfigurationRecoveryHandler recoveryHandler)
-    {
-        try
-        {
-            recoveryHandler.beginConfigurationRecovery(this, getConfigVersion());
-            loadConfiguredObjects(recoveryHandler);
-
-            setConfigVersion(recoveryHandler.completeConfigurationRecovery());
-        }
-        catch (SQLException e)
-        {
-            throw new StoreException("Error recovering persistent state: " + e.getMessage(), e);
-        }
-    }
-
     private void setConfigVersion(int version) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
@@ -811,24 +844,36 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
     @Override
-    public void close()
+    public void closeMessageStore()
     {
-        if (_closed.compareAndSet(false, true))
+        if (_messageStoreOpen.compareAndSet(true, false))
         {
-            _stateManager.attainState(State.CLOSING);
-
-            doClose();
-
-            _stateManager.attainState(State.CLOSED);
+            if (!_configurationStoreOpen.get())
+            {
+                doClose();
+            }
         }
     }
 
+    @Override
+    public void closeConfigurationStore()
+    {
+        if (_configurationStoreOpen.compareAndSet(true, false))
+        {
+            if (!_messageStoreOpen.get())
+            {
+                doClose();
+            }
+        }
+    }
 
     protected abstract void doClose();
 
     @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
     {
+        checkMessageStoreOpen();
+
         if(metaData.isPersistent())
         {
             return new StoredJDBCMessage(_messageId.incrementAndGet(), metaData);
@@ -839,12 +884,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    public StoredMessage getMessage(long messageNumber)
-    {
-        return null;
-    }
-
-    public void removeMessage(long messageId)
+    private void removeMessage(long messageId)
     {
         try
         {
@@ -908,27 +948,24 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     @Override
     public void create(ConfiguredObjectRecord object) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        checkConfigurationStoreOpen();
+        try
         {
+            Connection conn = newConnection();
             try
             {
-                Connection conn = newConnection();
-                try
-                {
-                    insertConfiguredObject(object, conn);
-                    conn.commit();
-                }
-                finally
-                {
-                    conn.close();
-                }
+                insertConfiguredObject(object, conn);
+                conn.commit();
             }
-            catch (SQLException e)
+            finally
             {
-                throw new StoreException("Error creating ConfiguredObject " + object);
+                conn.close();
             }
         }
-
+        catch (SQLException e)
+        {
+            throw new StoreException("Error creating ConfiguredObject " + object);
+        }
     }
 
     /**
@@ -986,46 +1023,15 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     protected abstract Connection getConnection() throws SQLException;
 
-    private byte[] convertStringMapToBytes(final Map<String, String> arguments) throws StoreException
-    {
-        byte[] argumentBytes;
-        if(arguments == null)
-        {
-            argumentBytes = new byte[0];
-        }
-        else
-        {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(bos);
-
-
-            try
-            {
-                dos.writeInt(arguments.size());
-                for(Map.Entry<String,String> arg : arguments.entrySet())
-                {
-                    dos.writeUTF(arg.getKey());
-                    dos.writeUTF(arg.getValue());
-                }
-            }
-            catch (IOException e)
-            {
-                // This should never happen
-                throw new StoreException(e.getMessage(), e);
-            }
-            argumentBytes = bos.toByteArray();
-        }
-        return argumentBytes;
-    }
-
     @Override
     public Transaction newTransaction()
     {
+        checkMessageStoreOpen();
+
         return new JDBCTransaction();
     }
 
-    public void enqueueMessage(ConnectionWrapper connWrapper, final TransactionLogResource queue, Long messageId) throws
-                                                                                                                  StoreException
+    private void enqueueMessage(ConnectionWrapper connWrapper, final TransactionLogResource queue, Long messageId) throws StoreException
     {
         Connection conn = connWrapper.getConnection();
 
@@ -1068,8 +1074,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    public void dequeueMessage(ConnectionWrapper connWrapper, final TransactionLogResource  queue, Long messageId) throws
-                                                                                                                   StoreException
+    private void dequeueMessage(ConnectionWrapper connWrapper, final TransactionLogResource  queue, Long messageId) throws StoreException
     {
 
         Connection conn = connWrapper.getConnection();
@@ -1233,11 +1238,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    protected boolean isConfigStoreOnly()
-    {
-        return _messageRecoveryHandler == null;
-    }
-
     private static final class ConnectionWrapper
     {
         private final Connection _connection;
@@ -1254,7 +1254,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
 
-    public void commitTran(ConnectionWrapper connWrapper) throws StoreException
+    private void commitTran(ConnectionWrapper connWrapper) throws StoreException
     {
 
         try
@@ -1279,13 +1279,13 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    public StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws StoreException
+    private StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws StoreException
     {
         commitTran(connWrapper);
         return StoreFuture.IMMEDIATE_FUTURE;
     }
 
-    public void abortTran(ConnectionWrapper connWrapper) throws StoreException
+    private void abortTran(ConnectionWrapper connWrapper) throws StoreException
     {
         if (connWrapper == null)
         {
@@ -1308,11 +1308,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             throw new StoreException("Error aborting transaction: " + e.getMessage(), e);
         }
 
-    }
-
-    public Long getNewMessageId()
-    {
-        return _messageId.incrementAndGet();
     }
 
     private void storeMetaData(Connection conn, long messageId, StorableMessageMetaData metaData)
@@ -1368,7 +1363,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    protected void recoverMessages(MessageStoreRecoveryHandler recoveryHandler) throws SQLException
+    private void recoverMessages(MessageStoreRecoveryHandler recoveryHandler) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
         try
@@ -1425,7 +1420,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     }
 
 
-    protected TransactionLogRecoveryHandler.DtxRecordRecoveryHandler recoverQueueEntries(TransactionLogRecoveryHandler recoveryHandler) throws SQLException
+    private TransactionLogRecoveryHandler.DtxRecordRecoveryHandler recoverQueueEntries(TransactionLogRecoveryHandler recoveryHandler) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
         try
@@ -1555,7 +1550,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    protected void recoverXids(TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh) throws SQLException
+    private void recoverXids(TransactionLogRecoveryHandler.DtxRecordRecoveryHandler dtxrh) throws SQLException
     {
         Connection conn = newAutoCommitConnection();
         try
@@ -1642,7 +1637,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    StorableMessageMetaData getMetaData(long messageId) throws SQLException
+    private StorableMessageMetaData getMetaData(long messageId) throws SQLException
     {
 
         Connection conn = newAutoCommitConnection();
@@ -1724,7 +1719,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    public int getContent(long messageId, int offset, ByteBuffer dst)
+    private int getContent(long messageId, int offset, ByteBuffer dst)
     {
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -1805,6 +1800,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         @Override
         public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
+            checkMessageStoreOpen();
+
             final StoredMessage storedMessage = message.getStoredMessage();
             if(storedMessage instanceof StoredJDBCMessage)
             {
@@ -1825,12 +1822,16 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         @Override
         public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
+            checkMessageStoreOpen();
+
             AbstractJDBCMessageStore.this.dequeueMessage(_connWrapper, queue, message.getMessageNumber());
         }
 
         @Override
         public void commitTran()
         {
+            checkMessageStoreOpen();
+
             AbstractJDBCMessageStore.this.commitTran(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
         }
@@ -1838,6 +1839,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         @Override
         public StoreFuture commitTranAsync()
         {
+            checkMessageStoreOpen();
+
             StoreFuture storeFuture = AbstractJDBCMessageStore.this.commitTranAsync(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
             return storeFuture;
@@ -1846,18 +1849,24 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         @Override
         public void abortTran()
         {
+            checkMessageStoreOpen();
+
             AbstractJDBCMessageStore.this.abortTran(_connWrapper);
         }
 
         @Override
         public void removeXid(long format, byte[] globalId, byte[] branchId)
         {
+            checkMessageStoreOpen();
+
             AbstractJDBCMessageStore.this.removeXid(_connWrapper, format, globalId, branchId);
         }
 
         @Override
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
         {
+            checkMessageStoreOpen();
+
             AbstractJDBCMessageStore.this.recordXid(_connWrapper, format, globalId, branchId, enqueues, dequeues);
         }
     }
@@ -1899,6 +1908,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             StorableMessageMetaData metaData = _metaData == null ? _metaDataRef.get() : _metaData;
             if(metaData == null)
             {
+                checkMessageStoreOpen();
                 try
                 {
                     metaData = AbstractJDBCMessageStore.this.getMetaData(_messageId);
@@ -1954,6 +1964,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             }
             else
             {
+                checkMessageStoreOpen();
                 return AbstractJDBCMessageStore.this.getContent(_messageId, offsetInMessage, dst);
             }
         }
@@ -1972,6 +1983,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         @Override
         public synchronized StoreFuture flushToStore()
         {
+            checkMessageStoreOpen();
+
             Connection conn = null;
             try
             {
@@ -2003,6 +2016,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         @Override
         public void remove()
         {
+            checkMessageStoreOpen();
+
             int delta = getMetaData().getContentSize();
             AbstractJDBCMessageStore.this.removeMessage(_messageId);
             storedSizeChange(-delta);
@@ -2147,12 +2162,13 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         {
             throw new StoreException("Error inserting of configured object " + configuredObject + " into database: " + e.getMessage(), e);
         }
-
     }
 
     @Override
     public UUID[] remove(ConfiguredObjectRecord... objects) throws StoreException
     {
+        checkConfigurationStoreOpen();
+
         Collection<UUID> removed = new ArrayList<UUID>(objects.length);
         try
         {
@@ -2209,31 +2225,27 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE) || _stateManager.isInState(State.ACTIVATING))
+        checkConfigurationStoreOpen();
+        try
         {
+            Connection conn = newConnection();
             try
             {
-                Connection conn = newConnection();
-                try
+                for(ConfiguredObjectRecord record : records)
                 {
-                    for(ConfiguredObjectRecord record : records)
-                    {
-                        updateConfiguredObject(record, createIfNecessary, conn);
-                    }
-                    conn.commit();
+                    updateConfiguredObject(record, createIfNecessary, conn);
                 }
-                finally
-                {
-                    conn.close();
-                }
+                conn.commit();
             }
-            catch (SQLException e)
+            finally
             {
-                throw new StoreException("Error updating configured objects in database: " + e.getMessage(), e);
+                conn.close();
             }
-
         }
-
+        catch (SQLException e)
+        {
+            throw new StoreException("Error updating configured objects in database: " + e.getMessage(), e);
+        }
     }
 
     private void updateConfiguredObject(ConfiguredObjectRecord configuredObject,
@@ -2241,89 +2253,88 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                                         Connection conn)
             throws SQLException, StoreException
     {
-            PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
+        PreparedStatement stmt = conn.prepareStatement(FIND_CONFIGURED_OBJECT);
+        try
+        {
+            stmt.setString(1, configuredObject.getId().toString());
+            ResultSet rs = stmt.executeQuery();
             try
             {
-                stmt.setString(1, configuredObject.getId().toString());
-                ResultSet rs = stmt.executeQuery();
-                try
+                final ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.registerModule(_module);
+                if (rs.next())
                 {
-                    final ObjectMapper objectMapper = new ObjectMapper();
-                    objectMapper.registerModule(_module);
-                    if (rs.next())
+                    PreparedStatement stmt2 = conn.prepareStatement(UPDATE_CONFIGURED_OBJECTS);
+                    try
                     {
-                        PreparedStatement stmt2 = conn.prepareStatement(UPDATE_CONFIGURED_OBJECTS);
-                        try
+                        stmt2.setString(1, configuredObject.getType());
+                        if (configuredObject.getAttributes() != null)
                         {
-                            stmt2.setString(1, configuredObject.getType());
-                            if (configuredObject.getAttributes() != null)
-                            {
-                                byte[] attributesAsBytes = objectMapper.writeValueAsBytes(
-                                        configuredObject.getAttributes());
-                                ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
-                                stmt2.setBinaryStream(2, bis, attributesAsBytes.length);
-                            }
-                            else
-                            {
-                                stmt2.setNull(2, Types.BLOB);
-                            }
-                            stmt2.setString(3, configuredObject.getId().toString());
-                            stmt2.execute();
+                            byte[] attributesAsBytes = objectMapper.writeValueAsBytes(
+                                    configuredObject.getAttributes());
+                            ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
+                            stmt2.setBinaryStream(2, bis, attributesAsBytes.length);
                         }
-                        finally
+                        else
                         {
-                            stmt2.close();
+                            stmt2.setNull(2, Types.BLOB);
                         }
+                        stmt2.setString(3, configuredObject.getId().toString());
+                        stmt2.execute();
                     }
-                    else if(createIfNecessary)
+                    finally
                     {
-                        PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_CONFIGURED_OBJECTS);
-                        try
-                        {
-                            insertStmt.setString(1, configuredObject.getId().toString());
-                            insertStmt.setString(2, configuredObject.getType());
-                            if(configuredObject.getAttributes() == null)
-                            {
-                                insertStmt.setNull(3, Types.BLOB);
-                            }
-                            else
-                            {
-                                final Map<String, Object> attributes = configuredObject.getAttributes();
-                                byte[] attributesAsBytes = objectMapper.writeValueAsBytes(attributes);
-                                ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
-                                insertStmt.setBinaryStream(3, bis, attributesAsBytes.length);
-                            }
-                            insertStmt.execute();
-                        }
-                        finally
-                        {
-                            insertStmt.close();
-                        }
-                        writeHierarchy(configuredObject, conn);
+                        stmt2.close();
                     }
                 }
-                finally
+                else if(createIfNecessary)
                 {
-                    rs.close();
+                    PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_CONFIGURED_OBJECTS);
+                    try
+                    {
+                        insertStmt.setString(1, configuredObject.getId().toString());
+                        insertStmt.setString(2, configuredObject.getType());
+                        if(configuredObject.getAttributes() == null)
+                        {
+                            insertStmt.setNull(3, Types.BLOB);
+                        }
+                        else
+                        {
+                            final Map<String, Object> attributes = configuredObject.getAttributes();
+                            byte[] attributesAsBytes = objectMapper.writeValueAsBytes(attributes);
+                            ByteArrayInputStream bis = new ByteArrayInputStream(attributesAsBytes);
+                            insertStmt.setBinaryStream(3, bis, attributesAsBytes.length);
+                        }
+                        insertStmt.execute();
+                    }
+                    finally
+                    {
+                        insertStmt.close();
+                    }
+                    writeHierarchy(configuredObject, conn);
                 }
-            }
-            catch (JsonMappingException e)
-            {
-                throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
-            }
-            catch (JsonGenerationException e)
-            {
-                throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
-            }
-            catch (IOException e)
-            {
-                throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
             }
             finally
             {
-                stmt.close();
+                rs.close();
             }
-
+        }
+        catch (JsonMappingException e)
+        {
+            throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+        }
+        catch (JsonGenerationException e)
+        {
+            throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+        }
+        catch (IOException e)
+        {
+            throw new StoreException("Error updating configured object " + configuredObject + " in database: " + e.getMessage(), e);
+        }
+        finally
+        {
+            stmt.close();
+        }
     }
 
     private void writeHierarchy(final ConfiguredObjectRecord configuredObject, final Connection conn) throws SQLException, StoreException
@@ -2450,17 +2461,26 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     @Override
     public void onDelete()
     {
+        // TODO should probably check we are closed
         try
         {
             Connection conn = newAutoCommitConnection();
             try
             {
-                for (String tableName : ALL_TABLES)
+                List<String> tables = new ArrayList<String>();
+                tables.addAll(CONFIGURATION_STORE_TABLE_NAMES);
+                tables.addAll(MESSAGE_STORE_TABLE_NAMES);
+
+                for (String tableName : tables)
                 {
                     Statement stmt = conn.createStatement();
                     try
                     {
                         stmt.execute("DROP TABLE " +  tableName);
+                    }
+                    catch(SQLException e)
+                    {
+                        getLogger().warn("Failed to drop table '" + tableName + "' :" + e);
                     }
                     finally
                     {

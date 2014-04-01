@@ -21,15 +21,12 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreConstants;
-import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
 
 public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestBase
 {
@@ -59,16 +56,19 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
         return NUMBER_OF_MESSAGES_TO_OVERFILL_STORE;
     }
 
+
     @Override
-    protected void applyStoreSpecificConfiguration(VirtualHost virtualHost)
+    protected Map<String, Object>createStoreSettings(String storeLocation)
     {
-        _logger.debug("Applying store specific config. overfull-sze=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
+        _logger.debug("Applying store specific config. overfull-size=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
 
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, storeLocation);
+        messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
+        messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
         Map<String,String> envMap = Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
-        when(virtualHost.getAttribute(eq("bdbEnvironmentConfig"))).thenReturn(envMap);
-        when(virtualHost.getAttribute(eq(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE))).thenReturn(OVERFULL_SIZE);
-        when(virtualHost.getAttribute(eq(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE))).thenReturn(UNDERFULL_SIZE);
-
+        messageStoreSettings.put(EnvironmentFacadeFactory.ENVIRONMENT_CONFIGURATION, envMap);
+        return messageStoreSettings;
     }
 
     @Override

@@ -28,7 +28,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
 
 import java.io.File;
 import java.util.HashMap;
@@ -36,24 +35,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
-import org.apache.qpid.server.store.Transaction.Record;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 import org.mockito.ArgumentCaptor;
@@ -75,16 +70,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     private String _storePath;
     private String _storeName;
-    private MessageStore _messageStore;
-    private Configuration _configuration;
-    private VirtualHost _virtualHost;
 
     private ConfigurationRecoveryHandler _recoveryHandler;
-    private MessageStoreRecoveryHandler _messageStoreRecoveryHandler;
-    private StoredMessageRecoveryHandler _storedMessageRecoveryHandler;
-    private TransactionLogRecoveryHandler _logRecoveryHandler;
-    private TransactionLogRecoveryHandler.QueueEntryRecoveryHandler _queueEntryRecoveryHandler;
-    private TransactionLogRecoveryHandler.DtxRecordRecoveryHandler _dtxRecordRecoveryHandler;
 
     private ExchangeImpl _exchange = mock(ExchangeImpl.class);
     private static final String ROUTING_KEY = "routingKey";
@@ -93,32 +80,24 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private UUID _queueId;
     private UUID _exchangeId;
     private DurableConfigurationStore _configStore;
+    protected Map<String, Object> _configurationStoreSettings;
 
     public void setUp() throws Exception
     {
         super.setUp();
 
+        _configurationStoreSettings = new HashMap<String, Object>();
         _queueId = UUIDGenerator.generateRandomUUID();
         _exchangeId = UUIDGenerator.generateRandomUUID();
 
         _storeName = getName();
         _storePath = TMP_FOLDER + File.separator + _storeName;
+        _configurationStoreSettings.put(MessageStore.STORE_PATH, _storePath);
         FileUtils.delete(new File(_storePath), true);
         setTestSystemProperty("QPID_WORK", TMP_FOLDER);
-        _configuration = mock(Configuration.class);
+
         _recoveryHandler = mock(ConfigurationRecoveryHandler.class);
-        _storedMessageRecoveryHandler = mock(StoredMessageRecoveryHandler.class);
-        _logRecoveryHandler = mock(TransactionLogRecoveryHandler.class);
-        _messageStoreRecoveryHandler = mock(MessageStoreRecoveryHandler.class);
-        _queueEntryRecoveryHandler = mock(TransactionLogRecoveryHandler.QueueEntryRecoveryHandler.class);
-        _dtxRecordRecoveryHandler = mock(TransactionLogRecoveryHandler.DtxRecordRecoveryHandler.class);
-        _virtualHost = mock(VirtualHost.class);
-
-        when(_messageStoreRecoveryHandler.begin()).thenReturn(_storedMessageRecoveryHandler);
-        when(_logRecoveryHandler.begin(any(MessageStore.class))).thenReturn(_queueEntryRecoveryHandler);
-        when(_queueEntryRecoveryHandler.completeQueueEntryRecovery()).thenReturn(_dtxRecordRecoveryHandler);
         when(_exchange.getName()).thenReturn(EXCHANGE_NAME);
-
         when(_exchange.getId()).thenReturn(_exchangeId);
         when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
         when(_exchange.getEventLogger()).thenReturn(new EventLogger());
@@ -127,11 +106,6 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchangeRecord.getId()).thenReturn(_exchangeId);
         when(exchangeRecord.getType()).thenReturn(Exchange.class.getSimpleName());
         when(_exchange.asObjectRecord()).thenReturn(exchangeRecord);
-
-        when(_configuration.getString(eq(MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY), anyString())).thenReturn(
-                _storePath);
-        when(_virtualHost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storePath);
-
 
         _bindingArgs = new HashMap<String, Object>();
         String argKey = AMQPFilterTypes.JMS_SELECTOR.toString();
@@ -145,7 +119,6 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         try
         {
-            closeMessageStore();
             closeConfigStore();
             FileUtils.delete(new File(_storePath), true);
         }
@@ -512,123 +485,22 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     private void reopenStore() throws Exception
     {
-        closeMessageStore();
         closeConfigStore();
-        _messageStore = createMessageStore();
         _configStore = createConfigStore();
 
-        _configStore.configureConfigStore(_virtualHost, _recoveryHandler);
-        _messageStore.configureMessageStore(_virtualHost, _messageStoreRecoveryHandler, _logRecoveryHandler);
-        _messageStore.activate();
+        ConfiguredObject<?> parent = mock(ConfiguredObject.class);
+        when(parent.getName()).thenReturn("testName");
+        _configStore.openConfigurationStore(parent, _configurationStoreSettings);
+        _configStore.recoverConfigurationStore(_recoveryHandler);
     }
 
-    protected abstract MessageStore createMessageStore() throws Exception;
     protected abstract DurableConfigurationStore createConfigStore() throws Exception;
-    protected abstract void closeMessageStore() throws Exception;
-    protected abstract void closeConfigStore() throws Exception;
 
-    public void testRecordXid() throws Exception
+    protected void closeConfigStore() throws Exception
     {
-        Record enqueueRecord = getTestRecord(1);
-        Record dequeueRecord = getTestRecord(2);
-        Record[] enqueues = { enqueueRecord };
-        Record[] dequeues = { dequeueRecord };
-        byte[] globalId = new byte[] { 1 };
-        byte[] branchId = new byte[] { 2 };
-
-        Transaction transaction = _messageStore.newTransaction();
-        transaction.recordXid(1l, globalId, branchId, enqueues, dequeues);
-        transaction.commitTran();
-        reopenStore();
-        verify(_dtxRecordRecoveryHandler).dtxRecord(1l, globalId, branchId, enqueues, dequeues);
-
-        transaction = _messageStore.newTransaction();
-        transaction.removeXid(1l, globalId, branchId);
-        transaction.commitTran();
-
-        reopenStore();
-        verify(_dtxRecordRecoveryHandler, times(1)).dtxRecord(1l, globalId, branchId, enqueues, dequeues);
-    }
-
-    private Record getTestRecord(long messageNumber)
-    {
-        UUID queueId1 = UUIDGenerator.generateRandomUUID();
-        TransactionLogResource queue1 = mock(TransactionLogResource.class);
-        when(queue1.getId()).thenReturn(queueId1);
-        EnqueueableMessage message1 = mock(EnqueueableMessage.class);
-        when(message1.isPersistent()).thenReturn(true);
-        when(message1.getMessageNumber()).thenReturn(messageNumber);
-        final StoredMessage storedMessage = mock(StoredMessage.class);
-        when(storedMessage.getMessageNumber()).thenReturn(messageNumber);
-        when(message1.getStoredMessage()).thenReturn(storedMessage);
-        Record enqueueRecord = new TestRecord(queue1, message1);
-        return enqueueRecord;
-    }
-
-    private static class TestRecord implements Record
-    {
-        private TransactionLogResource _queue;
-        private EnqueueableMessage _message;
-
-        public TestRecord(TransactionLogResource queue, EnqueueableMessage message)
+        if (_configStore != null)
         {
-            super();
-            _queue = queue;
-            _message = message;
+            _configStore.closeConfigurationStore();
         }
-
-        @Override
-        public TransactionLogResource getResource()
-        {
-            return _queue;
-        }
-
-        @Override
-        public EnqueueableMessage getMessage()
-        {
-            return _message;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((_message == null) ? 0 : new Long(_message.getMessageNumber()).hashCode());
-            result = prime * result + ((_queue == null) ? 0 : _queue.getId().hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            if (this == obj)
-            {
-                return true;
-            }
-            if (obj == null)
-            {
-                return false;
-            }
-            if (!(obj instanceof Record))
-            {
-                return false;
-            }
-            Record other = (Record) obj;
-            if (_message == null && other.getMessage() != null)
-            {
-                return false;
-            }
-            if (_queue == null && other.getResource() != null)
-            {
-                return false;
-            }
-            if (_message.getMessageNumber() != other.getMessage().getMessageNumber())
-            {
-                return false;
-            }
-            return _queue.getId().equals(other.getResource().getId());
-        }
-
     }
 }

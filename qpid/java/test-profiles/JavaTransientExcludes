@@ -20,6 +20,7 @@
 //These tests require a persistent store
 org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 org.apache.qpid.server.store.PersistentStoreTest#*
+org.apache.qpid.server.store.SplitStoreTest#*
 org.apache.qpid.server.logging.AlertingTest#testAlertingReallyWorksWithRestart
 org.apache.qpid.server.logging.AlertingTest#testAlertingReallyWorksWithChanges
 org.apache.qpid.test.unit.ack.ClientAcknowledgeTest#testClientAckWithLargeFlusherPeriod

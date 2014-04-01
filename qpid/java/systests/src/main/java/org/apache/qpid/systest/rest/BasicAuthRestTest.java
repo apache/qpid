@@ -29,10 +29,8 @@ import java.util.Collections;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -49,12 +47,12 @@ public class BasicAuthRestTest extends QpidRestTestCase
     }
 
     @Override
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         //do nothing, we will configure this locally
     }
 
-    private void configure(boolean useSsl) throws ConfigurationException, IOException
+    private void configure(boolean useSsl) throws IOException
     {
         getRestTestHelper().setUseSsl(useSsl);
         if (useSsl)
