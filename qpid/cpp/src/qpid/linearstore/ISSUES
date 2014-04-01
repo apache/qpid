@@ -39,21 +39,14 @@ Current/pending:
                    svn r.1560530 2014-01-22: Bugfixes for qpid_qls_analyze
                    svn r.1561848 2014-01-27: Bugfixes and enhancements for qpid_qls_analyze
                    svn r.1564808 2014-02-05: Bugfixes and enhancements for qpid_qls_analyze
+                   svn r.1578899 2014-03-18: Bugfixes and enhancements for qpid_qls_analyze
                    * Store analysis and status
                    * Recovery/reading of message content
                    * Empty file pool status and management
    5464 -        [linearstore] Incompletely created journal files accumulate in EFP
-   5484 1035843  Slow performance for producers
-                   svn r.1558592 2014-01-15 fixes an issue with using /dev/random as a source of random numbers for Journal serial numbers.
-                   svn r.1558913 2014-01-16 replaces use of /dev/urandom with several calls to rand() to construct a 64-bit random number.
-                   * Recommend rebuilding and testing for performance again with these two fixes. Marked POST.
-   -    1039522  Qpid crashes while recovering from linear store around apid::linearstore::journal::JournalFile::getFqFileName() including enq_rec::decode() threw JERR_JREC_BAD_RECTAIL
-                   * Possible dup of 1039525
-                   * May be fixed by QPID-5483 - waiting for needinfo, recommend rebuilding with QPID-5483 fix and re-testing. Marked POST.
-   -    1039525  Qpid crashes while recovering from linear store around apid::linearstore::journal::jexception::format including enq_rec::decode() threw JERR_JREC_BAD_REC_TAIL
-                   * Possible dup of 1039522
-                   * May be fixed by QPID-5483 - waiting for needinfo, recommend rebuilding with QPID-5483 fix and re-testing. Marked POST.
-#  -    1049870  [LinearStore] auto-delete property does not survive restart
+#  -    1078142  [linearstore] qpidd closes connection with (distributed) transactional client while checking previous transaction, broker signals error (closed by error: Queue Ve0-2: async_dequeue() failed: exception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error)
+                   * jexception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error. (AIO write operation failed: Invalid argument (-22) [pg=0 size=8192 offset=4096 fh=22])
+   -    1078937  [linearstore] Installation and tests for new store analysis tool qpid-qls-analyze
 
 Fixed/closed (in commit order):
 ===============================
@@ -85,8 +78,18 @@ NO-JIRA -        Added missing Apache copyright/license text
                    svn r.1558589 2014-01-15: Proposed fix
                    * May be linked to RHBZ 1039522 - VERIFIED
                    * May be linked to RHBZ 1039525 - VERIFIED
+   -    1039522  Qpid crashes while recovering from linear store around apid::linearstore::journal::JournalFile::getFqFileName() including enq_rec::decode() threw JERR_JREC_BAD_RECTAIL
+                   * Possible dup of 1039525
+                   * May be fixed by QPID-5483 - waiting for needinfo, recommend rebuilding with QPID-5483 fix and re-testing. VERIFIED.
+   -    1039525  Qpid crashes while recovering from linear store around apid::linearstore::journal::jexception::format including enq_rec::decode() threw JERR_JREC_BAD_REC_TAIL
+                   * Possible dup of 1039522
+                   * May be fixed by QPID-5483 - waiting for needinfo, recommend rebuilding with QPID-5483 fix and re-testing. VERIFIED.
    5487 1054448  [linearstore] Replace use of /dev/urandom with c random generator calls
                    svn r.1558913 2014-01-16: Proposed fix VEFIFIED
+   5484 1035843  Slow performance for producers
+                   svn r.1558592 2014-01-15 fixes an issue with using /dev/random as a source of random numbers for Journal serial numbers.
+                   svn r.1558913 2014-01-16 replaces use of /dev/urandom with several calls to rand() to construct a 64-bit random number.
+                   * Recommend rebuilding and testing for performance again with these two fixes. VERIFIED.
    5479 1053701  [linearstore] Using recovered store results in "JERR_JNLF_FILEOFFSOVFL: Attempted to increase submitted offset past file size. (JournalFile::submittedDblkCount)" error message
                    * Probability: 2 of 600 (0.3%) using tx-test-soak.sh
                    * Fixed by checkin for QPID-5480, no longer able to reproduce. VERIFIED
@@ -108,6 +111,9 @@ NO-JIRA -        Added missing Apache copyright/license text
    -    1036026  [LinearStore] Qpid linear store unable to create durable queue - framing-error: Queue <q-name>: create() failed: jexception 0x0000
                    * UNABLE TO REPRODUCE - but Frantizek has additional info
                    * Retested after checkin 1575009, problem solved. VERIFIED
+   5651       -  [C++ broker] segfault in qpid::linearstore::journal::jdir::clear_dir when declaring durable queue
+                   svn r.1582730 2014-03-28 Proposed fix by Pavel Moravec
+                   * Bug introduced by r.1578899.
 
 Ordered checkin list:
 =====================
@@ -137,6 +143,8 @@ no.   svn r  Q-JIRA     RHBZ       Date
 20. 1564935    5361        - 2014-02-05
 21. 1574513    5603  1063700 2014-03-05
 22. 1575009    5607  1064181 2014-03-06
+23. 1578899    5362        - 2014-03-18
+24. 1582730    5651        - 2014-03-28
 
 See above sections for details on these checkins.
 
