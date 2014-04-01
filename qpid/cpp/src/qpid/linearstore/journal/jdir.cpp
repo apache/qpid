@@ -104,6 +104,7 @@ jdir::clear_dir(const std::string& dirname/*, const std::string&
     DIR* dir = open_dir(dirname, "clear_dir", true);
     if (!dir && create_flag) {
         create_dir(dirname);
+        dir = open_dir(dirname, "clear_dir", true);
     }
 //#ifndef RHM_JOWRITE
     struct dirent* entry;

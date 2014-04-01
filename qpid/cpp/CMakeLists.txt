@@ -29,6 +29,8 @@ else()
     set (OPTIONAL_ARG OPTIONAL)
 endif()
 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
+
 # Parse the version from QPID_VERSION.txt.
 # Use the top level qpid/ file if we're in an SVN checkout, source dir otherwise.
 find_file(QPID_VERSION_FILE NAMES QPID_VERSION.txt PATHS ${PROJECT_SOURCE_DIR}/.. ${PROJECT_SOURCE_DIR} NO_DEFAULT_PATH)
