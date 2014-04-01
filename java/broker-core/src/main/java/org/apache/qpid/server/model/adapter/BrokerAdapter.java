@@ -43,6 +43,7 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.plugin.PreferencesProviderFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.security.SecurityManager;
@@ -50,7 +51,6 @@ import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MessageStoreCreator;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
@@ -197,7 +197,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         _portFactory = portFactory;
         _brokerOptions = brokerOptions;
         _securityManager = new SecurityManager(this, _brokerOptions.isManagementMode());
-        _supportedVirtualHostStoreTypes = new MessageStoreCreator().getStoreTypes();
+        _supportedVirtualHostStoreTypes = MessageStoreFactory.FACTORY_LOADER.getSupportedTypes();
         _supportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
         _brokerStore = brokerStore;
         if (_brokerOptions.isManagementMode())
@@ -262,7 +262,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     @Override
     public Collection<String> getSupportedPreferencesProviderTypes()
     {
-        return PreferencesProviderFactory.FACTORIES.getDescriptiveTypes();
+        return PreferencesProviderFactory.FACTORY_LOADER.getSupportedTypes();
     }
 
     @Override
@@ -969,7 +969,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         }
         else if (SUPPORTED_PREFERENCES_PROVIDER_TYPES.equals(name))
         {
-            return PreferencesProviderFactory.FACTORIES.getDescriptiveTypes();
+            return PreferencesProviderFactory.FACTORY_LOADER.getSupportedTypes();
         }
         else if (MODEL_VERSION.equals(name))
         {

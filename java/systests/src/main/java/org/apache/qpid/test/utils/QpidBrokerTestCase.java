@@ -22,7 +22,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,8 +47,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -66,10 +63,10 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.store.MessageStoreConstants;
-import org.apache.qpid.server.store.MessageStoreCreator;
+import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.SystemUtils;
@@ -101,14 +98,11 @@ public class QpidBrokerTestCase extends QpidTestCase
     private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
 
     private Map<Integer, TestBrokerConfiguration> _brokerConfigurations;
-    private XMLConfiguration _testVirtualhosts = new XMLConfiguration();
 
     protected static final String INDEX = "index";
     protected static final String CONTENT = "content";
 
     private static final String DEFAULT_INITIAL_CONTEXT = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
-
-    private static Map<String, String> supportedStoresClassToTypeMapping = new HashMap<String, String>();
 
     static
     {
@@ -118,17 +112,9 @@ public class QpidBrokerTestCase extends QpidTestCase
         {
             System.setProperty(Context.INITIAL_CONTEXT_FACTORY, DEFAULT_INITIAL_CONTEXT);
         }
-
-        MessageStoreCreator messageStoreCreator = new MessageStoreCreator();
-        Collection<MessageStoreFactory> factories = messageStoreCreator.getFactories();
-        for (MessageStoreFactory messageStoreFactory : factories)
-        {
-            supportedStoresClassToTypeMapping.put(messageStoreFactory.createMessageStore().getClass().getName(), messageStoreFactory.getType());
-        }
     }
 
     // system properties
-    private static final String TEST_VIRTUALHOSTS = "test.virtualhosts";
     private static final String BROKER_LANGUAGE = "broker.language";
     protected static final String BROKER_TYPE = "broker.type";
     private static final String BROKER_COMMAND = "broker.command";
@@ -249,7 +235,16 @@ public class QpidBrokerTestCase extends QpidTestCase
             configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.PORT, actualPort);
             configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT, Port.PORT, getManagementPort(actualPort));
             configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getManagementPort(actualPort) + JMXPORT_CONNECTORSERVER_OFFSET);
+
+            String workDir = System.getProperty("QPID_WORK") + File.separator + TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST + File.separator + actualPort;
+            Map<String, Object> virtualHostSettings = configuration.getObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> storeSettings = (Map<String, Object>)virtualHostSettings.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+            storeSettings.put(MessageStore.STORE_PATH, workDir);
+            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, storeSettings);
         }
+
         return configuration;
     }
 
@@ -420,7 +415,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         int actualPort = getPort(port);
         TestBrokerConfiguration configuration = getBrokerConfiguration(actualPort);
-        startBroker(actualPort, configuration, _testVirtualhosts, managementMode);
+        startBroker(actualPort, configuration, managementMode);
     }
 
     protected File getBrokerCommandLog4JFile()
@@ -434,16 +429,14 @@ public class QpidBrokerTestCase extends QpidTestCase
         _logger.info("Modified log config file to: " + file);
     }
 
-    public void startBroker(int port, TestBrokerConfiguration testConfiguration, XMLConfiguration virtualHosts) throws Exception
+    public void startBroker(int port, TestBrokerConfiguration testConfiguration) throws Exception
     {
-        startBroker(port, testConfiguration, virtualHosts, false);
+        startBroker(port, testConfiguration, false);
     }
 
-    public void startBroker(int port, TestBrokerConfiguration testConfiguration, XMLConfiguration virtualHosts, boolean managementMode) throws Exception
+    public void startBroker(int port, TestBrokerConfiguration testConfiguration, boolean managementMode) throws Exception
     {
         port = getPort(port);
-        String testConfig = saveTestConfiguration(port, testConfiguration);
-        String virtualHostsConfig = saveTestVirtualhosts(port, virtualHosts);
 
         if(_brokers.get(port) != null)
         {
@@ -451,11 +444,10 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
 
         Set<Integer> portsUsedByBroker = guessAllPortsUsedByBroker(port);
+        String testConfig = saveTestConfiguration(port, testConfiguration);
 
         if (_brokerType.equals(BrokerType.INTERNAL) && !existingInternalBroker())
         {
-            _logger.info("Set test.virtualhosts property to: " + virtualHostsConfig);
-            setSystemProperty(TEST_VIRTUALHOSTS, virtualHostsConfig);
             setSystemProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, "false");
             BrokerOptions options = new BrokerOptions();
 
@@ -549,7 +541,6 @@ public class QpidBrokerTestCase extends QpidTestCase
                 setSystemProperty("root.logging.level");
                 setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES);
                 setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES);
-                setSystemProperty(TEST_VIRTUALHOSTS, virtualHostsConfig);
 
                 // Add all the specified system properties to QPID_OPTS
                 if (!_propertiesSetForBroker.isEmpty())
@@ -651,25 +642,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         return _output + File.separator + getTestQueueName() + "-" + port + "-config";
     }
 
-    public String getTestVirtualhostsFile(int port)
-    {
-        return _output + File.separator + getTestQueueName() + "-" + port + "-virtualhosts.xml";
-    }
-
-    private String relativeToQpidHome(String file)
-    {
-        _logger.debug("Converting path to be relative to QPID_HOME: " + file);
-
-        final String qpidHome = System.getProperty(QPID_HOME,"QPID_HOME");
-        _logger.debug("QPID_HOME is: " + qpidHome);
-
-        if(!file.startsWith(qpidHome)) {
-            throw new RuntimeException("Provided path is not a child of the QPID_HOME directory: " + qpidHome);
-        }
-
-        return file.replace(qpidHome + File.separator,"");
-    }
-
     protected String getPathRelativeToWorkingDirectory(String file)
     {
         File configLocation = new File(file);
@@ -712,23 +684,6 @@ public class QpidBrokerTestCase extends QpidTestCase
             testConfiguration.save(new File(testConfig));
             testConfiguration.setSaved(true);
         }
-        return relative;
-    }
-
-    protected String saveTestVirtualhosts(int port, XMLConfiguration virtualHostConfiguration) throws ConfigurationException
-    {
-        // Specify the test virtualhosts file
-        String testVirtualhosts = getTestVirtualhostsFile(port);
-        String relative = relativeToQpidHome(testVirtualhosts);
-
-        _logger.info("Path to virtualhosts configuration: " + testVirtualhosts);
-
-        // Create the file if configuration does not exist
-        if (virtualHostConfiguration.isEmpty())
-        {
-            virtualHostConfiguration.addProperty("__ignore", "true");
-        }
-        virtualHostConfiguration.save(testVirtualhosts);
         return relative;
     }
 
@@ -872,65 +827,31 @@ public class QpidBrokerTestCase extends QpidTestCase
      * Creates a new virtual host within the test virtualhost file.
      * @param brokerPort broker port
      * @param virtualHostName virtual host name
-     *
-     * @throws ConfigurationException
      */
-    protected void createTestVirtualHost(int brokerPort, String virtualHostName) throws ConfigurationException
+    protected void createTestVirtualHost(int brokerPort, String virtualHostName)
     {
-        String storeClassName = getTestProfileMessageStoreClassName();
-
-        _testVirtualhosts.setProperty("virtualhost.name(-1)", virtualHostName);
-        _testVirtualhosts.setProperty("virtualhost." + virtualHostName + ".store.class", storeClassName);
-
+        String storeType = getTestProfileMessageStoreType();
         String storeDir = null;
 
         if (System.getProperty("profile", "").startsWith("java-dby-mem"))
         {
             storeDir = ":memory:";
         }
-        else if (!MEMORY_STORE_CLASS_NAME.equals(storeClassName))
+        else if (!MemoryMessageStore.TYPE.equals(storeType))
         {
-            storeDir = "${QPID_WORK}" + File.separator + virtualHostName + "-store";
-        }
-
-        if (storeDir != null)
-        {
-            _testVirtualhosts.setProperty("virtualhost." + virtualHostName + ".store." + MessageStoreConstants.ENVIRONMENT_PATH_PROPERTY, storeDir);
+            storeDir = "${QPID_WORK}" + File.separator + virtualHostName + File.separator + brokerPort;
         }
 
         // add new virtual host configuration to the broker store
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, virtualHostName);
-        attributes.put(VirtualHost.CONFIG_PATH,  System.getProperty("broker.virtualhosts-config"));
+        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_TYPE, storeType);
+        messageStoreSettings.put(MessageStore.STORE_PATH, storeDir);
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings );
         int port = getPort(brokerPort);
         getBrokerConfiguration(port).addVirtualHostConfiguration(attributes);
-    }
-
-    /**
-     * Set a configuration Property for this test run.
-     *
-     * This creates a new configuration based on the current configuration
-     * with the specified property change.
-     *
-     * Multiple calls to this method will result in multiple temporary
-     * configuration files being created.
-     *
-     * @param property the configuration property to set
-     * @param value    the new value
-     *
-     * @throws ConfigurationException when loading the current config file
-     */
-    public void setVirtualHostConfigurationProperty(String property, String value) throws ConfigurationException
-    {
-        // Choose which file to write the property to based on prefix.
-        if (property.startsWith("virtualhosts"))
-        {
-            _testVirtualhosts.setProperty(StringUtils.substringAfter(property, "virtualhosts."), value);
-        }
-        else
-        {
-            throw new ConfigurationException("Cannot set broker configuration as property");
-        }
     }
 
     /**
@@ -1466,26 +1387,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected int getFailingPort()
     {
         return FAILING_PORT;
-    }
-
-    public XMLConfiguration getTestVirtualhosts()
-    {
-        return _testVirtualhosts;
-    }
-
-    public void setTestVirtualhosts(XMLConfiguration testVirtualhosts)
-    {
-        _testVirtualhosts = testVirtualhosts;
-    }
-
-    public String getTestProfileMessageStoreType()
-    {
-        final String storeClass = getTestProfileMessageStoreClassName();
-       /* if (storeClass == null)
-        {
-            return "Memory";
-        }*/
-        return supportedStoresClassToTypeMapping.get(storeClass);
     }
 
 }

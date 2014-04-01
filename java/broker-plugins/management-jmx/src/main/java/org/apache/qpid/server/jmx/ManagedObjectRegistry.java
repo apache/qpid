@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.common.Closeable;
 
 import javax.management.JMException;
+
 import java.io.IOException;
 
 /**
@@ -40,7 +40,7 @@ import java.io.IOException;
  */
 public interface ManagedObjectRegistry extends Closeable
 {
-    void start() throws IOException, ConfigurationException;
+    void start() throws IOException;
 
     void registerObject(ManagedObject managedObject) throws JMException;
 

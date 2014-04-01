@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -35,7 +32,6 @@ import java.util.List;
 
 public abstract class AbstractTestMessages extends QpidTestCase
 {
-    protected Configuration _config = new PropertiesConfiguration();
     protected LogMessage _logMessage = null;
     protected UnitTestMessageLogger _logger;
     protected LogSubject _logSubject = new TestBlankSubject();

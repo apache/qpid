@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.test.utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,6 +46,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
+import org.apache.qpid.util.FileUtils;
 
 public class TestBrokerConfiguration
 {
@@ -308,4 +310,8 @@ public class TestBrokerConfiguration
         _store.save(newAp, pp);
     }
 
+    public Map<String, Object> getObjectAttributes(String name)
+    {
+        return findObjectByName(name).getAttributes();
+    }
 }

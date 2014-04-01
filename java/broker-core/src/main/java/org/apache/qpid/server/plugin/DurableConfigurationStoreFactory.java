@@ -21,9 +21,7 @@
 package org.apache.qpid.server.plugin;
 
 import java.util.Map;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MessageStore;
 
 public interface DurableConfigurationStoreFactory extends Pluggable
 {

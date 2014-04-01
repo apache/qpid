@@ -25,9 +25,17 @@ import static org.apache.qpid.test.utils.TestSSLConstants.KEYSTORE_PASSWORD;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
-import javax.net.ssl.SSLSocket;
-import org.apache.commons.configuration.ConfigurationException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Session;
+
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQTestConnection_0_10;
 import org.apache.qpid.jms.ConnectionURL;
@@ -35,15 +43,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.Session;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 public class SSLTest extends QpidBrokerTestCase
 {
@@ -402,7 +401,7 @@ public class SSLTest extends QpidBrokerTestCase
                                                 boolean sslOnly,
                                                 boolean needClientAuth,
                                                 boolean wantClientAuth,
-                                                boolean samePort) throws ConfigurationException
+                                                boolean samePort) throws Exception
     {
         if(isJavaBroker())
         {

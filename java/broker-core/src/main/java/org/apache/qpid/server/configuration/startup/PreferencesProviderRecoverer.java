@@ -41,7 +41,7 @@ public class PreferencesProviderRecoverer implements ConfiguredObjectRecoverer<P
         AuthenticationProvider authenticationProvider = RecovererHelper.verifyOnlyParentIsOfType(AuthenticationProvider.class, parents);
         Map<String, Object> attributes = entry.getAttributes();
         String type = MapValueConverter.getStringAttribute(PreferencesProvider.TYPE, attributes);
-        PreferencesProviderFactory factory = PreferencesProviderFactory.FACTORIES.get(type);
+        PreferencesProviderFactory factory = PreferencesProviderFactory.FACTORY_LOADER.get(type);
         return factory.createInstance(entry.getId(), attributes, authenticationProvider);
     }
 

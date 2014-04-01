@@ -22,8 +22,6 @@ package org.apache.qpid.server.model;
 
 import java.util.Collection;
 
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
 @ManagedObject

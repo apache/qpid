@@ -122,7 +122,7 @@ public class StandardEnvironmentFacadeTest extends QpidTestCase
 
     EnvironmentFacade createEnvironmentFacade()
     {
-        return new StandardEnvironmentFacade(_storePath.getAbsolutePath(), Collections.<String, String>emptyMap());
+        return new StandardEnvironmentFacade(_storePath.getAbsolutePath(), Collections.<String, String>emptyMap(), null);
     }
 
 }

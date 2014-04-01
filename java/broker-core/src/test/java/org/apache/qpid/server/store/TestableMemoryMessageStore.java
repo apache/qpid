@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TestableMemoryMessageStore extends TestMemoryMessageStore
 {
+    public static final String TYPE = "TestableMemory";
     private final Map<Long, AMQQueue> _messages = new HashMap<Long, AMQQueue>();
     private final AtomicInteger _messageCount = new AtomicInteger(0);
 

@@ -25,9 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.model.adapter.VirtualHostAdapter;
+
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -40,14 +38,9 @@ public interface VirtualHostFactory extends Pluggable
     VirtualHost createVirtualHost(VirtualHostRegistry virtualHostRegistry,
                                   StatisticsGatherer brokerStatisticsGatherer,
                                   SecurityManager parentSecurityManager,
-                                  VirtualHostConfiguration hostConfig,
                                   org.apache.qpid.server.model.VirtualHost virtualHost);
 
     void validateAttributes(Map<String, Object> attributes);
-
-    Map<String, Object> createVirtualHostConfiguration(VirtualHostAdapter virtualHostAdapter);
-
-    Map<String,Object> convertVirtualHostConfiguration(Configuration configuration);
 
     static final class TYPES
     {

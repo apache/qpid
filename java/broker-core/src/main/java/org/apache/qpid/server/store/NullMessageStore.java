@@ -19,14 +19,21 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.ConfiguredObject;
 
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
 {
+
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    {
+    }
+
+    @Override
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
     {
     }
 
@@ -52,13 +59,17 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
+    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings)
     {
     }
 
     @Override
-    public void close()
+    public void closeMessageStore()
+    {
+    }
+
+    @Override
+    public void closeConfigurationStore()
     {
     }
 
@@ -81,7 +92,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void activate()
+    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
     {
     }
 
@@ -100,4 +111,5 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     public void onDelete()
     {
     }
+
 }

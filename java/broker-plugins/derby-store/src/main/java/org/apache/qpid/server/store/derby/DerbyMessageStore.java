@@ -32,14 +32,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
-import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.FileUtils;
 
@@ -124,19 +123,17 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
     }
 
     @Override
-    protected void implementationSpecificConfiguration(String name,
-                                                       VirtualHost virtualHost)
+    protected void implementationSpecificConfiguration(String name, Map<String, Object> messageStoreSettings)
             throws ClassNotFoundException
     {
         //Update to pick up QPID_WORK and use that as the default location not just derbyDB
-
         _driverClass = (Class<Driver>) Class.forName(SQL_DRIVER_NAME);
 
-        String defaultPath = System.getProperty("QPID_WORK") + File.separator + "derbyDB";
-        String databasePath = isConfigStoreOnly() ? (String) virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH) : (String) virtualHost.getAttribute(VirtualHost.STORE_PATH);
+        String databasePath =  (String) messageStoreSettings.get(MessageStore.STORE_PATH);;
+
         if(databasePath == null)
         {
-            databasePath = defaultPath;
+            databasePath = System.getProperty("QPID_WORK") + File.separator + "derbyDB";
         }
 
         if(!MEMORY_STORE_LOCATION.equals(databasePath))
@@ -154,8 +151,8 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
 
         _storeLocation = databasePath;
 
-        Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
-        Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
+        Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
+        Object underfullAttr = messageStoreSettings.get(MessageStore.UNDERFULL_SIZE);
 
         _persistentSizeHighThreshold = overfullAttr == null ? -1l :
                                        overfullAttr instanceof Number ? ((Number) overfullAttr).longValue() : Long.parseLong(overfullAttr.toString());
@@ -170,16 +167,7 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         //FIXME this the _vhost name should not be added here, but derby wont use an empty directory as was possibly just created.
         _connectionURL = "jdbc:derby" + (databasePath.equals(MEMORY_STORE_LOCATION) ? databasePath: ":" + databasePath+ "/") + name + ";create=true";
 
-
-
-        _eventManager.addEventListener(new EventListener()
-                                        {
-                                            @Override
-                                            public void event(Event event)
-                                            {
-                                                setInitialSize();
-                                            }
-                                        }, Event.BEFORE_ACTIVATE);
+        setInitialSize();
 
     }
 

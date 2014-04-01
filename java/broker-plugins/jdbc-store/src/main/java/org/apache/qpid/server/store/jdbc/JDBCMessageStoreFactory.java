@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
-import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.configuration.Configuration;
+
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
@@ -51,56 +50,30 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory, DurableConf
     }
 
     @Override
-    public Map<String, Object> convertStoreConfiguration(Configuration storeConfiguration)
-    {
-        Map<String,Object> convertedMap = new HashMap<String,Object>();
-        convertedMap.put("jdbcBlobType", storeConfiguration.getString("sqlBlobType"));
-        convertedMap.put("jdbcVarbinaryType", storeConfiguration.getString("sqlVarbinaryType"));
-        if(storeConfiguration.containsKey("useBytesForBlob"))
-        {
-            convertedMap.put("jdbcUseBytesForBlob", storeConfiguration.getBoolean("useBytesForBlob"));
-        }
-        convertedMap.put("jdbcBigIntType", storeConfiguration.getString("sqlBigIntType"));
-        convertedMap.put("connectionPool", storeConfiguration.getString("pool.type"));
-        convertedMap.put("minConnectionsPerPartition", storeConfiguration.getInteger("pool.minConnectionsPerPartition",
-                null));
-        convertedMap.put("maxConnectionsPerPartition", storeConfiguration.getInteger("pool.maxConnectionsPerPartition",
-                null));
-        convertedMap.put("partitionCount", storeConfiguration.getInteger("pool.partitionCount", null));
-
-        return convertedMap;
-    }
-
-
-    @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        if(getType().equals(attributes.get(VirtualHost.STORE_TYPE)))
+        @SuppressWarnings("unchecked")
+        Map<String, Object> messageStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        if(getType().equals(messageStoreSettings.get(MessageStore.STORE_TYPE)))
         {
-            Object connectionURL = attributes.get(JDBCMessageStore.CONNECTION_URL);
+            Object connectionURL = messageStoreSettings.get(JDBCMessageStore.CONNECTION_URL);
             if(!(connectionURL instanceof String))
             {
-                Object storePath = attributes.get(VirtualHost.STORE_PATH);
-                if(!(storePath instanceof String))
-                {
-                    throw new IllegalArgumentException("Attribute '"+ JDBCMessageStore.CONNECTION_URL
-                                                                   +"' is required and must be of type String.");
+                throw new IllegalArgumentException("Setting '"+ JDBCMessageStore.CONNECTION_URL
+                                                               +"' is required and must be of type String.");
 
-                }
             }
         }
-        if(getType().equals(attributes.get(VirtualHost.CONFIG_STORE_TYPE)))
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> configurationStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.CONFIGURATION_STORE_SETTINGS);
+        if(configurationStoreSettings != null && getType().equals(configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE)))
         {
-            Object connectionURL = attributes.get(JDBCMessageStore.CONFIG_CONNECTION_URL);
+            Object connectionURL = configurationStoreSettings.get(JDBCMessageStore.CONNECTION_URL);
             if(!(connectionURL instanceof String))
             {
-                Object storePath = attributes.get(VirtualHost.CONFIG_STORE_PATH);
-                if(!(storePath instanceof String))
-                {
-                    throw new IllegalArgumentException("Attribute '"+ JDBCMessageStore.CONFIG_CONNECTION_URL
-                                                                   +"' is required and must be of type String.");
-
-                }
+                throw new IllegalArgumentException("Setting '"+ JDBCMessageStore.CONNECTION_URL
+                        +"' is required and must be of type String.");
             }
         }
     }

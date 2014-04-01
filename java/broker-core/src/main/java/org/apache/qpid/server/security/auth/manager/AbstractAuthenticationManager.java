@@ -139,7 +139,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         {
             String name = MapValueConverter.getStringAttribute(PreferencesProvider.NAME, attributes);
             String type = MapValueConverter.getStringAttribute(PreferencesProvider.TYPE, attributes);
-            PreferencesProviderFactory factory = PreferencesProviderFactory.FACTORIES.get(type);
+            PreferencesProviderFactory factory = PreferencesProviderFactory.FACTORY_LOADER.get(type);
             UUID id = UUIDGenerator.generatePreferencesProviderUUID(name, getName());
             PreferencesProvider pp = factory.createInstance(id, attributes, this);
             pp.setDesiredState(State.INITIALISING, State.ACTIVE);

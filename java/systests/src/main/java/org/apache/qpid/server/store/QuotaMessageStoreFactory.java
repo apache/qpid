@@ -18,18 +18,31 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.test.utils.QpidTestCase;
+package org.apache.qpid.server.store;
 
-public class MessageStoreCreatorTest extends QpidTestCase
+import java.util.Map;
+
+import org.apache.qpid.server.plugin.MessageStoreFactory;
+
+public class QuotaMessageStoreFactory implements MessageStoreFactory
 {
-    public void testMessageStoreCreator()
+
+    @Override
+    public String getType()
     {
-        MessageStoreCreator messageStoreCreator = new MessageStoreCreator();
-        String type = new BDBMessageStoreFactory().getType();
-        MessageStore store = messageStoreCreator.createMessageStore(type);
-        assertNotNull("Store of type " + type + " is not created", store);
-    }}
+        return QuotaMessageStore.TYPE;
+    }
+
+    @Override
+    public MessageStore createMessageStore()
+    {
+        return new QuotaMessageStore();
+    }
+
+    @Override
+    public void validateAttributes(Map<String, Object> attributes)
+    {
+    }
+
+}

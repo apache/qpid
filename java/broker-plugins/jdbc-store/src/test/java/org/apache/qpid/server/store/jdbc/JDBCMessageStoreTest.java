@@ -25,15 +25,13 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
 
 public class JDBCMessageStoreTest extends MessageStoreTestCase
 {
@@ -54,21 +52,23 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
 
     public void testOnDelete() throws Exception
     {
-        String[] expectedTables = JDBCMessageStore.ALL_TABLES;
+        Set<String> expectedTables = JDBCMessageStore.MESSAGE_STORE_TABLE_NAMES;
         assertTablesExist(expectedTables, true);
-        getStore().close();
+        getStore().closeMessageStore();
         assertTablesExist(expectedTables, true);
         getStore().onDelete();
         assertTablesExist(expectedTables, false);
     }
 
     @Override
-    protected void setUpStoreConfiguration(VirtualHost virtualHost) throws Exception
+    protected Map<String, Object> getStoreSettings()
     {
         _connectionURL = "jdbc:derby:memory:/" + getTestName() + ";create=true";
-
-        when(virtualHost.getAttribute(eq("connectionURL"))).thenReturn(_connectionURL);
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(JDBCMessageStore.CONNECTION_URL, _connectionURL);
+        return messageStoreSettings;
     }
+
 
     @Override
     protected MessageStore createMessageStore()
@@ -76,7 +76,7 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
         return new JDBCMessageStore();
     }
 
-    private void assertTablesExist(String[] expectedTables, boolean exists) throws SQLException
+    private void assertTablesExist(Set<String> expectedTables, boolean exists) throws SQLException
     {
         Set<String> existingTables = getTableNames();
         for (String tableName : expectedTables)

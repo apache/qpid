@@ -34,8 +34,6 @@ import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-import com.sleepycat.je.rep.ReplicationConfig;
-
 public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 {
     private static final long RECEIVE_TIMEOUT = 5000l;
@@ -83,15 +81,6 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     private void startCluster(boolean designedPrimary) throws Exception
     {
         setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
-
-        String storeConfigKeyPrefix = _clusterCreator.getStoreConfigKeyPrefix();
-
-        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).name", ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT);
-        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(0).value", "2 s");
-
-        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).name", ReplicationConfig.ELECTIONS_PRIMARY_RETRIES);
-        setVirtualHostConfigurationProperty(storeConfigKeyPrefix + ".repConfig(1).value", "0");
-
         _clusterCreator.configureClusterNodes();
         _clusterCreator.setDesignatedPrimaryOnFirstBroker(designedPrimary);
         _brokerFailoverUrl = _clusterCreator.getConnectionUrlForAllClusterNodes();

@@ -23,7 +23,7 @@ package org.apache.qpid.server.configuration.startup;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,34 +35,13 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
-import org.apache.qpid.test.utils.TestFileUtils;
 
 public class VirtualHostRecovererTest extends TestCase
 {
-    public void testCreate()
-    {
-        StatisticsGatherer statisticsGatherer = mock(StatisticsGatherer.class);
-        SecurityManager securityManager = mock(SecurityManager.class);
-        ConfigurationEntry entry = mock(ConfigurationEntry.class);
-        Broker parent = mock(Broker.class);
-        when(parent.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
-        when(parent.getSecurityManager()).thenReturn(securityManager);
-
-        VirtualHostRecoverer recoverer = new VirtualHostRecoverer(statisticsGatherer);
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        String name = getName();
-        attributes.put(VirtualHost.NAME, name);
-        File file = TestFileUtils.createTempFile(this, ".xml", "<virtualhosts><virtualhost><name>" + name + "</name><" + name
-                + "></" + name + "></virtualhost></virtualhosts>");
-        attributes.put(VirtualHost.CONFIG_PATH, file.getAbsolutePath());
-        when(entry.getAttributes()).thenReturn(attributes);
-
-        VirtualHost host = recoverer.create(null, entry, parent);
-
-        assertNotNull("Null is returned", host);
-        assertEquals("Unexpected name", getName(), host.getName());
-    }
 
     public void testCreateVirtualHostFromStoreConfigAttributes()
     {
@@ -77,8 +56,7 @@ public class VirtualHostRecovererTest extends TestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-
-        attributes.put(VirtualHost.STORE_TYPE, "TESTMEMORY");
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
         when(entry.getAttributes()).thenReturn(attributes);
 
         VirtualHost host = recoverer.create(null, entry, parent);
@@ -91,15 +69,9 @@ public class VirtualHostRecovererTest extends TestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.CONFIG_PATH, "/path/to/virtualhost.xml");
-        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.CONFIG_PATH};
-
-        checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
-
-        attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.STORE_TYPE, "MEMORY");
-        mandatoryAttributes = new String[]{VirtualHost.NAME, VirtualHost.STORE_TYPE};
+        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
+        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.TYPE, VirtualHost.MESSAGE_STORE_SETTINGS};
 
         checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
     }

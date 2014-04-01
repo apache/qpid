@@ -40,11 +40,11 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
@@ -119,11 +119,11 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
      * Queue, Exchange, Bindings entries are stored now as configurable objects
      * in "CONFIGURED_OBJECTS" table.
      */
-    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, VirtualHost virtualHost)
+    public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, ConfiguredObject<?> parent)
     {
         reportStarting(environment, 5);
         upgradeMessages(environment, handler);
-        upgradeConfiguredObjectsAndDependencies(environment, handler, virtualHost.getName());
+        upgradeConfiguredObjectsAndDependencies(environment, handler, parent.getName());
         renameDatabases(environment, null);
         reportFinished(environment, 6);
     }

@@ -41,7 +41,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
-import org.apache.qpid.server.store.MessageStoreCreator;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.test.client.UnroutableMessageTestExceptionListener;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.SystemUtils;
@@ -271,7 +271,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         Collection<String> supportedVirtualHostStoreTypes = (Collection<String>)brokerDetails.get(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES);
-        Collection<String> expectedSupportedVirtualHostStoreTypes = new MessageStoreCreator().getStoreTypes();
+        Collection<String> expectedSupportedVirtualHostStoreTypes = MessageStoreFactory.FACTORY_LOADER.getSupportedTypes();
         assertEquals("Unexpected supported virtual host store types",  new HashSet<String>(expectedSupportedVirtualHostStoreTypes), new HashSet<String>(supportedVirtualHostStoreTypes));
     }
 

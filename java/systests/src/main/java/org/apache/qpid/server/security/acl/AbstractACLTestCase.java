@@ -18,9 +18,7 @@
  */
 package org.apache.qpid.server.security.acl;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
@@ -33,6 +31,7 @@ import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.naming.NamingException;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -95,12 +94,12 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
         }
     }
 
-    public void writeACLFile(final String...rules) throws ConfigurationException, IOException
+    public void writeACLFile(final String...rules) throws IOException
     {
         writeACLFileUtil(this, rules);
     }
 
-    public static void writeACLFileUtil(QpidBrokerTestCase testcase, String...rules) throws ConfigurationException, IOException
+    public static void writeACLFileUtil(QpidBrokerTestCase testcase, String...rules) throws IOException
     {
         File aclFile = File.createTempFile(testcase.getClass().getSimpleName(), testcase.getName());
         aclFile.deleteOnExit();

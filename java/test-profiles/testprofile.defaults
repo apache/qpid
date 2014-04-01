@@ -21,7 +21,7 @@ java.naming.provider.url=${test.profiles}${file.separator}test-provider.properti
 
 broker.ready=Listening on TCP
 broker.config=build/etc/config-systests.json
-messagestore.class.name=org.apache.qpid.server.store.MemoryMessageStore
+messagestore.type=Memory
 broker.protocol.excludes=
 broker.persistent=false
 
@@ -63,6 +63,6 @@ exclude.modules=none
 
 profile.clustered=false
 broker.config-store-type=json
-broker.virtualhosts-config="${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml"
+
 
 

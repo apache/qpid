@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
@@ -74,6 +75,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
 
         _store = store;
         _upgrader = _upgraderProvider.getUpgrader(configVersion, this);
+        _eventLogger.message(_logSubject, ConfigStoreMessages.RECOVERY_START());
     }
 
     @Override
