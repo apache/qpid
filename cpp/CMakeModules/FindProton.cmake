@@ -65,6 +65,6 @@ if (PKG_CONFIG_FOUND)
 endif()
 
 # Proton not found print a standard error message
-if (NOT ${CMAKE_VERSION} VERSION_LESS "2.8.0")
+if (NOT ${CMAKE_VERSION} VERSION_LESS "2.8.3")
     find_package_handle_standard_args(Proton CONFIG_MODE)
 endif()
