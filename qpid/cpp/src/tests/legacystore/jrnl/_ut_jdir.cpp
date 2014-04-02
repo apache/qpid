@@ -76,7 +76,7 @@ void create_jdat_file(const char* dirname, const char* base_filename, u_int32_t 
     file_hdr fh(RHM_JDAT_FILE_MAGIC, RHM_JDAT_VERSION, 0, first_rid, fid, 0x200, true);
     ofstream of(fn.str().c_str(), ofstream::out | ofstream::trunc);
     if (!of.good())
-        BOOST_FAIL("Unable to open journal data file " << fn << " for writing.");
+        BOOST_FAIL("Unable to open journal data file " << fn.str() << " for writing.");
     of.write((const char*)&fh, sizeof(file_hdr));
     of.close();
 }

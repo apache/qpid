@@ -55,7 +55,7 @@ Thread::Thread(Runnable* runnable) : impl(new ThreadPrivate(runnable)) {}
 Thread::Thread(Runnable& runnable) : impl(new ThreadPrivate(&runnable)) {}
 
 Thread::operator bool() {
-    return impl;
+    return !!impl;
 }
 
 bool Thread::operator==(const Thread& t) const {

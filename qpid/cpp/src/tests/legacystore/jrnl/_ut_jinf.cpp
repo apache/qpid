@@ -360,7 +360,7 @@ QPID_AUTO_TEST_CASE(analyze_owi_in_non_ae_journal)
             try
             {
                 ji.analyze();
-                BOOST_FAIL("Failed to detect irregular OWI flag in non-ae journal file \"" << fn << "\"");
+                BOOST_FAIL("Failed to detect irregular OWI flag in non-ae journal file \"" << fn.str() << "\"");
             }
             catch (const jexception& e) {} // ignore - expected
 
@@ -389,7 +389,7 @@ QPID_AUTO_TEST_CASE(analyze_owi_in_ae_min_size_journal)
             try
             {
                 ji.analyze();
-                BOOST_FAIL("Failed to detect irregular OWI flag in min-sized ae journal file \"" << fn << "\"");
+                BOOST_FAIL("Failed to detect irregular OWI flag in min-sized ae journal file \"" << fn.str() << "\"");
             }
             catch (const jexception& e) {} // ignore - expected
 

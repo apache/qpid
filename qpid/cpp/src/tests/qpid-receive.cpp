@@ -136,8 +136,7 @@ struct Options : public qpid::Options
             if (address.empty()) throw qpid::Exception("Address must be specified!");
             qpid::log::Logger::instance().configure(log);
             if (help) {
-                std::ostringstream msg;
-                std::cout << msg << *this << std::endl << std::endl
+                std::cout << *this << std::endl << std::endl
                           << "Drains messages from the specified address" << std::endl;
                 return false;
             } else {

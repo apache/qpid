@@ -204,13 +204,13 @@ Exchange::Exchange(const string& _name, bool _durable, bool _autodelete, const q
         }
     }
 
-    sequence = _args.get(qpidMsgSequence);
+    sequence = !!_args.get(qpidMsgSequence);
     if (sequence) {
         QPID_LOG(debug, "Configured exchange " <<  _name  << " with Msg sequencing");
         args.setInt64(std::string(qpidSequenceCounter), sequenceNo);
     }
 
-    ive = _args.get(qpidIVE);
+    ive = !!_args.get(qpidIVE);
     if (ive) {
         QPID_LOG(debug, "Configured exchange " <<  _name  << " with Initial Value");
     }
