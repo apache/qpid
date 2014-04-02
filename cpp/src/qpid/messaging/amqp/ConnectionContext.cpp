@@ -78,7 +78,7 @@ void ConnectionContext::trace(const char* message) const
 
 ConnectionContext::ConnectionContext(const std::string& url, const qpid::types::Variant::Map& o)
     : qpid::messaging::ConnectionOptions(o),
-      fullUrl(url),
+      fullUrl(url, protocol.empty() ? qpid::Address::TCP : protocol),
       engine(pn_transport()),
       connection(pn_connection()),
       //note: disabled read/write of header as now handled by engine
@@ -89,7 +89,8 @@ ConnectionContext::ConnectionContext(const std::string& url, const qpid::types::
       codecAdapter(*this)
 {
     // Concatenate all known URLs into a single URL, get rid of duplicate addresses.
-    sys::urlAddStrings(fullUrl, urls.begin(), urls.end());
+    sys::urlAddStrings(fullUrl, urls.begin(), urls.end(), protocol.empty() ?
+                       qpid::Address::TCP : protocol);
     if (pn_transport_bind(engine, connection)) {
         //error
     }
