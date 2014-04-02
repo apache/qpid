@@ -330,7 +330,7 @@ namespace Rdma {
     {}
 
     ConnectionEvent::operator bool() const {
-        return event;
+        return !!event;
     }
 
     ::rdma_cm_event_type ConnectionEvent::getEventType() const {

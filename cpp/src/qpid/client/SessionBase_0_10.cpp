@@ -73,7 +73,7 @@ uint32_t SessionBase_0_10::timeout(uint32_t seconds) { return impl->setTimeout(s
 
 SessionId SessionBase_0_10::getId() const { return impl->getId(); }
 
-bool SessionBase_0_10::isValid() const { return impl; }
+bool SessionBase_0_10::isValid() const { return !!impl; }
 
 Connection SessionBase_0_10::getConnection()
 {

@@ -254,7 +254,7 @@ const Message::Encoding& Message::getEncoding() const
 }
 Message::operator bool() const
 {
-    return encoding;
+    return !!encoding;
 }
 
 std::string Message::getContent() const

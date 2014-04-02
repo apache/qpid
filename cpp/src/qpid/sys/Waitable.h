@@ -25,6 +25,12 @@
 #include "qpid/sys/ExceptionHolder.h"
 #include <assert.h>
 
+#if __cplusplus >=201103L
+#define DESTRUCTOR_THROWS noexcept(false)
+#else
+#define DESTRUCTOR_THROWS
+#endif
+
 namespace qpid {
 namespace sys {
 
@@ -101,7 +107,7 @@ class Waitable : public Monitor {
     struct ExCheck {
         const ExceptionHolder& exception;
         ExCheck(const ExceptionHolder& e) : exception(e) { e.raise(); }
-        ~ExCheck() { exception.raise(); }
+        ~ExCheck() DESTRUCTOR_THROWS { exception.raise(); }
     };
         
     size_t waiters;

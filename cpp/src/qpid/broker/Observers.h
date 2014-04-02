@@ -80,7 +80,7 @@ class Observers
     }
 
     template <class T> static bool isA(const ObserverPtr&o) {
-        return boost::dynamic_pointer_cast<T>(o);
+        return !!boost::dynamic_pointer_cast<T>(o);
     }
 
     mutable sys::Mutex myLock;
