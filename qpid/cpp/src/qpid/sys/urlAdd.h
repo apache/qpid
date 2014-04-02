@@ -40,7 +40,9 @@ inline void urlAddUrl(Url& url, const Url& more) {
 }
 
 /** Convert str to a Url and do urlAddUrl. */
-inline void urlAddString(Url& url, const std::string& str) { urlAddUrl(url, Url(str)); }
+inline void urlAddString(Url& url, const std::string& str, const std::string& defaultProtocol) {
+    urlAddUrl(url, Url(str, defaultProtocol));
+}
 
 /** For each URL in a range, do urlAddUrl */
 template <class UrlIterator>
@@ -50,8 +52,9 @@ void urlAddUrls(Url& url, UrlIterator i, UrlIterator j) {
 
 /** For each string in a range, do urlAddUrl(Url(string)) */
 template <class StringIterator>
-void urlAddStrings(Url& url, StringIterator i, StringIterator j) {
-    for_each(i, j, boost::bind(&urlAddString, boost::ref(url), _1));
+void urlAddStrings(Url& url, StringIterator i, StringIterator j,
+                   const std::string& defaultProtocol) {
+    for_each(i, j, boost::bind(&urlAddString, boost::ref(url), _1, defaultProtocol));
 }
 
 }} // namespace qpid::sys
