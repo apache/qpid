@@ -147,6 +147,7 @@ inline bool isIdentifierPart(char c)
     return std::isalnum(c) || c=='_' || c=='$' || c=='.';
 }
 
+static const std::string END("<END>");
 bool tokenise(std::string::const_iterator& s, std::string::const_iterator& e, Token& tok)
 {
     std::string::const_iterator t = s;
@@ -171,7 +172,7 @@ bool tokenise(std::string::const_iterator& s, std::string::const_iterator& e, To
     while (true)
     switch (state) {
     case START:
-        if (t==e) {tok = Token(T_EOS, s, "<END>"); return true;}
+        if (t==e) {tok = Token(T_EOS, s, END); return true;}
         else switch (*t) {
         case '(': tokType = T_LPAREN; state = ACCEPT_INC; continue;
         case ')': tokType = T_RPAREN; state = ACCEPT_INC; continue;
