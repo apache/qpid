@@ -217,7 +217,7 @@ class TraceAnalysis:
                                 elif lline.contains("xCommitBody") or lline.contains("xRollbackBody"):
                                     lline.txn_cnt = ssn.txn_cnt
                                     ssn.txn_cnt += 1
-                except KeyboardInterrupt as e: raise e
+                except KeyboardInterrupt, e: raise e
                 except: pass
                 if (lcnt + 1) % PROGRESS_LINES_PER_DOT == 0:
                     sys.stdout.write(".")
