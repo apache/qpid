@@ -26,7 +26,9 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/operators.hpp>
 #include <boost/bind.hpp>
+
 #include <algorithm>
+#include <iostream>
 #include <numeric>
 
 namespace qpid {

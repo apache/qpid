@@ -26,6 +26,8 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/RefCounted.h"
 
+#include <string>
+
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {

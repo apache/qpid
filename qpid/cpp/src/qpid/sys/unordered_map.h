@@ -21,7 +21,7 @@
 
 // unordered_map include path is platform specific
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(_LIBCPP_VERSION) || __cplusplus >= 201103L
 #  include <unordered_map>
 #elif defined(__SUNPRO_CC)
 #  include <boost/tr1/unordered_map.hpp>
@@ -30,7 +30,11 @@
 #endif /* _MSC_VER */
 namespace qpid {
 namespace sys {
+#if defined(_LIBCPP_VERSION) || __cplusplus >= 201103L
+    using std::unordered_map;
+#else
     using std::tr1::unordered_map;
+#endif
 }}
 
 
