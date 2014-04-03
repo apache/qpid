@@ -40,6 +40,7 @@ Current/pending:
                    svn r.1561848 2014-01-27: Bugfixes and enhancements for qpid_qls_analyze
                    svn r.1564808 2014-02-05: Bugfixes and enhancements for qpid_qls_analyze
                    svn r.1578899 2014-03-18: Bugfixes and enhancements for qpid_qls_analyze
+                   svn r.1583778 2014-04-01: Bugfix for qpid_qls_analyze
                    * Store analysis and status
                    * Recovery/reading of message content
                    * Empty file pool status and management
@@ -145,6 +146,7 @@ no.   svn r  Q-JIRA     RHBZ       Date
 22. 1575009    5607  1064181 2014-03-06
 23. 1578899    5362        - 2014-03-18
 24. 1582730    5651        - 2014-03-28
+25. 1583778    5362        - 2014-04-01
 
 See above sections for details on these checkins.
 

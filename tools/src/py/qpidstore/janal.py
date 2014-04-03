@@ -219,7 +219,7 @@ class TxnMap(object):
             if isinstance(hdr, jrnl.DeqRec):
                 try:
                     self.__emap.unlock(hdr.deq_rid)
-                except jerr.NonExistentRecordError as err: # Not in emap, look in current transaction op list (TPL)
+                except jerr.NonExistentRecordError, err: # Not in emap, look in current transaction op list (TPL)
                     found_rid = False
                     for _, hdr1, _ in self.__map[xid]:
                         if isinstance(hdr1, jrnl.EnqRec) and hdr1.rid == hdr.deq_rid:
