@@ -20,6 +20,14 @@
  */
 package org.apache.qpid.server.configuration.store;
 
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.Broker;
+import org.codehaus.jackson.map.ObjectMapper;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,16 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.Broker;
-import org.codehaus.jackson.map.ObjectMapper;
-
 public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTestCase
 {
-
     @Override
     protected ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception
     {
@@ -56,8 +56,8 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         ConfigurationEntry parentEntry = getStore().getEntry(parentId);
         Set<UUID> children = new HashSet<UUID>(parentEntry.getChildrenIds());
         children.add(id);
-        ConfigurationEntry newParentEntry = new ConfigurationEntry(parentEntry.getId(), parentEntry.getType(), parentEntry.getAttributes(), children, store);
-        store.save(newParentEntry, new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), store));
+        ConfigurationEntry newParentEntry = new ConfigurationEntryImpl(parentEntry.getId(), parentEntry.getType(), parentEntry.getAttributes(), children, store);
+        store.save(newParentEntry, new ConfigurationEntryImpl(id, type, attributes, Collections.<UUID> emptySet(), store));
     }
 
     public void testCreateWithNullLocationAndNullInitialStore()
@@ -130,4 +130,5 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
     {
         assertEquals("Unexpected type", "memory", getStore().getType());
     }
+
 }

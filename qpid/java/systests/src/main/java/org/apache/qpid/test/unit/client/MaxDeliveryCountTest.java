@@ -21,15 +21,16 @@
 package org.apache.qpid.test.unit.client;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.RejectBehaviour;
 import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -41,6 +42,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -75,13 +77,13 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         //enable DLQ/maximumDeliveryCount support for all queues at the vhost level
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.queues.maximumDeliveryCount",
-                String.valueOf(MAX_DELIVERY_COUNT));
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost.test.queues.deadLetterQueues",
-                                String.valueOf(true));
+
+        TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
+        brokerConfiguration.setBrokerAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, true);
+        brokerConfiguration.setBrokerAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, MAX_DELIVERY_COUNT);
 
         //Ensure management is on
-        getBrokerConfiguration().addJmxManagementConfiguration();
+        brokerConfiguration.addJmxManagementConfiguration();
 
         // Set client-side flag to allow the server to determine if messages
         // dead-lettered or requeued.

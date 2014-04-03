@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.message.EnqueueableMessage;
@@ -62,18 +63,18 @@ public class VirtualHostConfigRecoveryHandler implements
     private final Map<Long, StoredMessage> _unusedMessages = new HashMap<Long, StoredMessage>();
     private final EventLogger _eventLogger;
 
-    private MessageStoreLogSubject _logSubject;
+    private final MessageStoreLogSubject _logSubject;
     private MessageStore _store;
 
-    public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost)
+    public VirtualHostConfigRecoveryHandler(VirtualHost virtualHost, MessageStoreLogSubject logSubject)
     {
         _virtualHost = virtualHost;
         _eventLogger = virtualHost.getEventLogger();
+        _logSubject = logSubject;
     }
 
     public VirtualHostConfigRecoveryHandler begin(MessageStore store)
     {
-        _logSubject = new MessageStoreLogSubject(_virtualHost.getName(), store.getClass().getSimpleName());
         _store = store;
         _eventLogger.message(_logSubject, TransactionLogMessages.RECOVERY_START(null, false));
         return this;
@@ -81,6 +82,7 @@ public class VirtualHostConfigRecoveryHandler implements
 
     public StoredMessageRecoveryHandler begin()
     {
+        _eventLogger.message(_logSubject, MessageStoreMessages.RECOVERY_START());
         return this;
     }
 
@@ -232,10 +234,9 @@ public class VirtualHostConfigRecoveryHandler implements
             m.remove();
         }
         _eventLogger.message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
-    }
 
-    public void complete()
-    {
+        _eventLogger.message(_logSubject, MessageStoreMessages.RECOVERED(_recoveredMessages.size() - _unusedMessages.size()));
+        _eventLogger.message(_logSubject, MessageStoreMessages.RECOVERY_COMPLETE());
     }
 
     public void queueEntry(final UUID queueId, long messageId)
@@ -313,8 +314,6 @@ public class VirtualHostConfigRecoveryHandler implements
 
             _eventLogger.message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(entry.getKey(), true));
         }
-
-
 
         return this;
     }

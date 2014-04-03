@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AccessControlProvider;
@@ -54,7 +53,7 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
                           "ACL DENY-LOG ALL ALL";
 
     @Override
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER, OTHER_USER);

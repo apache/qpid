@@ -35,6 +35,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
@@ -42,6 +43,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ManagementModeStoreHandlerTest extends QpidTestCase
@@ -213,7 +215,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         when(virtualHost.getId()).thenReturn(virtualHostId);
         when(virtualHost.getType()).thenReturn(VirtualHost.class.getSimpleName());
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.CONFIG_PATH, "/path/to/host.xml");
+        attributes.put(VirtualHost.TYPE, "STANDARD");
         when(virtualHost.getAttributes()).thenReturn(attributes);
         when(_store.getEntry(virtualHostId)).thenReturn(virtualHost);
         when(_root.getChildrenIds()).thenReturn(new HashSet<UUID>(Arrays.asList(_portEntryId, virtualHostId)));
@@ -253,7 +255,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, "TEST");
-        ConfigurationEntry configurationEntry = new ConfigurationEntry(_portEntryId, Port.class.getSimpleName(), attributes,
+        ConfigurationEntry
+                configurationEntry = new ConfigurationEntryImpl(_portEntryId, Port.class.getSimpleName(), attributes,
                 Collections.<UUID> emptySet(), null);
         _handler.save(configurationEntry);
         verify(_store).save(any(ConfigurationEntry.class));
@@ -269,7 +272,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         ConfigurationEntry root = _handler.getRootEntry();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Broker.NAME, "TEST");
-        ConfigurationEntry configurationEntry = new ConfigurationEntry(_rootId, Broker.class.getSimpleName(), attributes,
+        ConfigurationEntry
+                configurationEntry = new ConfigurationEntryImpl(_rootId, Broker.class.getSimpleName(), attributes,
                 root.getChildrenIds(), null);
         _handler.save(configurationEntry);
         verify(_store).save(any(ConfigurationEntry.class));
@@ -283,7 +287,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         UUID portId = getOptionsPortId();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, "TEST");
-        ConfigurationEntry configurationEntry = new ConfigurationEntry(portId, Port.class.getSimpleName(), attributes,
+        ConfigurationEntry
+                configurationEntry = new ConfigurationEntryImpl(portId, Port.class.getSimpleName(), attributes,
                 Collections.<UUID> emptySet(), null);
         try
         {
@@ -300,9 +305,34 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeHttpPortOverride(1000);
         _handler = new ManagementModeStoreHandler(_store, _options);
+        ConfiguredObjectRecord record = new ConfiguredObjectRecord()
+        {
+            @Override
+            public UUID getId()
+            {
+                return _portEntryId;
+            }
 
-        _handler.remove(_portEntryId);
-        verify(_store).remove(_portEntryId);
+            @Override
+            public String getType()
+            {
+                return Port.class.getSimpleName();
+            }
+
+            @Override
+            public Map<String, Object> getAttributes()
+            {
+                return Collections.emptyMap();
+            }
+
+            @Override
+            public Map<String, ConfiguredObjectRecord> getParents()
+            {
+                return null;
+            }
+        };
+        _handler.remove(record);
+        verify(_store).remove(record);
     }
 
     public void testRemoveCLIPort()
@@ -310,9 +340,11 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _options.setManagementModeHttpPortOverride(1000);
         _handler = new ManagementModeStoreHandler(_store, _options);
         UUID portId = getOptionsPortId();
+        ConfiguredObjectRecord record = mock(ConfiguredObjectRecord.class);
+        when(record.getId()).thenReturn(portId);
         try
         {
-            _handler.remove(portId);
+            _handler.remove(record);
             fail("Exception should be thrown on trying to remove CLI port");
         }
         catch (IllegalConfigurationException e)

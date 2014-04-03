@@ -52,9 +52,10 @@ import javax.servlet.http.HttpServletResponse;
 import junit.framework.Assert;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -80,6 +81,7 @@ public class RestTestHelper
 
     private File _passwdFile;
     private boolean _useSslAuth;
+    static final String[] EXPECTED_QUEUES = { "queue", "ping" };
 
     public RestTestHelper(int httpPort)
     {
@@ -226,6 +228,11 @@ public class RestTestHelper
 
     public Map<String, Object> find(String name, Object value, List<Map<String, Object>> data)
     {
+        if (data == null)
+        {
+            return null;
+        }
+
         for (Map<String, Object> map : data)
         {
             Object mapValue = map.get(name);
@@ -437,7 +444,7 @@ public class RestTestHelper
     /**
      * Create password file that follows the convention username=password, which is deleted by {@link #tearDown()}
      */
-    public void configureTemporaryPasswordFile(QpidBrokerTestCase testCase, String... users) throws ConfigurationException, IOException
+    public void configureTemporaryPasswordFile(QpidBrokerTestCase testCase, String... users) throws IOException
     {
         _passwdFile = createTemporaryPasswdFile(users);
 
@@ -508,5 +515,23 @@ public class RestTestHelper
     {
         _useSslAuth = useSslAuth;
         _useSsl = true;
+    }
+
+    public void createTestQueues() throws IOException, JsonGenerationException, JsonMappingException
+    {
+        for (int i = 0; i < EXPECTED_QUEUES.length; i++)
+        {
+            String queueName = EXPECTED_QUEUES[i];
+            Map<String, Object> queueData = new HashMap<String, Object>();
+            queueData.put(Queue.NAME, queueName);
+            queueData.put(Queue.DURABLE, Boolean.FALSE);
+            submitRequest("/rest/queue/test/" + queueName, "PUT", queueData);
+
+            Map<String, Object> bindingData = new HashMap<String, Object>();
+            bindingData.put(Binding.NAME, queueName);
+            bindingData.put(Binding.QUEUE, queueName);
+            bindingData.put(Binding.EXCHANGE, "amq.direct");
+            submitRequest("/rest/binding/test/amq.direct/" + queueName + "/" + queueName, "PUT", queueData);
+        }
     }
 }

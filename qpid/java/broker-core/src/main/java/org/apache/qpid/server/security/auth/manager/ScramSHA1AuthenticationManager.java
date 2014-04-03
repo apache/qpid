@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.scram.ScramSHA1SaslServer;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -40,7 +40,6 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.AccessControlException;
 import java.security.InvalidKeyException;
@@ -56,6 +55,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@ManagedObject( category = false, type = "SCRAM-SHA1" )
 public class ScramSHA1AuthenticationManager
         extends AbstractAuthenticationManager<ScramSHA1AuthenticationManager>
     implements PasswordCredentialManagingAuthenticationProvider<ScramSHA1AuthenticationManager>,
@@ -71,8 +71,7 @@ public class ScramSHA1AuthenticationManager
 
     protected ScramSHA1AuthenticationManager(final Broker broker,
                                              final Map<String, Object> defaults,
-                                             final Map<String, Object> attributes,
-                                             final boolean recovering)
+                                             final Map<String, Object> attributes)
     {
         super(broker, defaults, attributes);
     }
@@ -265,7 +264,7 @@ public class ScramSHA1AuthenticationManager
                 userAttrs.put(User.NAME, username);
                 userAttrs.put(User.PASSWORD, createStoredPassword(password));
                 userAttrs.put(User.TYPE, SCRAM_USER_TYPE);
-                ScramAuthUser user = new ScramAuthUser(userAttrs);
+                ScramAuthUser user = new ScramAuthUser(userAttrs, this);
                 _users.put(username, user);
 
                 return true;
@@ -425,30 +424,25 @@ public class ScramSHA1AuthenticationManager
     @Override
     public ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(final String type)
     {
-        if("User".equals(type))
-        {
-            return new UserRecoverer();
-        }
-        else
-        {
-            return null;
-        }
+        return null;
     }
 
-    private class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements User<ScramAuthUser>
+    @ManagedObject( category = false, type = "scram")
+    static class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements User<ScramAuthUser>
     {
 
-
-        protected ScramAuthUser(final Map<String, Object> attributes)
+        private ScramSHA1AuthenticationManager _authenticationManager;
+        protected ScramAuthUser(final Map<String, Object> attributes, ScramSHA1AuthenticationManager parent)
         {
-            super(parentsMap(ScramSHA1AuthenticationManager.this),
+            super(parentsMap(parent),
                   Collections.<String,Object>emptyMap(),
-                  attributes, ScramSHA1AuthenticationManager.this.getTaskExecutor());
-
+                  attributes, parent.getTaskExecutor());
+            _authenticationManager = parent;
             if(!ASCII.newEncoder().canEncode(getName()))
             {
                 throw new IllegalArgumentException("Scram SHA1 user names are restricted to characters in the ASCII charset");
             }
+
         }
 
         @Override
@@ -456,9 +450,9 @@ public class ScramSHA1AuthenticationManager
         {
             if(desiredState == State.DELETED)
             {
-                getSecurityManager().authoriseUserOperation(Operation.DELETE, getName());
-                _users.remove(getName());
-                ScramSHA1AuthenticationManager.this.childRemoved(this);
+                _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.DELETE, getName());
+                _authenticationManager._users.remove(getName());
+                _authenticationManager.childRemoved(this);
                 return true;
             }
             else
@@ -479,7 +473,7 @@ public class ScramSHA1AuthenticationManager
                 {
                     try
                     {
-                        modifiedAttributes.put(User.PASSWORD, createStoredPassword(newPassword));
+                        modifiedAttributes.put(User.PASSWORD, _authenticationManager.createStoredPassword(newPassword));
                     }
                     catch (SaslException e)
                     {
@@ -514,11 +508,12 @@ public class ScramSHA1AuthenticationManager
         @Override
         public void setPassword(final String password)
         {
-            getSecurityManager().authoriseUserOperation(Operation.UPDATE, getName());
+            _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.UPDATE, getName());
 
             try
             {
-                changeAttribute(User.PASSWORD, getAttribute(User.PASSWORD), createStoredPassword(password));
+                changeAttribute(User.PASSWORD, getAttribute(User.PASSWORD), _authenticationManager.createStoredPassword(
+                        password));
             }
             catch (SaslException e)
             {
@@ -579,7 +574,7 @@ public class ScramSHA1AuthenticationManager
         @Override
         public Map<String, Object> getPreferences()
         {
-            PreferencesProvider preferencesProvider = getPreferencesProvider();
+            PreferencesProvider preferencesProvider = _authenticationManager.getPreferencesProvider();
             if (preferencesProvider == null)
             {
                 return null;
@@ -601,7 +596,7 @@ public class ScramSHA1AuthenticationManager
         @Override
         public Map<String, Object> setPreferences(Map<String, Object> preferences)
         {
-            PreferencesProvider preferencesProvider = getPreferencesProvider();
+            PreferencesProvider preferencesProvider = _authenticationManager.getPreferencesProvider();
             if (preferencesProvider == null)
             {
                 return null;
@@ -612,7 +607,7 @@ public class ScramSHA1AuthenticationManager
         @Override
         public boolean deletePreferences()
         {
-            PreferencesProvider preferencesProvider = getPreferencesProvider();
+            PreferencesProvider preferencesProvider = _authenticationManager.getPreferencesProvider();
             if (preferencesProvider == null)
             {
                 return false;
@@ -680,17 +675,13 @@ public class ScramSHA1AuthenticationManager
         }
     }
 
-    private class UserRecoverer implements ConfiguredObjectRecoverer<ScramAuthUser>
+    public void instantiateUser(User<?> user)
     {
-        @Override
-        public ScramAuthUser create(final RecovererProvider recovererProvider,
-                                    final ConfigurationEntry entry,
-                                    final ConfiguredObject... parents)
+        if(!(user instanceof ScramAuthUser))
         {
-
-            Map<String,Object> attributes = new HashMap<String, Object>(entry.getAttributes());
-            attributes.put(User.ID,entry.getId());
-            return new ScramAuthUser(attributes);
+            throw new IllegalArgumentException("Only users of type " + ScramAuthUser.class.getSimpleName() + " can be add to a " + getClass().getSimpleName());
         }
+        _users.put(user.getName(), (ScramAuthUser) user);
+
     }
 }

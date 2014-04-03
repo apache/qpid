@@ -103,4 +103,9 @@ public interface StatisticsGatherer
      * Reset the counters for this, and any child {@link StatisticsGatherer}s.
      */
     void resetStatistics();
+
+    interface Source
+    {
+        StatisticsGatherer getStatisticsGatherer();
+    }
 }

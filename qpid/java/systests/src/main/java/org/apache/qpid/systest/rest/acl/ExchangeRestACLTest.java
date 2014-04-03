@@ -25,10 +25,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -39,14 +39,16 @@ public class ExchangeRestACLTest extends QpidRestTestCase
 {
     private static final String ALLOWED_USER = "user1";
     private static final String DENIED_USER = "user2";
+    private String _queueName;
 
     @Override
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER);
 
         AbstractACLTestCase.writeACLFileUtil(this, "ACL ALLOW-LOG ALL ACCESS MANAGEMENT",
+                "ACL ALLOW-LOG " + ALLOWED_USER + " CREATE QUEUE",
                 "ACL ALLOW-LOG " + ALLOWED_USER + " CREATE EXCHANGE",
                 "ACL DENY-LOG " + DENIED_USER + " CREATE EXCHANGE",
                 "ACL ALLOW-LOG " + ALLOWED_USER + " UPDATE EXCHANGE",
@@ -61,6 +63,20 @@ public class ExchangeRestACLTest extends QpidRestTestCase
 
         getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
+    }
+
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _queueName = getTestQueueName();
+        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
+        Map<String, Object> queueData = new HashMap<String, Object>();
+        queueData.put(Queue.NAME, _queueName);
+        queueData.put(Queue.DURABLE, Boolean.TRUE);
+        int status = getRestTestHelper().submitRequest("/rest/queue/test/" + _queueName, "PUT", queueData);
+        assertEquals("Unexpected status", 201, status);
+
     }
 
     public void testCreateExchangeAllowed() throws Exception
@@ -209,10 +225,10 @@ public class ExchangeRestACLTest extends QpidRestTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Binding.NAME, bindingName);
-        attributes.put(Binding.QUEUE, "queue");
+        attributes.put(Binding.QUEUE, _queueName);
         attributes.put(Binding.EXCHANGE, "amq.direct");
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/binding/test/amq.direct/queue/" + bindingName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("/rest/binding/test/amq.direct/" + _queueName + "/" + bindingName, "PUT", attributes);
         return responseCode;
     }
 
@@ -228,7 +244,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
 
     private void assertBindingExistence(String bindingName, boolean exists) throws Exception
     {
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct/queue/" + bindingName);
+        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct/" + _queueName + "/" + bindingName);
         assertEquals("Unexpected result", exists, !bindings.isEmpty());
     }
 }

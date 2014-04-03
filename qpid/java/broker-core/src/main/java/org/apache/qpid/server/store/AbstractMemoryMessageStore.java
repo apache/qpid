@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.model.VirtualHost;
 
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
 abstract public class AbstractMemoryMessageStore extends NullMessageStore
 {
     private final AtomicLong _messageId = new AtomicLong(1);
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     private static final Transaction IN_MEMORY_TRANSACTION = new Transaction()
     {
@@ -71,43 +68,8 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
         }
     };
 
-    private final StateManager _stateManager;
     private final EventManager _eventManager = new EventManager();
 
-    public AbstractMemoryMessageStore()
-    {
-        _stateManager = new StateManager(_eventManager);
-    }
-
-    @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
-    {
-        _stateManager.attainState(State.INITIALISING);
-    }
-
-    @Override
-    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler recoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler)
-    {
-        if(_stateManager.isInState(State.INITIAL))
-        {
-            _stateManager.attainState(State.INITIALISING);
-        }
-        _stateManager.attainState(State.INITIALISED);
-    }
-
-    @Override
-    public void activate()
-    {
-
-        if(_stateManager.isInState(State.INITIALISING))
-        {
-            _stateManager.attainState(State.INITIALISED);
-        }
-        _stateManager.attainState(State.ACTIVATING);
-
-        _stateManager.attainState(State.ACTIVE);
-    }
 
     @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
@@ -128,16 +90,6 @@ abstract public class AbstractMemoryMessageStore extends NullMessageStore
     public boolean isPersistent()
     {
         return false;
-    }
-
-    @Override
-    public void close()
-    {
-        if (_closed.compareAndSet(false, true))
-        {
-            _stateManager.attainState(State.CLOSING);
-            _stateManager.attainState(State.CLOSED);
-        }
     }
 
     @Override

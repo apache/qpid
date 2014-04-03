@@ -36,7 +36,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 
 public class ConnectionRestTest extends QpidRestTestCase
 {

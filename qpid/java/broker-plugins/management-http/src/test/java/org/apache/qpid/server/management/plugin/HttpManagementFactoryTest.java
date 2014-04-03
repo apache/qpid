@@ -18,41 +18,33 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import static org.mockito.Mockito.mock;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.PluginFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
+import static org.mockito.Mockito.mock;
 
 public class HttpManagementFactoryTest extends QpidTestCase
 {
     private static final int SESSION_TIMEOUT = 3600;
 
-    private PluginFactory _pluginFactory = new HttpManagementFactory();
+    private HttpManagementFactory _pluginFactory = new HttpManagementFactory();
     private Map<String, Object> _attributes = new HashMap<String, Object>();
     private Broker _broker = mock(Broker.class);
     private UUID _id = UUID.randomUUID();
 
-    public void testCreateInstanceReturnsNullWhenPluginTypeMissing() throws Exception
-    {
-        assertNull(_pluginFactory.createInstance(_id, _attributes, _broker));
-    }
-    public void testCreateInstanceReturnsNullWhenPluginTypeNotHttp()
-    {
-        _attributes.put(PluginFactory.PLUGIN_TYPE, "notHttp");
-        assertNull(_pluginFactory.createInstance(_id, _attributes, _broker));
-    }
 
     public void testCreateInstance() throws Exception
     {
-        _attributes.put(PluginFactory.PLUGIN_TYPE, HttpManagement.PLUGIN_TYPE);
+        _attributes.put(ConfiguredObject.TYPE, HttpManagement.PLUGIN_TYPE);
         _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
+        _attributes.put(ConfiguredObject.ID, _id);
 
-        HttpManagement management = (HttpManagement) _pluginFactory.createInstance(_id, _attributes, _broker);
+        HttpManagement management = _pluginFactory.createInstance(_attributes, _broker);
 
         assertEquals(_broker, management.getParent(Broker.class));
         assertEquals(SESSION_TIMEOUT, management.getSessionTimeout());

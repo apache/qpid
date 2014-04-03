@@ -28,10 +28,12 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.external.ExternalSaslServer;
 
+@ManagedObject( category = false, type = "External" )
 public class ExternalAuthenticationManager extends AbstractAuthenticationManager<ExternalAuthenticationManager>
 {
     private static final String EXTERNAL = "EXTERNAL";

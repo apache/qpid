@@ -1,4 +1,4 @@
-package org.apache.qpid.server.virtualhost;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,18 +18,22 @@ package org.apache.qpid.server.virtualhost;/*
  * under the License.
  *
  */
+package org.apache.qpid.server.virtualhost;
 
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
+import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
+
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreCreator;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreCreator;
-import org.apache.qpid.server.store.OperationalLoggingListener;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class StandardVirtualHost extends AbstractVirtualHost
 {
@@ -37,69 +41,21 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
     private DurableConfigurationStore _durableConfigurationStore;
 
+    private MessageStoreLogSubject _messageStoreLogSubject;
+
+    private MessageStoreLogSubject _configurationStoreLogSubject;
+
     StandardVirtualHost(VirtualHostRegistry virtualHostRegistry,
                         StatisticsGatherer brokerStatisticsGatherer,
                         org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                        VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
+                        VirtualHost virtualHost)
     {
-        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, hostConfig, virtualHost);
+        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, virtualHost);
     }
 
-
-
-    private MessageStore initialiseMessageStore(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
-    {
-        final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.STORE_TYPE);
-        String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
-        MessageStore  messageStore = null;
-        if (storeType == null)
-        {
-            try
-            {
-                final Class<?> clazz = Class.forName(hostConfig.getMessageStoreClass());
-                final Object o = clazz.newInstance();
-
-                if (!(o instanceof MessageStore))
-                {
-                    throw new ClassCastException(clazz + " does not implement " + MessageStore.class);
-                }
-
-                messageStore = (MessageStore) o;
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new ServerScopedRuntimeException("Failed to fina virtual host message store implementation, " +
-                                                       "check the classpath and the configuration", e);
-            }
-            catch (InstantiationException e)
-            {
-                throw new ServerScopedRuntimeException("Failed to initialise virtual host store, " +
-                                                       "check the configuration", e);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new ServerScopedRuntimeException("Failed to initialise virtual host store, " +
-                                                       "check the configuration", e);
-            }
-        }
-        else
-        {
-            messageStore = new MessageStoreCreator().createMessageStore(storeType);
-        }
-
-        final
-        MessageStoreLogSubject
-                storeLogSubject = new MessageStoreLogSubject(getName(), messageStore.getClass().getSimpleName());
-        OperationalLoggingListener.listen(messageStore, storeLogSubject, getEventLogger());
-
-        return messageStore;
-    }
-
-    private DurableConfigurationStore initialiseConfigurationStore(VirtualHost virtualHost)
+    private DurableConfigurationStore initialiseConfigurationStore(String storeType)
     {
         DurableConfigurationStore configurationStore;
-        final Object storeTypeAttr = virtualHost.getAttribute(VirtualHost.CONFIG_STORE_TYPE);
-        String storeType = storeTypeAttr == null ? null : String.valueOf(storeTypeAttr);
 
         if(storeType != null)
         {
@@ -117,24 +73,52 @@ public class StandardVirtualHost extends AbstractVirtualHost
         return configurationStore;
     }
 
-
-    protected void initialiseStorage(VirtualHostConfiguration hostConfig, VirtualHost virtualHost)
+    @Override
+    protected void initialiseStorage(VirtualHost virtualHost)
     {
-        _messageStore = initialiseMessageStore(hostConfig, virtualHost);
+        Map<String, Object> messageStoreSettings = virtualHost.getMessageStoreSettings();
+        String storeType = (String) messageStoreSettings.get(MessageStore.STORE_TYPE);
+        _messageStore = MessageStoreFactory.FACTORY_LOADER.get(storeType).createMessageStore();
+        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
+        getEventLogger().message(_messageStoreLogSubject, MessageStoreMessages.CREATED());
 
-        _durableConfigurationStore = initialiseConfigurationStore(virtualHost);
+        Map<String, Object> configurationStoreSettings = virtualHost.getConfigurationStoreSettings();
+        String configurationStoreType = configurationStoreSettings == null ? null : (String) configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE);
+        _durableConfigurationStore = initialiseConfigurationStore(configurationStoreType);
+        boolean combinedStores = _durableConfigurationStore == _messageStore;
+        if (combinedStores)
+        {
+            configurationStoreSettings = new HashMap<String,Object>(messageStoreSettings);
+            configurationStoreSettings.put(DurableConfigurationStore.IS_MESSAGE_STORE_TOO, true);
+        }
 
-        DurableConfigurationRecoverer configRecoverer =
-                new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
-                                                  new DefaultUpgraderProvider(this, getExchangeRegistry()), getEventLogger());
-        _durableConfigurationStore.configureConfigStore(virtualHost, configRecoverer);
+        if (!combinedStores)
+        {
+            _configurationStoreLogSubject = new MessageStoreLogSubject(getName(), _durableConfigurationStore.getClass().getSimpleName());
+            getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.CREATED());
+        }
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this);
-        _messageStore.configureMessageStore(virtualHost, recoveryHandler, recoveryHandler);
+        _durableConfigurationStore.openConfigurationStore(virtualHost, configurationStoreSettings);
 
-        initialiseModel(hostConfig);
+        _messageStore.openMessageStore(virtualHost, virtualHost.getMessageStoreSettings());
 
-        _messageStore.activate();
+        getEventLogger().message(_messageStoreLogSubject, MessageStoreMessages.STORE_LOCATION(_messageStore.getStoreLocation()));
+
+        if (_configurationStoreLogSubject != null)
+        {
+            getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.STORE_LOCATION(configurationStoreSettings.toString()));
+        }
+
+        DurableConfigurationRecoverer configRecoverer = new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
+                new DefaultUpgraderProvider(this), getEventLogger());
+
+        _durableConfigurationStore.recoverConfigurationStore(configRecoverer);
+
+        // If store does not have entries for standard exchanges (amq.*), the following will create them.
+        initialiseModel();
+
+        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getMessageStoreLogSubject());
+        _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
 
         attainActivation();
     }
@@ -151,4 +135,15 @@ public class StandardVirtualHost extends AbstractVirtualHost
         return _durableConfigurationStore;
     }
 
+    @Override
+    protected MessageStoreLogSubject getMessageStoreLogSubject()
+    {
+        return _messageStoreLogSubject;
+    }
+
+    @Override
+    protected MessageStoreLogSubject getConfigurationStoreLogSubject()
+    {
+        return _configurationStoreLogSubject;
+    }
 }

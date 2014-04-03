@@ -20,33 +20,18 @@
  */
 package org.apache.qpid.server.configuration.store;
 
-import static org.apache.qpid.server.configuration.ConfigurationEntry.ATTRIBUTE_NAME;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
-
 import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.Strings;
 import org.apache.qpid.util.Strings.ChainedResolver;
 import org.codehaus.jackson.JsonGenerationException;
@@ -58,8 +43,18 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.node.ArrayNode;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.*;
+
+import static org.apache.qpid.server.configuration.ConfigurationEntry.ATTRIBUTE_NAME;
+
 public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 {
+
     public static final String STORE_TYPE = "memory";
 
     private static final String DEFAULT_BROKER_NAME = "Broker";
@@ -79,6 +74,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     private boolean _generatedObjectIdDuringLoad;
 
     private ChainedResolver _resolver;
+    private ConfiguredObject<?> _parent;
 
     protected MemoryConfigurationEntryStore(Map<String, String> configProperties)
     {
@@ -128,9 +124,16 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         }
     }
 
+
     @Override
-    public synchronized UUID[] remove(UUID... entryIds)
+    public synchronized UUID[] remove(final ConfiguredObjectRecord... records)
     {
+        UUID[] entryIds = new UUID[records.length];
+        for(int i = 0; i < records.length; i++)
+        {
+            entryIds[i] = records[i].getId();
+        }
+
         List<UUID> removedIds = new ArrayList<UUID>();
         for (UUID uuid : entryIds)
         {
@@ -150,7 +153,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                     {
                         Set<UUID> children = new HashSet<UUID>(entry.getChildrenIds());
                         children.remove(uuid);
-                        ConfigurationEntry referral = new ConfigurationEntry(entry.getId(), entry.getType(),
+                        ConfigurationEntry referral = new ConfigurationEntryImpl(entry.getId(), entry.getType(),
                                 entry.getAttributes(), children, this);
                         _entries.put(entry.getId(), referral);
                     }
@@ -183,7 +186,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     /**
      * Copies the store into the given location
      *
-     * @param target location to copy store into
+     * @param copyLocation location to copy store into
      * @throws IllegalConfigurationException if store cannot be copied into given location
      */
     public void copyTo(String copyLocation)
@@ -218,6 +221,188 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     public String toString()
     {
         return "MemoryConfigurationEntryStore [_rootId=" + _rootId + "]";
+    }
+
+    @Override
+    public synchronized void create(final ConfiguredObjectRecord object)
+    {
+        Collection<ConfigurationEntry> entriesToSave = new ArrayList<ConfigurationEntry>();
+        entriesToSave.add(new ConfigurationEntryImpl(object.getId(), object.getType(), object.getAttributes(), Collections.<UUID>emptySet(), this));
+        for(ConfiguredObjectRecord parent : object.getParents().values())
+        {
+            ConfigurationEntry parentEntry = getEntry(parent.getId());
+            Set<UUID> children = new HashSet<UUID>(parentEntry.getChildrenIds());
+            children.add(object.getId());
+            ConfigurationEntry replacementEntry = new ConfigurationEntryImpl(parentEntry.getId(), parent.getType(), parent.getAttributes(), children, this);
+            entriesToSave.add(replacementEntry);
+        }
+        save(entriesToSave.toArray(new ConfigurationEntry[entriesToSave.size()]));
+    }
+
+    @Override
+    public synchronized void update(final boolean createIfNecessary, final ConfiguredObjectRecord... records) throws StoreException
+    {
+
+        Map<UUID, ConfigurationEntry> updates = new HashMap<UUID, ConfigurationEntry>();
+
+
+        for (ConfiguredObjectRecord record : records)
+        {
+            Set<UUID> currentChildren;
+
+            final ConfigurationEntry entry = getEntry(record.getId());
+
+            if (entry == null)
+            {
+                if (createIfNecessary)
+                {
+                    currentChildren = new HashSet<UUID>();
+                }
+                else
+                {
+                    throw new StoreException("Cannot update record with id "
+                                             + record.getId()
+                                             + " as it does not exist");
+                }
+            }
+            else
+            {
+                currentChildren = new HashSet<UUID>(entry.getChildrenIds());
+            }
+
+            updates.put(record.getId(),
+                        new ConfigurationEntryImpl(record.getId(),
+                                                   record.getType(),
+                                                   record.getAttributes(),
+                                                   currentChildren,
+                                                   this));
+        }
+
+        for (ConfiguredObjectRecord record : records)
+        {
+            for (ConfiguredObjectRecord parent : record.getParents().values())
+            {
+                ConfigurationEntry existingParentEntry = updates.get(parent.getId());
+                if(existingParentEntry == null)
+                {
+                    existingParentEntry = getEntry(parent.getId());
+                    if (existingParentEntry == null)
+                    {
+                        if (parent.getType().equals(SystemContext.class.getSimpleName()))
+                        {
+                            if(_rootId == null)
+                            {
+                                _rootId = record.getId();
+                            }
+                            continue;
+                        }
+                        throw new StoreException("Unknown parent of type "
+                                                 + parent.getType()
+                                                 + " with id "
+                                                 + parent.getId());
+                    }
+                }
+                Set<UUID> children = new HashSet<UUID>(existingParentEntry.getChildrenIds());
+                if(!children.contains(record.getId()))
+                {
+                    children.add(record.getId());
+                    ConfigurationEntry newParentEntry = new ConfigurationEntryImpl(existingParentEntry.getId(), existingParentEntry.getType(), existingParentEntry.getAttributes(), children, this);
+                    updates.put(newParentEntry.getId(), newParentEntry);
+                }
+
+            }
+
+        }
+        save(updates.values().toArray(new ConfigurationEntry[updates.size()]));
+    }
+
+    @Override
+    public void closeConfigurationStore() throws StoreException
+    {
+    }
+
+    @Override
+    public void openConfigurationStore(final ConfiguredObject<?> parent, final Map<String, Object> storeSettings)
+            throws StoreException
+    {
+        _parent = parent;
+    }
+
+    @Override
+    public void recoverConfigurationStore(final ConfigurationRecoveryHandler recoveryHandler) throws StoreException
+    {
+
+        recoveryHandler.beginConfigurationRecovery(this,0);
+
+        final Map<UUID,Map<String,UUID>> parentMap = new HashMap<UUID, Map<String, UUID>>();
+
+        for(ConfigurationEntry entry : _entries.values())
+        {
+            if(entry.getChildrenIds() != null)
+            {
+                for(UUID childId : entry.getChildrenIds())
+                {
+                    Map<String, UUID> parents = parentMap.get(childId);
+                    if(parents == null)
+                    {
+                        parents = new HashMap<String, UUID>();
+                        parentMap.put(childId, parents);
+                    }
+                    parents.put(entry.getType(), entry.getId());
+                }
+            }
+        }
+
+        final Map<UUID, ConfiguredObjectRecord> records = new HashMap<UUID, ConfiguredObjectRecord>();
+        for(final ConfigurationEntry entry : _entries.values())
+        {
+            records.put(entry.getId(), new ConfiguredObjectRecord()
+            {
+                @Override
+                public UUID getId()
+                {
+                    return entry.getId();
+                }
+
+                @Override
+                public String getType()
+                {
+                    return entry.getType();
+                }
+
+                @Override
+                public Map<String, Object> getAttributes()
+                {
+                    return entry.getAttributes();
+                }
+
+                @Override
+                public Map<String, ConfiguredObjectRecord> getParents()
+                {
+                    Map<String,ConfiguredObjectRecord> parents = new HashMap<String, ConfiguredObjectRecord>();
+                    Map<String, UUID> calculatedParents = parentMap.get(getId());
+                    if(calculatedParents != null)
+                    {
+                        for(Map.Entry<String,UUID> entry : calculatedParents.entrySet())
+                        {
+                            parents.put(entry.getKey(), records.get(entry.getValue()));
+                        }
+                    }
+                    else
+                    {
+                        ConfiguredObjectRecord parent = _parent.asObjectRecord();
+                        parents.put(parent.getType(),parent);
+                    }
+                    return parents;
+                }
+            });
+        }
+        for(ConfiguredObjectRecord record : records.values())
+        {
+            recoveryHandler.configuredObject(record);
+        }
+        recoveryHandler.completeConfigurationRecovery();
+
     }
 
     protected boolean replaceEntries(ConfigurationEntry... entries)
@@ -348,7 +533,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 
             Set<UUID> children = entry.getChildrenIds();
             Set<UUID> childrenCopy = children == null? null : new HashSet<UUID>(children);
-            ConfigurationEntry copy = new ConfigurationEntry(entryId, entry.getType(), new HashMap<String, Object>(entry.getAttributes()), childrenCopy, this);
+            ConfigurationEntry copy = new ConfigurationEntryImpl(entryId, entry.getType(), new HashMap<String, Object>(entry.getAttributes()), childrenCopy, this);
             entries.put(entryId, copy);
             if (children != null)
             {
@@ -393,7 +578,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 
     private void createRootEntry()
     {
-        ConfigurationEntry brokerEntry = new ConfigurationEntry(UUIDGenerator.generateRandomUUID(),
+        ConfigurationEntry brokerEntry = new ConfigurationEntryImpl(UUIDGenerator.generateRandomUUID(),
                 Broker.class.getSimpleName(), Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), this);
         _rootId = brokerEntry.getId();
         _entries.put(_rootId, brokerEntry);
@@ -545,7 +730,11 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             }
             else if (fieldNode.isObject())
             {
-                // ignore, in-line objects are not supported yet
+                if (attributes == null)
+                {
+                    attributes = new HashMap<String, Object>();
+                }
+                attributes.put(fieldName, toObject(fieldNode) );
             }
             else
             {
@@ -605,7 +794,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                         "ID attribute value does not conform to UUID format for configuration entry " + parent);
             }
         }
-        ConfigurationEntry entry = new ConfigurationEntry(id, type, attributes, childrenIds, this);
+        ConfigurationEntry entry = new ConfigurationEntryImpl(id, type, attributes, childrenIds, this);
         if (entries.containsKey(id))
         {
             throw new IllegalConfigurationException("Duplicate id is found: " + id

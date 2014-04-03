@@ -21,8 +21,6 @@ commons-beanutils-core=lib/required/commons-beanutils-core-1.8.3.jar
 commons-cli=lib/required/commons-cli-1.2.jar
 commons-codec=lib/required/commons-codec-1.6.jar
 commons-collections=lib/required/commons-collections-3.2.1.jar
-commons-configuration=lib/required/commons-configuration-1.8.jar
-commons-digester=lib/required/commons-digester-1.8.1.jar
 commons-lang=lib/required/commons-lang-2.6.jar
 commons-logging=lib/required/commons-logging-1.1.1.jar
 
@@ -67,8 +65,7 @@ dojo=lib/required/dojo-${dojo-version}.zip
 jackson-core=lib/required/jackson-core-asl-1.9.0.jar
 jackson-mapper=lib/required/jackson-mapper-asl-1.9.0.jar
 
-commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
-  ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
+commons.libs = ${commons-codec} ${commons-lang} 
 
 common.libs=${slf4j-api}
 client.libs=${geronimo-jms}
@@ -77,20 +74,20 @@ amqp-1-0-client.libs=
 amqp-1-0-client-example.libs=${commons-cli}
 amqp-1-0-client-jms.libs=${geronimo-jms}
 amqp-1-0-client-websocket.libs = ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket}
-tools.libs=${commons-configuration.libs} ${log4j}
+tools.libs=${commons.libs} ${log4j}
 broker-core.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
-    ${xalan} ${derby-db} ${commons-configuration.libs} \
+    ${xalan} ${derby-db} ${commons.libs} \
     ${jackson-core} ${jackson-mapper} ${jetty} ${jetty-continuation} ${jetty-security} ${jetty-http} ${jetty-io} ${jetty-servlet} ${jetty-util} ${servlet-api} ${jetty-websocket} ${bcel}
 
 #Borrow the broker-core libs, hack for release binary generation
 broker.libs=${broker-core.libs}
 
 broker-plugins-management-http.libs=${dojo} ${cryptojs}
-broker-plugins.libs=${log4j} ${commons-configuration.libs}
+broker-plugins.libs=${log4j} ${commons.libs}
 
 test.libs=${slf4j-log4j} ${log4j} ${junit} ${slf4j-api} ${mockito-all}
 
-perftests.libs=${geronimo-jms} ${slf4j-api} ${log4j} ${slf4j-log4j} ${commons-logging} ${commons-collections} ${commons-beanutils-core} ${commons-lang} ${gson-all} ${derby-db}
+perftests.libs=${geronimo-jms} ${slf4j-api} ${log4j} ${slf4j-log4j} ${commons-logging} ${commons-beanutils-core} ${commons-lang} ${commons-collections} ${gson-all} ${derby-db}
 
 management-common.libs=
 
@@ -107,7 +104,7 @@ qpid-test-utils.libs = ${test.libs} ${geronimo-jms}
 broker-plugins-access-control.test.libs=${test.libs}
 broker-plugins-management-amqp.test.libs=${test.libs}
 broker-plugins-management-http.test.libs=${test.libs}
-broker-plugins-management-jmx.test.libs=${test.libs}
+broker-plugins-management-jmx.test.libs=${commons-beanutils-core} ${test.libs}
 broker-plugins-jdbc-store.test.libs=${test.libs}
 broker-plugins-derby-store.test.libs=${test.libs}
 broker-plugins-memory-store.test.libs=${test.libs}

@@ -82,6 +82,7 @@ org.apache.qpid.server.AlertingTest#*
 
 // The C++ server has a totally different persistence mechanism
 org.apache.qpid.server.store.PersistentStoreTest#*
+org.apache.qpid.server.store.SplitStoreTest#*
 
 // These tests are for the Java broker persistent store modules
 org.apache.qpid.server.store.MessageStoreTest#testMessagePersistence

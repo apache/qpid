@@ -20,20 +20,20 @@
  */
 package org.apache.qpid.server.model;
 
-import java.net.SocketAddress;
-import java.util.Collection;
-
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.logging.MessageLogger;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-@ManagedObject
-public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventLoggerProvider
+import java.net.SocketAddress;
+import java.util.Collection;
+
+@ManagedObject( defaultType = "adapter" )
+public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventLoggerProvider, StatisticsGatherer
 {
 
     String BUILD_VERSION = "buildVersion";
@@ -41,7 +41,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String PLATFORM = "platform";
     String PROCESS_PID = "processPid";
     String PRODUCT_VERSION = "productVersion";
-    String SUPPORTED_BROKER_STORE_TYPES = "supportedBrokerStoreTypes";
     String SUPPORTED_VIRTUALHOST_TYPES = "supportedVirtualHostTypes";
     String SUPPORTED_VIRTUALHOST_STORE_TYPES = "supportedVirtualHostStoreTypes";
     String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
@@ -90,9 +89,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
     @ManagedAttribute
     String getProductVersion();
-
-    @ManagedAttribute
-    Collection<String> getSupportedBrokerStoreTypes();
 
     @ManagedAttribute
     Collection<String> getSupportedVirtualHostStoreTypes();
@@ -150,15 +146,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
     @ManagedAttribute
     boolean getStatisticsReportingResetEnabled();
-
-    @ManagedAttribute
-    String getStoreType();
-
-    @ManagedAttribute
-    int getStoreVersion();
-
-    @ManagedAttribute
-    String getStorePath();
 
     @ManagedAttribute
     String getModelVersion();

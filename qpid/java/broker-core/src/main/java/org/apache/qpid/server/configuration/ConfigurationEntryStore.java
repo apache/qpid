@@ -20,9 +20,15 @@
  */
 package org.apache.qpid.server.configuration;
 
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.StoreException;
+
 import java.util.UUID;
 
-public interface ConfigurationEntryStore
+public interface ConfigurationEntryStore extends DurableConfigurationStore
 {
 
     /**
@@ -47,14 +53,19 @@ public interface ConfigurationEntryStore
      */
     void save(ConfigurationEntry... entries);
 
+    void create(ConfiguredObjectRecord object);
+    void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
+
+
     /**
      * Removes the entries with given IDs and all their children
      *
-     * @param entryIds IDs of entries to remove
-     * @return IDs of removed entries
+     * @param records records to remove
+     * @return IDs of removed record
      * @throws IllegalConfigurationException if remove operation fails
      */
-    UUID[] remove(UUID... entryIds);
+
+    UUID[] remove(ConfiguredObjectRecord... records);
 
     /**
      * Copies the store into the given location

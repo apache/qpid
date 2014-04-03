@@ -19,22 +19,19 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.util.ResourceBundleLoader;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.util.ResourceBundleLoader;
-
-public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationManagerFactory
+public class SimpleLDAPAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<SimpleLDAPAuthenticationManager>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationProviderAttributeDescriptions";
-    private static final String DEFAULT_LDAP_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 
     public static final String PROVIDER_TYPE = "SimpleLDAP";
 
@@ -56,18 +53,9 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
             ATTRIBUTE_LDAP_CONTEXT_FACTORY
             ));
 
-    @Override
-    public SimpleLDAPAuthenticationManager createInstance(Broker broker,
-                                                          Map<String, Object> attributes,
-                                                          final boolean recovering)
+    public SimpleLDAPAuthenticationManagerFactory()
     {
-        if (attributes == null || !PROVIDER_TYPE.equals(attributes.get(AuthenticationProvider.TYPE)))
-        {
-            return null;
-        }
-
-
-        return new SimpleLDAPAuthenticationManager(broker, Collections.<String,Object>emptyMap(),attributes);
+        super(SimpleLDAPAuthenticationManager.class);
     }
 
     @Override
@@ -77,14 +65,16 @@ public class SimpleLDAPAuthenticationManagerFactory implements AuthenticationMan
     }
 
     @Override
-    public String getType()
-    {
-        return PROVIDER_TYPE;
-    }
-
-    @Override
     public Map<String, String> getAttributeDescriptions()
     {
         return ResourceBundleLoader.getResources(RESOURCE_BUNDLE);
     }
+
+    @Override
+    public SimpleLDAPAuthenticationManager createInstance(final Map<String, Object> attributes,
+                                                          final ConfiguredObject<?>... parents)
+    {
+        return new SimpleLDAPAuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(),attributes);
+    }
+
 }

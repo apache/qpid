@@ -29,14 +29,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.util.MapValueConverter;
 
 /**
  * An implementation of a {@link org.apache.qpid.server.store.MessageStore} that uses a JDBC database as the persistence
@@ -48,10 +49,13 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
     private static final Logger _logger = Logger.getLogger(JDBCMessageStore.class);
 
-
     public static final String TYPE = "JDBC";
     public static final String CONNECTION_URL = "connectionURL";
-    public static final String CONFIG_CONNECTION_URL = "configConnectionURL";
+    public static final String CONNECTION_POOL = "connectionPool";
+    public static final String JDBC_BIG_INT_TYPE = "jdbcBigIntType";
+    public static final String JDBC_BYTES_FOR_BLOB = "jdbcBytesForBlob";
+    public static final String JDBC_VARBINARY_TYPE = "jdbcVarbinaryType";
+    public static final String JDBC_BLOB_TYPE = "jdbcBlobType";
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
@@ -254,18 +258,24 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     @Override
     protected void doClose()
     {
-        while(!_transactions.isEmpty())
-        {
-            RecordedJDBCTransaction txn = _transactions.get(0);
-            txn.abortTran();
-        }
         try
         {
-            _connectionProvider.close();
+            while(!_transactions.isEmpty())
+            {
+                RecordedJDBCTransaction txn = _transactions.get(0);
+                txn.abortTran();
+            }
         }
-        catch (SQLException e)
+        finally
         {
-            throw new StoreException("Unable to close connection provider ", e);
+            try
+            {
+                _connectionProvider.close();
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Unable to close connection provider ", e);
+            }
         }
     }
 
@@ -276,28 +286,15 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     }
 
 
-    protected void implementationSpecificConfiguration(String name,
-                                                       VirtualHost virtualHost)
+    protected void implementationSpecificConfiguration(String name, Map<String, Object> storeSettings)
         throws ClassNotFoundException, SQLException
     {
+        _connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
+        Object poolAttribute = storeSettings.get(CONNECTION_POOL);
 
-        String connectionURL;
-        if(!isConfigStoreOnly())
-        {
-            connectionURL = virtualHost.getAttribute(CONNECTION_URL) == null
-                                   ? String.valueOf(virtualHost.getAttribute(VirtualHost.STORE_PATH))
-                                   : String.valueOf(virtualHost.getAttribute(CONNECTION_URL));
-        }
-        else
-        {
-            connectionURL = virtualHost.getAttribute(CONFIG_CONNECTION_URL) == null
-                                               ? String.valueOf(virtualHost.getAttribute(VirtualHost.CONFIG_STORE_PATH))
-                                               : String.valueOf(virtualHost.getAttribute(CONFIG_CONNECTION_URL));
-
-        }
         JDBCDetails details = null;
 
-        String[] components = connectionURL.split(":",3);
+        String[] components = _connectionURL.split(":",3);
         if(components.length >= 2)
         {
             String vendor = components[1];
@@ -306,15 +303,13 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
         if(details == null)
         {
-            getLogger().info("Do not recognize vendor from connection URL: " + connectionURL);
+            getLogger().info("Do not recognize vendor from connection URL: " + _connectionURL);
 
             // TODO - is there a better default than derby
             details = DERBY_DETAILS;
         }
 
-
-        Object poolAttribute = virtualHost.getAttribute("connectionPool");
-        String connectionPoolType = poolAttribute == null ? "DEFAULT" : String.valueOf(poolAttribute);
+        String connectionPoolType = poolAttribute == null ? DefaultConnectionProviderFactory.TYPE : String.valueOf(poolAttribute);
 
         JDBCConnectionProviderFactory connectionProviderFactory =
                 JDBCConnectionProviderFactory.FACTORIES.get(connectionPoolType);
@@ -324,44 +319,14 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             connectionProviderFactory = new DefaultConnectionProviderFactory();
         }
 
-        _connectionProvider = connectionProviderFactory.getConnectionProvider(connectionURL, virtualHost);
-
-        _blobType = getStringAttribute(virtualHost, "jdbcBlobType",details.getBlobType());
-        _varBinaryType = getStringAttribute(virtualHost, "jdbcVarbinaryType",details.getVarBinaryType());
-        _useBytesMethodsForBlob = getBooleanAttribute(virtualHost, "jdbcBytesForBlob",details.isUseBytesMethodsForBlob());
-        _bigIntType = getStringAttribute(virtualHost, "jdbcBigIntType", details.getBigintType());
+        _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL, storeSettings);
+        _blobType = MapValueConverter.getStringAttribute(JDBC_BLOB_TYPE, storeSettings, details.getBlobType());
+        _varBinaryType = MapValueConverter.getStringAttribute(JDBC_VARBINARY_TYPE, storeSettings, details.getVarBinaryType());
+        _useBytesMethodsForBlob = MapValueConverter.getBooleanAttribute(JDBC_BYTES_FOR_BLOB, storeSettings, details.isUseBytesMethodsForBlob());
+        _bigIntType = MapValueConverter.getStringAttribute(JDBC_BIG_INT_TYPE, storeSettings, details.getBigintType());
     }
 
-
-    private String getStringAttribute(VirtualHost virtualHost, String attributeName, String defaultVal)
-    {
-        Object attrValue = virtualHost.getAttribute(attributeName);
-        if(attrValue != null)
-        {
-            return attrValue.toString();
-        }
-        return defaultVal;
-    }
-
-    private boolean getBooleanAttribute(VirtualHost virtualHost, String attributeName, boolean defaultVal)
-    {
-        Object attrValue = virtualHost.getAttribute(attributeName);
-        if(attrValue != null)
-        {
-            if(attrValue instanceof Boolean)
-            {
-                return ((Boolean) attrValue).booleanValue();
-            }
-            else if(attrValue instanceof String)
-            {
-                return Boolean.parseBoolean((String)attrValue);
-            }
-
-        }
-        return defaultVal;
-    }
-
-
+    @Override
     protected void storedSizeChange(int contentSize)
     {
     }
@@ -369,7 +334,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     @Override
     public String getStoreLocation()
     {
-        return "";
+        return _connectionURL;
     }
 
     @Override

@@ -21,6 +21,22 @@
 
 package org.apache.qpid.server.jmx;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
+import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
+import org.apache.qpid.server.jmx.mbeans.Shutdown;
+import org.apache.qpid.server.jmx.mbeans.UserManagementMBean;
+import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
+import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
+
+import javax.management.JMException;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -28,23 +44,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.management.JMException;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
-import org.apache.qpid.server.jmx.mbeans.UserManagementMBean;
-import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
-import org.apache.qpid.server.jmx.mbeans.Shutdown;
-import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
-import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
-import org.apache.qpid.server.plugin.PluginFactory;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
+@ManagedObject( category = false , type = "MANAGEMENT-JMX" )
 public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implements ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagement.class);
@@ -63,14 +63,15 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
     private static final Map<String, Object> DEFAULTS = new HashMap<String, Object>(){{
         put(USE_PLATFORM_MBEAN_SERVER, DEFAULT_USE_PLATFORM_MBEAN_SERVER);
         put(NAME, DEFAULT_NAME);
-        put(PluginFactory.PLUGIN_TYPE, PLUGIN_TYPE);
+        put(TYPE, PLUGIN_TYPE);
     }};
 
     @SuppressWarnings("serial")
     private static final Map<String, Type> ATTRIBUTE_TYPES = new HashMap<String, Type>(){{
         put(USE_PLATFORM_MBEAN_SERVER, Boolean.class);
         put(NAME, String.class);
-        put(PluginFactory.PLUGIN_TYPE, String.class);
+        put(TYPE, String.class);
+        put(TYPE, String.class);
     }};
 
     private JMXManagedObjectRegistry _objectRegistry;

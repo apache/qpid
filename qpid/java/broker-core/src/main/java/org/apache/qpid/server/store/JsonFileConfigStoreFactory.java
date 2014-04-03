@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 
 import java.util.Map;
+
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 
@@ -41,10 +42,13 @@ public class JsonFileConfigStoreFactory implements DurableConfigurationStoreFact
     @Override
     public void validateAttributes(Map<String, Object> attributes)
     {
-        Object storePath = attributes.get(VirtualHost.CONFIG_STORE_PATH);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> configurationStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.CONFIGURATION_STORE_SETTINGS);
+
+        Object storePath = configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
         if(!(storePath instanceof String))
         {
-            throw new IllegalArgumentException("Attribute '"+ VirtualHost.CONFIG_STORE_PATH
+            throw new IllegalArgumentException("Setting '"+ DurableConfigurationStore.STORE_PATH
                                                            +"' is required and must be of type String.");
 
         }

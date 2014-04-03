@@ -25,48 +25,10 @@ import org.apache.qpid.server.store.AbstractDurableConfigurationStoreTestCase;
 public class DerbyMessageStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
 
-    private DerbyMessageStore _derbyMessageStore;
-
-    @Override
-    protected DerbyMessageStore createMessageStore() throws Exception
-    {
-        createStoreIfNecessary();
-        return _derbyMessageStore;
-    }
-
-    @Override
-    protected void closeMessageStore() throws Exception
-    {
-        closeStoreIfNecessary();
-    }
-
-    private void createStoreIfNecessary()
-    {
-        if(_derbyMessageStore == null)
-        {
-            _derbyMessageStore = new DerbyMessageStore();
-        }
-    }
-
     @Override
     protected DerbyMessageStore createConfigStore() throws Exception
     {
-        createStoreIfNecessary();
-        return _derbyMessageStore;
+        return new DerbyMessageStore();
     }
 
-    @Override
-    protected void closeConfigStore() throws Exception
-    {
-        closeStoreIfNecessary();
-    }
-
-    private void closeStoreIfNecessary() throws Exception
-    {
-        if (_derbyMessageStore != null)
-        {
-            _derbyMessageStore.close();
-            _derbyMessageStore = null;
-        }
-    }
 }

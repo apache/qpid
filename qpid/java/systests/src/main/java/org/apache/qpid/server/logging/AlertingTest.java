@@ -20,8 +20,19 @@
 */
 package org.apache.qpid.server.logging;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
+import org.apache.qpid.systest.rest.RestTestHelper;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 import javax.jms.Connection;
 import javax.jms.Queue;
@@ -29,7 +40,7 @@ import javax.jms.Session;
 
 public class AlertingTest extends AbstractTestLogging
 {
-    private String VIRTUALHOST = "test";
+
     private Session _session;
     private Connection _connection;
     private Queue _destination;
@@ -41,9 +52,9 @@ public class AlertingTest extends AbstractTestLogging
     public void setUp() throws Exception
     {
         _numMessages = 50;
-
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", String.valueOf(ALERT_LOG_WAIT_PERIOD));
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", String.valueOf(_numMessages));
+        TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
+        brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, String.valueOf(ALERT_LOG_WAIT_PERIOD));
+        brokerConfiguration.setBrokerAttribute(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, _numMessages);
 
         // Then we do the normal setup stuff like starting the broker, getting a connection etc.
         super.setUp();
@@ -140,8 +151,24 @@ public class AlertingTest extends AbstractTestLogging
 
         _monitor.markDiscardPoint();
 
-        // Change max message count to 5, start broker and make sure that that's triggered at the right time
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", "5");
+        RestTestHelper restTestHelper = new RestTestHelper(findFreePort());
+        TestBrokerConfiguration config = getBrokerConfiguration();
+        config.addHttpManagementConfiguration();
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, restTestHelper.getHttpPort());
+        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT);
+        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
+
+        Map<String, Object> anonymousProviderAttributes = new HashMap<String, Object>();
+        anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        anonymousProviderAttributes.put(AuthenticationProvider.NAME, "testAnonymous");
+        config.addAuthenticationProviderConfiguration(anonymousProviderAttributes);
+
+        // set password authentication provider on http port for the tests
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
+                TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
+        config.setSaved(false);
+        restTestHelper.setUsernameAndPassword("webadmin", "webadmin");
 
         startBroker();
 
@@ -154,6 +181,12 @@ public class AlertingTest extends AbstractTestLogging
         // Ensure the alert has not occurred yet
         assertLoggingNotYetOccured(MESSAGE_COUNT_ALERT);
 
+        // Change max message count to 5, start broker and make sure that that's triggered at the right time
+        TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
+        brokerConfiguration.setBrokerAttribute(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 5);
+        brokerConfiguration.setSaved(false);
+
+        restTestHelper.submitRequest("/rest/queue/test/" + getTestQueueName(), "PUT", Collections.<String, Object>singletonMap(org.apache.qpid.server.model.Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 5));
         // Trigger the new value
         sendMessage(_session, _destination, 3);
         _session.commit();

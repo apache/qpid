@@ -21,16 +21,16 @@
 package org.apache.qpid.server.plugin;
 
 import java.util.Map;
-import org.apache.commons.configuration.Configuration;
+
 import org.apache.qpid.server.store.MessageStore;
 
 public interface MessageStoreFactory extends Pluggable
 {
+    PluggableFactoryLoader<MessageStoreFactory> FACTORY_LOADER = new PluggableFactoryLoader<MessageStoreFactory>(MessageStoreFactory.class);
+
     String getType();
 
     MessageStore createMessageStore();
-
-    public Map<String, Object> convertStoreConfiguration(Configuration configuration);
 
     void validateAttributes(Map<String, Object> attributes);
 }

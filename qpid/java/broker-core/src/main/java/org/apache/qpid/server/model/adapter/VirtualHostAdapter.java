@@ -20,7 +20,32 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.io.File;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.plugin.VirtualHostFactory;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.ConflationQueue;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ParameterizedTypeImpl;
+import org.apache.qpid.server.virtualhost.ExchangeExistsException;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
+import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.virtualhost.VirtualHostListener;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
 import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.util.ArrayList;
@@ -31,40 +56,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.configuration.XmlConfigurationUtilities.MyConfiguration;
-import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.ConflationQueue;
-import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.txn.LocalTransaction;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.plugin.VirtualHostFactory;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.ExchangeExistsException;
-import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHostListener;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.virtualhost.QueueExistsException;
-
-public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHostAdapter> implements VirtualHost<VirtualHostAdapter>, VirtualHostListener
+@ManagedObject( category = false, type = "STANDARD")
+public class VirtualHostAdapter<X extends VirtualHostAdapter<X>> extends AbstractConfiguredObject<X> implements VirtualHost<X>, VirtualHostListener
 {
     private static final Logger LOGGER = Logger.getLogger(VirtualHostAdapter.class);
 
@@ -72,10 +65,32 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
         put(TYPE, String.class);
-        put(STORE_PATH, String.class);
-        put(STORE_TYPE, String.class);
-        put(CONFIG_PATH, String.class);
         put(STATE, State.class);
+
+        put(QUEUE_ALERT_REPEAT_GAP, Long.class);
+        put(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, Long.class);
+        put(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, Long.class);
+        put(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, Long.class);
+        put(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, Long.class);
+        put(QUEUE_DEAD_LETTER_QUEUE_ENABLED, Boolean.class);
+        put(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, Integer.class);
+        put(QUEUE_FLOW_CONTROL_SIZE_BYTES, Long.class);
+        put(QUEUE_FLOW_RESUME_SIZE_BYTES, Long.class);
+
+        put(HOUSEKEEPING_CHECK_PERIOD, Long.class);
+        put(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Long.class);
+        put(STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Long.class);
+        put(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Long.class);
+        put(STORE_TRANSACTION_OPEN_TIMEOUT_WARN, Long.class);
+
+        put(MESSAGE_STORE_SETTINGS, new ParameterizedTypeImpl(Map.class, String.class, Object.class));
+        put(CONFIGURATION_STORE_SETTINGS, new ParameterizedTypeImpl(Map.class, String.class, Object.class));
+
+    }});
+
+    @SuppressWarnings("serial")
+    private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
+        put(HOUSE_KEEPING_THREAD_COUNT, Runtime.getRuntime().availableProcessors());
     }});
 
     private org.apache.qpid.server.virtualhost.VirtualHost _virtualHost;
@@ -85,15 +100,19 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
     private final Broker<?> _broker;
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
-    private StatisticsGatherer _brokerStatisticsGatherer;
 
-    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker<?> broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
+    public VirtualHostAdapter(UUID id,
+                              Map<String, Object> attributes,
+                              Broker<?> broker)
     {
-        super(id, Collections.<String,Object>emptyMap(), MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(Broker.class,broker),
+              DEFAULTS,
+              combineIdWithAttributes(id, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false)),
+              broker.getTaskExecutor(),
+              false);
+
         _broker = broker;
-        _brokerStatisticsGatherer = brokerStatisticsGatherer;
         validateAttributes();
-        addParent(Broker.class, broker);
     }
 
     private void validateAttributes()
@@ -103,57 +122,18 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         {
             throw new IllegalConfigurationException("Virtual host name must be specified");
         }
-
-        String configurationFile = (String) getAttribute(CONFIG_PATH);
-        String type = (String) getAttribute(TYPE);
-
-        boolean invalidAttributes = false;
-        if (configurationFile == null)
+        String type = getType();
+        if (type == null || "".equals(type.trim()))
         {
-            if (type == null)
-            {
-                invalidAttributes = true;
-            }
-            else
-            {
-                validateAttributes(type);
-            }
-        }/*
-        else
-        {
-            if (type != null)
-            {
-                invalidAttributes = true;
-            }
-
-        }*/
-        if (invalidAttributes)
-        {
-            throw new IllegalConfigurationException("Please specify either the 'configPath' attribute or 'type' attributes");
+            throw new IllegalConfigurationException("Virtual host type must be specified");
         }
-
-        // pre-load the configuration in order to validate
-        try
-        {
-            createVirtualHostConfiguration(name);
-        }
-        catch(ConfigurationException e)
-        {
-            throw new IllegalConfigurationException("Failed to validate configuration", e);
-        }
-    }
-
-    private void validateAttributes(String type)
-    {
         final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
         if(factory == null)
         {
             throw new IllegalArgumentException("Unknown virtual host type '"+ type +"'.  Valid types are: " + VirtualHostFactory.TYPES.get());
         }
         factory.validateAttributes(getActualAttributes());
-
     }
-
 
     public Collection<VirtualHostAlias> getAliases()
     {
@@ -681,94 +661,87 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         {
             return LifetimePolicy.PERMANENT;
         }
+        else if(QUEUE_ALERT_REPEAT_GAP.equals(name))
+        {
+            return getAttribute(QUEUE_ALERT_REPEAT_GAP, Broker.QUEUE_ALERT_REPEAT_GAP);
+        }
+        else if(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
+        {
+            return getAttribute(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE);
+        }
+        else if(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
+        {
+            return getAttribute(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE);
+        }
+        else if(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
+        {
+            return getAttribute(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
+        }
+        else if(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
+        {
+            return getAttribute(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
+        }
+        else if(QUEUE_DEAD_LETTER_QUEUE_ENABLED.equals(name))
+        {
+            return getAttribute(QUEUE_DEAD_LETTER_QUEUE_ENABLED, Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED);
+        }
+        else if(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
+        {
+            return getAttribute(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS);
+        }
+        else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
+        {
+            return getAttribute(QUEUE_FLOW_CONTROL_SIZE_BYTES, Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES);
+        }
+        else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
+        {
+            return getAttribute(QUEUE_FLOW_RESUME_SIZE_BYTES, Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
+        }
+        else if(HOUSEKEEPING_CHECK_PERIOD.equals(name))
+        {
+            return getAttribute(HOUSEKEEPING_CHECK_PERIOD, Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD);
+        }
+        else if(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE.equals(name))
+        {
+            return getAttribute(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
+        }
+        else if(STORE_TRANSACTION_IDLE_TIMEOUT_WARN.equals(name))
+        {
+            return getAttribute(STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN);
+        }
+        else if(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE.equals(name))
+        {
+            return getAttribute(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
+        }
+        else if(STORE_TRANSACTION_OPEN_TIMEOUT_WARN.equals(name))
+        {
+            return getAttribute(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
+        }
         else if (_virtualHost != null)
         {
-            return getAttributeFromVirtualHostImplementation(name);
+            if(SUPPORTED_EXCHANGE_TYPES.equals(name))
+            {
+                List<String> types = new ArrayList<String>();
+                for(@SuppressWarnings("rawtypes") ExchangeType type : _virtualHost.getExchangeTypes())
+                {
+                    types.add(type.getType());
+                }
+                return Collections.unmodifiableCollection(types);
+            }
+            else if(SUPPORTED_QUEUE_TYPES.equals(name))
+            {
+                // TODO
+            }
         }
         return super.getAttribute(name);
     }
 
-    private Object getAttributeFromVirtualHostImplementation(String name)
+
+    Object getAttribute(String name, String brokerAttributeName)
     {
-        if(SUPPORTED_EXCHANGE_TYPES.equals(name))
-        {
-            List<String> types = new ArrayList<String>();
-            for(@SuppressWarnings("rawtypes") ExchangeType type : _virtualHost.getExchangeTypes())
-            {
-                types.add(type.getType());
-            }
-            return Collections.unmodifiableCollection(types);
-        }
-        else if(SUPPORTED_QUEUE_TYPES.equals(name))
-        {
-            // TODO
-        }
-        else if(QUEUE_DEAD_LETTER_QUEUE_ENABLED.equals(name))
-        {
-            return _virtualHost.getConfiguration().isDeadLetterQueueEnabled();
-        }
-        else if(HOUSEKEEPING_CHECK_PERIOD.equals(name))
-        {
-            return _virtualHost.getConfiguration().getHousekeepingCheckPeriod();
-        }
-        else if(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
-        {
-            return _virtualHost.getConfiguration().getMaxDeliveryCount();
-        }
-        else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
-        {
-            return _virtualHost.getConfiguration().getCapacity();
-        }
-        else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
-        {
-            return _virtualHost.getConfiguration().getFlowResumeCapacity();
-        }
-        else if(STORE_TYPE.equals(name))
-        {
-            return _virtualHost.getMessageStore().getStoreType();
-        }
-        else if(STORE_PATH.equals(name))
-        {
-            return _virtualHost.getMessageStore().getStoreLocation();
-        }
-        else if(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE.equals(name))
-        {
-            return _virtualHost.getConfiguration().getTransactionTimeoutIdleClose();
-        }
-        else if(STORE_TRANSACTION_IDLE_TIMEOUT_WARN.equals(name))
-        {
-            return _virtualHost.getConfiguration().getTransactionTimeoutIdleWarn();
-        }
-        else if(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE.equals(name))
-        {
-            return _virtualHost.getConfiguration().getTransactionTimeoutOpenClose();
-        }
-        else if(STORE_TRANSACTION_OPEN_TIMEOUT_WARN.equals(name))
-        {
-            return _virtualHost.getConfiguration().getTransactionTimeoutOpenWarn();
-        }
-        else if(QUEUE_ALERT_REPEAT_GAP.equals(name))
-        {
-            return _virtualHost.getConfiguration().getMinimumAlertRepeatGap();
-        }
-        else if(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
-        {
-            return _virtualHost.getConfiguration().getMaximumMessageAge();
-        }
-        else if(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
-        {
-            return _virtualHost.getConfiguration().getMaximumMessageSize();
-        }
-        else if(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
-        {
-            return _virtualHost.getConfiguration().getMaximumQueueDepth();
-        }
-        else if(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
-        {
-            return _virtualHost.getConfiguration().getMaximumMessageCount();
-        }
-        return super.getAttribute(name);
+        return getAttribute(name, _broker, brokerAttributeName);
     }
+
 
     @Override
     public Collection<String> getAttributeNames()
@@ -806,115 +779,99 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     @Override
     public boolean isQueue_deadLetterQueueEnabled()
     {
-        return _virtualHost.getConfiguration().isDeadLetterQueueEnabled();
+        return (Boolean)getAttribute(VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED);
     }
 
     @Override
     public long getHousekeepingCheckPeriod()
     {
-        return _virtualHost.getConfiguration().getHousekeepingCheckPeriod();
+        return (Long)getAttribute(VirtualHost.HOUSEKEEPING_CHECK_PERIOD);
     }
 
     @Override
     public int getQueue_maximumDeliveryAttempts()
     {
-        return _virtualHost.getConfiguration().getMaxDeliveryCount();
+        return (Integer)getAttribute(VirtualHost.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS);
     }
 
     @Override
     public long getQueue_flowControlSizeBytes()
     {
-        return _virtualHost.getConfiguration().getCapacity();
+        return (Long)getAttribute(VirtualHost.QUEUE_FLOW_CONTROL_SIZE_BYTES);
     }
 
     @Override
     public long getQueue_flowResumeSizeBytes()
     {
-        return _virtualHost.getConfiguration().getFlowResumeCapacity();
-    }
-
-    @Override
-    public String getConfigStoreType()
-    {
-        return (String) getAttribute(CONFIG_STORE_TYPE);
-    }
-
-    @Override
-    public String getConfigStorePath()
-    {
-        return (String) getAttribute(CONFIG_PATH);
-    }
-
-    @Override
-    public String getStoreType()
-    {
-        return _virtualHost.getMessageStore().getStoreType();
-    }
-
-    @Override
-    public String getStorePath()
-    {
-        return _virtualHost.getMessageStore().getStoreLocation();
+        return (Long)getAttribute(VirtualHost.QUEUE_FLOW_RESUME_SIZE_BYTES);
     }
 
     @Override
     public long getStoreTransactionIdleTimeoutClose()
     {
-        return _virtualHost.getConfiguration().getTransactionTimeoutIdleClose();
+        return (Long)getAttribute(VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
     }
 
     @Override
     public long getStoreTransactionIdleTimeoutWarn()
     {
-        return _virtualHost.getConfiguration().getTransactionTimeoutIdleWarn();
+        return (Long)getAttribute(VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_WARN);
     }
 
     @Override
     public long getStoreTransactionOpenTimeoutClose()
     {
-        return _virtualHost.getConfiguration().getTransactionTimeoutOpenClose();
+        return (Long)getAttribute(VirtualHost.STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
     }
 
     @Override
     public long getStoreTransactionOpenTimeoutWarn()
     {
-        return _virtualHost.getConfiguration().getTransactionTimeoutOpenWarn();
+        return (Long)getAttribute(VirtualHost.STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
     }
 
     @Override
     public long getQueue_alertRepeatGap()
     {
-        return _virtualHost.getConfiguration().getMinimumAlertRepeatGap();
+        return (Long)getAttribute(VirtualHost.QUEUE_ALERT_REPEAT_GAP);
     }
 
     @Override
     public long getQueue_alertThresholdMessageAge()
     {
-        return _virtualHost.getConfiguration().getMaximumMessageAge();
+        return (Long)getAttribute(VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE);
     }
 
     @Override
     public long getQueue_alertThresholdMessageSize()
     {
-        return _virtualHost.getConfiguration().getMaximumMessageSize();
+        return (Long)getAttribute(VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE);
     }
 
     @Override
     public long getQueue_alertThresholdQueueDepthBytes()
     {
-        return _virtualHost.getConfiguration().getMaximumQueueDepth();
+        return (Long)getAttribute(VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
     }
 
     @Override
     public long getQueue_alertThresholdQueueDepthMessages()
     {
-        return _virtualHost.getConfiguration().getMaximumMessageCount();
+        return (Long)getAttribute(VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public String getConfigPath()
+    public Map<String, Object> getMessageStoreSettings()
     {
-        return (String) getAttribute(CONFIG_PATH);
+        return (Map<String, Object>)getAttribute(VirtualHost.MESSAGE_STORE_SETTINGS);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<String, Object> getConfigurationStoreSettings()
+    {
+        return (Map<String, Object>)getAttribute(VirtualHost.CONFIGURATION_STORE_SETTINGS);
     }
 
     @Override
@@ -959,6 +916,17 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
         return _virtualHost.getMessageDeliveryStatistics().getTotal();
     }
 
+    @Override
+    public String getSecurityAcl()
+    {
+        return (String)getAttribute(SECURITY_ACL);
+    }
+
+    @Override
+    public int getHouseKeepingThreadCount()
+    {
+        return (Integer)getAttribute(HOUSE_KEEPING_THREAD_COUNT);
+    }
 
     @Override
     protected boolean setState(State currentState, State desiredState)
@@ -1038,27 +1006,18 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     {
         VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
         String virtualHostName = getName();
-        try
+        String type = (String) getAttribute(TYPE);
+        final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
+        if(factory == null)
         {
-            VirtualHostConfiguration configuration = createVirtualHostConfiguration(virtualHostName);
-            String type = configuration.getType();
-            final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
-            if(factory == null)
-            {
-                throw new IllegalArgumentException("Unknown virtual host type: " + type);
-            }
-            else
-            {
-                _virtualHost = factory.createVirtualHost(_broker.getVirtualHostRegistry(),
-                                                         _brokerStatisticsGatherer,
-                                                         _broker.getSecurityManager(),
-                                                         configuration,
-                                                         this);
-            }
+            throw new IllegalArgumentException("Unknown virtual host type: " + type);
         }
-        catch (ConfigurationException e)
+        else
         {
-            throw new ServerScopedRuntimeException("Failed to create virtual host " + virtualHostName, e);
+            _virtualHost = factory.createVirtualHost(_broker.getVirtualHostRegistry(),
+                                                     _broker,
+                                                     _broker.getSecurityManager(),
+                                                     this);
         }
 
         virtualHostRegistry.registerVirtualHost(_virtualHost);
@@ -1075,53 +1034,6 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
                }
             }
         }
-    }
-
-    private VirtualHostConfiguration createVirtualHostConfiguration(String virtualHostName) throws ConfigurationException
-    {
-        VirtualHostConfiguration configuration;
-        String configurationFile = (String)getAttribute(CONFIG_PATH);
-        if (configurationFile == null)
-        {
-            final MyConfiguration basicConfiguration = new MyConfiguration();
-            PropertiesConfiguration config = new PropertiesConfiguration();
-            final String type = (String) getAttribute(TYPE);
-            config.addProperty("type", type);
-            VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
-            if(factory != null)
-            {
-                for(Map.Entry<String,Object> entry : factory.createVirtualHostConfiguration(this).entrySet())
-                {
-                    config.addProperty(entry.getKey(), entry.getValue());
-                }
-            }
-            basicConfiguration.addConfiguration(config);
-
-            CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
-            compositeConfiguration.addConfiguration(new SystemConfiguration());
-            compositeConfiguration.addConfiguration(basicConfiguration);
-            configuration = new VirtualHostConfiguration(virtualHostName, compositeConfiguration , _broker);
-        }
-        else
-        {
-            if (!new File(configurationFile).exists())
-            {
-                throw new IllegalConfigurationException("Configuration file '" + configurationFile + "' does not exist");
-            }
-            configuration = new VirtualHostConfiguration(virtualHostName, new File(configurationFile) , _broker);
-            String type = configuration.getType();
-            changeAttribute(TYPE,null,type);
-            VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
-            if(factory != null)
-            {
-                for(Map.Entry<String,Object> entry : factory.convertVirtualHostConfiguration(configuration.getConfig()).entrySet())
-                {
-                    changeAttribute(entry.getKey(), getAttribute(entry.getKey()), entry.getValue());
-                }
-            }
-
-        }
-        return configuration;
     }
 
     @Override

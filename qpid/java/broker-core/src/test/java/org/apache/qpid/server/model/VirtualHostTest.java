@@ -20,23 +20,23 @@
  */
 package org.apache.qpid.server.model;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.adapter.StandardVirtualHostAdapter;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VirtualHostTest extends QpidTestCase
 {
@@ -54,6 +54,15 @@ public class VirtualHostTest extends QpidTestCase
         TaskExecutor taskExecutor = mock(TaskExecutor.class);
         when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
         when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
+        when(_broker.getAttribute(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE)).thenReturn(0l);
+        when(_broker.getAttribute(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE)).thenReturn(0l);
+        when(_broker.getAttribute(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES)).thenReturn(0l);
+        when(_broker.getAttribute(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES)).thenReturn(0l);
+        when(_broker.getAttribute(Broker.QUEUE_ALERT_REPEAT_GAP)).thenReturn(10000l);
+        when(_broker.getAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(0);
+        when(_broker.getAttribute(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES)).thenReturn(0l);
+        when(_broker.getAttribute(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES)).thenReturn(0l);
+        when(_broker.getAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED)).thenReturn(false);
 
         _recovererProvider = mock(RecovererProvider.class);
         _statisticsGatherer = mock(StatisticsGatherer.class);
@@ -79,7 +88,7 @@ public class VirtualHostTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-        attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
         attributes.put(VirtualHost.STATE, State.QUIESCED);
 
         VirtualHost host = createHost(attributes);
@@ -140,7 +149,7 @@ public class VirtualHostTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-        attributes.put(VirtualHost.STORE_TYPE, TestMemoryMessageStore.TYPE);
+        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
 
         VirtualHost host = createHost(attributes);
         return host;
@@ -148,10 +157,7 @@ public class VirtualHostTest extends QpidTestCase
 
     private VirtualHost createHost(Map<String, Object> attributes)
     {
-        ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(), attributes,
-                Collections.<UUID> emptySet(), null);
-
-        return new VirtualHostRecoverer(_statisticsGatherer).create(_recovererProvider, entry, _broker);
+        return new StandardVirtualHostAdapter(UUID.randomUUID(), attributes, _broker);
     }
 
 }

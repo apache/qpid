@@ -20,25 +20,33 @@
  */
 package org.apache.qpid.server.configuration.store;
 
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.StoreException;
+
 import java.io.File;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.store.StoreException;
 
 public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
 {
     public static final String STORE_TYPE = "json";
+    private final ConfiguredObject<?> _parentObject;
 
     private File _storeFile;
 
-    public JsonConfigurationEntryStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties)
+    public JsonConfigurationEntryStore(ConfiguredObject<?> parentObject, DurableConfigurationStore initialStore, boolean overwrite, Map<String, String> configProperties)
     {
         super(configProperties);
+        _parentObject = parentObject;
+        String storeLocation = (String) parentObject.getAttribute("storePath");
         _storeFile = new File(storeLocation);
 
         if(_storeFile.isDirectory())
@@ -58,7 +66,10 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
         {
            initialiseStore(_storeFile, initialStore);
         }
-        load(getConfigurationEntryStoreUtil().fileToURL(_storeFile));
+        else
+        {
+            load(getConfigurationEntryStoreUtil().fileToURL(_storeFile));
+        }
         if(isGeneratedObjectIdDuringLoad())
         {
             saveAsTree(_storeFile);
@@ -66,9 +77,9 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
     }
 
     @Override
-    public synchronized UUID[] remove(UUID... entryIds)
+    public synchronized UUID[] remove(final ConfiguredObjectRecord... records)
     {
-        UUID[] removedIds = super.remove(entryIds);
+        UUID[] removedIds = super.remove(records);
         if (removedIds.length > 0)
         {
             saveAsTree(_storeFile);
@@ -103,7 +114,7 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
         return "JsonConfigurationEntryStore [_storeFile=" + _storeFile + ", _rootId=" + getRootEntry().getId() + "]";
     }
 
-    private void initialiseStore(File storeFile, ConfigurationEntryStore initialStore)
+    private void initialiseStore(File storeFile, DurableConfigurationStore initialStore)
     {
         createFileIfNotExist(storeFile);
         if (initialStore == null)
@@ -112,17 +123,33 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
         }
         else
         {
-            if (initialStore instanceof MemoryConfigurationEntryStore && initialStore.getStoreLocation() != null)
+            final Collection<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>();
+            final ConfigurationRecoveryHandler replayHandler = new ConfigurationRecoveryHandler()
             {
-                getConfigurationEntryStoreUtil().copyInitialConfigFile(initialStore.getStoreLocation(), storeFile);
-            }
-            else
-            {
-                ConfigurationEntry rootEntry = initialStore.getRootEntry();
-                Map<UUID, ConfigurationEntry> entries = new HashMap<UUID, ConfigurationEntry>();
-                copyEntry(rootEntry.getId(), initialStore, entries);
-                saveAsTree(rootEntry.getId(), entries, getObjectMapper(), storeFile, getVersion());
-            }
+                private int _configVersion;
+                @Override
+                public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+                {
+                    _configVersion = configVersion;
+                }
+
+                @Override
+                public void configuredObject(ConfiguredObjectRecord record)
+                {
+                    records.add(record);
+                }
+
+                @Override
+                public int completeConfigurationRecovery()
+                {
+                    return _configVersion;
+                }
+            };
+
+            initialStore.openConfigurationStore(_parentObject, Collections.<String,Object>emptyMap());
+            initialStore.recoverConfigurationStore(replayHandler);
+
+            update(true, records.toArray(new ConfiguredObjectRecord[records.size()]));
         }
     }
 

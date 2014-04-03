@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -46,11 +46,8 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.EventManager;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreConstants;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
-import org.apache.qpid.server.store.State;
-import org.apache.qpid.server.store.StateManager;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
@@ -59,6 +56,7 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler.QueueEntryRecoveryHandler;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory.EnvironmentFacadeTask;
 import org.apache.qpid.server.store.berkeleydb.entry.HierarchyKey;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
@@ -72,6 +70,7 @@ import org.apache.qpid.server.store.berkeleydb.tuple.QueueEntryBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.XidBinding;
 import org.apache.qpid.server.store.berkeleydb.upgrade.Upgrader;
+import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.util.FileUtils;
 
 import com.sleepycat.bind.tuple.ByteBinding;
@@ -102,7 +101,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private static final Logger LOGGER = Logger.getLogger(BDBMessageStore.class);
 
     public static final int VERSION = 8;
-    public static final String ENVIRONMENT_CONFIGURATION = "bdbEnvironmentConfig";
     private static final int LOCK_RETRY_ATTEMPTS = 5;
     private static String CONFIGURED_OBJECTS_DB_NAME = "CONFIGURED_OBJECTS";
     private static String CONFIGURED_OBJECT_HIERARCHY_DB_NAME = "CONFIGURED_OBJECT_HIERARCHY";
@@ -110,25 +108,20 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private static String MESSAGE_META_DATA_DB_NAME = "MESSAGE_METADATA";
     private static String MESSAGE_CONTENT_DB_NAME = "MESSAGE_CONTENT";
     private static String DELIVERY_DB_NAME = "QUEUE_ENTRIES";
+
+    //TODO: Add upgrader to remove BRIDGES and LINKS
     private static String BRIDGEDB_NAME = "BRIDGES";
     private static String LINKDB_NAME = "LINKS";
     private static String XID_DB_NAME = "XIDS";
     private static String CONFIG_VERSION_DB_NAME = "CONFIG_VERSION";
-    private static final String[] DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, CONFIGURED_OBJECT_HIERARCHY_DB_NAME, MESSAGE_META_DATA_DB_NAME,
-            MESSAGE_CONTENT_DB_NAME, DELIVERY_DB_NAME, BRIDGEDB_NAME, LINKDB_NAME, XID_DB_NAME, CONFIG_VERSION_DB_NAME };
-
-    private final AtomicBoolean _closed = new AtomicBoolean(false);
+    private static final String[] CONFIGURATION_STORE_DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, CONFIG_VERSION_DB_NAME , CONFIGURED_OBJECT_HIERARCHY_DB_NAME};
+    private static final String[] MESSAGE_STORE_DATABASE_NAMES = new String[] { MESSAGE_META_DATA_DB_NAME, MESSAGE_CONTENT_DB_NAME, DELIVERY_DB_NAME, BRIDGEDB_NAME, LINKDB_NAME, XID_DB_NAME };
 
     private EnvironmentFacade _environmentFacade;
     private final AtomicLong _messageId = new AtomicLong(0);
 
-    protected final StateManager _stateManager;
-
-    private MessageStoreRecoveryHandler _messageRecoveryHandler;
-
-    private TransactionLogRecoveryHandler _tlogRecoveryHandler;
-
-    private ConfigurationRecoveryHandler _configRecoveryHandler;
+    private final AtomicBoolean _messageStoreOpen = new AtomicBoolean();
+    private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
 
     private long _totalStoreSize;
     private boolean _limitBusted;
@@ -137,11 +130,11 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private final EventManager _eventManager = new EventManager();
     private final String _type;
-    private VirtualHost _virtualHost;
 
     private final EnvironmentFacadeFactory _environmentFacadeFactory;
 
     private volatile Committer _committer;
+
 
     public BDBMessageStore()
     {
@@ -152,7 +145,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         _type = environmentFacadeFactory.getType();
         _environmentFacadeFactory = environmentFacadeFactory;
-        _stateManager = new StateManager(_eventManager);
     }
 
     @Override
@@ -162,110 +154,90 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void configureConfigStore(VirtualHost virtualHost, ConfigurationRecoveryHandler recoveryHandler)
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
-        _stateManager.attainState(State.INITIALISING);
-
-        _configRecoveryHandler = recoveryHandler;
-        _virtualHost = virtualHost;
+        if (_configurationStoreOpen.compareAndSet(false,  true))
+        {
+            if (_environmentFacade == null)
+            {
+                String[] databaseNames = null;
+                if (MapValueConverter.getBooleanAttribute(IS_MESSAGE_STORE_TOO, storeSettings, false))
+                {
+                    databaseNames = new String[CONFIGURATION_STORE_DATABASE_NAMES.length + MESSAGE_STORE_DATABASE_NAMES.length];
+                    System.arraycopy(CONFIGURATION_STORE_DATABASE_NAMES, 0, databaseNames, 0, CONFIGURATION_STORE_DATABASE_NAMES.length);
+                    System.arraycopy(MESSAGE_STORE_DATABASE_NAMES, 0, databaseNames, CONFIGURATION_STORE_DATABASE_NAMES.length, MESSAGE_STORE_DATABASE_NAMES.length);
+                }
+                else
+                {
+                    databaseNames = CONFIGURATION_STORE_DATABASE_NAMES;
+                }
+                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(storeSettings, new UpgradeTask(parent), new OpenDatabasesTask(databaseNames));
+            }
+            else
+            {
+                throw new IllegalStateException("The database have been already opened as message store");
+            }
+        }
     }
 
     @Override
-    public void configureMessageStore(VirtualHost virtualHost, MessageStoreRecoveryHandler messageRecoveryHandler,
-                                      TransactionLogRecoveryHandler tlogRecoveryHandler) throws StoreException
+    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
     {
-        if(_stateManager.isInState(State.INITIAL))
-        {
-            // Is acting as a message store, but not a durable config store
-            _stateManager.attainState(State.INITIALISING);
-        }
+        checkConfigurationStoreOpen();
 
-        _messageRecoveryHandler = messageRecoveryHandler;
-        _tlogRecoveryHandler = tlogRecoveryHandler;
-        _virtualHost = virtualHost;
-
-        completeInitialisation();
-    }
-
-    private void completeInitialisation() throws StoreException
-    {
-        configure(_virtualHost, _messageRecoveryHandler != null);
-
-        _stateManager.attainState(State.INITIALISED);
-    }
-
-    private void startActivation() throws StoreException
-    {
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        dbConfig.setAllowCreate(true);
-        try
-        {
-            new Upgrader(_environmentFacade.getEnvironment(), _virtualHost).upgradeIfNecessary();
-            _environmentFacade.openDatabases(dbConfig, DATABASE_NAMES);
-            _totalStoreSize = getSizeOnDisk();
-        }
-        catch(DatabaseException e)
-        {
-            throw _environmentFacade.handleDatabaseException("Cannot configure store", e);
-        }
-
+        recoverConfig(recoveryHandler);
     }
 
     @Override
-    public synchronized void activate() throws StoreException
+    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings) throws StoreException
     {
-        // check if acting as a durable config store, but not a message store
-        if(_stateManager.isInState(State.INITIALISING))
+        if (_messageStoreOpen.compareAndSet(false, true))
         {
-            completeInitialisation();
-        }
 
-        _stateManager.attainState(State.ACTIVATING);
-        startActivation();
+            Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
+            Object underfullAttr = messageStoreSettings.get(MessageStore.UNDERFULL_SIZE);
 
-        if(_configRecoveryHandler != null)
-        {
-            recoverConfig(_configRecoveryHandler);
-        }
-        if(_messageRecoveryHandler != null)
-        {
-            recoverMessages(_messageRecoveryHandler);
-        }
-        if(_tlogRecoveryHandler != null)
-        {
-            recoverQueueEntries(_tlogRecoveryHandler);
-        }
+            _persistentSizeHighThreshold = overfullAttr == null ? -1l :
+                                           overfullAttr instanceof Number ? ((Number) overfullAttr).longValue() : Long.parseLong(overfullAttr.toString());
+            _persistentSizeLowThreshold = underfullAttr == null ? _persistentSizeHighThreshold :
+                                           underfullAttr instanceof Number ? ((Number) underfullAttr).longValue() : Long.parseLong(underfullAttr.toString());
 
-        _stateManager.attainState(State.ACTIVE);
+            if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
+            {
+                _persistentSizeLowThreshold = _persistentSizeHighThreshold;
+            }
+
+            if (_environmentFacade == null)
+            {
+                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(messageStoreSettings, new UpgradeTask(parent), new OpenDatabasesTask(MESSAGE_STORE_DATABASE_NAMES), new DiskSpaceTask());
+            }
+
+            _committer = _environmentFacade.createCommitter(parent.getName());
+            _committer.start();
+        }
+    }
+
+    @Override
+    public synchronized void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler) throws StoreException
+    {
+        checkMessageStoreOpen();
+
+        if(messageRecoveryHandler != null)
+        {
+            recoverMessages(messageRecoveryHandler);
+        }
+        if(transactionLogRecoveryHandler != null)
+        {
+            recoverQueueEntries(transactionLogRecoveryHandler);
+        }
     }
 
     @Override
     public org.apache.qpid.server.store.Transaction newTransaction() throws StoreException
     {
+        checkMessageStoreOpen();
+
         return new BDBTransaction();
-    }
-
-    private void configure(VirtualHost virtualHost, boolean isMessageStore) throws StoreException
-    {
-        Object overfullAttr = virtualHost.getAttribute(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE);
-        Object underfullAttr = virtualHost.getAttribute(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE);
-
-        _persistentSizeHighThreshold = overfullAttr == null ? -1l :
-                                       overfullAttr instanceof Number ? ((Number) overfullAttr).longValue() : Long.parseLong(overfullAttr.toString());
-        _persistentSizeLowThreshold = underfullAttr == null ? _persistentSizeHighThreshold :
-                                       underfullAttr instanceof Number ? ((Number) underfullAttr).longValue() : Long.parseLong(underfullAttr.toString());
-
-
-        if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
-        {
-            _persistentSizeLowThreshold = _persistentSizeHighThreshold;
-        }
-
-        _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(virtualHost, isMessageStore);
-
-        _committer = _environmentFacade.createCommitter(virtualHost.getName());
-        _committer.start();
     }
 
     @Override
@@ -283,33 +255,47 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         return _environmentFacade;
     }
 
-    /**
-     * Called to close and cleanup any resources used by the message store.
-     *
-     * @throws Exception If the close fails.
-     */
     @Override
-    public void close() throws StoreException
+    public void closeMessageStore() throws StoreException
     {
-        if (_closed.compareAndSet(false, true))
+        if (_messageStoreOpen.compareAndSet(true, false))
         {
-            _stateManager.attainState(State.CLOSING);
             try
             {
-                try
+                if (_committer != null)
                 {
                     _committer.stop();
                 }
-                finally
+            }
+            finally
+            {
+                if (!_configurationStoreOpen.get())
                 {
                     closeEnvironment();
                 }
             }
-            catch(DatabaseException e)
+        }
+    }
+
+    @Override
+    public void closeConfigurationStore() throws StoreException
+    {
+        if (_configurationStoreOpen.compareAndSet(true, false))
+        {
+            try
             {
-                throw new StoreException("Exception occured on message store close", e);
+                if (_committer != null)
+                {
+                    _committer.stop();
+                }
             }
-            _stateManager.attainState(State.CLOSED);
+            finally
+            {
+                if (!_messageStoreOpen.get())
+                {
+                    closeEnvironment();
+                }
+            }
         }
     }
 
@@ -751,27 +737,25 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public void create(ConfiguredObjectRecord configuredObject) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        checkConfigurationStoreOpen();
+        com.sleepycat.je.Transaction txn = null;
+        try
         {
-            com.sleepycat.je.Transaction txn = null;
-            try
+            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
+            storeConfiguredObjectEntry(txn, configuredObject);
+            txn.commit();
+            txn = null;
+        }
+        catch (DatabaseException e)
+        {
+            throw _environmentFacade.handleDatabaseException("Error creating configured object " + configuredObject
+                    + " in database: " + e.getMessage(), e);
+        }
+        finally
+        {
+            if (txn != null)
             {
-                txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
-                storeConfiguredObjectEntry(txn, configuredObject);
-                txn.commit();
-                txn = null;
-            }
-            catch (DatabaseException e)
-            {
-                throw _environmentFacade.handleDatabaseException("Error creating configured object " + configuredObject
-                        + " in database: " + e.getMessage(), e);
-            }
-            finally
-            {
-                if (txn != null)
-                {
-                    abortTransactionIgnoringException("Error creating configured object", txn);
-                }
+                abortTransactionIgnoringException("Error creating configured object", txn);
             }
         }
     }
@@ -779,11 +763,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public UUID[] remove(final ConfiguredObjectRecord... objects) throws StoreException
     {
+        checkConfigurationStoreOpen();
+
         com.sleepycat.je.Transaction txn = null;
         try
         {
             txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
-            
+
             Collection<UUID> removed = new ArrayList<UUID>(objects.length);
             for(ConfiguredObjectRecord record : objects)
             {
@@ -792,7 +778,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                     removed.add(record.getId());
                 }
             }
-            
+
             txn.commit();
             txn = null;
             return removed.toArray(new UUID[removed.size()]);
@@ -814,6 +800,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException
     {
+        checkConfigurationStoreOpen();
+
         com.sleepycat.je.Transaction txn = null;
         try
         {
@@ -885,7 +873,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      *
      * @throws StoreException If the operation fails for any reason.
      */
-    public void enqueueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
+    private void enqueueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
                                long messageId) throws StoreException
     {
 
@@ -924,7 +912,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
      *
      * @throws StoreException If the operation fails for any reason, or if the specified message does not exist.
      */
-    public void dequeueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
+    private void dequeueMessage(final com.sleepycat.je.Transaction tx, final TransactionLogResource queue,
                                long messageId) throws StoreException
     {
 
@@ -1341,38 +1329,35 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private void storeConfiguredObjectEntry(final Transaction txn, ConfiguredObjectRecord configuredObject) throws StoreException
     {
-        if (_stateManager.isInState(State.ACTIVE))
+        if (LOGGER.isDebugEnabled())
         {
-            if (LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("Storing configured object: " + configuredObject);
-            }
-            DatabaseEntry key = new DatabaseEntry();
-            UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
-            uuidBinding.objectToEntry(configuredObject.getId(), key);
+            LOGGER.debug("Storing configured object record: " + configuredObject);
+        }
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
+        uuidBinding.objectToEntry(configuredObject.getId(), key);
 
-            DatabaseEntry value = new DatabaseEntry();
-            ConfiguredObjectBinding queueBinding = ConfiguredObjectBinding.getInstance();
+        DatabaseEntry value = new DatabaseEntry();
+        ConfiguredObjectBinding queueBinding = ConfiguredObjectBinding.getInstance();
 
-            queueBinding.objectToEntry(configuredObject, value);
-            try
+        queueBinding.objectToEntry(configuredObject, value);
+        try
+        {
+            OperationStatus status = getConfiguredObjectsDb().put(txn, key, value);
+            if (status != OperationStatus.SUCCESS)
             {
-                OperationStatus status = getConfiguredObjectsDb().put(txn, key, value);
-                if (status != OperationStatus.SUCCESS)
-                {
-                    throw new StoreException("Error writing configured object " + configuredObject + " to database: "
-                            + status);
-                }
-                writeHierarchyRecords(txn, configuredObject);               
+                throw new StoreException("Error writing configured object " + configuredObject + " to database: "
+                        + status);
             }
-            catch (DatabaseException e)
-            {
-                throw _environmentFacade.handleDatabaseException("Error writing configured object " + configuredObject
-                        + " to database: " + e.getMessage(), e);
-            }
+            writeHierarchyRecords(txn, configuredObject);
+        }
+        catch (DatabaseException e)
+        {
+            throw _environmentFacade.handleDatabaseException("Error writing configured object " + configuredObject
+                    + " to database: " + e.getMessage(), e);
         }
     }
-    
+
     private void writeHierarchyRecords(final Transaction txn, final ConfiguredObjectRecord configuredObject)
     {
         OperationStatus status;
@@ -1398,7 +1383,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         UUID id = record.getId();
         Map<String, ConfiguredObjectRecord> parents = record.getParents();
- 
+
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Removing configured object: " + id);
@@ -1449,11 +1434,14 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
         }
 
+        @Override
         public StorableMessageMetaData getMetaData()
         {
             StorableMessageMetaData metaData = _metaDataRef.get();
             if(metaData == null)
             {
+                checkMessageStoreOpen();
+
                 metaData = BDBMessageStore.this.getMessageMetaData(_messageId);
                 _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
             }
@@ -1461,11 +1449,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             return metaData;
         }
 
+        @Override
         public long getMessageNumber()
         {
             return _messageId;
         }
 
+        @Override
         public void addContent(int offsetInMessage, java.nio.ByteBuffer src)
         {
             src = src.slice();
@@ -1488,6 +1478,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         }
 
+        @Override
         public int getContent(int offsetInMessage, java.nio.ByteBuffer dst)
         {
             byte[] data = _dataRef == null ? null : _dataRef.get();
@@ -1499,10 +1490,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
             else
             {
+                checkMessageStoreOpen();
+
                 return BDBMessageStore.this.getContent(_messageId, offsetInMessage, dst);
             }
         }
 
+        @Override
         public ByteBuffer getContent(int offsetInMessage, int size)
         {
             byte[] data = _dataRef == null ? null : _dataRef.get();
@@ -1539,10 +1533,13 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
         }
 
+        @Override
         public synchronized StoreFuture flushToStore()
         {
             if(!stored())
             {
+                checkMessageStoreOpen();
+
                 com.sleepycat.je.Transaction txn;
                 try
                 {
@@ -1562,8 +1559,11 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             return StoreFuture.IMMEDIATE_FUTURE;
         }
 
+        @Override
         public void remove()
         {
+            checkMessageStoreOpen();
+
             int delta = getMetaData().getContentSize();
             BDBMessageStore.this.removeMessage(_messageId, false);
             storedSizeChangeOccured(-delta);
@@ -1592,8 +1592,11 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             }
         }
 
+        @Override
         public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message) throws StoreException
         {
+            checkMessageStoreOpen();
+
             if(message.getStoredMessage() instanceof StoredBDBMessage)
             {
                 final StoredBDBMessage storedMessage = (StoredBDBMessage) message.getStoredMessage();
@@ -1604,36 +1607,54 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             BDBMessageStore.this.enqueueMessage(_txn, queue, message.getMessageNumber());
         }
 
+        @Override
         public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message) throws StoreException
         {
+            checkMessageStoreOpen();
+
             BDBMessageStore.this.dequeueMessage(_txn, queue, message.getMessageNumber());
         }
 
+        @Override
         public void commitTran() throws StoreException
         {
+            checkMessageStoreOpen();
+
             BDBMessageStore.this.commitTranImpl(_txn, true);
             BDBMessageStore.this.storedSizeChangeOccured(_storeSizeIncrease);
         }
 
+        @Override
         public StoreFuture commitTranAsync() throws StoreException
         {
+            checkMessageStoreOpen();
+
             BDBMessageStore.this.storedSizeChangeOccured(_storeSizeIncrease);
             return BDBMessageStore.this.commitTranImpl(_txn, false);
         }
 
+        @Override
         public void abortTran() throws StoreException
         {
+            checkMessageStoreOpen();
+
             BDBMessageStore.this.abortTran(_txn);
         }
 
+        @Override
         public void removeXid(long format, byte[] globalId, byte[] branchId) throws StoreException
         {
+            checkMessageStoreOpen();
+
             BDBMessageStore.this.removeXid(_txn, format, globalId, branchId);
         }
 
+        @Override
         public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues,
                               Record[] dequeues) throws StoreException
         {
+            checkMessageStoreOpen();
+
             BDBMessageStore.this.recordXid(_txn, format, globalId, branchId, enqueues, dequeues);
         }
     }
@@ -1694,6 +1715,22 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
                 }
             }
+        }
+    }
+
+    private void checkConfigurationStoreOpen()
+    {
+        if (!_configurationStoreOpen.get())
+        {
+            throw new IllegalStateException("Configuration store is not open");
+        }
+    }
+
+    private void checkMessageStoreOpen()
+    {
+        if (!_messageStoreOpen.get())
+        {
+            throw new IllegalStateException("Message store is not open");
         }
     }
 
@@ -1796,4 +1833,72 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         return _environmentFacade.getOpenDatabase(XID_DB_NAME);
     }
 
+    class UpgradeTask implements EnvironmentFacadeTask
+    {
+
+        private ConfiguredObject<?> _parent;
+
+        public UpgradeTask(ConfiguredObject<?> parent)
+        {
+            _parent = parent;
+        }
+
+        @Override
+        public void execute(EnvironmentFacade facade)
+        {
+            try
+            {
+                new Upgrader(facade.getEnvironment(), _parent).upgradeIfNecessary();
+            }
+            catch(DatabaseException e)
+            {
+                throw facade.handleDatabaseException("Cannot upgrade store", e);
+            }
+        }
+    }
+
+    class OpenDatabasesTask implements EnvironmentFacadeTask
+    {
+        private String[] _names;
+
+        public OpenDatabasesTask(String[] names)
+        {
+            _names = names;
+        }
+
+        @Override
+        public void execute(EnvironmentFacade facade)
+        {
+            try
+            {
+                DatabaseConfig dbConfig = new DatabaseConfig();
+                dbConfig.setTransactional(true);
+                dbConfig.setAllowCreate(true);
+                facade.openDatabases(dbConfig, _names);
+            }
+            catch(DatabaseException e)
+            {
+                throw facade.handleDatabaseException("Cannot open databases", e);
+            }
+        }
+
+    }
+
+    class DiskSpaceTask implements EnvironmentFacadeTask
+    {
+
+        @Override
+        public void execute(EnvironmentFacade facade)
+        {
+            try
+            {
+                _totalStoreSize = facade.getEnvironment().getStats(null).getTotalLogSize();
+            }
+            catch(DatabaseException e)
+            {
+                throw facade.handleDatabaseException("Cannot evaluate disk store size", e);
+            }
+        }
+
+    }
 }

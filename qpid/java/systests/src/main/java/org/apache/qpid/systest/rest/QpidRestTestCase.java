@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
@@ -42,7 +41,6 @@ public class QpidRestTestCase extends QpidBrokerTestCase
     public static final String TEST3_VIRTUALHOST = "test3";
 
     public static final String[] EXPECTED_VIRTUALHOSTS = { TEST1_VIRTUALHOST, TEST2_VIRTUALHOST, TEST3_VIRTUALHOST};
-    public static final String[] EXPECTED_QUEUES = { "queue", "ping" };
     public static final String[] EXPECTED_EXCHANGES = { "amq.fanout", "amq.match", "amq.direct","amq.topic" };
 
     private RestTestHelper _restTestHelper = new RestTestHelper(findFreePort());
@@ -60,12 +58,6 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         for (String virtualhost : EXPECTED_VIRTUALHOSTS)
         {
             createTestVirtualHost(0, virtualhost);
-
-            for (String queue : EXPECTED_QUEUES)
-            {
-                setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.exchange", "amq.direct");
-                setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + virtualhost + ".queues.queue(-1).name", queue);
-            }
         }
 
         customizeConfiguration();
@@ -85,7 +77,7 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         }
     }
 
-    protected void customizeConfiguration() throws ConfigurationException, IOException
+    protected void customizeConfiguration() throws IOException
     {
         TestBrokerConfiguration config = getBrokerConfiguration();
         config.addHttpManagementConfiguration();

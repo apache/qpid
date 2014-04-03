@@ -29,7 +29,6 @@ import java.util.Set;
 
 import javax.security.auth.Subject;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -64,7 +63,7 @@ public class DefaultAccessControl implements AccessControl
         _aclFile = new File(fileName);
     }
 
-    DefaultAccessControl(RuleSet rs) throws ConfigurationException
+    DefaultAccessControl(RuleSet rs)
     {
         _ruleSet = rs;
         _eventLogger = rs;

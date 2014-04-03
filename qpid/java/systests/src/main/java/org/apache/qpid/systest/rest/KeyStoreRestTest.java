@@ -29,7 +29,7 @@ import java.util.Map;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.adapter.AbstractKeyStoreAdapter;
+import org.apache.qpid.server.security.AbstractKeyStoreAdapter;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestSSLConstants;
 import org.codehaus.jackson.JsonGenerationException;

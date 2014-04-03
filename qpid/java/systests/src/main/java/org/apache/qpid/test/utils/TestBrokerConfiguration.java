@@ -20,6 +20,15 @@
  */
 package org.apache.qpid.test.utils;
 
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
+import org.apache.qpid.server.security.group.FileGroupManagerFactory;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,23 +37,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
-import org.apache.qpid.server.model.AccessControlProvider;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.plugin.PluginFactory;
-import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
-import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 
 public class TestBrokerConfiguration
 {
@@ -107,10 +99,36 @@ public class TestBrokerConfiguration
 
     public UUID[] removeObjectConfiguration(String name)
     {
-        ConfigurationEntry entry = findObjectByName(name);
+        final ConfigurationEntry entry = findObjectByName(name);
         if (entry != null)
         {
-            return _store.remove(entry.getId());
+            return _store.remove(new ConfiguredObjectRecord()
+            {
+                @Override
+                public UUID getId()
+                {
+                    return entry.getId();
+                }
+
+                @Override
+                public String getType()
+                {
+                    return entry.getType();
+                }
+
+                @Override
+                public Map<String, Object> getAttributes()
+                {
+                    return entry.getAttributes();
+                }
+
+                @Override
+                public Map<String, ConfiguredObjectRecord> getParents()
+                {
+                    // TODO RG : this should be rectified
+                    return null;
+                }
+            });
         }
         return null;
     }
@@ -125,7 +143,7 @@ public class TestBrokerConfiguration
     public UUID addJmxManagementConfiguration()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(PluginFactory.PLUGIN_TYPE, MANAGEMENT_JMX_PLUGIN_TYPE);
+        attributes.put(ConfiguredObject.TYPE, MANAGEMENT_JMX_PLUGIN_TYPE);
         attributes.put(Plugin.NAME, ENTRY_NAME_JMX_MANAGEMENT);
         return addObjectConfiguration(ENTRY_NAME_JMX_MANAGEMENT, Plugin.class.getSimpleName(), attributes);
     }
@@ -133,7 +151,7 @@ public class TestBrokerConfiguration
     public UUID addHttpManagementConfiguration()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(PluginFactory.PLUGIN_TYPE, MANAGEMENT_HTTP_PLUGIN_TYPE);
+        attributes.put(ConfiguredObject.TYPE, MANAGEMENT_HTTP_PLUGIN_TYPE);
         attributes.put(Plugin.NAME, ENTRY_NAME_HTTP_MANAGEMENT);
         return addObjectConfiguration(ENTRY_NAME_HTTP_MANAGEMENT, Plugin.class.getSimpleName(), attributes);
     }
@@ -204,7 +222,7 @@ public class TestBrokerConfiguration
     {
         Map<String, Object> newAttributes = new HashMap<String, Object>(entry.getAttributes());
         newAttributes.putAll(attributes);
-        ConfigurationEntry newEntry = new ConfigurationEntry(entry.getId(), entry.getType(), newAttributes,
+        ConfigurationEntry newEntry = new ConfigurationEntryImpl(entry.getId(), entry.getType(), newAttributes,
                 entry.getChildrenIds(), _store);
         _store.save(newEntry);
         return true;
@@ -242,7 +260,7 @@ public class TestBrokerConfiguration
 
     private void addObjectConfiguration(UUID id, String type, Map<String, Object> attributes)
     {
-        ConfigurationEntry entry = new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), _store);
+        ConfigurationEntry entry = new ConfigurationEntryImpl(id, type, attributes, Collections.<UUID> emptySet(), _store);
         ConfigurationEntry root = _store.getRootEntry();
 
         Map<String, Collection<ConfigurationEntry>> children = root.getChildren();
@@ -251,7 +269,8 @@ public class TestBrokerConfiguration
 
         Set<UUID> childrenIds = new HashSet<UUID>(root.getChildrenIds());
         childrenIds.add(id);
-        ConfigurationEntry newRoot = new ConfigurationEntry(root.getId(), root.getType(), root.getAttributes(), childrenIds,
+        ConfigurationEntry
+                newRoot = new ConfigurationEntryImpl(root.getId(), root.getType(), root.getAttributes(), childrenIds,
                 _store);
         _store.save(newRoot, entry);
     }
@@ -280,7 +299,8 @@ public class TestBrokerConfiguration
     {
         Map<String, Object> attributes = new HashMap<String, Object>(entry.getAttributes());
         attributes.put(attributeName, value);
-        ConfigurationEntry newEntry = new ConfigurationEntry(entry.getId(), entry.getType(), attributes, entry.getChildrenIds(),
+        ConfigurationEntry
+                newEntry = new ConfigurationEntryImpl(entry.getId(), entry.getType(), attributes, entry.getChildrenIds(),
                 _store);
         _store.save(newEntry);
         return true;
@@ -298,14 +318,19 @@ public class TestBrokerConfiguration
 
     public void addPreferencesProviderConfiguration(String authenticationProvider, Map<String, Object> attributes)
     {
-        ConfigurationEntry pp = new ConfigurationEntry(UUIDGenerator.generateRandomUUID(),
+        ConfigurationEntry pp = new ConfigurationEntryImpl(UUIDGenerator.generateRandomUUID(),
                 PreferencesProvider.class.getSimpleName(), attributes, Collections.<UUID> emptySet(), _store);
         ConfigurationEntry ap = findObjectByName(authenticationProvider);
         Set<UUID> children = new HashSet<UUID>();
         children.addAll(ap.getChildrenIds());
         children.add(pp.getId());
-        ConfigurationEntry newAp = new ConfigurationEntry(ap.getId(), ap.getType(), ap.getAttributes(), children, _store);
+        ConfigurationEntry
+                newAp = new ConfigurationEntryImpl(ap.getId(), ap.getType(), ap.getAttributes(), children, _store);
         _store.save(newAp, pp);
     }
 
+    public Map<String, Object> getObjectAttributes(String name)
+    {
+        return findObjectByName(name).getAttributes();
+    }
 }

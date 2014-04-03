@@ -33,8 +33,6 @@ import java.util.UUID;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -56,7 +54,6 @@ public class AMQQueueFactoryTest extends QpidTestCase
     private VirtualHost _virtualHost;
     private AMQQueueFactory _queueFactory;
     private List<AMQQueue> _queues;
-    private QueueConfiguration _queueConfiguration;
 
     @Override
     public void setUp() throws Exception
@@ -67,12 +64,8 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         _virtualHost = mock(VirtualHost.class);
         when(_virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
-
-        VirtualHostConfiguration vhostConfig = mock(VirtualHostConfiguration.class);
-        when(_virtualHost.getConfiguration()).thenReturn(vhostConfig);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        _queueConfiguration = mock(QueueConfiguration.class);
-        when(vhostConfig.getQueueConfiguration(anyString())).thenReturn(_queueConfiguration);
+
         DurableConfigurationStore store = mock(DurableConfigurationStore.class);
         when(_virtualHost.getDurableConfigurationStore()).thenReturn(store);
 
@@ -284,15 +277,14 @@ public class AMQQueueFactoryTest extends QpidTestCase
         String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
-        when(_queueConfiguration.getMaxDeliveryCount()).thenReturn(5);
-        when(_queueConfiguration.isDeadLetterQueueEnabled()).thenReturn(true);
-
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
         assertNull("The alternate exchange should not yet exist", _virtualHost.getExchange(dlExchangeName));
 
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+        attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 5);
 
         AMQQueue queue = _queueFactory.createQueue(attributes);
 
@@ -501,19 +493,16 @@ public class AMQQueueFactoryTest extends QpidTestCase
         }
     }
 
-    public void testMessageGroupFromConfig() throws Exception
+    public void testMessageGroupQueue() throws Exception
     {
 
-        Map<String,String> arguments = new HashMap<String, String>();
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(Queue.ID, UUID.randomUUID());
+        attributes.put(Queue.NAME, getTestName());
+        attributes.put(Queue.MESSAGE_GROUP_KEY,"mykey");
+        attributes.put(Queue.MESSAGE_GROUP_SHARED_GROUPS, true);
 
-        arguments.put(QueueArgumentsConverter.QPID_GROUP_HEADER_KEY,"mykey");
-        arguments.put(QueueArgumentsConverter.QPID_SHARED_MSG_GROUP,"1");
-
-        QueueConfiguration qConf = mock(QueueConfiguration.class);
-        when(qConf.getArguments()).thenReturn(arguments);
-        when(qConf.getName()).thenReturn("test");
-
-        AMQQueue queue = _queueFactory.createAMQQueueImpl(qConf);
+        AMQQueue queue = _queueFactory.createQueue(attributes);
         assertEquals("mykey", queue.getAttribute(Queue.MESSAGE_GROUP_KEY));
         assertEquals(Boolean.TRUE, queue.getAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS));
     }

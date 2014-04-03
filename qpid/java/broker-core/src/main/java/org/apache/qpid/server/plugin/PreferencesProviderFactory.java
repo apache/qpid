@@ -26,7 +26,7 @@ import org.apache.qpid.server.model.PreferencesProvider;
 
 public interface PreferencesProviderFactory extends Pluggable
 {
-    PluggableFactoryLoader<PreferencesProviderFactory> FACTORIES = new PluggableFactoryLoader<PreferencesProviderFactory>(PreferencesProviderFactory.class);
+    PluggableFactoryLoader<PreferencesProviderFactory> FACTORY_LOADER = new PluggableFactoryLoader<PreferencesProviderFactory>(PreferencesProviderFactory.class);
 
     PreferencesProvider createInstance(UUID id, Map<String, Object> attributes, AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider);
 

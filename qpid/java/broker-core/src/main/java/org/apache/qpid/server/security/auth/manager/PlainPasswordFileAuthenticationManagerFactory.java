@@ -20,17 +20,21 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ResolvedObject;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
+import org.apache.qpid.server.util.ResourceBundleLoader;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.util.ResourceBundleLoader;
-
-public class PlainPasswordFileAuthenticationManagerFactory implements AuthenticationManagerFactory
+public class PlainPasswordFileAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<PlainPasswordDatabaseAuthenticationManager>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.PasswordFileAuthenticationProviderAttributeDescriptions";
     public static final String ATTRIBUTE_PATH = "path";
@@ -42,23 +46,9 @@ public class PlainPasswordFileAuthenticationManagerFactory implements Authentica
 
     public static final String PROVIDER_TYPE = "PlainPasswordFile";
 
-    @Override
-    public String getType()
+    public PlainPasswordFileAuthenticationManagerFactory()
     {
-        return PROVIDER_TYPE;
-    }
-
-    @Override
-    public AbstractAuthenticationManager createInstance(final Broker broker,
-                                                        final Map<String, Object> attributes,
-                                                        final boolean recovering)
-    {
-        if (attributes == null || !getType().equals(attributes.get(AuthenticationProvider.TYPE)))
-        {
-            return null;
-        }
-
-        return new PlainPasswordDatabaseAuthenticationManager(broker, Collections.<String,Object>emptyMap(),attributes,recovering);
+        super(PlainPasswordDatabaseAuthenticationManager.class);
     }
 
     @Override
@@ -72,5 +62,28 @@ public class PlainPasswordFileAuthenticationManagerFactory implements Authentica
     public Collection<String> getAttributeNames()
     {
         return ATTRIBUTES;
+    }
+
+    @Override
+    public PlainPasswordDatabaseAuthenticationManager createInstance(final Map<String, Object> attributes,
+                                                                     final ConfiguredObject<?>... parents)
+    {
+        return new PlainPasswordDatabaseAuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(),attributes,false);
+    }
+
+    @Override
+    public UnresolvedConfiguredObject<PlainPasswordDatabaseAuthenticationManager> recover(final ConfiguredObjectRecord record,
+                                                                                          final ConfiguredObject<?>... parents)
+    {
+
+        Map<String, Object> attributes = new HashMap<String, Object>(record.getAttributes());
+        attributes.put(ConfiguredObject.ID, record.getId());
+        PlainPasswordDatabaseAuthenticationManager authManager = new PlainPasswordDatabaseAuthenticationManager(
+                getParent(Broker.class, parents),
+                Collections.<String, Object>emptyMap(),
+                attributes,
+                true);
+
+        return ResolvedObject.newInstance(authManager);
     }
 }

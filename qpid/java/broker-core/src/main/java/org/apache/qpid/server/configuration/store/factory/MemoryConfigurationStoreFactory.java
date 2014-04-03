@@ -24,12 +24,13 @@ import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
 
 public class MemoryConfigurationStoreFactory  implements ConfigurationStoreFactory
 {
     @Override
-    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties)
+    public ConfigurationEntryStore createStore(SystemContext systemContext, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties)
     {
         return new MemoryConfigurationEntryStore(null, initialStore, configProperties);
     }

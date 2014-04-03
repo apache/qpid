@@ -20,45 +20,41 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
+import com.sleepycat.je.rep.ReplicationConfig;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.util.FileUtils;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
-import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.test.utils.TestFileUtils;
-import org.apache.qpid.util.FileUtils;
-
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.rep.ReplicatedEnvironment;
-import com.sleepycat.je.rep.ReplicationConfig;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VirtualHostTest extends QpidTestCase
 {
 
-    private Broker _broker;
+    private Broker<?> _broker;
     private StatisticsGatherer _statisticsGatherer;
     private RecovererProvider _recovererProvider;
-    private File _configFile;
     private File _bdbStorePath;
-    private VirtualHost _host;
+    private VirtualHost<?> _host;
     private ConfigurationEntryStore _store;
 
     @Override
@@ -71,7 +67,6 @@ public class VirtualHostTest extends QpidTestCase
         TaskExecutor taslExecutor = mock(TaskExecutor.class);
         when(taslExecutor.isTaskExecutorThread()).thenReturn(true);
         when(_broker.getTaskExecutor()).thenReturn(taslExecutor);
-
 
         _statisticsGatherer = mock(StatisticsGatherer.class);
 
@@ -91,10 +86,6 @@ public class VirtualHostTest extends QpidTestCase
         }
         finally
         {
-            if (_configFile != null)
-            {
-                _configFile.delete();
-            }
             if (_bdbStorePath != null)
             {
                 FileUtils.delete(_bdbStorePath, true);
@@ -103,106 +94,63 @@ public class VirtualHostTest extends QpidTestCase
         }
     }
 
-
-    public void testCreateBdbVirtualHostFromConfigurationFile()
+    public void testCreateBdbHaVirtualHostFromConfigurationEntry()
     {
-        String hostName = getName();
-        long logFileMax = 2000000;
-        _host = createHostFromConfiguration(hostName, logFileMax);
-        _host.setDesiredState(State.INITIALISING, State.ACTIVE);
-        assertEquals("Unexpected host name", hostName, _host.getName());
-        assertEquals("Unexpected host type", StandardVirtualHostFactory.TYPE, _host.getType());
-        assertEquals("Unexpected store type", new BDBMessageStoreFactory().getType(), _host.getAttribute(VirtualHost.STORE_TYPE));
-        assertEquals("Unexpected store path", _bdbStorePath.getAbsolutePath(), _host.getAttribute(VirtualHost.STORE_PATH));
-
-        BDBMessageStore messageStore = (BDBMessageStore) _host.getMessageStore();
-        EnvironmentConfig envConfig = messageStore.getEnvironmentFacade().getEnvironment().getConfig();
-        assertEquals("Unexpected JE log file max", String.valueOf(logFileMax), envConfig.getConfigParam(EnvironmentConfig.LOG_FILE_MAX));
-
-    }
-
-    public void testCreateBdbHaVirtualHostFromConfigurationFile()
-    {
-        String hostName = getName();
-
         String repStreamTimeout = "2 h";
         String nodeName = "node";
         String groupName = "group";
         String nodeHostPort = "localhost:" + findFreePort();
         String helperHostPort = nodeHostPort;
         String durability = "NO_SYNC,SYNC,NONE";
-        _host = createHaHostFromConfiguration(hostName, groupName, nodeName, nodeHostPort, helperHostPort, durability, repStreamTimeout);
+        String virtualHostName = getName();
+
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.NODE_NAME, nodeName);
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.GROUP_NAME, groupName);
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS, nodeHostPort);
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.HELPER_ADDRESS, helperHostPort);
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.DURABILITY, durability);
+
+        messageStoreSettings.put(MessageStore.STORE_PATH, _bdbStorePath.getAbsolutePath());
+        messageStoreSettings.put(ReplicatedEnvironmentFacadeFactory.REPLICATION_CONFIG,
+                Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
+
+        Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put(VirtualHost.NAME, virtualHostName);
+        virtualHostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
+        virtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+
+        _host = createHost(virtualHostAttributes);
         _host.setDesiredState(State.INITIALISING, State.ACTIVE);
-        assertEquals("Unexpected host name", hostName, _host.getName());
+
+        assertEquals("Unexpected virtual host name", virtualHostName, _host.getName());
         assertEquals("Unexpected host type", BDBHAVirtualHostFactory.TYPE, _host.getType());
-        assertEquals("Unexpected store type", ReplicatedEnvironmentFacade.TYPE, _host.getAttribute(VirtualHost.STORE_TYPE));
-        assertEquals("Unexpected store path", _bdbStorePath.getAbsolutePath(), _host.getAttribute(VirtualHost.STORE_PATH));
+
+        assertEquals(messageStoreSettings, _host.getMessageStoreSettings());
 
         BDBMessageStore messageStore = (BDBMessageStore) _host.getMessageStore();
         ReplicatedEnvironment environment = (ReplicatedEnvironment) messageStore.getEnvironmentFacade().getEnvironment();
-        ReplicationConfig repConfig = environment.getRepConfig();
-        assertEquals("Unexpected JE replication groupName", groupName, repConfig.getConfigParam(ReplicationConfig.GROUP_NAME));
-        assertEquals("Unexpected JE replication nodeName", nodeName, repConfig.getConfigParam(ReplicationConfig.NODE_NAME));
-        assertEquals("Unexpected JE replication nodeHostPort", nodeHostPort, repConfig.getConfigParam(ReplicationConfig.NODE_HOST_PORT));
-        assertEquals("Unexpected JE replication nodeHostPort", helperHostPort, repConfig.getConfigParam(ReplicationConfig.HELPER_HOSTS));
-        assertEquals("Unexpected JE replication nodeHostPort", "false", repConfig.getConfigParam(ReplicationConfig.DESIGNATED_PRIMARY));
-        assertEquals("Unexpected JE replication stream timeout", repStreamTimeout, repConfig.getConfigParam(ReplicationConfig.REP_STREAM_TIMEOUT));
+        ReplicationConfig replicationConfig = environment.getRepConfig();
+
+        assertEquals(nodeName, environment.getNodeName());
+        assertEquals(groupName, environment.getGroup().getName());
+        assertEquals(nodeHostPort, replicationConfig.getNodeHostPort());
+        assertEquals(helperHostPort, replicationConfig.getHelperHosts());
+        assertEquals(durability, environment.getConfig().getDurability().toString());
+        assertEquals("Unexpected JE replication stream timeout", repStreamTimeout, replicationConfig.getConfigParam(ReplicationConfig.REP_STREAM_TIMEOUT));
     }
 
-    private VirtualHost createHost(Map<String, Object> attributes, Set<UUID> children)
+
+    private VirtualHost<?> createHost(Map<String, Object> attributes)
     {
-        ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(), attributes,
-                children, _store);
-
-        return new VirtualHostRecoverer(_statisticsGatherer).create(_recovererProvider, entry, _broker);
+        ConfiguredObjectFactory factory = new ConfiguredObjectFactory();
+        ConfiguredObjectTypeFactory vhostFactory =
+                factory.getConfiguredObjectTypeFactory(VirtualHost.class, attributes);
+        attributes = new HashMap<String, Object>(attributes);
+        attributes.put(ConfiguredObject.ID, UUID.randomUUID());
+        return (VirtualHost<?>) vhostFactory.create(attributes,_broker);
     }
 
-    private VirtualHost createHost(Map<String, Object> attributes)
-    {
-        return createHost(attributes, Collections.<UUID> emptySet());
-    }
-
-    private VirtualHost createHostFromConfiguration(String hostName, long logFileMax)
-    {
-        String content = "<virtualhosts><virtualhost><name>" + hostName + "</name><" + hostName + ">"
-                        + "<store><class>" + BDBMessageStore.class.getName() + "</class>"
-                        + "<environment-path>" + _bdbStorePath.getAbsolutePath() + "</environment-path>"
-                        + "<envConfig><name>" + EnvironmentConfig.LOG_FILE_MAX + "</name><value>" + logFileMax + "</value></envConfig>"
-                        + "</store>"
-                        + "</" + hostName + "></virtualhost></virtualhosts>";
-        Map<String, Object> attributes = writeConfigAndGenerateAttributes(content);
-        return createHost(attributes);
-    }
-
-
-    private VirtualHost createHaHostFromConfiguration(String hostName, String groupName, String nodeName, String nodeHostPort, String helperHostPort, String durability, String repStreamTimeout)
-    {
-        String content = "<virtualhosts><virtualhost><name>" + hostName + "</name><" + hostName + ">"
-                        + "<type>" + BDBHAVirtualHostFactory.TYPE + "</type>"
-                        + "<store><class>" + BDBMessageStore.class.getName() + "</class>"
-                        + "<environment-path>" + _bdbStorePath.getAbsolutePath() + "</environment-path>"
-                        + "<highAvailability>"
-                        + "<groupName>" + groupName + "</groupName>"
-                        + "<nodeName>" + nodeName + "</nodeName>"
-                        + "<nodeHostPort>" + nodeHostPort + "</nodeHostPort>"
-                        + "<helperHostPort>" + helperHostPort + "</helperHostPort>"
-                        + "<durability>" + durability.replaceAll(",", "\\\\,") + "</durability>"
-                        + "</highAvailability>"
-                        + "<repConfig><name>" + ReplicationConfig.REP_STREAM_TIMEOUT + "</name><value>" + repStreamTimeout + "</value></repConfig>"
-                        + "</store>"
-                        + "</" + hostName + "></virtualhost></virtualhosts>";
-        Map<String, Object> attributes = writeConfigAndGenerateAttributes(content);
-        return createHost(attributes);
-    }
-
-    private Map<String, Object> writeConfigAndGenerateAttributes(String content)
-    {
-        _configFile = TestFileUtils.createTempFile(this, ".virtualhost.xml", content);
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.CONFIG_PATH, _configFile.getAbsolutePath());
-        return attributes;
-    }
 }
 
     

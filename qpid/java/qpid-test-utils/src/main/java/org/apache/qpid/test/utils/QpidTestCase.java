@@ -22,6 +22,7 @@ package org.apache.qpid.test.utils;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -124,10 +125,7 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    protected static final String MESSAGE_STORE_CLASS_NAME_KEY = "messagestore.class.name";
-    protected static final String CONFIGURATION_STORE_CLASS_NAME_KEY = "configurationstore.class.name";
-
-    protected static final String MEMORY_STORE_CLASS_NAME = "org.apache.qpid.server.store.MemoryMessageStore";
+    protected static final String MESSAGE_STORE_TYPE = "messagestore.type";
 
     private static List<String> _exclusionList;
 
@@ -151,12 +149,12 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    public String getTestProfileMessageStoreClassName()
+    public String getTestProfileMessageStoreType()
     {
-        final String storeClass = System.getProperty(MESSAGE_STORE_CLASS_NAME_KEY);
-        _logger.debug("MESSAGE_STORE_CLASS_NAME_KEY " + storeClass);
+        final String storeType = System.getProperty(MESSAGE_STORE_TYPE);
+        _logger.debug(MESSAGE_STORE_TYPE + "=" + storeType);
 
-        return storeClass != null ? storeClass : MEMORY_STORE_CLASS_NAME ;
+        return storeType != null ? storeType : "TestableMemory";
     }
 
 

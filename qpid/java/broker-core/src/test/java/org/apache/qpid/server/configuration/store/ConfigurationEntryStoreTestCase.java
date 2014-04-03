@@ -20,27 +20,21 @@
  */
 package org.apache.qpid.server.configuration.store;
 
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.test.utils.QpidTestCase;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
-import org.apache.qpid.test.utils.QpidTestCase;
 
 public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 {
@@ -79,7 +73,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _virtualHostId = UUID.randomUUID();
         _virtualHostAttributes = new HashMap<String, Object>();
         _virtualHostAttributes.put(VirtualHost.NAME, "test");
-        _virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/test");
+        _virtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
 
         _authenticationProviderId = UUID.randomUUID();
         _authenticationProviderAttributes = new HashMap<String, Object>();
@@ -92,6 +86,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     }
 
     // ??? perhaps it should not be abstract
+
     protected abstract ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception;
 
     protected abstract void addConfiguration(UUID id, String type, Map<String, Object> attributes, UUID parentId);
@@ -133,36 +128,72 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 
     public void testRemove()
     {
-        Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        final Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, getName());
-        virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config");
-        UUID virtualHostId = UUID.randomUUID();
+        virtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
+        final UUID virtualHostId = UUID.randomUUID();
         addConfiguration(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes);
 
         assertNotNull("Virtual host with id " + virtualHostId + " should exist", _store.getEntry(virtualHostId));
 
-        _store.remove(virtualHostId);
-        assertNull("Authentication provider configuration should be removed", _store.getEntry(virtualHostId));
+        _store.remove(createConfiguredObjectRecord(virtualHostId, VirtualHost.class, virtualHostAttributes));
+        assertNull("Virtual host configuration should be removed", _store.getEntry(virtualHostId));
+    }
+
+    protected ConfiguredObjectRecord createConfiguredObjectRecord(final UUID virtualHostId,
+                                                                  final Class<? extends ConfiguredObject> type,
+                                                                  final Map<String, Object> virtualHostAttributes)
+    {
+        return new ConfiguredObjectRecord()
+        {
+            @Override
+            public UUID getId()
+            {
+                return virtualHostId;
+            }
+
+            @Override
+            public String getType()
+            {
+                return type.getSimpleName();
+            }
+
+            @Override
+            public Map<String, Object> getAttributes()
+            {
+                return virtualHostAttributes;
+            }
+
+            @Override
+            public Map<String, ConfiguredObjectRecord> getParents()
+            {
+                // TODO RG : rectify this
+                return null;
+            }
+        };
     }
 
     public void testRemoveMultipleEntries()
     {
         Map<String, Object> virtualHost1Attributes = new HashMap<String, Object>();
         virtualHost1Attributes.put(VirtualHost.NAME, "test1");
-        virtualHost1Attributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config1");
+        virtualHost1Attributes.put(VirtualHost.TYPE, "STANDARD");
         UUID virtualHost1Id = UUID.randomUUID();
         addConfiguration(virtualHost1Id, VirtualHost.class.getSimpleName(), virtualHost1Attributes);
 
         Map<String, Object> virtualHost2Attributes = new HashMap<String, Object>();
         virtualHost2Attributes.put(VirtualHost.NAME, "test1");
-        virtualHost2Attributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config2");
+        virtualHost2Attributes.put(VirtualHost.TYPE, "STANDARD");
         UUID virtualHost2Id = UUID.randomUUID();
         addConfiguration(virtualHost2Id, VirtualHost.class.getSimpleName(), virtualHost2Attributes);
 
         assertNotNull("Virtual host with id " + virtualHost1Id + " should exist", _store.getEntry(virtualHost1Id));
         assertNotNull("Virtual host with id " + virtualHost2Id + " should exist", _store.getEntry(virtualHost2Id));
 
-        UUID[] deletedIds = _store.remove(virtualHost1Id, virtualHost2Id);
+        UUID[] deletedIds =
+                _store.remove(createConfiguredObjectRecord(virtualHost1Id, VirtualHost.class, virtualHost1Attributes),
+                              createConfiguredObjectRecord(virtualHost2Id, VirtualHost.class, virtualHost2Attributes));
+
         assertNotNull("Unexpected deleted ids", deletedIds);
         assertEquals("Unexpected id of first deleted virtual host", virtualHost1Id , deletedIds[0]);
         assertEquals("Unexpected id of second deleted virtual host", virtualHost2Id , deletedIds[1]);
@@ -189,7 +220,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 12000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 14000);
         attributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, false);
-        ConfigurationEntry updatedBrokerEntry = new ConfigurationEntry(_brokerId, Broker.class.getSimpleName(), attributes,
+        ConfigurationEntry
+                updatedBrokerEntry = new ConfigurationEntryImpl(_brokerId, Broker.class.getSimpleName(), attributes,
                 brokerConfigEntry.getChildrenIds(), _store);
 
         _store.save(updatedBrokerEntry);
@@ -207,9 +239,9 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     {
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, "test1");
-        virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config1");
+        virtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
         UUID virtualHostId = UUID.randomUUID();
-        ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
+        ConfigurationEntry hostEntry = new ConfigurationEntryImpl(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 Collections.<UUID> emptySet(), _store);
 
         _store.save(hostEntry);
@@ -228,9 +260,9 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, "test");
-        virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/new/phantom/test/configuration");
+        virtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
 
-        ConfigurationEntry updatedEntry = new ConfigurationEntry(_virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
+        ConfigurationEntry updatedEntry = new ConfigurationEntryImpl(_virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 hostEntry.getChildrenIds(), _store);
         _store.save(updatedEntry);
 
@@ -247,7 +279,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         Map<String, Object> authenticationProviderAttributes = new HashMap<String, Object>();
         authenticationProviderAttributes.put(AuthenticationProvider.NAME, "authenticationProvider1");
         authenticationProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManager.class.getSimpleName());
-        ConfigurationEntry providerEntry = new ConfigurationEntry(authenticationProviderId, AuthenticationProvider.class.getSimpleName(),
+        ConfigurationEntry providerEntry = new ConfigurationEntryImpl(authenticationProviderId, AuthenticationProvider.class.getSimpleName(),
                 authenticationProviderAttributes, Collections.<UUID> emptySet(), _store);
 
         _store.save(providerEntry);
@@ -267,7 +299,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         Map<String, Object> authenticationProviderAttributes = new HashMap<String, Object>();
         authenticationProviderAttributes.put(AuthenticationProvider.NAME, "authenticationProvider1");
         authenticationProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManager.class.getSimpleName());
-        ConfigurationEntry updatedEntry = new ConfigurationEntry(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(),
+        ConfigurationEntry updatedEntry = new ConfigurationEntryImpl(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(),
                 authenticationProviderAttributes, Collections.<UUID> emptySet(), _store);
         _store.save(updatedEntry);
 
@@ -289,7 +321,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(TrustStore.DESCRIPTION, "Description");
 
-        ConfigurationEntry trustStoreEntry = new ConfigurationEntry(trustStoreId, TrustStore.class.getSimpleName(), attributes,
+        ConfigurationEntry
+                trustStoreEntry = new ConfigurationEntryImpl(trustStoreId, TrustStore.class.getSimpleName(), attributes,
                 Collections.<UUID> emptySet(), _store);
 
         _store.save(trustStoreEntry);
@@ -313,7 +346,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(KeyStore.DESCRIPTION, "Description");
         attributes.put(KeyStore.CERTIFICATE_ALIAS, "Alias");
 
-        ConfigurationEntry keyStoreEntry = new ConfigurationEntry(keyStoreId, KeyStore.class.getSimpleName(), attributes, Collections.<UUID> emptySet(),
+        ConfigurationEntry keyStoreEntry = new ConfigurationEntryImpl(keyStoreId, KeyStore.class.getSimpleName(), attributes, Collections.<UUID> emptySet(),
                 _store);
 
         _store.save(keyStoreEntry);
@@ -331,7 +364,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, getName());
 
-        ConfigurationEntry groupProviderEntry = new ConfigurationEntry(groupProviderId, GroupProvider.class.getSimpleName(), attributes,
+        ConfigurationEntry groupProviderEntry = new ConfigurationEntryImpl(groupProviderId, GroupProvider.class.getSimpleName(), attributes,
                 Collections.<UUID> emptySet(), _store);
 
         _store.save(groupProviderEntry);
@@ -356,7 +389,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(Port.NEED_CLIENT_AUTH, true);
         attributes.put(Port.WANT_CLIENT_AUTH, true);
 
-        ConfigurationEntry portEntry = new ConfigurationEntry(portId, Port.class.getSimpleName(), attributes, Collections.<UUID> emptySet(), _store);
+        ConfigurationEntry portEntry = new ConfigurationEntryImpl(portId, Port.class.getSimpleName(), attributes, Collections
+                .<UUID> emptySet(), _store);
 
         _store.save(portEntry);
 
@@ -372,8 +406,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         UUID virtualHostId = UUID.randomUUID();
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, "test1");
-        virtualHostAttributes.put(VirtualHost.CONFIG_PATH, "/path/to/phantom/virtualhost/config1");
-        ConfigurationEntry hostEntry = new ConfigurationEntry(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
+        virtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
+        ConfigurationEntry hostEntry = new ConfigurationEntryImpl(virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 Collections.<UUID> emptySet(), _store);
 
         UUID keyStoreId = UUID.randomUUID();
@@ -386,7 +420,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(KeyStore.DESCRIPTION, "Description");
         attributes.put(KeyStore.CERTIFICATE_ALIAS, "Alias");
 
-        ConfigurationEntry keyStoreEntry = new ConfigurationEntry(keyStoreId, KeyStore.class.getSimpleName(), attributes, Collections.<UUID> emptySet(),
+        ConfigurationEntry keyStoreEntry = new ConfigurationEntryImpl(keyStoreId, KeyStore.class.getSimpleName(), attributes, Collections.<UUID> emptySet(),
                 _store);
 
         _store.save(hostEntry, keyStoreEntry);
@@ -418,7 +452,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     protected void addPreferencesProvider(UUID preferencesProviderId, String name, String path)
     {
         ConfigurationEntry authenticationProviderEntry = _store.getEntry(_authenticationProviderId);
-        ConfigurationEntry newAuthenticationProviderConfigEntry = new ConfigurationEntry(authenticationProviderEntry.getId(),
+        ConfigurationEntry newAuthenticationProviderConfigEntry = new ConfigurationEntryImpl(authenticationProviderEntry.getId(),
                 authenticationProviderEntry.getType(), authenticationProviderEntry.getAttributes(),
                 Collections.<UUID>singleton(preferencesProviderId), _store);
 
@@ -427,7 +461,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         preferencesProviderAttributes.put(FileSystemPreferencesProvider.PATH, path);
         preferencesProviderAttributes.put(PreferencesProvider.NAME, name);
 
-        ConfigurationEntry preferencesProviderEntry = new ConfigurationEntry(preferencesProviderId, PreferencesProvider.class.getSimpleName(),
+        ConfigurationEntry preferencesProviderEntry = new ConfigurationEntryImpl(preferencesProviderId, PreferencesProvider.class.getSimpleName(),
                 preferencesProviderAttributes, Collections.<UUID> emptySet(), _store);
 
         _store.save(newAuthenticationProviderConfigEntry, preferencesProviderEntry);

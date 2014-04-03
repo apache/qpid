@@ -25,8 +25,7 @@ broker.command.windows=build${file.separator}bin${file.separator}qpid-server.bat
 broker.ready=BRK-1004
 broker.stopped=Exception
 qpid.broker_default_amqp_protocol_excludes=AMQP_1_0,AMQP_0_10,AMQP_0_9_1
-broker.virtualhosts-config=${QPID_HOME}/etc/virtualhosts-systests-derby-mem.xml
-messagestore.class.name=org.apache.qpid.server.store.derby.DerbyMessageStore
+messagestore.type=DERBY
 profile.excludes=JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes
 broker.clean.between.tests=true
 broker.persistent=true
@@ -34,4 +33,3 @@ broker.persistent=true
 # Do not enable. Allow client to attempt 0-10 and negotiate downwards
 #
 #qpid.amqp.version=0-9
-

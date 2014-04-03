@@ -20,22 +20,22 @@
  */
 package org.apache.qpid.server.store;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase implements EventListener, TransactionLogResource
 {
@@ -50,9 +50,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     private UUID _transactionResource;
 
     protected abstract MessageStore createStore() throws Exception;
-
-    protected abstract void applyStoreSpecificConfiguration(VirtualHost virtualHost);
-
+    protected abstract Map<String, Object> createStoreSettings(String storeLocation);
     protected abstract int getNumberOfMessagesToFillStore();
 
     @Override
@@ -64,23 +62,22 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         FileUtils.delete(_storeLocation, true);
 
 
-        VirtualHost vhost = mock(VirtualHost.class);
-        when(vhost.getAttribute(eq(VirtualHost.STORE_PATH))).thenReturn(_storeLocation.getAbsolutePath());
-        when(vhost.getName()).thenReturn("test");
-
-        applyStoreSpecificConfiguration(vhost);
+        Map<String, Object> storeSettings = createStoreSettings(_storeLocation.getAbsolutePath());
 
         _store = createStore();
-        ((DurableConfigurationStore)_store).configureConfigStore(vhost, null);
+
         MessageStoreRecoveryHandler recoveryHandler = mock(MessageStoreRecoveryHandler.class);
         when(recoveryHandler.begin()).thenReturn(mock(StoredMessageRecoveryHandler.class));
-        _store.configureMessageStore(vhost, recoveryHandler, null);
-        _store.activate();
+        ConfiguredObject<?> parent = mock(ConfiguredObject.class);
+        when(parent.getName()).thenReturn("test");
+        _store.openMessageStore(parent, storeSettings);
+        _store.recoverMessageStore(recoveryHandler, null);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();
         _store.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
+
 
     @Override
     public void tearDown() throws Exception
@@ -93,7 +90,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         {
             if (_store != null)
             {
-                _store.close();
+                _store.closeMessageStore();
             }
             FileUtils.delete(_storeLocation, true);
         }

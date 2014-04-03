@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth.manager;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
@@ -31,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+@ManagedObject( category = false, type = "Base64MD5PasswordFile" )
 public class Base64MD5PasswordDatabaseAuthenticationManager
         extends PrincipalDatabaseAuthenticationManager<Base64MD5PasswordDatabaseAuthenticationManager>
 {

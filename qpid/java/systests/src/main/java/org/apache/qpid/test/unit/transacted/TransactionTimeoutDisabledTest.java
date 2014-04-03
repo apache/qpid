@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
+
 /**
  * This verifies that the default behaviour is not to time out transactions.
  */
@@ -29,7 +32,8 @@ public class TransactionTimeoutDisabledTest extends TransactionTimeoutTestCase
     protected void configure() throws Exception
     {
         // Setup housekeeping every second
-        setVirtualHostConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
+        TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
+        brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 100);
 
         // No transaction timeout configuration.
     }

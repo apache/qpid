@@ -21,10 +21,15 @@
 package org.apache.qpid.server.store;
 
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-
-import org.apache.commons.configuration.PropertiesConfiguration;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.AMQPFilterTypes;
@@ -34,40 +39,33 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.queue.PriorityQueue;
+import org.apache.qpid.server.protocol.v0_8.AMQMessage;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.ConflationQueue;
+import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.StandardQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * This tests the MessageStores by using the available interfaces.
@@ -104,8 +102,6 @@ public class MessageStoreTest extends QpidTestCase
 
     private String queueOwner = "MST";
 
-    private PropertiesConfiguration _config;
-
     private VirtualHost _virtualHost;
     private org.apache.qpid.server.model.VirtualHost _virtualHostModel;
     private Broker _broker;
@@ -116,15 +112,19 @@ public class MessageStoreTest extends QpidTestCase
         super.setUp();
         BrokerTestHelper.setUp();
 
-        _storePath = System.getProperty("QPID_WORK") + File.separator + getName();
+        String hostName = getName();
+        _storePath = System.getProperty("QPID_WORK", TMP_FOLDER + File.separator + getTestName()) + File.separator + hostName;
 
-        _config = new PropertiesConfiguration();
-        _config.addProperty("store.class", getTestProfileMessageStoreClassName());
-        _config.addProperty("store.environment-path", _storePath);
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, _storePath);
+        messageStoreSettings.put(MessageStore.STORE_TYPE, getTestProfileMessageStoreType());
+
         _virtualHostModel = mock(org.apache.qpid.server.model.VirtualHost.class);
-        when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.STORE_PATH))).thenReturn(_storePath);
-
-
+        when(_virtualHostModel.getMessageStoreSettings()).thenReturn(messageStoreSettings);
+        when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.TYPE))).thenReturn(StandardVirtualHostFactory.TYPE);
+        when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.NAME))).thenReturn(hostName);
+        when(_virtualHostModel.getType()).thenReturn(StandardVirtualHostFactory.TYPE);
+        when(_virtualHostModel.getName()).thenReturn(hostName);
 
         cleanup(new File(_storePath));
 
@@ -138,7 +138,7 @@ public class MessageStoreTest extends QpidTestCase
         return _storePath;
     }
 
-    protected org.apache.qpid.server.model.VirtualHost getVirtualHostModel()
+    protected org.apache.qpid.server.model.VirtualHost<?> getVirtualHostModel()
     {
         return _virtualHostModel;
     }
@@ -165,11 +165,6 @@ public class MessageStoreTest extends QpidTestCase
         return _virtualHost;
     }
 
-    public PropertiesConfiguration getConfig()
-    {
-        return _config;
-    }
-
     protected void reloadVirtualHost()
     {
         VirtualHost original = getVirtualHost();
@@ -189,7 +184,7 @@ public class MessageStoreTest extends QpidTestCase
 
         try
         {
-            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config, _broker),new VirtualHostRegistry(_broker.getEventLogger()),getVirtualHostModel());
+            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostRegistry(new EventLogger()), getVirtualHostModel());
             when(_virtualHostModel.getId()).thenReturn(_virtualHost.getId());
 
             ConfiguredObjectRecord objectRecord = mock(ConfiguredObjectRecord.class);

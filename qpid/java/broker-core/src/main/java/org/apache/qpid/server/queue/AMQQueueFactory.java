@@ -26,11 +26,9 @@ import java.util.UUID;
 
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -59,7 +57,7 @@ public class AMQQueueFactory implements QueueFactory
     {
         _virtualHost = virtualHost;
         _queueRegistry = queueRegistry;
-    }   
+    }
 
     @Override
     public AMQQueue restoreQueue(Map<String, Object> attributes)
@@ -74,50 +72,10 @@ public class AMQQueueFactory implements QueueFactory
         return createOrRestoreQueue(attributes, true);
     }
 
-    private AMQQueue createOrRestoreQueue(Map<String, Object> attributes,
-                                          boolean createInStore)
+    private AMQQueue createOrRestoreQueue(Map<String, Object> attributes, boolean createInStore)
     {
-
-
         String queueName = MapValueConverter.getStringAttribute(Queue.NAME,attributes);
-
-        QueueConfiguration config = _virtualHost.getConfiguration().getQueueConfiguration(queueName);
-
-        if (!attributes.containsKey(Queue.ALERT_THRESHOLD_MESSAGE_AGE) && config.getMaximumMessageAge() != 0)
-        {
-            attributes.put(Queue.ALERT_THRESHOLD_MESSAGE_AGE, config.getMaximumMessageAge());
-        }
-        if (!attributes.containsKey(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES) && config.getMaximumQueueDepth() != 0)
-        {
-            attributes.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, config.getMaximumQueueDepth());
-        }
-        if (!attributes.containsKey(Queue.ALERT_THRESHOLD_MESSAGE_SIZE) && config.getMaximumMessageSize() != 0)
-        {
-            attributes.put(Queue.ALERT_THRESHOLD_MESSAGE_SIZE, config.getMaximumMessageSize());
-        }
-        if (!attributes.containsKey(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES) && config.getMaximumMessageCount() != 0)
-        {
-            attributes.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, config.getMaximumMessageCount());
-        }
-        if (!attributes.containsKey(Queue.ALERT_REPEAT_GAP) && config.getMinimumAlertRepeatGap() != 0)
-        {
-            attributes.put(Queue.ALERT_REPEAT_GAP, config.getMinimumAlertRepeatGap());
-        }
-        if (config.getMaxDeliveryCount() != 0 && !attributes.containsKey(Queue.MAXIMUM_DELIVERY_ATTEMPTS))
-        {
-            attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, config.getMaxDeliveryCount());
-        }
-        if (!attributes.containsKey(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES) && config.getCapacity() != 0)
-        {
-            attributes.put(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, config.getCapacity());
-        }
-        if (!attributes.containsKey(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES) && config.getFlowResumeCapacity() != 0)
-        {
-            attributes.put(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, config.getFlowResumeCapacity());
-        }
-
-
-        boolean createDLQ = createDLQ(attributes, config);
+        boolean createDLQ = createInStore && shouldCreateDLQ(attributes, _virtualHost.getDefaultDeadLetterQueueEnabled());
         if (createDLQ)
         {
             validateDLNames(queueName);
@@ -259,30 +217,7 @@ public class AMQQueueFactory implements QueueFactory
         queue.setAlternateExchange(dlExchange);
     }
 
-    public AMQQueue createAMQQueueImpl(QueueConfiguration config)
-    {
-
-        Map<String, Object> arguments = createQueueAttributesFromConfig(_virtualHost, config);
-        
-        AMQQueue q = createOrRestoreQueue(arguments, false);
-        return q;
-    }
-
-    /**
-     * Validates DLQ and DLE names
-     * <p>
-     * DLQ name and DLQ exchange name need to be validated in order to keep
-     * integrity in cases when queue name passes validation check but DLQ name
-     * or DL exchange name fails to pass it. Otherwise, we might have situations
-     * when queue is created but DL exchange or/and DLQ creation fail.
-     * <p>
-     *
-     * @param name
-     *            queue name
-     * @throws IllegalArgumentException
-     *             thrown if length of queue name or exchange name exceed 255
-     */
-    protected static void validateDLNames(String name)
+    private static void validateDLNames(String name)
     {
         // check if DLQ name and DLQ exchange name do not exceed 255
         String exchangeName = getDeadLetterExchangeName(name);
@@ -299,16 +234,7 @@ public class AMQQueueFactory implements QueueFactory
         }
     }
 
-    /**
-     * Checks if DLQ is enabled for the queue.
-     *
-     * @param arguments
-     *            queue arguments
-     * @param qConfig
-     *            queue configuration
-     * @return true if DLQ enabled
-     */
-    protected static boolean createDLQ(Map<String, Object> arguments, QueueConfiguration qConfig)
+    private static boolean shouldCreateDLQ(Map<String, Object> arguments, boolean virtualHostDefaultDeadLetterQueueEnabled)
     {
         boolean autoDelete = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
                                                                 Queue.LIFETIME_POLICY,
@@ -320,7 +246,7 @@ public class AMQQueueFactory implements QueueFactory
         {
             boolean dlqArgumentPresent = arguments != null
                                          && arguments.containsKey(Queue.CREATE_DLQ_ON_CREATION);
-            if (dlqArgumentPresent || qConfig.isDeadLetterQueueEnabled())
+            if (dlqArgumentPresent)
             {
                 boolean dlqEnabled = true;
                 if (dlqArgumentPresent)
@@ -329,89 +255,21 @@ public class AMQQueueFactory implements QueueFactory
                     dlqEnabled = (argument instanceof Boolean && ((Boolean)argument).booleanValue())
                                 || (argument instanceof String && Boolean.parseBoolean(argument.toString()));
                 }
-                return dlqEnabled ;
+                return dlqEnabled;
             }
+            return virtualHostDefaultDeadLetterQueueEnabled;
         }
         return false;
     }
 
-    /**
-     * Generates a dead letter queue name for a given queue name
-     *
-     * @param name
-     *            queue name
-     * @return DLQ name
-     */
-    protected static String getDeadLetterQueueName(String name)
+    private static String getDeadLetterQueueName(String name)
     {
         return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, DEFAULT_DLQ_NAME_SUFFIX);
     }
 
-    /**
-     * Generates a dead letter exchange name for a given queue name
-     *
-     * @param name
-     *            queue name
-     * @return DL exchange name
-     */
-    protected static String getDeadLetterExchangeName(String name)
+    private static String getDeadLetterExchangeName(String name)
     {
         return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-    }
-
-    private static Map<String, Object> createQueueAttributesFromConfig(final VirtualHost virtualHost,
-                                                                       QueueConfiguration config)
-    {
-        Map<String,Object> attributes = new HashMap<String,Object>();
-
-        if(config.getArguments() != null && !config.getArguments().isEmpty())
-        {
-            attributes.putAll(QueueArgumentsConverter.convertWireArgsToModel(new HashMap<String, Object>(config.getArguments())));
-        }
-
-        if(config.isLVQ() || config.getLVQKey() != null)
-        {
-            attributes.put(Queue.LVQ_KEY,
-                          config.getLVQKey() == null ? ConflationQueue.DEFAULT_LVQ_KEY : config.getLVQKey());
-        }
-        else if (config.getPriority() || config.getPriorities() > 0)
-        {
-            attributes.put(Queue.PRIORITIES, config.getPriorities() < 0 ? 10 : config.getPriorities());
-        }
-        else if (config.getQueueSortKey() != null && !"".equals(config.getQueueSortKey()))
-        {
-            attributes.put(Queue.SORT_KEY, config.getQueueSortKey());
-        }
-
-        if (!config.getAutoDelete() && config.isDeadLetterQueueEnabled())
-        {
-            attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
-        }
-
-        if (config.getDescription() != null && !"".equals(config.getDescription()))
-        {
-            attributes.put(Queue.DESCRIPTION, config.getDescription());
-        }
-
-        attributes.put(Queue.DURABLE, config.getDurable());
-        attributes.put(Queue.LIFETIME_POLICY,
-                      config.getAutoDelete() ? LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS : LifetimePolicy.PERMANENT);
-        if(config.getExclusive())
-        {
-            attributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER);
-        }
-        if(config.getOwner() != null)
-        {
-            attributes.put(Queue.OWNER, config.getOwner());
-        }
-        
-        attributes.put(Queue.NAME, config.getName());
-        
-        // we need queues that are defined in config to have deterministic ids.
-        attributes.put(Queue.ID, UUIDGenerator.generateQueueUUID(config.getName(), virtualHost.getName()));
-
-
-        return attributes;
     }
 
 }

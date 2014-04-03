@@ -20,14 +20,12 @@
  */
 package org.apache.qpid.server.store.derby;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreConstants;
-import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
+import java.util.HashMap;
+import java.util.Map;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
 
 public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestBase
 {
@@ -50,17 +48,21 @@ public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTes
     }
 
     @Override
-    protected void applyStoreSpecificConfiguration(VirtualHost vhost)
-    {
-        _logger.debug("Applying store specific config. overfull-sze=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
-
-        when(vhost.getAttribute(eq(MessageStoreConstants.OVERFULL_SIZE_ATTRIBUTE))).thenReturn(OVERFULL_SIZE);
-        when(vhost.getAttribute(eq(MessageStoreConstants.UNDERFULL_SIZE_ATTRIBUTE))).thenReturn(UNDERFULL_SIZE);
-    }
-
-    @Override
     protected MessageStore createStore() throws Exception
     {
         return new DerbyMessageStore();
     }
+
+    @Override
+    protected Map<String, Object> createStoreSettings(String storeLocation)
+    {
+        _logger.debug("Applying store specific config. overfull-size=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
+
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, storeLocation);
+        messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
+        messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
+        return messageStoreSettings;
+    }
+
 }
