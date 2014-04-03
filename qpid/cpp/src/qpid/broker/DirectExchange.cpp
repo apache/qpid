@@ -63,7 +63,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
         fedOp = args->getAsString(qpidFedOp);
         fedTags = args->getAsString(qpidFedTags);
         fedOrigin = args->getAsString(qpidFedOrigin);
-        exclusiveBinding = args->get(qpidExclusiveBinding);  // only direct exchanges take exclusive bindings
+        exclusiveBinding = !!args->get(qpidExclusiveBinding);  // only direct exchanges take exclusive bindings
     }
 
     bool propagate = false;

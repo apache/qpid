@@ -51,6 +51,10 @@ template <class T> inline std::size_t hashValue(T* v) {
     return x + (x >> 3);
 }
 
+template <class T> inline std::size_t hashValue(boost::shared_ptr<T> v) {
+    return hashValue(v.get());
+}
+
 template <class T> inline void hashCombine(std::size_t& seed, const T& v) {
     seed ^= hashValue(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 }
