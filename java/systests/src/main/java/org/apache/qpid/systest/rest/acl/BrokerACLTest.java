@@ -27,12 +27,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.TrustStore;
@@ -48,8 +52,6 @@ import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.test.utils.TestSSLConstants;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
 
 public class BrokerACLTest extends QpidRestTestCase
 {
@@ -74,7 +76,7 @@ public class BrokerACLTest extends QpidRestTestCase
                 "ACL DENY-LOG " + DENIED_USER + " CONFIGURE BROKER\n" +
                 "ACL DENY-LOG ALL ALL";
 
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 

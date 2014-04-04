@@ -539,7 +539,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
             sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
             sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
-            getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
+            getBrokerConfiguration().addObjectConfiguration(Port.class, sslPortAttributes);
 
             startBroker();
 
@@ -833,7 +833,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
             sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
             sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
-            getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
+            getBrokerConfiguration().addObjectConfiguration(Port.class, sslPortAttributes);
 
             startBroker();
 

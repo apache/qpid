@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Map;
 import java.util.UUID;
 
 public abstract class AbstractDurableConfiguredObjectRecoverer<T> implements DurableConfiguredObjectRecoverer
@@ -41,21 +40,26 @@ public abstract class AbstractDurableConfiguredObjectRecoverer<T> implements Dur
             else
             {
                 durableConfigurationRecoverer.addResolutionListener(dependency.getType(), dependency.getId(),
-                                                                    new DependencyListener()
-                                                                    {
+                                                                      new DependencyListener()
+                                                                      {
 
-                                                                        @Override
-                                                                        public void dependencyResolved(final String depType,
-                                                                                                       final UUID depId,
-                                                                                                       final Object o)
-                                                                        {
-                                                                            dependency.resolve(o);
-                                                                            if(obj.getUnresolvedDependencies().length == 0)
-                                                                            {
-                                                                                durableConfigurationRecoverer.resolve(getType(), record.getId(), obj.resolve());
-                                                                            }
-                                                                        }
-                                                                    });
+                                                                          @Override
+                                                                          public void dependencyResolved(final String depType,
+                                                                                                         final UUID depId,
+                                                                                                         final Object o)
+                                                                          {
+                                                                              dependency.resolve(o);
+                                                                              if (obj.getUnresolvedDependencies().length
+                                                                                  == 0)
+                                                                              {
+                                                                                  durableConfigurationRecoverer.resolve(
+                                                                                          getType(),
+                                                                                          record.getId(),
+                                                                                          obj.resolve());
+                                                                              }
+                                                                          }
+                                                                      }
+                                                                     );
             }
         }
         if(obj.getUnresolvedDependencies().length == 0)

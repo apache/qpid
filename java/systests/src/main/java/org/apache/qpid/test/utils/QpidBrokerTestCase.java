@@ -17,36 +17,6 @@
  */
 package org.apache.qpid.test.utils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.jms.BytesMessage;
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.StreamMessage;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -70,6 +40,23 @@ import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.SystemUtils;
+
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.lang.IllegalStateException;
 
 /**
  * Qpid base class for system testing test cases.
@@ -232,17 +219,17 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
         if (actualPort != DEFAULT_PORT)
         {
-            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.PORT, actualPort);
-            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT, Port.PORT, getManagementPort(actualPort));
-            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getManagementPort(actualPort) + JMXPORT_CONNECTORSERVER_OFFSET);
+            configuration.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.PORT, actualPort);
+            configuration.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_RMI_PORT, Port.PORT, getManagementPort(actualPort));
+            configuration.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getManagementPort(actualPort) + JMXPORT_CONNECTORSERVER_OFFSET);
 
             String workDir = System.getProperty("QPID_WORK") + File.separator + TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST + File.separator + actualPort;
-            Map<String, Object> virtualHostSettings = configuration.getObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+            Map<String, Object> virtualHostSettings = configuration.getObjectAttributes(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
 
             @SuppressWarnings("unchecked")
             Map<String, Object> storeSettings = (Map<String, Object>)virtualHostSettings.get(VirtualHost.MESSAGE_STORE_SETTINGS);
             storeSettings.put(MessageStore.STORE_PATH, workDir);
-            configuration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, storeSettings);
+            configuration.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, storeSettings);
         }
 
         return configuration;
@@ -851,7 +838,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         messageStoreSettings.put(MessageStore.STORE_PATH, storeDir);
         attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings );
         int port = getPort(brokerPort);
-        getBrokerConfiguration(port).addVirtualHostConfiguration(attributes);
+        getBrokerConfiguration(port).addObjectConfiguration(VirtualHost.class, attributes);
     }
 
     /**

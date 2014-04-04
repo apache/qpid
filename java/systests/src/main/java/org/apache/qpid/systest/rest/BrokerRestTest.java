@@ -40,7 +40,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.test.client.UnroutableMessageTestExceptionListener;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -263,11 +263,6 @@ public class BrokerRestTest extends QpidRestTestCase
         assertNotNull("Unexpected value of attribute virtualhosts", brokerDetails.get(BROKER_VIRTUALHOSTS_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute ports", brokerDetails.get(BROKER_PORTS_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute authenticationproviders", brokerDetails.get(BROKER_AUTHENTICATIONPROVIDERS_ATTRIBUTE));
-
-        @SuppressWarnings("unchecked")
-        Collection<String> supportedBrokerStoreTypes = (Collection<String>)brokerDetails.get(Broker.SUPPORTED_BROKER_STORE_TYPES);
-        Collection<String> expectedSupportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
-        assertEquals("Unexpected supported broker store types",  new HashSet<String>(expectedSupportedBrokerStoreTypes), new HashSet<String>(supportedBrokerStoreTypes));
 
         @SuppressWarnings("unchecked")
         Collection<String> supportedVirtualHostStoreTypes = (Collection<String>)brokerDetails.get(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES);

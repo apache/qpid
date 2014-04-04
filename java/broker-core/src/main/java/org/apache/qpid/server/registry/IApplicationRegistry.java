@@ -24,7 +24,7 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
-public interface IApplicationRegistry extends StatisticsGatherer
+public interface IApplicationRegistry
 {
 
     void initialise(BrokerOptions brokerOptions) throws Exception;

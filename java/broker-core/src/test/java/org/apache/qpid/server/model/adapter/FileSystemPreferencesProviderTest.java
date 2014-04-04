@@ -97,7 +97,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(FileSystemPreferencesProvider.PATH, nonExistingFile.getAbsolutePath());
             attributes.put(FileSystemPreferencesProvider.NAME, getTestName());
-            _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider, _broker.getTaskExecutor());
+            _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider);
             _preferencesProvider.createStoreIfNotExist();
             assertEquals(State.INITIALISING, _preferencesProvider.getState());
             assertTrue("Preferences file was not created", nonExistingFile.exists());
@@ -118,7 +118,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(FileSystemPreferencesProvider.NAME, getTestName());
             attributes.put(FileSystemPreferencesProvider.PATH, emptyPrefsFile.getAbsolutePath());
-            _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider, _broker.getTaskExecutor());
+            _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider);
             assertEquals(State.INITIALISING, _preferencesProvider.getState());
         }
         finally
@@ -278,7 +278,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(FileSystemPreferencesProvider.PATH, _preferencesFile.getAbsolutePath());
         attributes.put(FileSystemPreferencesProvider.NAME, "test");
-        return _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider, _broker.getTaskExecutor());
+        return _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider);
     }
 
     private void assertUser1Preferences(Map<String, Object> preferences1)

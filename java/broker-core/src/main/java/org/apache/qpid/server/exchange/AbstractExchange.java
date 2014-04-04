@@ -38,7 +38,7 @@ import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;

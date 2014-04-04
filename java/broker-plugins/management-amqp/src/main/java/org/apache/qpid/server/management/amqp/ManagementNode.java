@@ -37,7 +37,7 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQSessionModel;

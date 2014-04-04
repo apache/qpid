@@ -39,8 +39,7 @@ import javax.security.sasl.SaslServer;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -415,14 +414,6 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
 
         @Override
         public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
-        {
-            return null;
-        }
-
-        @Override
-        public <C extends ConfiguredObject> C createChild(Class<C> childClass,
-                                                          Map<String, Object> attributes,
-                                                          ConfiguredObject... otherParents)
         {
             return null;
         }

@@ -71,9 +71,6 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     boolean getWantClientAuth();
 
     @ManagedAttribute
-    AuthenticationProvider getAuthenticationProvider();
-
-    @ManagedAttribute
     KeyStore getKeyStore();
 
     @ManagedAttribute

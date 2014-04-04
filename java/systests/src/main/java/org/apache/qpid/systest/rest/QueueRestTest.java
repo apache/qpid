@@ -39,7 +39,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 
 public class QueueRestTest extends QpidRestTestCase
 {

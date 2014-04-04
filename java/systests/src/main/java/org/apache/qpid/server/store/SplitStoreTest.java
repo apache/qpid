@@ -82,8 +82,8 @@ public class SplitStoreTest extends QpidBrokerTestCase
         messageStoreSettings.put(MessageStore.STORE_PATH, _messageStorePath);
 
         TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.CONFIGURATION_STORE_SETTINGS, configurationStoreSettings);
+        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.CONFIGURATION_STORE_SETTINGS, configurationStoreSettings);
 
         super.startBroker();
     }

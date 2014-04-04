@@ -61,7 +61,7 @@ public class BDBBackupTest extends QpidBrokerTestCase
         super.setUp();
         _backupToDir = new File(SYSTEM_TMP_DIR + File.separator + getTestName());
         _backupToDir.mkdirs();
-        Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(TEST_VHOST);
+        Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(VirtualHost.class,TEST_VHOST);
         Map<String, Object> messageStoreSettings = (Map<String, Object>) virtualHostAttributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
         _backupFromDir = new File((String)messageStoreSettings.get(MessageStore.STORE_PATH));
         boolean fromDirExistsAndIsDir = _backupFromDir.isDirectory();

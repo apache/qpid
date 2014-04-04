@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.configuration.store;
 
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verify;
@@ -28,13 +29,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class StoreConfigurationChangeListenerTest extends QpidTestCase
@@ -55,8 +56,10 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         UUID id = UUID.randomUUID();
         ConfiguredObject object = mock(VirtualHost.class);
         when(object.getId()).thenReturn(id);
+        ConfiguredObjectRecord record = mock(ConfiguredObjectRecord.class);
+        when(object.asObjectRecord()).thenReturn(record);
         _listener.stateChanged(object, State.ACTIVE, State.DELETED);
-        verify(_store).remove(id);
+        verify(_store).remove(record);
     }
 
     public void testChildAdded()
@@ -67,18 +70,7 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         VirtualHost child = mock(VirtualHost.class);
         when(child.getCategoryClass()).thenReturn(VirtualHost.class);
         _listener.childAdded(broker, child);
-        verify(_store).save(any(ConfigurationEntry.class), any(ConfigurationEntry.class));
-    }
-
-    public void testChildRemoved()
-    {
-        notifyBrokerStarted();
-        Broker broker = mock(Broker.class);
-        when(broker.getCategoryClass()).thenReturn(Broker.class);
-        VirtualHost child = mock(VirtualHost.class);
-        when(child.getCategoryClass()).thenReturn(VirtualHost.class);
-        _listener.childRemoved(broker, child);
-        verify(_store).save(any(ConfigurationEntry.class));
+        verify(_store).update(eq(true), any(ConfiguredObjectRecord.class));
     }
 
     public void testAttributeSet()
@@ -87,7 +79,7 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         Broker broker = mock(Broker.class);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         _listener.attributeSet(broker, Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES, null, 1);
-        verify(_store).save(any(ConfigurationEntry.class));
+        verify(_store).update(eq(false),any(ConfiguredObjectRecord.class));
     }
 
     public void testChildAddedForVirtualHost()

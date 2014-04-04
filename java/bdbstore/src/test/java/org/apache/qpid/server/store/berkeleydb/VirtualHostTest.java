@@ -20,8 +20,23 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
+import com.sleepycat.je.rep.ReplicationConfig;
+import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.util.FileUtils;
 
 import java.io.File;
 import java.util.Collections;
@@ -29,24 +44,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
-import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.util.FileUtils;
-
-import com.sleepycat.je.rep.ReplicatedEnvironment;
-import com.sleepycat.je.rep.ReplicationConfig;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VirtualHostTest extends QpidTestCase
 {
@@ -139,16 +138,17 @@ public class VirtualHostTest extends QpidTestCase
         assertEquals(helperHostPort, replicationConfig.getHelperHosts());
         assertEquals(durability, environment.getConfig().getDurability().toString());
         assertEquals("Unexpected JE replication stream timeout", repStreamTimeout, replicationConfig.getConfigParam(ReplicationConfig.REP_STREAM_TIMEOUT));
-
     }
 
 
     private VirtualHost<?> createHost(Map<String, Object> attributes)
     {
-        ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(), attributes,
-                Collections.<UUID>emptySet(), _store);
-
-        return new VirtualHostRecoverer(_statisticsGatherer).create(_recovererProvider, entry, _broker);
+        ConfiguredObjectFactory factory = new ConfiguredObjectFactory();
+        ConfiguredObjectTypeFactory vhostFactory =
+                factory.getConfiguredObjectTypeFactory(VirtualHost.class, attributes);
+        attributes = new HashMap<String, Object>(attributes);
+        attributes.put(ConfiguredObject.ID, UUID.randomUUID());
+        return (VirtualHost<?>) vhostFactory.create(attributes,_broker);
     }
 
 }

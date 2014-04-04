@@ -18,15 +18,13 @@
  */
 package org.apache.qpid.server.plugin;
 
-import java.util.Map;
-import java.util.UUID;
-
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Plugin;
 
+import java.util.Map;
+import java.util.UUID;
+
 public interface PluginFactory extends Pluggable
 {
-    static final String PLUGIN_TYPE = "pluginType";
-
     Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker);
 }

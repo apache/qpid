@@ -21,17 +21,15 @@
 package org.apache.qpid.systest.management.jmx;
 
 
-import org.apache.qpid.server.configuration.BrokerProperties;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-import org.apache.qpid.test.utils.TestSSLConstants;
 import org.apache.qpid.util.LogMonitor;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Management Console Test Suite
@@ -314,8 +312,8 @@ public class ManagementLoggingTest extends AbstractTestLogging
         if(useManagementSSL)
         {
             // This test requires we have ssl, change the transport and add they keystore to the port config
-            config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.TRANSPORTS, Collections.singleton(Transport.SSL));
-            config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
+            config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+            config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
         }
 
         startBroker();

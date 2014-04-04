@@ -23,14 +23,8 @@ package org.apache.qpid.server.model.adapter;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.qpid.server.model.AuthenticationMethod;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.VirtualHostAlias;
+
+import org.apache.qpid.server.model.*;
 
 import java.security.AccessControlException;
 import java.util.Collection;
@@ -116,12 +110,6 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptySet();
-    }
-
-    @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
-    {
-        throw new UnsupportedOperationException();
     }
 
     @Override

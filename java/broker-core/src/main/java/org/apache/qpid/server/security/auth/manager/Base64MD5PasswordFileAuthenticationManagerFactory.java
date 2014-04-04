@@ -20,17 +20,21 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ResolvedObject;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
+import org.apache.qpid.server.util.ResourceBundleLoader;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.util.ResourceBundleLoader;
-
-public class Base64MD5PasswordFileAuthenticationManagerFactory implements AuthenticationManagerFactory
+public class Base64MD5PasswordFileAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<Base64MD5PasswordDatabaseAuthenticationManager>
 {
     public static final String PROVIDER_TYPE = "Base64MD5PasswordFile";
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.PasswordFileAuthenticationProviderAttributeDescriptions";
@@ -41,10 +45,9 @@ public class Base64MD5PasswordFileAuthenticationManagerFactory implements Authen
             AuthenticationProvider.TYPE,
             ATTRIBUTE_PATH));
 
-    @Override
-    public String getType()
+    public Base64MD5PasswordFileAuthenticationManagerFactory()
     {
-        return PROVIDER_TYPE;
+        super(Base64MD5PasswordDatabaseAuthenticationManager.class);
     }
 
     @Override
@@ -53,24 +56,31 @@ public class Base64MD5PasswordFileAuthenticationManagerFactory implements Authen
         return ResourceBundleLoader.getResources(RESOURCE_BUNDLE);
     }
 
-
-    @Override
-    public AbstractAuthenticationManager createInstance(final Broker broker,
-                                                        final Map<String, Object> attributes,
-                                                        final boolean recovering)
-    {
-        if (attributes == null || !getType().equals(attributes.get(AuthenticationProvider.TYPE)))
-        {
-            return null;
-        }
-
-        return new Base64MD5PasswordDatabaseAuthenticationManager(broker, Collections.<String,Object>emptyMap(),attributes,recovering);
-    }
-
     @Override
     public Collection<String> getAttributeNames()
     {
         return ATTRIBUTES;
     }
 
+    @Override
+    public Base64MD5PasswordDatabaseAuthenticationManager createInstance(final Map<String, Object> attributes,
+                                                                         final ConfiguredObject<?>... parents)
+    {
+        return new Base64MD5PasswordDatabaseAuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(),attributes,false);
+    }
+
+    @Override
+    public UnresolvedConfiguredObject<Base64MD5PasswordDatabaseAuthenticationManager> recover(final ConfiguredObjectRecord record,
+                                                                                              final ConfiguredObject<?>... parents)
+    {
+
+        Map<String, Object> attributes = new HashMap<String, Object>(record.getAttributes());
+        attributes.put(ConfiguredObject.ID, record.getId());
+        final Base64MD5PasswordDatabaseAuthenticationManager authenticationManager =
+                new Base64MD5PasswordDatabaseAuthenticationManager(getParent(Broker.class, parents),
+                                                                   Collections.<String, Object>emptyMap(),
+                                                                   attributes,
+                                                                   true);
+        return ResolvedObject.newInstance(authenticationManager);
+    }
 }

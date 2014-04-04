@@ -35,12 +35,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
+
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.tools.security.Passwd;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 
 public class SaslRestTest extends QpidRestTestCase
 {
@@ -378,6 +379,6 @@ public class SaslRestTest extends QpidRestTestCase
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put("path", passwordFile.getAbsolutePath());
         newAttributes.put(AuthenticationProvider.TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-        getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
+        getBrokerConfiguration().setObjectAttributes(AuthenticationProvider.class,TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
     }
 }

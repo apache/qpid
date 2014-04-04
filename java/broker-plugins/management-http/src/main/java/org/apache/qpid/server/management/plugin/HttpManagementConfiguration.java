@@ -25,6 +25,7 @@ import java.net.SocketAddress;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Plugin;
 
 public interface HttpManagementConfiguration<X extends HttpManagementConfiguration<X>> extends Plugin<X>

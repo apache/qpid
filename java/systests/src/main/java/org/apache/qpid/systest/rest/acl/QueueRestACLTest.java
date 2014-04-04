@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
@@ -51,7 +52,7 @@ public class QueueRestACLTest extends QpidRestTestCase
                 "ACL DENY-LOG " + DENIED_USER + " DELETE QUEUE",
                 "ACL DENY-LOG ALL ALL");
 
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 

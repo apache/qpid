@@ -28,12 +28,14 @@ import java.util.Properties;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
+
 import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 
 public class UserRestACLTest extends QpidRestTestCase
 {
@@ -62,7 +64,7 @@ public class UserRestACLTest extends QpidRestTestCase
     protected void customizeConfiguration() throws IOException
     {
         super.customizeConfiguration();
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 
     @Override

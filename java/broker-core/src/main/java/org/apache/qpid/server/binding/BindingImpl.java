@@ -30,7 +30,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.StateChangeListener;
 

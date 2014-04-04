@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.configuration.store;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -30,17 +33,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
-import org.apache.qpid.test.utils.TestFileUtils;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.test.utils.TestFileUtils;
+
 
 public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTestCase
 {
@@ -64,15 +76,41 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     }
 
     @Override
-    protected ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception
+    protected JsonConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception
     {
         _storeFile = createStoreFile(brokerId, brokerAttributes);
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
+        return createStore();
+    }
+
+    private JsonConfigurationEntryStore createStore()
+    {
+        String absolutePath = _storeFile.getAbsolutePath();
+        return createStore(absolutePath);
+    }
+
+    private JsonConfigurationEntryStore createStore(final String absolutePath)
+    {
+        return createStore(absolutePath, null);
+    }
+
+    private JsonConfigurationEntryStore createStore(final String absolutePath,
+                                                    final DurableConfigurationStore initialStore)
+    {
+        final BrokerOptions brokerOptions = mock(BrokerOptions.class);
+        when(brokerOptions.getConfigurationStoreLocation()).thenReturn(absolutePath);
+        SystemContext context = new SystemContext(new TaskExecutor(),
+                                                  new ConfiguredObjectFactory(),
+                                                  mock(EventLogger.class),
+                                                  mock(LogRecorder.class),
+                                                  brokerOptions);
+
+        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(context, initialStore, false,
+                                                                            Collections.<String,String>emptyMap());
         return store;
     }
 
     private File createStoreFile(UUID brokerId, Map<String, Object> brokerAttributes) throws IOException,
-            JsonGenerationException, JsonMappingException
+                                                                                             JsonGenerationException, JsonMappingException
     {
         return createStoreFile(brokerId, brokerAttributes, true);
     }
@@ -100,12 +138,12 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     @Override
     protected void addConfiguration(UUID id, String type, Map<String, Object> attributes, UUID parentId)
     {
-        ConfigurationEntryStore store = getStore();
+        MemoryConfigurationEntryStore store = getStore();
         ConfigurationEntry parentEntry = getStore().getEntry(parentId);
         Set<UUID> children = new HashSet<UUID>(parentEntry.getChildrenIds());
         children.add(id);
-        ConfigurationEntry newParentEntry = new ConfigurationEntry(parentEntry.getId(), parentEntry.getType(), parentEntry.getAttributes(), children, store);
-        store.save(newParentEntry, new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), store));
+        ConfigurationEntry newParentEntry = new ConfigurationEntryImpl(parentEntry.getId(), parentEntry.getType(), parentEntry.getAttributes(), children, store);
+        store.save(newParentEntry, new ConfigurationEntryImpl(id, type, attributes, Collections.<UUID> emptySet(), store));
     }
 
     public void testAttributeIsResolvedFromSystemProperties()
@@ -113,15 +151,16 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         String defaultVhost = getTestName();
         setTestSystemProperty("my.test.property", defaultVhost);
 
-        ConfigurationEntryStore store = getStore();
+        MemoryConfigurationEntryStore store = getStore();
         ConfigurationEntry brokerConfigEntry = store.getRootEntry();
         Map<String, Object> attributes = new HashMap<String, Object>(brokerConfigEntry.getAttributes());
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "${my.test.property}");
-        ConfigurationEntry updatedBrokerEntry = new ConfigurationEntry(brokerConfigEntry.getId(), Broker.class.getSimpleName(),
+        ConfigurationEntry
+                updatedBrokerEntry = new ConfigurationEntryImpl(brokerConfigEntry.getId(), Broker.class.getSimpleName(),
                 attributes, brokerConfigEntry.getChildrenIds(), store);
         store.save(updatedBrokerEntry);
 
-        JsonConfigurationEntryStore store2 = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
+        JsonConfigurationEntryStore store2 = createStore();
 
         assertEquals("Unresolved default virtualhost  value", defaultVhost, store2.getRootEntry().getAttributes().get(Broker.DEFAULT_VIRTUAL_HOST));
     }
@@ -131,7 +170,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         File file = TestFileUtils.createTempFile(this, ".json");
         try
         {
-            new JsonConfigurationEntryStore(file.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
+            createStore(file.getAbsolutePath());
             fail("Cannot create a new store without initial store");
         }
         catch(IllegalConfigurationException e)
@@ -147,7 +186,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         brokerAttributes.put(Broker.NAME, getTestName());
         File file = createStoreFile(brokerId, brokerAttributes);
 
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(file.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
+        JsonConfigurationEntryStore store = createStore(file.getAbsolutePath());
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
         assertEquals("Unexpected root entry", brokerId, root.getId());
@@ -164,10 +203,10 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         File initialStoreFile = createStoreFile(brokerId, brokerAttributes);
 
-        JsonConfigurationEntryStore initialStore = new JsonConfigurationEntryStore(initialStoreFile.getAbsolutePath(), null, false, Collections.<String,String>emptyMap());
+        JsonConfigurationEntryStore initialStore = createStore(initialStoreFile.getAbsolutePath());
 
         File storeFile = TestFileUtils.createTempFile(this, ".json");
-        JsonConfigurationEntryStore store = new JsonConfigurationEntryStore(storeFile.getAbsolutePath(), initialStore, false, Collections.<String,String>emptyMap());
+        JsonConfigurationEntryStore store = createStore(storeFile.getAbsolutePath(), initialStore);
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
@@ -201,7 +240,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
             try
             {
                 storeFile = createStoreFile(brokerId, brokerAttributes);
-                new JsonConfigurationEntryStore(storeFile.getAbsolutePath(), null, false, Collections.<String, String>emptyMap());
+                createStore(storeFile.getAbsolutePath());
                 fail("The store creation should fail due to unsupported store version");
             }
             catch (IllegalConfigurationException e)
@@ -227,7 +266,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         try
         {
             storeFile = createStoreFile(brokerId, brokerAttributes, false);
-            new JsonConfigurationEntryStore(storeFile.getAbsolutePath(), null, false, Collections.<String, String>emptyMap());
+            createStore(storeFile.getAbsolutePath());
             fail("The store creation should fail due to unspecified store version");
         }
         catch (IllegalConfigurationException e)
@@ -252,7 +291,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         addPreferencesProvider(preferencesProviderId, name, path);
 
         // verify that store can deserialise child of a child
-        JsonConfigurationEntryStore newStore = new JsonConfigurationEntryStore(_storeFile.getAbsolutePath(), null, false, Collections.<String, String>emptyMap());
+        JsonConfigurationEntryStore newStore = createStore();
 
         ConfigurationEntry authenticationProviderEntry = newStore.getEntry(_authenticationProviderId);
         assertEquals("Unexpected preference provider ID in authentication provider children set", preferencesProviderId, authenticationProviderEntry.getChildrenIds().iterator().next());
@@ -265,4 +304,5 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         assertEquals("Unexpected preferences provider type", FileSystemPreferencesProvider.PROVIDER_TYPE,
                 attributes.get(PreferencesProvider.TYPE));
     }
+
 }

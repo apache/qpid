@@ -20,6 +20,7 @@ package org.apache.qpid.server.security.acl;
 
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.server.security.access.ObjectType;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -45,7 +46,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     public void setUp() throws Exception
     {
         //remove the normal 'test' vhost, we will configure the vhosts below
-        getBrokerConfiguration(0).removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+        getBrokerConfiguration(0).removeObjectConfiguration(org.apache.qpid.server.model.VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
 
         createTestVirtualHost(0, TEST_VHOST);
         createTestVirtualHost(0, TEST2_VHOST);

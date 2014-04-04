@@ -20,24 +20,23 @@
  */
 package org.apache.qpid.server.model;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.startup.VirtualHostRecoverer;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.adapter.StandardVirtualHostAdapter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VirtualHostTest extends QpidTestCase
 {
@@ -158,10 +157,7 @@ public class VirtualHostTest extends QpidTestCase
 
     private VirtualHost createHost(Map<String, Object> attributes)
     {
-        ConfigurationEntry entry = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(), attributes,
-                Collections.<UUID> emptySet(), null);
-
-        return new VirtualHostRecoverer(_statisticsGatherer).create(_recovererProvider, entry, _broker);
+        return new StandardVirtualHostAdapter(UUID.randomUUID(), attributes, _broker);
     }
 
 }

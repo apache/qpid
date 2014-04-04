@@ -23,6 +23,7 @@ package org.apache.qpid.systest.rest.acl;
 import java.io.IOException;
 
 import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -43,7 +44,7 @@ public class LogViewerACLTest extends QpidRestTestCase
                 "ACL DENY-LOG " + DENIED_USER + " ACCESS_LOGS BROKER",
                 "ACL DENY-LOG ALL ALL");
 
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 

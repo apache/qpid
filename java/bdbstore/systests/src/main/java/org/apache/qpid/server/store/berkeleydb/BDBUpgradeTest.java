@@ -42,6 +42,9 @@ import javax.jms.TopicSubscriber;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularDataSupport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.model.VirtualHost;
@@ -50,8 +53,6 @@ import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Tests upgrading a BDB store on broker startup.
@@ -84,7 +85,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         assertNotNull("QPID_WORK must be set", QPID_WORK_ORIG);
-        Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+        Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(VirtualHost.class,TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
         @SuppressWarnings("unchecked")
         Map<String, Object> messageStoreSettings = (Map<String, Object>) virtualHostAttributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
         _storeLocation = (String)messageStoreSettings.get(MessageStore.STORE_PATH);

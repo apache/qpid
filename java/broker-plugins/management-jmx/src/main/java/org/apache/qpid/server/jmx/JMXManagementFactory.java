@@ -18,31 +18,27 @@
  */
 package org.apache.qpid.server.jmx;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.plugin.PluginFactory;
-
-public class JMXManagementFactory implements PluginFactory
+public class JMXManagementFactory extends AbstractConfiguredObjectTypeFactory<JMXManagement>
 {
-    @Override
-    public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
+    public JMXManagementFactory()
     {
-        if (JMXManagement.PLUGIN_TYPE.equals(attributes.get(PLUGIN_TYPE)))
-        {
-            return new JMXManagement(id, broker, attributes);
-        }
-        else
-        {
-            return null;
-        }
+        super(JMXManagement.class);
     }
 
     @Override
-    public String getType()
+    public JMXManagement createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
-        return "JMX Management";
+        Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
+        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
+        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
+        return new JMXManagement(id, getParent(Broker.class,parents),attributes);
     }
 }

@@ -20,6 +20,32 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.plugin.VirtualHostFactory;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.ConflationQueue;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ParameterizedTypeImpl;
+import org.apache.qpid.server.virtualhost.ExchangeExistsException;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
+import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.virtualhost.VirtualHostListener;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
 import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.util.ArrayList;
@@ -30,35 +56,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.ConflationQueue;
-import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.txn.LocalTransaction;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.util.ParameterizedTypeImpl;
-import org.apache.qpid.server.plugin.VirtualHostFactory;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.ExchangeExistsException;
-import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHostListener;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.virtualhost.QueueExistsException;
-
-public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHostAdapter> implements VirtualHost<VirtualHostAdapter>, VirtualHostListener
+@ManagedObject( category = false, type = "STANDARD")
+public class VirtualHostAdapter<X extends VirtualHostAdapter<X>> extends AbstractConfiguredObject<X> implements VirtualHost<X>, VirtualHostListener
 {
     private static final Logger LOGGER = Logger.getLogger(VirtualHostAdapter.class);
 
@@ -101,15 +100,19 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
 
     private final Broker<?> _broker;
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
-    private StatisticsGatherer _brokerStatisticsGatherer;
 
-    public VirtualHostAdapter(UUID id, Map<String, Object> attributes, Broker<?> broker, StatisticsGatherer brokerStatisticsGatherer, TaskExecutor taskExecutor)
+    public VirtualHostAdapter(UUID id,
+                              Map<String, Object> attributes,
+                              Broker<?> broker)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false), taskExecutor, false);
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(Broker.class,broker),
+              DEFAULTS,
+              combineIdWithAttributes(id, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES, false)),
+              broker.getTaskExecutor(),
+              false);
+
         _broker = broker;
-        _brokerStatisticsGatherer = brokerStatisticsGatherer;
         validateAttributes();
-        addParent(Broker.class, broker);
     }
 
     private void validateAttributes()
@@ -1003,25 +1006,18 @@ public final class VirtualHostAdapter extends AbstractConfiguredObject<VirtualHo
     {
         VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
         String virtualHostName = getName();
-        try
+        String type = (String) getAttribute(TYPE);
+        final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
+        if(factory == null)
         {
-            String type = (String) getAttribute(TYPE);
-            final VirtualHostFactory factory = VirtualHostFactory.FACTORIES.get(type);
-            if(factory == null)
-            {
-                throw new IllegalArgumentException("Unknown virtual host type: " + type);
-            }
-            else
-            {
-                _virtualHost = factory.createVirtualHost(_broker.getVirtualHostRegistry(),
-                                                         _brokerStatisticsGatherer,
-                                                         _broker.getSecurityManager(),
-                                                         this);
-            }
+            throw new IllegalArgumentException("Unknown virtual host type: " + type);
         }
-        catch (Exception e)
+        else
         {
-            throw new ServerScopedRuntimeException("Failed to create virtual host " + virtualHostName, e);
+            _virtualHost = factory.createVirtualHost(_broker.getVirtualHostRegistry(),
+                                                     _broker,
+                                                     _broker.getSecurityManager(),
+                                                     this);
         }
 
         virtualHostRegistry.registerVirtualHost(_virtualHost);

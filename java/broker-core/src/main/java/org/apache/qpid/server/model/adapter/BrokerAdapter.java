@@ -20,46 +20,48 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.lang.reflect.Type;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.security.AccessControlException;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.port.AmqpPort;
+import org.apache.qpid.server.model.port.PortWithAuthProvider;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
-import org.apache.qpid.server.plugin.PreferencesProviderFactory;
 import org.apache.qpid.server.plugin.VirtualHostFactory;
+import org.apache.qpid.server.security.FileKeyStore;
+import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
+import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
 
 import javax.security.auth.Subject;
+import java.lang.reflect.Type;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.security.AccessControlException;
+import java.security.PrivilegedAction;
+import java.util.*;
+import java.util.regex.Pattern;
 
-public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject<X> implements Broker<X>, ConfigurationChangeListener
+@ManagedObject(category = false, type = "adapter")
+public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, ConfigurationChangeListener, StatisticsGatherer, StatisticsGatherer.Source
 {
     private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
+
+    private static final Pattern MODEL_VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+$");
 
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
@@ -136,6 +138,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
         put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
     }});
+    private final ConfiguredObjectFactory _objectFactory;
 
     private String[] POSITIVE_NUMERIC_ATTRIBUTES = { QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
             QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, QUEUE_ALERT_REPEAT_GAP, QUEUE_FLOW_CONTROL_SIZE_BYTES,
@@ -146,7 +149,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
 
 
     private EventLogger _eventLogger;
-    private final StatisticsGatherer _statisticsGatherer;
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
 
@@ -160,46 +162,33 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     private final Map<String, TrustStore<?>> _trustStores = new HashMap<String, TrustStore<?>>();
     private final Map<UUID, AccessControlProvider<?>> _accessControlProviders = new HashMap<UUID, AccessControlProvider<?>>();
 
-    private final GroupProviderFactory _groupProviderFactory;
-    private final AuthenticationProviderFactory _authenticationProviderFactory;
-    private final AccessControlProviderFactory _accessControlProviderFactory;
-    private final PortFactory _portFactory;
     private final SecurityManager _securityManager;
 
     private final Collection<String> _supportedVirtualHostStoreTypes;
-    private Collection<String> _supportedBrokerStoreTypes;
-    private final ConfigurationEntryStore _brokerStore;
 
     private AuthenticationProvider<?> _managementAuthenticationProvider;
     private BrokerOptions _brokerOptions;
 
+    private Timer _reportingTimer;
+    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+
+
     public BrokerAdapter(UUID id,
                          Map<String, Object> attributes,
-                         StatisticsGatherer statisticsGatherer,
-                         VirtualHostRegistry virtualHostRegistry,
-                         LogRecorder logRecorder,
-                         AuthenticationProviderFactory authenticationProviderFactory,
-                         GroupProviderFactory groupProviderFactory,
-                         AccessControlProviderFactory accessControlProviderFactory,
-                         PortFactory portFactory,
-                         TaskExecutor taskExecutor,
-                         ConfigurationEntryStore brokerStore,
-                         BrokerOptions brokerOptions)
+                         SystemContext parent)
     {
-        super(id, DEFAULTS,  MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
-        _statisticsGatherer = statisticsGatherer;
-        _virtualHostRegistry = virtualHostRegistry;
-        _logRecorder = logRecorder;
-        _eventLogger = virtualHostRegistry.getEventLogger();
-        _authenticationProviderFactory = authenticationProviderFactory;
-        _groupProviderFactory = groupProviderFactory;
-        _accessControlProviderFactory = accessControlProviderFactory;
-        _portFactory = portFactory;
-        _brokerOptions = brokerOptions;
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(SystemContext.class, parent), DEFAULTS, combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)), parent.getTaskExecutor());
+        validateModelVersion();
+
+        _objectFactory = parent.getObjectFactory();
+        _virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());
+        _virtualHostRegistry.setDefaultVirtualHostName((String)getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
+
+        _logRecorder = parent.getLogRecorder();
+        _eventLogger = parent.getEventLogger();
+        _brokerOptions = parent.getBrokerOptions();
         _securityManager = new SecurityManager(this, _brokerOptions.isManagementMode());
         _supportedVirtualHostStoreTypes = MessageStoreFactory.FACTORY_LOADER.getSupportedTypes();
-        _supportedBrokerStoreTypes = new BrokerConfigurationStoreCreator().getStoreTypes();
-        _brokerStore = brokerStore;
         if (_brokerOptions.isManagementMode())
         {
             Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
@@ -209,7 +198,51 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
             authManager.addUser(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
             _managementAuthenticationProvider = authManager;
         }
+        initialiseStatistics();
     }
+
+    private void validateModelVersion()
+    {
+        String modelVersion = (String) getActualAttributes().get(Broker.MODEL_VERSION);
+        if (modelVersion == null)
+        {
+            throw new IllegalConfigurationException("Broker " + Broker.MODEL_VERSION + " must be specified");
+        }
+
+        if (!MODEL_VERSION_PATTERN.matcher(modelVersion).matches())
+        {
+            throw new IllegalConfigurationException("Broker " + Broker.MODEL_VERSION + " is specified in incorrect format: "
+                                                    + modelVersion);
+        }
+
+        int versionSeparatorPosition = modelVersion.indexOf(".");
+        String majorVersionPart = modelVersion.substring(0, versionSeparatorPosition);
+        int majorModelVersion = Integer.parseInt(majorVersionPart);
+        int minorModelVersion = Integer.parseInt(modelVersion.substring(versionSeparatorPosition + 1));
+
+        if (majorModelVersion != Model.MODEL_MAJOR_VERSION || minorModelVersion > Model.MODEL_MINOR_VERSION)
+        {
+            throw new IllegalConfigurationException("The model version '" + modelVersion
+                                                    + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'");
+        }
+
+    }
+
+    private void initialiseStatisticsReporting()
+    {
+        long report = ((Number)getAttribute(Broker.STATISTICS_REPORTING_PERIOD)).intValue() * 1000; // convert to ms
+        final boolean reset = (Boolean)getAttribute(Broker.STATISTICS_REPORTING_RESET_ENABLED);
+
+        /* add a timer task to report statistics if generation is enabled for broker or virtualhosts */
+        if (report > 0L)
+        {
+            _reportingTimer = new Timer("Statistics-Reporting", true);
+            StatisticsReportingTask task = new StatisticsReportingTask(reset, _eventLogger);
+            _reportingTimer.scheduleAtFixedRate(task, report / 2, report);
+        }
+    }
+
+
 
     @Override
     public String getBuildVersion()
@@ -242,12 +275,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     }
 
     @Override
-    public Collection<String> getSupportedBrokerStoreTypes()
-    {
-        return _supportedBrokerStoreTypes;
-    }
-
-    @Override
     public Collection<String> getSupportedVirtualHostStoreTypes()
     {
         return _supportedVirtualHostStoreTypes;
@@ -256,13 +283,13 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     @Override
     public Collection<String> getSupportedAuthenticationProviders()
     {
-        return _authenticationProviderFactory.getSupportedAuthenticationProviders();
+        return _objectFactory.getSupportedTypes(AuthenticationProvider.class);
     }
 
     @Override
     public Collection<String> getSupportedPreferencesProviderTypes()
     {
-        return PreferencesProviderFactory.FACTORY_LOADER.getSupportedTypes();
+        return _objectFactory.getSupportedTypes(PreferencesProvider.class);
     }
 
     @Override
@@ -359,24 +386,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     public boolean getStatisticsReportingResetEnabled()
     {
         return (Boolean) getAttribute(STATISTICS_REPORTING_RESET_ENABLED);
-    }
-
-    @Override
-    public String getStoreType()
-    {
-        return _brokerStore.getType();
-    }
-
-    @Override
-    public int getStoreVersion()
-    {
-        return _brokerStore.getVersion();
-    }
-
-    @Override
-    public String getStorePath()
-    {
-        return _brokerStore.getStoreLocation();
     }
 
     @Override
@@ -478,9 +487,9 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        final VirtualHostAdapter virtualHostAdapter = new VirtualHostAdapter(UUID.randomUUID(), attributes, this,
-                _statisticsGatherer, getTaskExecutor());
-        addVirtualHost(virtualHostAdapter);
+        ConfiguredObjectTypeFactory virtualHostFactory =
+                _objectFactory.getConfiguredObjectTypeFactory(VirtualHost.class, attributes);
+        final VirtualHostAdapter virtualHostAdapter = (VirtualHostAdapter) virtualHostFactory.create(attributes,this);
 
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
@@ -556,25 +565,25 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     @Override
     public long getBytesIn()
     {
-        return _statisticsGatherer.getDataReceiptStatistics().getTotal();
+        return getDataReceiptStatistics().getTotal();
     }
 
     @Override
     public long getBytesOut()
     {
-        return _statisticsGatherer.getDataDeliveryStatistics().getTotal();
+        return getDataDeliveryStatistics().getTotal();
     }
 
     @Override
     public long getMessagesIn()
     {
-        return _statisticsGatherer.getMessageReceiptStatistics().getTotal();
+        return getMessageReceiptStatistics().getTotal();
     }
 
     @Override
     public long getMessagesOut()
     {
-        return _statisticsGatherer.getMessageDeliveryStatistics().getTotal();
+        return getMessageDeliveryStatistics().getTotal();
     }
     @SuppressWarnings("unchecked")
     @Override
@@ -657,17 +666,16 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     /**
      * Called when adding a new port via the management interface
      */
-    private Port createPort(Map<String, Object> attributes)
+    private Port<?> createPort(Map<String, Object> attributes)
     {
-        Port<?> port = _portFactory.createPort(UUID.randomUUID(), this, attributes);
-        addPort(port);
+        Port<?> port = createChild(Port.class, attributes);
 
         //1. AMQP ports are disabled during ManagementMode.
         //2. The management plugins can currently only start ports at broker startup and
         //   not when they are newly created via the management interfaces.
         //3. When active ports are deleted, or their port numbers updated, the broker must be
         //   restarted for it to take effect so we can't reuse port numbers until it is.
-        boolean quiesce = isManagementMode() || !(port instanceof AmqpPortAdapter) || isPreviouslyUsedPortNumber(port);
+        boolean quiesce = isManagementMode() || !(port instanceof AmqpPort) || isPreviouslyUsedPortNumber(port);
 
         port.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
 
@@ -710,8 +718,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         AccessControlProvider<?> accessControlProvider;
         synchronized (_accessControlProviders)
         {
-            accessControlProvider = _accessControlProviderFactory.create(UUID.randomUUID(), this, attributes);
-            addAccessControlProvider(accessControlProvider);
+            accessControlProvider = (AccessControlProvider<?>) createChild(AccessControlProvider.class, attributes);
         }
 
         boolean quiesce = isManagementMode() ;
@@ -765,10 +772,23 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
 
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
-        AuthenticationProvider<?> authenticationProvider = _authenticationProviderFactory.create(UUID.randomUUID(), this, attributes);
+        AuthenticationProvider<?> authenticationProvider = createChild(AuthenticationProvider.class, attributes);
         authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
-        addAuthenticationProvider(authenticationProvider);
         return authenticationProvider;
+    }
+
+    private <X extends ConfiguredObject> X createChild(Class<X> clazz, Map<String, Object> attributes)
+    {
+        ConfiguredObjectTypeFactory factory =
+                _objectFactory.getConfiguredObjectTypeFactory(clazz, attributes);
+        if(!attributes.containsKey(ConfiguredObject.ID))
+        {
+            attributes = new HashMap<String, Object>(attributes);
+            attributes.put(ConfiguredObject.ID, UUID.randomUUID());
+        }
+        final X instance = (X) factory.create(attributes, this);
+
+        return instance;
     }
 
     /**
@@ -797,9 +817,8 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
 
     private GroupProvider<?> createGroupProvider(Map<String, Object> attributes)
     {
-        GroupProvider<?> groupProvider = _groupProviderFactory.create(UUID.randomUUID(), this, attributes);
+        GroupProvider<?> groupProvider = createChild(GroupProvider.class, attributes);
         groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
-        addGroupProvider(groupProvider);
         return groupProvider;
     }
 
@@ -835,17 +854,13 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
 
     private KeyStore createKeyStore(Map<String, Object> attributes)
     {
-        KeyStore keyStore = new KeyStoreAdapter(UUIDGenerator.generateRandomUUID(), this, attributes);
-        addKeyStore(keyStore);
-
+        KeyStore keyStore = new FileKeyStore(UUIDGenerator.generateRandomUUID(), this, attributes);
         return keyStore;
     }
 
     private TrustStore createTrustStore(Map<String, Object> attributes)
     {
-        TrustStore trustStore = new TrustStoreAdapter(UUIDGenerator.generateRandomUUID(), this, attributes);
-        addTrustStore(trustStore);
-
+        TrustStore trustStore = new FileTrustStore(UUIDGenerator.generateRandomUUID(), this, attributes);
         return trustStore;
     }
 
@@ -951,10 +966,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         {
             return QpidProperties.getReleaseVersion();
         }
-        else if(SUPPORTED_BROKER_STORE_TYPES.equals(name))
-        {
-            return _supportedBrokerStoreTypes;
-        }
         else if(SUPPORTED_VIRTUALHOST_STORE_TYPES.equals(name))
         {
             return _supportedVirtualHostStoreTypes;
@@ -965,27 +976,15 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         }
         else if(SUPPORTED_AUTHENTICATION_PROVIDERS.equals(name))
         {
-            return _authenticationProviderFactory.getSupportedAuthenticationProviders();
+            return getSupportedAuthenticationProviders();
         }
         else if (SUPPORTED_PREFERENCES_PROVIDER_TYPES.equals(name))
         {
-            return PreferencesProviderFactory.FACTORY_LOADER.getSupportedTypes();
+            return getSupportedPreferencesProviderTypes();
         }
         else if (MODEL_VERSION.equals(name))
         {
             return Model.MODEL_VERSION;
-        }
-        else if (STORE_VERSION.equals(name))
-        {
-            return _brokerStore.getVersion();
-        }
-        else if (STORE_TYPE.equals(name))
-        {
-            return _brokerStore.getType();
-        }
-        else if (STORE_PATH.equals(name))
-        {
-            return _brokerStore.getStoreLocation();
         }
         return super.getAttribute(name);
     }
@@ -1048,6 +1047,7 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     {
         if (desiredState == State.ACTIVE)
         {
+            initialiseStatisticsReporting();
             changeState(_groupProviders, currentState, State.ACTIVE, false);
             changeState(_authenticationProviders, currentState, State.ACTIVE, false);
             changeState(_accessControlProviders, currentState, State.ACTIVE, false);
@@ -1067,11 +1067,18 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         }
         else if (desiredState == State.STOPPED)
         {
+            //Stop Statistics Reporting
+            if (_reportingTimer != null)
+            {
+                _reportingTimer.cancel();
+            }
+
             changeState(_plugins, currentState,State.STOPPED, true);
             changeState(_portAdapters, currentState, State.STOPPED, true);
             changeState(_vhostAdapters,currentState, State.STOPPED, true);
             changeState(_authenticationProviders, currentState, State.STOPPED, true);
             changeState(_groupProviders, currentState, State.STOPPED, true);
+            _virtualHostRegistry.close();
             return true;
         }
         return false;
@@ -1201,46 +1208,46 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         }
     }
 
-    public void recoverChild(ConfiguredObject object)
+    public void instantiateAuthenticationProvider(AuthenticationProvider object)
     {
-        if(object instanceof AuthenticationProvider)
-        {
-            addAuthenticationProvider((AuthenticationProvider)object);
-        }
-        else if(object instanceof AccessControlProvider)
-        {
-            addAccessControlProvider((AccessControlProvider)object);
-        }
-        else if(object instanceof Port)
-        {
-            addPort((Port)object);
-        }
-        else if(object instanceof VirtualHost)
-        {
-            addVirtualHost((VirtualHost)object);
-        }
-        else if(object instanceof GroupProvider)
-        {
-            addGroupProvider((GroupProvider)object);
-        }
-        else if(object instanceof KeyStore)
-        {
-            addKeyStore((KeyStore)object);
-        }
-        else if(object instanceof TrustStore)
-        {
-            addTrustStore((TrustStore)object);
-        }
-        else if(object instanceof Plugin)
-        {
-            addPlugin(object);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Attempted to recover unexpected type of configured object: " + object.getClass().getName());
-        }
+        addAuthenticationProvider(object);
     }
 
+    public void instantiateAccessControlProvider(AccessControlProvider object)
+    {
+        addAccessControlProvider(object);
+    }
+
+    public void instantiatePort(Port object)
+    {
+        addPort(object);
+    }
+
+    public void instantiateVirtualHost(VirtualHost object)
+    {
+        addVirtualHost(object);
+    }
+
+    public void instantiateGroupProvider(GroupProvider object)
+    {
+        addGroupProvider(object);
+    }
+
+    public void instantiateKeyStore(KeyStore object)
+    {
+        addKeyStore(object);
+    }
+
+    public void instantiateTrustStore(TrustStore object)
+    {
+        addTrustStore(object);
+    }
+
+    public void instantiatePlugin(Plugin object)
+    {
+        addPlugin(object);
+    }
+   
     @Override
     public SecurityManager getSecurityManager()
     {
@@ -1280,9 +1287,9 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         Collection<Port<?>> ports = getPorts();
         for (Port<?> p : ports)
         {
-            if (inetSocketAddress.getPort() == p.getPort())
+            if (p instanceof PortWithAuthProvider && inetSocketAddress.getPort() == p.getPort())
             {
-                provider = p.getAuthenticationProvider();
+                provider = ((PortWithAuthProvider<?>) p).getAuthenticationProvider();
                 break;
             }
         }
@@ -1333,12 +1340,6 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
         if (convertedAttributes.containsKey(MODEL_VERSION) && !Model.MODEL_VERSION.equals(convertedAttributes.get(MODEL_VERSION)))
         {
             throw new IllegalConfigurationException("Cannot change the model version");
-        }
-
-        if (convertedAttributes.containsKey(STORE_VERSION)
-                && !new Integer(_brokerStore.getVersion()).equals(convertedAttributes.get(STORE_VERSION)))
-        {
-            throw new IllegalConfigurationException("Cannot change the store version");
         }
 
         String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);
@@ -1447,4 +1448,138 @@ public class BrokerAdapter<X extends Broker<X>> extends AbstractConfiguredObject
     {
         _eventLogger = eventLogger;
     }
+
+    @Override
+    public StatisticsGatherer getStatisticsGatherer()
+    {
+        return this;
+    }
+
+    public void registerMessageDelivered(long messageSize)
+    {
+        _messagesDelivered.registerEvent(1L);
+        _dataDelivered.registerEvent(messageSize);
+    }
+
+    public void registerMessageReceived(long messageSize, long timestamp)
+    {
+        _messagesReceived.registerEvent(1L, timestamp);
+        _dataReceived.registerEvent(messageSize, timestamp);
+    }
+
+    public StatisticsCounter getMessageReceiptStatistics()
+    {
+        return _messagesReceived;
+    }
+
+    public StatisticsCounter getDataReceiptStatistics()
+    {
+        return _dataReceived;
+    }
+
+    public StatisticsCounter getMessageDeliveryStatistics()
+    {
+        return _messagesDelivered;
+    }
+
+    public StatisticsCounter getDataDeliveryStatistics()
+    {
+        return _dataDelivered;
+    }
+
+    public void resetStatistics()
+    {
+        _messagesDelivered.reset();
+        _dataDelivered.reset();
+        _messagesReceived.reset();
+        _dataReceived.reset();
+
+        for (org.apache.qpid.server.virtualhost.VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
+        {
+            vhost.resetStatistics();
+        }
+    }
+
+    public void initialiseStatistics()
+    {
+        _messagesDelivered = new StatisticsCounter("messages-delivered");
+        _dataDelivered = new StatisticsCounter("bytes-delivered");
+        _messagesReceived = new StatisticsCounter("messages-received");
+        _dataReceived = new StatisticsCounter("bytes-received");
+    }
+
+    private class StatisticsReportingTask extends TimerTask
+    {
+        private final int DELIVERED = 0;
+        private final int RECEIVED = 1;
+
+        private final boolean _reset;
+        private final EventLogger _logger;
+        private final Subject _subject;
+
+        public StatisticsReportingTask(boolean reset, EventLogger logger)
+        {
+            _reset = reset;
+            _logger = logger;
+            _subject = SecurityManager.getSystemTaskSubject("Statistics");
+        }
+
+        public void run()
+        {
+            Subject.doAs(_subject, new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+                    reportStatistics();
+                    return null;
+                }
+            });
+        }
+
+        protected void reportStatistics()
+        {
+            try
+            {
+                _eventLogger.message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
+                _eventLogger.message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
+                _eventLogger.message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
+                _eventLogger.message(BrokerMessages.STATS_MSGS(RECEIVED,
+                                                               _messagesReceived.getPeak(),
+                                                               _messagesReceived.getTotal()));
+                Collection<org.apache.qpid.server.virtualhost.VirtualHost> hosts = _virtualHostRegistry.getVirtualHosts();
+
+                if (hosts.size() > 1)
+                {
+                    for (org.apache.qpid.server.virtualhost.VirtualHost vhost : hosts)
+                    {
+                        String name = vhost.getName();
+                        StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
+                        StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
+                        StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
+                        StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
+                        EventLogger logger = vhost.getEventLogger();
+                        logger.message(VirtualHostMessages.STATS_DATA(name,
+                                                                      DELIVERED,
+                                                                      dataDelivered.getPeak() / 1024.0,
+                                                                      dataDelivered.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
+                    }
+                }
+
+                if (_reset)
+                {
+                    resetStatistics();
+                }
+            }
+            catch(Exception e)
+            {
+                LOGGER.warn("Unexpected exception occurred while reporting the statistics", e);
+            }
+        }
+    }
+
+
 }

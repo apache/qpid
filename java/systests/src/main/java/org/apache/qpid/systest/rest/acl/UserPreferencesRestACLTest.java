@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
@@ -80,7 +81,7 @@ public class UserPreferencesRestACLTest extends QpidRestTestCase
                 + " UPDATE USER", "ACL DENY-LOG " + DENIED_USER + " UPDATE USER", "ACL DENY-LOG ALL ALL");
 
         TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
-        brokerConfiguration.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
+        brokerConfiguration.setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
 
         Map<String, Object> attributes = new HashMap<String, Object>();

@@ -19,28 +19,21 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-
-public class KerberosAuthenticationManagerFactory implements AuthenticationManagerFactory
+public class KerberosAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<KerberosAuthenticationManager>
 {
     public static final String PROVIDER_TYPE = "Kerberos";
 
-    @Override
-    public KerberosAuthenticationManager createInstance(Broker broker,
-                                                        Map<String, Object> attributes,
-                                                        final boolean recovering)
+    public KerberosAuthenticationManagerFactory()
     {
-        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(AuthenticationProvider.TYPE)))
-        {
-            return new KerberosAuthenticationManager(broker, Collections.<String,Object>emptyMap(), attributes);
-        }
-        return null;
+        super(KerberosAuthenticationManager.class);
     }
 
     @Override
@@ -50,14 +43,16 @@ public class KerberosAuthenticationManagerFactory implements AuthenticationManag
     }
 
     @Override
-    public String getType()
+    public Map<String, String> getAttributeDescriptions()
     {
-        return PROVIDER_TYPE;
+        return Collections.emptyMap();
     }
 
     @Override
-    public Map<String, String> getAttributeDescriptions()
+    public KerberosAuthenticationManager createInstance(final Map<String, Object> attributes,
+                                                        final ConfiguredObject<?>... parents)
     {
-        return null;
+        return new KerberosAuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(), attributes);
     }
+
 }

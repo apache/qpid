@@ -19,17 +19,17 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.util.ResourceBundleLoader;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.util.ResourceBundleLoader;
-
-public class ExternalAuthenticationManagerFactory implements AuthenticationManagerFactory
+public class ExternalAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<ExternalAuthenticationManager>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.ExternalAuthenticationProviderAttributeDescriptions";
     public static final String PROVIDER_TYPE = "External";
@@ -39,16 +39,9 @@ public class ExternalAuthenticationManagerFactory implements AuthenticationManag
             AuthenticationProvider.TYPE,
             ATTRIBUTE_USE_FULL_DN));
 
-    @Override
-    public ExternalAuthenticationManager createInstance(Broker broker,
-                                                        Map<String, Object> attributes,
-                                                        final boolean recovering)
+    public ExternalAuthenticationManagerFactory()
     {
-        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(AuthenticationProvider.TYPE)))
-        {
-            return new ExternalAuthenticationManager(broker, Collections.<String,Object>emptyMap(),attributes);
-        }
-        return null;
+        super(ExternalAuthenticationManager.class);
     }
 
     @Override
@@ -58,15 +51,16 @@ public class ExternalAuthenticationManagerFactory implements AuthenticationManag
     }
 
     @Override
-    public String getType()
-    {
-        return PROVIDER_TYPE;
-    }
-
-    @Override
     public Map<String, String> getAttributeDescriptions()
     {
         return ResourceBundleLoader.getResources(RESOURCE_BUNDLE);
+    }
+
+    @Override
+    public ExternalAuthenticationManager createInstance(final Map<String, Object> attributes,
+                                                        final ConfiguredObject<?>... parents)
+    {
+        return new ExternalAuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(),attributes);
     }
 
 }

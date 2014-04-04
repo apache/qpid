@@ -26,21 +26,21 @@ import java.util.TreeMap;
 
 import org.apache.qpid.server.management.plugin.servlet.rest.Action;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AccessControlFactory;
+import org.apache.qpid.server.plugin.AccessControlProviderFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 public class ListAccessControlProviderAttributes  implements Action
 {
     private static final String ATTRIBUTES = "attributes";
     private static final String DESCRIPTIONS = "descriptions";
-    private Map<String, AccessControlFactory> _factories;
+    private Map<String, AccessControlProviderFactory> _factories;
 
     public ListAccessControlProviderAttributes()
     {
-        _factories = new TreeMap<String, AccessControlFactory>();
-        Iterable<AccessControlFactory> factories = new QpidServiceLoader<AccessControlFactory>()
-                .instancesOf(AccessControlFactory.class);
-        for (AccessControlFactory factory : factories)
+        _factories = new TreeMap<String, AccessControlProviderFactory>();
+        Iterable<AccessControlProviderFactory> factories = new QpidServiceLoader<AccessControlProviderFactory>()
+                .instancesOf(AccessControlProviderFactory.class);
+        for (AccessControlProviderFactory factory : factories)
         {
             _factories.put(factory.getType(), factory);
         }
@@ -58,10 +58,11 @@ public class ListAccessControlProviderAttributes  implements Action
         Map<String, Object> attributes = new TreeMap<String, Object>();
         for (String providerType : _factories.keySet())
         {
-            AccessControlFactory factory = _factories.get(providerType);
+            AccessControlProviderFactory<?> factory = _factories.get(providerType);
 
             Map<String, Object> data = new HashMap<String, Object>();
-            data.put(ATTRIBUTES, factory.getAttributeNames());
+            // TODO RG - fix
+            // data.put(ATTRIBUTES, factory.getAttributeNames());
             Map<String, String> resources = factory.getAttributeDescriptions();
             if (resources != null)
             {
