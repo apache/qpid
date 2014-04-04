@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -43,15 +44,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 public class JsonFileConfigStoreTest extends QpidTestCase
 {
-    private final ConfigurationRecoveryHandler _recoveryHandler = mock(ConfigurationRecoveryHandler.class);
-
     private JsonFileConfigStore _store;
     private HashMap<String, Object> _configurationStoreSettings;
     private ConfiguredObject<?> _virtualHost;
     private File _storeLocation;
+    private ConfiguredObjectRecordHandler _handler;
 
 
     private static final UUID ANY_UUID = UUID.randomUUID();
@@ -69,6 +70,9 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _configurationStoreSettings.put(JsonFileConfigStore.STORE_TYPE, JsonFileConfigStore.TYPE);
         _configurationStoreSettings.put(JsonFileConfigStore.STORE_PATH, _storeLocation.getAbsolutePath());
         _store = new JsonFileConfigStore();
+
+        _handler = mock(ConfiguredObjectRecordHandler.class);
+        when(_handler.handle(any(ConfiguredObjectRecord.class))).thenReturn(true);
     }
 
     @Override
@@ -113,35 +117,35 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         }
     }
 
-    public void testStartFromNoStore() throws Exception
+    public void testVisitEmptyStore()
     {
         _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        InOrder inorder = inOrder(_recoveryHandler);
-        inorder.verify(_recoveryHandler).beginConfigurationRecovery(eq(_store), eq(0));
-        inorder.verify(_recoveryHandler,never()).configuredObject(any(ConfiguredObjectRecord.class));
-        inorder.verify(_recoveryHandler).completeConfigurationRecovery();
+        _store.visitConfiguredObjectRecords(_handler);
+        InOrder inorder = inOrder(_handler);
+        inorder.verify(_handler).begin(eq(0));
+        inorder.verify(_handler,never()).handle(any(ConfiguredObjectRecord.class));
+        inorder.verify(_handler).end();
         _store.closeConfigurationStore();
     }
 
     public void testUpdatedConfigVersionIsRetained() throws Exception
     {
         final int NEW_CONFIG_VERSION = 42;
-        when(_recoveryHandler.completeConfigurationRecovery()).thenReturn(NEW_CONFIG_VERSION);
+        when(_handler.end()).thenReturn(NEW_CONFIG_VERSION);
 
         _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
+        _store.visitConfiguredObjectRecords(_handler);
         _store.closeConfigurationStore();
 
         _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        InOrder inorder = inOrder(_recoveryHandler);
+        _store.visitConfiguredObjectRecords(_handler);
+        InOrder inorder = inOrder(_handler);
 
         // first time the config version should be the initial version - 0
-        inorder.verify(_recoveryHandler).beginConfigurationRecovery(eq(_store), eq(0));
+        inorder.verify(_handler).begin(eq(0));
 
         // second time the config version should be the updated version
-        inorder.verify(_recoveryHandler).beginConfigurationRecovery(eq(_store), eq(NEW_CONFIG_VERSION));
+        inorder.verify(_handler).begin(eq(NEW_CONFIG_VERSION));
 
         _store.closeConfigurationStore();
     }
@@ -157,8 +161,9 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _store.closeConfigurationStore();
 
         _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        verify(_recoveryHandler).configuredObject(matchesRecord(queueId, queueType, queueAttr));
+
+        _store.visitConfiguredObjectRecords(_handler);
+        verify(_handler, times(1)).handle(matchesRecord(queueId, queueType, queueAttr));
         _store.closeConfigurationStore();
     }
 
@@ -179,8 +184,8 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _store.closeConfigurationStore();
 
         _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        verify(_recoveryHandler).configuredObject(matchesRecord(queueId, queueType, queueAttr));
+        _store.visitConfiguredObjectRecords(_handler);
+        verify(_handler, times(1)).handle(matchesRecord(queueId, queueType, queueAttr));
         _store.closeConfigurationStore();
     }
 
@@ -201,8 +206,8 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _store.closeConfigurationStore();
 
         _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        verify(_recoveryHandler, never()).configuredObject(any(ConfiguredObjectRecord.class));
+        _store.visitConfiguredObjectRecords(_handler);
+        verify(_handler, never()).handle(any(ConfiguredObjectRecord.class));
         _store.closeConfigurationStore();
     }
 
@@ -311,12 +316,12 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _store.update(true, bindingRecord, binding2Record);
         _store.closeConfigurationStore();
         _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.recoverConfigurationStore(_recoveryHandler);
-        verify(_recoveryHandler).configuredObject(matchesRecord(queueId, "Queue", EMPTY_ATTR));
-        verify(_recoveryHandler).configuredObject(matchesRecord(queue2Id, "Queue", EMPTY_ATTR));
-        verify(_recoveryHandler).configuredObject(matchesRecord(exchangeId, "Exchange", EMPTY_ATTR));
-        verify(_recoveryHandler).configuredObject(matchesRecord(bindingId, "Binding", EMPTY_ATTR));
-        verify(_recoveryHandler).configuredObject(matchesRecord(binding2Id, "Binding", EMPTY_ATTR));
+        _store.visitConfiguredObjectRecords(_handler);
+        verify(_handler).handle(matchesRecord(queueId, "Queue", EMPTY_ATTR));
+        verify(_handler).handle(matchesRecord(queue2Id, "Queue", EMPTY_ATTR));
+        verify(_handler).handle(matchesRecord(exchangeId, "Exchange", EMPTY_ATTR));
+        verify(_handler).handle(matchesRecord(bindingId, "Binding", EMPTY_ATTR));
+        verify(_handler).handle(matchesRecord(binding2Id, "Binding", EMPTY_ATTR));
         _store.closeConfigurationStore();
 
     }

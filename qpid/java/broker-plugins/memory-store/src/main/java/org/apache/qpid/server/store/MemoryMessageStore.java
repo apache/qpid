@@ -26,9 +26,4 @@ public class MemoryMessageStore extends AbstractMemoryMessageStore
 {
     public static final String TYPE = "Memory";
 
-    @Override
-    public String getStoreType()
-    {
-        return TYPE;
-    }
 }

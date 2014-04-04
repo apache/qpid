@@ -32,7 +32,7 @@ import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -53,7 +53,7 @@ public class AckTest extends QpidTestCase
 
     private AMQProtocolSession _protocolSession;
 
-    private TestableMemoryMessageStore _messageStore;
+    private TestMemoryMessageStore _messageStore;
 
     private AMQChannel _channel;
 
@@ -71,7 +71,7 @@ public class AckTest extends QpidTestCase
         _protocolSession = _channel.getProtocolSession();
         _virtualHost = _protocolSession.getVirtualHost();
         _queue = BrokerTestHelper.createQueue(getTestName(), _virtualHost);
-        _messageStore = (TestableMemoryMessageStore)_virtualHost.getMessageStore();
+        _messageStore = (TestMemoryMessageStore)_virtualHost.getMessageStore();
     }
 
     @Override

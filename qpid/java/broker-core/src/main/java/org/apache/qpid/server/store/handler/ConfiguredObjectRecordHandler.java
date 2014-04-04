@@ -18,13 +18,24 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.store.handler;
 
-public class JsonFileConfigStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+
+public interface ConfiguredObjectRecordHandler
 {
-    @Override
-    protected DurableConfigurationStore createConfigStore() throws Exception
-    {
-        return new JsonFileConfigStore();
-    }
+    // TODO configVersion argument will be removed.
+    void begin(int configVersion);
+
+    /**
+     * Handles the given record.
+     *
+     * @param record
+     * @return false is returned if the handler does not wish to handle other record, true otherwise
+     */
+    boolean handle(ConfiguredObjectRecord record);
+
+    //TODO: return should be void
+    // temporarily returning new config version
+    int end();
 }

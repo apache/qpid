@@ -31,6 +31,7 @@ import java.util.*;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonProcessingException;
@@ -98,21 +99,26 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
+    public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler)
     {
-        recoveryHandler.beginConfigurationRecovery(this,_configVersion);
+        handler.begin(_configVersion);
         List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());
         for(ConfiguredObjectRecord record : records)
         {
-            recoveryHandler.configuredObject(record);
+            boolean shouldContinue = handler.handle(record);
+            if (!shouldContinue)
+            {
+                break;
+            }
         }
         int oldConfigVersion = _configVersion;
-        _configVersion = recoveryHandler.completeConfigurationRecovery();
+        _configVersion = handler.end();
         if(oldConfigVersion != _configVersion)
         {
             save();
         }
     }
+
 
     private void setup(final Map<String, Object> configurationStoreSettings)
     {

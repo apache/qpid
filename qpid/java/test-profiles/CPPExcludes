@@ -85,14 +85,14 @@ org.apache.qpid.server.store.PersistentStoreTest#*
 org.apache.qpid.server.store.SplitStoreTest#*
 
 // These tests are for the Java broker persistent store modules
-org.apache.qpid.server.store.MessageStoreTest#testMessagePersistence
-org.apache.qpid.server.store.MessageStoreTest#testMessageRemoval
-org.apache.qpid.server.store.MessageStoreTest#testBindingPersistence
-org.apache.qpid.server.store.MessageStoreTest#testDurableBindingRemoval
-org.apache.qpid.server.store.MessageStoreTest#testQueuePersistence
-org.apache.qpid.server.store.MessageStoreTest#testDurableQueueRemoval
-org.apache.qpid.server.store.MessageStoreTest#testExchangePersistence
-org.apache.qpid.server.store.MessageStoreTest#testDurableExchangeRemoval
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testMessagePersistence
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testMessageRemoval
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testBindingPersistence
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testDurableBindingRemoval
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testQueuePersistence
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testDurableQueueRemoval
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testExchangePersistence
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testDurableExchangeRemoval
 org.apache.qpid.server.store.DurableConfigurationStoreTest#*
 
 // CPP Broker does not follow the same Logging convention as the Java broker

@@ -70,7 +70,22 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
 
     private static class TestServerMessage implements ServerMessage<TestMessageMetaData>
     {
-        private StoredMessage<TestMessageMetaData> _storedMsg;
+        private final StoredMessage<TestMessageMetaData> _storedMsg;
+
+        private final MessageReference<ServerMessage> _messageReference = new MessageReference<ServerMessage>()
+        {
+
+            @Override
+            public ServerMessage getMessage()
+            {
+                return TestServerMessage.this;
+            }
+
+            @Override
+            public void release()
+            {
+            }
+        };
 
         public TestServerMessage(StoredMessage<TestMessageMetaData> storedMsg)
         {
@@ -115,7 +130,7 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
         @Override
         public long getMessageNumber()
         {
-            return 0;
+            return _storedMsg.getMessageNumber();
         }
 
         @Override
@@ -140,13 +155,54 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
         @Override
         public boolean isPersistent()
         {
-            return false;
+            return _storedMsg.getMetaData().isPersistent();
         }
 
         @Override
         public MessageReference newReference()
         {
-            return null;
+            return _messageReference;
         }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((_storedMsg == null) ? 0 : _storedMsg.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (obj == null)
+            {
+                return false;
+            }
+            if (getClass() != obj.getClass())
+            {
+                return false;
+            }
+            TestServerMessage other = (TestServerMessage) obj;
+            if (_storedMsg == null)
+            {
+                if (other._storedMsg != null)
+                {
+                    return false;
+                }
+            }
+            else if (!_storedMsg.equals(other._storedMsg))
+            {
+                return false;
+            }
+            return true;
+        }
+
+
     }
 }

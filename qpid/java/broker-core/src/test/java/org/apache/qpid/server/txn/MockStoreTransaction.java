@@ -33,14 +33,14 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
  * Mock implementation of a (Store) Transaction allow its state to be observed.
  * Also provide a factory method to produce TestTransactionLog objects suitable
  * for unit test use.
- * 
+ *
  */
 class MockStoreTransaction implements Transaction
 {
     enum TransactionState {NOT_STARTED, STARTED, COMMITTED, ABORTED};
 
     private TransactionState _state = TransactionState.NOT_STARTED;
-    
+
     private int _numberOfEnqueuedMessages = 0;
     private int _numberOfDequeuedMessages = 0;
     private boolean _throwExceptionOnQueueOp;
@@ -52,7 +52,7 @@ class MockStoreTransaction implements Transaction
 
     public void setState(TransactionState state)
     {
-        _state = state; 
+        _state = state;
     }
 
     public TransactionState getState()
@@ -64,10 +64,10 @@ class MockStoreTransaction implements Transaction
     {
         if (_throwExceptionOnQueueOp)
         {
-            
+
             throw new ServerScopedRuntimeException("Mocked exception");
         }
-        
+
         _numberOfEnqueuedMessages++;
     }
 
@@ -87,7 +87,7 @@ class MockStoreTransaction implements Transaction
         {
             throw new ServerScopedRuntimeException("Mocked exception");
         }
-        
+
         _numberOfDequeuedMessages++;
     }
 
@@ -123,12 +123,6 @@ class MockStoreTransaction implements Transaction
             {
                 storeTransaction.setState(TransactionState.STARTED);
                 return storeTransaction;
-            }
-
-            @Override
-            public String getStoreType()
-            {
-                return "TEST";
             }
        };
     }

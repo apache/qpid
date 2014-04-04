@@ -18,13 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.store.handler;
 
-public class JsonFileConfigStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
+import org.apache.qpid.server.store.Transaction.Record;
+
+public interface DistributedTransactionHandler
 {
-    @Override
-    protected DurableConfigurationStore createConfigStore() throws Exception
-    {
-        return new JsonFileConfigStore();
-    }
+
+    boolean handle(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues);
+
 }

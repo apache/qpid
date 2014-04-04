@@ -20,14 +20,11 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -35,25 +32,15 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaDataType_0_8;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
-import org.apache.qpid.server.store.MessageStoreRecoveryHandler.StoredMessageRecoveryHandler;
-import org.apache.qpid.server.store.MessageStoreTest;
+import org.apache.qpid.server.store.MessageStoreTestCase;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.Transaction;
-import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
@@ -62,14 +49,30 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.util.FileUtils;
 
 /**
- * Subclass of MessageStoreTest which runs the standard tests from the superclass against
+ * Subclass of MessageStoreTestCase which runs the standard tests from the superclass against
  * the BDB Store as well as additional tests specific to the BDB store-implementation.
  */
-public class BDBMessageStoreTest extends MessageStoreTest
+public class BDBMessageStoreTest extends MessageStoreTestCase
 {
     private static byte[] CONTENT_BYTES = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    private String _storeLocation;
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            deleteStoreIfExists();
+        }
+    }
 
     /**
      * Tests that message metadata and content are successfully read back from a
@@ -78,9 +81,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
      */
     public void testBDBMessagePersistence() throws Exception
     {
-        MessageStore store = getVirtualHost().getMessageStore();
-
-        BDBMessageStore bdbStore = assertBDBStore(store);
+        BDBMessageStore bdbStore = (BDBMessageStore)getStore();
 
         // Create content ByteBuffers.
         // Split the content into 2 chunks for the 0-8 message, as per broker behaviour.
@@ -133,12 +134,13 @@ public class BDBMessageStoreTest extends MessageStoreTest
         /*
          * reload the store only (read-only)
          */
-        BDBMessageStore readOnlyStore = reloadStore(bdbStore);
+        reopenStore();
 
         /*
          * Read back and validate the 0-8 message metadata and content
          */
-        StorableMessageMetaData storeableMMD_0_8 = readOnlyStore.getMessageMetaData(messageid_0_8);
+        BDBMessageStore reopenedBdbStore = (BDBMessageStore) getStore();
+        StorableMessageMetaData storeableMMD_0_8 = reopenedBdbStore.getMessageMetaData(messageid_0_8);
 
         assertEquals("Unexpected message type", MessageMetaDataType_0_8.TYPE, storeableMMD_0_8.getType().ordinal());
         assertTrue("Unexpected instance type", storeableMMD_0_8 instanceof MessageMetaData);
@@ -162,7 +164,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         assertEquals("Property MessageID has changed", props_0_8.getMessageIdAsString(), returnedProperties_0_8.getMessageIdAsString());
 
         ByteBuffer recoveredContent_0_8 = ByteBuffer.allocate((int) chb_0_8.getBodySize()) ;
-        long recoveredCount_0_8 = readOnlyStore.getContent(messageid_0_8, 0, recoveredContent_0_8);
+        long recoveredCount_0_8 = reopenedBdbStore.getContent(messageid_0_8, 0, recoveredContent_0_8);
         assertEquals("Incorrect amount of payload data recovered", chb_0_8.getBodySize(), recoveredCount_0_8);
         String returnedPayloadString_0_8 = new String(recoveredContent_0_8.array());
         assertEquals("Message Payload has changed", bodyText, returnedPayloadString_0_8);
@@ -170,7 +172,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         /*
          * Read back and validate the 0-10 message metadata and content
          */
-        StorableMessageMetaData storeableMMD_0_10 = readOnlyStore.getMessageMetaData(messageid_0_10);
+        StorableMessageMetaData storeableMMD_0_10 = reopenedBdbStore.getMessageMetaData(messageid_0_10);
 
         assertEquals("Unexpected message type", MessageMetaDataType_0_10.TYPE, storeableMMD_0_10.getType().ordinal());
         assertTrue("Unexpected instance type", storeableMMD_0_10 instanceof MessageMetaData_0_10);
@@ -193,13 +195,13 @@ public class BDBMessageStoreTest extends MessageStoreTest
         assertEquals("Message content type has changed", msgProps_0_10.getContentType(), returnedMsgProps.getContentType());
 
         ByteBuffer recoveredContent = ByteBuffer.allocate((int) msgProps_0_10.getContentLength()) ;
-        long recoveredCount = readOnlyStore.getContent(messageid_0_10, 0, recoveredContent);
+        long recoveredCount = reopenedBdbStore.getContent(messageid_0_10, 0, recoveredContent);
         assertEquals("Incorrect amount of payload data recovered", msgProps_0_10.getContentLength(), recoveredCount);
 
         String returnedPayloadString_0_10 = new String(recoveredContent.array());
         assertEquals("Message Payload has changed", bodyText, returnedPayloadString_0_10);
 
-        readOnlyStore.closeMessageStore();
+        reopenedBdbStore.closeMessageStore();
     }
 
     private DeliveryProperties createDeliveryProperties_0_10()
@@ -226,28 +228,6 @@ public class BDBMessageStoreTest extends MessageStoreTest
         return msgProps_0_10;
     }
 
-    /**
-     * Close the provided store and create a new (read-only) store to read back the data.
-     *
-     * Use this method instead of reloading the virtual host like other tests in order
-     * to avoid the recovery handler deleting the message for not being on a queue.
-     */
-    private BDBMessageStore reloadStore(BDBMessageStore messageStore) throws Exception
-    {
-        messageStore.closeMessageStore();
-
-
-        BDBMessageStore newStore = new BDBMessageStore();
-
-        MessageStoreRecoveryHandler recoveryHandler = mock(MessageStoreRecoveryHandler.class);
-        when(recoveryHandler.begin()).thenReturn(mock(StoredMessageRecoveryHandler.class));
-        VirtualHost<?> virtualHost = getVirtualHostModel();
-        newStore.openMessageStore(virtualHost, virtualHost.getMessageStoreSettings());
-
-        newStore.recoverMessageStore(recoveryHandler, null);
-
-        return newStore;
-    }
 
     private MessagePublishInfo createPublishInfoBody_0_8()
     {
@@ -258,20 +238,24 @@ public class BDBMessageStoreTest extends MessageStoreTest
                 return new AMQShortString("exchange12345");
             }
 
+            @Override
             public void setExchange(AMQShortString exchange)
             {
             }
 
+            @Override
             public boolean isImmediate()
             {
                 return false;
             }
 
+            @Override
             public boolean isMandatory()
             {
                 return true;
             }
 
+            @Override
             public AMQShortString getRoutingKey()
             {
                 return new AMQShortString("routingKey12345");
@@ -298,9 +282,8 @@ public class BDBMessageStoreTest extends MessageStoreTest
 
     public void testGetContentWithOffset() throws Exception
     {
-        MessageStore store = getVirtualHost().getMessageStore();
-        BDBMessageStore bdbStore = assertBDBStore(store);
-        StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(store);
+        BDBMessageStore bdbStore = (BDBMessageStore) getStore();
+        StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(bdbStore);
         long messageid_0_8 = storedMessage_0_8.getMessageNumber();
 
         // normal case: offset is 0
@@ -350,6 +333,7 @@ public class BDBMessageStoreTest extends MessageStoreTest
         System.arraycopy(CONTENT_BYTES, 2, expected, 0, 5);
         assertTrue("Unexpected content", Arrays.equals(expected, array));
     }
+
     /**
      * Tests that messages which are added to the store and then removed using the
      * public MessageStore interfaces are actually removed from the store by then
@@ -358,10 +342,9 @@ public class BDBMessageStoreTest extends MessageStoreTest
      */
     public void testMessageCreationAndRemoval() throws Exception
     {
-        MessageStore store = getVirtualHost().getMessageStore();
-        BDBMessageStore bdbStore = assertBDBStore(store);
+        BDBMessageStore bdbStore = (BDBMessageStore)getStore();
 
-        StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(store);
+        StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(bdbStore);
         long messageid_0_8 = storedMessage_0_8.getMessageNumber();
 
         bdbStore.removeMessage(messageid_0_8, true);
@@ -383,13 +366,6 @@ public class BDBMessageStoreTest extends MessageStoreTest
 
         assertEquals("Retrieved content when none was expected",
                         0, bdbStore.getContent(messageid_0_8, 0, dst));
-    }
-    private BDBMessageStore assertBDBStore(MessageStore store)
-    {
-
-        assertEquals("Test requires an instance of BDBMessageStore to proceed", BDBMessageStore.class, store.getClass());
-
-        return (BDBMessageStore) store;
     }
 
     private StoredMessage<MessageMetaData> createAndStoreSingleChunkMessage_0_8(MessageStore store)
@@ -413,254 +389,48 @@ public class BDBMessageStoreTest extends MessageStoreTest
         return storedMessage_0_8;
     }
 
-    /**
-     * Tests transaction commit by utilising the enqueue and dequeue methods available
-     * in the TransactionLog interface implemented by the store, and verifying the
-     * behaviour using BDB implementation methods.
-     */
-    public void testTranCommit() throws Exception
-    {
-        MessageStore log = getVirtualHost().getMessageStore();
-
-        BDBMessageStore bdbStore = assertBDBStore(log);
-
-        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
-        TransactionLogResource mockQueue = new TransactionLogResource()
-        {
-            @Override
-            public String getName()
-            {
-                return getId().toString();
-            }
-
-            @Override
-            public UUID getId()
-            {
-                return mockQueueId;
-            }
-
-            @Override
-            public boolean isDurable()
-            {
-                return true;
-            }
-        };
-
-        Transaction txn = log.newTransaction();
-
-        txn.enqueueMessage(mockQueue, new MockMessage(1L));
-        txn.enqueueMessage(mockQueue, new MockMessage(5L));
-        txn.commitTran();
-
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
-
-        assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
-        Long val = enqueuedIds.get(0);
-        assertEquals("First Message is incorrect", 1L, val.longValue());
-        val = enqueuedIds.get(1);
-        assertEquals("Second Message is incorrect", 5L, val.longValue());
-    }
-
-
-    /**
-     * Tests transaction rollback before a commit has occurred by utilising the
-     * enqueue and dequeue methods available in the TransactionLog interface
-     * implemented by the store, and verifying the behaviour using BDB
-     * implementation methods.
-     */
-    public void testTranRollbackBeforeCommit() throws Exception
-    {
-        MessageStore log = getVirtualHost().getMessageStore();
-
-        BDBMessageStore bdbStore = assertBDBStore(log);
-
-        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
-        TransactionLogResource mockQueue = new TransactionLogResource()
-        {
-            @Override
-            public String getName()
-            {
-                return getId().toString();
-            }
-
-            @Override
-            public UUID getId()
-            {
-                return mockQueueId;
-            }
-
-            @Override
-            public boolean isDurable()
-            {
-                return true;
-            }
-        };
-
-        Transaction txn = log.newTransaction();
-
-        txn.enqueueMessage(mockQueue, new MockMessage(21L));
-        txn.abortTran();
-
-        txn = log.newTransaction();
-        txn.enqueueMessage(mockQueue, new MockMessage(22L));
-        txn.enqueueMessage(mockQueue, new MockMessage(23L));
-        txn.commitTran();
-
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
-
-        assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
-        Long val = enqueuedIds.get(0);
-        assertEquals("First Message is incorrect", 22L, val.longValue());
-        val = enqueuedIds.get(1);
-        assertEquals("Second Message is incorrect", 23L, val.longValue());
-    }
-
     public void testOnDelete() throws Exception
     {
-        MessageStore log = getVirtualHost().getMessageStore();
-        BDBMessageStore bdbStore = assertBDBStore(log);
-        String storeLocation = bdbStore.getStoreLocation();
+        String storeLocation = getStore().getStoreLocation();
 
         File location = new File(storeLocation);
         assertTrue("Store does not exist at " + storeLocation, location.exists());
 
-        bdbStore.closeMessageStore();
+        getStore().closeMessageStore();
         assertTrue("Store does not exist at " + storeLocation, location.exists());
 
-        bdbStore.onDelete();
+        getStore().onDelete();
         assertFalse("Store exists at " + storeLocation, location.exists());
     }
 
-    /**
-     * Tests transaction rollback after a commit has occurred by utilising the
-     * enqueue and dequeue methods available in the TransactionLog interface
-     * implemented by the store, and verifying the behaviour using BDB
-     * implementation methods.
-     */
-    public void testTranRollbackAfterCommit() throws Exception
+
+    @Override
+    protected Map<String, Object> getStoreSettings() throws Exception
     {
-        MessageStore log = getVirtualHost().getMessageStore();
+        _storeLocation = TMP_FOLDER + File.separator + getTestName();
+        deleteStoreIfExists();
+        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
+        messageStoreSettings.put(MessageStore.STORE_PATH, _storeLocation);
+        return messageStoreSettings;
 
-        BDBMessageStore bdbStore = assertBDBStore(log);
-
-        final UUID mockQueueId = UUIDGenerator.generateRandomUUID();
-        TransactionLogResource mockQueue = new TransactionLogResource()
-        {
-            @Override
-            public String getName()
-            {
-                return getId().toString();
-            }
-
-            @Override
-            public UUID getId()
-            {
-                return mockQueueId;
-            }
-
-            @Override
-            public boolean isDurable()
-            {
-                return true;
-            }
-        };
-
-        Transaction txn = log.newTransaction();
-
-        txn.enqueueMessage(mockQueue, new MockMessage(30L));
-        txn.commitTran();
-
-        txn = log.newTransaction();
-        txn.enqueueMessage(mockQueue, new MockMessage(31L));
-        txn.abortTran();
-
-        txn = log.newTransaction();
-        txn.enqueueMessage(mockQueue, new MockMessage(32L));
-        txn.commitTran();
-
-        List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueId);
-
-        assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
-        Long val = enqueuedIds.get(0);
-        assertEquals("First Message is incorrect", 30L, val.longValue());
-        val = enqueuedIds.get(1);
-        assertEquals("Second Message is incorrect", 32L, val.longValue());
     }
 
-    @SuppressWarnings("rawtypes")
-    private static class MockMessage implements ServerMessage, EnqueueableMessage
+    private void deleteStoreIfExists()
     {
-        private long _messageId;
-
-        public MockMessage(long messageId)
+        if (_storeLocation != null)
         {
-            _messageId = messageId;
-        }
-
-        public String getInitialRoutingAddress()
-        {
-            return null;
-        }
-
-        public AMQMessageHeader getMessageHeader()
-        {
-            return null;
-        }
-
-        public StoredMessage getStoredMessage()
-        {
-            return null;
-        }
-
-        public boolean isPersistent()
-        {
-            return true;
-        }
-
-        public long getSize()
-        {
-            return 0;
-        }
-
-        public boolean isImmediate()
-        {
-            return false;
-        }
-
-        public long getExpiration()
-        {
-            return 0;
-        }
-
-        public MessageReference newReference()
-        {
-            return null;
-        }
-
-        public long getMessageNumber()
-        {
-            return _messageId;
-        }
-
-        public long getArrivalTime()
-        {
-            return 0;
-        }
-
-        public int getContent(ByteBuffer buf, int offset)
-        {
-            return 0;
-        }
-
-        public ByteBuffer getContent(int offset, int length)
-        {
-            return null;
-        }
-
-        @Override
-        public Object getConnectionReference()
-        {
-            return null;
+            File location = new File(_storeLocation);
+            if (location.exists())
+            {
+                FileUtils.delete(location, true);
+            }
         }
     }
+
+    @Override
+    protected MessageStore createMessageStore()
+    {
+        return new BDBMessageStore();
+    }
+
 }

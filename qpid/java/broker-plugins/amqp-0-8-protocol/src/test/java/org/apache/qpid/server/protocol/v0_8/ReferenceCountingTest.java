@@ -27,7 +27,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
@@ -35,12 +35,12 @@ import org.apache.qpid.test.utils.QpidTestCase;
  */
 public class ReferenceCountingTest extends QpidTestCase
 {
-    private TestableMemoryMessageStore _store;
+    private TestMemoryMessageStore _store;
 
 
     protected void setUp() throws Exception
     {
-        _store = new TestableMemoryMessageStore();
+        _store = new TestMemoryMessageStore();
     }
 
     /**
@@ -83,7 +83,7 @@ public class ReferenceCountingTest extends QpidTestCase
 
         MessageMetaData mmd = new MessageMetaData(info, chb);
         StoredMessage storedMessage = _store.addMessage(mmd);
-
+        storedMessage.flushToStore();
 
         AMQMessage message = new AMQMessage(storedMessage);
 
@@ -141,6 +141,7 @@ public class ReferenceCountingTest extends QpidTestCase
 
         MessageMetaData mmd = new MessageMetaData(info, chb);
         StoredMessage storedMessage = _store.addMessage(mmd);
+        storedMessage.flushToStore();
 
         AMQMessage message = new AMQMessage(storedMessage);
 

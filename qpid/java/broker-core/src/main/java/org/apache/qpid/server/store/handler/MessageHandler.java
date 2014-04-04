@@ -18,30 +18,13 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.store.handler;
 
-package org.apache.qpid.server.store;
+import org.apache.qpid.server.store.StoredMessage;
 
-import java.util.Map;
-
-import org.apache.qpid.server.plugin.MessageStoreFactory;
-
-public class TestableMemoryMessageStoreFactory implements MessageStoreFactory
+public interface MessageHandler
 {
-    @Override
-    public String getType()
-    {
-        return TestableMemoryMessageStore.TYPE;
-    }
 
-    @Override
-    public MessageStore createMessageStore()
-    {
-        return new TestableMemoryMessageStore();
-    }
-
-    @Override
-    public void validateAttributes(Map<String, Object> attributes)
-    {
-    }
+    boolean handle(StoredMessage<?> storedMessage);
 
 }
