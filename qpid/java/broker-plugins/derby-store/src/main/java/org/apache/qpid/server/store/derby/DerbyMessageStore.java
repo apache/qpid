@@ -417,12 +417,6 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
     }
 
     @Override
-    public String getStoreType()
-    {
-        return TYPE;
-    }
-
-    @Override
     public void onDelete()
     {
         if (_logger.isDebugEnabled())

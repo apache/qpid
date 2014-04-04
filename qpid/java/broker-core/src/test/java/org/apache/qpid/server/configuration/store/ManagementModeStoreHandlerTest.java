@@ -50,10 +50,10 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ManagementModeStoreHandlerTest extends QpidTestCase
@@ -89,20 +89,22 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         when(_portEntry.getParents()).thenReturn(Collections.singletonMap(Broker.class.getSimpleName(), _root));
         when(_portEntry.getType()).thenReturn(Port.class.getSimpleName());
 
-        final ArgumentCaptor<ConfigurationRecoveryHandler> recovererArgumentCaptor = ArgumentCaptor.forClass(ConfigurationRecoveryHandler.class);
+        final ArgumentCaptor<ConfiguredObjectRecordHandler> recovererArgumentCaptor = ArgumentCaptor.forClass(ConfiguredObjectRecordHandler.class);
         doAnswer(
                 new Answer()
                 {
                     @Override
                     public Object answer(final InvocationOnMock invocation) throws Throwable
                     {
-                        ConfigurationRecoveryHandler recoverer = recovererArgumentCaptor.getValue();
-                        recoverer.configuredObject(_root);
-                        recoverer.configuredObject(_portEntry);
+                        ConfiguredObjectRecordHandler recoverer = recovererArgumentCaptor.getValue();
+                        if(recoverer.handle(_root))
+                        {
+                            recoverer.handle(_portEntry);
+                        }
                         return null;
                     }
                 }
-                ).when(_store).recoverConfigurationStore(recovererArgumentCaptor.capture());
+                ).when(_store).visitConfiguredObjectRecords(recovererArgumentCaptor.capture());
         _options = new BrokerOptions();
         _handler = new ManagementModeStoreHandler(_store, _options);
 
@@ -112,21 +114,21 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     private ConfiguredObjectRecord getRootEntry()
     {
         BrokerFinder brokerFinder = new BrokerFinder();
-        _handler.recoverConfigurationStore(brokerFinder);
+        _handler.visitConfiguredObjectRecords(brokerFinder);
         return brokerFinder.getBrokerRecord();
     }
 
     private ConfiguredObjectRecord getEntry(UUID id)
     {
         RecordFinder recordFinder = new RecordFinder(id);
-        _handler.recoverConfigurationStore(recordFinder);
+        _handler.visitConfiguredObjectRecords(recordFinder);
         return recordFinder.getFoundRecord();
     }
 
     private Collection<UUID> getChildrenIds(ConfiguredObjectRecord record)
     {
         ChildFinder childFinder = new ChildFinder(record);
-        _handler.recoverConfigurationStore(childFinder);
+        _handler.visitConfiguredObjectRecords(childFinder);
         return childFinder.getChildIds();
     }
 
@@ -288,21 +290,25 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         attributes.put(VirtualHost.TYPE, "STANDARD");
 
         final ConfiguredObjectRecord virtualHost = new ConfiguredObjectRecordImpl(virtualHostId, VirtualHost.class.getSimpleName(), attributes, Collections.singletonMap(Broker.class.getSimpleName(), _root));
-        final ArgumentCaptor<ConfigurationRecoveryHandler> recovererArgumentCaptor = ArgumentCaptor.forClass(ConfigurationRecoveryHandler.class);
+        final ArgumentCaptor<ConfiguredObjectRecordHandler> recovererArgumentCaptor = ArgumentCaptor.forClass(ConfiguredObjectRecordHandler.class);
         doAnswer(
                 new Answer()
                 {
                     @Override
                     public Object answer(final InvocationOnMock invocation) throws Throwable
                     {
-                        ConfigurationRecoveryHandler recoverer = recovererArgumentCaptor.getValue();
-                        recoverer.configuredObject(_root);
-                        recoverer.configuredObject(_portEntry);
-                        recoverer.configuredObject(virtualHost);
+                        ConfiguredObjectRecordHandler recoverer = recovererArgumentCaptor.getValue();
+                        if(recoverer.handle(_root))
+                        {
+                            if(recoverer.handle(_portEntry))
+                            {
+                                recoverer.handle(virtualHost);
+                            }
+                        }
                         return null;
                     }
                 }
-                ).when(_store).recoverConfigurationStore(recovererArgumentCaptor.capture());
+                ).when(_store).visitConfiguredObjectRecords(recovererArgumentCaptor.capture());
 
         State expectedState = mmQuiesceVhosts ? State.QUIESCED : null;
         if(mmQuiesceVhosts)
@@ -457,28 +463,32 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     }
 
 
-    private class BrokerFinder implements ConfigurationRecoveryHandler
+    private class BrokerFinder implements ConfiguredObjectRecordHandler
     {
         private ConfiguredObjectRecord _brokerRecord;
-        @Override
-        public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
-        {
+        private int _version;
 
+        @Override
+        public void begin(final int configVersion)
+        {
+            _version = configVersion;
         }
 
         @Override
-        public void configuredObject(final ConfiguredObjectRecord object)
+        public boolean handle(final ConfiguredObjectRecord object)
         {
             if(object.getType().equals(Broker.class.getSimpleName()))
             {
                 _brokerRecord = object;
+                return false;
             }
+            return true;
         }
 
         @Override
-        public int completeConfigurationRecovery()
+        public int end()
         {
-            return 0;
+            return _version;
         }
 
         public ConfiguredObjectRecord getBrokerRecord()
@@ -487,10 +497,11 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
     }
 
-    private class RecordFinder implements ConfigurationRecoveryHandler
+    private class RecordFinder implements ConfiguredObjectRecordHandler
     {
         private final UUID _id;
         private ConfiguredObjectRecord _foundRecord;
+        private int _version;
 
         private RecordFinder(final UUID id)
         {
@@ -498,24 +509,26 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
 
         @Override
-        public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+        public void begin(final int configVersion)
         {
-
+            _version = configVersion;
         }
 
         @Override
-        public void configuredObject(final ConfiguredObjectRecord object)
+        public boolean handle(final ConfiguredObjectRecord object)
         {
             if(object.getId().equals(_id))
             {
                 _foundRecord = object;
+                return false;
             }
+            return true;
         }
 
         @Override
-        public int completeConfigurationRecovery()
+        public int end()
         {
-            return 0;
+            return _version;
         }
 
         public ConfiguredObjectRecord getFoundRecord()
@@ -524,10 +537,11 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
     }
 
-    private class ChildFinder implements ConfigurationRecoveryHandler
+    private class ChildFinder implements ConfiguredObjectRecordHandler
     {
         private final Collection<UUID> _childIds = new HashSet<UUID>();
         private final ConfiguredObjectRecord _parent;
+        private int _version;
 
         private ChildFinder(final ConfiguredObjectRecord parent)
         {
@@ -535,13 +549,13 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
 
         @Override
-        public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+        public void begin(final int configVersion)
         {
-
+            _version = configVersion;
         }
 
         @Override
-        public void configuredObject(final ConfiguredObjectRecord object)
+        public boolean handle(final ConfiguredObjectRecord object)
         {
 
             if(object.getParents() != null)
@@ -555,12 +569,13 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
                 }
 
             }
+            return true;
         }
 
         @Override
-        public int completeConfigurationRecovery()
+        public int end()
         {
-            return 0;
+            return _version;
         }
 
         public Collection<UUID> getChildIds()

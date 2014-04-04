@@ -20,11 +20,28 @@
  */
 package org.apache.qpid.server.store;
 
-public class JsonFileConfigStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
+import java.util.Collections;
+import java.util.Map;
+
+public class MemoryMessageStoreTest extends MessageStoreTestCase
 {
+
     @Override
-    protected DurableConfigurationStore createConfigStore() throws Exception
+    protected Map<String, Object> getStoreSettings() throws Exception
     {
-        return new JsonFileConfigStore();
+        return Collections.<String, Object>emptyMap();
     }
+
+    @Override
+    protected MessageStore createMessageStore()
+    {
+        return new MemoryMessageStore();
+    }
+
+    @Override
+    protected void reopenStore() throws Exception
+    {
+        // cannot re-open memory message store as it is not persistent
+    }
+
 }

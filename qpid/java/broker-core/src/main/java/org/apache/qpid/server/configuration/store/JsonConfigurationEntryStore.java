@@ -20,20 +20,20 @@
  */
 package org.apache.qpid.server.configuration.store;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.StoreException;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
 {
@@ -124,30 +124,31 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
         else
         {
             final Collection<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>();
-            final ConfigurationRecoveryHandler replayHandler = new ConfigurationRecoveryHandler()
+            final ConfiguredObjectRecordHandler replayHandler = new ConfiguredObjectRecordHandler()
             {
                 private int _configVersion;
                 @Override
-                public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+                public void begin(final int configVersion)
                 {
                     _configVersion = configVersion;
                 }
 
                 @Override
-                public void configuredObject(ConfiguredObjectRecord record)
+                public boolean handle(ConfiguredObjectRecord record)
                 {
                     records.add(record);
+                    return true;
                 }
 
                 @Override
-                public int completeConfigurationRecovery()
+                public int end()
                 {
                     return _configVersion;
                 }
             };
 
             initialStore.openConfigurationStore(_parentObject, Collections.<String,Object>emptyMap());
-            initialStore.recoverConfigurationStore(replayHandler);
+            initialStore.visitConfiguredObjectRecords(replayHandler);
 
             update(true, records.toArray(new ConfiguredObjectRecord[records.size()]));
         }

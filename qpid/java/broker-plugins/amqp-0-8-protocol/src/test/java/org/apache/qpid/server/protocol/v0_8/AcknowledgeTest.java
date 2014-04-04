@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -175,7 +173,7 @@ public class AcknowledgeTest extends QpidTestCase
 
     private void checkStoreContents(int messageCount)
     {
-        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageCount());
+        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestMemoryMessageStore) _messageStore).getMessageCount());
     }
 
 }

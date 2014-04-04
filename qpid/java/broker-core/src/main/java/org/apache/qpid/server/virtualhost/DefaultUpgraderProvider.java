@@ -78,6 +78,10 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
     public DurableConfigurationStoreUpgrader getUpgrader(final int configVersion, DurableConfigurationRecoverer recoverer)
     {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Getting upgrader for configVersion:  " + configVersion);
+        }
         DurableConfigurationStoreUpgrader currentUpgrader = null;
         switch(configVersion)
         {

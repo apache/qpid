@@ -338,12 +338,6 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     }
 
     @Override
-    public String getStoreType()
-    {
-        return TYPE;
-    }
-
-    @Override
     protected byte[] getBlobAsBytes(ResultSet rs, int col) throws SQLException
     {
         if(_useBytesMethodsForBlob)

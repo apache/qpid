@@ -18,35 +18,12 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.store.handler;
 
-package org.apache.qpid.server.store.berkeleydb.entry;
+import java.util.UUID;
 
-public class Xid
+public interface MessageInstanceHandler
 {
+    boolean handle(UUID queueId, long messageId);
 
-    private final long _format;
-    private final byte[] _globalId;
-    private final byte[] _branchId;
-
-    public Xid(long format, byte[] globalId, byte[] branchId)
-    {
-        _format = format;
-        _globalId = globalId;
-        _branchId = branchId;
-    }
-
-    public long getFormat()
-    {
-        return _format;
-    }
-
-    public byte[] getGlobalId()
-    {
-        return _globalId;
-    }
-
-    public byte[] getBranchId()
-    {
-        return _branchId;
-    }
 }

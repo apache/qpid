@@ -27,7 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -133,7 +133,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
 
     private void checkStoreContents(int messageCount)
     {
-        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageCount());
+        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestMemoryMessageStore) _messageStore).getMessageCount());
     }
 
     private AMQShortString browse(AMQChannel channel, AMQQueue queue) throws Exception

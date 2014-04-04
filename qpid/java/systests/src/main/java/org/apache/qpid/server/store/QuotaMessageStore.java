@@ -27,7 +27,7 @@ import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.ConfiguredObject;
 
-public class QuotaMessageStore extends NullMessageStore
+public class QuotaMessageStore extends AbstractMemoryMessageStore
 {
     public static final String TYPE = "QuotaMessageStore";
     private final AtomicLong _messageId = new AtomicLong(1);
@@ -154,11 +154,5 @@ public class QuotaMessageStore extends NullMessageStore
                 }
             }
         }
-    }
-
-    @Override
-    public String getStoreType()
-    {
-        return TYPE;
     }
 }

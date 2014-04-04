@@ -58,10 +58,9 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.util.Strings;
 import org.apache.qpid.util.Strings.ChainedResolver;
 
@@ -128,30 +127,31 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                 _storeLocation = initialStore.getStoreLocation();
             }
             final Collection<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>();
-            final ConfigurationRecoveryHandler replayHandler = new ConfigurationRecoveryHandler()
+            final ConfiguredObjectRecordHandler replayHandler = new ConfiguredObjectRecordHandler()
             {
                 private int _configVersion;
                 @Override
-                public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+                public void begin(final int configVersion)
                 {
                     _configVersion = configVersion;
                 }
 
                 @Override
-                public void configuredObject(ConfiguredObjectRecord record)
+                public boolean handle(ConfiguredObjectRecord record)
                 {
                     records.add(record);
+                    return true;
                 }
 
                 @Override
-                public int completeConfigurationRecovery()
+                public int end()
                 {
                     return _configVersion;
                 }
             };
 
             initialStore.openConfigurationStore(parentObject, Collections.<String,Object>emptyMap());
-            initialStore.recoverConfigurationStore(replayHandler);
+            initialStore.visitConfiguredObjectRecords(replayHandler);
 
             update(true, records.toArray(new ConfiguredObjectRecord[records.size()]));
 
@@ -365,10 +365,10 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     }
 
     @Override
-    public void recoverConfigurationStore(final ConfigurationRecoveryHandler recoveryHandler) throws StoreException
+    public void visitConfiguredObjectRecords(final ConfiguredObjectRecordHandler recoveryHandler) throws StoreException
     {
 
-        recoveryHandler.beginConfigurationRecovery(this,0);
+        recoveryHandler.begin(0);
 
         final Map<UUID,Map<String,UUID>> parentMap = new HashMap<UUID, Map<String, UUID>>();
 
@@ -435,9 +435,12 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         }
         for(ConfiguredObjectRecord record : records.values())
         {
-            recoveryHandler.configuredObject(record);
+            if(!recoveryHandler.handle(record))
+            {
+                break;
+            }
         }
-        recoveryHandler.completeConfigurationRecovery();
+        recoveryHandler.end();
 
     }
 

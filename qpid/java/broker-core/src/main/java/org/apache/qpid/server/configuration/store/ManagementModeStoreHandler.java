@@ -38,11 +38,11 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.util.MapValueConverter;
 
 public class ManagementModeStoreHandler implements DurableConfigurationStore
@@ -80,20 +80,21 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
 
 
         _records = new HashMap<UUID, ConfiguredObjectRecord>();
-        final ConfigurationRecoveryHandler localRecoveryHandler = new ConfigurationRecoveryHandler()
+        final ConfiguredObjectRecordHandler localRecoveryHandler = new ConfiguredObjectRecordHandler()
         {
             private int _version;
             private boolean _quiesceRmiPort = _options.getManagementModeRmiPortOverride() > 0;
             private boolean _quiesceJmxPort = _options.getManagementModeJmxPortOverride() > 0;
             private boolean _quiesceHttpPort = _options.getManagementModeHttpPortOverride() > 0;
+
             @Override
-            public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+            public void begin(final int configVersion)
             {
                 _version = configVersion;
             }
 
             @Override
-            public void configuredObject(final ConfiguredObjectRecord object)
+            public boolean handle(final ConfiguredObjectRecord object)
             {
                 String entryType = object.getType();
                 Map<String, Object> attributes = object.getAttributes();
@@ -153,11 +154,12 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
                 {
                     _records.put(object.getId(), object);
                 }
+                return true;
             }
 
 
             @Override
-            public int completeConfigurationRecovery()
+            public int end()
             {
                 return _version;
             }
@@ -166,7 +168,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
 
 
 
-        _store.recoverConfigurationStore(localRecoveryHandler);
+        _store.visitConfiguredObjectRecords(localRecoveryHandler);
 
         _cliEntries = createPortsFromCommandLineOptions(_options);
 
@@ -179,17 +181,20 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     }
 
     @Override
-    public void recoverConfigurationStore(final ConfigurationRecoveryHandler recoveryHandler) throws StoreException
+    public void visitConfiguredObjectRecords(final ConfiguredObjectRecordHandler recoveryHandler) throws StoreException
     {
 
 
-        recoveryHandler.beginConfigurationRecovery(this,0);
+        recoveryHandler.begin(0);
 
         for(ConfiguredObjectRecord record : _records.values())
         {
-            recoveryHandler.configuredObject(record);
+            if(!recoveryHandler.handle(record))
+            {
+                break;
+            }
         }
-        recoveryHandler.completeConfigurationRecovery();
+        recoveryHandler.end();
     }
 
 
@@ -357,16 +362,16 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
         final int managementModeJmxPortOverride = options.getManagementModeJmxPortOverride();
         final int managementModeHttpPortOverride = options.getManagementModeHttpPortOverride();
 
-        _store.recoverConfigurationStore(new ConfigurationRecoveryHandler()
+        _store.visitConfiguredObjectRecords(new ConfiguredObjectRecordHandler()
         {
             @Override
-            public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+            public void begin(final int configVersion)
             {
 
             }
 
             @Override
-            public void configuredObject(final ConfiguredObjectRecord entry)
+            public boolean handle(final ConfiguredObjectRecord entry)
             {
                 String entryType = entry.getType();
                 Map<String, Object> attributes = entry.getAttributes();
@@ -417,11 +422,12 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
                     // save original state
                     quiescedEntries.put(entry.getId(), attributes.get(ATTRIBUTE_STATE));
                 }
+                return true;
             }
 
 
             @Override
-            public int completeConfigurationRecovery()
+            public int end()
             {
                 return 0;
             }

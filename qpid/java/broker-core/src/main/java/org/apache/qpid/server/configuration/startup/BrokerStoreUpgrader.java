@@ -35,12 +35,12 @@ import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListen
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreUpgrader;
 import org.apache.qpid.server.store.NonNullUpgrader;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public class BrokerStoreUpgrader
 {
@@ -583,17 +583,17 @@ public class BrokerStoreUpgrader
 
     public Broker upgrade(DurableConfigurationStore store)
     {
-        final BrokerStoreRecoveryHandler recoveryHandler = new BrokerStoreRecoveryHandler(_systemContext);
+        final BrokerStoreRecoveryHandler recoveryHandler = new BrokerStoreRecoveryHandler(_systemContext, store);
         store.openConfigurationStore(_systemContext, Collections.<String,Object>emptyMap());
-        store.recoverConfigurationStore(recoveryHandler);
+        store.visitConfiguredObjectRecords(recoveryHandler);
 
         return recoveryHandler.getBroker();
     }
 
 
-    private static class BrokerStoreRecoveryHandler implements ConfigurationRecoveryHandler
+    private static class BrokerStoreRecoveryHandler implements ConfiguredObjectRecordHandler
     {
-        private static Logger LOGGER = Logger.getLogger(ConfigurationRecoveryHandler.class);
+        private static Logger LOGGER = Logger.getLogger(BrokerStoreRecoveryHandler.class);
 
         private DurableConfigurationStoreUpgrader _upgrader;
         private DurableConfigurationStore _store;
@@ -601,27 +601,28 @@ public class BrokerStoreUpgrader
         private int _version;
         private final SystemContext _systemContext;
 
-        private BrokerStoreRecoveryHandler(final SystemContext systemContext)
+        private BrokerStoreRecoveryHandler(final SystemContext systemContext, DurableConfigurationStore store)
         {
             _systemContext = systemContext;
+            _store = store;
         }
 
 
         @Override
-        public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+        public void begin(final int configVersion)
         {
-            _store = store;
             _version = configVersion;
         }
 
         @Override
-        public void configuredObject(final ConfiguredObjectRecord object)
+        public boolean handle(final ConfiguredObjectRecord object)
         {
             _records.put(object.getId(), object);
+            return true;
         }
 
         @Override
-        public int completeConfigurationRecovery()
+        public int end()
         {
             String version = getCurrentVersion();
 

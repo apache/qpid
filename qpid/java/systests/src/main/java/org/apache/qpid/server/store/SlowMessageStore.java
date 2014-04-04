@@ -31,6 +31,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
+import org.apache.qpid.server.store.handler.MessageHandler;
+import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 
 public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 {
@@ -61,12 +65,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             _realDurableConfigurationStore = new DurableConfigurationStoreCreator().createMessageStore(realStore);
             _realDurableConfigurationStore.openConfigurationStore(parent, storeSettings);
         }
-    }
-
-    @Override
-    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
-    {
-        _realDurableConfigurationStore.recoverConfigurationStore(recoveryHandler);
     }
 
     private void configureDelays(Map<String, Object> delays)
@@ -294,12 +292,6 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
-    {
-       _realMessageStore.recoverMessageStore(messageRecoveryHandler, transactionLogRecoveryHandler);
-    }
-
-    @Override
     public void addEventListener(EventListener eventListener, Event... events)
     {
         if (_realMessageStore == null)
@@ -319,15 +311,33 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
     @Override
-    public String getStoreType()
-    {
-        return TYPE;
-    }
-
-    @Override
     public void onDelete()
     {
         _realMessageStore.onDelete();
+    }
+
+    @Override
+    public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException
+    {
+        _realDurableConfigurationStore.visitConfiguredObjectRecords(handler);
+    }
+
+    @Override
+    public void visitMessages(MessageHandler handler) throws StoreException
+    {
+        _realMessageStore.visitMessages(handler);
+    }
+
+    @Override
+    public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
+    {
+        _realMessageStore.visitMessageInstances(handler);
+    }
+
+    @Override
+    public void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException
+    {
+        _realMessageStore.visitDistributedTransactions(handler);
     }
 
 }

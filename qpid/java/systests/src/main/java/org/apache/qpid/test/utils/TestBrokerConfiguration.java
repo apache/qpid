@@ -45,10 +45,9 @@ import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
-import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
-import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public class TestBrokerConfiguration
 {
@@ -191,7 +190,7 @@ public class TestBrokerConfiguration
     private ConfiguredObjectRecord findObject(final Class<? extends ConfiguredObject> category, final String objectName)
     {
         final RecordFindingVisitor visitor = new RecordFindingVisitor(category, objectName);
-        _store.recoverConfigurationStore(visitor);
+        _store.visitConfiguredObjectRecords(visitor);
         return visitor.getFoundRecord();
     }
 
@@ -235,11 +234,12 @@ public class TestBrokerConfiguration
         return findObject(category, name).getAttributes();
     }
 
-    private static class RecordFindingVisitor implements ConfigurationRecoveryHandler
+    private static class RecordFindingVisitor implements ConfiguredObjectRecordHandler
     {
         private final Class<? extends ConfiguredObject> _category;
         private final String _objectName;
         public ConfiguredObjectRecord _foundRecord;
+        private int _version;
 
         public RecordFindingVisitor(final Class<? extends ConfiguredObject> category, final String objectName)
         {
@@ -248,26 +248,28 @@ public class TestBrokerConfiguration
         }
 
         @Override
-        public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+        public void begin(final int configVersion)
         {
-
+            _version = configVersion;
         }
 
         @Override
-        public void configuredObject(final ConfiguredObjectRecord object)
+        public boolean handle(final ConfiguredObjectRecord object)
         {
             if (object.getType().equals(_category.getSimpleName())
                 && (_objectName == null
                     || _objectName.equals(object.getAttributes().get(ConfiguredObject.NAME))))
             {
                 _foundRecord = object;
+                return false;
             }
+            return true;
         }
 
         @Override
-        public int completeConfigurationRecovery()
+        public int end()
         {
-            return 0;
+            return _version;
         }
 
         public ConfiguredObjectRecord getFoundRecord()
