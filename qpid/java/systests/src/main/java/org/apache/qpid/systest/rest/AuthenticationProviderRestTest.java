@@ -27,13 +27,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -178,7 +178,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.NAME, providerName);
         attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsoluteFile());
 
-        UUID id = config.addAuthenticationProviderConfiguration(attributes);
+        UUID id = config.addObjectConfiguration(AuthenticationProvider.class, attributes);
         config.setSaved(false);
         startBroker(0, true);
 
@@ -216,7 +216,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.NAME, providerName);
         attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsoluteFile());
 
-        UUID id = config.addAuthenticationProviderConfiguration(attributes);
+        UUID id = config.addObjectConfiguration(AuthenticationProvider.class, attributes);
         config.setSaved(false);
         startBroker(0, true);
 
@@ -260,9 +260,9 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
     {
         stopBroker();
         getBrokerConfiguration().setSaved(false);
-        getBrokerConfiguration().removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
+        getBrokerConfiguration().removeObjectConfiguration(AuthenticationProvider.class, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+        getBrokerConfiguration().setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
+        getBrokerConfiguration().setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
 
         startBroker();
 

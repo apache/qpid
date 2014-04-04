@@ -67,7 +67,7 @@ public class BrokerConfigurationStoreCreator
      */
     public ConfigurationEntryStore createStore(SystemContext systemContext, String storeType, String initialConfigLocation, boolean overwrite, Map<String, String> configProperties)
     {
-        ConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(initialConfigLocation, null, configProperties);
+        ConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(systemContext, initialConfigLocation, null, configProperties);
         ConfigurationStoreFactory factory = _factories.get(storeType.toLowerCase());
         if (factory == null)
         {

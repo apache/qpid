@@ -36,7 +36,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
@@ -45,7 +45,7 @@ public class ConfigurationEntryTest extends TestCase
 {
     public void testGetChildren()
     {
-        ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
+        MemoryConfigurationEntryStore store = mock(MemoryConfigurationEntryStore.class);
 
         ConfigurationEntry virtualHostEntry1 = new ConfigurationEntryImpl(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), store);
@@ -79,7 +79,7 @@ public class ConfigurationEntryTest extends TestCase
 
     public void testHashCode()
     {
-        ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
+        MemoryConfigurationEntryStore store = mock(MemoryConfigurationEntryStore.class);
 
         UUID id = UUID.randomUUID();
         ConfigurationEntry entry1 = new ConfigurationEntryImpl(id, VirtualHost.class.getSimpleName(),
@@ -95,7 +95,7 @@ public class ConfigurationEntryTest extends TestCase
 
     public void testEqualsObject()
     {
-        ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
+        MemoryConfigurationEntryStore store = mock(MemoryConfigurationEntryStore.class);
 
         UUID id = UUID.randomUUID();
         Map<String, Object> attributes1 = new HashMap<String, Object>();

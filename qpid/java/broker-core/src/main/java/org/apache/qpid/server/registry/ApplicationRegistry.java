@@ -24,15 +24,17 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.startup.BrokerStoreUpgrader;
-import org.apache.qpid.server.logging.*;
+import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.Log4jMessageLogger;
+import org.apache.qpid.server.logging.MessageLogger;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.util.SystemUtils;
 
 
@@ -50,9 +52,9 @@ public class ApplicationRegistry implements IApplicationRegistry
 
     private Broker _broker;
 
-    private ConfigurationEntryStore _store;
+    private DurableConfigurationStore _store;
 
-    public ApplicationRegistry(ConfigurationEntryStore store, SystemContext systemContext)
+    public ApplicationRegistry(DurableConfigurationStore store, SystemContext systemContext)
     {
         _store = store;
         _systemContext = systemContext;

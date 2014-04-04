@@ -20,13 +20,7 @@
  */
 package org.apache.qpid.server.configuration.store;
 
-import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.Broker;
-import org.codehaus.jackson.map.ObjectMapper;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.util.Collections;
@@ -36,10 +30,35 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.codehaus.jackson.map.ObjectMapper;
+
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.SystemContext;
+
 public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTestCase
 {
+    private SystemContext _systemContext;
+
     @Override
-    protected ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _systemContext = new SystemContext(new TaskExecutor(), new ConfiguredObjectFactory(),
+                                           mock(EventLogger.class), mock(LogRecorder.class),
+                                           new BrokerOptions());
+
+    }
+
+    @Override
+    protected MemoryConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception
     {
         Map<String, Object> broker = new HashMap<String, Object>();
         broker.put(Broker.ID, brokerId);
@@ -52,7 +71,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
     @Override
     protected void addConfiguration(UUID id, String type, Map<String, Object> attributes, UUID parentId)
     {
-        ConfigurationEntryStore store = getStore();
+        MemoryConfigurationEntryStore store = getStore();
         ConfigurationEntry parentEntry = getStore().getEntry(parentId);
         Set<UUID> children = new HashSet<UUID>(parentEntry.getChildrenIds());
         children.add(id);
@@ -64,7 +83,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
     {
         try
         {
-            new MemoryConfigurationEntryStore(null, null, Collections.<String,String>emptyMap());
+            new MemoryConfigurationEntryStore(null, null, null, Collections.<String,String>emptyMap());
             fail("Cannot create a memory store without either initial store or path to an initial store file");
         }
         catch(IllegalConfigurationException e)
@@ -86,8 +105,8 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         UUID brokerId = UUID.randomUUID();
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.NAME, getTestName());
-        MemoryConfigurationEntryStore  initialStoreFile = (MemoryConfigurationEntryStore)createStore(brokerId, brokerAttributes);
-        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null, initialStoreFile, Collections.<String,String>emptyMap());
+        MemoryConfigurationEntryStore  initialStoreFile = createStore(brokerId, brokerAttributes);
+        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(_systemContext, null, initialStoreFile, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
@@ -108,11 +127,11 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
             setTestSystemProperty("QPID_HOME", TMP_FOLDER);
             setTestSystemProperty("QPID_WORK", TMP_FOLDER + File.separator + "work");
         }
-        MemoryConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, null, new BrokerOptions().getConfigProperties());
+        MemoryConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(_systemContext,BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, null, new BrokerOptions().getConfigProperties());
         ConfigurationEntry initialStoreRoot = initialStore.getRootEntry();
         assertNotNull("Initial store root entry is not found", initialStoreRoot);
 
-         MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null, initialStore, Collections.<String,String>emptyMap());
+         MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(_systemContext, null, initialStore, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);

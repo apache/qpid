@@ -26,15 +26,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
+
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.security.AbstractKeyStoreAdapter;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestSSLConstants;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 
 public class KeyStoreRestTest extends QpidRestTestCase
 {
@@ -108,7 +109,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         sslKeyStoreAttributes.put(KeyStore.NAME, name);
         sslKeyStoreAttributes.put(KeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
         sslKeyStoreAttributes.put(KeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
-        getBrokerConfiguration().addKeyStoreConfiguration(sslKeyStoreAttributes);
+        getBrokerConfiguration().addObjectConfiguration(KeyStore.class,sslKeyStoreAttributes);
 
         //add the SSL port using it
         Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
@@ -117,7 +118,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
         sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
         sslPortAttributes.put(Port.KEY_STORE, name);
-        getBrokerConfiguration().addPortConfiguration(sslPortAttributes);
+        getBrokerConfiguration().addObjectConfiguration(Port.class,sslPortAttributes);
 
         super.setUp();
 

@@ -32,7 +32,7 @@ public class MemoryConfigurationStoreFactory  implements ConfigurationStoreFacto
     @Override
     public ConfigurationEntryStore createStore(SystemContext systemContext, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties)
     {
-        return new MemoryConfigurationEntryStore(null, initialStore, configProperties);
+        return new MemoryConfigurationEntryStore(systemContext, null, initialStore, configProperties);
     }
 
     @Override

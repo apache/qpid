@@ -20,17 +20,23 @@
  */
 package org.apache.qpid.server.configuration.store;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -39,9 +45,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.util.MapValueConverter;
 
-import java.util.*;
-
-public class ManagementModeStoreHandler implements ConfigurationEntryStore
+public class ManagementModeStoreHandler implements DurableConfigurationStore
 {
     private static final Logger LOGGER = Logger.getLogger(ManagementModeStoreHandler.class);
 
@@ -52,50 +56,19 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     private static final Object MANAGEMENT_MODE_AUTH_PROVIDER = "mm-auth";
 
 
-    private final ConfigurationEntryStore _store;
-    private final Map<UUID, ConfigurationEntry> _cliEntries;
+    private final DurableConfigurationStore _store;
+    private Map<UUID, ConfiguredObjectRecord> _cliEntries;
     private final Map<UUID, Object> _quiescedEntriesOriginalState;
-    private final UUID _rootId;
     private final BrokerOptions _options;
     private ConfiguredObject<?> _parent;
+    private HashMap<UUID, ConfiguredObjectRecord> _records;
 
-    public ManagementModeStoreHandler(ConfigurationEntryStore store, BrokerOptions options)
+    public ManagementModeStoreHandler(DurableConfigurationStore store,
+                                      BrokerOptions options)
     {
-        ConfigurationEntry storeRoot = store.getRootEntry();
         _options = options;
         _store = store;
-        _rootId = storeRoot.getId();
-        _cliEntries = createPortsFromCommandLineOptions(options);
-        _quiescedEntriesOriginalState = quiesceEntries(storeRoot, options);
-    }
-
-    @Override
-    public ConfigurationEntry getRootEntry()
-    {
-        return getEntry(_rootId);
-    }
-
-    @Override
-    public ConfigurationEntry getEntry(UUID id)
-    {
-        synchronized (_store)
-        {
-            if (_cliEntries.containsKey(id))
-            {
-                return _cliEntries.get(id);
-            }
-
-            ConfigurationEntry entry = _store.getEntry(id);
-            if (_quiescedEntriesOriginalState.containsKey(id))
-            {
-                entry = createEntryWithState(entry, State.QUIESCED);
-            }
-            else if (id == _rootId)
-            {
-                entry = createRootWithCLIEntries(entry);
-            }
-            return entry;
-        }
+        _quiescedEntriesOriginalState = quiesceEntries(options);
     }
 
     @Override
@@ -104,13 +77,9 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     {
         _parent = parent;
         _store.openConfigurationStore(parent,storeSettings);
-    }
 
-    @Override
-    public void recoverConfigurationStore(final ConfigurationRecoveryHandler recoveryHandler) throws StoreException
-    {
 
-        final Map<UUID,ConfiguredObjectRecord> records = new HashMap<UUID, ConfiguredObjectRecord>();
+        _records = new HashMap<UUID, ConfiguredObjectRecord>();
         final ConfigurationRecoveryHandler localRecoveryHandler = new ConfigurationRecoveryHandler()
         {
             private int _version;
@@ -177,12 +146,12 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
                     Map<String,Object> modifiedAttributes = new HashMap<String, Object>(attributes);
                     modifiedAttributes.put(ATTRIBUTE_STATE, State.QUIESCED);
                     ConfiguredObjectRecord record = new ConfiguredObjectRecordImpl(object.getId(), object.getType(), modifiedAttributes, object.getParents());
-                    records.put(record.getId(), record);
+                    _records.put(record.getId(), record);
 
                 }
                 else
                 {
-                    records.put(object.getId(), object);
+                    _records.put(object.getId(), object);
                 }
             }
 
@@ -194,22 +163,29 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
             }
         };
 
-        ConfiguredObjectRecord parent = records.get(_parent.getId());
-        if(parent == null)
-        {
-            parent = _parent.asObjectRecord();
-        }
-        for(ConfigurationEntry entry : _cliEntries.values())
-        {
-            records.put(entry.getId(),new ConfiguredObjectRecordImpl(entry.getId(), entry.getType(), entry.getAttributes(), Collections.singletonMap(parent.getType(), parent)));
-        }
+
 
 
         _store.recoverConfigurationStore(localRecoveryHandler);
 
+        _cliEntries = createPortsFromCommandLineOptions(_options);
+
+        for(ConfiguredObjectRecord entry : _cliEntries.values())
+        {
+            _records.put(entry.getId(),entry);
+        }
+
+
+    }
+
+    @Override
+    public void recoverConfigurationStore(final ConfigurationRecoveryHandler recoveryHandler) throws StoreException
+    {
+
+
         recoveryHandler.beginConfigurationRecovery(this,0);
 
-        for(ConfiguredObjectRecord record : records.values())
+        for(ConfiguredObjectRecord record : _records.values())
         {
             recoveryHandler.configuredObject(record);
         }
@@ -222,26 +198,9 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     {
         synchronized (_store)
         {
-            Collection<ConfigurationEntry> entriesToSave = new ArrayList<ConfigurationEntry>();
-            entriesToSave.add(new ConfigurationEntryImpl(object.getId(),
-                                                         object.getType(),
-                                                         object.getAttributes(),
-                                                         Collections.<UUID>emptySet(),
-                                                         this));
-            for (ConfiguredObjectRecord parent : object.getParents().values())
-            {
-                ConfigurationEntry parentEntry = getEntry(parent.getId());
-                Set<UUID> children = new HashSet<UUID>(parentEntry.getChildrenIds());
-                children.add(object.getId());
-                ConfigurationEntry replacementEntry = new ConfigurationEntryImpl(parentEntry.getId(),
-                                                                                 parent.getType(),
-                                                                                 parent.getAttributes(),
-                                                                                 children,
-                                                                                 this);
-                entriesToSave.add(replacementEntry);
-            }
-            save(entriesToSave.toArray(new ConfigurationEntry[entriesToSave.size()]));
+            _store.create(object);
         }
+        _records.put(object.getId(), object);
     }
 
     @Override
@@ -249,77 +208,28 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     {
         synchronized (_store)
         {
-            Map<UUID, ConfigurationEntry> updates = new HashMap<UUID, ConfigurationEntry>();
 
+            Collection<ConfiguredObjectRecord> actualUpdates = new ArrayList<ConfiguredObjectRecord>();
 
-            for (ConfiguredObjectRecord record : records)
+            for(ConfiguredObjectRecord record : records)
             {
-                Set<UUID> currentChildren;
-
-                final ConfigurationEntry entry = getEntry(record.getId());
-
-                if (entry == null)
+                if (_cliEntries.containsKey(record.getId()))
                 {
-                    if (createIfNecessary)
-                    {
-                        currentChildren = new HashSet<UUID>();
-                    }
-                    else
-                    {
-                        throw new StoreException("Cannot update record with id "
-                                                 + record.getId()
-                                                 + " as it does not exist");
-                    }
+                    throw new IllegalConfigurationException("Cannot save configuration provided as command line argument:"
+                                                            + record);
                 }
-                else
+                else if (_quiescedEntriesOriginalState.containsKey(record.getId()))
                 {
-                    currentChildren = new HashSet<UUID>(entry.getChildrenIds());
+                    // save entry with the original state
+                    record = createEntryWithState(record, _quiescedEntriesOriginalState.get(record.getId()));
                 }
-
-                updates.put(record.getId(),
-                            new ConfigurationEntryImpl(record.getId(),
-                                                       record.getType(),
-                                                       record.getAttributes(),
-                                                       currentChildren,
-                                                       this)
-                           );
+                actualUpdates.add(record);
             }
-
-            for (ConfiguredObjectRecord record : records)
-            {
-                for (ConfiguredObjectRecord parent : record.getParents().values())
-                {
-                    ConfigurationEntry existingParentEntry = updates.get(parent.getId());
-                    if (existingParentEntry == null)
-                    {
-                        existingParentEntry = getEntry(parent.getId());
-                        if (existingParentEntry == null)
-                        {
-                            if(parent.getType().equals(SystemContext.class.getSimpleName()))
-                            {
-                                continue;
-                            }
-                            throw new StoreException("Unknown parent of type " + parent.getType() + " with id " + parent
-                                    .getId());
-                        }
-
-                        Set<UUID> children = new HashSet<UUID>(existingParentEntry.getChildrenIds());
-                        if (!children.contains(record.getId()))
-                        {
-                            children.add(record.getId());
-                            ConfigurationEntry newParentEntry = new ConfigurationEntryImpl(existingParentEntry.getId(),
-                                                                                           existingParentEntry.getType(),
-                                                                                           existingParentEntry.getAttributes(),
-                                                                                           children,
-                                                                                           this);
-                            updates.put(newParentEntry.getId(), newParentEntry);
-                        }
-                    }
-                }
-
-            }
-
-            save(updates.values().toArray(new ConfigurationEntry[updates.size()]));
+            _store.update(createIfNecessary, actualUpdates.toArray(new ConfiguredObjectRecord[actualUpdates.size()]));
+        }
+        for(ConfiguredObjectRecord record : records)
+        {
+            _records.put(record.getId(), record);
         }
     }
 
@@ -328,44 +238,6 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
     {
     }
 
-    @Override
-    public void save(ConfigurationEntry... entries)
-    {
-        synchronized (_store)
-        {
-            ConfigurationEntry[] entriesToSave = new ConfigurationEntry[entries.length];
-
-            for (int i = 0; i < entries.length; i++)
-            {
-                ConfigurationEntry entry = entries[i];
-                UUID id = entry.getId();
-                if (_cliEntries.containsKey(id))
-                {
-                    throw new IllegalConfigurationException("Cannot save configuration provided as command line argument:"
-                            + entry);
-                }
-                else if (_quiescedEntriesOriginalState.containsKey(id))
-                {
-                    // save entry with the original state
-                    entry = createEntryWithState(entry, _quiescedEntriesOriginalState.get(id));
-                }
-                else if (_rootId.equals(id))
-                {
-                    // save root without command line entries
-                    Set<UUID> childrenIds = new HashSet<UUID>(entry.getChildrenIds());
-                    if (!_cliEntries.isEmpty())
-                    {
-                        childrenIds.removeAll(_cliEntries.keySet());
-                    }
-                    HashMap<String, Object> attributes = new HashMap<String, Object>(entry.getAttributes());
-                    entry = new ConfigurationEntryImpl(entry.getId(), entry.getType(), attributes, childrenIds, this);
-                }
-                entriesToSave[i] = entry;
-            }
-
-            _store.save(entriesToSave);
-        }
-    }
 
     @Override
     public synchronized UUID[] remove(final ConfiguredObjectRecord... records)
@@ -394,38 +266,15 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
                     _quiescedEntriesOriginalState.remove(id);
                 }
             }
+            for(ConfiguredObjectRecord record : records)
+            {
+                _records.remove(record.getId());
+            }
             return result;
         }
     }
 
-    @Override
-    public void copyTo(String copyLocation)
-    {
-        synchronized (_store)
-        {
-            _store.copyTo(copyLocation);
-        }
-    }
-
-    @Override
-    public String getStoreLocation()
-    {
-        return _store.getStoreLocation();
-    }
-
-    @Override
-    public int getVersion()
-    {
-        return _store.getVersion();
-    }
-
-    @Override
-    public String getType()
-    {
-        return _store.getType();
-    }
-
-    private Map<UUID, ConfigurationEntry> createPortsFromCommandLineOptions(BrokerOptions options)
+    private Map<UUID, ConfiguredObjectRecord> createPortsFromCommandLineOptions(BrokerOptions options)
     {
         int managementModeRmiPortOverride = options.getManagementModeRmiPortOverride();
         if (managementModeRmiPortOverride < 0)
@@ -442,32 +291,34 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         {
             throw new IllegalConfigurationException("Invalid http port is specified: " + managementModeHttpPortOverride);
         }
-        Map<UUID, ConfigurationEntry> cliEntries = new HashMap<UUID, ConfigurationEntry>();
+        Map<UUID, ConfiguredObjectRecord> cliEntries = new HashMap<UUID, ConfiguredObjectRecord>();
         if (managementModeRmiPortOverride != 0)
         {
-            ConfigurationEntry entry = createCLIPortEntry(managementModeRmiPortOverride, Protocol.RMI);
+            ConfiguredObjectRecord entry = createCLIPortEntry(managementModeRmiPortOverride, Protocol.RMI);
             cliEntries.put(entry.getId(), entry);
             if (managementModeJmxPortOverride == 0)
             {
-                ConfigurationEntry connectorEntry = createCLIPortEntry(managementModeRmiPortOverride + 100, Protocol.JMX_RMI);
+                ConfiguredObjectRecord connectorEntry = createCLIPortEntry(managementModeRmiPortOverride + 100, Protocol.JMX_RMI);
                 cliEntries.put(connectorEntry.getId(), connectorEntry);
             }
         }
         if (managementModeJmxPortOverride != 0)
         {
-            ConfigurationEntry entry = createCLIPortEntry(managementModeJmxPortOverride, Protocol.JMX_RMI);
+            ConfiguredObjectRecord entry = createCLIPortEntry(managementModeJmxPortOverride, Protocol.JMX_RMI);
             cliEntries.put(entry.getId(), entry);
         }
         if (managementModeHttpPortOverride != 0)
         {
-            ConfigurationEntry entry = createCLIPortEntry(managementModeHttpPortOverride, Protocol.HTTP);
+            ConfiguredObjectRecord entry = createCLIPortEntry(managementModeHttpPortOverride, Protocol.HTTP);
             cliEntries.put(entry.getId(), entry);
         }
         return cliEntries;
     }
 
-    private ConfigurationEntry createCLIPortEntry(int port, Protocol protocol)
+    private ConfiguredObjectRecord createCLIPortEntry(int port, Protocol protocol)
     {
+        ConfiguredObjectRecord parent = findBroker();
+
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, port);
         attributes.put(Port.PROTOCOLS, Collections.singleton(protocol));
@@ -476,8 +327,8 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         {
             attributes.put(Port.AUTHENTICATION_PROVIDER, MANAGEMENT_MODE_AUTH_PROVIDER);
         }
-        ConfigurationEntry portEntry = new ConfigurationEntryImpl(UUID.randomUUID(), PORT_TYPE, attributes,
-                Collections.<UUID> emptySet(), this);
+        ConfiguredObjectRecord portEntry = new ConfiguredObjectRecordImpl(UUID.randomUUID(), PORT_TYPE, attributes,
+                Collections.singletonMap(parent.getType(),parent));
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Add management mode port configuration " + portEntry + " for port " + port + " and protocol "
@@ -486,79 +337,97 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         return portEntry;
     }
 
-    private ConfigurationEntry createRootWithCLIEntries(ConfigurationEntry storeRoot)
+    private ConfiguredObjectRecord findBroker()
     {
-        Set<UUID> childrenIds = new HashSet<UUID>(storeRoot.getChildrenIds());
-        if (!_cliEntries.isEmpty())
+        for(ConfiguredObjectRecord record : _records.values())
         {
-            childrenIds.addAll(_cliEntries.keySet());
+            if(record.getType().equals(Broker.class.getSimpleName()))
+            {
+                return record;
+            }
         }
-        ConfigurationEntry root = new ConfigurationEntryImpl(storeRoot.getId(), storeRoot.getType(), new HashMap<String, Object>(
-                storeRoot.getAttributes()), childrenIds, this);
-        return root;
+        return null;
     }
 
-    private Map<UUID, Object> quiesceEntries(ConfigurationEntry storeRoot, BrokerOptions options)
+
+    private Map<UUID, Object> quiesceEntries(final BrokerOptions options)
     {
-        Map<UUID, Object> quiescedEntries = new HashMap<UUID, Object>();
-        Set<UUID> childrenIds;
-        int managementModeRmiPortOverride = options.getManagementModeRmiPortOverride();
-        int managementModeJmxPortOverride = options.getManagementModeJmxPortOverride();
-        int managementModeHttpPortOverride = options.getManagementModeHttpPortOverride();
-        childrenIds = storeRoot.getChildrenIds();
-        for (UUID id : childrenIds)
+        final Map<UUID, Object> quiescedEntries = new HashMap<UUID, Object>();
+        final int managementModeRmiPortOverride = options.getManagementModeRmiPortOverride();
+        final int managementModeJmxPortOverride = options.getManagementModeJmxPortOverride();
+        final int managementModeHttpPortOverride = options.getManagementModeHttpPortOverride();
+
+        _store.recoverConfigurationStore(new ConfigurationRecoveryHandler()
         {
-            ConfigurationEntry entry = _store.getEntry(id);
-            String entryType = entry.getType();
-            Map<String, Object> attributes = entry.getAttributes();
-            boolean quiesce = false;
-            if (VIRTUAL_HOST_TYPE.equals(entryType) && options.isManagementModeQuiesceVirtualHosts())
+            @Override
+            public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
             {
-                quiesce = true;
+
             }
-            else if (PORT_TYPE.equals(entryType))
+
+            @Override
+            public void configuredObject(final ConfiguredObjectRecord entry)
             {
-                if (attributes == null)
-                {
-                    throw new IllegalConfigurationException("Port attributes are not set in " + entry);
-                }
-                Set<Protocol> protocols = getPortProtocolsAttribute(attributes);
-                if (protocols == null)
+                String entryType = entry.getType();
+                Map<String, Object> attributes = entry.getAttributes();
+                boolean quiesce = false;
+                if (VIRTUAL_HOST_TYPE.equals(entryType) && options.isManagementModeQuiesceVirtualHosts())
                 {
                     quiesce = true;
                 }
-                else
+                else if (PORT_TYPE.equals(entryType))
                 {
-                    for (Protocol protocol : protocols)
+                    if (attributes == null)
                     {
-                        switch (protocol)
+                        throw new IllegalConfigurationException("Port attributes are not set in " + entry);
+                    }
+                    Set<Protocol> protocols = getPortProtocolsAttribute(attributes);
+                    if (protocols == null)
+                    {
+                        quiesce = true;
+                    }
+                    else
+                    {
+                        for (Protocol protocol : protocols)
                         {
-                        case JMX_RMI:
-                            quiesce = managementModeJmxPortOverride > 0 || managementModeRmiPortOverride > 0;
-                            break;
-                        case RMI:
-                            quiesce = managementModeRmiPortOverride > 0;
-                            break;
-                        case HTTP:
-                            quiesce = managementModeHttpPortOverride > 0;
-                            break;
-                        default:
-                            quiesce = true;
+                            switch (protocol)
+                            {
+                                case JMX_RMI:
+                                    quiesce = managementModeJmxPortOverride > 0 || managementModeRmiPortOverride > 0;
+                                    break;
+                                case RMI:
+                                    quiesce = managementModeRmiPortOverride > 0;
+                                    break;
+                                case HTTP:
+                                    quiesce = managementModeHttpPortOverride > 0;
+                                    break;
+                                default:
+                                    quiesce = true;
+                            }
                         }
                     }
                 }
-            }
-            if (quiesce)
-            {
-                if (LOGGER.isDebugEnabled())
+                if (quiesce)
                 {
-                    LOGGER.debug("Management mode quiescing entry " + entry);
-                }
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Management mode quiescing entry " + entry);
+                    }
 
-                // save original state
-                quiescedEntries.put(entry.getId(), attributes.get(ATTRIBUTE_STATE));
+                    // save original state
+                    quiescedEntries.put(entry.getId(), attributes.get(ATTRIBUTE_STATE));
+                }
             }
-        }
+
+
+            @Override
+            public int completeConfigurationRecovery()
+            {
+                return 0;
+            }
+        });
+
+
         return quiescedEntries;
     }
 
@@ -572,7 +441,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         return MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, attributes, Protocol.class);
     }
 
-    private ConfigurationEntry createEntryWithState(ConfigurationEntry entry, Object state)
+    private ConfiguredObjectRecord createEntryWithState(ConfiguredObjectRecord entry, Object state)
     {
         Map<String, Object> attributes = new HashMap<String, Object>(entry.getAttributes());
         if (state == null)
@@ -583,13 +452,7 @@ public class ManagementModeStoreHandler implements ConfigurationEntryStore
         {
             attributes.put(ATTRIBUTE_STATE, state);
         }
-        Set<UUID> originalChildren = entry.getChildrenIds();
-        Set<UUID> children = null;
-        if (originalChildren != null)
-        {
-            children = new HashSet<UUID>(originalChildren);
-        }
-        return new ConfigurationEntryImpl(entry.getId(), entry.getType(), attributes, children, entry.getStore());
+        return new ConfiguredObjectRecordImpl(entry.getId(), entry.getType(), attributes, entry.getParents());
     }
 
 }

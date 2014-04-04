@@ -29,10 +29,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import javax.security.auth.Subject;
+
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -46,8 +48,7 @@ import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
-
-import javax.security.auth.Subject;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 
 public class Broker
 {
@@ -137,7 +138,7 @@ public class Broker
         SystemContext systemContext = new SystemContext(taskExecutor, configuredObjectFactory, _eventLogger, logRecorder, options);
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
-        ConfigurationEntryStore store = storeCreator.createStore(systemContext, storeType, options.getInitialConfigurationLocation(),
+        DurableConfigurationStore store = storeCreator.createStore(systemContext, storeType, options.getInitialConfigurationLocation(),
                                                                  options.isOverwriteConfigurationStore(), options.getConfigProperties());
 
         if (options.isManagementMode())

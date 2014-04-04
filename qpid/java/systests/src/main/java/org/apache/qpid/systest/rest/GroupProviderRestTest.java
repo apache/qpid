@@ -29,13 +29,13 @@ import java.util.Properties;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -301,7 +301,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
         assertFalse("Group file should not exist", file.exists());
 
         TestBrokerConfiguration config = getBrokerConfiguration();
-        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
+        config.removeObjectConfiguration(GroupProvider.class, TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
         UUID id = config.addGroupFileConfiguration(file.getAbsolutePath());
         config.setSaved(false);
         startBroker(0, true);

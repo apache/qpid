@@ -19,8 +19,17 @@ package org.apache.qpid.server.configuration.startup;/*
  *
  */
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.model.Broker;
@@ -32,8 +41,6 @@ import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreUpgrader;
 import org.apache.qpid.server.store.NonNullUpgrader;
-
-import java.util.*;
 
 public class BrokerStoreUpgrader
 {
@@ -574,7 +581,7 @@ public class BrokerStoreUpgrader
 
 
 
-    public Broker upgrade(ConfigurationEntryStore store)
+    public Broker upgrade(DurableConfigurationStore store)
     {
         final BrokerStoreRecoveryHandler recoveryHandler = new BrokerStoreRecoveryHandler(_systemContext);
         store.openConfigurationStore(_systemContext, Collections.<String,Object>emptyMap());

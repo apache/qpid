@@ -20,6 +20,35 @@
  */
 package org.apache.qpid.server.configuration.store;
 
+import static org.apache.qpid.server.configuration.ConfigurationEntry.ATTRIBUTE_NAME;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jackson.node.ArrayNode;
+
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
@@ -31,26 +60,10 @@ import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.Strings;
 import org.apache.qpid.util.Strings.ChainedResolver;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.node.ArrayNode;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.*;
-
-import static org.apache.qpid.server.configuration.ConfigurationEntry.ATTRIBUTE_NAME;
 
 public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 {
@@ -100,22 +113,48 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         }
     }
 
-    public MemoryConfigurationEntryStore(String initialStoreLocation, ConfigurationEntryStore initialStore, Map<String, String> configProperties)
+    public MemoryConfigurationEntryStore(ConfiguredObject parentObject, String initialStoreLocation, ConfigurationEntryStore initialStore, Map<String, String> configProperties)
     {
         this(configProperties);
         if (initialStore == null && (initialStoreLocation == null || "".equals(initialStoreLocation) ))
         {
             throw new IllegalConfigurationException("Cannot instantiate the memory broker store as neither initial store nor initial store location is provided");
         }
-
+        _parent = parentObject;
         if (initialStore != null)
         {
             if (initialStore instanceof MemoryConfigurationEntryStore)
             {
                 _storeLocation = initialStore.getStoreLocation();
             }
-            _rootId = initialStore.getRootEntry().getId();
-            copyEntry(_rootId, initialStore, _entries);
+            final Collection<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>();
+            final ConfigurationRecoveryHandler replayHandler = new ConfigurationRecoveryHandler()
+            {
+                private int _configVersion;
+                @Override
+                public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+                {
+                    _configVersion = configVersion;
+                }
+
+                @Override
+                public void configuredObject(ConfiguredObjectRecord record)
+                {
+                    records.add(record);
+                }
+
+                @Override
+                public int completeConfigurationRecovery()
+                {
+                    return _configVersion;
+                }
+            };
+
+            initialStore.openConfigurationStore(parentObject, Collections.<String,Object>emptyMap());
+            initialStore.recoverConfigurationStore(replayHandler);
+
+            update(true, records.toArray(new ConfiguredObjectRecord[records.size()]));
+
         }
         else
         {
@@ -165,19 +204,16 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         return removedIds.toArray(new UUID[removedIds.size()]);
     }
 
-    @Override
     public synchronized void save(ConfigurationEntry... entries)
     {
         replaceEntries(entries);
     }
 
-    @Override
     public ConfigurationEntry getRootEntry()
     {
         return getEntry(_rootId);
     }
 
-    @Override
     public synchronized ConfigurationEntry getEntry(UUID id)
     {
         return _entries.get(id);
@@ -517,31 +553,6 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         catch (IOException e)
         {
             throw new IllegalConfigurationException("Cannot create file " + file, e);
-        }
-    }
-
-    protected void copyEntry(UUID entryId, ConfigurationEntryStore initialStore, Map<UUID,ConfigurationEntry> entries)
-    {
-        ConfigurationEntry entry = initialStore.getEntry(entryId);
-        if (entry != null)
-        {
-            if (entries.containsKey(entryId))
-            {
-                throw new IllegalConfigurationException("Duplicate id is found: " + entryId
-                        + "! The following configuration entries have the same id: " + entries.get(entryId) + ", " + entry);
-            }
-
-            Set<UUID> children = entry.getChildrenIds();
-            Set<UUID> childrenCopy = children == null? null : new HashSet<UUID>(children);
-            ConfigurationEntry copy = new ConfigurationEntryImpl(entryId, entry.getType(), new HashMap<String, Object>(entry.getAttributes()), childrenCopy, this);
-            entries.put(entryId, copy);
-            if (children != null)
-            {
-                for (UUID uuid : children)
-                {
-                    copyEntry(uuid, initialStore, entries);
-                }
-            }
         }
     }
 

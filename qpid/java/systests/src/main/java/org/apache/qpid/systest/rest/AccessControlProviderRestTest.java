@@ -30,6 +30,7 @@ import java.util.UUID;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AccessControlProvider;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -58,7 +59,7 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
         super.customizeConfiguration();
         getRestTestHelper().configureTemporaryPasswordFile(this, ALLOWED_USER, DENIED_USER, OTHER_USER);
 
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 

@@ -20,25 +20,33 @@
  */
 package org.apache.qpid.server.configuration.store;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.test.utils.QpidTestCase;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.test.utils.QpidTestCase;
+
 public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 {
-    private ConfigurationEntryStore _store;
+    private MemoryConfigurationEntryStore _store;
 
     private UUID _brokerId;
     private UUID _virtualHostId;
@@ -87,7 +95,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 
     // ??? perhaps it should not be abstract
 
-    protected abstract ConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception;
+    protected abstract MemoryConfigurationEntryStore createStore(UUID brokerId, Map<String, Object> brokerAttributes) throws Exception;
 
     protected abstract void addConfiguration(UUID id, String type, Map<String, Object> attributes, UUID parentId);
 
@@ -96,7 +104,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         addConfiguration(id, type, attributes, _brokerId);
     }
 
-    protected ConfigurationEntryStore getStore()
+    protected MemoryConfigurationEntryStore getStore()
     {
         return _store;
     }

@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+
 public class ConfigurationEntryImpl implements ConfigurationEntry
 {
 
@@ -35,10 +37,10 @@ public class ConfigurationEntryImpl implements ConfigurationEntry
     private final String _type;
     private final Map<String, Object> _attributes;
     private final Set<UUID> _childrenIds;
-    private final ConfigurationEntryStore _store;
+    private final MemoryConfigurationEntryStore _store;
 
     public ConfigurationEntryImpl(UUID id, String type, Map<String, Object> attributes, Set<UUID> childrenIds,
-                                  ConfigurationEntryStore store)
+                                  MemoryConfigurationEntryStore store)
     {
         super();
         _id = id;

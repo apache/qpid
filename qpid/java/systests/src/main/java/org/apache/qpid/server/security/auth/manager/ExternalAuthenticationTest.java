@@ -96,7 +96,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
     public void testExternalAuthenticationManagerOnNonSslPort() throws Exception
     {
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        getBrokerConfiguration().setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         super.setUp();
 
         setClientKeystoreProperties();
@@ -202,7 +202,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         sslTrustStoreAttributes.put(TrustStore.PATH, BROKER_PEERSTORE);
         sslTrustStoreAttributes.put(TrustStore.PASSWORD, BROKER_PEERSTORE_PASSWORD);
         sslTrustStoreAttributes.put(TrustStore.PEERS_ONLY, true);
-        getBrokerConfiguration().addTrustStoreConfiguration(sslTrustStoreAttributes);
+        getBrokerConfiguration().addObjectConfiguration(TrustStore.class, sslTrustStoreAttributes);
 
         super.setUp();
 
@@ -283,7 +283,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         JMXTestUtils jmxUtils = new JMXTestUtils(this);
 
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER, ExternalAuthenticationManagerFactory.ATTRIBUTE_USE_FULL_DN, "true");
+        getBrokerConfiguration().setObjectAttribute(AuthenticationProvider.class, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER, ExternalAuthenticationManagerFactory.ATTRIBUTE_USE_FULL_DN, "true");
         getBrokerConfiguration().addJmxManagementConfiguration();
 
         super.setUp();
@@ -343,14 +343,14 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
         sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
         sslPortAttributes.put(Port.TRUST_STORES, trustStoreNames);
-        config.addPortConfiguration(sslPortAttributes);
+        config.addObjectConfiguration(Port.class, sslPortAttributes);
 
         Map<String, Object> externalAuthProviderAttributes = new HashMap<String, Object>();
         externalAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
         externalAuthProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
-        config.addAuthenticationProviderConfiguration(externalAuthProviderAttributes);
+        config.addObjectConfiguration(AuthenticationProvider.class, externalAuthProviderAttributes);
 
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
+        config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
     }
 
     private void setUntrustedClientKeystoreProperties()

@@ -20,25 +20,8 @@
  */
 package org.apache.qpid.server.configuration.store;
 
-import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.test.utils.TestFileUtils;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,8 +33,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.test.utils.TestFileUtils;
 
 
 public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTestCase
@@ -138,7 +138,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     @Override
     protected void addConfiguration(UUID id, String type, Map<String, Object> attributes, UUID parentId)
     {
-        ConfigurationEntryStore store = getStore();
+        MemoryConfigurationEntryStore store = getStore();
         ConfigurationEntry parentEntry = getStore().getEntry(parentId);
         Set<UUID> children = new HashSet<UUID>(parentEntry.getChildrenIds());
         children.add(id);
@@ -151,7 +151,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         String defaultVhost = getTestName();
         setTestSystemProperty("my.test.property", defaultVhost);
 
-        ConfigurationEntryStore store = getStore();
+        MemoryConfigurationEntryStore store = getStore();
         ConfigurationEntry brokerConfigEntry = store.getRootEntry();
         Map<String, Object> attributes = new HashMap<String, Object>(brokerConfigEntry.getAttributes());
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "${my.test.property}");

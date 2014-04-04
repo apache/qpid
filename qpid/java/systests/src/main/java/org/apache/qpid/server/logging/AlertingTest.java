@@ -24,19 +24,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jms.Connection;
+import javax.jms.Queue;
+import javax.jms.Session;
+
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.systest.rest.RestTestHelper;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-
-import javax.jms.Connection;
-import javax.jms.Queue;
-import javax.jms.Session;
 
 public class AlertingTest extends AbstractTestLogging
 {
@@ -154,19 +155,19 @@ public class AlertingTest extends AbstractTestLogging
         RestTestHelper restTestHelper = new RestTestHelper(findFreePort());
         TestBrokerConfiguration config = getBrokerConfiguration();
         config.addHttpManagementConfiguration();
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, restTestHelper.getHttpPort());
-        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT);
-        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
+        config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, restTestHelper.getHttpPort());
+        config.removeObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_JMX_PORT);
+        config.removeObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
 
         Map<String, Object> anonymousProviderAttributes = new HashMap<String, Object>();
         anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
         anonymousProviderAttributes.put(AuthenticationProvider.NAME, "testAnonymous");
-        config.addAuthenticationProviderConfiguration(anonymousProviderAttributes);
+        config.addObjectConfiguration(AuthenticationProvider.class, anonymousProviderAttributes);
 
         // set password authentication provider on http port for the tests
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
+        config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
                 TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
+        config.setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
         config.setSaved(false);
         restTestHelper.setUsernameAndPassword("webadmin", "webadmin");
 

@@ -50,20 +50,21 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.servlet.http.HttpServletResponse;
 
 import junit.framework.Assert;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class RestTestHelper
 {
@@ -448,7 +449,7 @@ public class RestTestHelper
     {
         _passwdFile = createTemporaryPasswdFile(users);
 
-        testCase.getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER,
+        testCase.getBrokerConfiguration().setObjectAttribute(AuthenticationProvider.class, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER,
                 "path", _passwdFile.getAbsolutePath());
     }
 

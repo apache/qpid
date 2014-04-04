@@ -28,12 +28,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BrokerRestHttpsTest extends QpidRestTestCase
@@ -56,7 +56,7 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
         newAttributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.HTTP));
         newAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
         newAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
-        getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT,newAttributes);
+        getBrokerConfiguration().setObjectAttributes(Port.class,TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT,newAttributes);
     }
 
     public void testGetWithHttps() throws Exception
