@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 import java.security.AccessControlException;
@@ -279,6 +278,8 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
 
     Class<? extends ConfiguredObject> getCategoryClass();
+
+    <C extends ConfiguredObject<C>> C findConfiguredObject(Class<C> clazz, String name);
 
     // TODO - remove this when objects become responsible for their own storage
     ConfiguredObjectRecord asObjectRecord();

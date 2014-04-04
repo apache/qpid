@@ -18,30 +18,29 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.plugin.PluginFactory;
-
-public class HttpManagementFactory implements PluginFactory
+public class HttpManagementFactory extends AbstractConfiguredObjectTypeFactory<HttpManagement>
 {
 
-    @Override
-    public Plugin createInstance(UUID id, Map<String, Object> attributes, Broker broker)
+    public HttpManagementFactory()
     {
-        if (!HttpManagement.PLUGIN_TYPE.equals(attributes.get(PLUGIN_TYPE)))
-        {
-            return null;
-        }
-
-        return new HttpManagement(id, broker, attributes);
+        super(HttpManagement.class);
     }
 
     @Override
-    public String getType()
+    public HttpManagement createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
-        return "HTTP Management";
+        Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
+        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
+        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
+        return new HttpManagement(id, getParent(Broker.class,parents), attributes);
     }
+
 }

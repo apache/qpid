@@ -42,7 +42,7 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.configuration.BrokerProperties;

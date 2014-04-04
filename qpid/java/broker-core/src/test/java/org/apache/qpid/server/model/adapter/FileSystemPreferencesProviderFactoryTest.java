@@ -32,6 +32,7 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -80,7 +81,8 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
         try
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
-            PreferencesProvider provider = _factory.createInstance(id, attributes, _authenticationProvider);
+            attributes.put(ConfiguredObject.ID, id);
+            PreferencesProvider provider = _factory.create(attributes, _authenticationProvider);
             assertNotNull("Preferences provider was not instantiated", provider);
             assertEquals("Unexpected name", "test-provider", provider.getName());
             assertEquals("Unexpected id", id, provider.getId());
@@ -104,7 +106,8 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
         try
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
-            _factory.createInstance(id, attributes, _authenticationProvider);
+            attributes.put(ConfiguredObject.ID, id);
+            _factory.create(attributes, _authenticationProvider);
         }
         catch (IllegalConfigurationException e)
         {
@@ -123,7 +126,8 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
         try
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
-            PreferencesProvider provider = _factory.createInstance(id, attributes, _authenticationProvider);
+            attributes.put(ConfiguredObject.ID, id);
+            PreferencesProvider provider = _factory.create(attributes, _authenticationProvider);
             assertNotNull("Preferences provider was not recovered", provider);
             assertEquals("Unexpected name", "test-provider", provider.getName());
             assertEquals("Unexpected id", id, provider.getId());

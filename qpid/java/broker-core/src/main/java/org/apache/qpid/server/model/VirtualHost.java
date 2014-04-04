@@ -20,17 +20,16 @@
  */
 package org.apache.qpid.server.model;
 
-import java.security.AccessControlException;
-import java.util.Collection;
-import java.util.Map;
-
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.store.MessageStore;
 
+import java.security.AccessControlException;
+import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
-@ManagedObject( managesChildren = true )
+@ManagedObject( managesChildren = true, defaultType = "STANDARD")
 public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
 {
 

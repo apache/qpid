@@ -38,11 +38,13 @@ import javax.security.sasl.SaslServer;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
 
+@ManagedObject( category = false, type = "Simple" )
 public class SimpleAuthenticationManager extends AbstractAuthenticationManager<SimpleAuthenticationManager>
 {
     private static final Logger _logger = Logger.getLogger(SimpleAuthenticationManager.class);

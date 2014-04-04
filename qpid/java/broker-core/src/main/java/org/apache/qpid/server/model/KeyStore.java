@@ -21,12 +21,9 @@
 package org.apache.qpid.server.model;
 
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import javax.net.ssl.KeyManager;
 
-@ManagedObject
+@ManagedObject( defaultType = "FileKeyStore" )
 public interface KeyStore<X extends KeyStore<X>> extends ConfiguredObject<X>
 {
     String DURABLE = "durable";

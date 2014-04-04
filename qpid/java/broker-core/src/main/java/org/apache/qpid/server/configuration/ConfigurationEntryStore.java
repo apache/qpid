@@ -20,41 +20,10 @@
  */
 package org.apache.qpid.server.configuration;
 
-import java.util.UUID;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 
-public interface ConfigurationEntryStore
+public interface ConfigurationEntryStore extends DurableConfigurationStore
 {
-
-    /**
-     * Returns stored root configuration entry
-     *
-     * @return root entry
-     */
-    ConfigurationEntry getRootEntry();
-
-    /**
-     * Returns the configuration entry with a given id.
-     *
-     * @return entry with a given id or null if entry does not exists
-     */
-    ConfigurationEntry getEntry(UUID id);
-
-    /**
-     * Saves given entries in the store.
-     *
-     * @param entries entries to store
-     * @throws IllegalConfigurationException if save operation fails
-     */
-    void save(ConfigurationEntry... entries);
-
-    /**
-     * Removes the entries with given IDs and all their children
-     *
-     * @param entryIds IDs of entries to remove
-     * @return IDs of removed entries
-     * @throws IllegalConfigurationException if remove operation fails
-     */
-    UUID[] remove(UUID... entryIds);
 
     /**
      * Copies the store into the given location

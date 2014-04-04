@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.server.store.jdbc.bonecp;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Map;
-
+import com.jolbox.bonecp.BoneCP;
+import com.jolbox.bonecp.BoneCPConfig;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 import org.apache.qpid.server.util.MapValueConverter;
 
-import com.jolbox.bonecp.BoneCP;
-import com.jolbox.bonecp.BoneCPConfig;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Map;
 
 public class BoneCPConnectionProvider implements ConnectionProvider
 {

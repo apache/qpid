@@ -26,10 +26,12 @@ import java.util.Map;
 
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class QpidRestTestCase extends QpidBrokerTestCase
 {
@@ -52,7 +54,7 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         getRestTestHelper().setUsernameAndPassword("webadmin", "webadmin");
 
         //remove the normal 'test' vhost, we will configure the vhosts below
-        getBrokerConfiguration(0).removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+        getBrokerConfiguration(0).removeObjectConfiguration(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
 
         // Set up virtualhost config with queues and bindings to the amq.direct
         for (String virtualhost : EXPECTED_VIRTUALHOSTS)
@@ -81,19 +83,19 @@ public class QpidRestTestCase extends QpidBrokerTestCase
     {
         TestBrokerConfiguration config = getBrokerConfiguration();
         config.addHttpManagementConfiguration();
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _restTestHelper.getHttpPort());
-        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_JMX_PORT);
-        config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
+        config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _restTestHelper.getHttpPort());
+        config.removeObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_JMX_PORT);
+        config.removeObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
 
         Map<String, Object> anonymousProviderAttributes = new HashMap<String, Object>();
         anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
         anonymousProviderAttributes.put(AuthenticationProvider.NAME, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        config.addAuthenticationProviderConfiguration(anonymousProviderAttributes);
+        config.addObjectConfiguration(AuthenticationProvider.class, anonymousProviderAttributes);
 
         // set password authentication provider on http port for the tests
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
+        config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
                 TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
+        config.setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 
     public RestTestHelper getRestTestHelper()

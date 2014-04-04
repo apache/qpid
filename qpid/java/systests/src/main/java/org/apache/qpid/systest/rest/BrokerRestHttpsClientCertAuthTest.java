@@ -68,13 +68,13 @@ public class BrokerRestHttpsClientCertAuthTest extends QpidRestTestCase
         Map<String, Object> externalProviderAttributes = new HashMap<String, Object>();
         externalProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
         externalProviderAttributes.put(AuthenticationProvider.NAME, EXTERNAL_AUTHENTICATION_PROVIDER);
-        getBrokerConfiguration().addAuthenticationProviderConfiguration(externalProviderAttributes);
+        getBrokerConfiguration().addObjectConfiguration(AuthenticationProvider.class, externalProviderAttributes);
 
         // set password authentication provider on http port for the tests
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
+        getBrokerConfiguration().setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
                                                     EXTERNAL_AUTHENTICATION_PROVIDER);
 
-        getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, newAttributes);
+        getBrokerConfiguration().setObjectAttributes(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, newAttributes);
     }
 
     public void testGetWithHttps() throws Exception

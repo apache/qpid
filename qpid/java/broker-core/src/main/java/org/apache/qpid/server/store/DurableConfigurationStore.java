@@ -41,7 +41,8 @@ public interface DurableConfigurationStore
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
-     * @param parent host name
+     *
+     * @param parent
      * @param storeSettings store settings
      */
     void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings) throws StoreException;

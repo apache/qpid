@@ -19,45 +19,43 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-
-public class AnonymousAuthenticationManagerFactory implements AuthenticationManagerFactory
+public class AnonymousAuthenticationManagerFactory extends AbstractConfiguredObjectTypeFactory<AnonymousAuthenticationManager> implements AuthenticationManagerFactory<AnonymousAuthenticationManager>
 {
     public static final String PROVIDER_TYPE = "Anonymous";
 
-    @Override
-    public AnonymousAuthenticationManager createInstance(Broker broker,
-                                                         Map<String, Object> attributes,
-                                                         final boolean recovering)
+    public AnonymousAuthenticationManagerFactory()
     {
-        if (attributes != null && PROVIDER_TYPE.equals(attributes.get(AuthenticationProvider.TYPE)))
-        {
-            return new AnonymousAuthenticationManager(broker, Collections.<String,Object>emptyMap(),attributes);
-        }
-        return null;
+        super(AnonymousAuthenticationManager.class);
     }
 
     @Override
     public Collection<String> getAttributeNames()
     {
-        return Collections.<String>singletonList(AuthenticationProvider.TYPE);
+        return Collections.singletonList(AuthenticationProvider.TYPE);
     }
 
-    @Override
-    public String getType()
-    {
-        return PROVIDER_TYPE;
-    }
 
     @Override
     public Map<String, String> getAttributeDescriptions()
     {
-        return null;
+        return Collections.emptyMap();
     }
+
+    public AnonymousAuthenticationManager createInstance(final Map<String, Object> attributes,
+                                                         final ConfiguredObject<?>... parents)
+    {
+        return new AnonymousAuthenticationManager(getParent(Broker.class,parents), Collections.<String,Object>emptyMap(),attributes);
+    }
+
+
 }

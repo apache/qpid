@@ -20,17 +20,6 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import java.lang.reflect.Type;
-import java.net.SocketAddress;
-import java.security.GeneralSecurityException;
-import java.util.*;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.servlet.DispatcherType;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
@@ -39,21 +28,10 @@ import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationF
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.LogFileServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.HelperServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.LogFileListingServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.LoggedOnUserPreferencesServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.*;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
-import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
@@ -67,6 +45,17 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.servlet.DispatcherType;
+import java.lang.reflect.Type;
+import java.net.SocketAddress;
+import java.security.GeneralSecurityException;
+import java.util.*;
+
+@ManagedObject( category = false, type = "MANAGEMENT-HTTP" )
 public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implements HttpManagementConfiguration<HttpManagement>
 {
     private final Logger _logger = Logger.getLogger(HttpManagement.class);
@@ -109,7 +98,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         put(HTTPS_SASL_AUTHENTICATION_ENABLED, Boolean.class);
         put(NAME, String.class);
         put(TIME_OUT, Integer.class);
-        put(PluginFactory.PLUGIN_TYPE, String.class);
+        put(TYPE, String.class);
     }});
 
     private static final String JSESSIONID_COOKIE_PREFIX = "JSESSIONID_";

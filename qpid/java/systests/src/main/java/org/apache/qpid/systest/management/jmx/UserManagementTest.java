@@ -59,7 +59,7 @@ public class UserManagementTest extends QpidBrokerTestCase
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put(AuthenticationProvider.TYPE, getAuthenticationManagerType());
         newAttributes.put("path", _passwordFile.getAbsolutePath());
-        getBrokerConfiguration().setObjectAttributes(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
+        getBrokerConfiguration().setObjectAttributes(AuthenticationProvider.class,TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
         getBrokerConfiguration().addJmxManagementConfiguration();
 
         _jmxUtils = new JMXTestUtils(this);

@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
@@ -57,22 +58,22 @@ public class BrokerConfigurationStoreCreator
     /**
      * Create broker configuration store for a given store location, store type, initial json config location
      *
-     * @param storeLocation store location
+     * @param systemContext applicationContext
      * @param storeType store type
      * @param initialConfigLocation initial store location
      * @param overwrite whether to overwrite an existing configuration store with the initial configuration
      * @param configProperties a map of configuration properties the store can use to resolve configuration variables
      * @throws IllegalConfigurationException if store type is unknown
      */
-    public ConfigurationEntryStore createStore(String storeLocation, String storeType, String initialConfigLocation, boolean overwrite, Map<String, String> configProperties)
+    public ConfigurationEntryStore createStore(SystemContext systemContext, String storeType, String initialConfigLocation, boolean overwrite, Map<String, String> configProperties)
     {
-        ConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(initialConfigLocation, null, configProperties);
+        ConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(systemContext, initialConfigLocation, null, configProperties);
         ConfigurationStoreFactory factory = _factories.get(storeType.toLowerCase());
         if (factory == null)
         {
             throw new IllegalConfigurationException("Unknown store type: " + storeType);
         }
-        return factory.createStore(storeLocation, initialStore, overwrite, configProperties);
+        return factory.createStore(systemContext, initialStore, overwrite, configProperties);
     }
 
     public Collection<String> getStoreTypes()

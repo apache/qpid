@@ -20,20 +20,21 @@
  */
 package org.apache.qpid.systest.rest.acl;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ExchangeRestACLTest extends QpidRestTestCase
 {
@@ -61,7 +62,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
                 "ACL DENY-LOG " + DENIED_USER + " UNBIND EXCHANGE",
                 "ACL DENY-LOG ALL ALL");
 
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT,
                 HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
     }
 

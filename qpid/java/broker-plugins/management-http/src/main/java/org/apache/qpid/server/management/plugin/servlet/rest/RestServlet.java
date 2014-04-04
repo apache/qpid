@@ -458,6 +458,7 @@ public class RestServlet extends AbstractServlet
         catch (RuntimeException e)
         {
             setResponseStatus(response, e);
+            e.printStackTrace();
         }
     }
 

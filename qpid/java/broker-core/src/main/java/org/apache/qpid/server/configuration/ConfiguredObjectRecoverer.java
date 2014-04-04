@@ -24,5 +24,4 @@ import org.apache.qpid.server.model.ConfiguredObject;
 
 public interface ConfiguredObjectRecoverer<T extends ConfiguredObject>
 {
-    T create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents);
 }

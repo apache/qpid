@@ -21,15 +21,14 @@ package org.apache.qpid.server.security.auth.manager;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.util.ResourceBundleLoader;
+import org.apache.qpid.server.model.ConfiguredObject;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class ScramSHA1AuthenticationManagerFactory implements AuthenticationManagerFactory
+public class ScramSHA1AuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<ScramSHA1AuthenticationManager>
 {
 
     public static final String PROVIDER_TYPE = "SCRAM-SHA1";
@@ -40,18 +39,9 @@ public class ScramSHA1AuthenticationManagerFactory implements AuthenticationMana
             AuthenticationProvider.TYPE
             ));
 
-    @Override
-    public ScramSHA1AuthenticationManager createInstance(Broker broker,
-                                                          Map<String, Object> attributes,
-                                                          final boolean recovering)
+    public ScramSHA1AuthenticationManagerFactory()
     {
-        if (attributes == null || !PROVIDER_TYPE.equals(attributes.get(AuthenticationProvider.TYPE)))
-        {
-            return null;
-        }
-
-
-        return new ScramSHA1AuthenticationManager(broker, Collections.<String,Object>emptyMap(),attributes, false);
+        super(ScramSHA1AuthenticationManager.class);
     }
 
     @Override
@@ -61,14 +51,16 @@ public class ScramSHA1AuthenticationManagerFactory implements AuthenticationMana
     }
 
     @Override
-    public String getType()
-    {
-        return PROVIDER_TYPE;
-    }
-
-    @Override
     public Map<String, String> getAttributeDescriptions()
     {
         return Collections.emptyMap();
     }
+
+    @Override
+    public ScramSHA1AuthenticationManager createInstance(final Map<String, Object> attributes,
+                                                         final ConfiguredObject<?>... parents)
+    {
+        return new ScramSHA1AuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(),attributes);
+    }
+
 }

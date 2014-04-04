@@ -24,14 +24,15 @@ import java.util.Map;
 
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
 
 public class JsonConfigurationStoreFactory implements ConfigurationStoreFactory
 {
     @Override
-    public ConfigurationEntryStore createStore(String storeLocation, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties)
+    public ConfigurationEntryStore createStore(SystemContext systemContext, ConfigurationEntryStore initialStore, boolean overwrite, Map<String, String> configProperties)
     {
-        return new JsonConfigurationEntryStore(storeLocation, initialStore, overwrite, configProperties);
+        return new JsonConfigurationEntryStore(systemContext, initialStore, overwrite, configProperties);
     }
 
     @Override

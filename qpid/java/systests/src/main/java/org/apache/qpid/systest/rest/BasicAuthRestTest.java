@@ -30,6 +30,7 @@ import java.util.Collections;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -57,8 +58,8 @@ public class BasicAuthRestTest extends QpidRestTestCase
         getRestTestHelper().setUseSsl(useSsl);
         if (useSsl)
         {
-            getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.TRANSPORTS, Collections.singleton(Transport.SSL));
-            getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
+            getBrokerConfiguration().setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.TRANSPORTS, Collections.singleton(Transport.SSL));
+            getBrokerConfiguration().setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
         }
         super.customizeConfiguration();
     }
@@ -85,7 +86,7 @@ public class BasicAuthRestTest extends QpidRestTestCase
     public void testBasicAuthWhenDisabledWithHttp() throws Exception
     {
         configure(false);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, false);
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, false);
         super.setUp();
 
         // Try the attempt with authentication, it should fail because
@@ -98,7 +99,7 @@ public class BasicAuthRestTest extends QpidRestTestCase
     {
         configure(false);
 
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
         super.setUp();
 
         // Try the attempt with authentication, it should succeed because
@@ -110,7 +111,7 @@ public class BasicAuthRestTest extends QpidRestTestCase
     public void testDisablingForHttps() throws Exception
     {
         configure(true);
-        getBrokerConfiguration().setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "httpsBasicAuthenticationEnabled", false);
+        getBrokerConfiguration().setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "httpsBasicAuthenticationEnabled", false);
         super.setUp();
         setSystemProperty("javax.net.ssl.trustStore", TRUSTSTORE);
         setSystemProperty("javax.net.ssl.trustStorePassword", TRUSTSTORE_PASSWORD);

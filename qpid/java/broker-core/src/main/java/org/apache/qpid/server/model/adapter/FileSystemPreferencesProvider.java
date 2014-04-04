@@ -21,6 +21,16 @@
 
 package org.apache.qpid.server.model.adapter;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jackson.type.TypeReference;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -31,27 +41,10 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.security.AccessControlException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.util.MapValueConverter;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.type.TypeReference;
-
+@ManagedObject( category = false, type = "FileSystemPreferences" )
 public class FileSystemPreferencesProvider extends AbstractConfiguredObject<FileSystemPreferencesProvider> implements PreferencesProvider<FileSystemPreferencesProvider>
 {
     private static final Logger LOGGER = Logger.getLogger(FileSystemPreferencesProvider.class);
@@ -77,16 +70,18 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
 
     private FileSystemPreferencesStore _store;
 
-    protected FileSystemPreferencesProvider(UUID id, Map<String, Object> attributes,
-                                            AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider,
-                                            TaskExecutor taskExecutor)
+    public FileSystemPreferencesProvider(UUID id, Map<String, Object> attributes,
+                                            AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), taskExecutor);
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(AuthenticationProvider.class, authenticationProvider),
+              DEFAULTS,
+              combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)),
+              authenticationProvider.getParent(Broker.class).getTaskExecutor());
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
-        addParent(AuthenticationProvider.class, authenticationProvider);
         _authenticationProvider = authenticationProvider;
         _store = new FileSystemPreferencesStore(new File(MapValueConverter.getStringAttribute(PATH, attributes)));
+        createStoreIfNotExist();
     }
 
     @Override

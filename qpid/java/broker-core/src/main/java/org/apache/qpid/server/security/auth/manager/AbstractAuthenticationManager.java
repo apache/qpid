@@ -22,9 +22,9 @@ package org.apache.qpid.server.security.auth.manager;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.adapter.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.PreferencesProviderFactory;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
@@ -34,6 +34,7 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -92,6 +93,11 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         throw new IllegalConfigurationException("Cannot associate  " + user + " with authentication provider " + this);
     }
 
+    public void instantiatePreferencesProvider(final PreferencesProvider preferencesProvider)
+    {
+        _preferencesProvider = preferencesProvider;
+    }
+
     @Override
     public String setName(final String currentName, final String desiredName)
             throws IllegalStateException, AccessControlException
@@ -137,11 +143,13 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     {
         if(childClass == PreferencesProvider.class)
         {
-            String name = MapValueConverter.getStringAttribute(PreferencesProvider.NAME, attributes);
-            String type = MapValueConverter.getStringAttribute(PreferencesProvider.TYPE, attributes);
-            PreferencesProviderFactory factory = PreferencesProviderFactory.FACTORY_LOADER.get(type);
-            UUID id = UUIDGenerator.generatePreferencesProviderUUID(name, getName());
-            PreferencesProvider pp = factory.createInstance(id, attributes, this);
+            // TODO RG - get the configured object factory from parents
+            ConfiguredObjectFactory factory = new ConfiguredObjectFactory();
+            attributes = new HashMap<String, Object>(attributes);
+            attributes.put(ConfiguredObject.ID, UUID.randomUUID());
+            final ConfiguredObjectTypeFactory preferencesFactory =
+                    factory.getConfiguredObjectTypeFactory(PreferencesProvider.class, attributes);
+            PreferencesProvider pp = (PreferencesProvider) preferencesFactory.create(attributes, this);
             pp.setDesiredState(State.INITIALISING, State.ACTIVE);
             _preferencesProvider = pp;
             return (C)pp;

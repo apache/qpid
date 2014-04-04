@@ -56,6 +56,8 @@ public class Model
 
     private Model()
     {
+        addRelationship(SystemContext.class, Broker.class);
+
         addRelationship(Broker.class, VirtualHost.class);
         addRelationship(Broker.class, Port.class);
         addRelationship(Broker.class, AccessControlProvider.class);

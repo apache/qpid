@@ -20,36 +20,22 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.security.PrivilegedAction;
-import java.util.Collection;
-import java.util.Timer;
-import java.util.TimerTask;
-
 import org.apache.log4j.Logger;
-import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.startup.DefaultRecovererProvider;
-import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
-import org.apache.qpid.server.logging.*;
+import org.apache.qpid.server.configuration.startup.BrokerStoreUpgrader;
+import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.Log4jMessageLogger;
+import org.apache.qpid.server.logging.MessageLogger;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.stats.StatisticsCounter;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.util.SystemUtils;
-
-import javax.security.auth.Subject;
 
 
 /**
@@ -62,169 +48,45 @@ public class ApplicationRegistry implements IApplicationRegistry
 {
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
-    private final EventLogger _eventLogger;
-
-    private final VirtualHostRegistry _virtualHostRegistry;
-
-    private volatile MessageLogger _messageLogger;
+    private final SystemContext _systemContext;
 
     private Broker _broker;
 
-    private Timer _reportingTimer;
-    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private DurableConfigurationStore _store;
 
-    private LogRecorder _logRecorder;
-
-    private ConfigurationEntryStore _store;
-    private TaskExecutor _taskExecutor;
-
-    public ApplicationRegistry(ConfigurationEntryStore store, EventLogger eventLogger)
+    public ApplicationRegistry(DurableConfigurationStore store, SystemContext systemContext)
     {
         _store = store;
-        _eventLogger = eventLogger;
-        _virtualHostRegistry = new VirtualHostRegistry(_eventLogger);
-        initialiseStatistics();
+        _systemContext = systemContext;
     }
 
     public void initialise(BrokerOptions brokerOptions) throws Exception
     {
         // Create the RootLogger to be used during broker operation
         boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
-        _messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
-        _eventLogger.setMessageLogger(_messageLogger);
-        _logRecorder = new LogRecorder();
+        MessageLogger messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
+        final EventLogger eventLogger = _systemContext.getEventLogger();
+        eventLogger.setMessageLogger(messageLogger);
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
-        MessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _messageLogger};
+        MessageLogger[] messageLoggers = {new SystemOutMessageLogger(), messageLogger};
 
         CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
         EventLogger startupLogger = new EventLogger(startupMessageLogger);
 
-
         logStartupMessages(startupLogger);
 
-        _taskExecutor = new TaskExecutor();
-        _taskExecutor.start();
+        BrokerStoreUpgrader upgrader = new BrokerStoreUpgrader(_systemContext);
+        _broker = upgrader.upgrade(_store);
 
-        StoreConfigurationChangeListener storeChangeListener = new StoreConfigurationChangeListener(_store);
-        RecovererProvider provider = new DefaultRecovererProvider((StatisticsGatherer)this, _virtualHostRegistry, _logRecorder,
-                                                                  _taskExecutor, brokerOptions, storeChangeListener);
-        ConfiguredObjectRecoverer<? extends ConfiguredObject> brokerRecoverer =  provider.getRecoverer(Broker.class.getSimpleName());
-        _broker = (Broker) brokerRecoverer.create(provider, _store.getRootEntry());
         _broker.setEventLogger(startupLogger);
-        _virtualHostRegistry.setDefaultVirtualHostName((String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
-
-        initialiseStatisticsReporting();
 
         // starting the broker
         _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
 
         startupLogger.message(BrokerMessages.READY());
-        _broker.setEventLogger(_eventLogger);
+        _broker.setEventLogger(eventLogger);
 
-    }
-
-    private void initialiseStatisticsReporting()
-    {
-        long report = ((Number)_broker.getAttribute(Broker.STATISTICS_REPORTING_PERIOD)).intValue() * 1000; // convert to ms
-        final boolean reset = (Boolean)_broker.getAttribute(Broker.STATISTICS_REPORTING_RESET_ENABLED);
-
-        /* add a timer task to report statistics if generation is enabled for broker or virtualhosts */
-        if (report > 0L)
-        {
-            _reportingTimer = new Timer("Statistics-Reporting", true);
-            StatisticsReportingTask task = new StatisticsReportingTask(reset, _messageLogger);
-            _reportingTimer.scheduleAtFixedRate(task, report / 2, report);
-        }
-    }
-
-    private class StatisticsReportingTask extends TimerTask
-    {
-        private final int DELIVERED = 0;
-        private final int RECEIVED = 1;
-
-        private final boolean _reset;
-        private final MessageLogger _logger;
-        private final Subject _subject;
-
-        public StatisticsReportingTask(boolean reset, MessageLogger logger)
-        {
-            _reset = reset;
-            _logger = logger;
-            _subject = SecurityManager.getSystemTaskSubject("Statistics");
-        }
-
-        public void run()
-        {
-            Subject.doAs(_subject, new PrivilegedAction<Object>()
-            {
-                @Override
-                public Object run()
-                {
-                    reportStatistics();
-                    return null;
-                }
-            });
-        }
-
-        protected void reportStatistics()
-        {
-            try
-            {
-                _eventLogger.message(BrokerMessages.STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
-                _eventLogger.message(BrokerMessages.STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
-                _eventLogger.message(BrokerMessages.STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
-                _eventLogger.message(BrokerMessages.STATS_MSGS(RECEIVED,
-                                                               _messagesReceived.getPeak(),
-                                                               _messagesReceived.getTotal()));
-                Collection<VirtualHost> hosts = _virtualHostRegistry.getVirtualHosts();
-
-                if (hosts.size() > 1)
-                {
-                    for (VirtualHost vhost : hosts)
-                    {
-                        String name = vhost.getName();
-                        StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
-                        StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
-                        StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
-                        StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
-                        EventLogger logger = vhost.getEventLogger();
-                        logger.message(VirtualHostMessages.STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
-                        logger.message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
-                        logger.message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
-                        logger.message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
-                    }
-                }
-
-                if (_reset)
-                {
-                    resetStatistics();
-                }
-            }
-            catch(Exception e)
-            {
-                ApplicationRegistry._logger.warn("Unexpected exception occurred while reporting the statistics", e);
-            }
-        }
-    }
-
-    /**
-     * Close non-null Closeable items and log any errors
-     * @param close
-     */
-    private void close(Closeable close)
-    {
-        try
-        {
-            if (close != null)
-            {
-                close.close();
-            }
-        }
-        catch (Throwable e)
-        {
-            _logger.error("Error thrown whilst closing " + close.getClass().getSimpleName(), e);
-        }
     }
 
     public void close()
@@ -236,93 +98,19 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         try
         {
-            //Stop Statistics Reporting
-            if (_reportingTimer != null)
-            {
-                _reportingTimer.cancel();
-            }
-
             if (_broker != null)
             {
                 _broker.setDesiredState(_broker.getState(), State.STOPPED);
             }
-
-            //Shutdown virtualhosts
-            close(_virtualHostRegistry);
-
-            if (_taskExecutor != null)
-            {
-                _taskExecutor.stop();
-            }
-
-            _eventLogger.message(BrokerMessages.STOPPED());
-
-            _logRecorder.closeLogRecorder();
-
         }
         finally
         {
-            if (_taskExecutor != null)
-            {
-                _taskExecutor.stopImmediately();
-            }
+            _systemContext.close();
         }
         _store = null;
         _broker = null;
     }
 
-    public void registerMessageDelivered(long messageSize)
-    {
-        _messagesDelivered.registerEvent(1L);
-        _dataDelivered.registerEvent(messageSize);
-    }
-
-    public void registerMessageReceived(long messageSize, long timestamp)
-    {
-        _messagesReceived.registerEvent(1L, timestamp);
-        _dataReceived.registerEvent(messageSize, timestamp);
-    }
-
-    public StatisticsCounter getMessageReceiptStatistics()
-    {
-        return _messagesReceived;
-    }
-
-    public StatisticsCounter getDataReceiptStatistics()
-    {
-        return _dataReceived;
-    }
-
-    public StatisticsCounter getMessageDeliveryStatistics()
-    {
-        return _messagesDelivered;
-    }
-
-    public StatisticsCounter getDataDeliveryStatistics()
-    {
-        return _dataDelivered;
-    }
-
-    public void resetStatistics()
-    {
-        _messagesDelivered.reset();
-        _dataDelivered.reset();
-        _messagesReceived.reset();
-        _dataReceived.reset();
-
-        for (VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
-        {
-            vhost.resetStatistics();
-        }
-    }
-
-    public void initialiseStatistics()
-    {
-        _messagesDelivered = new StatisticsCounter("messages-delivered");
-        _dataDelivered = new StatisticsCounter("bytes-delivered");
-        _messagesReceived = new StatisticsCounter("messages-received");
-        _dataReceived = new StatisticsCounter("bytes-received");
-    }
 
     private void logStartupMessages(EventLogger eventLogger)
     {

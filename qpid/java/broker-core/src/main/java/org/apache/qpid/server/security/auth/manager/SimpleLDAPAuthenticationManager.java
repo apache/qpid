@@ -50,6 +50,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -62,6 +63,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StringUtil;
 import org.apache.qpid.ssl.SSLContextFactory;
 
+@ManagedObject( category = false, type = "SimpleLDAP" )
 public class SimpleLDAPAuthenticationManager extends AbstractAuthenticationManager<SimpleLDAPAuthenticationManager>
 {
     private static final Logger _logger = Logger.getLogger(SimpleLDAPAuthenticationManager.class);

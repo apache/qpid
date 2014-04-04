@@ -31,6 +31,7 @@ import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -49,7 +50,7 @@ public class MultipleAuthenticationManagersTest extends QpidBrokerTestCase
         Map<String, Object> externalAuthProviderAttributes = new HashMap<String, Object>();
         externalAuthProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
         externalAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
-        config.addAuthenticationProviderConfiguration(externalAuthProviderAttributes);
+        config.addObjectConfiguration(AuthenticationProvider.class, externalAuthProviderAttributes);
 
         Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
         sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
@@ -58,7 +59,7 @@ public class MultipleAuthenticationManagersTest extends QpidBrokerTestCase
         sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
         sslPortAttributes.put(Port.TRUST_STORES, Collections.singleton(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE));
         sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
-        config.addPortConfiguration(sslPortAttributes);
+        config.addObjectConfiguration(Port.class, sslPortAttributes);
 
         // set the ssl system properties
         setSystemProperty("javax.net.ssl.keyStore", KEYSTORE);

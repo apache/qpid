@@ -93,7 +93,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
         _name = parent.getName();
-
         setup(storeSettings);
         load();
     }

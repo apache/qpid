@@ -34,7 +34,6 @@ public class BoneCPConnectionProviderFactory implements JDBCConnectionProviderFa
         return "BONECP";
     }
 
-    @Override
     public ConnectionProvider getConnectionProvider(String connectionUrl, Map<String, Object> storeSettings)
             throws SQLException
     {

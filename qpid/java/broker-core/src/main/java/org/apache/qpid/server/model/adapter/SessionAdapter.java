@@ -21,7 +21,6 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,12 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.ConsumerListener;
-import org.apache.qpid.server.queue.QueueConsumer;
 
 final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> implements Session<SessionAdapter>
 {
@@ -162,12 +159,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         {
             return Collections.emptySet();
         }
-    }
-
-    @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
-    {
-        throw new  UnsupportedOperationException();
     }
 
     @Override

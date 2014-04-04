@@ -38,8 +38,10 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 
+import com.sleepycat.je.rep.ReplicationConfig;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.server.model.VirtualHost;
@@ -48,8 +50,6 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironment
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
-
-import com.sleepycat.je.rep.ReplicationConfig;
 
 public class HATestClusterCreator
 {
@@ -117,8 +117,8 @@ public class HATestClusterCreator
 
             TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
             brokerConfiguration.addJmxManagementConfiguration();
-            brokerConfiguration.setObjectAttribute(_virtualHostName, VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
-            brokerConfiguration.setObjectAttribute(_virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+            brokerConfiguration.setObjectAttribute(VirtualHost.class, _virtualHostName, VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
+            brokerConfiguration.setObjectAttribute(VirtualHost.class, _virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
             brokerPort = _testcase.getNextAvailable(bdbPort + 1);
         }
@@ -133,9 +133,9 @@ public class HATestClusterCreator
         }
         TestBrokerConfiguration config = _testcase.getBrokerConfiguration(_primaryBrokerPort);
         @SuppressWarnings("unchecked")
-        Map<String, Object> storeSetting = (Map<String, Object>) config.getObjectAttributes(_virtualHostName).get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        Map<String, Object> storeSetting = (Map<String, Object>) config.getObjectAttributes(VirtualHost.class, _virtualHostName).get(VirtualHost.MESSAGE_STORE_SETTINGS);
         storeSetting.put(ReplicatedEnvironmentFacadeFactory.DESIGNATED_PRIMARY, designatedPrimary);
-        config.setObjectAttribute(_virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, storeSetting);
+        config.setObjectAttribute(VirtualHost.class, _virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, storeSetting);
         config.setSaved(false);
     }
 
@@ -274,7 +274,8 @@ public class HATestClusterCreator
         return new AMQConnectionURL(String.format(MANY_BROKER_URL_FORMAT, _virtualHostName, brokerList, FAILOVER_CYCLECOUNT));
     }
 
-    public AMQConnectionURL getConnectionUrlForSingleNodeWithoutRetry(final int brokerPortNumber) throws URLSyntaxException
+    public AMQConnectionURL getConnectionUrlForSingleNodeWithoutRetry(final int brokerPortNumber) throws
+                                                                                                  URLSyntaxException
     {
         return getConnectionUrlForSingleNode(brokerPortNumber, false);
     }
@@ -370,13 +371,13 @@ public class HATestClusterCreator
         TestBrokerConfiguration config = _testcase.getBrokerConfiguration(brokerPortNumberToBeMoved);
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> storeSetting = (Map<String, Object>) config.getObjectAttributes(_virtualHostName).get(VirtualHost.MESSAGE_STORE_SETTINGS);
+        Map<String, Object> storeSetting = (Map<String, Object>) config.getObjectAttributes(VirtualHost.class, _virtualHostName).get(VirtualHost.MESSAGE_STORE_SETTINGS);
         String oldBdbHostPort = (String) storeSetting.get(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS);
         String[] oldHostAndPort = StringUtils.split(oldBdbHostPort, ":");
         String oldHost = oldHostAndPort[0];
         String newBdbHostPort = oldHost + ":" + newBdbPort;
         storeSetting.put(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS, newBdbHostPort);
-        config.setObjectAttribute(_virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, storeSetting);
+        config.setObjectAttribute(VirtualHost.class, _virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, storeSetting);
         config.setSaved(false);
     }
 

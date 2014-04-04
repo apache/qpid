@@ -35,7 +35,8 @@ import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
+import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
@@ -44,13 +45,13 @@ public class ConfigurationEntryTest extends TestCase
 {
     public void testGetChildren()
     {
-        ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
+        MemoryConfigurationEntryStore store = mock(MemoryConfigurationEntryStore.class);
 
-        ConfigurationEntry virtualHostEntry1 = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
+        ConfigurationEntry virtualHostEntry1 = new ConfigurationEntryImpl(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), store);
-        ConfigurationEntry virtualHostEntry2 = new ConfigurationEntry(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
+        ConfigurationEntry virtualHostEntry2 = new ConfigurationEntryImpl(UUID.randomUUID(), VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), store);
-        ConfigurationEntry portEntry = new ConfigurationEntry(UUID.randomUUID(), Port.class.getSimpleName(),
+        ConfigurationEntry portEntry = new ConfigurationEntryImpl(UUID.randomUUID(), Port.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.<UUID> emptySet(), store);
 
         when(store.getEntry(virtualHostEntry1.getId())).thenReturn(virtualHostEntry1);
@@ -61,7 +62,7 @@ public class ConfigurationEntryTest extends TestCase
         childrenIds.add(virtualHostEntry1.getId());
         childrenIds.add(virtualHostEntry2.getId());
         childrenIds.add(portEntry.getId());
-        ConfigurationEntry parentEntry = new ConfigurationEntry(UUID.randomUUID(), Broker.class.getSimpleName(),
+        ConfigurationEntry parentEntry = new ConfigurationEntryImpl(UUID.randomUUID(), Broker.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), childrenIds, store);
 
         Map<String, Collection<ConfigurationEntry>> children = parentEntry.getChildren();
@@ -78,14 +79,14 @@ public class ConfigurationEntryTest extends TestCase
 
     public void testHashCode()
     {
-        ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
+        MemoryConfigurationEntryStore store = mock(MemoryConfigurationEntryStore.class);
 
         UUID id = UUID.randomUUID();
-        ConfigurationEntry entry1 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(),
+        ConfigurationEntry entry1 = new ConfigurationEntryImpl(id, VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
-        ConfigurationEntry entry2 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(),
+        ConfigurationEntry entry2 = new ConfigurationEntryImpl(id, VirtualHost.class.getSimpleName(),
                 Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
-        ConfigurationEntry entryWithDifferentId = new ConfigurationEntry(UUID.randomUUID(),
+        ConfigurationEntry entryWithDifferentId = new ConfigurationEntryImpl(UUID.randomUUID(),
                 VirtualHost.class.getSimpleName(), Collections.<String, Object> emptyMap(), Collections.singleton(UUID.randomUUID()), store);
 
         assertTrue(entry1.hashCode() == entry2.hashCode());
@@ -94,35 +95,35 @@ public class ConfigurationEntryTest extends TestCase
 
     public void testEqualsObject()
     {
-        ConfigurationEntryStore store = mock(ConfigurationEntryStore.class);
+        MemoryConfigurationEntryStore store = mock(MemoryConfigurationEntryStore.class);
 
         UUID id = UUID.randomUUID();
         Map<String, Object> attributes1 = new HashMap<String, Object>();
         attributes1.put(VirtualHost.NAME, "name1");
         Set<UUID> childrenIds = Collections.singleton(UUID.randomUUID());
-        ConfigurationEntry entry1 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(), attributes1,
+        ConfigurationEntry entry1 = new ConfigurationEntryImpl(id, VirtualHost.class.getSimpleName(), attributes1,
                 childrenIds, store);
 
         Map<String, Object> attributes2 = new HashMap<String, Object>();
         attributes2.put(VirtualHost.NAME, "name2");
 
-        ConfigurationEntry entry2 = new ConfigurationEntry(id, VirtualHost.class.getSimpleName(), attributes1,
+        ConfigurationEntry entry2 = new ConfigurationEntryImpl(id, VirtualHost.class.getSimpleName(), attributes1,
                 childrenIds, store);
-        ConfigurationEntry entryWithDifferentId = new ConfigurationEntry(UUID.randomUUID(),
+        ConfigurationEntry entryWithDifferentId = new ConfigurationEntryImpl(UUID.randomUUID(),
                 VirtualHost.class.getSimpleName(), attributes1, childrenIds, store);
 
         assertTrue(entry1.equals(entry2));
         assertFalse("Entries should be different because of different IDs", entry1.equals(entryWithDifferentId));
 
-        ConfigurationEntry entryWithDifferentChildId = new ConfigurationEntry(id,
+        ConfigurationEntry entryWithDifferentChildId = new ConfigurationEntryImpl(id,
                 VirtualHost.class.getSimpleName(), attributes1, Collections.singleton(UUID.randomUUID()), store);
         assertFalse("Entries should be different because of different children", entry1.equals(entryWithDifferentChildId));
 
-        ConfigurationEntry entryWithDifferentName = new ConfigurationEntry(id,
+        ConfigurationEntry entryWithDifferentName = new ConfigurationEntryImpl(id,
                 VirtualHost.class.getSimpleName(), attributes2, childrenIds, store);
         assertFalse("Entries should be different because of different attributes", entry1.equals(entryWithDifferentName));
 
-        ConfigurationEntry entryWithDifferentType = new ConfigurationEntry(id,
+        ConfigurationEntry entryWithDifferentType = new ConfigurationEntryImpl(id,
                 Broker.class.getSimpleName(), attributes1, childrenIds, store);
         assertFalse("Entries should be different because of different types", entry1.equals(entryWithDifferentType));
     }

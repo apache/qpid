@@ -20,18 +20,6 @@
  */
 package org.apache.qpid.server.stats;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
-import org.apache.qpid.util.LogMonitor;
-
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +29,19 @@ import javax.jms.JMSException;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.util.LogMonitor;
 
 /**
  * Test generation of message/data statistics reporting and the ability
@@ -72,7 +73,7 @@ public class StatisticsReportingTest extends QpidBrokerTestCase
         if (getName().equals("testEnabledStatisticsReporting"))
         {
             TestBrokerConfiguration config = getBrokerConfiguration();
-            config.removeObjectConfiguration(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+            config.removeObjectConfiguration(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
             config.setBrokerAttribute(Broker.STATISTICS_REPORTING_PERIOD, STATISTICS_REPORTING_PERIOD_IN_SECONDS);
         }
 

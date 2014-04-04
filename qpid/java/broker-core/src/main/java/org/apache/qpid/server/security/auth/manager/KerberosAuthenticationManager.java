@@ -32,9 +32,11 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
+@ManagedObject( category = false, type = "Kerberos" )
 public class KerberosAuthenticationManager extends AbstractAuthenticationManager<KerberosAuthenticationManager>
 {
     private static final String GSSAPI_MECHANISM = "GSSAPI";

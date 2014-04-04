@@ -21,33 +21,29 @@
 
 package org.apache.qpid.server.model.adapter;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.plugin.PreferencesProviderFactory;
-
-public class FileSystemPreferencesProviderFactory implements PreferencesProviderFactory
+public class FileSystemPreferencesProviderFactory extends AbstractConfiguredObjectTypeFactory<FileSystemPreferencesProvider>
 {
 
-    @Override
-    public String getType()
+    public FileSystemPreferencesProviderFactory()
     {
-        return FileSystemPreferencesProvider.PROVIDER_TYPE;
+        super(FileSystemPreferencesProvider.class);
     }
 
     @Override
-    public PreferencesProvider createInstance(UUID id, Map<String, Object> attributes,
-            AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
+    public FileSystemPreferencesProvider createInstance(final Map<String, Object> attributes,
+                                                        final ConfiguredObject<?>... parents)
     {
-        Broker<?> broker = authenticationProvider.getParent(Broker.class);
-        FileSystemPreferencesProvider provider = new FileSystemPreferencesProvider(id, attributes, authenticationProvider, broker.getTaskExecutor());
-
-        // create store if such does not exist
-        provider.createStoreIfNotExist();
-        return provider;
+        Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
+        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
+        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
+        return new FileSystemPreferencesProvider(id, attributesWithoutId, getParent(AuthenticationProvider.class,parents));
     }
-
 }

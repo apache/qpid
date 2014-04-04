@@ -43,6 +43,8 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.port.AmqpPort;
+import org.apache.qpid.server.model.port.PortFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class PortFactoryTest extends QpidTestCase
@@ -62,6 +64,7 @@ public class PortFactoryTest extends QpidTestCase
     private String _authProviderName = "authProvider";
     private AuthenticationProvider _authProvider = mock(AuthenticationProvider.class);
     private PortFactory _portFactory;
+
 
     @Override
     protected void setUp() throws Exception
@@ -83,7 +86,13 @@ public class PortFactoryTest extends QpidTestCase
 
     public void testDefaultProtocols()
     {
-        Collection<Protocol> protocols = _portFactory.getDefaultProtocols();
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.PORT, 1);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
+        Port port = _portFactory.createPort(_portId, _broker, attributes);
+
+        Collection<Protocol> protocols = port.getProtocols();
+
         EnumSet<Protocol> expected = EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10,
                 Protocol.AMQP_1_0);
         assertEquals("Unexpected protocols", new HashSet<Protocol>(expected), new HashSet<Protocol>(protocols));
@@ -93,8 +102,14 @@ public class PortFactoryTest extends QpidTestCase
     {
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, Protocol.AMQP_1_0.name() + ","
                 + Protocol.AMQP_0_10.name());
-        _portFactory = new PortFactory();
-        Collection<Protocol> protocols = _portFactory.getDefaultProtocols();
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.PORT, 1);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
+        Port port = _portFactory.createPort(_portId, _broker, attributes);
+
+        Collection<Protocol> protocols = port.getProtocols();
+
         EnumSet<Protocol> expected = EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1);
         assertEquals("Unexpected protocols", new HashSet<Protocol>(expected), new HashSet<Protocol>(protocols));
     }
@@ -105,8 +120,14 @@ public class PortFactoryTest extends QpidTestCase
                 + Protocol.AMQP_0_10.name() + "," + Protocol.AMQP_0_9_1.name());
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, Protocol.AMQP_0_10.name() + ","
                 + Protocol.AMQP_0_9_1.name());
-        _portFactory = new PortFactory();
-        Collection<Protocol> protocols = _portFactory.getDefaultProtocols();
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Port.PORT, 1);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
+        Port port = _portFactory.createPort(_portId, _broker, attributes);
+
+        Collection<Protocol> protocols = port.getProtocols();
+
         EnumSet<Protocol> expected = EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10);
         assertEquals("Unexpected protocols", new HashSet<Protocol>(expected), new HashSet<Protocol>(protocols));
     }
@@ -119,10 +140,11 @@ public class PortFactoryTest extends QpidTestCase
         Port port = _portFactory.createPort(_portId, _broker, attributes);
 
         assertNotNull(port);
-        assertTrue(port instanceof AmqpPortAdapter);
+        assertTrue(port instanceof AmqpPort);
         assertEquals("Unexpected port", 1, port.getPort());
         assertEquals("Unexpected transports", Collections.singleton(PortFactory.DEFAULT_TRANSPORT), port.getTransports());
-        assertEquals("Unexpected protocols", _portFactory.getDefaultProtocols(), port.getProtocols());
+        assertEquals("Unexpected protocols", EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10,
+                                                        Protocol.AMQP_1_0), port.getProtocols());
         assertEquals("Unexpected send buffer size", PortFactory.DEFAULT_AMQP_SEND_BUFFER_SIZE,
                 port.getAttribute(Port.SEND_BUFFER_SIZE));
         assertEquals("Unexpected receive buffer size", PortFactory.DEFAULT_AMQP_RECEIVE_BUFFER_SIZE,
@@ -252,7 +274,7 @@ public class PortFactoryTest extends QpidTestCase
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
 
         assertNotNull(port);
-        assertTrue(port instanceof AmqpPortAdapter);
+        assertTrue(port instanceof AmqpPort);
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
         if(useSslTransport)
@@ -285,7 +307,7 @@ public class PortFactoryTest extends QpidTestCase
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
 
         assertNotNull(port);
-        assertFalse("Port should be a PortAdapter, not its AMQP-specific subclass", port instanceof AmqpPortAdapter);
+        assertFalse("Port should be a PortAdapter, not its AMQP-specific subclass", port instanceof AmqpPort);
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
         assertEquals(_tcpTransportSet, port.getTransports());
@@ -310,7 +332,7 @@ public class PortFactoryTest extends QpidTestCase
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
 
         assertNotNull(port);
-        assertFalse("Port should be a PortAdapter, not its AMQP-specific subclass", port instanceof AmqpPortAdapter);
+        assertFalse("Port should be a PortAdapter, not its AMQP-specific subclass", port instanceof AmqpPort);
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
         assertEquals(Collections.singleton(PortFactory.DEFAULT_TRANSPORT), port.getTransports());

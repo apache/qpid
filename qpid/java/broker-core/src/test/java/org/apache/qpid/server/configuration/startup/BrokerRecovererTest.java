@@ -20,74 +20,61 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import junit.framework.TestCase;
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.adapter.AccessControlProviderFactory;
-import org.apache.qpid.server.model.adapter.AuthenticationProviderFactory;
-import org.apache.qpid.server.model.adapter.GroupProviderFactory;
-import org.apache.qpid.server.model.adapter.PortFactory;
-import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BrokerRecovererTest extends TestCase
 {
-    private BrokerRecoverer _brokerRecoverer;
-    private ConfigurationEntry _brokerEntry = mock(ConfigurationEntry.class);
+    private ConfiguredObjectRecord _brokerEntry = mock(ConfiguredObjectRecord.class);
 
     private UUID _brokerId = UUID.randomUUID();
-    private Map<String, Collection<ConfigurationEntry>> _brokerEntryChildren = new HashMap<String, Collection<ConfigurationEntry>>();
-    private ConfigurationEntry _authenticationProviderEntry1;
+    private Map<String, Collection<ConfiguredObjectRecord>> _brokerEntryChildren = new HashMap<String, Collection<ConfiguredObjectRecord>>();
+    private ConfiguredObjectRecord _authenticationProviderEntry1;
     private AuthenticationProvider _authenticationProvider1;
     private UUID _authenticationProvider1Id = UUID.randomUUID();
+    private SystemContext _systemContext;
+    private ConfiguredObjectFactory _configuredObjectFactory;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        _brokerRecoverer = new BrokerRecoverer(mock(AuthenticationProviderFactory.class), mock(GroupProviderFactory.class), mock(AccessControlProviderFactory.class), mock(PortFactory.class),
-                mock(StatisticsGatherer.class), mock(VirtualHostRegistry.class), mock(LogRecorder.class),
-                mock(TaskExecutor.class), mock(BrokerOptions.class),
-                mock(StoreConfigurationChangeListener.class));
+        _configuredObjectFactory = new ConfiguredObjectFactory();
+        _systemContext = new SystemContext(mock(TaskExecutor.class),
+                                           _configuredObjectFactory, mock(EventLogger.class), mock(LogRecorder.class), mock(BrokerOptions.class));
+
         when(_brokerEntry.getId()).thenReturn(_brokerId);
-        when(_brokerEntry.getChildren()).thenReturn(_brokerEntryChildren);
+        when(_brokerEntry.getType()).thenReturn(Broker.class.getSimpleName());
         when(_brokerEntry.getAttributes()).thenReturn(Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, Model.MODEL_VERSION));
+        when(_brokerEntry.getParents()).thenReturn(Collections.singletonMap(SystemContext.class.getSimpleName(), _systemContext.asObjectRecord()));
 
         //Add a base AuthenticationProvider for all tests
         _authenticationProvider1 = mock(AuthenticationProvider.class);
         when(_authenticationProvider1.getName()).thenReturn("authenticationProvider1");
         when(_authenticationProvider1.getId()).thenReturn(_authenticationProvider1Id);
-        _authenticationProviderEntry1 = mock(ConfigurationEntry.class);
+        _authenticationProviderEntry1 = mock(ConfiguredObjectRecord.class);
         _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1));
     }
 
@@ -120,16 +107,9 @@ public class BrokerRecovererTest extends TestCase
 
         when(_brokerEntry.getAttributes()).thenReturn(entryAttributes);
 
-        final ConfigurationEntry virtualHostEntry = mock(ConfigurationEntry.class);
-        String typeName = VirtualHost.class.getSimpleName();
-        when(virtualHostEntry.getType()).thenReturn(typeName);
-        _brokerEntryChildren.put(typeName, Arrays.asList(virtualHostEntry));
-        final VirtualHost virtualHost = mock(VirtualHost.class);
-        when(virtualHost.getName()).thenReturn("test");
+        _systemContext.resolveObjects(_brokerEntry);
+        Broker broker = _systemContext.getBroker();
 
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[] { virtualHostEntry, _authenticationProviderEntry1 },
-                new ConfiguredObject[] { virtualHost, _authenticationProvider1 });
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
 
@@ -142,153 +122,136 @@ public class BrokerRecovererTest extends TestCase
 
     public void testCreateBrokerWithVirtualHost()
     {
-        final ConfigurationEntry virtualHostEntry = mock(ConfigurationEntry.class);
+        final ConfiguredObjectRecord virtualHostEntry = mock(ConfiguredObjectRecord.class);
 
         String typeName = VirtualHost.class.getSimpleName();
         when(virtualHostEntry.getType()).thenReturn(typeName);
         _brokerEntryChildren.put(typeName, Arrays.asList(virtualHostEntry));
 
-        final VirtualHost virtualHost = mock(VirtualHost.class);
-
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{virtualHostEntry, _authenticationProviderEntry1},
-                                                                     new ConfiguredObject[]{virtualHost, _authenticationProvider1});
-
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
+        UUID vhostId = UUID.randomUUID();
+        _systemContext.resolveObjects(_brokerEntry, createVhostRecord(vhostId));
+        Broker<?> broker = _systemContext.getBroker();
 
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
         assertEquals(1, broker.getVirtualHosts().size());
-        assertEquals(virtualHost, broker.getVirtualHosts().iterator().next());
+        assertEquals(vhostId, broker.getVirtualHosts().iterator().next().getId());
+
     }
+
+    public ConfiguredObjectRecord createVhostRecord(UUID id)
+    {
+        final Map<String, Object> vhostAttributes = new HashMap<String, Object>();
+        vhostAttributes.put(VirtualHost.NAME, "vhost");
+        vhostAttributes.put(VirtualHost.TYPE, "STANDARD");
+        vhostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE,
+                                                                                               TestMemoryMessageStore.TYPE));
+        return new ConfiguredObjectRecordImpl(id, VirtualHost.class.getSimpleName(), vhostAttributes, Collections
+                .singletonMap(Broker.class.getSimpleName(), _brokerEntry));
+    }
+
+    public ConfiguredObjectRecord createAuthProviderRecord(UUID id, String name)
+    {
+        final Map<String, Object> authProviderAttrs = new HashMap<String, Object>();
+        authProviderAttrs.put(AuthenticationProvider.NAME, name);
+        authProviderAttrs.put(AuthenticationProvider.TYPE, "Anonymous");
+
+        return new ConfiguredObjectRecordImpl(id, AuthenticationProvider.class.getSimpleName(), authProviderAttrs, Collections
+                .singletonMap(Broker.class.getSimpleName(), _brokerEntry));
+    }
+
+
+    public ConfiguredObjectRecord createGroupProviderRecord(UUID id, String name)
+    {
+        final Map<String, Object> groupProviderAttrs = new HashMap<String, Object>();
+        groupProviderAttrs.put(GroupProvider.NAME, name);
+        groupProviderAttrs.put(GroupProvider.TYPE, "GroupFile");
+        groupProviderAttrs.put("path", "/no-such-path");
+
+        return new ConfiguredObjectRecordImpl(id, GroupProvider.class.getSimpleName(), groupProviderAttrs, Collections
+                .singletonMap(Broker.class.getSimpleName(), _brokerEntry));
+    }
+
+    public ConfiguredObjectRecord createPortRecord(UUID id, int port, Object authProviderRef)
+    {
+        final Map<String, Object> portAttrs = new HashMap<String, Object>();
+        portAttrs.put(Port.NAME, "port-"+port);
+        portAttrs.put(Port.TYPE, "HTTP");
+        portAttrs.put(Port.PORT, port);
+        portAttrs.put(Port.AUTHENTICATION_PROVIDER, authProviderRef);
+
+        return new ConfiguredObjectRecordImpl(id, Port.class.getSimpleName(), portAttrs, Collections
+                .singletonMap(Broker.class.getSimpleName(), _brokerEntry));
+    }
+
 
     public void testCreateBrokerWithPorts()
     {
-        ConfigurationEntry portEntry = mock(ConfigurationEntry.class);
-        Port port = mock(Port.class);
-        _brokerEntryChildren.put(Port.class.getSimpleName(), Arrays.asList(portEntry));
+        UUID authProviderId = UUID.randomUUID();
+        UUID portId = UUID.randomUUID();
 
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{portEntry, _authenticationProviderEntry1},
-                                                                     new ConfiguredObject[]{port, _authenticationProvider1});
+        _systemContext.resolveObjects(_brokerEntry, createAuthProviderRecord(authProviderId, "authProvider"), createPortRecord(
+                portId,
+                5672,
+                "authProvider"));
+        Broker<?> broker = _systemContext.getBroker();
 
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
 
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
-        assertEquals(Collections.singletonList(port), broker.getPorts());
+        assertEquals(1, broker.getPorts().size());
     }
 
     public void testCreateBrokerWithOneAuthenticationProvider()
     {
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{_authenticationProviderEntry1},
-                                                                     new ConfiguredObject[]{_authenticationProvider1});
+        UUID authProviderId = UUID.randomUUID();
 
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
+        _systemContext.resolveObjects(_brokerEntry, createAuthProviderRecord(authProviderId, "authProvider"));
+        Broker<?> broker = _systemContext.getBroker();
+
 
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
-        assertEquals(Collections.singletonList(_authenticationProvider1), broker.getAuthenticationProviders());
+        assertEquals(1, broker.getAuthenticationProviders().size());
+
     }
 
     public void testCreateBrokerWithMultipleAuthenticationProvidersAndPorts()
     {
-        //Create a second authentication provider
-        AuthenticationProvider authenticationProvider2 = mock(AuthenticationProvider.class);
-        when(authenticationProvider2.getName()).thenReturn("authenticationProvider2");
-        ConfigurationEntry authenticationProviderEntry2 = mock(ConfigurationEntry.class);
-        _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1, authenticationProviderEntry2));
+        UUID authProviderId = UUID.randomUUID();
+        UUID portId = UUID.randomUUID();
+        UUID authProvider2Id = UUID.randomUUID();
+        UUID port2Id = UUID.randomUUID();
 
-        //Add a couple ports
-        ConfigurationEntry portEntry1 = mock(ConfigurationEntry.class);
-        Port port1 = mock(Port.class);
-        when(port1.getId()).thenReturn(UUIDGenerator.generateRandomUUID());
-        when(port1.getName()).thenReturn("port1");
-        when(port1.getPort()).thenReturn(5671);
-        when(port1.getAttribute(Port.AUTHENTICATION_PROVIDER)).thenReturn("authenticationProvider1");
-        ConfigurationEntry portEntry2 = mock(ConfigurationEntry.class);
-        Port port2 = mock(Port.class);
-        when(port2.getId()).thenReturn(UUIDGenerator.generateRandomUUID());
-        when(port2.getName()).thenReturn("port2");
-        when(port2.getPort()).thenReturn(5672);
-        when(port2.getAttribute(Port.AUTHENTICATION_PROVIDER)).thenReturn("authenticationProvider2");
-        _brokerEntryChildren.put(Port.class.getSimpleName(), Arrays.asList(portEntry1, portEntry2));
+        _systemContext.resolveObjects(_brokerEntry,
+                                      createAuthProviderRecord(authProviderId, "authProvider"),
+                                      createPortRecord(portId, 5672, "authProvider"),
+                                      createAuthProviderRecord(authProvider2Id, "authProvider2"),
+                                      createPortRecord(port2Id, 5673, "authProvider2"));
+        Broker<?> broker = _systemContext.getBroker();
 
-        RecovererProvider recovererProvider = createRecoveryProvider(
-                new ConfigurationEntry[]{portEntry1, portEntry2, authenticationProviderEntry2, _authenticationProviderEntry1},
-                new ConfiguredObject[]{port1, port2, authenticationProvider2, _authenticationProvider1});
-
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
 
         assertNotNull(broker);
+        assertEquals(_brokerId, broker.getId());
+        assertEquals(2, broker.getPorts().size());
+
         assertEquals("Unexpected number of authentication providers", 2, broker.getAuthenticationProviders().size());
 
-        Collection<Port> ports = broker.getPorts();
-        assertEquals("Unexpected number of ports", 2, ports.size());
-        assertTrue(ports.contains(port1));
-        assertTrue(ports.contains(port2));
     }
 
     public void testCreateBrokerWithGroupProvider()
     {
-        ConfigurationEntry groupProviderEntry = mock(ConfigurationEntry.class);
-        GroupProvider groupProvider = mock(GroupProvider.class);
-        _brokerEntryChildren.put(GroupProvider.class.getSimpleName(), Arrays.asList(groupProviderEntry));
 
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{groupProviderEntry, _authenticationProviderEntry1},
-                                                                     new ConfiguredObject[]{groupProvider, _authenticationProvider1});
+        UUID authProviderId = UUID.randomUUID();
 
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
+        _systemContext.resolveObjects(_brokerEntry, createGroupProviderRecord(authProviderId, "groupProvider"));
+        Broker<?> broker = _systemContext.getBroker();
+
 
         assertNotNull(broker);
         assertEquals(_brokerId, broker.getId());
-        assertEquals(Collections.singletonList(groupProvider), broker.getGroupProviders());
-    }
+        assertEquals(1, broker.getGroupProviders().size());
 
-    public void testCreateBrokerWithPlugins()
-    {
-        ConfigurationEntry pluginEntry = mock(ConfigurationEntry.class);
-        Plugin plugin = mock(Plugin.class);
-        _brokerEntryChildren.put(Plugin.class.getSimpleName(), Arrays.asList(pluginEntry));
-
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{pluginEntry, _authenticationProviderEntry1},
-                                                                     new ConfiguredObject[]{plugin, _authenticationProvider1});
-
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
-
-        assertNotNull(broker);
-        assertEquals(_brokerId, broker.getId());
-        assertEquals(Collections.singleton(plugin), new HashSet<ConfiguredObject>(broker.getChildren(Plugin.class)));
-    }
-
-    public void testCreateBrokerWithKeyStores()
-    {
-        ConfigurationEntry pluginEntry = mock(ConfigurationEntry.class);
-        KeyStore keyStore = mock(KeyStore.class);
-        _brokerEntryChildren.put(KeyStore.class.getSimpleName(), Arrays.asList(pluginEntry));
-
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{pluginEntry, _authenticationProviderEntry1},
-                                                                     new ConfiguredObject[]{keyStore, _authenticationProvider1});
-
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
-
-        assertNotNull(broker);
-        assertEquals(_brokerId, broker.getId());
-        assertEquals(Collections.singleton(keyStore), new HashSet<ConfiguredObject>(broker.getChildren(KeyStore.class)));
-    }
-
-    public void testCreateBrokerWithTrustStores()
-    {
-        ConfigurationEntry pluginEntry = mock(ConfigurationEntry.class);
-        TrustStore trustStore = mock(TrustStore.class);
-        _brokerEntryChildren.put(TrustStore.class.getSimpleName(), Arrays.asList(pluginEntry));
-
-        RecovererProvider recovererProvider = createRecoveryProvider(new ConfigurationEntry[]{pluginEntry, _authenticationProviderEntry1},
-                                                                     new ConfiguredObject[]{trustStore, _authenticationProvider1});
-
-        Broker broker = _brokerRecoverer.create(recovererProvider, _brokerEntry);
-
-        assertNotNull(broker);
-        assertEquals(_brokerId, broker.getId());
-        assertEquals(Collections.singleton(trustStore), new HashSet<ConfiguredObject>(broker.getChildren(TrustStore.class)));
     }
 
     public void testModelVersionValidationForIncompatibleMajorVersion() throws Exception
@@ -302,7 +265,8 @@ public class BrokerRecovererTest extends TestCase
 
             try
             {
-                _brokerRecoverer.create(null, _brokerEntry);
+                _systemContext.resolveObjects(_brokerEntry);
+                Broker<?> broker = _systemContext.getBroker();
                 fail("The broker creation should fail due to unsupported model version");
             }
             catch (IllegalConfigurationException e)
@@ -323,7 +287,7 @@ public class BrokerRecovererTest extends TestCase
 
         try
         {
-            _brokerRecoverer.create(null, _brokerEntry);
+            Broker broker = (Broker) _configuredObjectFactory.recover(_brokerEntry, _systemContext).resolve();
             fail("The broker creation should fail due to unsupported model version");
         }
         catch (IllegalConfigurationException e)
@@ -344,7 +308,8 @@ public class BrokerRecovererTest extends TestCase
 
             try
             {
-                _brokerRecoverer.create(null, _brokerEntry);
+                Broker broker = (Broker) _configuredObjectFactory.recover(_brokerEntry, _systemContext).resolve();
+
                 fail("The broker creation should fail due to unsupported model version");
             }
             catch (IllegalConfigurationException e)
@@ -359,7 +324,7 @@ public class BrokerRecovererTest extends TestCase
         return String.valueOf(attributeValue);
     }
 
-    private  RecovererProvider createRecoveryProvider(final ConfigurationEntry[] entries, final ConfiguredObject[] objectsToRecoverer)
+    private  RecovererProvider createRecoveryProvider(final ConfiguredObjectRecord[] entries, final ConfiguredObject[] objectsToRecoverer)
     {
         RecovererProvider recovererProvider = new RecovererProvider()
         {
@@ -369,12 +334,11 @@ public class BrokerRecovererTest extends TestCase
                 @SuppressWarnings({ "unchecked", "rawtypes" })
                 final ConfiguredObjectRecoverer<?  extends ConfiguredObject> recoverer = new ConfiguredObjectRecoverer()
                 {
-                    @Override
-                    public ConfiguredObject create(RecovererProvider recovererProvider, ConfigurationEntry entry, ConfiguredObject... parents)
+                    public ConfiguredObject create(RecovererProvider recovererProvider, ConfiguredObjectRecord entry, ConfiguredObject... parents)
                     {
                         for (int i = 0; i < entries.length; i++)
                         {
-                            ConfigurationEntry e = entries[i];
+                            ConfiguredObjectRecord e = entries[i];
                             if (entry == e)
                             {
                                 return objectsToRecoverer[i];

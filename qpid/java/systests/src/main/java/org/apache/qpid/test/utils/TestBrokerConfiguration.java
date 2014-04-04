@@ -20,33 +20,34 @@
  */
 package org.apache.qpid.test.utils;
 
-import java.io.ByteArrayOutputStream;
+import static org.mockito.Mockito.mock;
+
 import java.io.File;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.plugin.PluginFactory;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
-import org.apache.qpid.util.FileUtils;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public class TestBrokerConfiguration
 {
@@ -73,17 +74,30 @@ public class TestBrokerConfiguration
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation)
     {
-        _store = new MemoryConfigurationEntryStore(intialStoreLocation, null, Collections.<String,String>emptyMap());
+        _store = new MemoryConfigurationEntryStore(new SystemContext(new TaskExecutor(), new ConfiguredObjectFactory(),
+                                                                     mock(EventLogger.class), mock(LogRecorder.class),
+                                                                     mock(BrokerOptions.class)),
+                                                   intialStoreLocation,
+                                                   null, Collections.<String,String>emptyMap());
     }
 
     public boolean setBrokerAttribute(String name, Object value)
     {
-        return setObjectAttribute(_store.getRootEntry(), name, value);
+        ConfiguredObjectRecord entry = findObject(Broker.class, null);
+        if (entry == null)
+        {
+            return false;
+        }
+
+        return setObjectAttribute(entry, name, value);
     }
 
-    public boolean setObjectAttribute(String objectName, String attributeName, Object value)
+    public boolean setObjectAttribute(final Class<? extends ConfiguredObject> category,
+                                      String objectName,
+                                      String attributeName,
+                                      Object value)
     {
-        ConfigurationEntry entry = findObjectByName(objectName);
+        ConfiguredObjectRecord entry = findObject(category, objectName);
         if (entry == null)
         {
             return false;
@@ -91,9 +105,11 @@ public class TestBrokerConfiguration
         return setObjectAttribute(entry, attributeName, value);
     }
 
-    public boolean setObjectAttributes(String objectName, Map<String, Object> attributes)
+    public boolean setObjectAttributes(final Class<? extends ConfiguredObject> category,
+                                       String objectName,
+                                       Map<String, Object> attributes)
     {
-        ConfigurationEntry entry = findObjectByName(objectName);
+        ConfiguredObjectRecord entry = findObject(category, objectName);
         if (entry == null)
         {
             return false;
@@ -107,37 +123,38 @@ public class TestBrokerConfiguration
         return true;
     }
 
-    public UUID[] removeObjectConfiguration(String name)
+    public UUID[] removeObjectConfiguration(final Class<? extends ConfiguredObject> category,
+                                            String name)
     {
-        ConfigurationEntry entry = findObjectByName(name);
+        final ConfiguredObjectRecord entry = findObject(category, name);
         if (entry != null)
         {
-            return _store.remove(entry.getId());
+            return _store.remove(entry);
         }
         return null;
     }
 
-    public UUID addObjectConfiguration(String name, String type, Map<String, Object> attributes)
+    public UUID addObjectConfiguration(Class<? extends ConfiguredObject> type, Map<String, Object> attributes)
     {
         UUID id = UUIDGenerator.generateRandomUUID();
-        addObjectConfiguration(id, type, attributes);
+        addObjectConfiguration(id, type.getSimpleName(), attributes);
         return id;
     }
 
     public UUID addJmxManagementConfiguration()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(PluginFactory.PLUGIN_TYPE, MANAGEMENT_JMX_PLUGIN_TYPE);
+        attributes.put(Plugin.TYPE, MANAGEMENT_JMX_PLUGIN_TYPE);
         attributes.put(Plugin.NAME, ENTRY_NAME_JMX_MANAGEMENT);
-        return addObjectConfiguration(ENTRY_NAME_JMX_MANAGEMENT, Plugin.class.getSimpleName(), attributes);
+        return addObjectConfiguration(Plugin.class, attributes);
     }
 
     public UUID addHttpManagementConfiguration()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(PluginFactory.PLUGIN_TYPE, MANAGEMENT_HTTP_PLUGIN_TYPE);
+        attributes.put(Plugin.TYPE, MANAGEMENT_HTTP_PLUGIN_TYPE);
         attributes.put(Plugin.NAME, ENTRY_NAME_HTTP_MANAGEMENT);
-        return addObjectConfiguration(ENTRY_NAME_HTTP_MANAGEMENT, Plugin.class.getSimpleName(), attributes);
+        return addObjectConfiguration(Plugin.class, attributes);
     }
 
     public UUID addGroupFileConfiguration(String groupFilePath)
@@ -147,7 +164,7 @@ public class TestBrokerConfiguration
         attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileGroupManagerFactory.PATH, groupFilePath);
 
-        return addGroupProviderConfiguration(attributes);
+        return addObjectConfiguration(GroupProvider.class, attributes);
     }
 
     public UUID addAclFileConfiguration(String aclFilePath)
@@ -157,134 +174,39 @@ public class TestBrokerConfiguration
         attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
         attributes.put(FileAccessControlProviderConstants.PATH, aclFilePath);
 
-        return addAccessControlConfiguration(attributes);
+        return addObjectConfiguration(AccessControlProvider.class, attributes);
     }
 
-    public UUID addPortConfiguration(Map<String, Object> attributes)
-    {
-        String name = (String) attributes.get(Port.NAME);
-        return addObjectConfiguration(name, Port.class.getSimpleName(), attributes);
-    }
-
-    public UUID addVirtualHostConfiguration(Map<String, Object> attributes)
-    {
-        String name = (String) attributes.get(VirtualHost.NAME);
-        return addObjectConfiguration(name, VirtualHost.class.getSimpleName(), attributes);
-    }
-
-    public UUID addAuthenticationProviderConfiguration(Map<String, Object> attributes)
-    {
-        String name = (String) attributes.get(AuthenticationProvider.NAME);
-        return addObjectConfiguration(name, AuthenticationProvider.class.getSimpleName(), attributes);
-    }
-
-    public UUID addGroupProviderConfiguration(Map<String, Object> attributes)
-    {
-        String name = (String) attributes.get(GroupProvider.NAME);
-        return addObjectConfiguration(name, GroupProvider.class.getSimpleName(), attributes);
-    }
-
-    public UUID addAccessControlConfiguration(Map<String, Object> attributes)
-    {
-        String name = (String) attributes.get(AccessControlProvider.NAME);
-        return addObjectConfiguration(name, AccessControlProvider.class.getSimpleName(), attributes);
-    }
-
-    public UUID addTrustStoreConfiguration(Map<String, Object> attributes)
-    {
-        String name = (String) attributes.get(TrustStore.NAME);
-        return addObjectConfiguration(name, TrustStore.class.getSimpleName(), attributes);
-    }
-
-    public UUID addKeyStoreConfiguration(Map<String, Object> attributes)
-    {
-        String name = (String) attributes.get(KeyStore.NAME);
-        return addObjectConfiguration(name, KeyStore.class.getSimpleName(), attributes);
-    }
-
-    private boolean setObjectAttributes(ConfigurationEntry entry, Map<String, Object> attributes)
+    private boolean setObjectAttributes(ConfiguredObjectRecord entry, Map<String, Object> attributes)
     {
         Map<String, Object> newAttributes = new HashMap<String, Object>(entry.getAttributes());
         newAttributes.putAll(attributes);
-        ConfigurationEntry newEntry = new ConfigurationEntry(entry.getId(), entry.getType(), newAttributes,
-                entry.getChildrenIds(), _store);
-        _store.save(newEntry);
+        ConfiguredObjectRecord newEntry = new ConfiguredObjectRecordImpl(entry.getId(), entry.getType(), newAttributes,
+                                                                         entry.getParents());
+        _store.update(false, newEntry);
         return true;
     }
 
-    private ConfigurationEntry findObjectByName(String objectName)
+    private ConfiguredObjectRecord findObject(final Class<? extends ConfiguredObject> category, final String objectName)
     {
-        ConfigurationEntry root = _store.getRootEntry();
-        return findObjectByName(root, objectName);
-    }
-
-    private ConfigurationEntry findObjectByName(ConfigurationEntry entry, String objectName)
-    {
-        Map<String, Object> attributes = entry.getAttributes();
-        if (attributes != null)
-        {
-            String name = (String) attributes.get("name");
-            if (objectName.equals(name))
-            {
-                return entry;
-            }
-        }
-        Set<UUID> childrenIds = entry.getChildrenIds();
-        for (UUID uuid : childrenIds)
-        {
-            ConfigurationEntry child = _store.getEntry(uuid);
-            ConfigurationEntry result = findObjectByName(child, objectName);
-            if (result != null)
-            {
-                return result;
-            }
-        }
-        return null;
+        final RecordFindingVisitor visitor = new RecordFindingVisitor(category, objectName);
+        _store.visitConfiguredObjectRecords(visitor);
+        return visitor.getFoundRecord();
     }
 
     private void addObjectConfiguration(UUID id, String type, Map<String, Object> attributes)
     {
-        ConfigurationEntry entry = new ConfigurationEntry(id, type, attributes, Collections.<UUID> emptySet(), _store);
-        ConfigurationEntry root = _store.getRootEntry();
+        ConfiguredObjectRecord entry = new ConfiguredObjectRecordImpl(id, type, attributes, Collections.singletonMap(Broker.class.getSimpleName(), findObject(Broker.class,null)));
 
-        Map<String, Collection<ConfigurationEntry>> children = root.getChildren();
-
-        verifyChildWithNameDoesNotExist(id, type, attributes, children);
-
-        Set<UUID> childrenIds = new HashSet<UUID>(root.getChildrenIds());
-        childrenIds.add(id);
-        ConfigurationEntry newRoot = new ConfigurationEntry(root.getId(), root.getType(), root.getAttributes(), childrenIds,
-                _store);
-        _store.save(newRoot, entry);
+        _store.update(true, entry);
     }
 
-    private void verifyChildWithNameDoesNotExist(UUID id, String type,
-            Map<String, Object> attributes,
-            Map<String, Collection<ConfigurationEntry>> children)
-    {
-        Collection<ConfigurationEntry> childrenOfType = children.get(type);
-
-        if(childrenOfType != null)
-        {
-            String name = (String) attributes.get("name");
-            for(ConfigurationEntry ce : childrenOfType)
-            {
-                Object ceName = ce.getAttributes().get("name");
-                if(name.equals(ceName) && !id.equals(ce.getId()))
-                {
-                    throw new IllegalConfigurationException("A " + type + " with name " + name + " already exists with a different ID");
-                }
-            }
-        }
-    }
-
-    private boolean setObjectAttribute(ConfigurationEntry entry, String attributeName, Object value)
+    private boolean setObjectAttribute(ConfiguredObjectRecord entry, String attributeName, Object value)
     {
         Map<String, Object> attributes = new HashMap<String, Object>(entry.getAttributes());
         attributes.put(attributeName, value);
-        ConfigurationEntry newEntry = new ConfigurationEntry(entry.getId(), entry.getType(), attributes, entry.getChildrenIds(),
-                _store);
-        _store.save(newEntry);
+        ConfiguredObjectRecord newEntry = new ConfiguredObjectRecordImpl(entry.getId(), entry.getType(), attributes, entry.getParents());
+        _store.update(false, newEntry);
         return true;
     }
 
@@ -300,18 +222,59 @@ public class TestBrokerConfiguration
 
     public void addPreferencesProviderConfiguration(String authenticationProvider, Map<String, Object> attributes)
     {
-        ConfigurationEntry pp = new ConfigurationEntry(UUIDGenerator.generateRandomUUID(),
-                PreferencesProvider.class.getSimpleName(), attributes, Collections.<UUID> emptySet(), _store);
-        ConfigurationEntry ap = findObjectByName(authenticationProvider);
-        Set<UUID> children = new HashSet<UUID>();
-        children.addAll(ap.getChildrenIds());
-        children.add(pp.getId());
-        ConfigurationEntry newAp = new ConfigurationEntry(ap.getId(), ap.getType(), ap.getAttributes(), children, _store);
-        _store.save(newAp, pp);
+        ConfiguredObjectRecord authProviderRecord = findObject(AuthenticationProvider.class, authenticationProvider);
+        ConfiguredObjectRecord pp = new ConfiguredObjectRecordImpl(UUIDGenerator.generateRandomUUID(),
+                                                                   PreferencesProvider.class.getSimpleName(), attributes, Collections.<String, ConfiguredObjectRecord>singletonMap(AuthenticationProvider.class.getSimpleName(),authProviderRecord));
+
+        _store.create(pp);
     }
 
-    public Map<String, Object> getObjectAttributes(String name)
+    public Map<String,Object> getObjectAttributes(final Class<? extends ConfiguredObject> category, final String name)
     {
-        return findObjectByName(name).getAttributes();
+        return findObject(category, name).getAttributes();
+    }
+
+    private static class RecordFindingVisitor implements ConfiguredObjectRecordHandler
+    {
+        private final Class<? extends ConfiguredObject> _category;
+        private final String _objectName;
+        public ConfiguredObjectRecord _foundRecord;
+        private int _version;
+
+        public RecordFindingVisitor(final Class<? extends ConfiguredObject> category, final String objectName)
+        {
+            _category = category;
+            _objectName = objectName;
+        }
+
+        @Override
+        public void begin(final int configVersion)
+        {
+            _version = configVersion;
+        }
+
+        @Override
+        public boolean handle(final ConfiguredObjectRecord object)
+        {
+            if (object.getType().equals(_category.getSimpleName())
+                && (_objectName == null
+                    || _objectName.equals(object.getAttributes().get(ConfiguredObject.NAME))))
+            {
+                _foundRecord = object;
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int end()
+        {
+            return _version;
+        }
+
+        public ConfiguredObjectRecord getFoundRecord()
+        {
+            return _foundRecord;
+        }
     }
 }

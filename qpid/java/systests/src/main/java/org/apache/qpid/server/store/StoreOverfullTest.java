@@ -70,7 +70,7 @@ public class StoreOverfullTest extends QpidBrokerTestCase
         messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
 
         TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
         super.setUp();
 
