@@ -29,15 +29,15 @@ import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.DurableConfigurationRecoverer;
+import org.apache.qpid.server.store.ConfiguredObjectRecordRecoveverAndUpgrader;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
-import org.apache.qpid.server.virtualhost.DefaultUpgraderProvider;
+import org.apache.qpid.server.virtualhost.MessageStoreRecoverer;
 import org.apache.qpid.server.virtualhost.State;
-import org.apache.qpid.server.virtualhost.VirtualHostConfigRecoveryHandler;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import com.sleepycat.je.rep.StateChangeEvent;
@@ -98,17 +98,12 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         {
             _messageStore.getEnvironmentFacade().getEnvironment().flushLog(true);
 
-            DefaultUpgraderProvider upgraderProvider = new DefaultUpgraderProvider(this);
-
-            DurableConfigurationRecoverer configRecoverer =
-                    new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
-                            upgraderProvider, getEventLogger());
-            _messageStore.recoverConfigurationStore(configRecoverer);
+            ConfiguredObjectRecordHandler upgraderRecoverer = new ConfiguredObjectRecordRecoveverAndUpgrader(this, getDurableConfigurationRecoverers());
+            _messageStore.visitConfiguredObjectRecords(upgraderRecoverer);
 
             initialiseModel();
 
-            VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(BDBHAVirtualHost.this, getMessageStoreLogSubject());
-            _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
+            new MessageStoreRecoverer(this, getMessageStoreLogSubject()).recover();
 
             attainActivation();
         }

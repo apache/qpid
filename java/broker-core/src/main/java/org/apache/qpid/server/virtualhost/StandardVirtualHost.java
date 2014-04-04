@@ -29,11 +29,11 @@ import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-
-import org.apache.qpid.server.store.DurableConfigurationRecoverer;
+import org.apache.qpid.server.store.ConfiguredObjectRecordRecoveverAndUpgrader;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreCreator;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public class StandardVirtualHost extends AbstractVirtualHost
 {
@@ -107,18 +107,22 @@ public class StandardVirtualHost extends AbstractVirtualHost
         if (_configurationStoreLogSubject != null)
         {
             getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.STORE_LOCATION(configurationStoreSettings.toString()));
+            getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.RECOVERY_START());
         }
 
-        DurableConfigurationRecoverer configRecoverer = new DurableConfigurationRecoverer(getName(), getDurableConfigurationRecoverers(),
-                new DefaultUpgraderProvider(this), getEventLogger());
+        ConfiguredObjectRecordHandler upgraderRecoverer = new ConfiguredObjectRecordRecoveverAndUpgrader(this, getDurableConfigurationRecoverers());
 
-        _durableConfigurationStore.recoverConfigurationStore(configRecoverer);
+        _durableConfigurationStore.visitConfiguredObjectRecords(upgraderRecoverer);
+
+        if (_configurationStoreLogSubject != null)
+        {
+            getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
+        }
 
         // If store does not have entries for standard exchanges (amq.*), the following will create them.
         initialiseModel();
 
-        VirtualHostConfigRecoveryHandler recoveryHandler = new VirtualHostConfigRecoveryHandler(this, getMessageStoreLogSubject());
-        _messageStore.recoverMessageStore(recoveryHandler, recoveryHandler);
+        new MessageStoreRecoverer(this, getMessageStoreLogSubject()).recover();
 
         attainActivation();
     }

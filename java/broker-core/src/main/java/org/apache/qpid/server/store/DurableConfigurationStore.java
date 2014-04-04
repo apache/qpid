@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public interface DurableConfigurationStore
 {
@@ -44,12 +45,6 @@ public interface DurableConfigurationStore
      * @param storeSettings store settings
      */
     void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings) throws StoreException;
-
-    /**
-     * Recovers configuration from the store using given recovery handler
-     * @param recoveryHandler recovery handler
-     */
-    void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler) throws StoreException;
 
     /**
      * Makes the specified object persistent.
@@ -84,4 +79,11 @@ public interface DurableConfigurationStore
 
     void closeConfigurationStore() throws StoreException;
 
+    /**
+     * Visit all configured object records with given handler.
+     *
+     * @param handler a handler to invoke on each configured object record
+     * @throws StoreException
+     */
+    void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException;
 }

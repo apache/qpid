@@ -34,13 +34,20 @@ public class TestMessageMetaData implements StorableMessageMetaData
 
     private static final TestMessageMetaDataType TYPE = new TestMessageMetaDataType();
 
-    private int _contentSize;
-    private long _messageId;
+    private final int _contentSize;
+    private final long _messageId;
+    private final boolean _persistent;
 
     public TestMessageMetaData(long messageId, int contentSize)
     {
+        this(messageId, contentSize, true);
+    }
+
+    public TestMessageMetaData(long messageId, int contentSize, boolean persistent)
+    {
         _contentSize = contentSize;
         _messageId = messageId;
+        _persistent = persistent;
     }
 
     @Override
@@ -59,7 +66,7 @@ public class TestMessageMetaData implements StorableMessageMetaData
     }
 
     @Override
-    public MessageMetaDataType getType()
+    public MessageMetaDataType<TestMessageMetaData> getType()
     {
         return TYPE;
     }
@@ -67,7 +74,7 @@ public class TestMessageMetaData implements StorableMessageMetaData
     @Override
     public boolean isPersistent()
     {
-        return true;
+        return _persistent;
     }
 
     @Override

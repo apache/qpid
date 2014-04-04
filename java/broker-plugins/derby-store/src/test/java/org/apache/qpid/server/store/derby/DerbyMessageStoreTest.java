@@ -70,10 +70,13 @@ public class DerbyMessageStoreTest extends MessageStoreTestCase
 
     private void deleteStoreIfExists()
     {
-        File location = new File(_storeLocation);
-        if (location.exists())
+        if (_storeLocation != null)
         {
-            FileUtils.delete(location, true);
+            File location = new File(_storeLocation);
+            if (location.exists())
+            {
+                FileUtils.delete(location, true);
+            }
         }
     }
 

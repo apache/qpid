@@ -23,17 +23,16 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
+import org.apache.qpid.server.store.handler.MessageHandler;
+import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
 {
 
     @Override
     public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
-    {
-    }
-
-    @Override
-    public void recoverConfigurationStore(ConfigurationRecoveryHandler recoveryHandler)
     {
     }
 
@@ -92,11 +91,6 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void recoverMessageStore(MessageStoreRecoveryHandler messageRecoveryHandler, TransactionLogRecoveryHandler transactionLogRecoveryHandler)
-    {
-    }
-
-    @Override
     public void addEventListener(EventListener eventListener, Event... events)
     {
     }
@@ -109,6 +103,26 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
 
     @Override
     public void onDelete()
+    {
+    }
+
+    @Override
+    public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException
+    {
+    }
+
+    @Override
+    public void visitMessages(MessageHandler handler) throws StoreException
+    {
+    }
+
+    @Override
+    public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
+    {
+    }
+
+    @Override
+    public void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException
     {
     }
 

@@ -17,4 +17,3 @@
 # under the License.
 #
 org.apache.qpid.server.store.TestMemoryMessageStoreFactory
-org.apache.qpid.server.store.TestableMemoryMessageStoreFactory
