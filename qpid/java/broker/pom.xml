@@ -28,6 +28,10 @@
   <name>Qpid Java Broker</name>
   <description>Broker configuration and executable</description>
 
+  <properties>
+    <dependency-change-verification>true</dependency-change-verification>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
