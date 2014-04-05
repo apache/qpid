@@ -28,6 +28,10 @@
   <name>Qpid AMQP 1.0 Client WebSocket</name>
   <description>AMQP 1.0 compliant WebSocket module</description>
 
+  <properties>
+    <dependency-change-verification>true</dependency-change-verification>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
@@ -53,6 +57,27 @@
   </dependencies>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <!--version specified in parent pluginManagement -->
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/qpid-amqp-1-0-client-websocket-bin.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 
 </project>
