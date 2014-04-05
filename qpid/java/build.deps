@@ -28,7 +28,7 @@ bcel=lib/required/bcel-5.2.jar
 
 derby-db=lib/required/derby-10.8.2.2.jar
 
-geronimo-jms=lib/required/geronimo-jms_1.1_spec-1.0.jar
+geronimo-jms=lib/required/geronimo-jms_1.1_spec-1.1.1.jar
 geronimo-j2ee=lib/required/geronimo-j2ee-connector_1.5_spec-2.0.0.jar
 geronimo-jta=lib/required/geronimo-jta_1.1_spec-1.1.1.jar
 geronimo-kernel=lib/required/geronimo-kernel-2.2.1.jar
