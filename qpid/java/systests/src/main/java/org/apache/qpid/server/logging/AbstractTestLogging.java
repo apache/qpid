@@ -26,10 +26,12 @@ import org.apache.qpid.util.LogMonitor;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Abstract superclass for logging test set up and utility methods.
@@ -110,15 +112,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
         {
             end = log.length();
         }
-
-        try
-        {
-            return Integer.parseInt(log.substring(start, end));
-        }
-        catch (Exception e)
-        {
-            return -1;
-        }
+        return parseInt(log, start, end);
     }
 
     protected String fromMessage(String log)
@@ -237,14 +231,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     {
         int conIDStart = log.indexOf("con:") + 4;
         int conIDEnd = log.indexOf("(", conIDStart);
-        try
-        {
-            return Integer.parseInt(log.substring(conIDStart, conIDEnd));
-        }
-        catch (Exception e)
-        {
-            return -1;
-        }
+        return parseInt(log, conIDStart, conIDEnd);
     }
 
     /**
@@ -407,6 +394,20 @@ public class AbstractTestLogging extends QpidBrokerTestCase
         {
             System.err.println("Monitored file contents:");
             System.err.println(monitor.readFile());
+        }
+    }
+
+    private int parseInt(final String logSubstring, final int start, final int end)
+    {
+        try
+        {
+            final NumberFormat format = NumberFormat.getInstance(Locale.getDefault());
+            final Number number = format.parse(logSubstring.substring(start, end));
+            return number.intValue();
+        }
+        catch (Exception e)
+        {
+            return -1;
         }
     }
 }
