@@ -209,7 +209,6 @@ class SemanticStateConsumerImpl : public Consumer, public sys::OutputTask,
     bool blocked;
     bool exclusive;
     std::string resumeId;
-    const std::string tag;  // <destination> from AMQP 0-10 Message.subscribe command
     boost::shared_ptr<Selector> selector;
     uint64_t resumeTtl;
     framing::FieldTable arguments;
@@ -270,7 +269,6 @@ class SemanticStateConsumerImpl : public Consumer, public sys::OutputTask,
     bool isAcquire() const { return acquire; }
     bool isExclusive() const { return exclusive; }
     std::string getResumeId() const { return resumeId; };
-    const std::string& getTag() const { return tag; }
     uint64_t getResumeTtl() const { return resumeTtl; }
     uint32_t getDeliveryCount() const { return deliveryCount; }
     void setDeliveryCount(uint32_t _deliveryCount) { deliveryCount = _deliveryCount; }

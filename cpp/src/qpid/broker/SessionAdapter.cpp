@@ -29,15 +29,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/broker/SessionState.h"
-#include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
-#include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
-#include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
-#include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
-#include "qmf/org/apache/qpid/broker/EventBind.h"
-#include "qmf/org/apache/qpid/broker/EventUnbind.h"
-#include "qmf/org/apache/qpid/broker/EventSubscribe.h"
-#include "qmf/org/apache/qpid/broker/EventUnsubscribe.h"
-#include <boost/format.hpp>
+ #include <boost/format.hpp>
 #include <boost/cast.hpp>
 #include <boost/bind.hpp>
 
@@ -50,7 +42,6 @@ using namespace qpid;
 using namespace qpid::framing;
 using namespace qpid::framing::dtx;
 using namespace qpid::management;
-namespace _qmf = qmf::org::apache::qpid::broker;
 
 typedef std::vector<Queue::shared_ptr> QueueVector;
 
@@ -425,10 +416,6 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
                   acceptMode == 0, acquireMode == 0, exclusive,
                   resumeId, resumeTtl, arguments);
 
-    ManagementAgent* agent = getBroker().getManagementAgent();
-    if (agent)
-        agent->raiseEvent(_qmf::EventSubscribe(getConnection().getMgmtId(), getConnection().getUserId(),
-                                               queueName, destination, exclusive, ManagementAgent::toMap(arguments)));
     QPID_LOG_CAT(debug, model, "Create subscription. queue:" << queueName
         << " destination:" << destination
         << " user:" << getConnection().getUserId()
@@ -443,10 +430,6 @@ SessionAdapter::MessageHandlerImpl::cancel(const string& destination )
     if (!state.cancel(destination)) {
         throw NotFoundException(QPID_MSG("No such subscription: " << destination));
     }
-
-    ManagementAgent* agent = getBroker().getManagementAgent();
-    if (agent)
-        agent->raiseEvent(_qmf::EventUnsubscribe(getConnection().getMgmtId(), getConnection().getUserId(), destination));
     QPID_LOG_CAT(debug, model, "Delete subscription. destination:" << destination
         << " user:" << getConnection().getUserId()
         << " rhost:" << getConnection().getMgmtId() );
