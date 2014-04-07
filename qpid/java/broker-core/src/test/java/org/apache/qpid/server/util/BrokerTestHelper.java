@@ -120,10 +120,7 @@ public class BrokerTestHelper
         AbstractVirtualHost host = (AbstractVirtualHost) factory.create(attributes, broker);
 
         host.setDesiredState(host.getState(), State.ACTIVE);
-        /*if(virtualHostRegistry != null)
-        {
-            virtualHostRegistry.registerVirtualHost(host);
-        }*/
+
         return host;
     }
 
