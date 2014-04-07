@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-public class UnknownExchangeException extends Exception
+public class UnknownExchangeException extends RuntimeException
 {
     private final String _exchangeName;
 

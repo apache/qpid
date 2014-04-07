@@ -19,7 +19,7 @@ package org.apache.qpid.server.virtualhost;/*
  *
  */
 
-public class ReservedExchangeNameException extends Exception
+public class ReservedExchangeNameException extends RuntimeException
 {
     private final String _name;
 

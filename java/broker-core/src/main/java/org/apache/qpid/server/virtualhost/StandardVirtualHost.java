@@ -20,23 +20,27 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
-import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.ConfiguredObjectRecordRecoveverAndUpgrader;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreCreator;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
-public class StandardVirtualHost extends AbstractVirtualHost
+@ManagedObject( category = false, type = "STANDARD")
+public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost>
 {
+    public static final String TYPE = "STANDARD";
     private MessageStore _messageStore;
 
     private DurableConfigurationStore _durableConfigurationStore;
@@ -45,12 +49,51 @@ public class StandardVirtualHost extends AbstractVirtualHost
 
     private MessageStoreLogSubject _configurationStoreLogSubject;
 
-    StandardVirtualHost(VirtualHostRegistry virtualHostRegistry,
-                        StatisticsGatherer brokerStatisticsGatherer,
-                        org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                        VirtualHost virtualHost)
+    public StandardVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
     {
-        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, virtualHost);
+        super(attributes, broker);
+    }
+
+    @Override
+    protected void validateAttributes()
+    {
+        super.validateAttributes();
+        Map<String,Object> attributes = getActualAttributes();
+        Map<String, Object> messageStoreSettings = (Map<String, Object>)attributes.get(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS);
+        if (messageStoreSettings == null)
+        {
+            throw new IllegalArgumentException("Attribute '"+ org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS + "' is required.");
+        }
+
+        Object storeType = messageStoreSettings.get(MessageStore.STORE_TYPE);
+
+        // need store type and path
+        Collection<String> knownTypes = MessageStoreFactory.FACTORY_LOADER.getSupportedTypes();
+
+        if (storeType == null)
+        {
+            throw new IllegalArgumentException("Setting '"+ MessageStore.STORE_TYPE
+                                               +"' is required in attribute " + org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS + ". Known types are : " + knownTypes);
+        }
+        else if (!(storeType instanceof String))
+        {
+            throw new IllegalArgumentException("Setting '"+ MessageStore.STORE_TYPE
+                                               +"' is required and must be of type String. "
+                                               +"Known types are : " + knownTypes);
+        }
+
+        MessageStoreFactory factory = MessageStoreFactory.FACTORY_LOADER.get((String)storeType);
+        if(factory == null)
+        {
+            throw new IllegalArgumentException("Setting '"+ MessageStore.STORE_TYPE
+                                               +"' has value '" + storeType + "' which is not one of the valid values: "
+                                               + "Known types are : " + knownTypes);
+        }
+
+        factory.validateAttributes(attributes);
+
+
+
     }
 
     private DurableConfigurationStore initialiseConfigurationStore(String storeType)

@@ -23,12 +23,16 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sleepycat.je.rep.StateChangeEvent;
+import com.sleepycat.je.rep.StateChangeListener;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.ConfiguredObjectRecordRecoveverAndUpgrader;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -37,30 +41,55 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironment
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.MessageStoreRecoverer;
-import org.apache.qpid.server.virtualhost.State;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHostState;
 
-import com.sleepycat.je.rep.StateChangeEvent;
-import com.sleepycat.je.rep.StateChangeListener;
-
-public class BDBHAVirtualHost extends AbstractVirtualHost
+@ManagedObject( category = false, type = "BDB_HA" )
+public class BDBHAVirtualHost extends AbstractVirtualHost<BDBHAVirtualHost>
 {
+    public static final String TYPE = "BDB_HA";
     private static final Logger LOGGER = Logger.getLogger(BDBHAVirtualHost.class);
 
     private BDBMessageStore _messageStore;
     private MessageStoreLogSubject _messageStoreLogSubject;
 
-    BDBHAVirtualHost(VirtualHostRegistry virtualHostRegistry,
-                     StatisticsGatherer brokerStatisticsGatherer,
-                     org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                     VirtualHost virtualHost)
+    BDBHAVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
     {
-        super(virtualHostRegistry, brokerStatisticsGatherer, parentSecurityManager, virtualHost);
+        super(attributes, broker);
+    }
+
+
+    @Override
+    protected void validateAttributes()
+    {
+        super.validateAttributes();
+        Map<String, Object> attributes = getActualAttributes();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> messageStoreSettings = (Map<String, Object>)attributes.get(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS);
+        if (messageStoreSettings == null)
+        {
+            throw new IllegalArgumentException("Attribute '"+ org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS + "' is required.");
+        }
+
+        validateAttribute(MessageStore.STORE_PATH, String.class, messageStoreSettings);
+        validateAttribute(ReplicatedEnvironmentFacadeFactory.GROUP_NAME, String.class, messageStoreSettings);
+        validateAttribute(ReplicatedEnvironmentFacadeFactory.NODE_NAME, String.class, messageStoreSettings);
+        validateAttribute(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS, String.class, messageStoreSettings);
+        validateAttribute(ReplicatedEnvironmentFacadeFactory.HELPER_ADDRESS, String.class, messageStoreSettings);
+    }
+
+    private void validateAttribute(String attrName, Class<?> clazz, Map<String, Object> attributes)
+    {
+        Object attr = attributes.get(attrName);
+        if(!clazz.isInstance(attr))
+        {
+            throw new IllegalArgumentException("Attribute '"+ attrName
+                                               +"' is required and must be of type "+clazz.getSimpleName()+".");
+        }
     }
 
     protected void initialiseStorage(VirtualHost virtualHost)
     {
-        setState(State.PASSIVE);
+        setState(VirtualHostState.PASSIVE);
 
         _messageStoreLogSubject = new MessageStoreLogSubject(getName(), BDBMessageStore.class.getSimpleName());
         _messageStore = new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
@@ -92,7 +121,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
         return _messageStore;
     }
 
-    private void activate()
+    private void onMaster()
     {
         try
         {
@@ -115,7 +144,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
 
     private void passivate()
     {
-        State finalState = State.ERRORED;
+        VirtualHostState finalState = VirtualHostState.ERRORED;
 
         try
         {
@@ -132,12 +161,12 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
             getExchangeRegistry().clearAndUnregisterMbeans();
             getDtxRegistry().close();
 
-            finalState = State.PASSIVE;
+            finalState = VirtualHostState.PASSIVE;
         }
         finally
         {
             setState(finalState);
-            reportIfError(getState());
+            reportIfError(getVirtualHostState());
         }
     }
 
@@ -163,7 +192,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost
             switch (state)
             {
             case MASTER:
-                activate();
+                onMaster();
                 break;
             case REPLICA:
                 passivate();

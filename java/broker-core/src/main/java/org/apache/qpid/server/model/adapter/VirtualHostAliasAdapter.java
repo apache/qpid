@@ -21,32 +21,41 @@
 
 package org.apache.qpid.server.model.adapter;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.qpid.server.model.*;
-
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AuthenticationMethod;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostAlias;
 
 public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHostAliasAdapter> implements VirtualHostAlias<VirtualHostAliasAdapter>
 {
-    private VirtualHostAdapter _vhost;
+    private VirtualHost _vhost;
     private Port _port;
 
-    public VirtualHostAliasAdapter(VirtualHostAdapter virtualHostAdapter, Port port)
+    public VirtualHostAliasAdapter(VirtualHost virtualHost, Port port)
     {
-        super(Collections.<String,Object>emptyMap(), createAttributes(virtualHostAdapter, port), virtualHostAdapter.getTaskExecutor());
-        _vhost = virtualHostAdapter;
+        super(Collections.<String, Object>emptyMap(),
+              createAttributes(virtualHost, port),
+              virtualHost.getTaskExecutor());
+        _vhost = virtualHost;
         _port = port;
     }
 
-    private static Map<String, Object> createAttributes(final VirtualHostAdapter virtualHostAdapter, final Port port)
+    private static Map<String, Object> createAttributes(final VirtualHost virtualHost, final Port port)
     {
         final Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(ID, UUIDGenerator.generateVhostAliasUUID(virtualHostAdapter.getName(), port.getName()));
-        attributes.put(NAME, virtualHostAdapter.getName());
+        attributes.put(ID, UUIDGenerator.generateVhostAliasUUID(virtualHost.getName(), port.getName()));
+        attributes.put(NAME, virtualHost.getName());
         return attributes;
     }
 

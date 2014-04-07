@@ -36,6 +36,7 @@ import javax.management.ObjectName;
 import javax.management.OperationsException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
@@ -47,7 +48,6 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 
 @MBeanDescription("This MBean exposes the broker level management features")
@@ -106,7 +106,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
     @Override
     public String[] getExchangeTypes() throws IOException
     {
-        Collection<String> exchangeTypes = _virtualHostMBean.getVirtualHost().getExchangeTypes();
+        Collection<String> exchangeTypes = _virtualHostMBean.getVirtualHost().getExchangeTypeNames();
         return exchangeTypes.toArray(new String[exchangeTypes.size()]);
     }
 
@@ -158,7 +158,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
     public void createNewExchange(String name, String type, boolean durable)
             throws IOException, JMException, MBeanException
     {
-        if (!getConfiguredObject().getExchangeTypes().contains(type))
+        if (!getConfiguredObject().getExchangeTypeNames().contains(type))
         {
             throw new OperationsException("No such exchange type \""+type+"\"");
         }

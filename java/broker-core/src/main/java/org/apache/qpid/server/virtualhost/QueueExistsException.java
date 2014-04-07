@@ -22,7 +22,7 @@ package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.server.queue.AMQQueue;
 
-public class QueueExistsException extends Exception
+public class QueueExistsException extends RuntimeException
 {
     private final AMQQueue _existing;
 

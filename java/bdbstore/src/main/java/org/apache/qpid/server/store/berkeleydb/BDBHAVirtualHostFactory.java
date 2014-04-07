@@ -1,4 +1,4 @@
-package org.apache.qpid.server.store.berkeleydb;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,64 +18,31 @@ package org.apache.qpid.server.store.berkeleydb;/*
  * under the License.
  *
  */
+package org.apache.qpid.server.store.berkeleydb;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
-import org.apache.qpid.server.plugin.VirtualHostFactory;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
-public class BDBHAVirtualHostFactory implements VirtualHostFactory
+public class BDBHAVirtualHostFactory extends AbstractConfiguredObjectTypeFactory<BDBHAVirtualHost>
 {
 
-    public static final String TYPE = "BDB_HA";
-
-    @Override
-    public String getType()
+    public BDBHAVirtualHostFactory()
     {
-        return TYPE;
+        super(BDBHAVirtualHost.class);
     }
 
     @Override
-    public VirtualHost createVirtualHost(VirtualHostRegistry virtualHostRegistry,
-                                         StatisticsGatherer brokerStatisticsGatherer,
-                                         org.apache.qpid.server.security.SecurityManager parentSecurityManager,
-                                         org.apache.qpid.server.model.VirtualHost virtualHost)
+    public BDBHAVirtualHost createInstance(final Map<String, Object> attributes,
+                                                 final ConfiguredObject<?>... parents)
     {
-        return new BDBHAVirtualHost(virtualHostRegistry,
-                                    brokerStatisticsGatherer,
-                                    parentSecurityManager,
-                                    virtualHost);
+        final Broker broker = getParent(Broker.class, parents);
+        return new BDBHAVirtualHost(attributes, broker);
     }
 
-    @Override
-    public void validateAttributes(Map<String, Object> attributes)
-    {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> messageStoreSettings = (Map<String, Object>)attributes.get(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS);
-        if (messageStoreSettings == null)
-        {
-            throw new IllegalArgumentException("Attribute '"+ org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS + "' is required.");
-        }
-
-        validateAttribute(MessageStore.STORE_PATH, String.class, messageStoreSettings);
-        validateAttribute(ReplicatedEnvironmentFacadeFactory.GROUP_NAME, String.class, messageStoreSettings);
-        validateAttribute(ReplicatedEnvironmentFacadeFactory.NODE_NAME, String.class, messageStoreSettings);
-        validateAttribute(ReplicatedEnvironmentFacadeFactory.NODE_ADDRESS, String.class, messageStoreSettings);
-        validateAttribute(ReplicatedEnvironmentFacadeFactory.HELPER_ADDRESS, String.class, messageStoreSettings);
-    }
-
-    private void validateAttribute(String attrName, Class<?> clazz, Map<String, Object> attributes)
-    {
-        Object attr = attributes.get(attrName);
-        if(!clazz.isInstance(attr))
-        {
-            throw new IllegalArgumentException("Attribute '"+ attrName
-                                               +"' is required and must be of type "+clazz.getSimpleName()+".");
-        }
-    }
 
 }

@@ -31,6 +31,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
@@ -41,8 +44,6 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 
 public class MessageServlet extends AbstractServlet
 {
@@ -134,9 +135,9 @@ public class MessageServlet extends AbstractServlet
         String vhostName = pathInfoElements[0];
         String queueName = pathInfoElements[1];
 
-        VirtualHost<?> vhost = null;
+        VirtualHost<?,?,?> vhost = null;
 
-        for(VirtualHost<?> vh : getBroker().getVirtualHosts())
+        for(VirtualHost<?,?,?> vh : getBroker().getVirtualHosts())
         {
             if(vh.getName().equals(vhostName))
             {
@@ -148,11 +149,11 @@ public class MessageServlet extends AbstractServlet
         return getQueueFromVirtualHost(queueName, vhost);
     }
 
-    private Queue getQueueFromVirtualHost(String queueName, VirtualHost<?> vhost)
+    private Queue getQueueFromVirtualHost(String queueName, VirtualHost<?,?,?> vhost)
     {
         Queue queue = null;
 
-        for(Queue q : vhost.getQueues())
+        for(Queue<?> q : vhost.getQueues())
         {
 
             if(q.getName().equals(queueName))
@@ -420,7 +421,7 @@ public class MessageServlet extends AbstractServlet
             String destQueueName = (String) providedObject.get("destinationQueue");
             Boolean move = (Boolean) providedObject.get("move");
 
-            final VirtualHost<?> vhost = sourceQueue.getParent(VirtualHost.class);
+            final VirtualHost<?,?,?> vhost = sourceQueue.getParent(VirtualHost.class);
 
             boolean isMoveTransaction = move != null && Boolean.valueOf(move);
 
@@ -461,7 +462,7 @@ public class MessageServlet extends AbstractServlet
 
         final Queue<?> sourceQueue = getQueueFromRequest(request);
 
-        final VirtualHost<?> vhost = sourceQueue.getParent(VirtualHost.class);
+        final VirtualHost<?,?,?> vhost = sourceQueue.getParent(VirtualHost.class);
 
 
         final List<Long> messageIds = new ArrayList<Long>();
@@ -485,7 +486,7 @@ public class MessageServlet extends AbstractServlet
 
     }
 
-    private void authorizeMethod(String methodName, VirtualHost<?> vhost)
+    private void authorizeMethod(String methodName, VirtualHost<?,?,?> vhost)
     {
         SecurityManager securityManager = getBroker().getSecurityManager();
         securityManager.authoriseMethod(Operation.UPDATE, "VirtualHost.Queue", methodName, vhost.getName());

@@ -32,7 +32,7 @@ org.apache.qpid.server.model.port.JmxPortFactory
 org.apache.qpid.server.model.port.RmiPortFactory
 org.apache.qpid.server.model.port.PortFactory
 org.apache.qpid.server.model.adapter.BrokerAdapterFactory
-org.apache.qpid.server.model.adapter.StandardVirtualHostAdapterFactory
+org.apache.qpid.server.model.adapter.StandardVirtualHostFactory
 org.apache.qpid.server.model.adapter.FileBasedGroupProviderFactory
 org.apache.qpid.server.model.adapter.FileSystemPreferencesProviderFactory
 

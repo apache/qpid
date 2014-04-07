@@ -20,10 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -59,7 +56,8 @@ import org.apache.qpid.server.queue.StandardQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
+import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -102,9 +100,9 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
     private String queueOwner = "MST";
 
-    private VirtualHost _virtualHost;
-    private org.apache.qpid.server.model.VirtualHost<?> _virtualHostModel;
+    private AbstractVirtualHost<?> _virtualHost;
     private String _storePath;
+    private Map<String, Object> _attributes;
 
     public void setUp() throws Exception
     {
@@ -118,13 +116,11 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         messageStoreSettings.put(MessageStore.STORE_PATH, _storePath);
         messageStoreSettings.put(MessageStore.STORE_TYPE, getTestProfileMessageStoreType());
 
-        _virtualHostModel = mock(org.apache.qpid.server.model.VirtualHost.class);
+        _attributes = new HashMap<String, Object>();
+        _attributes.put(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+        _attributes.put(org.apache.qpid.server.model.VirtualHost.TYPE, StandardVirtualHost.TYPE);
+        _attributes.put(org.apache.qpid.server.model.VirtualHost.NAME, hostName);
 
-        when(_virtualHostModel.getMessageStoreSettings()).thenReturn(messageStoreSettings);
-        when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.TYPE))).thenReturn(StandardVirtualHostFactory.TYPE);
-        when(_virtualHostModel.getAttribute(eq(org.apache.qpid.server.model.VirtualHost.NAME))).thenReturn(hostName);
-        when(_virtualHostModel.getType()).thenReturn(StandardVirtualHostFactory.TYPE);
-        when(_virtualHostModel.getName()).thenReturn(hostName);
 
         cleanup(new File(_storePath));
 
@@ -136,9 +132,9 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         return _storePath;
     }
 
-    protected org.apache.qpid.server.model.VirtualHost<?> getVirtualHostModel()
+    protected org.apache.qpid.server.model.VirtualHost<?,?,?> getVirtualHostModel()
     {
-        return _virtualHostModel;
+        return _virtualHost;
     }
 
     @Override
@@ -182,13 +178,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         try
         {
-            _virtualHost = BrokerTestHelper.createVirtualHost(new VirtualHostRegistry(new EventLogger()), getVirtualHostModel());
-            when(_virtualHostModel.getId()).thenReturn(_virtualHost.getId());
-
-            ConfiguredObjectRecord objectRecord = mock(ConfiguredObjectRecord.class);
-            when(objectRecord.getId()).thenReturn(_virtualHost.getId());
-            when(objectRecord.getType()).thenReturn(org.apache.qpid.server.model.VirtualHost.class.getSimpleName());
-            when(_virtualHostModel.asObjectRecord()).thenReturn(objectRecord);
+            _virtualHost = (AbstractVirtualHost<?>) BrokerTestHelper.createVirtualHost(new VirtualHostRegistry(new EventLogger()), _attributes);
         }
         catch (Exception e)
         {

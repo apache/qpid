@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.store.MessageStore;
-
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.store.MessageStore;
+
 @ManagedObject( managesChildren = true, defaultType = "STANDARD")
-public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<X>
+public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>, E extends Exchange<?> > extends ConfiguredObject<X>
 {
 
     String QUEUE_ALERT_REPEAT_GAP                     = "queue.alertRepeatGap";
@@ -144,17 +144,17 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     //children
     Collection<VirtualHostAlias> getAliases();
     Collection<Connection> getConnections();
-    Collection<Queue> getQueues();
-    Collection<Exchange> getExchanges();
+    Collection<Q> getQueues();
+    Collection<E> getExchanges();
 
-    Exchange createExchange(String name, State initialState, boolean durable,
+    E createExchange(String name, State initialState, boolean durable,
                             LifetimePolicy lifetime, String type, Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException;
 
-    Queue createQueue(Map<String, Object> attributes)
+    Q createQueue(Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException;
 
-    Collection<String> getExchangeTypes();
+    Collection<String> getExchangeTypeNames();
 
     public static interface Transaction
     {
@@ -176,7 +176,7 @@ public interface VirtualHost<X extends VirtualHost<X>> extends ConfiguredObject<
     // TODO - remove this
     TaskExecutor getTaskExecutor();
 
-    Exchange getExchange(UUID id);
+    E getExchange(UUID id);
 
     MessageStore getMessageStore();
 

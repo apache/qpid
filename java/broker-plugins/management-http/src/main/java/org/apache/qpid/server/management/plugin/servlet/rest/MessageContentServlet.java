@@ -77,7 +77,7 @@ public class MessageContentServlet extends AbstractServlet
         String vhostName = pathInfoElements[0];
         String queueName = pathInfoElements[1];
 
-        VirtualHost<?> vhost = null;
+        VirtualHost<?,?,?> vhost = null;
 
         for(VirtualHost vh : getBroker().getVirtualHosts())
         {
@@ -91,7 +91,7 @@ public class MessageContentServlet extends AbstractServlet
         return getQueueFromVirtualHost(queueName, vhost);
     }
 
-    private Queue getQueueFromVirtualHost(String queueName, VirtualHost<?> vhost)
+    private Queue getQueueFromVirtualHost(String queueName, VirtualHost<?,?,?> vhost)
     {
         Queue queue = null;
 

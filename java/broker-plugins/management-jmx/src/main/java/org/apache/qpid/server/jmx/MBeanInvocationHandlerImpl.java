@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.Arrays;
 
 import javax.management.Attribute;
 import javax.management.JMException;
@@ -38,15 +39,15 @@ import javax.management.ObjectName;
 import javax.management.RuntimeErrorException;
 import javax.management.remote.MBeanServerForwarder;
 import javax.security.auth.Subject;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.util.Arrays;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 
 /**
  * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. It delegates
@@ -200,7 +201,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
 
         if (virtualHostName != null)
         {
-            VirtualHost<?> virtualHost = _broker.findVirtualHostByName(virtualHostName);
+            VirtualHost<?,?,?> virtualHost = _broker.findVirtualHostByName(virtualHostName);
             if (virtualHost == null)
             {
                 throw new IllegalArgumentException("Virtual host with name '" + virtualHostName + "' is not found.");

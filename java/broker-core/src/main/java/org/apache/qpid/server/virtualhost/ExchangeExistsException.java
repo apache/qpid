@@ -21,7 +21,7 @@ package org.apache.qpid.server.virtualhost;/*
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
 
-public class ExchangeExistsException extends Exception
+public class ExchangeExistsException extends RuntimeException
 {
     private final ExchangeImpl _existing;
 

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-public enum State
+public enum VirtualHostState
 {
     INITIALISING,
     ACTIVE,

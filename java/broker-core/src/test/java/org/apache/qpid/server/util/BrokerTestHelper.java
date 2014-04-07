@@ -21,6 +21,7 @@
 package org.apache.qpid.server.util;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,33 +30,42 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.adapter.BrokerAdapter;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.plugin.PluggableFactoryLoader;
-import org.apache.qpid.server.plugin.VirtualHostFactory;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
+import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerTestHelper
 {
 
     protected static final String BROKER_STORE_CLASS_NAME_KEY = "brokerstore.class.name";
     protected static final String JSON_BROKER_STORE_CLASS_NAME = JsonConfigurationEntryStore.class.getName();
+
+    private static final TaskExecutor TASK_EXECUTOR = new TaskExecutor();
+    static
+    {
+        TASK_EXECUTOR.start();
+    }
 
     public static Broker createBrokerMock()
     {
@@ -81,19 +91,39 @@ public class BrokerTestHelper
     {
     }
 
-    public static VirtualHost createVirtualHost(VirtualHostRegistry virtualHostRegistry, org.apache.qpid.server.model.VirtualHost modelVHost)
+    public static VirtualHost createVirtualHost(VirtualHostRegistry virtualHostRegistry, Map<String,Object> attributes)
             throws Exception
     {
-        String hostType = modelVHost.getType();
-        VirtualHostFactory factory = new PluggableFactoryLoader<VirtualHostFactory>(VirtualHostFactory.class).get(hostType);
-        VirtualHost host = factory.createVirtualHost(virtualHostRegistry,
-                mock(StatisticsGatherer.class),
-                new SecurityManager(mock(Broker.class), false),
-                modelVHost);
-        if(virtualHostRegistry != null)
+
+        //VirtualHostFactory factory = new PluggableFactoryLoader<VirtualHostFactory>(VirtualHostFactory.class).get(hostType);
+
+        Broker broker = mock(Broker.class);
+        when(broker.getVirtualHostRegistry()).thenReturn(virtualHostRegistry);
+        when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
+        SecurityManager securityManager = new SecurityManager(broker, false);
+        when(broker.getSecurityManager()).thenReturn(securityManager);
+        when(broker.getAttribute(eq(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD))).thenReturn(BrokerAdapter.DEFAULT_HOUSEKEEPING_CHECK_PERIOD);
+        when(broker.getAttribute(eq(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED))).thenReturn(BrokerAdapter.DEFAULT_DEAD_LETTER_QUEUE_ENABLED);
+        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE))).thenReturn(BrokerAdapter.DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE);
+        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE))).thenReturn(BrokerAdapter.DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE);
+        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES))).thenReturn(BrokerAdapter.DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT);
+        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES))).thenReturn(BrokerAdapter.DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH);
+        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_REPEAT_GAP))).thenReturn(BrokerAdapter.DEFAULT_ALERT_REPEAT_GAP);
+        when(broker.getAttribute(eq(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES))).thenReturn(BrokerAdapter.DEFAULT_FLOW_CONTROL_SIZE_BYTES);
+        when(broker.getAttribute(eq(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES))).thenReturn(BrokerAdapter.DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES);
+        when(broker.getAttribute(eq(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS))).thenReturn(BrokerAdapter.DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS);
+
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactory();
+        ConfiguredObjectTypeFactory factory = objectFactory.getConfiguredObjectTypeFactory(org.apache.qpid.server.model.VirtualHost.class,
+                                                                      attributes);
+
+        AbstractVirtualHost host = (AbstractVirtualHost) factory.create(attributes, broker);
+
+        host.setDesiredState(host.getState(), State.ACTIVE);
+        /*if(virtualHostRegistry != null)
         {
             virtualHostRegistry.registerVirtualHost(host);
-        }
+        }*/
         return host;
     }
 
@@ -104,16 +134,16 @@ public class BrokerTestHelper
 
     public static VirtualHost createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception
     {
-        org.apache.qpid.server.model.VirtualHost virtualHost = mock(org.apache.qpid.server.model.VirtualHost.class);
-        when(virtualHost.getType()).thenReturn(StandardVirtualHostFactory.TYPE);
-        when(virtualHost.getAttribute(org.apache.qpid.server.model.VirtualHost.TYPE)).thenReturn(StandardVirtualHostFactory.TYPE);
+        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(org.apache.qpid.server.model.VirtualHost.TYPE, StandardVirtualHost.TYPE);
 
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
         messageStoreSettings.put(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE);
 
-        when(virtualHost.getMessageStoreSettings()).thenReturn(messageStoreSettings);
-        when(virtualHost.getName()).thenReturn(name);
-        return createVirtualHost(virtualHostRegistry, virtualHost);
+        attributes.put(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+        attributes.put(org.apache.qpid.server.model.VirtualHost.NAME, name);
+
+        return createVirtualHost(virtualHostRegistry, attributes);
     }
 
     public static AMQSessionModel createSession(int channelId, AMQConnectionModel connection)

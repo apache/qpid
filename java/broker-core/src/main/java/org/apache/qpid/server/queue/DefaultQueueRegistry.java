@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
 public class DefaultQueueRegistry implements QueueRegistry
 {
-    private ConcurrentMap<String, AMQQueue> _queueMap = new ConcurrentHashMap<String, AMQQueue>();
+    private ConcurrentMap<String, AMQQueue<?>> _queueMap = new ConcurrentHashMap<String, AMQQueue<?>>();
 
     private final VirtualHost _virtualHost;
     private final Collection<RegistryChangeListener> _listeners =
@@ -74,7 +74,7 @@ public class DefaultQueueRegistry implements QueueRegistry
     }
 
 
-    public Collection<AMQQueue> getQueues()
+    public Collection<AMQQueue<?>> getQueues()
     {
         return _queueMap.values();
     }
@@ -116,8 +116,8 @@ public class DefaultQueueRegistry implements QueueRegistry
     @Override
     public synchronized AMQQueue getQueue(UUID queueId)
     {
-        Collection<AMQQueue> queues = _queueMap.values();
-        for (AMQQueue queue : queues)
+        Collection<AMQQueue<?>> queues = _queueMap.values();
+        for (AMQQueue<?> queue : queues)
         {
             if (queue.getId().equals(queueId))
             {

@@ -117,7 +117,7 @@ public class HATestClusterCreator
 
             TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
             brokerConfiguration.addJmxManagementConfiguration();
-            brokerConfiguration.setObjectAttribute(VirtualHost.class, _virtualHostName, VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
+            brokerConfiguration.setObjectAttribute(VirtualHost.class, _virtualHostName, VirtualHost.TYPE, BDBHAVirtualHost.TYPE);
             brokerConfiguration.setObjectAttribute(VirtualHost.class, _virtualHostName, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
             brokerPort = _testcase.getNextAvailable(bdbPort + 1);
