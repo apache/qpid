@@ -264,7 +264,7 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                     QPID_LOG_CAT(warning, model, "Node name will be ambiguous, creation of queue named " << name << " requested when exchange of the same name already exists");
                 }
                 std::pair<boost::shared_ptr<Queue>, bool> result
-                    = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), this, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId());
+                    = connection.getBroker().createQueue(name, node.properties.getQueueSettings(), node.properties.isExclusive() ? this:0, node.properties.getAlternateExchange(), connection.getUserId(), connection.getId());
                 node.queue = result.first;
                 node.created = result.second;
             }

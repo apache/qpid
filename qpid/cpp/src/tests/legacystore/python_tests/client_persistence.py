@@ -17,15 +17,20 @@
 # under the License.
 #
 
+import os
+
 from brokertest import EXPECT_EXIT_OK
 from store_test import StoreTest, Qmf, store_args
 from qpid.messaging import *
+
+import qpid.messaging, brokertest
+brokertest.qm = qpid.messaging             # FIXME aconway 2014-04-04: Tests fail with SWIG client.
 
 class ExchangeQueueTests(StoreTest):
     """
     Simple tests of the broker exchange and queue types
     """
-    
+
     def test_direct_exchange(self):
         """Test Direct exchange."""
         broker = self.broker(store_args(), name="test_direct_exchange", expect=EXPECT_EXIT_OK)
@@ -34,11 +39,11 @@ class ExchangeQueueTests(StoreTest):
         broker.send_message("a", msg1)
         broker.send_message("b", msg2)
         broker.terminate()
-        
+
         broker = self.broker(store_args(), name="test_direct_exchange")
         self.check_message(broker, "a", msg1, True)
         self.check_message(broker, "b", msg2, True)
-    
+
     def test_topic_exchange(self):
         """Test Topic exchange."""
         broker = self.broker(store_args(), name="test_topic_exchange", expect=EXPECT_EXIT_OK)
@@ -56,17 +61,17 @@ class ExchangeQueueTests(StoreTest):
         msg2 = Message("Message2", durable=True, correlation_id="Msg0004")
         snd2.send(msg2)
         broker.terminate()
-        
+
         broker = self.broker(store_args(), name="test_topic_exchange")
         self.check_message(broker, "a", msg1, True)
         self.check_message(broker, "b", msg1, True)
         self.check_messages(broker, "c", [msg1, msg2], True)
         self.check_message(broker, "d", msg2, True)
         self.check_message(broker, "e", msg2, True)
-        
-    
+
+
     def test_legacy_lvq(self):
-        """Test legacy LVQ."""        
+        """Test legacy LVQ."""
         broker = self.broker(store_args(), name="test_lvq", expect=EXPECT_EXIT_OK)
         ma1 = Message("A1", durable=True, correlation_id="Msg0005", properties={"qpid.LVQ_key":"A"})
         ma2 = Message("A2", durable=True, correlation_id="Msg0006", properties={"qpid.LVQ_key":"A"})
@@ -77,7 +82,7 @@ class ExchangeQueueTests(StoreTest):
         broker.send_messages("lvq-test", [mb1, ma1, ma2, mb2, mb3, mc1],
                              xprops="arguments:{\"qpid.last_value_queue\":True}")
         broker.terminate()
-        
+
         broker = self.broker(store_args(), name="test_lvq", expect=EXPECT_EXIT_OK)
         ssn = self.check_messages(broker, "lvq-test", [ma2, mb3, mc1], empty=True, ack=False)
         # Add more messages while subscriber is active (no replacement):
@@ -89,11 +94,11 @@ class ExchangeQueueTests(StoreTest):
         broker.send_messages("lvq-test", [mc2, mc3, ma3, ma4, mc4], session=ssn)
         ssn.acknowledge()
         broker.terminate()
-        
+
         broker = self.broker(store_args(), name="test_lvq")
         self.check_messages(broker, "lvq-test", [ma4, mc4], True)
-        
-        
+
+
     def test_fanout_exchange(self):
         """Test Fanout Exchange"""
         broker = self.broker(store_args(), name="test_fanout_exchange", expect=EXPECT_EXIT_OK)
@@ -107,7 +112,7 @@ class ExchangeQueueTests(StoreTest):
         msg2 = Message("Msg2", durable=True, correlation_id="Msg0002")
         snd.send(msg2)
         broker.terminate()
-        
+
         broker = self.broker(store_args(), name="test_fanout_exchange")
         self.check_messages(broker, "q1", [msg1, msg2], True)
         self.check_messages(broker, "q2", [msg1, msg2], True)
@@ -124,18 +129,18 @@ class ExchangeQueueTests(StoreTest):
         m2 = rcv.fetch()
         ssn.acknowledge(message=m2, disposition=Disposition(REJECTED))
         broker.terminate()
-         
+
         broker = self.broker(store_args(), name="test_message_reject")
         qmf = Qmf(broker)
         assert qmf.queue_message_count("tmr") == 0
 
-        
+
     def test_route(self):
         """ Test the recovery of a route (link and bridge objects."""
         broker = self.broker(store_args(), name="test_route", expect=EXPECT_EXIT_OK)
         qmf = Qmf(broker)
         qmf_broker_obj = qmf.get_objects("broker")[0]
-        
+
         # create a "link"
         link_args = {"host":"a.fake.host.com", "port":9999, "durable":True,
                      "authMechanism":"PLAIN", "username":"guest", "password":"guest",
@@ -143,16 +148,16 @@ class ExchangeQueueTests(StoreTest):
         result = qmf_broker_obj.create("link", "test-link", link_args, False)
         self.assertEqual(result.status, 0, result)
         link = qmf.get_objects("link")[0]
-        
+
         # create bridge
         bridge_args = {"link":"test-link", "src":"amq.direct", "dest":"amq.fanout",
                        "key":"my-key", "durable":True}
         result = qmf_broker_obj.create("bridge", "test-bridge", bridge_args, False);
         self.assertEqual(result.status, 0, result)
         bridge = qmf.get_objects("bridge")[0]
-        
+
         broker.terminate()
-        
+
         # recover the link and bridge
         broker = self.broker(store_args(), name="test_route")
         qmf = Qmf(broker)
@@ -189,7 +194,7 @@ class AlternateExchangePropertyTests(StoreTest):
         self.assertTrue(qmf.query_exchange("testExch", alt_exchange_name = "altExch"),
                         "Alternate exchange property not found or is incorrect on exchange \"testExch\".")
         qmf.close()
-        
+
     def test_queue(self):
         """Queue alternate exchange property persistexchangeNamece test"""
         broker = self.broker(store_args(), name="test_queue", expect=EXPECT_EXIT_OK)
@@ -226,7 +231,7 @@ class RedeliveredTests(StoreTest):
         msg = Message(msg_content, durable=True)
         broker.send_message("testQueue", msg)
         broker.terminate()
-        
+
         broker = self.broker(store_args(), name="test_broker_recovery")
         rcv_msg = broker.get_message("testQueue")
         self.assertEqual(msg_content, rcv_msg.content)

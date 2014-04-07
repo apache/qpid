@@ -30,6 +30,8 @@ from qpid.messaging import Message
 try: import qmf.console
 except: print "Cannot import module qmf.console, skipping tests"; exit(0);
 
+import qpid.messaging, brokertest
+brokertest.qm = qpid.messaging             # TODO aconway 2014-04-04: Tests fail with SWIG client.
 
 class ConsoleTest(BrokerTest):
     """

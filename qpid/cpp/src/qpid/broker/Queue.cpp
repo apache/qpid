@@ -521,7 +521,7 @@ void Queue::markInUse(bool controlling)
     else users.addOther();
 }
 
-void Queue::releaseFromUse(bool controlling)
+void Queue::releaseFromUse(bool controlling, bool doDelete)
 {
     bool trydelete;
     if (controlling) {
@@ -533,7 +533,7 @@ void Queue::releaseFromUse(bool controlling)
         users.removeOther();
         trydelete = isUnused(locker);
     }
-    if (trydelete) scheduleAutoDelete();
+    if (trydelete && doDelete) scheduleAutoDelete();
 }
 
 void Queue::consume(Consumer::shared_ptr c, bool requestExclusive,
@@ -577,11 +577,13 @@ void Queue::consume(Consumer::shared_ptr c, bool requestExclusive,
     if (mgmtObject != 0 && c->isCounted()) {
         mgmtObject->inc_consumerCount();
     }
-    ManagementAgent* agent = broker->getManagementAgent();
-    if (agent) {
-        agent->raiseEvent(
-            _qmf::EventSubscribe(connectionId, userId, name,
-                                 c->getTag(), requestExclusive, ManagementAgent::toMap(arguments)));
+    if (broker) {
+        ManagementAgent* agent = broker->getManagementAgent();
+        if (agent) {
+            agent->raiseEvent(
+                _qmf::EventSubscribe(connectionId, userId, name,
+                                     c->getTag(), requestExclusive, ManagementAgent::toMap(arguments)));
+        }
     }
 }
 
@@ -589,6 +591,7 @@ void Queue::cancel(Consumer::shared_ptr c, const std::string& connectionId, cons
 {
     removeListener(c);
     if(c->isCounted())
+
     {
         bool unused;
         {
@@ -605,12 +608,12 @@ void Queue::cancel(Consumer::shared_ptr c, const std::string& connectionId, cons
         if (mgmtObject != 0) {
             mgmtObject->dec_consumerCount();
         }
-        if (unused && settings.autodelete) {
-            scheduleAutoDelete();
-        }
+        if (unused && settings.autodelete) scheduleAutoDelete();
     }
-    ManagementAgent* agent = broker->getManagementAgent();
-    if (agent) agent->raiseEvent(_qmf::EventUnsubscribe(connectionId, userId, c->getTag()));
+    if (broker) {
+        ManagementAgent* agent = broker->getManagementAgent();
+        if (agent) agent->raiseEvent(_qmf::EventUnsubscribe(connectionId, userId, c->getTag()));
+    }
 }
 
 /**

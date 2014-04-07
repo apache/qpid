@@ -18,6 +18,8 @@
  * under the License.
  *
  */
+
+#include "PnData.h"
 #include "qpid/messaging/amqp/AddressHelper.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/AddressImpl.h"
@@ -32,6 +34,7 @@
 extern "C" {
 #include <proton/engine.h>
 }
+
 
 namespace qpid {
 namespace messaging {
@@ -237,179 +240,6 @@ bool replace(Variant::Map& map, const std::string& original, const std::string& 
     } else {
         return false;
     }
-}
-
-void write(pn_data_t* data, const Variant& value);
-
-void write(pn_data_t* data, const Variant::Map& map)
-{
-    pn_data_put_map(data);
-    pn_data_enter(data);
-    for (Variant::Map::const_iterator i = map.begin(); i != map.end(); ++i) {
-        pn_data_put_string(data, convert(i->first));
-        write(data, i->second);
-    }
-    pn_data_exit(data);
-}
-void write(pn_data_t* data, const Variant::List& list)
-{
-    pn_data_put_list(data);
-    pn_data_enter(data);
-    for (Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
-        write(data, *i);
-    }
-    pn_data_exit(data);
-}
-void write(pn_data_t* data, const Variant& value)
-{
-    switch (value.getType()) {
-      case qpid::types::VAR_VOID:
-        pn_data_put_null(data);
-        break;
-      case qpid::types::VAR_BOOL:
-        pn_data_put_bool(data, value.asBool());
-        break;
-      case qpid::types::VAR_UINT64:
-        pn_data_put_ulong(data, value.asUint64());
-        break;
-      case qpid::types::VAR_INT64:
-        pn_data_put_long(data, value.asInt64());
-        break;
-      case qpid::types::VAR_DOUBLE:
-        pn_data_put_double(data, value.asDouble());
-        break;
-      case qpid::types::VAR_STRING:
-        pn_data_put_string(data, convert(value.asString()));
-        break;
-      case qpid::types::VAR_MAP:
-        write(data, value.asMap());
-        break;
-      case qpid::types::VAR_LIST:
-        write(data, value.asList());
-        break;
-      default:
-        break;
-    }
-}
-bool read(pn_data_t* data, pn_type_t type, qpid::types::Variant& value);
-bool read(pn_data_t* data, qpid::types::Variant& value)
-{
-    return read(data, pn_data_type(data), value);
-}
-void readList(pn_data_t* data, qpid::types::Variant::List& value)
-{
-    size_t count = pn_data_get_list(data);
-    pn_data_enter(data);
-    for (size_t i = 0; i < count && pn_data_next(data); ++i) {
-        qpid::types::Variant e;
-        if (read(data, e)) value.push_back(e);
-    }
-    pn_data_exit(data);
-}
-void readMap(pn_data_t* data, qpid::types::Variant::Map& value)
-{
-    size_t count = pn_data_get_list(data);
-    pn_data_enter(data);
-    for (size_t i = 0; i < (count/2) && pn_data_next(data); ++i) {
-        std::string key = convert(pn_data_get_symbol(data));
-        pn_data_next(data);
-        qpid::types::Variant e;
-        if (read(data, e)) value[key]= e;
-    }
-    pn_data_exit(data);
-}
-void readArray(pn_data_t* data, qpid::types::Variant::List& value)
-{
-    size_t count = pn_data_get_array(data);
-    pn_type_t type = pn_data_get_array_type(data);
-    pn_data_enter(data);
-    for (size_t i = 0; i < count && pn_data_next(data); ++i) {
-        qpid::types::Variant e;
-        if (read(data, type, e)) value.push_back(e);
-    }
-    pn_data_exit(data);
-}
-bool read(pn_data_t* data, pn_type_t type, qpid::types::Variant& value)
-{
-    switch (type) {
-      case PN_NULL:
-        if (value.getType() != qpid::types::VAR_VOID) value = qpid::types::Variant();
-        return true;
-      case PN_BOOL:
-        value = pn_data_get_bool(data);
-        return true;
-      case PN_UBYTE:
-        value = pn_data_get_ubyte(data);
-        return true;
-      case PN_BYTE:
-        value = pn_data_get_byte(data);
-        return true;
-      case PN_USHORT:
-        value = pn_data_get_ushort(data);
-        return true;
-      case PN_SHORT:
-        value = pn_data_get_short(data);
-        return true;
-      case PN_UINT:
-        value = pn_data_get_uint(data);
-        return true;
-      case PN_INT:
-        value = pn_data_get_int(data);
-        return true;
-      case PN_CHAR:
-        value = pn_data_get_char(data);
-        return true;
-      case PN_ULONG:
-        value = pn_data_get_ulong(data);
-        return true;
-      case PN_LONG:
-        value = pn_data_get_long(data);
-        return true;
-      case PN_TIMESTAMP:
-        value = pn_data_get_timestamp(data);
-        return true;
-      case PN_FLOAT:
-        value = pn_data_get_float(data);
-        return true;
-      case PN_DOUBLE:
-        value = pn_data_get_double(data);
-        return true;
-      case PN_UUID:
-        value = qpid::types::Uuid(pn_data_get_uuid(data).bytes);
-        return true;
-      case PN_BINARY:
-        value = convert(pn_data_get_binary(data));
-        value.setEncoding(qpid::types::encodings::BINARY);
-        return true;
-      case PN_STRING:
-        value = convert(pn_data_get_string(data));
-        value.setEncoding(qpid::types::encodings::UTF8);
-        return true;
-      case PN_SYMBOL:
-        value = convert(pn_data_get_string(data));
-        value.setEncoding(qpid::types::encodings::ASCII);
-        return true;
-      case PN_LIST:
-        value = qpid::types::Variant::List();
-        readList(data, value.asList());
-        return true;
-        break;
-      case PN_MAP:
-        value = qpid::types::Variant::Map();
-        readMap(data, value.asMap());
-        return true;
-      case PN_ARRAY:
-        value = qpid::types::Variant::List();
-        readArray(data, value.asList());
-        return true;
-      case PN_DESCRIBED:
-      case PN_DECIMAL32:
-      case PN_DECIMAL64:
-      case PN_DECIMAL128:
-      default:
-        return false;
-    }
-
 }
 
 const uint32_t DEFAULT_DURABLE_TIMEOUT(15*60);//15 minutes
@@ -680,9 +510,9 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
                             requested.erase(j->first);
                         }
                     } else if (key == AUTO_DELETE) {
-                        read(data, v);
+                        PnData(data).read(v);
                         isAutoDeleted = v.asBool();
-                    } else if (j != requested.end() && (read(data, v) && v.asString() == j->second.asString())) {
+                    } else if (j != requested.end() && (PnData(data).read(v) && v.asString() == j->second.asString())) {
                         requested.erase(j->first);
                     }
                 }
@@ -815,7 +645,7 @@ void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMod
                 } else {
                     pn_data_put_ulong(filter, i->descriptorCode);
                 }
-                write(filter, i->value);
+                PnData(filter).write(i->value);
                 pn_data_exit(filter);
             }
             pn_data_exit(filter);
@@ -902,7 +732,7 @@ void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
                 putLifetimePolicy(data, toLifetimePolicy(i->second.asString()));
             } else {
                 pn_data_put_symbol(data, convert(i->first));
-                write(data, i->second);
+                PnData(data).write(i->second);
             }
         }
         pn_data_exit(data);

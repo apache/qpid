@@ -53,6 +53,7 @@ struct mystr
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Duration.h>
 #include <qpid/messaging/FailoverUpdates.h>
+#include <qpid/messaging/Logger.h>
 
 //
 // Wrapper functions for map-decode and list-decode.  This allows us to avoid
@@ -84,6 +85,7 @@ qpid::types::Variant::List& decodeList(const qpid::messaging::Message& msg) {
 %include <qpid/messaging/Session.h>
 %include <qpid/messaging/Connection.h>
 %include <qpid/messaging/FailoverUpdates.h>
+%include <qpid/messaging/Logger.h>
 
 qpid::types::Variant::Map& decodeMap(const qpid::messaging::Message&);
 qpid::types::Variant::List& decodeList(const qpid::messaging::Message&);

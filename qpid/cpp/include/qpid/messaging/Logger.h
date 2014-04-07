@@ -103,7 +103,7 @@ public:
      * --log-time ("on"|"off|"0"|"1")
      * --log-level ("on"|"off|"0"|"1")
      * --log-source ("on"|"off|"0"|"1")
-     * --log-thread ("on"|"off|"0"|"1")
+    * --log-thread ("on"|"off|"0"|"1")
      * --log-function ("on"|"off|"0"|"1")
      * --log-hires-timestamp ("on"|"off|"0"|"1")
      *
