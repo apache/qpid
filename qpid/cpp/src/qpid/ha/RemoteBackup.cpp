@@ -41,7 +41,7 @@ RemoteBackup::RemoteBackup(
     std::ostringstream oss;
     oss << "Remote backup at " << info << ": ";
     logPrefix = oss.str();
-    QPID_LOG(debug, logPrefix << "Connected");
+    QPID_LOG(debug, logPrefix << (c? "Connected" : "Expected"));
 }
 
 RemoteBackup::~RemoteBackup() {

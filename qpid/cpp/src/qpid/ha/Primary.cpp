@@ -136,7 +136,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
     logPrefix("Primary: "), active(false),
     replicationTest(hb.getSettings().replicateDefault.get()),
     sessionHandlerObserver(new PrimarySessionHandlerObserver(logPrefix)),
-    queueLimits(logPrefix)
+    queueLimits(logPrefix, hb.getBroker().getQueues(), replicationTest)
 {
     // Note that at this point, we are still rejecting client connections.
     // So we are safe from client interference while we set up the primary.

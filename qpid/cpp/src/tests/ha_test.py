@@ -196,7 +196,7 @@ acl allow all all
 
     def ha_status(self): return self.qmf().status
 
-    def wait_status(self, status):
+    def wait_status(self, status, timeout=5):
         def try_get_status():
             self._status = "<unknown>"
             # Ignore ConnectionError, the broker may not be up yet.
@@ -204,7 +204,7 @@ acl allow all all
                 self._status = self.ha_status()
                 return self._status == status;
             except ConnectionError: return False
-        assert retry(try_get_status, timeout=5), "%s expected=%r, actual=%r"%(
+        assert retry(try_get_status, timeout=timeout), "%s expected=%r, actual=%r"%(
             self, status, self._status)
 
     def wait_queue(self, queue, timeout=1):
