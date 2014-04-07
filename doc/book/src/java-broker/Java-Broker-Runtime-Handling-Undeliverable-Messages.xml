@@ -65,7 +65,7 @@
    once it reconnects.</para>
   <para> If the consuming application is using AMQP 0-9-1, 0-9, or 0-8 protocols, it is necessary to
    set the client system property <varname>qpid.reject.behaviour</varname> or connection or binding
-   URL option <varname>rejectbehaviour</varname> to the value <literal>system</literal>.</para>
+   URL option <varname>rejectbehaviour</varname> to the value <literal>server</literal>.</para>
   <para>It is possible to determine the number of times a message has been sent to a consumer via
    the Management interfaces, but is not possible to determine this information from a message client.
    Specifically, the optional JMS message header <property>JMSXDeliveryCount</property> is not
