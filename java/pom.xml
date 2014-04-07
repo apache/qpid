@@ -595,7 +595,7 @@
         <profile.test.excludes>Excludes CPPExcludes ${profile}.excludes ${profile.specific.excludes} cpp.excludes</profile.test.excludes>
         <profile.specific.excludes>CPPPrefetchExcludes CPPTransientExcludes</profile.specific.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
-        <profile.broker.persistent>true</profile.broker.persistent>
+        <profile.broker.persistent>false</profile.broker.persistent>
       </properties>
       <build>
         <plugins>
