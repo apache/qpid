@@ -120,6 +120,8 @@ if (BUILD_AMQP)
          qpid/messaging/amqp/ConnectionHandle.cpp
          qpid/messaging/amqp/DriverImpl.h
          qpid/messaging/amqp/DriverImpl.cpp
+         qpid/messaging/amqp/PnData.h
+         qpid/messaging/amqp/PnData.cpp
          qpid/messaging/amqp/ReceiverContext.h
          qpid/messaging/amqp/ReceiverContext.cpp
          qpid/messaging/amqp/ReceiverHandle.h

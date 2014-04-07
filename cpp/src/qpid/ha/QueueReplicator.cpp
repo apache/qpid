@@ -156,7 +156,7 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
     args.setString(QPID_REPLICATE, printable(NONE).str());
     setArgs(args);
     // Don't allow backup queues to auto-delete, primary decides when to delete.
-    if (q->isAutoDelete()) q->markInUse();
+    if (q->isAutoDelete()) q->markInUse(false);
 
     dispatch[DequeueEvent::KEY] =
         boost::bind(&QueueReplicator::dequeueEvent, this, _1, _2);
@@ -352,13 +352,13 @@ void QueueReplicator::promoted() {
         queue->getMessageInterceptors().add(
             boost::shared_ptr<IdSetter>(new IdSetter(maxId+1)));
         // Process auto-deletes
-        if (queue->isAutoDelete() && subscribed) {
+        if (queue->isAutoDelete()) {
             // Make a temporary shared_ptr to prevent premature deletion of queue.
             // Otherwise scheduleAutoDelete can call this->destroy, which resets this->queue
             // which could delete the queue while it's still running it's destroyed logic.
             boost::shared_ptr<Queue> q(queue);
-            q->releaseFromUse();
-            q->scheduleAutoDelete();
+            // See markInUse in ctor: release but don't delete if never used.
+            q->releaseFromUse(false/*controller*/, subscribed/*doDelete*/);
         }
     }
 }

@@ -50,11 +50,11 @@ export QPID_TESTS_PY=$QPID_TESTS/src/py
 export QPID_TOOLS=$top_srcdir/../tools
 export QMF_LIB=$top_srcdir/../extras/qmf/src/py
 export PYTHON_COMMANDS=$QPID_TOOLS/src/py
-export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$QPID_TESTS_PY:$QMF_LIB:$PYTHONPATH
+export PYTHONPATH_SWIG=$pythonswigdir:$pythonswiglibdir
+export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$QPID_TESTS_PY:$QMF_LIB:$PYTHONPATH_SWIG:$PYTHONPATH
 export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
 export QPID_HA_EXEC=$PYTHON_COMMANDS/qpid-ha
-export PYTHONPATH_SWIG=$pythonswigdir:$pythonswiglibdir
 export PYTHONSWIGMODULE=$pythonswigdir/qpid_messaging.py
 # Executables
 export QPIDD_EXEC=$top_builddir/src/qpidd

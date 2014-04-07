@@ -64,8 +64,6 @@ class ReplicationTest
 
     // Calculate level for objects that may not have replication set,
     // including auto-delete/exclusive settings.
-    ReplicateLevel useLevel(const types::Variant::Map& args, bool autodelete, bool exclusive) const;
-    ReplicateLevel useLevel(const framing::FieldTable& args, bool autodelete, bool exclusive) const;
     ReplicateLevel useLevel(const broker::Queue&) const;
     ReplicateLevel useLevel(const broker::Exchange&) const;
 

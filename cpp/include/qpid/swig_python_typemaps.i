@@ -452,3 +452,10 @@ typedef int Py_ssize_t;
     $1 = PyInt_Check($input) ? 1 : 0;
 }
 
+
+/**
+ * argc,argv as python list
+ */
+
+%include <argcargv.i>
+%apply (int ARGC, char **ARGV) { (int argc, const char *argv[]) }

@@ -141,7 +141,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
  * don't even know why there is a non-const version of the method. */
 %rename(opened) qpid::messaging::Connection::isOpen();
 %rename(_close) qpid::messaging::Connection::close();
-%rename(receiver) qpid::messaging::Session::createReceiver;
+%rename(_receiver) qpid::messaging::Session::createReceiver;
 %rename(_sender) qpid::messaging::Session::createSender;
 %rename(_acknowledge_all) qpid::messaging::Session::acknowledge(bool);
 %rename(_acknowledge_msg) qpid::messaging::Session::acknowledge(
@@ -161,6 +161,16 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 %rename(_getTtl) qpid::messaging::Message::getTtl;
 %rename(_setTtl) qpid::messaging::Message::setTtl;
 
+%rename(_sync) qpid::messaging::Session::sync;
+
+// Capitalize constant names correctly for python
+%rename(TRACE) qpid::messaging::trace;
+%rename(DEBUG) qpid::messaging::debug;
+%rename(INFO) qpid::messaging::info;
+%rename(NOTICE) qpid::messaging::notice;
+%rename(WARNING) qpid::messaging::warning;
+%rename(ERROR) qpid::messaging::error;
+%rename(CRITICAL) qpid::messaging::critical;
 
 %include "qpid/qpid.i"
 
@@ -221,31 +231,77 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 
     %pythoncode %{
         @staticmethod
-        def establish(url=None, **options) :
+        def establish(url=None, timeout=None, **options) :
+            if timeout and "reconnect-timeout" not in options:
+                options["reconnect-timeout"] = timeout
             conn = Connection(url, **options)
             conn.open()
             return conn
     %}
 }
 
+%pythoncode %{
+    # Disposition class from messaging/message.py
+    class Disposition:
+        def __init__(self, type, **options):
+            self.type = type
+            self.options = options
+
+        def __repr__(self):
+            args = [str(self.type)] + ["%s=%r" % (k, v) for k, v in self.options.items()]
+            return "Disposition(%s)" % ", ".join(args)
+
+    # Consntants from messaging/constants.py
+    __SELF__ = object()
+
+    class Constant:
+
+      def __init__(self, name, value=__SELF__):
+        self.name = name
+        if value is __SELF__:
+          self.value = self
+        else:
+          self.value = value
+
+      def __repr__(self):
+        return self.name
+
+    AMQP_PORT = 5672
+    AMQPS_PORT = 5671
+
+    UNLIMITED = Constant("UNLIMITED", 0xFFFFFFFFL)
+
+    REJECTED = Constant("REJECTED")
+    RELEASED = Constant("RELEASED")
+%}
+
 %extend qpid::messaging::Session {
     %pythoncode %{
          def acknowledge(self, message=None, disposition=None, sync=True) :
-             if disposition :
-                 raise Exception("SWIG does not support dispositions yet. Use "
-                                 "Session.reject and Session.release instead")
              if message :
-                 self._acknowledge_msg(message, sync)
+                 if disposition is None: self._acknowledge_msg(message, sync)
+                 # FIXME aconway 2014-02-11: the following does not repsect the sync flag.
+                 elif disposition.type == REJECTED: self.reject(message)
+                 elif disposition.type == RELEASED: self.release(message)
              else :
+                 if disposition : # FIXME aconway 2014-02-11: support this
+                     raise Exception("SWIG does not support dispositions yet. Use "
+                                     "Session.reject and Session.release instead")
                  self._acknowledge_all(sync)
 
          __swig_getmethods__["connection"] = getConnection
          if _newclass: connection = property(getConnection)
 
-         def sender(self, target, **options) :
-            s = self._sender(target)
-            s._setDurable(options.get("durable"))
-            return s
+         def receiver(self, source, capacity=None):
+             r = self._receiver(source)
+             if capacity is not None: r.capacity = capacity
+             return r
+
+         def sender(self, target, durable=None, capacity=None) :
+             s = self._sender(target)
+             if capacity is not None: s.capacity = capacity
+             s._setDurable(durable)
+             return s
 
          def next_receiver(self, timeout=None) :
              if timeout is None :
@@ -254,6 +310,11 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
                  # Python API uses timeouts in seconds,
                  # but C++ API uses milliseconds
                  return self._next_receiver(Duration(int(1000*timeout)))
+
+         def sync(self, timeout=None):
+             if timeout == 0: self._sync(False) # Non-blocking sync
+             else: self._sync(True)             # Blocking sync, C++ has not timeout.
+
     %}
 }
 
@@ -301,6 +362,8 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
              if self.durable and message.durable is None:
                  message.durable = self.durable
              return self._send(message, sync)
+
+         def sync(self, timeout=None): self.session.sync(timeout)
 
          __swig_getmethods__["capacity"] = getCapacity
          __swig_setmethods__["capacity"] = setCapacity

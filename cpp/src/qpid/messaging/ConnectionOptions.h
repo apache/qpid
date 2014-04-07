@@ -47,6 +47,7 @@ struct ConnectionOptions : qpid::client::ConnectionSettings
     std::string identifier;
     bool nestAnnotations;
     bool setToOnSend;
+    std::map<std::string, qpid::types::Variant> properties;
 
     QPID_MESSAGING_EXTERN ConnectionOptions(const std::map<std::string, qpid::types::Variant>&);
     QPID_MESSAGING_EXTERN void set(const std::string& name, const qpid::types::Variant& value);

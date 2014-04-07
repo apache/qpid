@@ -22,10 +22,13 @@ from brokertest import BrokerTest
 from qpid.messaging import Empty
 from qmf.console import Session
 
-    
+import qpid.messaging, brokertest
+brokertest.qm = qpid.messaging             # TODO aconway 2014-04-04: Tests fail with SWIG client.
+
+
 def store_args(store_dir = None):
     """Return the broker args necessary to load the async store"""
-    assert BrokerTest.store_lib 
+    assert BrokerTest.store_lib
     if store_dir == None:
         return []
     return ["--store-dir", store_dir]
@@ -51,7 +54,7 @@ class Qmf:
         else:
             amqp_session.exchange_declare(exchange=exchange_name, type=exchange_type, passive=passive, durable=durable,
                                           arguments=arguments)
-    
+
     def add_queue(self, queue_name, alt_exchange_name=None, passive=False, durable=False, arguments = None):
         """Add a new queue"""
         amqp_session = self.__broker.getAmqpSession()
@@ -62,7 +65,7 @@ class Qmf:
                                        durable=durable, arguments=arguments)
         else:
             amqp_session.queue_declare(queue_name, passive=passive, durable=durable, arguments=arguments)
-    
+
     def delete_queue(self, queue_name):
         """Delete an existing queue"""
         amqp_session = self.__broker.getAmqpSession()
@@ -84,24 +87,24 @@ class Qmf:
             return found
         except Exception:
             return False
-                
+
 
     def query_exchange(self, exchange_name, alt_exchange_name=None):
         """Test for the presence of an exchange, and optionally whether it has an alternate exchange set to a known
         value."""
         return self._query(exchange_name, "exchange", "org.apache.qpid.broker", alt_exchange_name)
-    
+
     def query_queue(self, queue_name, alt_exchange_name=None):
         """Test for the presence of an exchange, and optionally whether it has an alternate exchange set to a known
         value."""
         return self._query(queue_name, "queue", "org.apache.qpid.broker", alt_exchange_name)
-    
+
     def queue_message_count(self, queue_name):
         """Query the number of messages on a queue"""
         queue_list = self.__session.getObjects(_class="queue", _name=queue_name)
         if len(queue_list):
             return queue_list[0].msgDepth
-    
+
     def queue_empty(self, queue_name):
         """Check if a queue is empty (has no messages waiting)"""
         return self.queue_message_count(queue_name) == 0
@@ -109,7 +112,7 @@ class Qmf:
     def get_objects(self, target_class, target_package="org.apache.qpid.broker"):
         return self.__session.getObjects(_class=target_class, _package=target_package)
 
-    
+
     def close(self):
         self.__session.delBroker(self.__broker)
         self.__session = None
@@ -119,7 +122,7 @@ class StoreTest(BrokerTest):
     """
     This subclass of BrokerTest adds some convenience test/check functions
     """
-    
+
     def _chk_empty(self, queue, receiver):
         """Check if a queue is empty (has no more messages)"""
         try:
@@ -141,9 +144,9 @@ class StoreTest(BrokerTest):
                 else:
                     buff += chr(ord('a') + (index % 26))
         return buff + msg
-    
+
     # Functions for formatting address strings
-    
+
     @staticmethod
     def _fmt_csv(string_list, list_braces = None):
         """Format a list using comma-separation. Braces are optionally added."""
@@ -163,16 +166,16 @@ class StoreTest(BrokerTest):
         if list_braces != None:
             str_ += list_braces[1]
         return str_
-    
+
     def _fmt_map(self, string_list):
         """Format a map {l1, l2, l3, ...} from a string list. Each item in the list must be a formatted map
         element('key:val')."""
-        return self._fmt_csv(string_list, list_braces="{}") 
-    
+        return self._fmt_csv(string_list, list_braces="{}")
+
     def _fmt_list(self, string_list):
         """Format a list [l1, l2, l3, ...] from a string list."""
-        return self._fmt_csv(string_list, list_braces="[]") 
-    
+        return self._fmt_csv(string_list, list_braces="[]")
+
     def addr_fmt(self, node_name, **kwargs):
         """Generic AMQP to new address formatter. Takes common (but not all) AMQP options and formats an address
         string."""
@@ -190,12 +193,12 @@ class StoreTest(BrokerTest):
         x_declare_list = kwargs.get("x_declare_list", [])
         x_bindings_list = kwargs.get("x_bindings_list", [])
         x_subscribe_list = kwargs.get("x_subscribe_list", [])
-        
+
         node_flag = not link and (node_type != None or durable or len(x_declare_list) > 0 or len(x_bindings_list) > 0)
         link_flag = link and (link_name != None or durable or link_reliability != None or len(x_declare_list) > 0 or
                              len(x_bindings_list) > 0 or len(x_subscribe_list) > 0)
         assert not (node_flag and link_flag)
-        
+
         opt_str_list = []
         if create_policy != None:
             opt_str_list.append("create: %s" % create_policy)
@@ -231,7 +234,7 @@ class StoreTest(BrokerTest):
         if len(opt_str_list) > 0:
             addr_str += "; %s" % self._fmt_map(opt_str_list)
         return addr_str
-    
+
     def snd_addr(self, node_name, **kwargs):
         """ Create a send (node) address"""
         # Get keyword args
@@ -245,7 +248,7 @@ class StoreTest(BrokerTest):
         ftd_size = kwargs.get("ftd_size")
         policy = kwargs.get("policy", "flow-to-disk")
         exchage_type = kwargs.get("exchage_type")
-        
+
         create_policy = None
         if auto_create:
             create_policy = "always"
@@ -265,10 +268,10 @@ class StoreTest(BrokerTest):
             x_declare_list.append("arguments: %s" % self._fmt_map(queue_policy))
         if exchage_type != None:
             x_declare_list.append("type: %s" % exchage_type)
-            
+
         return self.addr_fmt(node_name, topic=topic, create_policy=create_policy, delete_policy=delete_policy,
                              node_type=node_type, durable=durable, x_declare_list=x_declare_list)
-    
+
     def rcv_addr(self, node_name, **kwargs):
         """ Create a receive (link) address"""
         # Get keyword args
@@ -282,7 +285,7 @@ class StoreTest(BrokerTest):
         ftd_count = kwargs.get("ftd_count")
         ftd_size = kwargs.get("ftd_size")
         policy = kwargs.get("policy", "flow-to-disk")
-        
+
         create_policy = None
         if auto_create:
             create_policy = "always"
@@ -291,7 +294,7 @@ class StoreTest(BrokerTest):
             delete_policy = "always"
         mode = None
         if browse:
-            mode = "browse" 
+            mode = "browse"
         x_declare_list = ["\"exclusive\": %s" % exclusive]
         if ftd_count != None or ftd_size != None:
             queue_policy = ["\'qpid.policy_type\': %s" % policy]
@@ -308,11 +311,11 @@ class StoreTest(BrokerTest):
         return self.addr_fmt(node_name, create_policy=create_policy, delete_policy=delete_policy, mode=mode, link=True,
                              link_name=link_name, durable=durable, x_declare_list=x_declare_list,
                              x_bindings_list=x_bindings_list, link_reliability=reliability)
-    
+
     def check_message(self, broker, queue, exp_msg, transactional=False, empty=False, ack=True, browse=False):
         """Check that a message is on a queue by dequeuing it and comparing it to the expected message"""
         return self.check_messages(broker, queue, [exp_msg], transactional, empty, ack, browse)
-        
+
     def check_messages(self, broker, queue, exp_msg_list, transactional=False, empty=False, ack=True, browse=False,
                        emtpy_flag=False):
         """Check that messages is on a queue by dequeuing them and comparing them to the expected messages"""
@@ -341,8 +344,8 @@ class StoreTest(BrokerTest):
             if transactional:
                 ssn.commit()
             return ssn
-            
-    
+
+
     # Functions for finding strings in the broker log file (or other files)
 
     @staticmethod
@@ -353,7 +356,7 @@ class StoreTest(BrokerTest):
             return file_handle.read()
         finally:
             file_handle.close()
-    
+
     def _get_hits(self, broker, search):
         """Find all occurrences of the search in the broker log (eliminating possible duplicates from msgs on multiple
         queues)"""
@@ -361,9 +364,9 @@ class StoreTest(BrokerTest):
         hits = []
         for hit in search.findall(self._read_file(broker.log)):
             if hit not in hits:
-                hits.append(hit) 
+                hits.append(hit)
         return hits
-    
+
     def _reconsile_hits(self, broker, ftd_msgs, release_hits):
         """Remove entries from list release_hits if they match the message id in ftd_msgs. Check for remaining
         release_hits."""
@@ -382,35 +385,33 @@ class StoreTest(BrokerTest):
             for hit in release_hits:
                 err += "  %s\n" % hit
             self.assert_(False, err)
-        
+
     def check_msg_release(self, broker, ftd_msgs):
         """ Check for 'Content released' messages in broker log for messages in ftd_msgs"""
         hits = self._get_hits(broker, re.compile("debug Message id=\"[0-9a-f-]{36}\"; pid=0x[0-9a-f]+: "
                                                  "Content released$", re.MULTILINE))
         self._reconsile_hits(broker, ftd_msgs, hits)
-        
+
     def check_msg_release_on_commit(self, broker, ftd_msgs):
         """ Check for 'Content released on commit' messages in broker log for messages in ftd_msgs"""
         hits = self._get_hits(broker, re.compile("debug Message id=\"[0-9a-f-]{36}\"; pid=0x[0-9a-f]+: "
                                                  "Content released on commit$", re.MULTILINE))
         self._reconsile_hits(broker, ftd_msgs, hits)
-        
+
     def check_msg_release_on_recover(self, broker, ftd_msgs):
         """ Check for 'Content released after recovery' messages in broker log for messages in ftd_msgs"""
         hits = self._get_hits(broker, re.compile("debug Message id=\"[0-9a-f-]{36}\"; pid=0x[0-9a-f]+: "
                                                  "Content released after recovery$", re.MULTILINE))
         self._reconsile_hits(broker, ftd_msgs, hits)
-    
+
     def check_msg_block(self, broker, ftd_msgs):
         """Check for 'Content release blocked' messages in broker log for messages in ftd_msgs"""
         hits = self._get_hits(broker, re.compile("debug Message id=\"[0-9a-f-]{36}\"; pid=0x[0-9a-f]+: "
                                                  "Content release blocked$", re.MULTILINE))
         self._reconsile_hits(broker, ftd_msgs, hits)
-     
+
     def check_msg_block_on_commit(self, broker, ftd_msgs):
         """Check for 'Content release blocked' messages in broker log for messages in ftd_msgs"""
         hits = self._get_hits(broker, re.compile("debug Message id=\"[0-9a-f-]{36}\"; pid=0x[0-9a-f]+: "
                                                  "Content release blocked on commit$", re.MULTILINE))
         self._reconsile_hits(broker, ftd_msgs, hits)
-       
-        

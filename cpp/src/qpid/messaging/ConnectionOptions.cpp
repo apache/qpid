@@ -119,6 +119,8 @@ void ConnectionOptions::set(const std::string& name, const qpid::types::Variant&
         nestAnnotations = value;
     } else if (name == "set-to-on-send" || name == "set_to_on_send") {
         setToOnSend = value;
+    } else if (name == "properties" || name == "client-properties" || name == "client_properties") {
+        properties = value.asMap();
     } else {
         throw qpid::messaging::MessagingException(QPID_MSG("Invalid option: " << name << " not recognised"));
     }

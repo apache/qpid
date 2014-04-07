@@ -1292,12 +1292,13 @@ const std::string Broker::TCP_TRANSPORT("tcp");
 
 std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     const std::string& name,
-    const QueueSettings& settings,
+    const QueueSettings& constSettings,
     const OwnershipToken* owner,
     const std::string& alternateExchange,
     const std::string& userId,
     const std::string& connectionId)
 {
+    QueueSettings settings(constSettings); // So we can modify them
     if (acl) {
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
@@ -1334,6 +1335,10 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
         alternate = exchanges.get(alternateExchange);
         if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
+
+    // Identify queues that won't survive a failover: exclusive, auto-delete with no delay.
+    if (owner && settings.autodelete && !settings.autoDeleteDelay)
+        settings.isTemporary = true;
 
     std::pair<Queue::shared_ptr, bool> result =
         queues.declare(name, settings, alternate, false/*recovering*/,

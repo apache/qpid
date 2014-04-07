@@ -25,7 +25,7 @@ from brokertest import *
 from ha_test import HaPort
 from threading import Thread, Lock, Condition
 from logging import getLogger, WARN, ERROR, DEBUG, INFO
-from qpidtoollibs import BrokerAgent, BrokerObject
+from qpidtoollibs import BrokerObject
 
 class Domain(BrokerObject):
     def __init__(self, broker, values):
@@ -49,7 +49,7 @@ class AmqpBrokerTest(BrokerTest):
         self.port_holder = HaPort(self)
         self.broker = self.amqp_broker(port_holder=self.port_holder)
         self.default_config = Config(self.broker)
-        self.agent = BrokerAgent(self.broker.connect())
+        self.agent = self.broker.agent
 
     def sender(self, config, reply_to=None):
         cmd = ["qpid-send",
@@ -224,7 +224,7 @@ class AmqpBrokerTest(BrokerTest):
 
     def incoming_link(self, mechanism):
         brokerB = self.amqp_broker()
-        agentB = BrokerAgent(brokerB.connect())
+        agentB = brokerB.agent
         self.agent.create("queue", "q")
         agentB.create("queue", "q")
         self.agent.create("domain", "BrokerB", {"url":brokerB.host_port(), "sasl_mechanisms":mechanism})
@@ -240,7 +240,7 @@ class AmqpBrokerTest(BrokerTest):
 
     def test_outgoing_link(self):
         brokerB = self.amqp_broker()
-        agentB = BrokerAgent(brokerB.connect())
+        agentB = brokerB.agent
         self.agent.create("queue", "q")
         agentB.create("queue", "q")
         self.agent.create("domain", "BrokerB", {"url":brokerB.host_port(), "sasl_mechanisms":"NONE"})
@@ -250,7 +250,7 @@ class AmqpBrokerTest(BrokerTest):
 
     def test_relay(self):
         brokerB = self.amqp_broker()
-        agentB = BrokerAgent(brokerB.connect())
+        agentB = brokerB.agent
         agentB.create("queue", "q")
         self.agent.create("domain", "BrokerB", {"url":brokerB.host_port(), "sasl_mechanisms":"NONE"})
         #send to q on broker B through brokerA

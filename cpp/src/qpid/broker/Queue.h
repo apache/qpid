@@ -363,7 +363,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * be created.
      */
     QPID_BROKER_EXTERN void markInUse(bool controlling=false);
-    QPID_BROKER_EXTERN void releaseFromUse(bool controlling=false);
+    QPID_BROKER_EXTERN void releaseFromUse(bool controlling=false, bool doDelete=true);
 
     QPID_BROKER_EXTERN uint32_t purge(const uint32_t purge_request=0,  //defaults to all messages
                    boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>(),

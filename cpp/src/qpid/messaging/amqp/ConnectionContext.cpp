@@ -20,6 +20,7 @@
  */
 #include "ConnectionContext.h"
 #include "DriverImpl.h"
+#include "PnData.h"
 #include "ReceiverContext.h"
 #include "Sasl.h"
 #include "SenderContext.h"
@@ -49,6 +50,8 @@ extern "C" {
 namespace qpid {
 namespace messaging {
 namespace amqp {
+using types::Variant;
+
 namespace {
 
 //remove conditional when 0.5 is no longer supported
@@ -872,13 +875,6 @@ namespace {
 const std::string CLIENT_PROCESS_NAME("qpid.client_process");
 const std::string CLIENT_PID("qpid.client_pid");
 const std::string CLIENT_PPID("qpid.client_ppid");
-pn_bytes_t convert(const std::string& s)
-{
-    pn_bytes_t result;
-    result.start = const_cast<char*>(s.data());
-    result.size = s.size();
-    return result;
-}
 }
 void ConnectionContext::setProperties()
 {
@@ -886,15 +882,21 @@ void ConnectionContext::setProperties()
     pn_data_put_map(data);
     pn_data_enter(data);
 
-    pn_data_put_symbol(data, convert(CLIENT_PROCESS_NAME));
+    pn_data_put_symbol(data, PnData::str(CLIENT_PROCESS_NAME));
     std::string processName = sys::SystemInfo::getProcessName();
-    pn_data_put_string(data, convert(processName));
+    pn_data_put_string(data, PnData::str(processName));
 
-    pn_data_put_symbol(data, convert(CLIENT_PID));
+    pn_data_put_symbol(data, PnData::str(CLIENT_PID));
     pn_data_put_int(data, sys::SystemInfo::getProcessId());
 
-    pn_data_put_symbol(data, convert(CLIENT_PPID));
+    pn_data_put_symbol(data, PnData::str(CLIENT_PPID));
     pn_data_put_int(data, sys::SystemInfo::getParentProcessId());
+
+    for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i)
+    {
+        pn_data_put_symbol(data, PnData::str(i->first));
+        PnData(data).write(i->second);
+    }
     pn_data_exit(data);
 }
 

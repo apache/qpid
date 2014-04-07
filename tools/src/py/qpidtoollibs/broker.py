@@ -17,7 +17,7 @@
 # under the License.
 #
 
-from qpid.messaging import Message
+import sys
 from qpidtoollibs.disp import TimeLong
 try:
   from uuid import uuid4
@@ -26,13 +26,16 @@ except ImportError:
 
 class BrokerAgent(object):
   """
-  Proxy for a manageable Qpid Broker - Invoke with an opened qpid.messaging.Connection.
+  Proxy for a manageable Qpid Broker - Invoke with an opened qpid.messaging.Connection
+  or qpid_messaging.Connection
   """
   def __init__(self, conn):
+    # Use the Message class from the same module as conn which could be qpid.messaging
+    # or qpid_messaging
+    self.message_class = sys.modules[conn.__class__.__module__].Message
     self.conn = conn
     self.sess = self.conn.session()
-    self.reply_to = "qmf.default.topic/direct.%s;{node:{type:topic}, link:{x-declare:{auto-delete:True,exclusive:True}}}" % \
-        str(uuid4())
+    self.reply_to = "qmf.default.topic/direct.%s;{node:{type:topic}}" % str(uuid4())
     self.reply_rx = self.sess.receiver(self.reply_to)
     self.reply_rx.capacity = 10
     self.tx = self.sess.sender("qmf.default.direct/broker")
@@ -55,8 +58,9 @@ class BrokerAgent(object):
                '_method_name' : method,
                '_arguments'   : arguments}
 
-    message = Message(content, reply_to=self.reply_to, correlation_id=correlator,
-                      properties=props, subject="broker")
+    message = self.message_class(
+      content, reply_to=self.reply_to, correlation_id=correlator,
+      properties=props, subject="broker")
     self.tx.send(message)
     response = self.reply_rx.fetch(timeout)
     self.sess.acknowledge()
@@ -72,8 +76,9 @@ class BrokerAgent(object):
              'x-amqp-0-10.app-id' : 'qmf2'}
     correlator = str(self.next_correlator)
     self.next_correlator += 1
-    message = Message(content, reply_to=self.reply_to, correlation_id=correlator,
-                      properties=props, subject="broker")
+    message = self.message_class(
+      content, reply_to=self.reply_to, correlation_id=correlator,
+      properties=props, subject="broker")
     self.tx.send(message)
     return correlator
 
@@ -259,7 +264,7 @@ class BrokerAgent(object):
             'options':      options}
     self._method('delete', args)
 
-  def bind(self, exchange, queue, key, options={}, **kwargs):
+  def bind(self, exchange, queue, key="", options={}, **kwargs):
     properties = options
     for k,v in kwargs.items():
       properties[k] = v
