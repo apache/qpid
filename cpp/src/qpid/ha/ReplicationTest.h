@@ -56,18 +56,18 @@ class ReplicationTest
         replicateDefault(replicateDefault_) {}
 
     // Get the replication level set on an object, or default if not set.
-    ReplicateLevel getLevel(const std::string& str);
-    ReplicateLevel getLevel(const framing::FieldTable& f);
-    ReplicateLevel getLevel(const types::Variant::Map& m);
-    ReplicateLevel getLevel(const broker::Queue&);
-    ReplicateLevel getLevel(const broker::Exchange&);
+    ReplicateLevel getLevel(const std::string& str) const;
+    ReplicateLevel getLevel(const framing::FieldTable& f) const;
+    ReplicateLevel getLevel(const types::Variant::Map& m) const;
+    ReplicateLevel getLevel(const broker::Queue&) const;
+    ReplicateLevel getLevel(const broker::Exchange&) const;
 
     // Calculate level for objects that may not have replication set,
     // including auto-delete/exclusive settings.
-    ReplicateLevel useLevel(const types::Variant::Map& args, bool autodelete, bool exclusive);
-    ReplicateLevel useLevel(const framing::FieldTable& args, bool autodelete, bool exclusive);
-    ReplicateLevel useLevel(const broker::Queue&);
-    ReplicateLevel useLevel(const broker::Exchange&);
+    ReplicateLevel useLevel(const types::Variant::Map& args, bool autodelete, bool exclusive) const;
+    ReplicateLevel useLevel(const framing::FieldTable& args, bool autodelete, bool exclusive) const;
+    ReplicateLevel useLevel(const broker::Queue&) const;
+    ReplicateLevel useLevel(const broker::Exchange&) const;
 
   private:
     ReplicateLevel replicateDefault;

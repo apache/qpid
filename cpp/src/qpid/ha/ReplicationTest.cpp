@@ -29,20 +29,20 @@ namespace ha {
 
 using types::Variant;
 
-ReplicateLevel ReplicationTest::getLevel(const std::string& str) {
+ReplicateLevel ReplicationTest::getLevel(const std::string& str) const {
     Enum<ReplicateLevel> rl(replicateDefault);
     if (!str.empty()) rl.parse(str);
     return rl.get();
 }
 
-ReplicateLevel ReplicationTest::getLevel(const framing::FieldTable& f) {
+ReplicateLevel ReplicationTest::getLevel(const framing::FieldTable& f) const {
     if (f.isSet(QPID_REPLICATE))
         return getLevel(f.getAsString(QPID_REPLICATE));
     else
         return replicateDefault;
 }
 
-ReplicateLevel ReplicationTest::getLevel(const Variant::Map& m) {
+ReplicateLevel ReplicationTest::getLevel(const Variant::Map& m) const {
     Variant::Map::const_iterator i = m.find(QPID_REPLICATE);
     if (i != m.end())
         return getLevel(i->second.asString());
@@ -50,7 +50,7 @@ ReplicateLevel ReplicationTest::getLevel(const Variant::Map& m) {
         return replicateDefault;
 }
 
-ReplicateLevel ReplicationTest::getLevel(const broker::Queue& q) {
+ReplicateLevel ReplicationTest::getLevel(const broker::Queue& q) const {
     const Variant::Map& qmap(q.getSettings().original);
     Variant::Map::const_iterator i = qmap.find(QPID_REPLICATE);
     if (i != qmap.end())
@@ -59,16 +59,15 @@ ReplicateLevel ReplicationTest::getLevel(const broker::Queue& q) {
         return getLevel(q.getSettings().storeSettings);
 }
 
-ReplicateLevel ReplicationTest::getLevel(const broker::Exchange& ex) {
+ReplicateLevel ReplicationTest::getLevel(const broker::Exchange& ex) const {
     return getLevel(ex.getArgs());
 }
 
-ReplicateLevel ReplicationTest::useLevel(const broker::Queue& q)
-{
+ReplicateLevel ReplicationTest::useLevel(const broker::Queue& q) const {
     return q.getSettings().isTemporary ? ReplicationTest(NONE).getLevel(q) : getLevel(q);
 }
 
-ReplicateLevel ReplicationTest::useLevel(const broker::Exchange& ex) {
+ReplicateLevel ReplicationTest::useLevel(const broker::Exchange& ex) const {
     return ReplicationTest::getLevel(ex);
 }
 
