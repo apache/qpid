@@ -53,6 +53,8 @@
 #include "qmf/org/apache/qpid/broker/ArgsQueuePurge.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueueReroute.h"
 #include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
+#include "qmf/org/apache/qpid/broker/EventSubscribe.h"
+#include "qmf/org/apache/qpid/broker/EventUnsubscribe.h"
 
 #include <iostream>
 #include <algorithm>
@@ -534,7 +536,9 @@ void Queue::releaseFromUse(bool controlling)
     if (trydelete) scheduleAutoDelete();
 }
 
-void Queue::consume(Consumer::shared_ptr c, bool requestExclusive)
+void Queue::consume(Consumer::shared_ptr c, bool requestExclusive,
+                    const framing::FieldTable& arguments,
+                    const std::string& connectionId, const std::string& userId)
 {
     {
         Mutex::ScopedLock locker(messageLock);
@@ -573,9 +577,15 @@ void Queue::consume(Consumer::shared_ptr c, bool requestExclusive)
     if (mgmtObject != 0 && c->isCounted()) {
         mgmtObject->inc_consumerCount();
     }
+    ManagementAgent* agent = broker->getManagementAgent();
+    if (agent) {
+        agent->raiseEvent(
+            _qmf::EventSubscribe(connectionId, userId, name,
+                                 c->getTag(), requestExclusive, ManagementAgent::toMap(arguments)));
+    }
 }
 
-void Queue::cancel(Consumer::shared_ptr c)
+void Queue::cancel(Consumer::shared_ptr c, const std::string& connectionId, const std::string& userId)
 {
     removeListener(c);
     if(c->isCounted())
@@ -599,6 +609,8 @@ void Queue::cancel(Consumer::shared_ptr c)
             scheduleAutoDelete();
         }
     }
+    ManagementAgent* agent = broker->getManagementAgent();
+    if (agent) agent->raiseEvent(_qmf::EventUnsubscribe(connectionId, userId, c->getTag()));
 }
 
 /**

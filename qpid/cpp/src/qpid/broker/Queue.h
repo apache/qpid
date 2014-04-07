@@ -348,8 +348,14 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN void recover(Message& msg);
 
     QPID_BROKER_EXTERN void consume(Consumer::shared_ptr c,
-                                    bool exclusive = false);
-    QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
+                                    bool exclusive = false,
+                                    const framing::FieldTable& arguments = framing::FieldTable(),
+                                    const std::string& connectionId=std::string(),
+                                    const std::string& userId=std::string());
+
+    QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c,
+                                    const std::string& connectionId=std::string(),
+                                    const std::string& userId=std::string());
     /**
      * Used to indicate that the queue is being used in some other
      * context than by a subscriber. The controlling flag should only

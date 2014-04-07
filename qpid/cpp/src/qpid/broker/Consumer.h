@@ -49,8 +49,8 @@ class Consumer : public QueueCursor {
  public:
     typedef boost::shared_ptr<Consumer> shared_ptr;
 
-    Consumer(const std::string& _name, SubscriptionType type)
-        : QueueCursor(type), acquires(type == CONSUMER), inListeners(false), name(_name) {}
+    Consumer(const std::string& _name, SubscriptionType type, const std::string& _tag)
+        : QueueCursor(type), acquires(type == CONSUMER), inListeners(false), name(_name), tag(_tag) {}
     virtual ~Consumer(){}
 
     bool preAcquires() const { return acquires; }
@@ -88,8 +88,12 @@ class Consumer : public QueueCursor {
 
     QueueCursor getCursor() const { return *this; }
     void setCursor(const QueueCursor& qc) { static_cast<QueueCursor&>(*this) = qc; }
+
+    const std::string& getTag() const { return tag; }
+
   protected:
     //framing::SequenceNumber position;
+    const std::string tag;  // <destination> from AMQP 0-10 Message.subscribe command
 
   private:
     friend class QueueListeners;

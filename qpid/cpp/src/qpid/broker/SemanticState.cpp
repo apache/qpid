@@ -141,7 +141,7 @@ void SemanticState::consume(const string& tag,
         c = ConsumerImpl::shared_ptr(
             new ConsumerImpl(this, name, queue, ackRequired, acquire ? CONSUMER : BROWSER, exclusive, tag,
                              resumeId, resumeTtl, arguments));
-    queue->consume(c, exclusive);//may throw exception
+    queue->consume(c, exclusive, arguments, connectionId, userID);//may throw exception
     consumers[tag] = c;
 }
 
@@ -323,7 +323,7 @@ SemanticStateConsumerImpl::SemanticStateConsumerImpl(SemanticState* _parent,
                                           const framing::FieldTable& _arguments
 
 ) :
-Consumer(_name, type),
+    Consumer(_name, type, _tag),
     parent(_parent),
     queue(_queue),
     ackExpected(ack),
@@ -331,7 +331,6 @@ Consumer(_name, type),
     blocked(true),
     exclusive(_exclusive),
     resumeId(_resumeId),
-    tag(_tag),
     selector(returnSelector(_arguments.getAsString(APACHE_SELECTOR))),
     resumeTtl(_resumeTtl),
     arguments(_arguments),
@@ -472,7 +471,7 @@ void SemanticState::cancel(ConsumerImpl::shared_ptr c)
     disable(c);
     Queue::shared_ptr queue = c->getQueue();
     if(queue) {
-        queue->cancel(c);
+        queue->cancel(c, connectionId, userID);
     }
     c->cancel();
 }

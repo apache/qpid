@@ -64,7 +64,7 @@ public:
     QueueCursor lastCursor;
     Message lastMessage;
     bool received;
-    TestConsumer(std::string name="test", bool acquire = true) : Consumer(name, acquire ? CONSUMER : BROWSER), received(false) {};
+    TestConsumer(std::string name="test", bool acquire = true) : Consumer(name, acquire ? CONSUMER : BROWSER, ""), received(false) {};
 
     virtual bool deliver(const QueueCursor& cursor, const Message& message){
         lastCursor = cursor;
