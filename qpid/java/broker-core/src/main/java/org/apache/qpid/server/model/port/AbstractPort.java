@@ -181,7 +181,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     public Collection<VirtualHostAlias> getVirtualHostBindings()
     {
         List<VirtualHostAlias> aliases = new ArrayList<VirtualHostAlias>();
-        for(VirtualHost<?> vh : _broker.getVirtualHosts())
+        for(VirtualHost<?,?,?> vh : _broker.getVirtualHosts())
         {
             for(VirtualHostAlias<?> alias : vh.getAliases())
             {

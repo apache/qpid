@@ -21,9 +21,7 @@
 package org.apache.qpid.server.security;
 
 import static org.apache.qpid.server.security.access.ObjectType.BROKER;
-import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
 import static org.apache.qpid.server.security.access.Operation.ACCESS_LOGS;
-import static org.apache.qpid.server.security.access.Operation.PUBLISH;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -59,7 +57,7 @@ public class SecurityManagerTest extends QpidTestCase
 
     private AccessControl _accessControl;
     private SecurityManager _securityManager;
-    private VirtualHost<?> _virtualHost;
+    private VirtualHost<?,?,?> _virtualHost;
 
     @Override
     public void setUp() throws Exception

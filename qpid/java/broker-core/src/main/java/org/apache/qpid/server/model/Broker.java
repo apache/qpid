@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.model;
 
+import java.net.SocketAddress;
+import java.util.Collection;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
@@ -28,9 +31,6 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
-import java.net.SocketAddress;
-import java.util.Collection;
 
 @ManagedObject( defaultType = "adapter" )
 public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventLoggerProvider, StatisticsGatherer
@@ -178,7 +178,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
 
     //children
-    Collection < VirtualHost<?> > getVirtualHosts();
+    Collection < VirtualHost<?,?,?> > getVirtualHosts();
 
     Collection<Port<?>> getPorts();
 
@@ -201,7 +201,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
     AuthenticationProvider<?> findAuthenticationProviderByName(String authenticationProviderName);
 
-    VirtualHost<?> findVirtualHostByName(String name);
+    VirtualHost<?,?,?> findVirtualHostByName(String name);
 
     KeyStore<?> findKeyStoreByName(String name);
 

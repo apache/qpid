@@ -66,7 +66,7 @@ public class RuleSetTest extends QpidTestCase
     private String _exchangeType = "direct";
     private Subject _testSubject = TestPrincipalUtils.createTestSubject(TEST_USER);
     private AMQQueue<?> _queue;
-    private VirtualHost<?> _virtualHost;
+    private VirtualHost<?,?,?> _virtualHost;
 
     @Override
     public void setUp() throws Exception

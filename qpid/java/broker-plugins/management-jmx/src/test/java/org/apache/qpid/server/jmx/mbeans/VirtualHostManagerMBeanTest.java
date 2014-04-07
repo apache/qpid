@@ -20,8 +20,8 @@
 package org.apache.qpid.server.jmx.mbeans;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -30,6 +30,7 @@ import java.util.Map;
 import javax.management.OperationsException;
 
 import junit.framework.TestCase;
+import org.mockito.ArgumentCaptor;
 
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Exchange;
@@ -37,9 +38,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
-import org.mockito.ArgumentCaptor;
 
 public class VirtualHostManagerMBeanTest extends TestCase
 {
@@ -59,7 +58,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
     protected void setUp() throws Exception
     {
         _mockVirtualHost = mock(VirtualHost.class);
-        when(_mockVirtualHost.getExchangeTypes()).thenReturn(Collections.singletonList(TEST_EXCHANGE_TYPE));
+        when(_mockVirtualHost.getExchangeTypeNames()).thenReturn(Collections.singletonList(TEST_EXCHANGE_TYPE));
 
         _mockManagedObjectRegistry = mock(ManagedObjectRegistry.class);
 

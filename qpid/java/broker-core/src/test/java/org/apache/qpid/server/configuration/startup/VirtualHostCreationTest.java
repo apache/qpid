@@ -20,24 +20,27 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-import junit.framework.TestCase;
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.adapter.StandardVirtualHostAdapter;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import junit.framework.TestCase;
+
+import org.apache.qpid.server.configuration.ConfigurationEntry;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class VirtualHostCreationTest extends TestCase
 {
@@ -49,15 +52,19 @@ public class VirtualHostCreationTest extends TestCase
         Broker parent = mock(Broker.class);
         when(parent.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
         when(parent.getSecurityManager()).thenReturn(securityManager);
+        VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
+        when(virtualHostRegistry.getEventLogger()).thenReturn(mock(EventLogger.class));
+        when(parent.getVirtualHostRegistry()).thenReturn(virtualHostRegistry);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
+        attributes.put(VirtualHost.ID, UUID.randomUUID());
 
         attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
         when(entry.getAttributes()).thenReturn(attributes);
 
-        VirtualHost host = new StandardVirtualHostAdapter(UUID.randomUUID(),attributes,parent);
+        VirtualHost host = new StandardVirtualHost(attributes,parent);
 
         assertNotNull("Null is returned", host);
         assertEquals("Unexpected name", getName(), host.getName());
@@ -67,7 +74,7 @@ public class VirtualHostCreationTest extends TestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
         attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE,
                                                                                     TestMemoryMessageStore.TYPE));
         String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.TYPE, VirtualHost.MESSAGE_STORE_SETTINGS};
@@ -78,18 +85,20 @@ public class VirtualHostCreationTest extends TestCase
     public void checkMandatoryAttributesAreValidated(String[] mandatoryAttributes, Map<String, Object> attributes)
     {
         SecurityManager securityManager = mock(SecurityManager.class);
-        ConfigurationEntry entry = mock(ConfigurationEntry.class);
         Broker parent = mock(Broker.class);
         when(parent.getSecurityManager()).thenReturn(securityManager);
+        VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
+        when(virtualHostRegistry.getEventLogger()).thenReturn(mock(EventLogger.class));
+        when(parent.getVirtualHostRegistry()).thenReturn(virtualHostRegistry);
 
         for (String name : mandatoryAttributes)
         {
             Map<String, Object> copy = new HashMap<String, Object>(attributes);
             copy.remove(name);
-            when(entry.getAttributes()).thenReturn(copy);
+            copy.put(ConfiguredObject.ID, UUID.randomUUID());
             try
             {
-                VirtualHost host = new StandardVirtualHostAdapter(UUID.randomUUID(),copy,parent);
+                VirtualHost host = new StandardVirtualHost(copy,parent);
                 fail("Cannot create a virtual host without a mandatory attribute " + name);
             }
             catch(IllegalConfigurationException e)
@@ -99,6 +108,11 @@ public class VirtualHostCreationTest extends TestCase
             catch(IllegalArgumentException e)
             {
                 // pass
+            }
+            catch(NullPointerException e)
+            {
+                System.err.println(name);
+                e.printStackTrace();
             }
         }
     }

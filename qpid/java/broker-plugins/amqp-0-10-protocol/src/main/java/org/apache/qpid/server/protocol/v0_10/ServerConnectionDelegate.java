@@ -41,7 +41,7 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
-import org.apache.qpid.server.virtualhost.State;
+import org.apache.qpid.server.virtualhost.VirtualHostState;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -206,7 +206,7 @@ public class ServerConnectionDelegate extends ServerDelegate
                 return;
             }
 
-            if (vhost.getState() != State.ACTIVE)
+            if (vhost.getVirtualHostState() != VirtualHostState.ACTIVE)
             {
                 sconn.setState(Connection.State.CLOSING);
                 sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Virtual host '"+vhostName+"' is not active"));

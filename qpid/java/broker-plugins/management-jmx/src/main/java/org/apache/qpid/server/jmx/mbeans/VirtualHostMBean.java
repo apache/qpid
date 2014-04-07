@@ -21,7 +21,16 @@
 
 package org.apache.qpid.server.jmx.mbeans;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.management.JMException;
+import javax.management.ObjectName;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
@@ -34,18 +43,11 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.virtualhost.ManagedVirtualHost;
 
-import javax.management.JMException;
-import javax.management.ObjectName;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost, ConfigurationChangeListener
 {
     private static final Logger LOGGER = Logger.getLogger(VirtualHostMBean.class);
 
-    private final VirtualHost<?> _virtualHost;
+    private final VirtualHost<?,?,?> _virtualHost;
 
     private final Map<ConfiguredObject, AMQManagedObject> _children =
             new HashMap<ConfiguredObject, AMQManagedObject>();

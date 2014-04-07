@@ -32,7 +32,7 @@ package org.apache.qpid.server.exchange;
  * @todo Represent coding error, where unknown exchange type is requested by passing a string parameter. Use a type safe
  *       enum for the exchange type, or replace with IllegalArgumentException. Should be runtime.
  */
-public class AMQUnknownExchangeType extends Exception
+public class AMQUnknownExchangeType extends RuntimeException
 {
     public AMQUnknownExchangeType(String message, Throwable cause)
     {

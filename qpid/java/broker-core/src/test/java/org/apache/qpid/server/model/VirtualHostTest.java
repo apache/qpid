@@ -20,23 +20,22 @@
  */
 package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.adapter.StandardVirtualHostAdapter;
-import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
-import org.apache.qpid.test.utils.QpidTestCase;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 public class VirtualHostTest extends QpidTestCase
 {
@@ -80,22 +79,6 @@ public class VirtualHostTest extends QpidTestCase
         VirtualHost host = createHost();
 
         host.setDesiredState(State.INITIALISING, State.ACTIVE);
-        assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
-    }
-
-    public void testQuiescedState()
-    {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
-        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
-        attributes.put(VirtualHost.STATE, State.QUIESCED);
-
-        VirtualHost host = createHost(attributes);
-
-        assertEquals("Unexpected state", State.QUIESCED, host.getAttribute(VirtualHost.STATE));
-
-        host.setDesiredState(State.QUIESCED, State.ACTIVE);
         assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
     }
 
@@ -148,7 +131,7 @@ public class VirtualHostTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
         attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
 
         VirtualHost host = createHost(attributes);
@@ -157,7 +140,9 @@ public class VirtualHostTest extends QpidTestCase
 
     private VirtualHost createHost(Map<String, Object> attributes)
     {
-        return new StandardVirtualHostAdapter(UUID.randomUUID(), attributes, _broker);
+        attributes = new HashMap<String, Object>(attributes);
+        attributes.put(VirtualHost.ID, UUID.randomUUID());
+        return new StandardVirtualHost(attributes, _broker);
     }
 
 }

@@ -20,28 +20,28 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
 import java.util.Collection;
 import java.util.UUID;
+
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public interface QueueRegistry
 {
     VirtualHost getVirtualHost();
 
-    void registerQueue(AMQQueue queue);
+    void registerQueue(AMQQueue<?> queue);
 
     void unregisterQueue(String name);
 
-    Collection<AMQQueue> getQueues();
+    Collection<AMQQueue<?>> getQueues();
 
-    AMQQueue getQueue(String queue);
+    AMQQueue<?> getQueue(String queue);
 
     void addRegistryChangeListener(RegistryChangeListener listener);
 
     void stopAllAndUnregisterMBeans();
 
-    AMQQueue getQueue(UUID queueId);
+    AMQQueue<?> getQueue(UUID queueId);
 
     interface RegistryChangeListener
     {

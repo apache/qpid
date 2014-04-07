@@ -36,7 +36,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
+import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.SystemUtils;
@@ -832,7 +832,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         // add new virtual host configuration to the broker store
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, virtualHostName);
-        attributes.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
         messageStoreSettings.put(MessageStore.STORE_TYPE, storeType);
         messageStoreSettings.put(MessageStore.STORE_PATH, storeDir);

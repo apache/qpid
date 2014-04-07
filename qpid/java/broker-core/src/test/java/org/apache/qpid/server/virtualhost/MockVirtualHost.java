@@ -22,7 +22,9 @@ package org.apache.qpid.server.virtualhost;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -40,9 +42,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 
-import java.util.UUID;
-
-public class MockVirtualHost implements VirtualHost
+public class MockVirtualHost implements VirtualHost<AMQQueue<?>, ExchangeImpl<?>>
 {
     private String _name;
 
@@ -118,7 +118,7 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public AMQQueue getQueue(String name)
+    public AMQQueue<?> getQueue(String name)
     {
         return null;
     }
@@ -130,25 +130,25 @@ public class MockVirtualHost implements VirtualHost
     }
 
     @Override
-    public AMQQueue getQueue(UUID id)
+    public AMQQueue<?> getQueue(UUID id)
     {
         return null;
     }
 
     @Override
-    public Collection<AMQQueue> getQueues()
+    public Collection<AMQQueue<?>> getQueues()
     {
         return null;
     }
 
     @Override
-    public int removeQueue(AMQQueue queue)
+    public int removeQueue(AMQQueue<?> queue)
     {
         return 0;
     }
 
     @Override
-    public AMQQueue createQueue(Map<String, Object> arguments)
+    public AMQQueue<?> createQueue(Map<String, Object> arguments)
     {
         return null;
     }
@@ -286,9 +286,9 @@ public class MockVirtualHost implements VirtualHost
 
     }
 
-    public State getState()
+    public VirtualHostState getVirtualHostState()
     {
-        return State.ACTIVE;
+        return VirtualHostState.ACTIVE;
     }
 
     public void block()

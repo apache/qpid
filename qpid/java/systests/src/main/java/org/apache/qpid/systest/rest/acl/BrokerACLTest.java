@@ -47,7 +47,7 @@ import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManag
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.virtualhost.StandardVirtualHostFactory;
+import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -985,7 +985,7 @@ public class BrokerACLTest extends QpidRestTestCase
         Map<String, Object> hostData = new HashMap<String, Object>();
         hostData.put(VirtualHost.NAME, hostName);
         hostData.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
-        hostData.put(VirtualHost.TYPE, StandardVirtualHostFactory.TYPE);
+        hostData.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
 
         return getRestTestHelper().submitRequest("/rest/virtualhost/" + hostName, "PUT", hostData);
     }

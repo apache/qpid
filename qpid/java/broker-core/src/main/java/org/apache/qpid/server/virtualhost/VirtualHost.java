@@ -25,10 +25,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.common.Closeable;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.connection.IConnectionRegistry;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
@@ -43,40 +43,40 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 
-public interface VirtualHost extends DurableConfigurationStore.Source, Closeable, StatisticsGatherer,
+public interface VirtualHost< Q extends AMQQueue<?>, E extends ExchangeImpl<?> > extends DurableConfigurationStore.Source, Closeable, StatisticsGatherer,
                                      EventLoggerProvider
 {
     IConnectionRegistry getConnectionRegistry();
 
     String getName();
 
-    AMQQueue getQueue(String name);
+    Q getQueue(String name);
     MessageSource getMessageSource(String name);
 
-    AMQQueue getQueue(UUID id);
+    Q getQueue(UUID id);
 
-    Collection<AMQQueue> getQueues();
+    Collection<Q> getQueues();
 
-    int removeQueue(AMQQueue queue);
+    int removeQueue(Q queue);
 
-    AMQQueue createQueue(Map<String, Object> arguments) throws QueueExistsException;
+    Q createQueue(Map<String, Object> arguments) throws QueueExistsException;
 
-    ExchangeImpl createExchange(Map<String,Object> attributes)
+    E createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType;
 
-    void removeExchange(ExchangeImpl exchange, boolean force) throws ExchangeIsAlternateException,
+    void removeExchange(E exchange, boolean force) throws ExchangeIsAlternateException,
                                                                  RequiredExchangeException;
 
     MessageDestination getMessageDestination(String name);
 
-    ExchangeImpl getExchange(String name);
-    ExchangeImpl getExchange(UUID id);
+    E getExchange(String name);
+    E getExchange(UUID id);
 
 
     MessageDestination getDefaultDestination();
 
-    Collection<ExchangeImpl<?>> getExchanges();
+    Collection<E> getExchanges();
 
     Collection<ExchangeType<? extends ExchangeImpl>> getExchangeTypes();
 
@@ -112,7 +112,7 @@ public interface VirtualHost extends DurableConfigurationStore.Source, Closeable
 
     ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask);
 
-    State getState();
+    VirtualHostState getVirtualHostState();
 
     public void block();
 

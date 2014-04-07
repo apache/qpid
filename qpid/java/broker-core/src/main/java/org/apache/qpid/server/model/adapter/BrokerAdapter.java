@@ -20,7 +20,25 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.lang.reflect.Type;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.security.AccessControlException;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -34,7 +52,6 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.model.port.PortWithAuthProvider;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
-import org.apache.qpid.server.plugin.VirtualHostFactory;
 import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.SecurityManager;
@@ -46,15 +63,6 @@ import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
-
-import javax.security.auth.Subject;
-import java.lang.reflect.Type;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.security.AccessControlException;
-import java.security.PrivilegedAction;
-import java.util.*;
-import java.util.regex.Pattern;
 
 @ManagedObject(category = false, type = "adapter")
 public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, ConfigurationChangeListener, StatisticsGatherer, StatisticsGatherer.Source
@@ -152,7 +160,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
 
-    private final Map<String, VirtualHost<?>> _vhostAdapters = new HashMap<String, VirtualHost<?>>();
+    private final Map<String, VirtualHost<?,?,?>> _vhostAdapters = new HashMap<String, VirtualHost<?,?,?>>();
     private final Map<UUID, Port<?>> _portAdapters = new HashMap<UUID, Port<?>>();
     private final Map<Port, Integer> _stillInUsePortNumbers = new HashMap<Port, Integer>();
     private final Map<UUID, AuthenticationProvider<?>> _authenticationProviders = new HashMap<UUID, AuthenticationProvider<?>>();
@@ -418,11 +426,11 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
     }
 
-    public Collection<VirtualHost<?>> getVirtualHosts()
+    public Collection<VirtualHost<?,?,?>> getVirtualHosts()
     {
         synchronized(_vhostAdapters)
         {
-            return new ArrayList<VirtualHost<?>>(_vhostAdapters.values());
+            return new ArrayList<VirtualHost<?,?,?>>(_vhostAdapters.values());
         }
     }
 
@@ -489,7 +497,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     {
         ConfiguredObjectTypeFactory virtualHostFactory =
                 _objectFactory.getConfiguredObjectTypeFactory(VirtualHost.class, attributes);
-        final VirtualHostAdapter virtualHostAdapter = (VirtualHostAdapter) virtualHostFactory.create(attributes,this);
+        final VirtualHost virtualHost = (VirtualHost) virtualHostFactory.create(attributes,this);
 
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
@@ -498,11 +506,11 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                                 @Override
                                 public Object run()
                                 {
-                                    virtualHostAdapter.setDesiredState(State.INITIALISING, State.ACTIVE);
+                                    virtualHost.setDesiredState(State.INITIALISING, State.ACTIVE);
                                     return null;
                                 }
                             });
-        return virtualHostAdapter;
+        return virtualHost;
     }
 
     private boolean deleteVirtualHost(final VirtualHost vhost) throws AccessControlException, IllegalStateException
@@ -972,7 +980,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         }
         else if(SUPPORTED_VIRTUALHOST_TYPES.equals(name))
         {
-            return VirtualHostFactory.TYPES.get();
+            return _objectFactory.getSupportedTypes(VirtualHost.class);
         }
         else if(SUPPORTED_AUTHENTICATION_PROVIDERS.equals(name))
         {
@@ -1028,7 +1036,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return removedAuthenticationProvider != null;
     }
 
-    private void addVirtualHost(VirtualHost<?> virtualHost)
+    private void addVirtualHost(VirtualHost<?,?,?> virtualHost)
     {
         synchronized (_vhostAdapters)
         {

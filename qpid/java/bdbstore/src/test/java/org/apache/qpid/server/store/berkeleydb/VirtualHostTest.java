@@ -20,8 +20,18 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
+
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -38,15 +48,6 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
-import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class VirtualHostTest extends QpidTestCase
 {
 
@@ -54,7 +55,7 @@ public class VirtualHostTest extends QpidTestCase
     private StatisticsGatherer _statisticsGatherer;
     private RecovererProvider _recovererProvider;
     private File _bdbStorePath;
-    private VirtualHost<?> _host;
+    private VirtualHost<?,?,?> _host;
     private ConfigurationEntryStore _store;
 
     @Override
@@ -117,14 +118,14 @@ public class VirtualHostTest extends QpidTestCase
 
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, virtualHostName);
-        virtualHostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHostFactory.TYPE);
+        virtualHostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHost.TYPE);
         virtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
 
         _host = createHost(virtualHostAttributes);
         _host.setDesiredState(State.INITIALISING, State.ACTIVE);
 
         assertEquals("Unexpected virtual host name", virtualHostName, _host.getName());
-        assertEquals("Unexpected host type", BDBHAVirtualHostFactory.TYPE, _host.getType());
+        assertEquals("Unexpected host type", BDBHAVirtualHost.TYPE, _host.getType());
 
         assertEquals(messageStoreSettings, _host.getMessageStoreSettings());
 
@@ -141,14 +142,14 @@ public class VirtualHostTest extends QpidTestCase
     }
 
 
-    private VirtualHost<?> createHost(Map<String, Object> attributes)
+    private VirtualHost<?,?,?> createHost(Map<String, Object> attributes)
     {
         ConfiguredObjectFactory factory = new ConfiguredObjectFactory();
         ConfiguredObjectTypeFactory vhostFactory =
                 factory.getConfiguredObjectTypeFactory(VirtualHost.class, attributes);
         attributes = new HashMap<String, Object>(attributes);
         attributes.put(ConfiguredObject.ID, UUID.randomUUID());
-        return (VirtualHost<?>) vhostFactory.create(attributes,_broker);
+        return (VirtualHost<?,?,?>) vhostFactory.create(attributes,_broker);
     }
 
 }

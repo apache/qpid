@@ -21,7 +21,17 @@
 
 package org.apache.qpid.server.jmx;
 
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.management.JMException;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
@@ -29,20 +39,21 @@ import org.apache.qpid.server.jmx.mbeans.Shutdown;
 import org.apache.qpid.server.jmx.mbeans.UserManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.VirtualHostMBean;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
-import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
-import javax.management.JMException;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 @ManagedObject( category = false , type = "MANAGEMENT-JMX" )
 public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implements ConfigurationChangeListener
@@ -143,7 +154,7 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
 
         synchronized (_children)
         {
-            for(VirtualHost<?> virtualHost : broker.getVirtualHosts())
+            for(VirtualHost<?,?,?> virtualHost : broker.getVirtualHosts())
             {
                 if(!_children.containsKey(virtualHost))
                 {

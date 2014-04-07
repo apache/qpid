@@ -20,19 +20,28 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ManagedObject;
-
 import java.util.Map;
-import java.util.UUID;
 
-@ManagedObject( category = false, type = "STANDARD")
-public class StandardVirtualHostAdapter extends VirtualHostAdapter<StandardVirtualHostAdapter>
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+
+public class StandardVirtualHostFactory extends AbstractConfiguredObjectTypeFactory<StandardVirtualHost>
 {
-    public StandardVirtualHostAdapter(final UUID id,
-                                      final Map<String, Object> attributes,
-                                      final Broker<?> broker)
+
+    public StandardVirtualHostFactory()
     {
-        super(id, attributes, broker);
+        super(StandardVirtualHost.class);
     }
+
+    @Override
+    public StandardVirtualHost createInstance(final Map<String, Object> attributes,
+                                                 final ConfiguredObject<?>... parents)
+    {
+        final Broker broker = getParent(Broker.class, parents);
+        return new StandardVirtualHost(attributes, broker);
+    }
+
+
 }
