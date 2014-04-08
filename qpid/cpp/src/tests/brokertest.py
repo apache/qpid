@@ -488,8 +488,9 @@ class BrokerTest(TestCase):
         os.makedirs(self.dir)
         os.chdir(self.dir)
         self.teardown_list = []                # things to tear down at end of test
-
-        self.protocol = defs.get("PROTOCOL") or ("amqp1.0" if qpid_messaging else "amqp0-10")
+        if qpid_messaging: default_protocol="amqp1.0"
+        else: default_protocol="amqp0-10"
+        self.protocol = defs.get("PROTOCOL") or default_protocol
         self.tx_protocol = "amqp0-10" # Transactions not yet supported over 1.0
 
 
