@@ -67,7 +67,6 @@
     <dependency org="org.eclipse.jetty" name="jetty-security" rev="8.1.14.v20131031" transitive="false"/>
     <dependency org="org.eclipse.jetty" name="jetty-servlet" rev="8.1.14.v20131031" transitive="false"/>
     <dependency org="org.eclipse.jetty" name="jetty-util" rev="8.1.14.v20131031" transitive="false"/>
-    <dependency org="xalan" name="xalan" rev="2.7.0" transitive="false"/>
     <dependency org="velocity" name="velocity" rev="1.4" transitive="false"/>
     <dependency org="velocity" name="velocity-dep" rev="1.4" transitive="false"/>
     <dependency org="org.webjars" name="cryptojs" rev="3.1.2" transitive="false"/>
