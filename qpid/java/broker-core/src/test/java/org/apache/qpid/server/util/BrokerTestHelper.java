@@ -52,7 +52,7 @@ import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerTestHelper
@@ -91,7 +91,7 @@ public class BrokerTestHelper
     {
     }
 
-    public static VirtualHost createVirtualHost(VirtualHostRegistry virtualHostRegistry, Map<String,Object> attributes)
+    public static VirtualHostImpl createVirtualHost(VirtualHostRegistry virtualHostRegistry, Map<String,Object> attributes)
             throws Exception
     {
 
@@ -120,16 +120,19 @@ public class BrokerTestHelper
         AbstractVirtualHost host = (AbstractVirtualHost) factory.create(attributes, broker);
 
         host.setDesiredState(host.getState(), State.ACTIVE);
-
+        /*if(virtualHostRegistry != null)
+        {
+            virtualHostRegistry.registerVirtualHost(host);
+        }*/
         return host;
     }
 
-    public static VirtualHost createVirtualHost(String name) throws Exception
+    public static VirtualHostImpl createVirtualHost(String name) throws Exception
     {
         return createVirtualHost(name, new VirtualHostRegistry(new EventLogger()));
     }
 
-    public static VirtualHost createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception
+    public static VirtualHostImpl createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.VirtualHost.TYPE, StandardVirtualHost.TYPE);
@@ -169,7 +172,7 @@ public class BrokerTestHelper
 
     public static AMQConnectionModel createConnection(String hostName) throws Exception
     {
-        VirtualHost virtualHost = createVirtualHost(hostName);
+        VirtualHostImpl virtualHost = createVirtualHost(hostName);
         AMQConnectionModel connection = mock(AMQConnectionModel.class);
         return connection;
     }
@@ -177,7 +180,7 @@ public class BrokerTestHelper
     public static ExchangeImpl createExchange(String hostName, final boolean durable, final EventLogger eventLogger) throws Exception
     {
         SecurityManager securityManager = new SecurityManager(mock(Broker.class), false);
-        VirtualHost virtualHost = mock(VirtualHost.class);
+        VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getName()).thenReturn(hostName);
         when(virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(virtualHost.getEventLogger()).thenReturn(eventLogger);
@@ -190,7 +193,7 @@ public class BrokerTestHelper
         return factory.createExchange(attributes);
     }
 
-    public static AMQQueue createQueue(String queueName, VirtualHost virtualHost)
+    public static AMQQueue createQueue(String queueName, VirtualHostImpl virtualHost)
             throws QueueExistsException
     {
         Map<String,Object> attributes = new HashMap<String, Object>();

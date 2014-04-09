@@ -36,7 +36,7 @@ import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ public class AckTest extends QpidTestCase
     private AMQQueue _queue;
 
     private static final AMQShortString DEFAULT_CONSUMER_TAG = new AMQShortString("conTag");
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
 
     @Override
     public void setUp() throws Exception

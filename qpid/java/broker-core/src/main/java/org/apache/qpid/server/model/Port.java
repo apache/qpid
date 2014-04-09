@@ -22,6 +22,7 @@ package org.apache.qpid.server.model;
 
 import java.security.AccessControlException;
 import java.util.Collection;
+import java.util.Set;
 
 @ManagedObject
 public interface Port<X extends Port<X>> extends ConfiguredObject<X>
@@ -43,37 +44,22 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 
     // Attributes
 
-    @ManagedAttribute
+    @ManagedAttribute(automate = true)
     String getBindingAddress();
 
-    @ManagedAttribute
+    @ManagedAttribute(mandatory = true, automate = true)
     int getPort();
 
-    @ManagedAttribute
-    Collection<Protocol> getProtocols();
+    @ManagedAttribute( automate = true )
+    Set<Protocol> getProtocols();
 
-    @ManagedAttribute
-    Collection<Transport> getTransports();
+    @ManagedAttribute( automate = true )
+    Set<Transport> getTransports();
 
-    @ManagedAttribute
-    boolean isTcpNoDelay();
-
-    @ManagedAttribute
-    int getSendBufferSize();
-
-    @ManagedAttribute
-    int getReceiveBufferSize();
-
-    @ManagedAttribute
-    boolean getNeedClientAuth();
-
-    @ManagedAttribute
-    boolean getWantClientAuth();
-
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     KeyStore getKeyStore();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     Collection<TrustStore> getTrustStores();
 
 

@@ -32,7 +32,7 @@ import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.security.AccessControlException;
 
@@ -61,7 +61,7 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
         }
 
         AMQShortString exchangeName = body.getExchange();
-        VirtualHost vHost = session.getVirtualHost();
+        VirtualHostImpl vHost = session.getVirtualHost();
 
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
 

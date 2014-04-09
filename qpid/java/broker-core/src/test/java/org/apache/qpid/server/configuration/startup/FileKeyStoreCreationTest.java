@@ -20,38 +20,51 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-import junit.framework.TestCase;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.security.AbstractKeyStoreAdapter;
-import org.apache.qpid.server.security.FileKeyStore;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.test.utils.TestSSLConstants;
+import static org.mockito.Mockito.mock;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.security.auth.Subject;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
+import javax.net.ssl.KeyManagerFactory;
+import javax.security.auth.Subject;
+
+import junit.framework.TestCase;
+
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.security.AbstractKeyStoreAdapter;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.test.utils.TestSSLConstants;
 
 public class FileKeyStoreCreationTest extends TestCase
 {
+
+    private ConfiguredObjectFactory _factory;
+
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _factory = new ConfiguredObjectFactory();
+    }
 
     public void testCreateWithAllAttributesProvided()
     {
         Map<String, Object> attributes = getKeyStoreAttributes();
         Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
 
-        UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
 
-        final KeyStore keyStore = new FileKeyStore(id,broker,attributes);
+        final KeyStore keyStore =
+                createKeyStore(attributes, broker);
+
 
         assertNotNull("Key store configured object is not created", keyStore);
-        assertEquals(id, keyStore.getId());
+        assertEquals(attributes.get(ConfiguredObject.ID), keyStore.getId());
 
         //verify we can retrieve the actual password using the method
         Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
@@ -78,6 +91,13 @@ public class FileKeyStoreCreationTest extends TestCase
         }
     }
 
+    protected KeyStore createKeyStore(final Map<String, Object> attributes, final Broker broker)
+    {
+        ConfiguredObjectTypeFactory configuredObjectTypeFactory =
+                _factory.getConfiguredObjectTypeFactory(KeyStore.class, attributes);
+        return (KeyStore) configuredObjectTypeFactory.create(attributes, broker);
+    }
+
     public void testCreateWithMissedRequiredAttributes()
     {
         Map<String, Object> attributes = getKeyStoreAttributes();
@@ -92,7 +112,7 @@ public class FileKeyStoreCreationTest extends TestCase
             properties.remove(mandatoryProperties[i]);
             try
             {
-                new FileKeyStore(id, broker, properties);
+                createKeyStore(properties, broker);
                 fail("Cannot create key store without a " + mandatoryProperties[i]);
             }
             catch(IllegalArgumentException e)
@@ -105,6 +125,7 @@ public class FileKeyStoreCreationTest extends TestCase
     private Map<String, Object> getKeyStoreAttributes()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(KeyStore.ID, UUID.randomUUID());
         attributes.put(KeyStore.NAME, getName());
         attributes.put(KeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(KeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);

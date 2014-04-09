@@ -20,19 +20,8 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
-import junit.framework.TestCase;
-import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,8 +30,28 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import junit.framework.TestCase;
+
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TestMemoryMessageStore;
 
 public class BrokerRecovererTest extends TestCase
 {
@@ -111,6 +120,9 @@ public class BrokerRecovererTest extends TestCase
         Broker broker = _systemContext.getBroker();
 
         assertNotNull(broker);
+
+        broker.open();
+
         assertEquals(_brokerId, broker.getId());
 
         for (Map.Entry<String, Object> attribute : attributes.entrySet())
@@ -133,6 +145,7 @@ public class BrokerRecovererTest extends TestCase
         Broker<?> broker = _systemContext.getBroker();
 
         assertNotNull(broker);
+        broker.open();
         assertEquals(_brokerId, broker.getId());
         assertEquals(1, broker.getVirtualHosts().size());
         assertEquals(vhostId, broker.getVirtualHosts().iterator().next().getId());
@@ -198,6 +211,7 @@ public class BrokerRecovererTest extends TestCase
 
 
         assertNotNull(broker);
+        broker.open();
         assertEquals(_brokerId, broker.getId());
         assertEquals(1, broker.getPorts().size());
     }
@@ -211,6 +225,7 @@ public class BrokerRecovererTest extends TestCase
 
 
         assertNotNull(broker);
+        broker.open();
         assertEquals(_brokerId, broker.getId());
         assertEquals(1, broker.getAuthenticationProviders().size());
 
@@ -232,6 +247,7 @@ public class BrokerRecovererTest extends TestCase
 
 
         assertNotNull(broker);
+        broker.open();
         assertEquals(_brokerId, broker.getId());
         assertEquals(2, broker.getPorts().size());
 
@@ -249,6 +265,7 @@ public class BrokerRecovererTest extends TestCase
 
 
         assertNotNull(broker);
+        broker.open();
         assertEquals(_brokerId, broker.getId());
         assertEquals(1, broker.getGroupProviders().size());
 
@@ -260,6 +277,8 @@ public class BrokerRecovererTest extends TestCase
         String[] incompatibleVersions = {Integer.MAX_VALUE + "." + 0, "0.0"};
         for (String incompatibleVersion : incompatibleVersions)
         {
+            // need to reset all the shared objects for every iteration of the test
+            setUp();
             brokerAttributes.put(Broker.MODEL_VERSION, incompatibleVersion);
             when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
 
@@ -267,6 +286,7 @@ public class BrokerRecovererTest extends TestCase
             {
                 _systemContext.resolveObjects(_brokerEntry);
                 Broker<?> broker = _systemContext.getBroker();
+                broker.open();
                 fail("The broker creation should fail due to unsupported model version");
             }
             catch (IllegalConfigurationException e)
@@ -288,6 +308,7 @@ public class BrokerRecovererTest extends TestCase
         try
         {
             Broker broker = (Broker) _configuredObjectFactory.recover(_brokerEntry, _systemContext).resolve();
+            broker.open();
             fail("The broker creation should fail due to unsupported model version");
         }
         catch (IllegalConfigurationException e)
@@ -309,7 +330,7 @@ public class BrokerRecovererTest extends TestCase
             try
             {
                 Broker broker = (Broker) _configuredObjectFactory.recover(_brokerEntry, _systemContext).resolve();
-
+                broker.open();
                 fail("The broker creation should fail due to unsupported model version");
             }
             catch (IllegalConfigurationException e)

@@ -61,8 +61,6 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
-import org.apache.qpid.util.Strings;
-import org.apache.qpid.util.Strings.ChainedResolver;
 
 public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 {
@@ -85,7 +83,6 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 
     private boolean _generatedObjectIdDuringLoad;
 
-    private ChainedResolver _resolver;
     private ConfiguredObject<?> _parent;
 
     protected MemoryConfigurationEntryStore(Map<String, String> configProperties)
@@ -95,8 +92,6 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
         _entries = new HashMap<UUID, ConfigurationEntry>();
         _brokerChildrenRelationshipMap = buildRelationshipClassMap();
-        _resolver = new Strings.ChainedResolver(Strings.SYSTEM_RESOLVER,
-                                                new Strings.MapResolver(configProperties));
     }
 
     MemoryConfigurationEntryStore(String json, Map<String, String> configProperties)
@@ -872,7 +867,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             }
             else
             {
-                return Strings.expand(node.asText(), _resolver);
+                return node.asText();
             }
         }
         else if (node.isArray())
@@ -923,4 +918,5 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     {
         return _util;
     }
+
 }

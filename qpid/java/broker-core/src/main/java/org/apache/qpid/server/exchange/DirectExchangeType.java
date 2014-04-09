@@ -21,12 +21,11 @@
 package org.apache.qpid.server.exchange;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class DirectExchangeType implements ExchangeType<DirectExchange>
 {
@@ -37,7 +36,7 @@ public class DirectExchangeType implements ExchangeType<DirectExchange>
     }
 
     @Override
-    public DirectExchange newInstance(final VirtualHost virtualHost,
+    public DirectExchange newInstance(final VirtualHostImpl virtualHost,
                                       final Map<String, Object> attributes) throws UnknownExchangeException
     {
         return new DirectExchange(virtualHost, attributes);

@@ -31,7 +31,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.security.AccessControlException;
 
@@ -60,7 +60,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
     public void methodReceived(AMQStateManager stateManager, QueueDeleteBody body, int channelId) throws AMQException
     {
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
-        VirtualHost virtualHost = protocolConnection.getVirtualHost();
+        VirtualHostImpl virtualHost = protocolConnection.getVirtualHost();
         DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
 

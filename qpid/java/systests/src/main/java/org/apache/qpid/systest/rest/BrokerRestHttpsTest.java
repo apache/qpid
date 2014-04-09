@@ -70,6 +70,7 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
                 ConfiguredObject.CREATED_TIME,
                 ConfiguredObject.LAST_UPDATED_BY,
                 ConfiguredObject.LAST_UPDATED_TIME,
-                ConfiguredObject.DESCRIPTION);
+                ConfiguredObject.DESCRIPTION,
+                ConfiguredObject.CONTEXT);
     }
 }

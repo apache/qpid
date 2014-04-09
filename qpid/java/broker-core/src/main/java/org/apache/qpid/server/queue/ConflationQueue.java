@@ -24,16 +24,15 @@ package org.apache.qpid.server.queue;
 import java.util.Map;
 
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class ConflationQueue extends AbstractQueue
 {
     public static final String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
 
 
-    protected ConflationQueue(VirtualHost virtualHost,
+    protected ConflationQueue(VirtualHostImpl virtualHost,
                               Map<String, Object> attributes)
     {
         super(virtualHost, attributes, entryList(attributes));

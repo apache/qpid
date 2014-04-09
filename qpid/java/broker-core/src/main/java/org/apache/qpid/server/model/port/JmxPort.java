@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.model.port;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ManagedObject;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedObject;
 
 @ManagedObject( category = false, type = "JMX")
 public class JmxPort extends PortWithAuthProvider<JmxPort>
@@ -37,8 +37,12 @@ public class JmxPort extends PortWithAuthProvider<JmxPort>
                    final TaskExecutor taskExecutor)
     {
         super(id, broker, attributes, Collections.<String,Object>emptyMap(), taskExecutor);
+    }
 
-        validateOnlyOneInstance(broker);
-
+    @Override
+    public void validate()
+    {
+        super.validate();
+        validateOnlyOneInstance();
     }
 }

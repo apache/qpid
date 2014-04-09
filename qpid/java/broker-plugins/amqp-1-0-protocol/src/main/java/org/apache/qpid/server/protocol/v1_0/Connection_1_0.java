@@ -20,18 +20,28 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
+
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.security.auth.Subject;
+
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEventListener;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
-
 import org.apache.qpid.amqp_1_0.transport.SessionEventListener;
-import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
+import org.apache.qpid.amqp_1_0.type.transport.End;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
@@ -46,16 +56,7 @@ import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import javax.security.auth.Subject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class Connection_1_0 implements ConnectionEventListener, AMQConnectionModel<Connection_1_0,Session_1_0>
 {
@@ -63,7 +64,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     private final Port _port;
     private final Broker _broker;
     private final SubjectCreator _subjectCreator;
-    private VirtualHost _vhost;
+    private VirtualHostImpl _vhost;
     private final Transport _transport;
     private final ConnectionEndpoint _conn;
     private final long _connectionId;
@@ -130,7 +131,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         String host = _conn.getLocalHostname();
         if(host == null || host.trim().equals(""))
         {
-            host = (String)_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST);
+            host = _broker.getDefaultVirtualHost();
         }
         _vhost = _broker.getVirtualHostRegistry().getVirtualHost(host);
         _vhost.getConnectionRegistry().registerConnection(this);
@@ -432,7 +433,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         return _subject;
     }
 
-    VirtualHost getVirtualHost()
+    VirtualHostImpl getVirtualHost()
     {
         return _vhost;
     }

@@ -42,7 +42,7 @@ public class FileBasedGroupProvider
 {
     private static Logger LOGGER = Logger.getLogger(FileBasedGroupProvider.class);
 
-    private final GroupManager _groupManager;
+    private GroupManager _groupManager;
     private final Broker<?> _broker;
     private AtomicReference<State> _state;
 
@@ -56,15 +56,14 @@ public class FileBasedGroupProvider
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
               Collections.<String,Object>emptyMap(), combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
 
-        _groupManager = new FileGroupManager(getPath());
+
         _broker = broker;
 
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
-        validateUniqueFile();
     }
 
-    private void validateUniqueFile()
+    public void validate()
     {
         Collection<GroupProvider<?>> groupProviders = _broker.getGroupProviders();
         for(GroupProvider<?> provider : groupProviders)
@@ -86,12 +85,21 @@ public class FileBasedGroupProvider
         }
     }
 
+    protected void onOpen()
+    {
+        super.onOpen();
+        if(_groupManager == null)
+        {
+            _groupManager = new FileGroupManager(getPath());
+        }
+    }
 
     @Override
-    protected void create()
+    protected void onCreate()
     {
+        super.onCreate();
+        _groupManager = new FileGroupManager(getPath());
         _groupManager.onCreate();
-        super.create();
     }
 
     @ManagedAttribute( automate = true, mandatory = true)
@@ -193,7 +201,7 @@ public class FileBasedGroupProvider
     {
         if (clazz == Group.class)
         {
-            Set<Principal> groups = _groupManager.getGroupPrincipals();
+            Set<Principal> groups = _groupManager == null ? Collections.<Principal>emptySet() : _groupManager.getGroupPrincipals();
             Collection<Group> principals = new ArrayList<Group>(groups.size());
             for (Principal group : groups)
             {
@@ -273,6 +281,7 @@ public class FileBasedGroupProvider
             {
                 _groupManager.close();
                 _groupManager.onDelete();
+                deleted();
                 return true;
             }
             else

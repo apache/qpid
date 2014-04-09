@@ -25,10 +25,9 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -61,7 +60,7 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
 
     public static InternalTestProtocolSession createProtocolSession(String hostName) throws Exception
     {
-        VirtualHost virtualHost = createVirtualHost(hostName);
+        VirtualHostImpl virtualHost = createVirtualHost(hostName);
         return new InternalTestProtocolSession(virtualHost, createBrokerMock());
     }
 

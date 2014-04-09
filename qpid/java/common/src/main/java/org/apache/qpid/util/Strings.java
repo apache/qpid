@@ -102,10 +102,38 @@ public final class Strings
 
     private static final Pattern VAR = Pattern.compile("(?:\\$\\{([^\\}]*)\\})|(?:\\$(\\$))");
 
+    public static Resolver chain(Resolver... resolvers)
+    {
+        Resolver resolver;
+        if(resolvers.length == 0)
+        {
+            resolver =  NULL_RESOLVER;
+        }
+        else
+        {
+            resolver = resolvers[resolvers.length - 1];
+            for (int i = resolvers.length - 2; i >= 0; i--)
+            {
+                resolver = new ChainedResolver(resolvers[i], resolver);
+            }
+        }
+        return resolver;
+    }
+
     public static interface Resolver
     {
         String resolve(String variable);
     }
+
+    private static final Resolver NULL_RESOLVER =
+            new Resolver()
+            {
+                @Override
+                public String resolve(final String variable)
+                {
+                    return null;
+                }
+            };
 
     public static class MapResolver implements Resolver
     {
@@ -161,18 +189,27 @@ public final class Strings
         }
     }
 
-    public static final Resolver SYSTEM_RESOLVER = new Resolver()
-    {
-        public String resolve(String variable)
+    public static final Resolver ENV_VARS_RESOLVER = new Resolver()
         {
-            String result = System.getProperty(variable);
-            if (result == null)
+            @Override
+            public String resolve(final String variable)
             {
-                result = System.getenv(variable);
+                return System.getenv(variable);
             }
-            return result;
+        };
+
+
+    public static final Resolver JAVA_SYS_PROPS_RESOLVER = new Resolver()
+    {
+        @Override
+        public String resolve(final String variable)
+        {
+            return System.getProperty(variable);
         }
     };
+
+
+    public static final Resolver SYSTEM_RESOLVER = chain(JAVA_SYS_PROPS_RESOLVER, ENV_VARS_RESOLVER);
 
     public static final String expand(String input)
     {
@@ -181,10 +218,14 @@ public final class Strings
 
     public static final String expand(String input, Resolver resolver)
     {
-        return expand(input, resolver, new Stack<String>());
+        return expand(input, resolver, new Stack<String>(),true);
+    }
+    public static final String expand(String input, boolean failOnUnresolved, Resolver... resolvers)
+    {
+        return expand(input, chain(resolvers), new Stack<String>(), failOnUnresolved);
     }
 
-    private static final String expand(String input, Resolver resolver, Stack<String> stack)
+    private static final String expand(String input, Resolver resolver, Stack<String> stack, boolean failOnUnresolved)
     {
         Matcher m = VAR.matcher(input);
         StringBuffer result = new StringBuffer();
@@ -205,14 +246,17 @@ public final class Strings
             }
             else
             {
-                m.appendReplacement(result, Matcher.quoteReplacement(resolve(var, resolver, stack)));
+                m.appendReplacement(result, Matcher.quoteReplacement(resolve(var, resolver, stack, failOnUnresolved)));
             }
         }
         m.appendTail(result);
         return result.toString();
     }
 
-    private static final String resolve(String var, Resolver resolver, Stack<String> stack)
+    private static final String resolve(String var,
+                                        Resolver resolver,
+                                        Stack<String> stack,
+                                        final boolean failOnUnresolved)
     {
         if (stack.contains(var))
         {
@@ -224,13 +268,20 @@ public final class Strings
         String result = resolver.resolve(var);
         if (result == null)
         {
-            throw new IllegalArgumentException("no such variable: " + var);
+            if(failOnUnresolved)
+            {
+                throw new IllegalArgumentException("no such variable: " + var);
+            }
+            else
+            {
+                return "${"+var+"}";
+            }
         }
 
         stack.push(var);
         try
         {
-            return expand(result, resolver, stack);
+            return expand(result, resolver, stack, failOnUnresolved);
         }
         finally
         {

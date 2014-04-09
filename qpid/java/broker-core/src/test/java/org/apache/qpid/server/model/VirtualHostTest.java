@@ -79,6 +79,7 @@ public class VirtualHostTest extends QpidTestCase
         VirtualHost host = createHost();
 
         host.setDesiredState(State.INITIALISING, State.ACTIVE);
+        host.open();
         assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
     }
 
@@ -87,7 +88,7 @@ public class VirtualHostTest extends QpidTestCase
         VirtualHost host = createHost();
 
         assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
-
+        host.open();
         host.setDesiredState(State.INITIALISING, State.ACTIVE);
         assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
 
@@ -108,6 +109,7 @@ public class VirtualHostTest extends QpidTestCase
     public void testCreateQueueChildHavingMessageGroupingAttributes()
     {
         VirtualHost host = createHost();
+        host.open();
         host.setDesiredState(State.INITIALISING, State.ACTIVE);
 
         String queueName = getTestName();

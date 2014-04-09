@@ -29,15 +29,15 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class DefaultDestination implements MessageDestination
 {
 
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
     private static final Logger _logger = Logger.getLogger(DefaultDestination.class);
 
-    public DefaultDestination(VirtualHost virtualHost)
+    public DefaultDestination(VirtualHostImpl virtualHost)
     {
         _virtualHost =  virtualHost;
     }

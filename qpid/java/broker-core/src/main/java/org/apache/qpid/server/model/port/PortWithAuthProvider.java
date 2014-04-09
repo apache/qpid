@@ -20,19 +20,30 @@
  */
 package org.apache.qpid.server.model.port;
 
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.Port;
-
-import java.util.Map;
-import java.util.UUID;
+import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.Transport;
 
 abstract public class PortWithAuthProvider<X extends PortWithAuthProvider<X>> extends AbstractPort<X>
 {
+    public static final String DEFAULT_AMQP_NEED_CLIENT_AUTH = "false";
+    public static final String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
+
+    @ManagedAttributeField
     private AuthenticationProvider _authenticationProvider;
+
+    @ManagedAttributeField
+    private boolean _needClientAuth;
+
+    @ManagedAttributeField
+    private boolean _wantClientAuth;
 
     public PortWithAuthProvider(final UUID id,
                                 final Broker<?> broker,
@@ -41,23 +52,48 @@ abstract public class PortWithAuthProvider<X extends PortWithAuthProvider<X>> ex
                                 final TaskExecutor taskExecutor)
     {
         super(id, broker, attributes, defaults, taskExecutor);
-        String authProvider = (String)getAttribute(Port.AUTHENTICATION_PROVIDER);
-        if (authProvider == null)
-        {
-            throw new IllegalConfigurationException("An authentication provider must be specified for port : " + getName());
-        }
-        _authenticationProvider = broker.findAuthenticationProviderByName(authProvider);
-
-        if(_authenticationProvider == null)
-        {
-            throw new IllegalConfigurationException("The authentication provider '" + authProvider + "' could not be found for port : " + getName());
-        }
     }
 
+    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )
+    public boolean getNeedClientAuth()
+    {
+        return _needClientAuth;
+    }
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_WANT_CLIENT_AUTH )
+    public boolean getWantClientAuth()
+    {
+        return _wantClientAuth;
+    }
+
+    @ManagedAttribute( automate = true, mandatory = true )
     public AuthenticationProvider getAuthenticationProvider()
     {
+        Broker<?> broker = getParent(Broker.class);
+        if(broker.isManagementMode())
+        {
+            return broker.getManagementModeAuthenticationProvider();
+        }
         return _authenticationProvider;
+    }
+
+    @Override
+    public void validate()
+    {
+        super.validate();
+        boolean useClientAuth = getNeedClientAuth() || getWantClientAuth();
+
+        if(useClientAuth && (getTrustStores() == null || getTrustStores().isEmpty()))
+        {
+            throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but has no trust stores configured.");
+        }
+
+        boolean useTLSTransport = getTransports().contains(Transport.SSL) || getTransports().contains(Transport.WSS);
+        if(useClientAuth && !useTLSTransport)
+        {
+            throw new IllegalConfigurationException(
+                    "Can't create port which requests SSL client certificates but doesn't use SSL transport.");
+        }
+
     }
 }

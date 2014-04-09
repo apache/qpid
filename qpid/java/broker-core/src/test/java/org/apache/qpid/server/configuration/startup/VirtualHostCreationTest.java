@@ -65,7 +65,7 @@ public class VirtualHostCreationTest extends TestCase
         when(entry.getAttributes()).thenReturn(attributes);
 
         VirtualHost host = new StandardVirtualHost(attributes,parent);
-
+        host.open();
         assertNotNull("Null is returned", host);
         assertEquals("Unexpected name", getName(), host.getName());
     }
@@ -99,6 +99,7 @@ public class VirtualHostCreationTest extends TestCase
             try
             {
                 VirtualHost host = new StandardVirtualHost(copy,parent);
+                host.open();
                 fail("Cannot create a virtual host without a mandatory attribute " + name);
             }
             catch(IllegalConfigurationException e)

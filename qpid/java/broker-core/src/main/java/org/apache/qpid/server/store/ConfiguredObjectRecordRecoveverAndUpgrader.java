@@ -24,14 +24,14 @@ import java.util.Map;
 
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.virtualhost.DefaultUpgraderProvider;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class ConfiguredObjectRecordRecoveverAndUpgrader implements ConfiguredObjectRecordHandler
 {
     private DurableConfigurationRecoverer _configRecoverer;
     private DurableConfigurationStore _store;
 
-    public ConfiguredObjectRecordRecoveverAndUpgrader(VirtualHost virtualHost, Map<String, DurableConfiguredObjectRecoverer> recoverers)
+    public ConfiguredObjectRecordRecoveverAndUpgrader(VirtualHostImpl virtualHost, Map<String, DurableConfiguredObjectRecoverer> recoverers)
     {
         DefaultUpgraderProvider upgraderProvider = new DefaultUpgraderProvider(virtualHost);
         _configRecoverer = new DurableConfigurationRecoverer(virtualHost.getName(), recoverers, upgraderProvider, virtualHost.getEventLogger());

@@ -24,13 +24,13 @@ import java.util.Map;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public interface ExchangeType<T extends ExchangeImpl<T>> extends Pluggable
 {
     public String getType();
 
-    public T newInstance(final VirtualHost virtualHost, Map<String, Object> attributes) throws UnknownExchangeException;
+    public T newInstance(final VirtualHostImpl virtualHost, Map<String, Object> attributes) throws UnknownExchangeException;
 
     public String getDefaultExchangeName();
 }

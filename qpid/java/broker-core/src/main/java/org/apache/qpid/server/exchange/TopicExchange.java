@@ -43,7 +43,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class TopicExchange extends AbstractExchange<TopicExchange>
 {
@@ -59,7 +59,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
 
     private final Map<BindingImpl, Map<String,Object>> _bindings = new HashMap<BindingImpl, Map<String,Object>>();
 
-    public TopicExchange(final VirtualHost vhost, final Map attributes) throws UnknownExchangeException
+    public TopicExchange(final VirtualHostImpl vhost, final Map attributes) throws UnknownExchangeException
     {
         super(vhost, attributes);
     }

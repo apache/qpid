@@ -24,7 +24,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.util.Map;
 
@@ -36,7 +36,7 @@ public class SortedQueue extends OutOfOrderQueue
     private final Object _sortedQueueLock = new Object();
     private final String _sortedPropertyName;
 
-    protected SortedQueue(VirtualHost virtualHost,
+    protected SortedQueue(VirtualHostImpl virtualHost,
                           Map<String, Object> attributes,
                           QueueEntryListFactory factory)
     {
@@ -45,7 +45,7 @@ public class SortedQueue extends OutOfOrderQueue
     }
 
 
-    protected SortedQueue(VirtualHost virtualHost,
+    protected SortedQueue(VirtualHostImpl virtualHost,
                           Map<String, Object> attributes)
     {
         this(virtualHost,

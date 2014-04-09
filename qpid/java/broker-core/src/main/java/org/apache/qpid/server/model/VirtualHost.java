@@ -113,10 +113,10 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     @ManagedAttribute
     int getHouseKeepingThreadCount();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     Map<String, Object> getMessageStoreSettings();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     Map<String, Object> getConfigurationStoreSettings();
 
     @ManagedStatistic

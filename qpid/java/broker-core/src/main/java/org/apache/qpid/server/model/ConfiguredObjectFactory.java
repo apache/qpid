@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.UnresolvedConfiguredObject;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class ConfiguredObjectFactory
 {

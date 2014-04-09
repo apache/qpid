@@ -75,31 +75,31 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "virtualhost.storeTransactionOpenTimeoutClose";
     String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "virtualhost.storeTransactionOpenTimeoutWarn";
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getBuildVersion();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getOperatingSystem();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getPlatform();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getProcessPid();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getProductVersion();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     Collection<String> getSupportedVirtualHostStoreTypes();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     Collection<String> getSupportedAuthenticationProviders();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     Collection<String> getSupportedPreferencesProviderTypes();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getDefaultVirtualHost();
 
     @ManagedAttribute
@@ -147,7 +147,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     @ManagedAttribute
     boolean getStatisticsReportingResetEnabled();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getModelVersion();
 
     @ManagedAttribute
@@ -233,4 +233,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     EventLogger getEventLogger();
 
     void setEventLogger(EventLogger eventLogger);
+
+    AuthenticationProvider<?> getManagementModeAuthenticationProvider();
 }

@@ -20,18 +20,19 @@
  */
 package org.apache.qpid.server.model;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.UUID;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.store.ConfiguredObjectDependency;
 import org.apache.qpid.server.store.ConfiguredObjectIdDependency;
 import org.apache.qpid.server.store.ConfiguredObjectNameDependency;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
-
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.UUID;
 
 public abstract class AbstractUnresolvedObject<C extends ConfiguredObject<C>> implements UnresolvedConfiguredObject<C>
 {
@@ -60,40 +61,73 @@ public abstract class AbstractUnresolvedObject<C extends ConfiguredObject<C>> im
             else if(Collection.class.isAssignableFrom(attributeType))
             {
                 Type returnType = attribute.getGetter().getGenericReturnType();
-                if (returnType instanceof ParameterizedType)
+                Class<? extends ConfiguredObject> attrClass = getMemberType(returnType);
+                if(attrClass != null)
                 {
-                    Type type = ((ParameterizedType) returnType).getActualTypeArguments()[0];
-                    if(ConfiguredObject.class.isAssignableFrom((Class)type))
+                    Object attrValue = _record.getAttributes().get(attribute.getName());
+                    if(attrValue != null)
                     {
-                        Class<? extends ConfiguredObject> attrClass = (Class<? extends ConfiguredObject>) type;
-                        Object attrValue = _record.getAttributes().get(attribute.getName());
-                        if(attrValue != null)
+                        if (attrValue instanceof Collection)
                         {
-                            if (attrValue instanceof Collection)
+                            for (Object val : (Collection) attrValue)
                             {
-                                for (Object val : (Collection) attrValue)
-                                {
-                                    addUnresolvedObject(attrClass, attribute.getName(), val);
-                                }
+                                addUnresolvedObject(attrClass, attribute.getName(), val);
                             }
-                            else if(attrValue instanceof Object[])
+                        }
+                        else if(attrValue instanceof Object[])
+                        {
+                            for (Object val : (Object[]) attrValue)
                             {
-                                for (Object val : (Object[]) attrValue)
-                                {
-                                    addUnresolvedObject(attrClass, attribute.getName(), val);
-                                }
+                                addUnresolvedObject(attrClass, attribute.getName(), val);
                             }
-                            else
-                            {
-                                addUnresolvedObject(attrClass, attribute.getName(), attrValue);
-                            }
+                        }
+                        else
+                        {
+                            addUnresolvedObject(attrClass, attribute.getName(), attrValue);
                         }
                     }
                 }
 
+
             }
         }
     }
+
+    private Class<? extends ConfiguredObject> getMemberType(Type returnType)
+    {
+        Class<? extends ConfiguredObject> categoryClass = null;
+
+        if (returnType instanceof ParameterizedType)
+        {
+            Type type = ((ParameterizedType) returnType).getActualTypeArguments()[0];
+            if (type instanceof Class && ConfiguredObject.class.isAssignableFrom((Class)type))
+            {
+                categoryClass = (Class<? extends ConfiguredObject>) type;
+            }
+            else if (type instanceof ParameterizedType)
+            {
+                Type rawType = ((ParameterizedType) type).getRawType();
+                if (rawType instanceof Class && ConfiguredObject.class.isAssignableFrom((Class)rawType))
+                {
+                    categoryClass = (Class<? extends ConfiguredObject>) rawType;
+                }
+            }
+            else if (type instanceof TypeVariable)
+            {
+                Type[] bounds = ((TypeVariable) type).getBounds();
+                for(Type boundType : bounds)
+                {
+                    categoryClass = getMemberType(boundType);
+                    if(categoryClass != null)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        return categoryClass;
+    }
+
 
     public ConfiguredObjectRecord getRecord()
     {
@@ -126,7 +160,7 @@ public abstract class AbstractUnresolvedObject<C extends ConfiguredObject<C>> im
     {
         if(attrValue instanceof UUID)
         {
-            _unresolvedObjects.add(new IdDependency(clazz, attributeName,(UUID)attrValue));
+            _unresolvedObjects.add(new IdDependency(clazz, attributeName, (UUID) attrValue));
         }
         else if(attrValue instanceof String)
         {
@@ -152,6 +186,15 @@ public abstract class AbstractUnresolvedObject<C extends ConfiguredObject<C>> im
     public Collection<ConfiguredObjectDependency<?>> getUnresolvedDependencies()
     {
         return _unresolvedObjects;
+    }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + "{" +
+               "class=" + _clazz.getSimpleName() +
+               ", unresolvedObjects=" + _unresolvedObjects +
+               '}';
     }
 
     private abstract class Dependency<X extends ConfiguredObject<X>> implements ConfiguredObjectDependency<X>

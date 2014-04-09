@@ -88,7 +88,7 @@ import org.apache.qpid.server.txn.LocalTransaction.ActivityTimeAccessor;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.TransportException;
 
 import javax.security.auth.Subject;
@@ -303,7 +303,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     public void setPublishFrame(MessagePublishInfo info, final MessageDestination e)
     {
         String routingKey = info.getRoutingKey() == null ? null : info.getRoutingKey().asString();
-        VirtualHost virtualHost = getVirtualHost();
+        VirtualHostImpl virtualHost = getVirtualHost();
         SecurityManager securityManager = virtualHost.getSecurityManager();
 
         securityManager.authorisePublish(info.isImmediate(), routingKey, e.getName(), virtualHost.getName());
@@ -1534,7 +1534,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         return _blocking.get();
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return getProtocolSession().getVirtualHost();
     }

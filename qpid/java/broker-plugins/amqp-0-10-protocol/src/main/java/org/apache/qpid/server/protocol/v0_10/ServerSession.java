@@ -49,7 +49,6 @@ import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.ConsumerListener;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -84,7 +83,7 @@ import org.apache.qpid.server.txn.TimeoutDtxException;
 import org.apache.qpid.server.txn.UnknownDtxBranchException;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.Deletable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -686,7 +685,7 @@ public class ServerSession extends Session
         return getVirtualHost().getMessageStore();
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return getConnection().getVirtualHost();
     }

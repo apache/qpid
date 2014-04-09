@@ -41,9 +41,9 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
     private static final Logger _logger = Logger.getLogger(BindingRecoverer.class);
 
     private final ExchangeRegistry _exchangeRegistry;
-    private final VirtualHost _virtualHost;
+    private final VirtualHostImpl _virtualHost;
 
-    public BindingRecoverer(final VirtualHost virtualHost,
+    public BindingRecoverer(final VirtualHostImpl virtualHost,
                             final ExchangeRegistry exchangeRegistry)
     {
         _exchangeRegistry = exchangeRegistry;

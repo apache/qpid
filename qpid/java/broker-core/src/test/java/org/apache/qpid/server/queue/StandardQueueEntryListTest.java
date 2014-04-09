@@ -25,7 +25,7 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +52,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
-        final VirtualHost virtualHost = mock(VirtualHost.class);
+        final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         _testQueue = new StandardQueue(virtualHost, queueAttributes);
@@ -98,7 +98,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             Map<String,Object> queueAttributes = new HashMap<String, Object>();
             queueAttributes.put(Queue.ID, UUID.randomUUID());
             queueAttributes.put(Queue.NAME, getName());
-            final VirtualHost virtualHost = mock(VirtualHost.class);
+            final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
             when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
             when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
             StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);

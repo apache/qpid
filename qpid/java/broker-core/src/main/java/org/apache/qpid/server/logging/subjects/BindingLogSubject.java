@@ -25,7 +25,7 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.BINDING_F
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class BindingLogSubject extends AbstractLogSubject
 {
@@ -42,7 +42,7 @@ public class BindingLogSubject extends AbstractLogSubject
     public BindingLogSubject(String routingKey, ExchangeImpl exchange,
                              AMQQueue queue)
     {
-        VirtualHost virtualHost = queue.getVirtualHost();
+        VirtualHostImpl virtualHost = queue.getVirtualHost();
         ExchangeType exchangeType = exchange.getExchangeType();
         setLogStringWithFormat(BINDING_FORMAT,
                                virtualHost.getName(),

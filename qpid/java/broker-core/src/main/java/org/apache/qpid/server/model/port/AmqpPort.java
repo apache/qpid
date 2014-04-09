@@ -32,6 +32,8 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
@@ -48,12 +50,20 @@ import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 @ManagedObject( category = false, type = "AMQP")
 public class AmqpPort extends PortWithAuthProvider<AmqpPort>
 {
-    public static final int DEFAULT_AMQP_SEND_BUFFER_SIZE = 262144;
-    public static final int DEFAULT_AMQP_RECEIVE_BUFFER_SIZE = 262144;
-    public static final boolean DEFAULT_AMQP_NEED_CLIENT_AUTH = false;
-    public static final boolean DEFAULT_AMQP_WANT_CLIENT_AUTH = false;
-    public static final boolean DEFAULT_AMQP_TCP_NO_DELAY = true;
+    public static final String DEFAULT_AMQP_SEND_BUFFER_SIZE = "262144";
+    public static final String DEFAULT_AMQP_RECEIVE_BUFFER_SIZE = "262144";
+
+    public static final String DEFAULT_AMQP_TCP_NO_DELAY = "true";
     public static final String DEFAULT_AMQP_BINDING = "*";
+
+    @ManagedAttributeField
+    private boolean _tcpNoDelay;
+
+    @ManagedAttributeField
+    private int _sendBufferSize;
+
+    @ManagedAttributeField
+    private int _receiveBufferSize;
 
     private final Broker<?> _broker;
     private AcceptingTransport _transport;
@@ -74,15 +84,29 @@ public class AmqpPort extends PortWithAuthProvider<AmqpPort>
         defaults.put(BINDING_ADDRESS, DEFAULT_AMQP_BINDING);
         defaults.put(NAME, attributes.containsKey(BINDING_ADDRESS) ? attributes.get(BINDING_ADDRESS) : DEFAULT_AMQP_BINDING + ":" + attributes.get(PORT));
         defaults.put(PROTOCOLS, getDefaultProtocols());
-        defaults.put(TCP_NO_DELAY, DEFAULT_AMQP_TCP_NO_DELAY);
-        defaults.put(WANT_CLIENT_AUTH, DEFAULT_AMQP_WANT_CLIENT_AUTH);
-        defaults.put(NEED_CLIENT_AUTH, DEFAULT_AMQP_NEED_CLIENT_AUTH);
-        defaults.put(RECEIVE_BUFFER_SIZE, DEFAULT_AMQP_RECEIVE_BUFFER_SIZE);
-        defaults.put(SEND_BUFFER_SIZE, DEFAULT_AMQP_SEND_BUFFER_SIZE);
+
 
         return defaults;
     }
 
+
+    @ManagedAttribute( automate = true , defaultValue = DEFAULT_AMQP_TCP_NO_DELAY )
+    public boolean isTcpNoDelay()
+    {
+        return _tcpNoDelay;
+    }
+
+    @ManagedAttribute( automate = true , defaultValue = DEFAULT_AMQP_SEND_BUFFER_SIZE )
+    public int getSendBufferSize()
+    {
+        return _sendBufferSize;
+    }
+
+    @ManagedAttribute( automate = true , defaultValue = DEFAULT_AMQP_RECEIVE_BUFFER_SIZE )
+    public int getReceiveBufferSize()
+    {
+        return _receiveBufferSize;
+    }
 
     private static Set<Protocol> getDefaultProtocols()
     {

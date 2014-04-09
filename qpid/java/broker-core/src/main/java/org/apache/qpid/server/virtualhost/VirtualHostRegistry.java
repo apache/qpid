@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class VirtualHostRegistry implements Closeable
 {
-    private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String, VirtualHost>();
+    private final Map<String, VirtualHostImpl> _registry = new ConcurrentHashMap<String, VirtualHostImpl>();
     private String _defaultVirtualHostName;
     private final EventLogger _eventLogger;
 
@@ -41,7 +41,7 @@ public class VirtualHostRegistry implements Closeable
         _eventLogger = eventLogger;
     }
 
-    public synchronized void registerVirtualHost(VirtualHost host)
+    public synchronized void registerVirtualHost(VirtualHostImpl host)
     {
         if(_registry.containsKey(host.getName()))
         {
@@ -50,12 +50,12 @@ public class VirtualHostRegistry implements Closeable
         _registry.put(host.getName(),host);
     }
 
-    public synchronized void unregisterVirtualHost(VirtualHost host)
+    public synchronized void unregisterVirtualHost(VirtualHostImpl host)
     {
         _registry.remove(host.getName());
     }
 
-    public VirtualHost getVirtualHost(String name)
+    public VirtualHostImpl getVirtualHost(String name)
     {
         if(name == null || name.trim().length() == 0 || "/".equals(name.trim()))
         {
@@ -65,7 +65,7 @@ public class VirtualHostRegistry implements Closeable
         return _registry.get(name);
     }
 
-    public VirtualHost getDefaultVirtualHost()
+    public VirtualHostImpl getDefaultVirtualHost()
     {
         return getVirtualHost(getDefaultVirtualHostName());
     }
@@ -81,14 +81,14 @@ public class VirtualHostRegistry implements Closeable
     }
 
 
-    public Collection<VirtualHost> getVirtualHosts()
+    public Collection<VirtualHostImpl> getVirtualHosts()
     {
-        return new ArrayList<VirtualHost>(_registry.values());
+        return new ArrayList<VirtualHostImpl>(_registry.values());
     }
 
     public void close()
     {
-        for (VirtualHost virtualHost : getVirtualHosts())
+        for (VirtualHostImpl virtualHost : getVirtualHosts())
         {
             virtualHost.close();
         }

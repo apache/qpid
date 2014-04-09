@@ -18,15 +18,15 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.test.utils.QpidTestCase;
+import static org.mockito.Mockito.mock;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 public class JMXManagementFactoryTest extends QpidTestCase
 {
@@ -41,7 +41,7 @@ public class JMXManagementFactoryTest extends QpidTestCase
         _attributes.put(ConfiguredObject.TYPE, JMXManagement.PLUGIN_TYPE);
 
         JMXManagement jmxManagement = _jmxManagementFactory.createInstance( _attributes, _broker);
-
+        jmxManagement.open();
         assertNotNull(jmxManagement);
         assertEquals("Unexpected plugin type", JMXManagement.PLUGIN_TYPE, jmxManagement.getType());
         assertEquals("Unexpected default mbean platform", JMXManagement.DEFAULT_USE_PLATFORM_MBEAN_SERVER, jmxManagement.getAttribute(JMXManagement.USE_PLATFORM_MBEAN_SERVER));

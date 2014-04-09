@@ -35,7 +35,7 @@ import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -43,7 +43,7 @@ import java.util.*;
 public class TxnCoordinatorLink_1_0 implements ReceivingLinkListener, Link_1_0
 {
     private static final Logger _logger = Logger.getLogger(TxnCoordinatorLink_1_0.class);
-    private VirtualHost _vhost;
+    private VirtualHostImpl _vhost;
     private ReceivingLinkEndpoint _endpoint;
 
     private ArrayList<Transfer> _incompleteMessage;
@@ -52,7 +52,7 @@ public class TxnCoordinatorLink_1_0 implements ReceivingLinkListener, Link_1_0
     private Session_1_0 _session;
 
 
-    public TxnCoordinatorLink_1_0(VirtualHost vhost,
+    public TxnCoordinatorLink_1_0(VirtualHostImpl vhost,
                                   Session_1_0 session_1_0, ReceivingLinkEndpoint endpoint,
                                   LinkedHashMap<Integer, ServerTransaction> openTransactions)
     {

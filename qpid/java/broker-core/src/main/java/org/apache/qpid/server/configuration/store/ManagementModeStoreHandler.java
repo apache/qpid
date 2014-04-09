@@ -38,6 +38,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -330,7 +331,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
         attributes.put(Port.NAME, MANAGEMENT_MODE_PORT_PREFIX + protocol.name());
         if (protocol != Protocol.RMI)
         {
-            attributes.put(Port.AUTHENTICATION_PROVIDER, MANAGEMENT_MODE_AUTH_PROVIDER);
+            attributes.put(Port.AUTHENTICATION_PROVIDER, BrokerAdapter.MANAGEMENT_MODE_AUTHENTICATION);
         }
         ConfiguredObjectRecord portEntry = new ConfiguredObjectRecordImpl(UUID.randomUUID(), PORT_TYPE, attributes,
                 Collections.singletonMap(parent.getType(),parent));

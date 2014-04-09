@@ -48,7 +48,7 @@ public class HouseKeepingTaskTest extends QpidTestCase
     {
         private String _threadNameDuringExecution;
 
-        private ThreadNameRememberingTask(VirtualHost vhost)
+        private ThreadNameRememberingTask(VirtualHostImpl vhost)
         {
             super(vhost);
         }

@@ -20,7 +20,6 @@ package org.apache.qpid.server.security.acl;
 
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.server.security.access.ObjectType;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 

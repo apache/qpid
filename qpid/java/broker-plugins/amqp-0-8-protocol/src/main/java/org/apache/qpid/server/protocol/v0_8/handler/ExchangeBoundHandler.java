@@ -31,7 +31,7 @@ import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 /**
  * @author Apache Software Foundation
@@ -68,7 +68,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
     public void methodReceived(AMQStateManager stateManager, ExchangeBoundBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHost virtualHost = session.getVirtualHost();
+        VirtualHostImpl virtualHost = session.getVirtualHost();
         MethodRegistry methodRegistry = session.getMethodRegistry();
 
         final AMQChannel channel = session.getChannel(channelId);

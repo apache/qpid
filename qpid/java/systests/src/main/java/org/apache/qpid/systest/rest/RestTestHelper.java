@@ -179,7 +179,7 @@ public class RestTestHelper
             JsonParseException, JsonMappingException
     {
         byte[] data = readConnectionInputStream(connection);
-
+String dataAsString = new String(data);
         ObjectMapper mapper = new ObjectMapper();
 
         TypeReference<List<LinkedHashMap<String, Object>>> typeReference = new TypeReference<List<LinkedHashMap<String, Object>>>()

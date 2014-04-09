@@ -33,7 +33,7 @@ import org.apache.qpid.server.protocol.v0_10.MessageTransferMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageDeliveryPriority;
@@ -56,7 +56,7 @@ public class MessageConverter_0_8_to_0_10  implements MessageConverter<AMQMessag
     }
 
     @Override
-    public MessageTransferMessage convert(AMQMessage message_0_8, VirtualHost vhost)
+    public MessageTransferMessage convert(AMQMessage message_0_8, VirtualHostImpl vhost)
     {
         return new MessageTransferMessage(convertToStoredMessage(message_0_8), null);
     }

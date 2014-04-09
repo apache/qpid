@@ -37,7 +37,7 @@ import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageDeliveryMode;
@@ -49,7 +49,7 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
     private static final int BASIC_CLASS_ID = 60;
 
     public static BasicContentHeaderProperties convertContentHeaderProperties(MessageTransferMessage messageTransferMessage,
-                                                                              VirtualHost vhost)
+                                                                              VirtualHostImpl vhost)
     {
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
 
@@ -166,13 +166,13 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
     }
 
     @Override
-    public AMQMessage convert(MessageTransferMessage message, VirtualHost vhost)
+    public AMQMessage convert(MessageTransferMessage message, VirtualHostImpl vhost)
     {
         return new AMQMessage(convertToStoredMessage(message, vhost));
     }
 
     private StoredMessage<MessageMetaData> convertToStoredMessage(final MessageTransferMessage message,
-                                                                  VirtualHost vhost)
+                                                                  VirtualHostImpl vhost)
     {
         final MessageMetaData metaData = convertMetaData(message, vhost);
         return new StoredMessage<org.apache.qpid.server.protocol.v0_8.MessageMetaData>()
@@ -221,14 +221,14 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
         };
     }
 
-    private MessageMetaData convertMetaData(MessageTransferMessage message, VirtualHost vhost)
+    private MessageMetaData convertMetaData(MessageTransferMessage message, VirtualHostImpl vhost)
     {
         return new MessageMetaData(convertPublishBody(message),
                 convertContentHeaderBody(message, vhost),
                 message.getArrivalTime());
     }
 
-    private ContentHeaderBody convertContentHeaderBody(MessageTransferMessage message, VirtualHost vhost)
+    private ContentHeaderBody convertContentHeaderBody(MessageTransferMessage message, VirtualHostImpl vhost)
     {
         BasicContentHeaderProperties props = convertContentHeaderProperties(message, vhost);
         ContentHeaderBody chb = new ContentHeaderBody(props, BASIC_CLASS_ID);

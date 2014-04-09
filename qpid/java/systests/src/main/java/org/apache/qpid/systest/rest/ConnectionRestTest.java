@@ -181,6 +181,7 @@ public class ConnectionRestTest extends QpidRestTestCase
                                         ConfiguredObject.LAST_UPDATED_BY,
                                         ConfiguredObject.LAST_UPDATED_TIME,
                                         ConfiguredObject.DESCRIPTION,
+                                        ConfiguredObject.CONTEXT,
                                         Session.STATE,
                                         Session.DURABLE,
                                         Session.LIFETIME_POLICY);

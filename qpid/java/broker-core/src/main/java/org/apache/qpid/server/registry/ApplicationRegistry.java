@@ -80,6 +80,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         _broker = upgrader.upgrade(_store);
 
         _broker.setEventLogger(startupLogger);
+        _broker.open();
 
         // starting the broker
         _broker.setDesiredState(State.INITIALISING, State.ACTIVE);

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.any;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,9 +52,9 @@ public class PortFactoryTest extends QpidTestCase
     private UUID _portId = UUID.randomUUID();
     private int _portNumber = 123;
     private Set<String> _tcpStringSet = Collections.singleton(Transport.TCP.name());
-    private Set<Transport> _tcpTransportSet = Collections.singleton(Transport.TCP);
+    private Set<Transport> _tcpTransports = Collections.singleton(Transport.TCP);
     private Set<String> _sslStringSet = Collections.singleton(Transport.SSL.name());
-    private Set<Transport> _sslTransportSet = Collections.singleton(Transport.SSL);
+    private Set<Transport> _sslTransports = Collections.singleton(Transport.SSL);
 
     private Map<String, Object> _attributes = new HashMap<String, Object>();
 
@@ -69,7 +69,8 @@ public class PortFactoryTest extends QpidTestCase
     @Override
     protected void setUp() throws Exception
     {
-        when(_broker.findAuthenticationProviderByName(_authProviderName)).thenReturn(_authProvider);
+        when(_authProvider.getName()).thenReturn(_authProviderName);
+        when(_broker.getChildren(eq(AuthenticationProvider.class))).thenReturn(Collections.singleton(_authProvider));
 
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);
@@ -178,7 +179,8 @@ public class PortFactoryTest extends QpidTestCase
     public void testCreateAmqpPortUsingSslSucceedsWithKeyStore()
     {
         String keyStoreName = "myKeyStore";
-        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
+        when(_keyStore.getName()).thenReturn(keyStoreName);
+        when(_broker.getChildren(eq(KeyStore.class))).thenReturn(Collections.singletonList(_keyStore));
 
         createAmqpPortTestImpl(true, false, false, keyStoreName, null);
     }
@@ -186,10 +188,9 @@ public class PortFactoryTest extends QpidTestCase
     public void testCreateAmqpPortNeedingClientAuthFailsWithoutTrustStore()
     {
         String keyStoreName = "myKeyStore";
-        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
-
-        when(_broker.findTrustStoreByName(any(String.class))).thenReturn(null);
-
+        when(_keyStore.getName()).thenReturn(keyStoreName);
+        when(_broker.getChildren(eq(KeyStore.class))).thenReturn(Collections.singletonList(_keyStore));
+        when(_broker.getChildren(eq(TrustStore.class))).thenReturn(Collections.emptyList());
         try
         {
             createAmqpPortTestImpl(true, true, false, keyStoreName, null);
@@ -204,10 +205,12 @@ public class PortFactoryTest extends QpidTestCase
     public void testCreateAmqpPortNeedingClientAuthSucceedsWithTrustStore()
     {
         String keyStoreName = "myKeyStore";
-        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
+        when(_keyStore.getName()).thenReturn(keyStoreName);
+        when(_broker.getChildren(eq(KeyStore.class))).thenReturn(Collections.singletonList(_keyStore));
 
         String trustStoreName = "myTrustStore";
-        when(_broker.findTrustStoreByName(trustStoreName)).thenReturn(_trustStore);
+        when(_trustStore.getName()).thenReturn(trustStoreName);
+        when(_broker.getChildren(eq(TrustStore.class))).thenReturn(Collections.singletonList(_trustStore));
 
         createAmqpPortTestImpl(true, true, false, keyStoreName, new String[]{trustStoreName});
     }
@@ -215,7 +218,8 @@ public class PortFactoryTest extends QpidTestCase
     public void testCreateAmqpPortWantingClientAuthFailsWithoutTrustStore()
     {
         String keyStoreName = "myKeyStore";
-        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
+        when(_keyStore.getName()).thenReturn(keyStoreName);
+        when(_broker.getChildren(eq(KeyStore.class))).thenReturn(Collections.singletonList(_keyStore));
 
         try
         {
@@ -231,10 +235,12 @@ public class PortFactoryTest extends QpidTestCase
     public void testCreateAmqpPortWantingClientAuthSucceedsWithTrustStore()
     {
         String keyStoreName = "myKeyStore";
-        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
+        when(_keyStore.getName()).thenReturn(keyStoreName);
+        when(_broker.getChildren(eq(KeyStore.class))).thenReturn(Collections.singletonList(_keyStore));
 
         String trustStoreName = "myTrustStore";
-        when(_broker.findTrustStoreByName(trustStoreName)).thenReturn(_trustStore);
+        when(_trustStore.getName()).thenReturn(trustStoreName);
+        when(_broker.getChildren(eq(TrustStore.class))).thenReturn(Collections.singletonList(_trustStore));
 
         createAmqpPortTestImpl(true, false, true, keyStoreName, new String[]{trustStoreName});
     }
@@ -279,11 +285,11 @@ public class PortFactoryTest extends QpidTestCase
         assertEquals(_portNumber, port.getPort());
         if(useSslTransport)
         {
-            assertEquals(_sslTransportSet, port.getTransports());
+            assertEquals(_sslTransports, port.getTransports());
         }
         else
         {
-            assertEquals(_tcpTransportSet, port.getTransports());
+            assertEquals(_tcpTransports, port.getTransports());
         }
         assertEquals(amqp010ProtocolSet, port.getProtocols());
         assertEquals("Unexpected send buffer size", 2, port.getAttribute(Port.SEND_BUFFER_SIZE));
@@ -296,8 +302,8 @@ public class PortFactoryTest extends QpidTestCase
 
     public void testCreateNonAmqpPort()
     {
-        Set<Protocol> nonAmqpProtocolSet = Collections.singleton(Protocol.JMX_RMI);
-        Set<String> nonAmqpStringSet = Collections.singleton(Protocol.JMX_RMI.name());
+        Set<Protocol> nonAmqpProtocolSet = Collections.singleton(Protocol.RMI);
+        Set<String> nonAmqpStringSet = Collections.singleton(Protocol.RMI.name());
         _attributes = new HashMap<String, Object>();
         _attributes.put(Port.PROTOCOLS, nonAmqpStringSet);
         _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
@@ -310,7 +316,7 @@ public class PortFactoryTest extends QpidTestCase
         assertFalse("Port should be a PortAdapter, not its AMQP-specific subclass", port instanceof AmqpPort);
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
-        assertEquals(_tcpTransportSet, port.getTransports());
+        assertEquals(_tcpTransports, port.getTransports());
         assertEquals(nonAmqpProtocolSet, port.getProtocols());
         assertNull("Unexpected send buffer size", port.getAttribute(Port.SEND_BUFFER_SIZE));
         assertNull("Unexpected receive buffer size", port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
@@ -322,8 +328,8 @@ public class PortFactoryTest extends QpidTestCase
 
     public void testCreateNonAmqpPortWithPartiallySetAttributes()
     {
-        Set<Protocol> nonAmqpProtocolSet = Collections.singleton(Protocol.JMX_RMI);
-        Set<String> nonAmqpStringSet = Collections.singleton(Protocol.JMX_RMI.name());
+        Set<Protocol> nonAmqpProtocolSet = Collections.singleton(Protocol.RMI);
+        Set<String> nonAmqpStringSet = Collections.singleton(Protocol.RMI.name());
         _attributes = new HashMap<String, Object>();
         _attributes.put(Port.PROTOCOLS, nonAmqpStringSet);
         _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);

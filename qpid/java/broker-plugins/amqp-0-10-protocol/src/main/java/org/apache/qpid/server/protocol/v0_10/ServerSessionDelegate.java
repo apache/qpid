@@ -195,7 +195,7 @@ public class ServerSessionDelegate extends SessionDelegate
             else
             {
                 String queueName = method.getQueue();
-                VirtualHost vhost = getVirtualHost(session);
+                VirtualHostImpl vhost = getVirtualHost(session);
 
                 final MessageSource queue = vhost.getMessageSource(queueName);
 
@@ -288,7 +288,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
 
-        final VirtualHost virtualHost = getVirtualHost(ssn);
+        final VirtualHostImpl virtualHost = getVirtualHost(ssn);
         try
         {
             virtualHost.getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName(), virtualHost.getName());
@@ -673,7 +673,7 @@ public class ServerSessionDelegate extends SessionDelegate
     public void exchangeDeclare(Session session, ExchangeDeclare method)
     {
         String exchangeName = method.getExchange();
-        VirtualHost virtualHost = getVirtualHost(session);
+        VirtualHostImpl virtualHost = getVirtualHost(session);
 
         //we must check for any unsupported arguments present and throw not-implemented
         if(method.hasArguments())
@@ -803,7 +803,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
     private MessageDestination getDestinationForMessage(Session ssn, MessageTransfer xfr)
     {
-        VirtualHost virtualHost = getVirtualHost(ssn);
+        VirtualHostImpl virtualHost = getVirtualHost(ssn);
 
         MessageDestination destination;
         if(xfr.hasDestination())
@@ -821,10 +821,10 @@ public class ServerSessionDelegate extends SessionDelegate
         return destination;
     }
 
-    private VirtualHost getVirtualHost(Session session)
+    private VirtualHostImpl getVirtualHost(Session session)
     {
         ServerConnection conn = getServerConnection(session);
-        VirtualHost vhost = conn.getVirtualHost();
+        VirtualHostImpl vhost = conn.getVirtualHost();
         return vhost;
     }
 
@@ -837,7 +837,7 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void exchangeDelete(Session session, ExchangeDelete method)
     {
-        VirtualHost virtualHost = getVirtualHost(session);
+        VirtualHostImpl virtualHost = getVirtualHost(session);
 
         try
         {
@@ -932,7 +932,7 @@ public class ServerSessionDelegate extends SessionDelegate
     public void exchangeBind(Session session, ExchangeBind method)
     {
 
-        VirtualHost virtualHost = getVirtualHost(session);
+        VirtualHostImpl virtualHost = getVirtualHost(session);
 
         if (!method.hasQueue())
         {
@@ -997,7 +997,7 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void exchangeUnbind(Session session, ExchangeUnbind method)
     {
-        VirtualHost virtualHost = getVirtualHost(session);
+        VirtualHostImpl virtualHost = getVirtualHost(session);
 
         if (!method.hasQueue())
         {
@@ -1045,7 +1045,7 @@ public class ServerSessionDelegate extends SessionDelegate
     {
 
         ExchangeBoundResult result = new ExchangeBoundResult();
-        VirtualHost virtualHost = getVirtualHost(session);
+        VirtualHostImpl virtualHost = getVirtualHost(session);
         ExchangeImpl exchange;
         AMQQueue queue;
         boolean isDefaultExchange;
@@ -1229,7 +1229,7 @@ public class ServerSessionDelegate extends SessionDelegate
     public void queueDeclare(Session session, final QueueDeclare method)
     {
 
-        final VirtualHost virtualHost = getVirtualHost(session);
+        final VirtualHostImpl virtualHost = getVirtualHost(session);
         DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
         String queueName = method.getQueue();
@@ -1386,7 +1386,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 else
                 {
-                    VirtualHost virtualHost = getVirtualHost(session);
+                    VirtualHostImpl virtualHost = getVirtualHost(session);
 
                     try
                     {

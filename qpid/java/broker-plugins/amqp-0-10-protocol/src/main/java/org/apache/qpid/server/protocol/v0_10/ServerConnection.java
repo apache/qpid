@@ -46,7 +46,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionCloseCode;
 import org.apache.qpid.transport.ExecutionErrorCode;
@@ -72,7 +72,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     private final long _connectionId;
     private final Object _reference = new Object();
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
     private Port _port;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
@@ -165,12 +165,12 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         super.setConnectionDelegate(delegate);
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _virtualHost;
     }
 
-    public void setVirtualHost(VirtualHost virtualHost)
+    public void setVirtualHost(VirtualHostImpl virtualHost)
     {
         _virtualHost = virtualHost;
 

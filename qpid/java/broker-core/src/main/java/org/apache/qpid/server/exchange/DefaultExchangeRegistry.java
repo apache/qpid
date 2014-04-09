@@ -20,7 +20,17 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -30,16 +40,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {
@@ -51,13 +52,13 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     private MessageDestination _defaultExchange;
 
-    private final VirtualHost _host;
+    private final VirtualHostImpl _host;
     private final QueueRegistry _queueRegistry;
 
     private final Collection<RegistryChangeListener> _listeners =
             Collections.synchronizedCollection(new ArrayList<RegistryChangeListener>());
 
-    public DefaultExchangeRegistry(VirtualHost host, QueueRegistry queueRegistry)
+    public DefaultExchangeRegistry(VirtualHostImpl host, QueueRegistry queueRegistry)
     {
         _host = host;
         _queueRegistry = queueRegistry;
@@ -97,6 +98,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
                 attributes.put(org.apache.qpid.server.model.Exchange.TYPE, type);
                 attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
                 ExchangeImpl<?> exchange = f.createExchange(attributes);
+                exchange.open();
                 registerExchange(exchange);
                 if(exchange.isDurable())
                 {

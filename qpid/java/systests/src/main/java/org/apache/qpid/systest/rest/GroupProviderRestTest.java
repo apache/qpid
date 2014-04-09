@@ -328,7 +328,8 @@ public class GroupProviderRestTest extends QpidRestTestCase
                 ConfiguredObject.CREATED_TIME,
                 ConfiguredObject.LAST_UPDATED_BY,
                 ConfiguredObject.LAST_UPDATED_TIME,
-                ConfiguredObject.DESCRIPTION);
+                ConfiguredObject.DESCRIPTION,
+                ConfiguredObject.CONTEXT);
         assertEquals("Unexpected value of provider attribute " + GroupProvider.STATE, State.ACTIVE.name(),
                 provider.get(GroupProvider.STATE));
         assertEquals("Unexpected value of provider attribute " + GroupProvider.LIFETIME_POLICY,

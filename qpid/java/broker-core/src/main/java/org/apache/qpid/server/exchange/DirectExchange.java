@@ -36,7 +36,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -130,7 +130,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
 
     public static final ExchangeType<DirectExchange> TYPE = new DirectExchangeType();
 
-    public DirectExchange(final VirtualHost vhost,
+    public DirectExchange(final VirtualHostImpl vhost,
                           final Map<String, Object> attributes) throws UnknownExchangeException
     {
         super(vhost, attributes);

@@ -27,7 +27,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,10 +45,10 @@ public class DefaultExchangeFactory implements ExchangeFactory
                                                  ExchangeDefaults.HEADERS_EXCHANGE_CLASS,
                                                  ExchangeDefaults.TOPIC_EXCHANGE_CLASS};
 
-    private final VirtualHost _host;
+    private final VirtualHostImpl _host;
     private Map<String, ExchangeType<? extends ExchangeImpl>> _exchangeClassMap = new HashMap<String, ExchangeType<? extends ExchangeImpl>>();
 
-    public DefaultExchangeFactory(VirtualHost host)
+    public DefaultExchangeFactory(VirtualHostImpl host)
     {
         _host = host;
 

@@ -59,7 +59,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
     private static final String MOCK_MECH_NAME = "MOCK-MECH-NAME";
     private static final UsernamePrincipal PRINCIPAL = new UsernamePrincipal("guest");
 
-    private AuthenticationManager _manager = null; // Class under test
+    private PrincipalDatabaseAuthenticationManager _manager = null; // Class under test
     private PrincipalDatabase _principalDatabase;
     private String _passwordFileLocation;
 
@@ -115,6 +115,14 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
             }
 
         };
+        if(recovering)
+        {
+            _manager.open();
+        }
+        else
+        {
+            _manager.create();
+        }
     }
 
     public void testInitialiseWhenPasswordFileNotFound() throws Exception
@@ -123,6 +131,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
         setupManager(true);
         try
         {
+
             _manager.initialise();
             fail("Initialisiation should fail when users file does not exist");
         }

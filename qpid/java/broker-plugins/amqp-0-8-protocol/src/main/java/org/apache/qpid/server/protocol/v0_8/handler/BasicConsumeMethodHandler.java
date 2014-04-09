@@ -35,7 +35,7 @@ import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.security.AccessControlException;
 
@@ -59,7 +59,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
 
         AMQChannel channel = protocolConnection.getChannel(channelId);
-        VirtualHost vHost = protocolConnection.getVirtualHost();
+        VirtualHostImpl vHost = protocolConnection.getVirtualHost();
 
         if (channel == null)
         {

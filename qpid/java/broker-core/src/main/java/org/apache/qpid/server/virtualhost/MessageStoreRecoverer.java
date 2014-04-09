@@ -55,7 +55,7 @@ public class MessageStoreRecoverer
 {
     private static final Logger _logger = Logger.getLogger(MessageStoreRecoverer.class);
 
-    private final VirtualHost _virtualHost;
+    private final VirtualHostImpl _virtualHost;
 
     private final Map<String, Integer> _queueRecoveries = new TreeMap<String, Integer>();
     private final Map<Long, ServerMessage<?>> _recoveredMessages = new HashMap<Long, ServerMessage<?>>();
@@ -66,7 +66,7 @@ public class MessageStoreRecoverer
     private final MessageStore _store;
 
 
-    public MessageStoreRecoverer(VirtualHost virtualHost, MessageStoreLogSubject logSubject)
+    public MessageStoreRecoverer(VirtualHostImpl virtualHost, MessageStoreLogSubject logSubject)
     {
         super();
         _virtualHost = virtualHost;

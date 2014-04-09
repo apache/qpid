@@ -78,7 +78,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     private ExchangeImpl<?> _topicExchange;
     private ExchangeImpl<?> _matchExchange;
     private ExchangeImpl<?> _fanoutExchange;
-    private VirtualHost _vhost;
+    private VirtualHostImpl _vhost;
     private DurableConfigurationStore _store;
     private ExchangeFactory _exchangeFactory;
     private ExchangeRegistry _exchangeRegistry;
@@ -98,7 +98,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         AMQQueue<?> queue = mock(AMQQueue.class);
 
-        _vhost = mock(VirtualHost.class);
+        _vhost = mock(VirtualHostImpl.class);
         when(_vhost.getName()).thenReturn(VIRTUAL_HOST_NAME);
 
         _exchangeRegistry = mock(ExchangeRegistry.class);

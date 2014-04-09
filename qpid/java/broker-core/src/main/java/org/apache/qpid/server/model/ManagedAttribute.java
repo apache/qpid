@@ -31,4 +31,5 @@ public @interface ManagedAttribute
     boolean derived() default false;
     boolean automate() default false;
     boolean mandatory() default false;
+    String defaultValue() default "";
 }

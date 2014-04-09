@@ -39,11 +39,11 @@ import org.apache.qpid.server.store.UnresolvedObject;
 public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQQueue>
 {
     private static final Logger _logger = Logger.getLogger(QueueRecoverer.class);
-    private final VirtualHost _virtualHost;
+    private final VirtualHostImpl _virtualHost;
     private final ExchangeRegistry _exchangeRegistry;
     private final QueueFactory _queueFactory;
 
-    public QueueRecoverer(final VirtualHost virtualHost,
+    public QueueRecoverer(final VirtualHostImpl virtualHost,
                           final ExchangeRegistry exchangeRegistry,
                           final QueueFactory queueFactory)
     {
