@@ -36,8 +36,11 @@ else (DEFINED linearstore_force)
             CHECK_LIBRARY_EXISTS (aio io_queue_init "" HAVE_AIO)
             CHECK_INCLUDE_FILES (libaio.h HAVE_AIO_H)
             if (HAVE_AIO AND HAVE_AIO_H)
-                message(STATUS "BerkeleyDB for C++ and libaio found, Linearstore support enabled")
-                set (linearstore_default ON)
+		#
+		# allow linearstore to be built
+		#
+                message(STATUS "BerkeleyDB for C++ and libaio found, Linearstore support may be enabled (currently experimental and disabled by default)")
+                set (linearstore_default OFF) # Temporarily disabled
             else (HAVE_AIO AND HAVE_AIO_H)
                 if (NOT HAVE_AIO)
                     message(STATUS "Linearstore requires libaio which is absent.")
