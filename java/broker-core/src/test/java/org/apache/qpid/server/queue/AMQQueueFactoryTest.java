@@ -42,7 +42,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
@@ -51,7 +51,7 @@ import org.mockito.stubbing.Answer;
 public class AMQQueueFactoryTest extends QpidTestCase
 {
     private QueueRegistry _queueRegistry;
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
     private AMQQueueFactory _queueFactory;
     private List<AMQQueue> _queues;
 
@@ -62,7 +62,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
         _queues = new ArrayList<AMQQueue>();
 
-        _virtualHost = mock(VirtualHost.class);
+        _virtualHost = mock(VirtualHostImpl.class);
         when(_virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
 

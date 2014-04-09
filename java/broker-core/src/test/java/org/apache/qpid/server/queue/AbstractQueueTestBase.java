@@ -49,7 +49,7 @@ import org.apache.qpid.server.queue.AbstractQueue.QueueEntryFilter;
 import org.apache.qpid.server.consumer.MockConsumer;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 abstract class AbstractQueueTestBase extends QpidTestCase
@@ -58,7 +58,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
 
     private AMQQueue<?> _queue;
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
     private String _qname = "qname";
     private String _owner = "owner";
     private String _routingKey = "routing key";
@@ -650,6 +650,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
     public void testProcessQueueWithUniqueSelectors() throws Exception
     {
         AbstractQueue testQueue = createNonAsyncDeliverQueue();
+        testQueue.open();
 
         // retrieve the QueueEntryList the queue creates and insert the test
         // messages, thus avoiding straight-through delivery attempts during
@@ -1015,7 +1016,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
     }
 
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _virtualHost;
     }
@@ -1106,7 +1107,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
     private static class NonAsyncDeliverQueue extends AbstractQueue
     {
-        public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHost vhost)
+        public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHostImpl vhost)
         {
             super(vhost, attributes(), factory);
         }

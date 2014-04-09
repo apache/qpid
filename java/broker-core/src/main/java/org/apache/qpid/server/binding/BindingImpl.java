@@ -20,20 +20,6 @@
  */
 package org.apache.qpid.server.binding;
 
-import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.messages.BindingMessages;
-import org.apache.qpid.server.logging.subjects.BindingLogSubject;
-import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.util.StateChangeListener;
-
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +29,20 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.messages.BindingMessages;
+import org.apache.qpid.server.logging.subjects.BindingLogSubject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.util.StateChangeListener;
 
 public class BindingImpl
         extends AbstractConfiguredObject<BindingImpl>
@@ -83,7 +83,7 @@ public class BindingImpl
 
     public BindingImpl(UUID id, Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
-        super(id,Collections.EMPTY_MAP,attributes,queue.getVirtualHost().getTaskExecutor());
+        super(parentsMap(queue,exchange),Collections.EMPTY_MAP,combineIdWithAttributes(id,attributes),queue.getVirtualHost().getTaskExecutor());
         _id = id;
         _bindingKey = (String)attributes.get(org.apache.qpid.server.model.Binding.NAME);
         _queue = queue;
@@ -100,6 +100,14 @@ public class BindingImpl
                                                                       && !getArguments().isEmpty()));
 
 
+    }
+
+    private static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(final AMQQueue queue, final ExchangeImpl exchange)
+    {
+        final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents = new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject<?>>();
+        parents.put(Queue.class, queue);
+        parents.put(Exchange.class, exchange);
+        return parents;
     }
 
 
@@ -291,20 +299,6 @@ public class BindingImpl
     public Collection<String> getAttributeNames()
     {
         return getAttributeNames(Binding.class);
-    }
-
-    @Override
-    public <T extends ConfiguredObject> T getParent(final Class<T> clazz)
-    {
-        if(clazz == Exchange.class)
-        {
-            return (T) getExchange();
-        }
-        else if(clazz == Queue.class)
-        {
-            return (T) getQueue();
-        }
-        return super.getParent(clazz);
     }
 
     @Override

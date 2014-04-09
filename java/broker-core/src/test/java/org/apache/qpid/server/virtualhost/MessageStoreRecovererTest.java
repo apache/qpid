@@ -62,14 +62,14 @@ import org.mockito.ArgumentMatcher;
 
 public class MessageStoreRecovererTest extends TestCase
 {
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        _virtualHost = mock(VirtualHost.class);
+        _virtualHost = mock(VirtualHostImpl.class);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
 
     }

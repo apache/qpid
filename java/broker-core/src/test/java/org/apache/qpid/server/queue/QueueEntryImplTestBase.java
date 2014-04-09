@@ -26,7 +26,7 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageInstance.EntryState;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -195,7 +195,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
-        final VirtualHost virtualHost = mock(VirtualHost.class);
+        final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
 

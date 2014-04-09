@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageDeliveryPriority;
@@ -48,7 +47,7 @@ public class MessageConverter_Internal_to_v0_10 implements MessageConverter<Inte
     }
 
     @Override
-    public MessageTransferMessage convert(InternalMessage serverMsg, VirtualHost vhost)
+    public MessageTransferMessage convert(InternalMessage serverMsg, VirtualHostImpl vhost)
     {
         return new MessageTransferMessage(convertToStoredMessage(serverMsg), null);
     }

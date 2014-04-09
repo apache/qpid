@@ -54,7 +54,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     private static final Logger LOGGER = Logger.getLogger(PrincipalDatabaseAuthenticationManager.class);
 
 
-    private final PrincipalDatabase _principalDatabase;
+    private PrincipalDatabase _principalDatabase;
     @ManagedAttributeField
     private String _path;
 
@@ -64,26 +64,34 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
                                                      boolean recovering)
     {
         super(broker, defaults, attributes);
+    }
 
-        if(!recovering)
+    @Override
+    protected void onCreate()
+    {
+        super.onCreate();
+        try
         {
-            try
+            File passwordFile = new File(_path);
+            if (!passwordFile.exists())
             {
-                File passwordFile = new File(_path);
-                if (!passwordFile.exists())
-                {
-                    passwordFile.createNewFile();
-                }
-                else if (!passwordFile.canRead())
-                {
-                    throw new IllegalConfigurationException("Cannot read password file" + _path + ". Check permissions.");
-                }
+                passwordFile.createNewFile();
             }
-            catch (IOException e)
+            else if (!passwordFile.canRead())
             {
-                throw new IllegalConfigurationException("Cannot use password database at :" + _path, e);
+                throw new IllegalConfigurationException("Cannot read password file" + _path + ". Check permissions.");
             }
         }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot use password database at :" + _path, e);
+        }
+    }
+
+    @Override
+    protected void onOpen()
+    {
+        super.onOpen();
         _principalDatabase = createDatabase();
     }
 
@@ -271,7 +279,8 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     {
         if(clazz == User.class)
         {
-            List<Principal> users = getPrincipalDatabase().getUsers();
+            PrincipalDatabase principalDatabase = getPrincipalDatabase();
+            List<Principal> users = principalDatabase == null ? Collections.<Principal>emptyList() : principalDatabase.getUsers();
             Collection<User> principals = new ArrayList<User>(users.size());
             for(Principal user : users)
             {

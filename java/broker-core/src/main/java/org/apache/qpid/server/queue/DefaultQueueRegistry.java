@@ -26,22 +26,22 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class DefaultQueueRegistry implements QueueRegistry
 {
     private ConcurrentMap<String, AMQQueue<?>> _queueMap = new ConcurrentHashMap<String, AMQQueue<?>>();
 
-    private final VirtualHost _virtualHost;
+    private final VirtualHostImpl _virtualHost;
     private final Collection<RegistryChangeListener> _listeners =
             new ArrayList<RegistryChangeListener>();
 
-    public DefaultQueueRegistry(VirtualHost virtualHost)
+    public DefaultQueueRegistry(VirtualHostImpl virtualHost)
     {
         _virtualHost = virtualHost;
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _virtualHost;
     }

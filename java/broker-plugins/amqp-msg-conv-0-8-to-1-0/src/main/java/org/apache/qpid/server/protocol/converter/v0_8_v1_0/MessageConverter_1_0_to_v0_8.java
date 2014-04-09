@@ -33,7 +33,7 @@ import org.apache.qpid.server.protocol.v1_0.MessageMetaData_1_0;
 import org.apache.qpid.server.protocol.v1_0.Message_1_0;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
@@ -56,7 +56,7 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
     }
 
     @Override
-    public AMQMessage convert(Message_1_0 serverMsg, VirtualHost vhost)
+    public AMQMessage convert(Message_1_0 serverMsg, VirtualHostImpl vhost)
     {
         return new AMQMessage(convertToStoredMessage(serverMsg), null);
     }

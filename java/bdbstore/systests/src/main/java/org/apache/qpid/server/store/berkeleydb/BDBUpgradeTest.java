@@ -53,6 +53,7 @@ import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.FileUtils;
+import org.apache.qpid.util.Strings;
 
 /**
  * Tests upgrading a BDB store on broker startup.
@@ -88,7 +89,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(VirtualHost.class,TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
         @SuppressWarnings("unchecked")
         Map<String, Object> messageStoreSettings = (Map<String, Object>) virtualHostAttributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
-        _storeLocation = (String)messageStoreSettings.get(MessageStore.STORE_PATH);
+        _storeLocation = Strings.expand((String)messageStoreSettings.get(MessageStore.STORE_PATH));
 
         //Clear the two target directories if they exist.
         File directory = new File(_storeLocation);

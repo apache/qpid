@@ -20,16 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
-import org.apache.qpid.server.plugin.PreferencesProviderFactory;
-import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.util.MapValueConverter;
-
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +28,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.IntegrityViolationException;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.User;
+import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.port.PortWithAuthProvider;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.access.Operation;
 
 public abstract class AbstractAuthenticationManager<T extends AbstractAuthenticationManager<T>>
     extends AbstractConfiguredObject<T>
@@ -58,9 +69,31 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         _broker = broker;
     }
 
+    @Override
+    public void validate()
+    {
+        super.validate();
+        Collection<PreferencesProvider> prefsProviders = getChildren(PreferencesProvider.class);
+        if(prefsProviders != null && prefsProviders.size() > 1)
+        {
+            throw new IllegalConfigurationException("Only one preference provider can be configured for an authentication provider");
+        }
+    }
+
     protected final Broker getBroker()
     {
         return _broker;
+    }
+
+    @Override
+    protected void onOpen()
+    {
+        super.onOpen();
+        Collection<PreferencesProvider> prefsProviders = getChildren(PreferencesProvider.class);
+        if(prefsProviders != null && !prefsProviders.isEmpty())
+        {
+            _preferencesProvider = prefsProviders.iterator().next();
+        }
     }
 
     @Override
@@ -188,17 +221,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         }
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
-    {
-        if (clazz == PreferencesProvider.class && _preferencesProvider != null)
-        {
-            return (Collection<C>) Collections.<PreferencesProvider>singleton(_preferencesProvider);
-        }
-        return Collections.emptySet();
-    }
-
     @Override
     public boolean setState(State currentState, State desiredState)
             throws IllegalStateTransitionException, AccessControlException
@@ -212,7 +234,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
             Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
             for (Port port : ports)
             {
-                if (providerName.equals(port.getAttribute(Port.AUTHENTICATION_PROVIDER)))
+                if(port instanceof PortWithAuthProvider && ((PortWithAuthProvider<?>)port).getAuthenticationProvider() == this)
                 {
                     throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
                 }
@@ -227,6 +249,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
                 {
                     _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.DELETED);
                 }
+                deleted();
                 return true;
             }
             else

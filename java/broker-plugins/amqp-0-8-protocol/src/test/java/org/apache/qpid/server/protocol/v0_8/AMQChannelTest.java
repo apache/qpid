@@ -35,12 +35,12 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AMQChannelTest extends QpidTestCase
 {
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
     private AMQProtocolSession _protocolSession;
     private Map<Integer,String> _replies;
     private Broker _broker;

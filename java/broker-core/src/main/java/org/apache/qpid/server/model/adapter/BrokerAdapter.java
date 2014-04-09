@@ -52,8 +52,6 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.model.port.PortWithAuthProvider;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
-import org.apache.qpid.server.security.FileKeyStore;
-import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
@@ -61,6 +59,7 @@ import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
 
@@ -146,6 +145,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
         put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
     }});
+    public static final String MANAGEMENT_MODE_AUTHENTICATION = "MANAGEMENT_MODE_AUTHENTICATION";
     private final ConfiguredObjectFactory _objectFactory;
 
     private String[] POSITIVE_NUMERIC_ATTRIBUTES = { QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
@@ -174,11 +174,14 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private final Collection<String> _supportedVirtualHostStoreTypes;
 
-    private AuthenticationProvider<?> _managementAuthenticationProvider;
+    private AuthenticationProvider<?> _managementModeAuthenticationProvider;
     private BrokerOptions _brokerOptions;
 
     private Timer _reportingTimer;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+
+    @ManagedAttributeField
+    private String _defaultVirtualHost;
 
 
     public BrokerAdapter(UUID id,
@@ -186,11 +189,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                          SystemContext parent)
     {
         super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(SystemContext.class, parent), DEFAULTS, combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)), parent.getTaskExecutor());
-        validateModelVersion();
 
         _objectFactory = parent.getObjectFactory();
         _virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());
-        _virtualHostRegistry.setDefaultVirtualHostName((String)getAttribute(Broker.DEFAULT_VIRTUAL_HOST));
 
         _logRecorder = parent.getLogRecorder();
         _eventLogger = parent.getEventLogger();
@@ -204,13 +205,14 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             authManagerAttrs.put(ID, UUID.randomUUID());
             SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(this, Collections.<String,Object>emptyMap(), authManagerAttrs);
             authManager.addUser(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
-            _managementAuthenticationProvider = authManager;
+            _managementModeAuthenticationProvider = authManager;
         }
         initialiseStatistics();
     }
 
-    private void validateModelVersion()
+    public void validate()
     {
+        super.validate();
         String modelVersion = (String) getActualAttributes().get(Broker.MODEL_VERSION);
         if (modelVersion == null)
         {
@@ -234,6 +236,52 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                                                     + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'");
         }
 
+    }
+
+    protected void onOpen()
+    {
+        super.onOpen();
+        if(_brokerOptions.isManagementMode())
+        {
+            _managementModeAuthenticationProvider.open();
+        }
+        _virtualHostRegistry.setDefaultVirtualHostName(getDefaultVirtualHost());
+
+        for(KeyStore<?> keyStore : getChildren(KeyStore.class))
+        {
+            addKeyStore(keyStore);
+        }
+        for(TrustStore<?> trustStore : getChildren(TrustStore.class))
+        {
+            addTrustStore(trustStore);
+        }
+        for(AuthenticationProvider<?> authenticationProvider : getChildren(AuthenticationProvider.class))
+        {
+            addAuthenticationProvider(authenticationProvider);
+        }
+        for(Port<?> port : getChildren(Port.class))
+        {
+            addPort(port);
+        }
+        for(Plugin<?> plugin : getChildren(Plugin.class))
+        {
+            addPlugin(plugin);
+        }
+        for(GroupProvider<?> groupProvider : getChildren(GroupProvider.class))
+        {
+            addGroupProvider(groupProvider);
+        }
+        for(AccessControlProvider<?> accessControlProvider : getChildren(AccessControlProvider.class))
+        {
+            addAccessControlProvider(accessControlProvider);
+        }
+        for(VirtualHost<?,?,?> virtualHost : getChildren(VirtualHost.class))
+        {
+            addVirtualHost(virtualHost);
+        }
+
+
+        initialiseStatistics();
     }
 
     private void initialiseStatisticsReporting()
@@ -303,7 +351,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public String getDefaultVirtualHost()
     {
-        return (String) getAttribute(DEFAULT_VIRTUAL_HOST);
+        return _defaultVirtualHost;
     }
 
     @Override
@@ -454,7 +502,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     {
         if (isManagementMode())
         {
-            return _managementAuthenticationProvider;
+            return _managementModeAuthenticationProvider;
         }
         Collection<AuthenticationProvider<?>> providers = getAuthenticationProviders();
         for (AuthenticationProvider<?> authenticationProvider : providers)
@@ -593,45 +641,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     {
         return getMessageDeliveryStatistics().getTotal();
     }
-    @SuppressWarnings("unchecked")
-    @Override
-    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
-    {
-        if(clazz == VirtualHost.class)
-        {
-            return (Collection<C>) getVirtualHosts();
-        }
-        else if(clazz == Port.class)
-        {
-            return (Collection<C>) getPorts();
-        }
-        else if(clazz == AccessControlProvider.class)
-        {
-            return (Collection<C>) getAccessControlProviders();
-        }
-        else if(clazz == AuthenticationProvider.class)
-        {
-            return (Collection<C>) getAuthenticationProviders();
-        }
-        else if(clazz == GroupProvider.class)
-        {
-            return (Collection<C>) getGroupProviders();
-        }
-        else if(clazz == KeyStore.class)
-        {
-            return (Collection<C>) getKeyStores();
-        }
-        else if(clazz == TrustStore.class)
-        {
-            return (Collection<C>) getTrustStores();
-        }
-        else if(clazz == Plugin.class)
-        {
-            return (Collection<C>) getPlugins();
-        }
-
-        return Collections.emptySet();
-    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -677,7 +686,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private Port<?> createPort(Map<String, Object> attributes)
     {
         Port<?> port = createChild(Port.class, attributes);
-
+        addPort(port);
         //1. AMQP ports are disabled during ManagementMode.
         //2. The management plugins can currently only start ports at broker startup and
         //   not when they are newly created via the management interfaces.
@@ -727,6 +736,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         synchronized (_accessControlProviders)
         {
             accessControlProvider = (AccessControlProvider<?>) createChild(AccessControlProvider.class, attributes);
+            addAccessControlProvider(accessControlProvider);
         }
 
         boolean quiesce = isManagementMode() ;
@@ -741,7 +751,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private void addAccessControlProvider(AccessControlProvider<?> accessControlProvider)
     {
         String name = accessControlProvider.getName();
-        synchronized (_authenticationProviders)
+        synchronized (_accessControlProviders)
         {
             if (_accessControlProviders.containsKey(accessControlProvider.getId()))
             {
@@ -781,6 +791,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
     {
         AuthenticationProvider<?> authenticationProvider = createChild(AuthenticationProvider.class, attributes);
+        addAuthenticationProvider(authenticationProvider);
         authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
         return authenticationProvider;
     }
@@ -826,6 +837,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private GroupProvider<?> createGroupProvider(Map<String, Object> attributes)
     {
         GroupProvider<?> groupProvider = createChild(GroupProvider.class, attributes);
+        addGroupProvider(groupProvider);
         groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
         return groupProvider;
     }
@@ -862,13 +874,17 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private KeyStore createKeyStore(Map<String, Object> attributes)
     {
-        KeyStore keyStore = new FileKeyStore(UUIDGenerator.generateRandomUUID(), this, attributes);
+
+        KeyStore<?> keyStore = createChild(KeyStore.class, attributes);
+
+        addKeyStore(keyStore);
         return keyStore;
     }
 
     private TrustStore createTrustStore(Map<String, Object> attributes)
     {
-        TrustStore trustStore = new FileTrustStore(UUIDGenerator.generateRandomUUID(), this, attributes);
+        TrustStore trustStore = createChild(TrustStore.class, attributes);
+        addTrustStore(trustStore);
         return trustStore;
     }
 
@@ -1216,46 +1232,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         }
     }
 
-    public void instantiateAuthenticationProvider(AuthenticationProvider object)
-    {
-        addAuthenticationProvider(object);
-    }
-
-    public void instantiateAccessControlProvider(AccessControlProvider object)
-    {
-        addAccessControlProvider(object);
-    }
-
-    public void instantiatePort(Port object)
-    {
-        addPort(object);
-    }
-
-    public void instantiateVirtualHost(VirtualHost object)
-    {
-        addVirtualHost(object);
-    }
-
-    public void instantiateGroupProvider(GroupProvider object)
-    {
-        addGroupProvider(object);
-    }
-
-    public void instantiateKeyStore(KeyStore object)
-    {
-        addKeyStore(object);
-    }
-
-    public void instantiateTrustStore(TrustStore object)
-    {
-        addTrustStore(object);
-    }
-
-    public void instantiatePlugin(Plugin object)
-    {
-        addPlugin(object);
-    }
-   
     @Override
     public SecurityManager getSecurityManager()
     {
@@ -1502,7 +1478,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         _messagesReceived.reset();
         _dataReceived.reset();
 
-        for (org.apache.qpid.server.virtualhost.VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
+        for (VirtualHostImpl vhost : _virtualHostRegistry.getVirtualHosts())
         {
             vhost.resetStatistics();
         }
@@ -1555,11 +1531,11 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                 _eventLogger.message(BrokerMessages.STATS_MSGS(RECEIVED,
                                                                _messagesReceived.getPeak(),
                                                                _messagesReceived.getTotal()));
-                Collection<org.apache.qpid.server.virtualhost.VirtualHost> hosts = _virtualHostRegistry.getVirtualHosts();
+                Collection<VirtualHostImpl> hosts = _virtualHostRegistry.getVirtualHosts();
 
                 if (hosts.size() > 1)
                 {
-                    for (org.apache.qpid.server.virtualhost.VirtualHost vhost : hosts)
+                    for (VirtualHostImpl vhost : hosts)
                     {
                         String name = vhost.getName();
                         StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
@@ -1589,5 +1565,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         }
     }
 
-
+    public AuthenticationProvider<?> getManagementModeAuthenticationProvider()
+    {
+        return _managementModeAuthenticationProvider;
+    }
 }

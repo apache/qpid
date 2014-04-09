@@ -58,7 +58,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -154,14 +154,14 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         }
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _virtualHost;
     }
 
     protected void reloadVirtualHost()
     {
-        VirtualHost original = getVirtualHost();
+        VirtualHostImpl original = getVirtualHost();
 
         if (getVirtualHost() != null)
         {

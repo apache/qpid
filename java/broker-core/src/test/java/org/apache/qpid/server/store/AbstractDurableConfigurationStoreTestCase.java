@@ -48,6 +48,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 import org.mockito.ArgumentCaptor;
@@ -414,7 +415,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(queue.isExclusive()).thenReturn(exclusive);
         when(queue.getId()).thenReturn(_queueId);
         when(queue.getAlternateExchange()).thenReturn(alternateExchange);
-        final org.apache.qpid.server.virtualhost.VirtualHost vh = mock(org.apache.qpid.server.virtualhost.VirtualHost.class);
+        final VirtualHostImpl vh = mock(VirtualHostImpl.class);
         when(vh.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(queue.getVirtualHost()).thenReturn(vh);
         final Map<String,Object> attributes = arguments == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(arguments);

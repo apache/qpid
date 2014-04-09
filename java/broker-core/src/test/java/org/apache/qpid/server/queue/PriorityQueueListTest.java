@@ -30,7 +30,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.HashMap;
@@ -55,7 +55,7 @@ public class PriorityQueueListTest extends QpidTestCase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.PRIORITIES, 10);
-        final VirtualHost virtualHost = mock(VirtualHost.class);
+        final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         PriorityQueue queue = new PriorityQueue(virtualHost, queueAttributes);

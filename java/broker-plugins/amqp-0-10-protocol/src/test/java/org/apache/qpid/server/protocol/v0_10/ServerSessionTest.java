@@ -18,20 +18,18 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.Binary;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ServerSessionTest extends QpidTestCase
 {
 
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
 
     @Override
     public void setUp() throws Exception

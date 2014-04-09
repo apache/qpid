@@ -38,7 +38,7 @@ import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 
 public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
@@ -174,9 +174,9 @@ public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
 
     Object getReference();
 
-    VirtualHost getVirtualHost();
+    VirtualHostImpl getVirtualHost();
 
-    void setVirtualHost(VirtualHost virtualHost) throws AMQException;
+    void setVirtualHost(VirtualHostImpl virtualHost) throws AMQException;
 
     public ProtocolOutputConverter getProtocolOutputConverter();
 

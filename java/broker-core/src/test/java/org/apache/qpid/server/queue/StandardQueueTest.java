@@ -20,15 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.consumer.ConsumerTarget;
-import org.apache.qpid.server.consumer.MockConsumer;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -38,7 +29,14 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.mock;
+import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.consumer.ConsumerTarget;
+import org.apache.qpid.server.consumer.MockConsumer;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class StandardQueueTest extends AbstractQueueTestBase
 {
@@ -51,7 +49,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
         queueAttributes.put(Queue.NAME, getQname());
         queueAttributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
         final StandardQueue queue = new StandardQueue(getVirtualHost(), queueAttributes);
-
+        queue.open();
         setQueue(queue);
 
         ServerMessage message = createMessage(25l);
@@ -74,7 +72,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
         queueAttributes.put(Queue.NAME, "testActiveConsumerCount");
         queueAttributes.put(Queue.OWNER, "testOwner");
         final StandardQueue queue = new StandardQueue(getVirtualHost(), queueAttributes);
-
+        queue.open();
         //verify adding an active consumer increases the count
         final MockConsumer consumer1 = new MockConsumer();
         consumer1.setActive(true);
@@ -143,6 +141,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
     {
         // create a queue where each even entry is considered a dequeued
         AbstractQueue queue = new DequeuedQueue(getVirtualHost());
+        queue.open();
         // create a consumer
         MockConsumer consumer = new MockConsumer();
 
@@ -188,6 +187,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
                 // do nothing
             }
         };
+        testQueue.open();
 
         // put messages
         List<StandardQueueEntry> entries =
@@ -248,7 +248,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
     private static class DequeuedQueue extends AbstractQueue
     {
 
-        public DequeuedQueue(VirtualHost virtualHost)
+        public DequeuedQueue(VirtualHostImpl virtualHost)
         {
             super(virtualHost, attributes(), new DequeuedQueueEntryListFactory());
         }

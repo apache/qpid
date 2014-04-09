@@ -31,11 +31,13 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.test.utils.Piper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.FileUtils;
+import org.apache.qpid.util.Strings;
 import org.apache.qpid.util.SystemUtils;
 
 /**
@@ -63,7 +65,7 @@ public class BDBBackupTest extends QpidBrokerTestCase
         _backupToDir.mkdirs();
         Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(VirtualHost.class,TEST_VHOST);
         Map<String, Object> messageStoreSettings = (Map<String, Object>) virtualHostAttributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
-        _backupFromDir = new File((String)messageStoreSettings.get(MessageStore.STORE_PATH));
+        _backupFromDir = new File(Strings.expand((String) messageStoreSettings.get(MessageStore.STORE_PATH)));
         boolean fromDirExistsAndIsDir = _backupFromDir.isDirectory();
         assertTrue("backupFromDir " + _backupFromDir + " should already exist", fromDirExistsAndIsDir);
     }

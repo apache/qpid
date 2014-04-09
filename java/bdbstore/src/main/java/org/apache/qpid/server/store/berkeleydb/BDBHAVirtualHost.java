@@ -59,9 +59,9 @@ public class BDBHAVirtualHost extends AbstractVirtualHost<BDBHAVirtualHost>
 
 
     @Override
-    protected void validateAttributes()
+    public void validate()
     {
-        super.validateAttributes();
+        super.validate();
         Map<String, Object> attributes = getActualAttributes();
         @SuppressWarnings("unchecked")
         Map<String, Object> messageStoreSettings = (Map<String, Object>)attributes.get(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS);

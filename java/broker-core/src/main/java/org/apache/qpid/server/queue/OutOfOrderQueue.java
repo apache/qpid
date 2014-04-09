@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.util.Map;
 
 public abstract class OutOfOrderQueue extends AbstractQueue
 {
 
-    protected OutOfOrderQueue(VirtualHost virtualHost,
+    protected OutOfOrderQueue(VirtualHostImpl virtualHost,
                               Map<String, Object> attributes,
                               QueueEntryListFactory entryListFactory)
     {

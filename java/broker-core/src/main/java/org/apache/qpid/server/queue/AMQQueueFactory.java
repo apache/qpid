@@ -39,7 +39,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 public class AMQQueueFactory implements QueueFactory
@@ -50,10 +50,10 @@ public class AMQQueueFactory implements QueueFactory
     public static final String DLQ_ROUTING_KEY = "dlq";
     private static final int MAX_LENGTH = 255;
 
-    private final VirtualHost _virtualHost;
+    private final VirtualHostImpl _virtualHost;
     private final QueueRegistry _queueRegistry;
 
-    public AMQQueueFactory(VirtualHost virtualHost, QueueRegistry queueRegistry)
+    public AMQQueueFactory(VirtualHostImpl virtualHost, QueueRegistry queueRegistry)
     {
         _virtualHost = virtualHost;
         _queueRegistry = queueRegistry;
@@ -99,7 +99,7 @@ public class AMQQueueFactory implements QueueFactory
         {
             queue = new StandardQueue(_virtualHost, attributes);
         }
-
+        queue.open();
         //Register the new queue
         _queueRegistry.registerQueue(queue);
 

@@ -23,7 +23,15 @@ import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
@@ -32,30 +40,40 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.pool.ReferenceCountingExecutorService;
-import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.ExclusivityPolicy;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.QueueNotificationListener;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
@@ -68,9 +86,7 @@ import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StateChangeListener;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import javax.security.auth.Subject;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public abstract class AbstractQueue
         extends AbstractConfiguredObject<AbstractQueue>
@@ -98,13 +114,13 @@ public abstract class AbstractQueue
         }
     };
 
-    private final VirtualHost _virtualHost;
+    private final VirtualHostImpl _virtualHost;
     private final DeletedChildListener _deletedChildListener = new DeletedChildListener();
 
     /** null means shared */
     private String _description;
 
-    private final boolean _durable;
+    private boolean _durable;
 
     private ExchangeImpl _alternateExchange;
 
@@ -186,14 +202,14 @@ public abstract class AbstractQueue
 
     private final AtomicBoolean _overfull = new AtomicBoolean(false);
     private final CopyOnWriteArrayList<BindingImpl> _bindings = new CopyOnWriteArrayList<BindingImpl>();
-    private final Map<String, Object> _arguments;
+    private Map<String, Object> _arguments;
 
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
 
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
     private int _maximumDeliveryCount;
-    private final MessageGroupManager _messageGroupManager;
+    private MessageGroupManager _messageGroupManager;
 
     private final Collection<ConsumerRegistrationListener<? super MessageSource>> _consumerListeners =
             new ArrayList<ConsumerRegistrationListener<? super MessageSource>>();
@@ -201,14 +217,25 @@ public abstract class AbstractQueue
     private QueueNotificationListener  _notificationListener;
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
 
-    protected AbstractQueue(VirtualHost virtualHost,
+    protected AbstractQueue(VirtualHostImpl virtualHost,
                             Map<String, Object> attributes,
                             QueueEntryListFactory entryListFactory)
     {
-        super(MapValueConverter.getUUIDAttribute(Queue.ID, attributes),
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(org.apache.qpid.server.model.VirtualHost.class, (org.apache.qpid.server.model.VirtualHost)virtualHost),
               Collections.<String,Object>emptyMap(), attributes, virtualHost.getTaskExecutor());
 
-        if (virtualHost == null)
+        _entries = entryListFactory.createQueueEntryList(this);
+        _virtualHost = virtualHost;
+        _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
+
+
+
+    }
+
+    public void validate()
+    {
+        super.validate();
+        if (_virtualHost == null)
         {
             throw new IllegalArgumentException("Virtual Host must not be null");
         }
@@ -218,7 +245,16 @@ public abstract class AbstractQueue
             throw new IllegalArgumentException("Queue name must not be null");
         }
 
-        boolean durable = MapValueConverter.getBooleanAttribute(Queue.DURABLE,attributes,false);
+
+    }
+
+    protected void onOpen()
+    {
+        super.onOpen();
+
+        Map<String,Object> attributes = getActualAttributes();
+
+        boolean durable = MapValueConverter.getBooleanAttribute(Queue.DURABLE, attributes, false);
 
 
         _exclusivityPolicy = MapValueConverter.getEnumAttribute(ExclusivityPolicy.class,
@@ -231,8 +267,6 @@ public abstract class AbstractQueue
                                                              LifetimePolicy.PERMANENT);
 
         _durable = durable;
-        _virtualHost = virtualHost;
-        _entries = entryListFactory.createQueueEntryList(this);
         final LinkedHashMap<String, Object> arguments = new LinkedHashMap<String, Object>(attributes);
 
         arguments.put(Queue.EXCLUSIVE, _exclusivityPolicy);
@@ -243,11 +277,10 @@ public abstract class AbstractQueue
 
         _noLocal = MapValueConverter.getBooleanAttribute(Queue.NO_LOCAL, attributes, false);
 
-        _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
         _logSubject = new QueueLogSubject(this);
 
-        virtualHost.getSecurityManager().authoriseCreateQueue(this);
+        _virtualHost.getSecurityManager().authoriseCreateQueue(this);
 
         Subject activeSubject = Subject.getSubject(AccessController.getContext());
         Set<SessionPrincipal> sessionPrincipals = activeSubject == null ? Collections.<SessionPrincipal>emptySet() : activeSubject.getPrincipals(SessionPrincipal.class);
@@ -338,15 +371,13 @@ public abstract class AbstractQueue
         }
 
 
-
-
         if (attributes.containsKey(Queue.ALERT_THRESHOLD_MESSAGE_AGE))
         {
             setMaximumMessageAge(MapValueConverter.getLongAttribute(Queue.ALERT_THRESHOLD_MESSAGE_AGE, attributes));
         }
         else
         {
-            setMaximumMessageAge(virtualHost.getDefaultAlertThresholdMessageAge());
+            setMaximumMessageAge(_virtualHost.getDefaultAlertThresholdMessageAge());
         }
         if (attributes.containsKey(Queue.ALERT_THRESHOLD_MESSAGE_SIZE))
         {
@@ -354,7 +385,7 @@ public abstract class AbstractQueue
         }
         else
         {
-            setMaximumMessageSize(virtualHost.getDefaultAlertThresholdMessageSize());
+            setMaximumMessageSize(_virtualHost.getDefaultAlertThresholdMessageSize());
         }
         if (attributes.containsKey(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES))
         {
@@ -363,7 +394,7 @@ public abstract class AbstractQueue
         }
         else
         {
-            setMaximumMessageCount(virtualHost.getDefaultAlertThresholdQueueDepthMessages());
+            setMaximumMessageCount(_virtualHost.getDefaultAlertThresholdQueueDepthMessages());
         }
         if (attributes.containsKey(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES))
         {
@@ -372,7 +403,7 @@ public abstract class AbstractQueue
         }
         else
         {
-            setMaximumQueueDepth(virtualHost.getDefaultAlertThresholdQueueDepthBytes());
+            setMaximumQueueDepth(_virtualHost.getDefaultAlertThresholdQueueDepthBytes());
         }
         if (attributes.containsKey(Queue.ALERT_REPEAT_GAP))
         {
@@ -380,7 +411,7 @@ public abstract class AbstractQueue
         }
         else
         {
-            setMinimumAlertRepeatGap(virtualHost.getDefaultAlertRepeatGap());
+            setMinimumAlertRepeatGap(_virtualHost.getDefaultAlertRepeatGap());
         }
         if (attributes.containsKey(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES))
         {
@@ -388,7 +419,7 @@ public abstract class AbstractQueue
         }
         else
         {
-            setCapacity(virtualHost.getDefaultQueueFlowControlSizeBytes());
+            setCapacity(_virtualHost.getDefaultQueueFlowControlSizeBytes());
         }
         if (attributes.containsKey(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES))
         {
@@ -396,7 +427,7 @@ public abstract class AbstractQueue
         }
         else
         {
-            setFlowResumeCapacity(virtualHost.getDefaultQueueFlowResumeSizeBytes());
+            setFlowResumeCapacity(_virtualHost.getDefaultQueueFlowResumeSizeBytes());
         }
         if (attributes.containsKey(Queue.MAXIMUM_DELIVERY_ATTEMPTS))
         {
@@ -404,7 +435,7 @@ public abstract class AbstractQueue
         }
         else
         {
-            setMaximumDeliveryCount(virtualHost.getDefaultMaximumDeliveryAttempts());
+            setMaximumDeliveryCount(_virtualHost.getDefaultMaximumDeliveryAttempts());
         }
 
         final String ownerString = getOwner();
@@ -443,7 +474,6 @@ public abstract class AbstractQueue
         }
 
         resetNotifications();
-
     }
 
     private void addLifetimeConstraint(final Deletable<? extends Deletable> lifetimeObject)
@@ -670,7 +700,7 @@ public abstract class AbstractQueue
         return null;
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _virtualHost;
     }
@@ -2851,16 +2881,6 @@ public abstract class AbstractQueue
             return (Collection<C>) getConsumers();
         }
         else return Collections.emptySet();
-    }
-
-    @Override
-    public <T extends ConfiguredObject> T getParent(final Class<T> clazz)
-    {
-        if(clazz == org.apache.qpid.server.model.VirtualHost.class)
-        {
-            return (T) _virtualHost.getModel();
-        }
-        return super.getParent(clazz);
     }
 
     @Override

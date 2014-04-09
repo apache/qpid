@@ -26,14 +26,13 @@ import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.util.Deletable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.util.Collection;
 import java.util.List;
@@ -68,7 +67,7 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     String getOwner();
 
-    VirtualHost getVirtualHost();
+    VirtualHostImpl getVirtualHost();
 
     public Collection<QueueConsumer<?>> getConsumers();
 

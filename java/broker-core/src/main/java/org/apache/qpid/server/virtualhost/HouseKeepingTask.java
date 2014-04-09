@@ -22,25 +22,22 @@ package org.apache.qpid.server.virtualhost;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.TaskPrincipal;
 
 import javax.security.auth.Subject;
 import java.security.PrivilegedAction;
-import java.util.Collections;
 
 public abstract class HouseKeepingTask implements Runnable
 {
     private Logger _logger = Logger.getLogger(this.getClass());
 
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
 
     private String _name;
 
     private final Subject _subject;
 
-    public HouseKeepingTask(VirtualHost vhost)
+    public HouseKeepingTask(VirtualHostImpl vhost)
     {
         _virtualHost = vhost;
         _name = _virtualHost.getName() + ":" + this.getClass().getSimpleName();
@@ -78,7 +75,7 @@ public abstract class HouseKeepingTask implements Runnable
         }
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _virtualHost;
     }

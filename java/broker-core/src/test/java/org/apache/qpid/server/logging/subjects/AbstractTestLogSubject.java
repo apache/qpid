@@ -28,7 +28,7 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.List;
@@ -195,7 +195,7 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
      * @param message the message to search
      * @param vhost   the vhostName to check against
      */
-    static public void verifyVirtualHost(String message, VirtualHost vhost)
+    static public void verifyVirtualHost(String message, VirtualHostImpl vhost)
     {
         String vhostSlice = getSlice("vh", message);
 

@@ -40,7 +40,7 @@ import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.security.AccessControlException;
 import java.util.HashMap;
@@ -64,7 +64,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
     public void methodReceived(AMQStateManager stateManager, ExchangeDeclareBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHost virtualHost = session.getVirtualHost();
+        VirtualHostImpl virtualHost = session.getVirtualHost();
         final AMQChannel channel = session.getChannel(channelId);
         if (channel == null)
         {

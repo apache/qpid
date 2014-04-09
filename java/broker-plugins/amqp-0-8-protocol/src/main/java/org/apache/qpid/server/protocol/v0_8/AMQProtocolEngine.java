@@ -79,7 +79,7 @@ import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -100,7 +100,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private String _clientVersion = null;
     private String _clientProduct = null;
 
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
 
     private final Map<Integer, AMQChannel<AMQProtocolEngine>> _channelMap =
             new HashMap<Integer, AMQChannel<AMQProtocolEngine>>();
@@ -1152,12 +1152,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return getMethodRegistry();
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _virtualHost;
     }
 
-    public void setVirtualHost(VirtualHost virtualHost) throws AMQException
+    public void setVirtualHost(VirtualHostImpl virtualHost) throws AMQException
     {
         _virtualHost = virtualHost;
 

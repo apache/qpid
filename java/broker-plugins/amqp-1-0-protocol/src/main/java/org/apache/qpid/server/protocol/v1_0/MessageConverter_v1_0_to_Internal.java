@@ -23,18 +23,7 @@ package org.apache.qpid.server.protocol.v1_0;
 import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.codec.BBDecoder;
-import org.apache.qpid.typedmessage.TypedBytesContentReader;
-import org.apache.qpid.typedmessage.TypedBytesFormatException;
-
-import java.io.EOFException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class MessageConverter_v1_0_to_Internal implements MessageConverter<Message_1_0, InternalMessage>
 {
@@ -61,7 +50,7 @@ public class MessageConverter_v1_0_to_Internal implements MessageConverter<Messa
     }
 
     @Override
-    public InternalMessage convert(Message_1_0 serverMessage, VirtualHost vhost)
+    public InternalMessage convert(Message_1_0 serverMessage, VirtualHostImpl vhost)
     {
         Object bodyObject = MessageConverter_from_1_0.convertBodyToObject(serverMessage);
 

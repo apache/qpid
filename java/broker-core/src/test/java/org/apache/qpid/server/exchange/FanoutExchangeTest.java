@@ -42,14 +42,15 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 public class FanoutExchangeTest extends TestCase
 {
     private FanoutExchange _exchange;
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
 
     public void setUp() throws UnknownExchangeException
     {
@@ -58,7 +59,7 @@ public class FanoutExchangeTest extends TestCase
         attributes.put(Exchange.NAME, "test");
         attributes.put(Exchange.DURABLE, false);
 
-        _virtualHost = mock(VirtualHost.class);
+        _virtualHost = mock(VirtualHostImpl.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());

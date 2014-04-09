@@ -21,12 +21,12 @@
 package org.apache.qpid.server.plugin;
 
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public interface MessageConverter<M extends ServerMessage, N extends ServerMessage> extends Pluggable
 {
     Class<M> getInputClass();
     Class<N> getOutputClass();
 
-    N convert(M message, VirtualHost vhost);
+    N convert(M message, VirtualHostImpl vhost);
 }

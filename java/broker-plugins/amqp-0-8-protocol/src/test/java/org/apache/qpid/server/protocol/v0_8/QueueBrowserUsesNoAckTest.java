@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -29,7 +28,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.List;
@@ -47,7 +46,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         super.setUp();
         BrokerTestHelper.setUp();
         _channel = BrokerTestHelper_0_8.createChannel();
-        VirtualHost virtualHost = _channel.getVirtualHost();
+        VirtualHostImpl virtualHost = _channel.getVirtualHost();
         _queueName = getTestName();
         _queue = BrokerTestHelper.createQueue(_queueName, virtualHost);
         _messageStore = virtualHost.getMessageStore();

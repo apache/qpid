@@ -41,8 +41,8 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostState;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -177,7 +177,7 @@ public class ServerConnectionDelegate extends ServerDelegate
     {
         final ServerConnection sconn = (ServerConnection) conn;
 
-        VirtualHost vhost;
+        VirtualHostImpl vhost;
         String vhostName;
         if(open.hasVirtualHost())
         {

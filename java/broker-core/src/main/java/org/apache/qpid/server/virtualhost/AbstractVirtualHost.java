@@ -22,6 +22,7 @@ package org.apache.qpid.server.virtualhost;
 
 import java.lang.reflect.Type;
 import java.security.AccessControlException;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,6 +37,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 
@@ -58,20 +61,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.IntegrityViolationException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.QueueType;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
 import org.apache.qpid.server.model.adapter.VirtualHostAliasAdapter;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -102,8 +92,8 @@ import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
 
 public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> extends AbstractConfiguredObject<X>
-        implements VirtualHost<AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener,
-                   org.apache.qpid.server.model.VirtualHost<X,AMQQueue<?>, ExchangeImpl<?>>
+        implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener,
+                   VirtualHost<X,AMQQueue<?>, ExchangeImpl<?>>
 {
     private static final Logger _logger = Logger.getLogger(AbstractVirtualHost.class);
 
@@ -181,6 +171,12 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private final AtomicBoolean _deleted = new AtomicBoolean();
 
+    @ManagedAttributeField
+    private Map<String, Object> _messageStoreSettings;
+
+    @ManagedAttributeField
+    private Map<String, Object> _configurationStoreSettings;
+
 
     public AbstractVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
     {
@@ -206,7 +202,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _exchangeRegistry = new DefaultExchangeRegistry(this, _queueRegistry);
 
-        validateAttributes();
     }
 
     private static Map<String, Object> enhanceWithId(Map<String, Object> attributes)
@@ -226,8 +221,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return parentsMap;
     }
 
-    protected void validateAttributes()
+    public void validate()
     {
+        super.validate();
         String name = getName();
         if (name == null || "".equals(name.trim()))
         {
@@ -240,13 +236,23 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
     }
 
-    public void onOpen()
+    protected void onOpen()
     {
+        super.onOpen();
+
         registerSystemNodes();
 
         initialiseStatistics();
 
-        initialiseStorage(this);
+        Subject.doAs(getSecurityManager().getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                initialiseStorage(AbstractVirtualHost.this);
+                return null;
+            }
+        });
 
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
@@ -581,7 +587,15 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     protected void initialiseModel()
     {
-        _exchangeRegistry.initialise(_exchangeFactory);
+        Subject.doAs(getSecurityManager().getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
+                     {
+                         @Override
+                         public Object run()
+                         {
+                             _exchangeRegistry.initialise(_exchangeFactory);
+                             return null;
+                         }
+                     });
     }
 
 
@@ -1346,7 +1360,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
 
         @Override
-        public VirtualHost getVirtualHost()
+        public VirtualHostImpl getVirtualHost()
         {
             return AbstractVirtualHost.this;
         }
@@ -1717,14 +1731,14 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public Map<String, Object> getMessageStoreSettings()
     {
-        return (Map<String, Object>)getAttribute(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS);
+        return _messageStoreSettings;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> getConfigurationStoreSettings()
     {
-        return (Map<String, Object>)getAttribute(org.apache.qpid.server.model.VirtualHost.CONFIGURATION_STORE_SETTINGS);
+        return _configurationStoreSettings;
     }
 
     @Override
@@ -1788,6 +1802,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         if (desiredState == State.ACTIVE)
         {
+/*
             try
             {
                 onOpen();
@@ -1804,6 +1819,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                     throw e;
                 }
             }
+*/
             return true;
         }
         else if (desiredState == State.STOPPED)
@@ -1848,7 +1864,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                     }
                 }
                 setAttribute(org.apache.qpid.server.model.VirtualHost.STATE, getState(), State.DELETED);
+                deleted();
             }
+
             return true;
         }
         return false;

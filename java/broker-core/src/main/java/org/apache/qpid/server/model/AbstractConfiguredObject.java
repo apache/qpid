@@ -20,6 +20,36 @@
  */
 package org.apache.qpid.server.model;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.AbstractCollection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.security.auth.Subject;
+
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.ChangeStateTask;
@@ -29,20 +59,13 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
-import javax.security.auth.Subject;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.*;
+import org.apache.qpid.util.Strings;
 
 public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> implements ConfiguredObject<X>
 {
+    private static final Logger LOGGER = Logger.getLogger(AbstractConfiguredObject.class);
     private static final String ID = "id";
 
     private static final Map<Class<? extends ConfiguredObject>, Collection<Attribute<?,?>>> _allAttributes =
@@ -71,12 +94,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         SECURE_VALUES = Collections.unmodifiableMap(secureValues);
     }
 
+    private final AtomicBoolean _open = new AtomicBoolean();
 
     private final Map<String,Object> _attributes = new HashMap<String, Object>();
     private final Map<Class<? extends ConfiguredObject>, ConfiguredObject> _parents =
             new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject>();
     private final Collection<ConfigurationChangeListener> _changeListeners =
             new ArrayList<ConfigurationChangeListener>();
+
+    private final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObject<?>>> _children =
+            new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObject<?>>>();
 
     @ManagedAttributeField
     private final UUID _id;
@@ -98,6 +125,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     @ManagedAttributeField
     private String _name;
+
+    @ManagedAttributeField
+    private Map<String,String> _context;
 
     private final Map<String, Attribute<?,?>> _attributeTypes;
     private final Map<String, Field> _automatedFields;
@@ -149,16 +179,42 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                        boolean filterAttributes)
     {
         _taskExecutor = taskExecutor;
-        final UUID uuid = (UUID) attributes.get(ID);
-        _id = uuid == null ? UUID.randomUUID() : uuid;
+        Object idObj = attributes.get(ID);
+
+        UUID uuid;
+        if(idObj == null)
+        {
+            uuid = UUID.randomUUID();
+        }
+        else
+        {
+            uuid = UUID_CONVERTER.convert(idObj, this);
+        }
+        _id = uuid;
+
+
         _attributeTypes = getAttributeTypes(getClass());
         _automatedFields = getAutomatedFields(getClass());
 
+        for (Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(getCategoryClass()))
+        {
+            _children.put(childClass, new CopyOnWriteArrayList<ConfiguredObject<?>>());
+        }
+
+        for(ConfiguredObject<?> parent : parents.values())
+        {
+            if(parent instanceof AbstractConfiguredObject<?>)
+            {
+                ((AbstractConfiguredObject<?>)parent).registerChild(this);
+            }
+        }
 
         for(Map.Entry<Class<? extends ConfiguredObject>, ConfiguredObject<?>> entry : parents.entrySet())
         {
             addParent((Class<ConfiguredObject>) entry.getKey(), entry.getValue());
         }
+
+        _name = STRING_CONVERTER.convert(attributes.get(NAME),this);
 
         Collection<String> names = getAttributeNames();
         if(names!=null)
@@ -174,10 +230,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                         {
                             _attributes.put(name, value);
                         }
-                        if(_automatedFields.containsKey(name))
-                        {
-                            automatedSetValue(name, value);
-                        }
                     }
                 }
             }
@@ -188,10 +240,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     if(entry.getValue()!=null)
                     {
                         _attributes.put(entry.getKey(),entry.getValue());
-                        if(_automatedFields.containsKey(entry.getKey()))
-                        {
-                            automatedSetValue(entry.getKey(), entry.getValue());
-                        }
                     }
                 }
             }
@@ -201,13 +249,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         if (defaults != null)
         {
             _defaultAttributes.putAll(defaults);
-            for(Map.Entry<String,Object> defaultedEntry : defaults.entrySet())
-            {
-                if(_automatedFields.containsKey(defaultedEntry.getKey()) && !attributes.containsKey(defaultedEntry.getKey()))
-                {
-                    automatedSetValue(defaultedEntry.getKey(),defaultedEntry.getValue());
-                }
-            }
         }
         if(!_attributes.containsKey(CREATED_BY))
         {
@@ -223,17 +264,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         for(Attribute<?,?> attr : _attributeTypes.values())
         {
-            if(attr.getAnnotation().mandatory() && !(attributes.containsKey(attr.getName())|| defaults.containsKey(attr.getName())))
+            if(attr.getAnnotation().mandatory() && !(_attributes.containsKey(attr.getName())
+                                                     || _defaultAttributes.containsKey(attr.getName())
+                                                     || !"".equals(attr.getAnnotation().defaultValue())))
             {
                 throw new IllegalArgumentException("Mandatory attribute " + attr.getName() + " not supplied for instance of " + getClass().getName());
-            }
-        }
-
-        for(ConfiguredObject<?> parent : parents.values())
-        {
-            if(parent instanceof AbstractConfiguredObject<?>)
-            {
-                ((AbstractConfiguredObject<?>)parent).instantiateChild(this);
             }
         }
 
@@ -257,6 +292,145 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         this(id, Collections.<String,Object>emptyMap(), Collections.<String,Object>emptyMap(), taskExecutor);
     }
 
+    public void open()
+    {
+        if(_open.compareAndSet(false,true))
+        {
+            doResolution();
+            doValidation();
+            doOpening();
+        }
+    }
+
+
+    public void create()
+    {
+        if(_open.compareAndSet(false,true))
+        {
+            doResolution();
+            doValidation();
+            doCreation();
+            doOpening();
+        }
+    }
+
+    protected void doOpening()
+    {
+        onOpen();
+        applyToChildren(new Action<ConfiguredObject<?>>()
+        {
+            @Override
+            public void performAction(final ConfiguredObject<?> child)
+            {
+                if(child instanceof AbstractConfiguredObject)
+                {
+                    ((AbstractConfiguredObject)child).doOpening();
+                }
+            }
+        });
+    }
+
+    protected void doValidation()
+    {
+        applyToChildren(new Action<ConfiguredObject<?>>()
+        {
+            @Override
+            public void performAction(final ConfiguredObject<?> child)
+            {
+                if(child instanceof AbstractConfiguredObject)
+                {
+                    ((AbstractConfiguredObject)child).doValidation();
+                }
+            }
+        });
+        validate();
+    }
+
+    protected void doResolution()
+    {
+        resolve();
+        applyToChildren(new Action<ConfiguredObject<?>>()
+        {
+            @Override
+            public void performAction(final ConfiguredObject<?> child)
+            {
+                if(child instanceof AbstractConfiguredObject)
+                {
+                    ((AbstractConfiguredObject)child).doResolution();
+                }
+            }
+        });
+    }
+
+    protected void doCreation()
+    {
+        onCreate();
+        applyToChildren(new Action<ConfiguredObject<?>>()
+        {
+            @Override
+            public void performAction(final ConfiguredObject<?> child)
+            {
+                if(child instanceof AbstractConfiguredObject)
+                {
+                    ((AbstractConfiguredObject)child).doCreation();
+                }
+            }
+        });
+    }
+
+    private void applyToChildren(Action<ConfiguredObject<?>> action)
+    {
+        for (Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(getCategoryClass()))
+        {
+            Collection<? extends ConfiguredObject> children = getChildren(childClass);
+            if (children != null)
+            {
+                for (ConfiguredObject<?> child : children)
+                {
+                    action.performAction(child);
+                }
+            }
+        }
+    }
+
+    public void validate()
+    {
+    }
+
+    protected void resolve()
+    {
+        for (Attribute<?, ?> attr : _attributeTypes.values())
+        {
+            String attrName = attr.getName();
+            ManagedAttribute attrAnnotation = attr.getAnnotation();
+            if (attrAnnotation.automate())
+            {
+                if (_attributes.containsKey(attrName))
+                {
+                    automatedSetValue(attrName, _attributes.get(attrName));
+                }
+                else if (_defaultAttributes.containsKey(attrName))
+                {
+                    automatedSetValue(attrName, _defaultAttributes.get(attrName));
+                }
+                else if (!"".equals(attrAnnotation.defaultValue()))
+                {
+                    automatedSetValue(attrName, attrAnnotation.defaultValue());
+                }
+
+            }
+        }
+    }
+
+    protected void onOpen()
+    {
+    }
+
+
+    protected void onCreate()
+    {
+    }
+
     public final UUID getId()
     {
         return _id;
@@ -270,6 +444,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public Class<? extends ConfiguredObject> getCategoryClass()
     {
         return getCategory(getClass());
+    }
+
+    public Map<String,String> getContext()
+    {
+        return _context == null ? null : Collections.unmodifiableMap(_context);
     }
 
     public State getDesiredState()
@@ -422,10 +601,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             return value;
         }
-    }
-
-    protected void create()
-    {
     }
 
     protected <T extends ConfiguredObject<?>> Object getAttribute(String name, T parent, String parentAttributeName)
@@ -666,37 +841,35 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         throw new UnsupportedOperationException();
     }
 
-    protected <C extends ConfiguredObject> void instantiateChild(final C child)
+    private <C extends ConfiguredObject> void registerChild(final C child)
     {
+        _children.get(child.getCategoryClass()).add(child);
+    }
 
-        Class<? extends ConfiguredObject> childCategory = child.getCategoryClass();
-        if(!Model.getInstance().getChildTypes(getCategoryClass()).contains(childCategory))
-        {
-            throw new IllegalArgumentException("Cannot instantiate a child of category " + childCategory.getSimpleName()
-                + " to a parent of category " + getCategoryClass().getSimpleName());
-        }
 
-        try
+    protected void deleted()
+    {
+        for(ConfiguredObject<?> parent : _parents.values())
         {
-            final String methodName = "instantiate" + childCategory.getSimpleName();
-            Method recoveryMethod = getClass().getMethod(methodName, childCategory);
-            recoveryMethod.setAccessible(true);
-            recoveryMethod.invoke(this, child);
+            if(parent instanceof AbstractConfiguredObject<?>)
+            {
+                ((AbstractConfiguredObject<?>)parent).unregisterChild(this);
+            }
         }
-        catch (NoSuchMethodException e)
-        {
-            throw new IllegalArgumentException("Cannot instantiate a child of category " + childCategory.getSimpleName()
-                                               + " to a parent of category " + getCategoryClass().getSimpleName()
-                                               + ". No instatiation method defined. ");
-        }
-        catch (InvocationTargetException e)
-        {
-            throw new IllegalArgumentException("Error recovering child", e.getTargetException());
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new ServerScopedRuntimeException("Error recovering child, method for recovery cannot be called", e);
-        }
+    }
+
+
+    protected <C extends ConfiguredObject> void unregisterChild(final C child)
+    {
+        _children.get(child.getCategoryClass()).remove(child);
+    }
+
+
+
+    @Override
+    public <C extends ConfiguredObject> Collection<C> getChildren(final Class<C> clazz)
+    {
+        return Collections.unmodifiableList((List<? extends C>) _children.get(clazz));
     }
 
     public TaskExecutor getTaskExecutor()
@@ -903,13 +1076,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         protected final Converter<T> _converter;
         protected final Method _getter;
 
-        private AttributeOrStatistic(
-                String name, final Method getter, Class<T> type)
+        private AttributeOrStatistic(final Method getter)
         {
-            _name = name;
+
             _getter = getter;
-            _type = type;
-            _converter = getConverter(type);
+            _type = (Class<T>) getTypeFromMethod(getter);
+            _name = getNameFromMethod(getter, _type);
+            _converter = getConverter(_type, getter.getGenericReturnType());
 
         }
 
@@ -950,9 +1123,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private static final class Statistic<C extends ConfiguredObject, T extends Number> extends AttributeOrStatistic<C,T>
     {
-        private Statistic(Class<C> clazz, String name, Class<T> type, final Method getter)
+        private Statistic(Class<C> clazz, final Method getter)
         {
-            super(name, getter, type);
+            super(getter);
+            if(getter.getParameterTypes().length != 0)
+            {
+                throw new IllegalArgumentException("ManagedStatistic annotation should only be added to no-arg getters");
+            }
+
+            if(!Number.class.isAssignableFrom(getType()))
+            {
+                throw new IllegalArgumentException("ManagedStatistic annotation should only be added to getters returning a Number type");
+            }
             addToStatisticsSet(clazz, this);
         }
     }
@@ -963,12 +1145,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         private final ManagedAttribute _annotation;
 
         private Attribute(Class<C> clazz,
-                          String name,
-                          Class<T> type,
                           final Method getter,
                           final ManagedAttribute annotation)
         {
-            super(name, getter, type);
+            super(getter);
+            if(getter.getParameterTypes().length != 0)
+            {
+                throw new IllegalArgumentException("ManagedAttribute annotation should only be added to no-arg getters");
+            }
             _annotation = annotation;
             addToAttributesSet(clazz, this);
         }
@@ -984,6 +1168,31 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    private static String interpolate(ConfiguredObject<?> object, String value)
+    {
+        Map<String,String> inheritedContext = new HashMap<String, String>();
+        generateInheritedContext(object, inheritedContext);
+        return Strings.expand(value, false, Strings.ENV_VARS_RESOLVER, Strings.JAVA_SYS_PROPS_RESOLVER, new Strings.MapResolver(inheritedContext));
+    }
+
+    private static void generateInheritedContext(final ConfiguredObject<?> object,
+                                                 final Map<String, String> inheritedContext)
+    {
+        Collection<Class<? extends ConfiguredObject>> parents =
+                Model.getInstance().getParentTypes(object.getCategoryClass());
+        if(parents != null && !parents.isEmpty())
+        {
+            ConfiguredObject parent = object.getParent(parents.iterator().next());
+            if(parent != null)
+            {
+                generateInheritedContext(parent, inheritedContext);
+            }
+        }
+        if(object.getContext() != null)
+        {
+            inheritedContext.putAll(object.getContext());
+        }
+    }
 
     private static interface Converter<T>
     {
@@ -995,7 +1204,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         @Override
         public String convert(final Object value, final ConfiguredObject object)
         {
-            return value == null ? null : value.toString();
+            return value == null ? null : interpolate(object, value.toString());
         }
     };
 
@@ -1010,7 +1219,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             else if(value instanceof String)
             {
-                return UUID.fromString((String) value);
+                return UUID.fromString(interpolate(object, (String) value));
             }
             else if(value == null)
             {
@@ -1039,7 +1248,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             else if(value instanceof String)
             {
-                return Long.valueOf((String) value);
+                return Long.valueOf(interpolate(object, (String) value));
             }
             else if(value == null)
             {
@@ -1068,7 +1277,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             else if(value instanceof String)
             {
-                return Integer.valueOf((String) value);
+                try
+                {
+                    return Integer.valueOf(interpolate(object, (String) value));
+                }
+                catch (NumberFormatException e)
+                {
+                    Map<String,String> context = new HashMap<String, String>();
+                    generateInheritedContext(object, context);
+                    LOGGER.debug(context.toString());
+                    throw e;
+                }
             }
             else if(value == null)
             {
@@ -1098,7 +1317,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             else if(value instanceof String)
             {
-                return Short.valueOf((String) value);
+                return Short.valueOf(interpolate(object, (String) value));
             }
             else if(value == null)
             {
@@ -1123,7 +1342,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             else if(value instanceof String)
             {
-                return Boolean.valueOf((String) value);
+                return Boolean.valueOf(interpolate(object, (String) value));
             }
             else if(value == null)
             {
@@ -1143,7 +1362,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             if(value instanceof List)
             {
-                return (List) value;
+                return Collections.unmodifiableList((List) value);
+            }
+            else if(value instanceof Object[])
+            {
+                return convert(Arrays.asList((Object[])value),object);
             }
             else if(value == null)
             {
@@ -1155,6 +1378,151 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
         }
     };
+
+    public static class GenericListConverter implements Converter<List>
+    {
+
+        private final Converter<?> _memberConverter;
+
+        public GenericListConverter(final Type genericType)
+        {
+            _memberConverter = getConverter(getRawType(genericType),genericType);
+        }
+
+        private static Class getRawType(Type t)
+        {
+            if(t instanceof Class)
+            {
+                return (Class)t;
+            }
+            else if(t instanceof ParameterizedType)
+            {
+                return (Class)((ParameterizedType)t).getRawType();
+            }
+            else if(t instanceof TypeVariable)
+            {
+                Type[] bounds = ((TypeVariable)t).getBounds();
+                if(bounds.length == 1)
+                {
+                    return getRawType(bounds[0]);
+                }
+            }
+            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
+        }
+
+        @Override
+        public List convert(final Object value, final ConfiguredObject object)
+        {
+            if(value instanceof Collection)
+            {
+                Collection original = (Collection)value;
+                List converted = new ArrayList(original.size());
+                for(Object member : original)
+                {
+                    converted.add(_memberConverter.convert(member, object));
+                }
+                return Collections.unmodifiableList(converted);
+            }
+            else if(value instanceof Object[])
+            {
+                return convert(Arrays.asList((Object[])value),object);
+            }
+            else if(value == null)
+            {
+                return null;
+            }
+            else
+            {
+                return Collections.unmodifiableList(Collections.singletonList(_memberConverter.convert(value, object)));
+            }
+        }
+    }
+
+
+    private static final Converter<Set> SET_CONVERTER = new Converter<Set>()
+    {
+        @Override
+        public Set convert(final Object value, final ConfiguredObject object)
+        {
+            if(value instanceof Set)
+            {
+                return Collections.unmodifiableSet((Set) value);
+            }
+
+            else if(value instanceof Object[])
+            {
+                return convert(new HashSet(Arrays.asList((Object[])value)),object);
+            }
+            else if(value == null)
+            {
+                return null;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a List");
+            }
+        }
+    };
+
+    public static class GenericSetConverter implements Converter<Set>
+    {
+
+        private final Converter<?> _memberConverter;
+
+        public GenericSetConverter(final Type genericType)
+        {
+            _memberConverter = getConverter(getRawType(genericType),genericType);
+        }
+
+        private static Class getRawType(Type t)
+        {
+            if(t instanceof Class)
+            {
+                return (Class)t;
+            }
+            else if(t instanceof ParameterizedType)
+            {
+                return (Class)((ParameterizedType)t).getRawType();
+            }
+            else if(t instanceof TypeVariable)
+            {
+                Type[] bounds = ((TypeVariable)t).getBounds();
+                if(bounds.length == 1)
+                {
+                    return getRawType(bounds[0]);
+                }
+            }
+            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
+        }
+
+        @Override
+        public Set convert(final Object value, final ConfiguredObject object)
+        {
+            if(value instanceof Collection)
+            {
+                Collection original = (Collection)value;
+                Set converted = new HashSet(original.size());
+                for(Object member : original)
+                {
+                    converted.add(_memberConverter.convert(member, object));
+                }
+                return Collections.unmodifiableSet(converted);
+            }
+            else if(value instanceof Object[])
+            {
+                return convert(new HashSet(Arrays.asList((Object[])value)),object);
+            }
+            else if(value == null)
+            {
+                return null;
+            }
+            else
+            {
+                return Collections.unmodifiableSet(Collections.singleton(_memberConverter.convert(value, object)));
+            }
+        }
+    }
+
 
     private static final Converter<Collection> COLLECTION_CONVERTER = new Converter<Collection>()
     {
@@ -1163,7 +1531,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             if(value instanceof Collection)
             {
-                return (Collection) value;
+                return Collections.unmodifiableCollection((Collection) value);
+            }
+            else if(value instanceof Object[])
+            {
+                return convert(Arrays.asList((Object[]) value), object);
             }
             else if(value == null)
             {
@@ -1176,6 +1548,66 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     };
 
+
+    public static class GenericCollectionConverter implements Converter<Collection>
+    {
+
+        private final Converter<?> _memberConverter;
+
+        public GenericCollectionConverter(final Type genericType)
+        {
+            _memberConverter = getConverter(getRawType(genericType),genericType);
+        }
+
+        private static Class getRawType(Type t)
+        {
+            if(t instanceof Class)
+            {
+                return (Class)t;
+            }
+            else if(t instanceof ParameterizedType)
+            {
+                return (Class)((ParameterizedType)t).getRawType();
+            }
+            else if(t instanceof TypeVariable)
+            {
+                Type[] bounds = ((TypeVariable)t).getBounds();
+                if(bounds.length == 1)
+                {
+                    return getRawType(bounds[0]);
+                }
+            }
+            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
+        }
+
+        @Override
+        public Collection convert(final Object value, final ConfiguredObject object)
+        {
+            if(value instanceof Collection)
+            {
+                Collection original = (Collection)value;
+                Collection converted = new ArrayList(original.size());
+                for(Object member : original)
+                {
+                    converted.add(_memberConverter.convert(member, object));
+                }
+                return Collections.unmodifiableCollection(converted);
+            }
+            else if(value instanceof Object[])
+            {
+                return convert(Arrays.asList((Object[])value),object);
+            }
+            else if(value == null)
+            {
+                return null;
+            }
+            else
+            {
+                return Collections.unmodifiableCollection(Collections.singletonList(_memberConverter.convert(value, object)));
+            }
+        }
+    }
+
     private static final Converter<Map> MAP_CONVERTER = new Converter<Map>()
     {
         @Override
@@ -1183,7 +1615,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             if(value instanceof Map)
             {
-                return (Map) value;
+                Map<Object,Object> originalMap = (Map) value;
+                Map resolvedMap = new LinkedHashMap(originalMap.size());
+                for(Map.Entry<Object,Object> entry : originalMap.entrySet())
+                {
+                    Object key = entry.getKey();
+                    Object val = entry.getValue();
+                    resolvedMap.put(key instanceof String ? interpolate(object, (String)key) : key,
+                                    val instanceof String ? interpolate(object, (String)val) : val);
+                }
+                return Collections.unmodifiableMap(resolvedMap);
             }
             else if(value == null)
             {
@@ -1218,7 +1659,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             else if(value instanceof String)
             {
-                return Enum.valueOf(_klazz,(String) value);
+                return Enum.valueOf(_klazz, interpolate(object, (String) value));
             }
             else
             {
@@ -1262,22 +1703,23 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             else if(value instanceof String)
             {
+                String valueStr = interpolate(object, (String) value);
                 Collection<X> reachable = getReachableObjects(object,_klazz);
                 for(X candidate : reachable)
                 {
-                    if(candidate.getName().equals(value))
+                    if(candidate.getName().equals(valueStr))
                     {
                         return candidate;
                     }
                 }
                 try
                 {
-                    UUID id = UUID.fromString((String)value);
+                    UUID id = UUID.fromString(valueStr);
                     return convert(id, object);
                 }
                 catch (IllegalArgumentException e)
                 {
-                    throw new IllegalArgumentException("Cannot find a " + _klazz.getSimpleName() + " with name '" + value + "'");
+                    throw new IllegalArgumentException("Cannot find a " + _klazz.getSimpleName() + " with name '" + valueStr + "'");
                 }
             }
             else
@@ -1288,7 +1730,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     }
 
-    private static <X> Converter<X> getConverter(final Class<X> type)
+    private static <X> Converter<X> getConverter(final Class<X> type, final Type returnType)
     {
         if(type == String.class)
         {
@@ -1320,7 +1762,27 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         else if(List.class.isAssignableFrom(type))
         {
-            return (Converter<X>) LIST_CONVERTER;
+            if (returnType instanceof ParameterizedType)
+            {
+                Type parameterizedType = ((ParameterizedType) returnType).getActualTypeArguments()[0];
+                return (Converter<X>) new GenericListConverter(parameterizedType);
+            }
+            else
+            {
+                return (Converter<X>) LIST_CONVERTER;
+            }
+        }
+        else if(Set.class.isAssignableFrom(type))
+        {
+            if (returnType instanceof ParameterizedType)
+            {
+                Type parameterizedType = ((ParameterizedType) returnType).getActualTypeArguments()[0];
+                return (Converter<X>) new GenericSetConverter(parameterizedType);
+            }
+            else
+            {
+                return (Converter<X>) SET_CONVERTER;
+            }
         }
         else if(Map.class.isAssignableFrom(type))
         {
@@ -1328,7 +1790,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         else if(Collection.class.isAssignableFrom(type))
         {
-            return (Converter<X>) COLLECTION_CONVERTER;
+            if (returnType instanceof ParameterizedType)
+            {
+                Type parameterizedType = ((ParameterizedType) returnType).getActualTypeArguments()[0];
+                return (Converter<X>) new GenericCollectionConverter(parameterizedType);
+            }
+            else
+            {
+                return (Converter<X>) COLLECTION_CONVERTER;
+            }
         }
         else if(ConfiguredObject.class.isAssignableFrom(type))
         {
@@ -1472,31 +1942,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
                 if(annotation != null)
                 {
-                    if(m.getParameterTypes().length != 0)
-                    {
-                        throw new IllegalArgumentException("ManagedAttribute annotation should only be added to no-arg getters");
-                    }
-                    Class<?> type = getType(m);
-                    String name = getName(m, type);
-                    Attribute<X,?> newAttr = new Attribute(clazz,name,type,m, annotation);
-
+                    Attribute<X,?> newAttr = new Attribute(clazz, m, annotation);
                 }
                 else
                 {
                     ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
                     if(statAnnotation != null)
                     {
-                        if(m.getParameterTypes().length != 0)
-                        {
-                            throw new IllegalArgumentException("ManagedStatistic annotation should only be added to no-arg getters");
-                        }
-                        Class<?> type = getType(m);
-                        if(!Number.class.isAssignableFrom(type))
-                        {
-                            throw new IllegalArgumentException("ManagedStatistic annotation should only be added to getters returning a Number type");
-                        }
-                        String name = getName(m, type);
-                        Statistic<X,?> newStat = new Statistic(clazz,name,type,m);
+                        Statistic<X,?> newStat = new Statistic(clazz,m);
                     }
                 }
             }
@@ -1542,7 +1995,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         throw new ServerScopedRuntimeException("Unable to find field definition for automated field " + attr.getName() + " in class " + objClass.getName());
     }
 
-    private static String getName(final Method m, final Class<?> type)
+    private static String getNameFromMethod(final Method m, final Class<?> type)
     {
         String methodName = m.getName();
         String baseName;
@@ -1579,7 +2032,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return name;
     }
 
-    private static Class<?> getType(final Method m)
+    private static Class<?> getTypeFromMethod(final Method m)
     {
         Class<?> type = m.getReturnType();
         if(type.isPrimitive())

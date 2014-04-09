@@ -146,6 +146,13 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         store.save(newParentEntry, new ConfigurationEntryImpl(id, type, attributes, Collections.<UUID> emptySet(), store));
     }
 
+    /* **
+     *  TODO - RG : This functionality has been moved to the generic configured object.  The JsonConfigurationEntryStore
+     *  needs to be removed and replaced with the Json configuration store written for the virtual host, however testing
+     *  resolution functionality needs to occur in a configured object resolution test
+     * **
+
+
     public void testAttributeIsResolvedFromSystemProperties()
     {
         String defaultVhost = getTestName();
@@ -164,6 +171,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
 
         assertEquals("Unresolved default virtualhost  value", defaultVhost, store2.getRootEntry().getAttributes().get(Broker.DEFAULT_VIRTUAL_HOST));
     }
+    */
 
     public void testCreateEmptyStore()
     {

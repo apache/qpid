@@ -20,21 +20,28 @@
  */
 package org.apache.qpid.server.model;
 
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.store.ConfiguredObjectDependency;
 import org.apache.qpid.server.store.ConfiguredObjectIdDependency;
 import org.apache.qpid.server.store.ConfiguredObjectNameDependency;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
-import java.security.AccessControlException;
-import java.util.*;
 
 @ManagedObject (creatable = false)
 public class SystemContext extends AbstractConfiguredObject<SystemContext>
@@ -50,7 +57,6 @@ public class SystemContext extends AbstractConfiguredObject<SystemContext>
 
     @ManagedAttributeField
     private String _storeType;
-    private Broker _broker;
 
     public SystemContext(final TaskExecutor taskExecutor,
                          final ConfiguredObjectFactory configuredObjectFactory,
@@ -64,6 +70,7 @@ public class SystemContext extends AbstractConfiguredObject<SystemContext>
         _objectFactory = configuredObjectFactory;
         _logRecorder = logRecorder;
         _brokerOptions = brokerOptions;
+        open();
     }
 
     public static Map<String, Object> createAttributes(final BrokerOptions brokerOptions)
@@ -72,6 +79,7 @@ public class SystemContext extends AbstractConfiguredObject<SystemContext>
         attributes.put(NAME, "System");
         attributes.put("storePath", brokerOptions.getConfigurationStoreLocation());
         attributes.put("storeTye", brokerOptions.getConfigurationStoreType());
+        attributes.put(ConfiguredObject.CONTEXT, brokerOptions.getConfigProperties());
         return attributes;
     }
 
@@ -237,17 +245,6 @@ public class SystemContext extends AbstractConfiguredObject<SystemContext>
         throw new IllegalArgumentException("Cannot change the lifetime of the SystemContext object");
     }
 
-    @Override
-    public <C extends ConfiguredObject> Collection<C> getChildren(final Class<C> clazz)
-    {
-        if(clazz == Broker.class)
-        {
-            return (Collection<C>) Collections.singleton(_broker);
-        }
-
-        return Collections.emptySet();
-    }
-
     public ConfiguredObjectFactory getObjectFactory()
     {
         return _objectFactory;
@@ -312,13 +309,17 @@ public class SystemContext extends AbstractConfiguredObject<SystemContext>
         return getAttributeNames(getClass());
     }
 
-    public void instantiateBroker(final Broker broker)
-    {
-        _broker = broker;
-    }
-
     public Broker getBroker()
     {
-        return _broker;
+        Collection<Broker> children = getChildren(Broker.class);
+        if(children == null || children.isEmpty())
+        {
+            return null;
+        }
+        else if(children.size() != 1)
+        {
+            throw new IllegalConfigurationException("More than one broker has been registered in a single context");
+        }
+        return children.iterator().next();
     }
 }

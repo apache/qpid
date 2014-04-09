@@ -24,7 +24,7 @@ import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 import java.util.HashMap;
@@ -50,7 +50,7 @@ public class QueueThreadPoolTest extends QpidTestCase
     public void test() throws Exception
     {
         int initialCount = ReferenceCountingExecutorService.getInstance().getReferenceCount();
-        VirtualHost test = BrokerTestHelper.createVirtualHost("test");
+        VirtualHostImpl test = BrokerTestHelper.createVirtualHost("test");
 
         try
         {

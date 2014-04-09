@@ -59,14 +59,14 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryStateHandler
 {
     private static final Logger _logger = Logger.getLogger(SendingLink_1_0.class);
 
-    private VirtualHost _vhost;
+    private VirtualHostImpl _vhost;
     private SendingDestination _destination;
 
     private ConsumerImpl _consumer;
@@ -87,7 +87,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
 
     public SendingLink_1_0(final SendingLinkAttachment linkAttachment,
-                           final VirtualHost vhost,
+                           final VirtualHostImpl vhost,
                            final SendingDestination destination)
             throws AmqpErrorException
     {
@@ -687,7 +687,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         _closeAction = action;
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _vhost;
     }

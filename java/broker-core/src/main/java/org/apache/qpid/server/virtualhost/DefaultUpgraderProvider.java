@@ -51,7 +51,7 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
     public static final String EXCLUSIVE = "exclusive";
     public static final String NAME = "name";
-    private final VirtualHost _virtualHost;
+    private final VirtualHostImpl _virtualHost;
 
     @SuppressWarnings("serial")
     private static final Map<String, String> DEFAULT_EXCHANGES = Collections.unmodifiableMap(new HashMap<String, String>()
@@ -64,7 +64,7 @@ public class DefaultUpgraderProvider implements UpgraderProvider
 
     private final Map<String, UUID> _defaultExchangeIds;
 
-    public DefaultUpgraderProvider(final VirtualHost virtualHost)
+    public DefaultUpgraderProvider(final VirtualHostImpl virtualHost)
     {
         _virtualHost = virtualHost;
         Map<String, UUID> defaultExchangeIds = new HashMap<String, UUID>();

@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 import org.apache.qpid.server.security.SubjectCreator;
 
-@ManagedObject
+@ManagedObject( creatable = false )
 public interface AuthenticationProvider<X extends AuthenticationProvider<X>> extends ConfiguredObject<X>
 {
 

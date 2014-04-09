@@ -69,6 +69,22 @@ public class ConfiguredObjectToMapConverter
             {
                 object.put(name, ((ConfiguredObject) value).getName());
             }
+            else if(value instanceof Collection)
+            {
+                List<Object> converted = new ArrayList();
+                for(Object member : (Collection)value)
+                {
+                    if(member instanceof ConfiguredObject)
+                    {
+                        converted.add(((ConfiguredObject)member).getName());
+                    }
+                    else
+                    {
+                        converted.add(member);
+                    }
+                }
+                object.put(name, converted);
+            }
             else if(value != null)
             {
                 object.put(name, value);

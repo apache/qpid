@@ -38,7 +38,8 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -50,14 +51,14 @@ import static org.mockito.Mockito.when;
 public class HeadersExchangeTest extends TestCase
 {
     private HeadersExchange _exchange;
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _virtualHost = mock(VirtualHost.class);
+        _virtualHost = mock(VirtualHostImpl.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());

@@ -40,7 +40,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.security.AccessControlException;
 import java.util.Map;
@@ -62,7 +62,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     {
         final AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
         final AMQSessionModel session = protocolConnection.getChannel(channelId);
-        VirtualHost virtualHost = protocolConnection.getVirtualHost();
+        VirtualHostImpl virtualHost = protocolConnection.getVirtualHost();
 
         final AMQShortString queueName;
 
@@ -178,7 +178,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
     protected AMQQueue createQueue(final AMQChannel channel, final AMQShortString queueName,
                                    QueueDeclareBody body,
-                                   final VirtualHost virtualHost,
+                                   final VirtualHostImpl virtualHost,
                                    final AMQProtocolSession session)
             throws AMQException, QueueExistsException
     {

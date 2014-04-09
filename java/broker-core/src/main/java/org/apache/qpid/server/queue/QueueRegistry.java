@@ -23,11 +23,11 @@ package org.apache.qpid.server.queue;
 import java.util.Collection;
 import java.util.UUID;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public interface QueueRegistry
 {
-    VirtualHost getVirtualHost();
+    VirtualHostImpl getVirtualHost();
 
     void registerQueue(AMQQueue<?> queue);
 

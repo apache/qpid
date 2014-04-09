@@ -22,7 +22,20 @@ package org.apache.qpid.server.exchange;
 
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
@@ -32,13 +45,13 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -51,19 +64,7 @@ import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public abstract class AbstractExchange<T extends AbstractExchange<T>>
         extends AbstractConfiguredObject<T>
@@ -77,7 +78,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     private boolean _durable;
 
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
 
     private final List<Action<ExchangeImpl>> _closeTaskList = new CopyOnWriteArrayList<Action<ExchangeImpl>>();
 
@@ -105,10 +106,10 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     private StateChangeListener<BindingImpl, State> _bindingListener;
 
-    public AbstractExchange(VirtualHost vhost, Map<String, Object> attributes) throws UnknownExchangeException
+    public AbstractExchange(VirtualHostImpl vhost, Map<String, Object> attributes) throws UnknownExchangeException
     {
-        super(MapValueConverter.getUUIDAttribute(org.apache.qpid.server.model.Exchange.ID, attributes),
-              Collections.<String,Object>emptyMap(), attributes, vhost.getTaskExecutor());
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(org.apache.qpid.server.model.VirtualHost.class, (org.apache.qpid.server.model.VirtualHost)vhost),
+                Collections.<String,Object>emptyMap(), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
 
         _durable = MapValueConverter.getBooleanAttribute(org.apache.qpid.server.model.Exchange.DURABLE, attributes);
@@ -227,7 +228,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return getClass().getSimpleName() + "[" + getName() +"]";
     }
 
-    public VirtualHost getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _virtualHost;
     }
@@ -885,17 +886,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         {
             throw new UnsupportedOperationException("'"+e.getMessage()+"' is a reserved exchange and can't be deleted",e);
         }
-    }
-
-
-    @Override
-    public <T extends ConfiguredObject> T getParent(final Class<T> clazz)
-    {
-        if(clazz == org.apache.qpid.server.model.VirtualHost.class)
-        {
-            return (T) _virtualHost.getModel();
-        }
-        return super.getParent(clazz);
     }
 
     @Override

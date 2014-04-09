@@ -87,11 +87,15 @@ public class FileKeyStore extends AbstractKeyStoreAdapter<FileKeyStore> implemen
     {
         super(id, broker, DEFAULTS, attributes);
         _broker = broker;
+    }
 
+    @Override
+    public void validate()
+    {
+        super.validate();
         validateKeyStoreAttributes(_keyStoreType, _path, getPassword(),
                                    _certificateAlias, _keyManagerFactoryAlgorithm);
     }
-
 
     @Override
     public Collection<String> getAttributeNames()
@@ -110,12 +114,12 @@ public class FileKeyStore extends AbstractKeyStoreAdapter<FileKeyStore> implemen
             Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
             for (Port port : ports)
             {
-                if (storeName.equals(port.getAttribute(Port.KEY_STORE)))
+                if (port.getKeyStore() == this)
                 {
                     throw new IntegrityViolationException("Key store '" + storeName + "' can't be deleted as it is in use by a port:" + port.getName());
                 }
             }
-
+            deleted();
             return true;
         }
 

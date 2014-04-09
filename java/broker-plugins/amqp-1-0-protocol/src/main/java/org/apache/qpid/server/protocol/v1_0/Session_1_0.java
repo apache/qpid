@@ -58,7 +58,7 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 import javax.security.auth.Subject;
@@ -73,7 +73,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     private static final Logger _logger = Logger.getLogger(Session_1_0.class);
     private static final Symbol LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     private final SessionEndpoint _endpoint;
-    private VirtualHost _vhost;
+    private VirtualHostImpl _vhost;
     private AutoCommitTransaction _transaction;
 
     private final LinkedHashMap<Integer, ServerTransaction> _openTransactions =
@@ -721,7 +721,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         return _subject;
     }
 
-    VirtualHost getVirtualHost()
+    VirtualHostImpl getVirtualHost()
     {
         return _connection.getVirtualHost();
     }

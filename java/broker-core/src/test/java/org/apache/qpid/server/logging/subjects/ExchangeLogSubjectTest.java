@@ -22,7 +22,7 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 
 /**
@@ -31,7 +31,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class ExchangeLogSubjectTest extends AbstractTestLogSubject
 {
     private ExchangeImpl _exchange;
-    private VirtualHost _testVhost;
+    private VirtualHostImpl _testVhost;
 
     @Override
     public void setUp() throws Exception

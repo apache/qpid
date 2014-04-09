@@ -32,7 +32,7 @@ import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.security.AccessControlException;
 
@@ -52,7 +52,7 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
     public void methodReceived(AMQStateManager stateManager, ExchangeDeleteBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHost virtualHost = session.getVirtualHost();
+        VirtualHostImpl virtualHost = session.getVirtualHost();
         final AMQChannel channel = session.getChannel(channelId);
         if (channel == null)
         {

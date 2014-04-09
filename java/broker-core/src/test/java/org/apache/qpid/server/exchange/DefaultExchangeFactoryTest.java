@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 @SuppressWarnings("rawtypes")
@@ -200,7 +200,7 @@ public class DefaultExchangeFactoryTest extends QpidTestCase
         }
 
         @Override
-        public CustomExchange newInstance(VirtualHost host, Map<String,Object> attributes)
+        public CustomExchange newInstance(VirtualHostImpl host, Map<String,Object> attributes)
         {
             return null;
         }

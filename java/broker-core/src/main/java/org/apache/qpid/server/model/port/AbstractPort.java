@@ -65,6 +65,24 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     private final Broker<?> _broker;
     private AtomicReference<State> _state;
 
+    @ManagedAttributeField
+    private int _port;
+
+    @ManagedAttributeField
+    private String _bindingAddress;
+
+    @ManagedAttributeField
+    private KeyStore<?> _keyStore;
+
+    @ManagedAttributeField
+    private Collection<TrustStore> _trustStores;
+
+    @ManagedAttributeField
+    private Set<Transport> _transports;
+
+    @ManagedAttributeField
+    private Set<Protocol> _protocols;
+
     public AbstractPort(UUID id,
                         Broker<?> broker,
                         Map<String, Object> attributes,
@@ -73,40 +91,26 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     {
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
               updateDefaults(defaults, attributes),
-              combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)),
+              combineIdWithAttributes(id,attributes),
               taskExecutor);
         _broker = broker;
 
-        Object portValue = attributes.get(Port.PORT);
-        if (portValue == null)
-        {
-            throw new IllegalConfigurationException("Port attribute is not specified for port: " + attributes);
-        }
-
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
+    }
 
-
-        boolean useClientAuth = Boolean.TRUE.equals(getAttribute(Port.NEED_CLIENT_AUTH))
-                                || Boolean.TRUE.equals(getAttribute(Port.WANT_CLIENT_AUTH));
-
-        if(useClientAuth && getTrustStores().isEmpty())
-        {
-            throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but has no trust stores configured.");
-        }
+    @Override
+    public void validate()
+    {
+        super.validate();
 
         boolean useTLSTransport = getTransports().contains(Transport.SSL) || getTransports().contains(Transport.WSS);
-        if(useClientAuth && !useTLSTransport)
-        {
-            throw new IllegalConfigurationException(
-                    "Can't create port which requests SSL client certificates but doesn't use SSL transport.");
-        }
+
         if(useTLSTransport && getKeyStore() == null)
         {
             throw new IllegalConfigurationException("Can't create a port which uses a secure transport but has no KeyStore");
         }
     }
-
 
     private static Map<String, Object> updateDefaults(final Map<String, Object> defaults,
                                                       final Map<String, Object> attributes)
@@ -126,20 +130,19 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     @Override
     public String getBindingAddress()
     {
-        return (String)getAttribute(BINDING_ADDRESS);
+        return _bindingAddress;
     }
 
     @Override
     public int getPort()
     {
-        return (Integer)getAttribute(PORT);
+        return _port;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Collection<Transport> getTransports()
+    public Set<Transport> getTransports()
     {
-        return (Collection<Transport>)getAttribute(TRANSPORTS);
+        return _transports;
     }
 
     @Override
@@ -156,11 +159,10 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         throw new IllegalStateException();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Collection<Protocol> getProtocols()
+    public Set<Protocol> getProtocols()
     {
-        return (Collection<Protocol>)getAttribute(PROTOCOLS);
+        return _protocols;
     }
 
     @Override
@@ -290,6 +292,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
                 if( _state.compareAndSet(state, State.DELETED))
                 {
                     onStop();
+                    deleted();
                     return true;
                 }
             }
@@ -363,14 +366,20 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
             throw new IllegalConfigurationException("Changing the port name is not allowed");
         }
 
-        Integer newPort = (Integer) merged.get(PORT);
-        if(getPort() != newPort)
+        if(converted.containsKey(PORT))
         {
-            for(Port p : _broker.getPorts())
+            Integer newPort = (Integer) merged.get(PORT);
+            if (getPort() != newPort)
             {
-                if(p.getPort() == newPort)
+                for (Port p : _broker.getPorts())
                 {
-                    throw new IllegalConfigurationException("Port number " + newPort + " is already in use by port " + p.getName());
+                    if (p.getPort() == newPort)
+                    {
+                        throw new IllegalConfigurationException("Port number "
+                                                                + newPort
+                                                                + " is already in use by port "
+                                                                + p.getName());
+                    }
                 }
             }
         }
@@ -393,7 +402,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
             }
         }
 
-        Set<String> trustStoreNames = (Set<String>) merged.get(TRUST_STORES);
+        Collection<String> trustStoreNames = (Collection<String>) merged.get(TRUST_STORES);
         boolean hasTrustStore = trustStoreNames != null && !trustStoreNames.isEmpty();
         if(hasTrustStore)
         {
@@ -460,7 +469,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
             }
         }
 
-        super.changeAttributes(converted);
+        super.changeAttributes(attributes);
     }
 
     @Override
@@ -496,39 +505,13 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     @Override
     public KeyStore getKeyStore()
     {
-        String keyStoreName = (String)getAttribute(Port.KEY_STORE);
-        KeyStore keyStore = _broker.findKeyStoreByName(keyStoreName);
-
-        if (keyStoreName != null && keyStore == null)
-        {
-            throw new IllegalConfigurationException("Can't find key store with name '" + keyStoreName + "' for port " + getName());
-        }
-
-        return keyStore;
+        return _keyStore;
     }
 
     @Override
     public Collection<TrustStore> getTrustStores()
     {
-        Set<String> trustStoreNames = (Set<String>) getAttribute(TRUST_STORES);
-        boolean hasTrustStoreName = trustStoreNames != null && !trustStoreNames.isEmpty();
-
-        final Collection<TrustStore> trustStores = new ArrayList<TrustStore>();
-        if(hasTrustStoreName)
-        {
-            for (String name : trustStoreNames)
-            {
-                TrustStore trustStore = _broker.findTrustStoreByName(name);
-                if (trustStore == null)
-                {
-                    throw new IllegalConfigurationException("Can't find trust store with name '" + name + "' for port " + getName());
-                }
-
-                trustStores.add(trustStore);
-            }
-        }
-
-        return trustStores;
+        return _trustStores;
     }
 
     @Override
@@ -537,38 +520,10 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", port=" + getPort() + "]";
     }
 
-    @Override
-    public boolean isTcpNoDelay()
-    {
-        return (Boolean)getAttribute(TCP_NO_DELAY);
-    }
 
-    @Override
-    public int getSendBufferSize()
+    protected void validateOnlyOneInstance()
     {
-        return (Integer)getAttribute(SEND_BUFFER_SIZE);
-    }
-
-    @Override
-    public int getReceiveBufferSize()
-    {
-        return (Integer)getAttribute(RECEIVE_BUFFER_SIZE);
-    }
-
-    @Override
-    public boolean getNeedClientAuth()
-    {
-        return (Boolean)getAttribute(NEED_CLIENT_AUTH);
-    }
-
-    @Override
-    public boolean getWantClientAuth()
-    {
-        return (Boolean)getAttribute(WANT_CLIENT_AUTH);
-    }
-
-    protected void validateOnlyOneInstance(final Broker<?> broker)
-    {
+        Broker<?> broker = getParent(Broker.class);
         if(!broker.isManagementMode())
         {
             //ManagementMode needs this relaxed to allow its overriding management ports to be inserted.

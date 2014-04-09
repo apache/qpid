@@ -60,12 +60,18 @@ public class ACLFileAccessControlProvider
               Collections.<String,Object>emptyMap(), attributes, broker.getTaskExecutor());
 
 
-        _accessControl = new DefaultAccessControl(getPath(), broker);
         _broker = broker;
 
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
 
+    }
+
+    @Override
+    protected void onOpen()
+    {
+        super.onOpen();
+        _accessControl = new DefaultAccessControl(getPath(), _broker);
     }
 
     @ManagedAttribute( automate = true, mandatory = true )
@@ -155,6 +161,7 @@ public class ACLFileAccessControlProvider
 
         if(desiredState == State.DELETED)
         {
+            deleted();
             return _state.compareAndSet(state, State.DELETED);
         }
         else if (desiredState == State.QUIESCED)

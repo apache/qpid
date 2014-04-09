@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 @ManagedObject( creatable = false, category = false )
 /**
@@ -37,6 +37,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     public static final String NAME = "name";
     public static final String TYPE = "type";
     public static final String DESCRIPTION = "description";
+    public static final String CONTEXT = "context";
     public static final String LAST_UPDATED_BY = "lastUpdatedBy";
     public static final String LAST_UPDATED_TIME = "lastUpdatedTime";
     public static final String STATE = "state";
@@ -66,6 +67,9 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
 
     @ManagedAttribute
     String getType();
+
+    @ManagedAttribute(automate = true)
+    Map<String, String> getContext();
 
     @ManagedAttribute
     String getLastUpdatedBy();
@@ -284,4 +288,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     // TODO - remove this when objects become responsible for their own storage
     ConfiguredObjectRecord asObjectRecord();
 
+    void open();
+
+    void validate();
 }

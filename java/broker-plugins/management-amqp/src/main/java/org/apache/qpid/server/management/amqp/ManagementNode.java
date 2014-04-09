@@ -48,7 +48,7 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.nio.charset.Charset;
 import java.security.AccessControlException;
@@ -92,7 +92,7 @@ class ManagementNode implements MessageSource, MessageDestination
     public static final String RESULTS = "results";
 
 
-    private final VirtualHost _virtualHost;
+    private final VirtualHostImpl _virtualHost;
 
     private final UUID _id;
 

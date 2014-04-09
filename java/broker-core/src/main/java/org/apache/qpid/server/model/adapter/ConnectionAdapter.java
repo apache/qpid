@@ -62,6 +62,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     {
         super(Collections.<String,Object>emptyMap(), createAttributes(conn), taskExecutor);
         _connection = conn;
+        open();
         conn.addSessionListener(this);
     }
 

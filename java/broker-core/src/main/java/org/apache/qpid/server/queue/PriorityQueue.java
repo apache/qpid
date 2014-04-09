@@ -21,9 +21,8 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.util.Map;
 
@@ -32,7 +31,7 @@ public class PriorityQueue extends OutOfOrderQueue
 
     public static final int DEFAULT_PRIORITY_LEVELS = 10;
 
-    protected PriorityQueue(VirtualHost virtualHost,
+    protected PriorityQueue(VirtualHostImpl virtualHost,
                             Map<String, Object> attributes)
     {
         super(virtualHost, attributes, entryList(attributes));

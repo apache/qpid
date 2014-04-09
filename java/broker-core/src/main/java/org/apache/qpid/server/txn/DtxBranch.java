@@ -34,7 +34,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.Xid;
 
 public class DtxBranch
@@ -51,7 +51,7 @@ public class DtxBranch
 
     private Transaction _transaction;
     private long _expiration;
-    private VirtualHost _vhost;
+    private VirtualHostImpl _vhost;
     private ScheduledFuture<?> _timeoutFuture;
     private MessageStore _store;
 
@@ -69,7 +69,7 @@ public class DtxBranch
     }
 
 
-    public DtxBranch(Xid xid, MessageStore store, VirtualHost vhost)
+    public DtxBranch(Xid xid, MessageStore store, VirtualHostImpl vhost)
     {
         _xid = xid;
         _store = store;

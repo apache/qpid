@@ -36,7 +36,7 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -55,8 +55,8 @@ public class SimpleAuthenticationManager extends AbstractAuthenticationManager<S
     private final Map<String, String> _users = Collections.synchronizedMap(new HashMap<String, String>());
 
     public SimpleAuthenticationManager(final Broker broker,
-                                          final Map<String, Object> defaults,
-                                          final Map<String, Object> attributes)
+                                       final Map<String, Object> defaults,
+                                       final Map<String, Object> attributes)
     {
         super(broker, defaults, attributes);
     }

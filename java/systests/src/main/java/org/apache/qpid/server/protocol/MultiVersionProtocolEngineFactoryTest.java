@@ -32,7 +32,7 @@ import java.util.Set;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.Sender;
@@ -40,7 +40,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
-    private VirtualHost _virtualHost;
+    private VirtualHostImpl _virtualHost;
     private Broker _broker;
 
     @Override
@@ -51,6 +51,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         _broker = BrokerTestHelper.createBrokerMock();
         VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
         when(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)).thenReturn("default");
+        when(_broker.getDefaultVirtualHost()).thenReturn("default");
 
         // AMQP 1-0 connection needs default vhost to be present
         _virtualHost = BrokerTestHelper.createVirtualHost("default", virtualHostRegistry);

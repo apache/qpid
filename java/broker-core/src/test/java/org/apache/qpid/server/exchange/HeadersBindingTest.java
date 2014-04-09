@@ -20,7 +20,15 @@
  */
 package org.apache.qpid.server.exchange;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.binding.BindingImpl;
@@ -28,14 +36,7 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 /**
  */
@@ -144,7 +145,7 @@ public class HeadersBindingTest extends TestCase
     {
         _count++;
         _queue = mock(AMQQueue.class);
-        VirtualHost vhost = mock(VirtualHost.class);
+        VirtualHostImpl vhost = mock(VirtualHostImpl.class);
         when(_queue.getVirtualHost()).thenReturn(vhost);
         when(vhost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         final EventLogger eventLogger = new EventLogger();
@@ -165,7 +166,7 @@ public class HeadersBindingTest extends TestCase
 
         matchHeaders.setString("A", "Value of A");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -176,7 +177,7 @@ public class HeadersBindingTest extends TestCase
         matchHeaders.setString("A", "Value of A");
         matchHeaders.setString("B", "Value of B");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -186,7 +187,7 @@ public class HeadersBindingTest extends TestCase
 
         matchHeaders.setString("A", "Altered value of A");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertFalse(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -197,7 +198,7 @@ public class HeadersBindingTest extends TestCase
 
         matchHeaders.setString("A", "Value of A");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -209,7 +210,7 @@ public class HeadersBindingTest extends TestCase
 
         matchHeaders.setString("A", "Value of A");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertFalse(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -222,7 +223,7 @@ public class HeadersBindingTest extends TestCase
         matchHeaders.setString("A", "Value of A");
         matchHeaders.setString("B", "Value of B");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -236,7 +237,7 @@ public class HeadersBindingTest extends TestCase
         matchHeaders.setString("B", "Value of B");
         matchHeaders.setString("C", "Value of C");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -250,7 +251,7 @@ public class HeadersBindingTest extends TestCase
         matchHeaders.setString("B", "Altered value of B");
         matchHeaders.setString("C", "Value of C");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertFalse(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -261,7 +262,7 @@ public class HeadersBindingTest extends TestCase
 
         matchHeaders.setString("A", "Value of A");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -273,7 +274,7 @@ public class HeadersBindingTest extends TestCase
 
         matchHeaders.setString("A", "Value of A");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -286,7 +287,7 @@ public class HeadersBindingTest extends TestCase
         matchHeaders.setString("A", "Value of A");
         matchHeaders.setString("B", "Value of B");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -300,7 +301,7 @@ public class HeadersBindingTest extends TestCase
         matchHeaders.setString("B", "Value of B");
         matchHeaders.setString("C", "Value of C");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -314,7 +315,7 @@ public class HeadersBindingTest extends TestCase
         matchHeaders.setString("B", "Altered value of B");
         matchHeaders.setString("C", "Value of C");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertTrue(new HeadersBinding(b).matches(matchHeaders));
     }
 
@@ -328,7 +329,7 @@ public class HeadersBindingTest extends TestCase
         matchHeaders.setString("B", "Altered value of B");
         matchHeaders.setString("C", "Value of C");
 
-        BindingImpl b = new BindingImpl(null, getQueueName(), _queue, _exchange, bindHeaders);
+        BindingImpl b = new BindingImpl(UUID.randomUUID(), getQueueName(), _queue, _exchange, bindHeaders);
         assertFalse(new HeadersBinding(b).matches(matchHeaders));
     }
 

@@ -23,7 +23,7 @@ package org.apache.qpid.server.logging.subjects;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,7 +37,7 @@ public class BindingLogSubjectTest extends AbstractTestLogSubject
     private AMQQueue _queue;
     private String _routingKey;
     private ExchangeImpl _exchange;
-    private VirtualHost _testVhost;
+    private VirtualHostImpl _testVhost;
 
     @Override
     public void setUp() throws Exception

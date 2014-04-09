@@ -55,11 +55,11 @@ public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost
     }
 
     @Override
-    protected void validateAttributes()
+    public void validate()
     {
-        super.validateAttributes();
+        super.validate();
         Map<String,Object> attributes = getActualAttributes();
-        Map<String, Object> messageStoreSettings = (Map<String, Object>)attributes.get(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS);
+        Map<String, Object> messageStoreSettings = getMessageStoreSettings();
         if (messageStoreSettings == null)
         {
             throw new IllegalArgumentException("Attribute '"+ org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS + "' is required.");

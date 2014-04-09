@@ -21,16 +21,6 @@
 
 package org.apache.qpid.server.model.adapter;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.util.MapValueConverter;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.type.TypeReference;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -41,8 +31,35 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.security.AccessControlException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.log4j.Logger;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jackson.type.TypeReference;
+
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.util.MapValueConverter;
 
 @ManagedObject( category = false, type = "FileSystemPreferences" )
 public class FileSystemPreferencesProvider extends AbstractConfiguredObject<FileSystemPreferencesProvider> implements PreferencesProvider<FileSystemPreferencesProvider>
@@ -177,6 +194,7 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
                 finally
                 {
                     _store.delete();
+                    deleted();
                     _authenticationProvider.setPreferencesProvider(null);
                 }
                 return true;

@@ -83,7 +83,12 @@ public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> impl
     {
         super(id, broker, DEFAULTS, attributes);
         _broker = broker;
+    }
 
+    @Override
+    public void validate()
+    {
+        super.validate();
         validateTrustStoreAttributes(_trustStoreType, _path, getPassword(), _trustManagerFactoryAlgorithm);
     }
 
@@ -105,11 +110,17 @@ public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> impl
             for (Port port : ports)
             {
                 Collection<TrustStore> trustStores = port.getTrustStores();
-                for(TrustStore store : trustStores)
+                if(trustStores != null)
                 {
-                    if (storeName.equals(store.getAttribute(TrustStore.NAME)))
+                    for (TrustStore store : trustStores)
                     {
-                        throw new IntegrityViolationException("Trust store '" + storeName + "' can't be deleted as it is in use by a port: " + port.getName());
+                        if (storeName.equals(store.getAttribute(TrustStore.NAME)))
+                        {
+                            throw new IntegrityViolationException("Trust store '"
+                                                                  + storeName
+                                                                  + "' can't be deleted as it is in use by a port: "
+                                                                  + port.getName());
+                        }
                     }
                 }
             }
@@ -125,7 +136,7 @@ public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> impl
                     throw new IntegrityViolationException("Trust store '" + storeName + "' can't be deleted as it is in use by an authentication manager: " + authProvider.getName());
                 }
             }
-
+            deleted();
             return true;
         }
         return false;

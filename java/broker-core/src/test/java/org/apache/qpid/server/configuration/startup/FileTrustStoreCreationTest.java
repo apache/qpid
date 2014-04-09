@@ -49,6 +49,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         Broker broker = mock(Broker.class);
 
         final TrustStore trustStore = new FileTrustStore(id, broker, attributes);
+        trustStore.open();
         assertNotNull("Trust store configured object is not created", trustStore);
         assertEquals(id, trustStore.getId());
 
@@ -92,6 +93,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
             try
             {
                 TrustStore trustStore = new FileTrustStore(id, broker, properties);
+                trustStore.open();
                 fail("Cannot create key store without a " + mandatoryProperties[i]);
             }
             catch(IllegalArgumentException e)
