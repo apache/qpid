@@ -405,7 +405,7 @@ class ReplicationTests(HaBrokerTest):
         s = primary.connect().session().sender("q; {create:always, node:{x-declare:{arguments:{'qpid.policy_type':reject, 'qpid.max_count':5}}}}")
         try:
             for i in range(10): s.send(qm.Message(str(i)), sync=False)
-        except qm.TargetCapacityExceeded: pass
+        except qm.LinkError: pass
         backup.assert_browse_backup("q", [str(i) for i in range(0,5)])
         try: s.session.connection.close()
         except: pass            # Expect exception from broken session
