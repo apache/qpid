@@ -24,6 +24,14 @@
       <outputDirectory>/lib</outputDirectory>
       <useProjectArtifact>true</useProjectArtifact>
     </dependencySet>
+    <dependencySet>
+      <outputDirectory>/lib</outputDirectory>
+      <useProjectArtifact>false</useProjectArtifact>
+      <scope>provided</scope>
+      <includes>
+        <include>org.apache.geronimo.specs:geronimo-jms_1.1_spec</include>
+      </includes>
+    </dependencySet>
   </dependencySets>
 </assembly>
 
