@@ -47,7 +47,7 @@ public class AMQProtocolEngineTest extends QpidTestCase
         super.setUp();
         BrokerTestHelper.setUp();
         _broker = BrokerTestHelper.createBrokerMock();
-        when(_broker.getAttribute(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE)).thenReturn(true);
+        when(_broker.getConnection_closeWhenNoRoute()).thenReturn(true);
 
         _port = mock(Port.class);
         _network = mock(NetworkConnection.class);

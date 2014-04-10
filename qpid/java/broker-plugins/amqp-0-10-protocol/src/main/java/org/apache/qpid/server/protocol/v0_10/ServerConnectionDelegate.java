@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import static org.apache.qpid.transport.Connection.State.CLOSE_RCVD;
+
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -30,8 +32,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.properties.ConnectionStartProperties;
@@ -43,13 +50,22 @@ import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationS
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostState;
-import org.apache.qpid.transport.*;
+import org.apache.qpid.transport.Binary;
+import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.ConnectionClose;
+import org.apache.qpid.transport.ConnectionCloseCode;
+import org.apache.qpid.transport.ConnectionOpen;
+import org.apache.qpid.transport.ConnectionOpenOk;
+import org.apache.qpid.transport.ConnectionStartOk;
+import org.apache.qpid.transport.ConnectionTuneOk;
+import org.apache.qpid.transport.ServerDelegate;
+import org.apache.qpid.transport.Session;
+import org.apache.qpid.transport.SessionAttach;
+import org.apache.qpid.transport.SessionDelegate;
+import org.apache.qpid.transport.SessionDetach;
+import org.apache.qpid.transport.SessionDetachCode;
+import org.apache.qpid.transport.SessionDetached;
 import org.apache.qpid.transport.network.NetworkConnection;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static org.apache.qpid.transport.Connection.State.CLOSE_RCVD;
 
 public class ServerConnectionDelegate extends ServerDelegate
 {
@@ -76,7 +92,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
         _broker = broker;
         _localFQDN = localFQDN;
-        _maxNoOfChannels = (Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT);
+        _maxNoOfChannels = broker.getConnection_sessionCountLimit();
         _subjectCreator = subjectCreator;
     }
 

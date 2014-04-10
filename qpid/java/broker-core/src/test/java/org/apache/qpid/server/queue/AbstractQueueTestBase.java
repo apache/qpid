@@ -830,7 +830,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         QueueNotificationListener listener = mock(QueueNotificationListener .class);
 
         _queue.setNotificationListener(listener);
-        _queue.setMaximumMessageCount(2);
+        _queue.setAlertThresholdQueueDepthMessages(2);
 
         _queue.enqueue(createMessage(new Long(24)), null);
         verifyZeroInteractions(listener);
@@ -849,7 +849,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _queue.enqueue(createMessage(new Long(26)), null);
 
         _queue.setNotificationListener(listener);
-        _queue.setMaximumMessageCount(2);
+        _queue.setAlertThresholdQueueDepthMessages(2);
 
         verifyZeroInteractions(listener);
 

@@ -50,7 +50,6 @@ public class VirtualHostCreationTest extends TestCase
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
         Broker parent = mock(Broker.class);
-        when(parent.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(3000l);
         when(parent.getSecurityManager()).thenReturn(securityManager);
         VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
         when(virtualHostRegistry.getEventLogger()).thenReturn(mock(EventLogger.class));

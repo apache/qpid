@@ -47,28 +47,28 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
 
         // Setup housekeeping every 100ms
         TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
-        brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 100);
+        setTestSystemProperty("virtualhost.housekeepingCheckPeriod","100");
 
         if (getName().contains("ProducerIdle"))
         {
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, 0);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, 0);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 500);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 1500);
+            setTestSystemProperty("virtualhost.storeTransactionOpenTimeoutWarn", "0");
+            setTestSystemProperty("virtualhost.storeTransactionOpenTimeoutClose", "0");
+            setTestSystemProperty("virtualhost.storeTransactionIdleTimeoutWarn", "500");
+            setTestSystemProperty("virtualhost.storeTransactionIdleTimeoutClose", "1500");
         }
         else if (getName().contains("ProducerOpen"))
         {
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, 1000);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, 2000);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 0);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 0);
+            setTestSystemProperty("virtualhost.storeTransactionOpenTimeoutWarn", "1000");
+            setTestSystemProperty("virtualhost.storeTransactionOpenTimeoutClose", "2000");
+            setTestSystemProperty("virtualhost.storeTransactionIdleTimeoutWarn", "0");
+            setTestSystemProperty("virtualhost.storeTransactionIdleTimeoutClose", "0");
         }
         else
         {
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, 1000);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, 2000);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 500);
-            brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 1500);
+            setTestSystemProperty("virtualhost.storeTransactionOpenTimeoutWarn", "1000");
+            setTestSystemProperty("virtualhost.storeTransactionOpenTimeoutClose", "2000");
+            setTestSystemProperty("virtualhost.storeTransactionIdleTimeoutWarn", "500");
+            setTestSystemProperty("virtualhost.storeTransactionIdleTimeoutClose", "1500");
         }
     }
 

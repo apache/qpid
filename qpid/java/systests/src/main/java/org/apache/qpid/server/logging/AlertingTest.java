@@ -32,7 +32,6 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
@@ -54,8 +53,8 @@ public class AlertingTest extends AbstractTestLogging
     {
         _numMessages = 50;
         TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
-        brokerConfiguration.setBrokerAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, String.valueOf(ALERT_LOG_WAIT_PERIOD));
-        brokerConfiguration.setBrokerAttribute(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, _numMessages);
+        setTestSystemProperty("virtualhost.housekeepingCheckPeriod", String.valueOf(ALERT_LOG_WAIT_PERIOD));
+        setTestSystemProperty("queue.alertThresholdQueueDepthMessages", String.valueOf(_numMessages));
 
         // Then we do the normal setup stuff like starting the broker, getting a connection etc.
         super.setUp();
@@ -184,7 +183,7 @@ public class AlertingTest extends AbstractTestLogging
 
         // Change max message count to 5, start broker and make sure that that's triggered at the right time
         TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
-        brokerConfiguration.setBrokerAttribute(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 5);
+        setTestSystemProperty("queue.alertThresholdQueueDepthMessages","5");
         brokerConfiguration.setSaved(false);
 
         restTestHelper.submitRequest("/rest/queue/test/" + getTestQueueName(), "PUT", Collections.<String, Object>singletonMap(org.apache.qpid.server.model.Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 5));

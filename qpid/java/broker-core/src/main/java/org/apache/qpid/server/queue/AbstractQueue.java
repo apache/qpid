@@ -24,10 +24,12 @@ import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +71,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.State;
@@ -94,6 +97,12 @@ public abstract class AbstractQueue
                    StateChangeListener<QueueConsumer<?>, State>,
                    MessageGroupManager.ConsumerResetHelper
 {
+
+    private static final Set<String> ALERT_ATTRIBUTE_NAMES =
+            Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(Queue.ALERT_THRESHOLD_MESSAGE_AGE,
+                                                                          Queue.ALERT_THRESHOLD_MESSAGE_SIZE,
+                                                                          Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
+                                                                          Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES)));
 
     private static final Logger _logger = Logger.getLogger(AbstractQueue.class);
 
@@ -155,29 +164,39 @@ public abstract class AbstractQueue
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
     /** max allowed size(KB) of a single message */
-    private long _maximumMessageSize;
+    @ManagedAttributeField
+    private long _alertThresholdMessageSize;
 
     /** max allowed number of messages on a queue. */
-    private long _maximumMessageCount;
+    @ManagedAttributeField
+    private long _alertThresholdQueueDepthMessages;
 
     /** max queue depth for the queue */
-    private long _maximumQueueDepth;
+    @ManagedAttributeField
+    private long _alertThresholdQueueDepthBytes;
 
     /** maximum message age before alerts occur */
-    private long _maximumMessageAge;
+    @ManagedAttributeField
+    private long _alertThresholdMessageAge;
 
     /** the minimum interval between sending out consecutive alerts of the same type */
-    private long _minimumAlertRepeatGap;
+    @ManagedAttributeField
+    private long _alertRepeatGap;
 
-    private long _capacity;
+    @ManagedAttributeField
+    private long _queueFlowControlSizeBytes;
 
-    private long _flowResumeCapacity;
+    @ManagedAttributeField
+    private long _queueFlowResumeSizeBytes;
 
-    private ExclusivityPolicy _exclusivityPolicy;
+    @ManagedAttributeField
+    private ExclusivityPolicy _exclusive;
+
     private LifetimePolicy _lifetimePolicy;
     private Object _exclusiveOwner; // could be connection, session or Principal
 
-    private final Set<NotificationCheck> _notificationChecks = EnumSet.noneOf(NotificationCheck.class);
+    private final Set<NotificationCheck> _notificationChecks =
+            Collections.synchronizedSet(EnumSet.noneOf(NotificationCheck.class));
 
 
     static final int MAX_ASYNC_DELIVERIES = 80;
@@ -208,7 +227,9 @@ public abstract class AbstractQueue
     private long _createTime = System.currentTimeMillis();
 
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
-    private int _maximumDeliveryCount;
+    @ManagedAttributeField
+    private int _maximumDeliveryAttempts;
+
     private MessageGroupManager _messageGroupManager;
 
     private final Collection<ConsumerRegistrationListener<? super MessageSource>> _consumerListeners =
@@ -245,6 +266,41 @@ public abstract class AbstractQueue
             throw new IllegalArgumentException("Queue name must not be null");
         }
 
+        addChangeListener(new ConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(final ConfiguredObject object, final State oldState, final State newState)
+            {
+
+            }
+
+            @Override
+            public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
+            {
+
+            }
+
+            @Override
+            public void childRemoved(final ConfiguredObject object, final ConfiguredObject child)
+            {
+
+            }
+
+            @Override
+            public void attributeSet(final ConfiguredObject object,
+                                     final String attributeName,
+                                     final Object oldAttributeValue,
+                                     final Object newAttributeValue)
+            {
+                onAttributeChange(attributeName, oldAttributeValue, newAttributeValue);
+            }
+        });
+    }
+
+    private void onAttributeChange(final String attributeName,
+                                   final Object oldAttributeValue,
+                                   final Object newAttributeValue)
+    {
 
     }
 
@@ -257,7 +313,7 @@ public abstract class AbstractQueue
         boolean durable = MapValueConverter.getBooleanAttribute(Queue.DURABLE, attributes, false);
 
 
-        _exclusivityPolicy = MapValueConverter.getEnumAttribute(ExclusivityPolicy.class,
+        _exclusive = MapValueConverter.getEnumAttribute(ExclusivityPolicy.class,
                                                                 Queue.EXCLUSIVE,
                                                                 attributes,
                                                                 ExclusivityPolicy.NONE);
@@ -269,7 +325,7 @@ public abstract class AbstractQueue
         _durable = durable;
         final LinkedHashMap<String, Object> arguments = new LinkedHashMap<String, Object>(attributes);
 
-        arguments.put(Queue.EXCLUSIVE, _exclusivityPolicy);
+        arguments.put(Queue.EXCLUSIVE, _exclusive);
         arguments.put(Queue.LIFETIME_POLICY, _lifetimePolicy);
 
         _arguments = Collections.synchronizedMap(arguments);
@@ -298,7 +354,7 @@ public abstract class AbstractQueue
         if(sessionModel != null)
         {
 
-            switch(_exclusivityPolicy)
+            switch(_exclusive)
             {
 
                 case PRINCIPAL:
@@ -321,11 +377,11 @@ public abstract class AbstractQueue
                     break;
                 default:
                     throw new ServerScopedRuntimeException("Unknown exclusivity policy: "
-                                                           + _exclusivityPolicy
+                                                           + _exclusive
                                                            + " this is a coding error inside Qpid");
             }
         }
-        else if(_exclusivityPolicy == ExclusivityPolicy.PRINCIPAL)
+        else if(_exclusive == ExclusivityPolicy.PRINCIPAL)
         {
             String owner = MapValueConverter.getStringAttribute(Queue.OWNER, attributes, null);
             if(owner != null)
@@ -333,7 +389,7 @@ public abstract class AbstractQueue
                 _exclusiveOwner = new AuthenticatedPrincipal(owner);
             }
         }
-        else if(_exclusivityPolicy == ExclusivityPolicy.CONTAINER)
+        else if(_exclusive == ExclusivityPolicy.CONTAINER)
         {
             String owner = MapValueConverter.getStringAttribute(Queue.OWNER, attributes, null);
             if(owner != null)
@@ -371,71 +427,9 @@ public abstract class AbstractQueue
         }
 
 
-        if (attributes.containsKey(Queue.ALERT_THRESHOLD_MESSAGE_AGE))
+        if (_queueFlowResumeSizeBytes > _queueFlowControlSizeBytes)
         {
-            setMaximumMessageAge(MapValueConverter.getLongAttribute(Queue.ALERT_THRESHOLD_MESSAGE_AGE, attributes));
-        }
-        else
-        {
-            setMaximumMessageAge(_virtualHost.getDefaultAlertThresholdMessageAge());
-        }
-        if (attributes.containsKey(Queue.ALERT_THRESHOLD_MESSAGE_SIZE))
-        {
-            setMaximumMessageSize(MapValueConverter.getLongAttribute(Queue.ALERT_THRESHOLD_MESSAGE_SIZE, attributes));
-        }
-        else
-        {
-            setMaximumMessageSize(_virtualHost.getDefaultAlertThresholdMessageSize());
-        }
-        if (attributes.containsKey(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES))
-        {
-            setMaximumMessageCount(MapValueConverter.getLongAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-                                                                      attributes));
-        }
-        else
-        {
-            setMaximumMessageCount(_virtualHost.getDefaultAlertThresholdQueueDepthMessages());
-        }
-        if (attributes.containsKey(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES))
-        {
-            setMaximumQueueDepth(MapValueConverter.getLongAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                                                                    attributes));
-        }
-        else
-        {
-            setMaximumQueueDepth(_virtualHost.getDefaultAlertThresholdQueueDepthBytes());
-        }
-        if (attributes.containsKey(Queue.ALERT_REPEAT_GAP))
-        {
-            setMinimumAlertRepeatGap(MapValueConverter.getLongAttribute(Queue.ALERT_REPEAT_GAP, attributes));
-        }
-        else
-        {
-            setMinimumAlertRepeatGap(_virtualHost.getDefaultAlertRepeatGap());
-        }
-        if (attributes.containsKey(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES))
-        {
-            setCapacity(MapValueConverter.getLongAttribute(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, attributes));
-        }
-        else
-        {
-            setCapacity(_virtualHost.getDefaultQueueFlowControlSizeBytes());
-        }
-        if (attributes.containsKey(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES))
-        {
-            setFlowResumeCapacity(MapValueConverter.getLongAttribute(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, attributes));
-        }
-        else
-        {
-            setFlowResumeCapacity(_virtualHost.getDefaultQueueFlowResumeSizeBytes());
-        }
-        if (attributes.containsKey(Queue.MAXIMUM_DELIVERY_ATTEMPTS))
-        {
-            setMaximumDeliveryCount(MapValueConverter.getIntegerAttribute(Queue.MAXIMUM_DELIVERY_ATTEMPTS, attributes));
-        }
-        else
-        {
-            setMaximumDeliveryCount(_virtualHost.getDefaultMaximumDeliveryAttempts());
+            throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
         }
 
         final String ownerString = getOwner();
@@ -473,7 +467,7 @@ public abstract class AbstractQueue
             _messageGroupManager = null;
         }
 
-        resetNotifications();
+        updateAlertChecks();
     }
 
     private void addLifetimeConstraint(final Deletable<? extends Deletable> lifetimeObject)
@@ -498,15 +492,6 @@ public abstract class AbstractQueue
         clearOwnerAction.setDeleteTask(deleteDeleteTask);
         lifetimeObject.addDeleteTask(clearOwnerAction);
         addDeleteTask(deleteDeleteTask);
-    }
-
-    public void resetNotifications()
-    {
-        // This ensure that the notification checks for the configured alerts are created.
-        setMaximumMessageAge(_maximumMessageAge);
-        setMaximumMessageCount(_maximumMessageCount);
-        setMaximumMessageSize(_maximumMessageSize);
-        setMaximumQueueDepth(_maximumQueueDepth);
     }
 
     // ------ Getters and Setters
@@ -542,7 +527,7 @@ public abstract class AbstractQueue
 
     public boolean isExclusive()
     {
-        return _exclusivityPolicy != ExclusivityPolicy.NONE;
+        return _exclusive != ExclusivityPolicy.NONE;
     }
 
     public ExchangeImpl getAlternateExchange()
@@ -581,26 +566,6 @@ public abstract class AbstractQueue
         {
             return getOwner();
         }
-        if(ALERT_REPEAT_GAP.equals(name))
-        {
-            return getAlertRepeatGap();
-        }
-        else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
-        {
-            return getAlertThresholdMessageAge();
-        }
-        else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
-        {
-            return getAlertThresholdMessageSize();
-        }
-        else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
-        {
-            return getAlertThresholdQueueDepthBytes();
-        }
-        else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
-        {
-            return getAlertThresholdQueueDepthMessages();
-        }
         else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
         {
             //We only return the boolean value if message groups are actually in use
@@ -612,18 +577,6 @@ public abstract class AbstractQueue
             {
                 return ((ConflationQueue)this).getConflationKey();
             }
-        }
-        else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
-        {
-            return getMaximumDeliveryAttempts();
-        }
-        else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
-        {
-            return getQueueFlowControlSizeBytes();
-        }
-        else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
-        {
-            return getQueueFlowResumeSizeBytes();
         }
         else if(QUEUE_FLOW_STOPPED.equals(name))
         {
@@ -676,7 +629,7 @@ public abstract class AbstractQueue
             }
         }
 
-        return _arguments.get(name);
+        return super.getAttribute(name);
     }
 
     @Override
@@ -689,7 +642,7 @@ public abstract class AbstractQueue
     {
         if(_exclusiveOwner != null)
         {
-            switch(_exclusivityPolicy)
+            switch(_exclusive)
             {
                 case CONTAINER:
                     return (String) _exclusiveOwner;
@@ -725,7 +678,7 @@ public abstract class AbstractQueue
         }
 
         Object exclusiveOwner = _exclusiveOwner;
-        switch(_exclusivityPolicy)
+        switch(_exclusive)
         {
             case CONNECTION:
                 if(exclusiveOwner == null)
@@ -790,7 +743,7 @@ public abstract class AbstractQueue
             case NONE:
                 break;
             default:
-                throw new ServerScopedRuntimeException("Unknown exclusivity policy " + _exclusivityPolicy);
+                throw new ServerScopedRuntimeException("Unknown exclusivity policy " + _exclusive);
         }
 
         boolean exclusive =  optionSet.contains(ConsumerImpl.Option.EXCLUSIVE);
@@ -879,7 +832,7 @@ public abstract class AbstractQueue
 
             consumer.setQueueContext(null);
 
-            if(_exclusivityPolicy == ExclusivityPolicy.LINK)
+            if(_exclusive == ExclusivityPolicy.LINK)
             {
                 _exclusiveOwner = null;
             }
@@ -1753,24 +1706,25 @@ public abstract class AbstractQueue
 
     public void checkCapacity(AMQSessionModel channel)
     {
-        if(_capacity != 0l)
+        if(_queueFlowControlSizeBytes != 0l)
         {
-            if(_atomicQueueSize.get() > _capacity)
+            if(_atomicQueueSize.get() > _queueFlowControlSizeBytes)
             {
                 _overfull.set(true);
                 //Overfull log message
-                getEventLogger().message(_logSubject, QueueMessages.OVERFULL(_atomicQueueSize.get(), _capacity));
+                getEventLogger().message(_logSubject, QueueMessages.OVERFULL(_atomicQueueSize.get(),
+                                                                             _queueFlowControlSizeBytes));
 
                 _blockedChannels.add(channel);
 
                 channel.block(this);
 
-                if(_atomicQueueSize.get() <= _flowResumeCapacity)
+                if(_atomicQueueSize.get() <= _queueFlowResumeSizeBytes)
                 {
 
                     //Underfull log message
                     getEventLogger().message(_logSubject,
-                                             QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
+                                             QueueMessages.UNDERFULL(_atomicQueueSize.get(), _queueFlowResumeSizeBytes));
 
                    channel.unblock(this);
                    _blockedChannels.remove(channel);
@@ -1785,14 +1739,14 @@ public abstract class AbstractQueue
 
     private void checkCapacity()
     {
-        if(_capacity != 0L)
+        if(_queueFlowControlSizeBytes != 0L)
         {
-            if(_overfull.get() && _atomicQueueSize.get() <= _flowResumeCapacity)
+            if(_overfull.get() && _atomicQueueSize.get() <= _queueFlowResumeSizeBytes)
             {
                 if(_overfull.compareAndSet(true,false))
                 {//Underfull log message
                     getEventLogger().message(_logSubject,
-                                             QueueMessages.UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
+                                             QueueMessages.UNDERFULL(_atomicQueueSize.get(), _queueFlowResumeSizeBytes));
                 }
 
                 for(final AMQSessionModel blockedChannel : _blockedChannels)
@@ -2210,107 +2164,99 @@ public abstract class AbstractQueue
 
     public long getAlertRepeatGap()
     {
-        return _minimumAlertRepeatGap;
+        return _alertRepeatGap;
     }
 
-    public void setMinimumAlertRepeatGap(long minimumAlertRepeatGap)
+    public void setAlertRepeatGap(long alertRepeatGap)
     {
-        _minimumAlertRepeatGap = minimumAlertRepeatGap;
+        _alertRepeatGap = alertRepeatGap;
     }
 
     public long getAlertThresholdMessageAge()
     {
-        return _maximumMessageAge;
+        return _alertThresholdMessageAge;
     }
 
-    public void setMaximumMessageAge(long maximumMessageAge)
+    public void setAlertThresholdMessageAge(long alertThresholdMessageAge)
     {
-        _maximumMessageAge = maximumMessageAge;
-        if (maximumMessageAge == 0L)
-        {
-            _notificationChecks.remove(NotificationCheck.MESSAGE_AGE_ALERT);
-        }
-        else
-        {
-            _notificationChecks.add(NotificationCheck.MESSAGE_AGE_ALERT);
-        }
+        _alertThresholdMessageAge = alertThresholdMessageAge;
+        updateNotificationCheck(alertThresholdMessageAge, NotificationCheck.MESSAGE_AGE_ALERT);
     }
 
     public long getAlertThresholdQueueDepthMessages()
     {
-        return _maximumMessageCount;
+        return _alertThresholdQueueDepthMessages;
     }
 
-    public void setMaximumMessageCount(final long maximumMessageCount)
+    private void updateAlertChecks()
     {
-        _maximumMessageCount = maximumMessageCount;
-        if (maximumMessageCount == 0L)
+        updateNotificationCheck(getAlertThresholdQueueDepthMessages(), NotificationCheck.MESSAGE_COUNT_ALERT);
+        updateNotificationCheck(getAlertThresholdQueueDepthBytes(), NotificationCheck.QUEUE_DEPTH_ALERT);
+        updateNotificationCheck(getAlertThresholdMessageAge(), NotificationCheck.MESSAGE_AGE_ALERT);
+        updateNotificationCheck(getAlertThresholdMessageSize(), NotificationCheck.MESSAGE_SIZE_ALERT);
+    }
+
+    private void updateNotificationCheck(final long checkValue, final NotificationCheck notificationCheck)
+    {
+        if (checkValue == 0L)
         {
-            _notificationChecks.remove(NotificationCheck.MESSAGE_COUNT_ALERT);
+            _notificationChecks.remove(notificationCheck);
         }
         else
         {
-            _notificationChecks.add(NotificationCheck.MESSAGE_COUNT_ALERT);
+            _notificationChecks.add(notificationCheck);
         }
+    }
+
+    public void setAlertThresholdQueueDepthMessages(final long alertThresholdQueueDepthMessages)
+    {
+        _alertThresholdQueueDepthMessages = alertThresholdQueueDepthMessages;
+        updateNotificationCheck(alertThresholdQueueDepthMessages, NotificationCheck.MESSAGE_COUNT_ALERT);
 
     }
 
     public long getAlertThresholdQueueDepthBytes()
     {
-        return _maximumQueueDepth;
+        return _alertThresholdQueueDepthBytes;
     }
 
     // Sets the queue depth, the max queue size
-    public void setMaximumQueueDepth(final long maximumQueueDepth)
+    public void setAlertThresholdQueueDepthBytes(final long alertThresholdQueueDepthBytes)
     {
-        _maximumQueueDepth = maximumQueueDepth;
-        if (maximumQueueDepth == 0L)
-        {
-            _notificationChecks.remove(NotificationCheck.QUEUE_DEPTH_ALERT);
-        }
-        else
-        {
-            _notificationChecks.add(NotificationCheck.QUEUE_DEPTH_ALERT);
-        }
+        _alertThresholdQueueDepthBytes = alertThresholdQueueDepthBytes;
+        updateNotificationCheck(alertThresholdQueueDepthBytes, NotificationCheck.QUEUE_DEPTH_ALERT);
 
     }
 
     public long getAlertThresholdMessageSize()
     {
-        return _maximumMessageSize;
+        return _alertThresholdMessageSize;
     }
 
-    public void setMaximumMessageSize(final long maximumMessageSize)
+    public void setAlertThresholdMessageSize(final long alertThresholdMessageSize)
     {
-        _maximumMessageSize = maximumMessageSize;
-        if (maximumMessageSize == 0L)
-        {
-            _notificationChecks.remove(NotificationCheck.MESSAGE_SIZE_ALERT);
-        }
-        else
-        {
-            _notificationChecks.add(NotificationCheck.MESSAGE_SIZE_ALERT);
-        }
+        _alertThresholdMessageSize = alertThresholdMessageSize;
+        updateNotificationCheck(alertThresholdMessageSize, NotificationCheck.MESSAGE_SIZE_ALERT);
     }
 
     public long getQueueFlowControlSizeBytes()
     {
-        return _capacity;
+        return _queueFlowControlSizeBytes;
     }
 
-    public void setCapacity(long capacity)
+    public void setQueueFlowControlSizeBytes(long queueFlowControlSizeBytes)
     {
-        _capacity = capacity;
+        _queueFlowControlSizeBytes = queueFlowControlSizeBytes;
     }
 
     public long getQueueFlowResumeSizeBytes()
     {
-        return _flowResumeCapacity;
+        return _queueFlowResumeSizeBytes;
     }
 
-    public void setFlowResumeCapacity(long flowResumeCapacity)
+    public void setQueueFlowResumeSizeBytes(long queueFlowResumeSizeBytes)
     {
-        _flowResumeCapacity = flowResumeCapacity;
+        _queueFlowResumeSizeBytes = queueFlowResumeSizeBytes;
 
         checkCapacity();
     }
@@ -2457,12 +2403,12 @@ public abstract class AbstractQueue
     @Override
     public int getMaximumDeliveryAttempts()
     {
-        return _maximumDeliveryCount;
+        return _maximumDeliveryAttempts;
     }
 
-    public void setMaximumDeliveryCount(final int maximumDeliveryCount)
+    public void setMaximumDeliveryAttempts(final int maximumDeliveryAttempts)
     {
-        _maximumDeliveryCount = maximumDeliveryCount;
+        _maximumDeliveryAttempts = maximumDeliveryAttempts;
     }
 
     /**
@@ -2546,7 +2492,7 @@ public abstract class AbstractQueue
     public boolean verifySessionAccess(final AMQSessionModel<?, ?> session)
     {
         boolean allowed;
-        switch(_exclusivityPolicy)
+        switch(_exclusive)
         {
             case NONE:
                 allowed = true;
@@ -2567,13 +2513,12 @@ public abstract class AbstractQueue
                 allowed = _exclusiveSubscriber == null || _exclusiveSubscriber.getSessionModel() == session;
                 break;
             default:
-                throw new ServerScopedRuntimeException("Unknown exclusivity policy " + _exclusivityPolicy);
+                throw new ServerScopedRuntimeException("Unknown exclusivity policy " + _exclusive);
         }
         return allowed;
     }
 
-    @Override
-    public synchronized void setExclusivityPolicy(ExclusivityPolicy desiredPolicy)
+    private synchronized void updateExclusivityPolicy(ExclusivityPolicy desiredPolicy)
             throws ExistingConsumerPreventsExclusive
     {
         if(desiredPolicy == null)
@@ -2581,7 +2526,7 @@ public abstract class AbstractQueue
             desiredPolicy = ExclusivityPolicy.NONE;
         }
 
-        if(desiredPolicy != _exclusivityPolicy)
+        if(desiredPolicy != _exclusive)
         {
             switch(desiredPolicy)
             {
@@ -2604,7 +2549,7 @@ public abstract class AbstractQueue
                     switchToLinkExclusivity();
                     break;
             }
-            _exclusivityPolicy = desiredPolicy;
+            _exclusive = desiredPolicy;
         }
     }
 
@@ -2627,7 +2572,7 @@ public abstract class AbstractQueue
     private void switchToSessionExclusivity() throws ExistingConsumerPreventsExclusive
     {
 
-        switch(_exclusivityPolicy)
+        switch(_exclusive)
         {
             case NONE:
             case PRINCIPAL:
@@ -2654,7 +2599,7 @@ public abstract class AbstractQueue
 
     private void switchToConnectionExclusivity() throws ExistingConsumerPreventsExclusive
     {
-        switch(_exclusivityPolicy)
+        switch(_exclusive)
         {
             case NONE:
             case CONTAINER:
@@ -2683,7 +2628,7 @@ public abstract class AbstractQueue
 
     private void switchToContainerExclusivity() throws ExistingConsumerPreventsExclusive
     {
-        switch(_exclusivityPolicy)
+        switch(_exclusive)
         {
             case NONE:
             case PRINCIPAL:
@@ -2714,7 +2659,7 @@ public abstract class AbstractQueue
 
     private void switchToPrincipalExclusivity() throws ExistingConsumerPreventsExclusive
     {
-        switch(_exclusivityPolicy)
+        switch(_exclusive)
         {
             case NONE:
             case CONTAINER:
@@ -2795,7 +2740,7 @@ public abstract class AbstractQueue
     @Override
     public ExclusivityPolicy getExclusive()
     {
-        return _exclusivityPolicy;
+        return _exclusive;
     }
 
     @Override
@@ -2910,32 +2855,7 @@ public abstract class AbstractQueue
     {
         try
         {
-            if(ALERT_REPEAT_GAP.equals(name))
-            {
-                setMinimumAlertRepeatGap((Long) desired);
-                return true;
-            }
-            else if(ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
-            {
-                setMaximumMessageAge((Long) desired);
-                return true;
-            }
-            else if(ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
-            {
-                setMaximumMessageSize((Long) desired);
-                return true;
-            }
-            else if(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
-            {
-                setMaximumQueueDepth((Long) desired);
-                return true;
-            }
-            else if(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
-            {
-                setMaximumMessageCount((Long) desired);
-                return true;
-            }
-            else if(ALTERNATE_EXCHANGE.equals(name))
+            if(ALTERNATE_EXCHANGE.equals(name))
             {
                 // In future we may want to accept a UUID as an alternative way to identifying the exchange
                 ExchangeImpl alternateExchange = (ExchangeImpl) desired;
@@ -2944,80 +2864,25 @@ public abstract class AbstractQueue
             }
             else if(EXCLUSIVE.equals(name))
             {
-                ExclusivityPolicy desiredPolicy;
-                if(desired == null)
+                ExclusivityPolicy existingPolicy = getExclusive();
+                if(super.changeAttribute(name, expected, desired))
                 {
-                    desiredPolicy = ExclusivityPolicy.NONE;
+                    try
+                    {
+                        if(existingPolicy != _exclusive)
+                        {
+                            ExclusivityPolicy newPolicy = _exclusive;
+                            _exclusive = newPolicy;
+                            updateExclusivityPolicy(newPolicy);
+                        }
+                        return true;
+                    }
+                    catch (ExistingConsumerPreventsExclusive existingConsumerPreventsExclusive)
+                    {
+                        throw new IllegalArgumentException("Unable to set exclusivity policy to " + desired + " as an existing combinations of consumers prevents this");
+                    }
                 }
-                else if(desired instanceof  ExclusivityPolicy)
-                {
-                    desiredPolicy = (ExclusivityPolicy)desired;
-                }
-                else if (desired instanceof String)
-                {
-                    desiredPolicy = ExclusivityPolicy.valueOf((String)desired);
-                }
-                else
-                {
-                    throw new IllegalArgumentException("Cannot set " + Queue.EXCLUSIVE + " property to type " + desired.getClass().getName());
-                }
-                try
-                {
-                    setExclusivityPolicy(desiredPolicy);
-                }
-                catch (MessageSource.ExistingConsumerPreventsExclusive existingConsumerPreventsExclusive)
-                {
-                    throw new IllegalArgumentException("Unable to set exclusivity policy to " + desired + " as an existing combinations of consumers prevents this");
-                }
-                return true;
-
-            }
-            else if(MESSAGE_GROUP_KEY.equals(name))
-            {
-                // TODO
-            }
-            else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
-            {
-                // TODO
-            }
-            else if(LVQ_KEY.equals(name))
-            {
-                // TODO
-            }
-            else if(MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
-            {
-                setMaximumDeliveryCount((Integer) desired);
-                return true;
-            }
-            else if(NO_LOCAL.equals(name))
-            {
-                // TODO
-            }
-            else if(OWNER.equals(name))
-            {
-                // TODO
-            }
-            else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
-            {
-                setCapacity((Long) desired);
-                return true;
-            }
-            else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
-            {
-                setFlowResumeCapacity((Long) desired);
-                return true;
-            }
-            else if(QUEUE_FLOW_STOPPED.equals(name))
-            {
-                // TODO
-            }
-            else if(SORT_KEY.equals(name))
-            {
-                // TODO
-            }
-            else if(QUEUE_TYPE.equals(name))
-            {
-                // TODO
+                return false;
             }
             else if (DESCRIPTION.equals(name))
             {
@@ -3025,7 +2890,17 @@ public abstract class AbstractQueue
                 return true;
             }
 
-            return super.changeAttribute(name, expected, desired);
+            final boolean updated = super.changeAttribute(name, expected, desired);
+
+            if(updated && ALERT_ATTRIBUTE_NAMES.contains(name))
+            {
+                updateAlertChecks();
+            }
+            else if(updated && QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
+            {
+                checkCapacity();
+            }
+            return updated;
         }
         finally
         {

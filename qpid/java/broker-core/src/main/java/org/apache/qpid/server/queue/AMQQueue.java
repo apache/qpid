@@ -20,13 +20,16 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
@@ -34,16 +37,10 @@ import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
 public interface AMQQueue<X extends AMQQueue<X>>
         extends Comparable<AMQQueue>, ExchangeReferrer, BaseQueue, MessageSource, CapacityChecker, MessageDestination,
                 Deletable<AMQQueue>, Queue<X>
 {
-
-    void setExclusivityPolicy(ExclusivityPolicy desiredPolicy) throws ExistingConsumerPreventsExclusive;
 
     boolean isExclusive();
 
@@ -124,37 +121,37 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     long getAlertThresholdMessageSize();
 
-    void setMaximumMessageSize(long value);
+    void setAlertThresholdMessageSize(long value);
 
 
     long getAlertThresholdQueueDepthMessages();
 
-    void setMaximumMessageCount(long value);
+    void setAlertThresholdQueueDepthMessages(long value);
 
 
     long getAlertThresholdQueueDepthBytes();
 
-    void setMaximumQueueDepth(long value);
+    void setAlertThresholdQueueDepthBytes(long value);
 
 
     long getAlertThresholdMessageAge();
 
-    void setMaximumMessageAge(final long maximumMessageAge);
+    void setAlertThresholdMessageAge(final long maximumMessageAge);
 
 
     long getAlertRepeatGap();
 
-    void setMinimumAlertRepeatGap(long value);
+    void setAlertRepeatGap(long value);
 
 
     long getQueueFlowControlSizeBytes();
 
-    void setCapacity(long capacity);
+    void setQueueFlowControlSizeBytes(long capacity);
 
 
     long getQueueFlowResumeSizeBytes();
 
-    void setFlowResumeCapacity(long flowResumeCapacity);
+    void setQueueFlowResumeSizeBytes(long flowResumeCapacity);
 
     boolean isOverfull();
 
@@ -193,7 +190,7 @@ public interface AMQQueue<X extends AMQQueue<X>>
      *
      * @param maximumDeliveryCount maximum delivery count
      */
-    public void setMaximumDeliveryCount(final int maximumDeliveryCount);
+    public void setMaximumDeliveryAttempts(final int maximumDeliveryCount);
 
     void setNotificationListener(QueueNotificationListener listener);
 

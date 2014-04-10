@@ -608,45 +608,45 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        int initialAlertRepeatGap = 30000;
-        int updatedAlertRepeatGap = 29999;
+        int initialSessionCountLimit = 256;
+        int updatedSessionCountLimit = 299;
 
         Map<String, Object> brokerAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
-        assertEquals("Unexpected alert repeat gap", initialAlertRepeatGap,
-                brokerAttributes.get(Broker.QUEUE_ALERT_REPEAT_GAP));
+        assertEquals("Unexpected alert repeat gap", initialSessionCountLimit,
+                brokerAttributes.get(Broker.CONNECTION_SESSION_COUNT_LIMIT));
 
         Map<String, Object> newAttributes = new HashMap<String, Object>();
-        newAttributes.put(Broker.QUEUE_ALERT_REPEAT_GAP, updatedAlertRepeatGap);
+        newAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, updatedSessionCountLimit);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/broker", "PUT", newAttributes);
         assertEquals("Setting of port attribites should be allowed", 200, responseCode);
 
         brokerAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
-        assertEquals("Unexpected default alert repeat gap", updatedAlertRepeatGap,
-                brokerAttributes.get(Broker.QUEUE_ALERT_REPEAT_GAP));
+        assertEquals("Unexpected default alert repeat gap", updatedSessionCountLimit,
+                brokerAttributes.get(Broker.CONNECTION_SESSION_COUNT_LIMIT));
     }
 
     public void testSetBrokerAttributesDenied() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        int initialAlertRepeatGap = 30000;
-        int updatedAlertRepeatGap = 29999;
+        int initialSessionCountLimit = 256;
+        int updatedSessionCountLimit = 299;
 
         Map<String, Object> brokerAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
-        assertEquals("Unexpected alert repeat gap", initialAlertRepeatGap,
-                brokerAttributes.get(Broker.QUEUE_ALERT_REPEAT_GAP));
+        assertEquals("Unexpected alert repeat gap", initialSessionCountLimit,
+                brokerAttributes.get(Broker.CONNECTION_SESSION_COUNT_LIMIT));
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
         Map<String, Object> newAttributes = new HashMap<String, Object>();
-        newAttributes.put(Broker.QUEUE_ALERT_REPEAT_GAP, updatedAlertRepeatGap);
+        newAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, updatedSessionCountLimit);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/broker", "PUT", newAttributes);
         assertEquals("Setting of port attribites should be allowed", 403, responseCode);
 
         brokerAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
-        assertEquals("Unexpected default alert repeat gap", initialAlertRepeatGap,
-                brokerAttributes.get(Broker.QUEUE_ALERT_REPEAT_GAP));
+        assertEquals("Unexpected default alert repeat gap", initialSessionCountLimit,
+                brokerAttributes.get(Broker.CONNECTION_SESSION_COUNT_LIMIT));
     }
 
     /* === GroupProvider === */

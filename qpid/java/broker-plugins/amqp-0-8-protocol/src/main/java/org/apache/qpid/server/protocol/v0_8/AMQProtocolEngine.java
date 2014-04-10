@@ -181,7 +181,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _broker = broker;
         _port = port;
         _transport = transport;
-        _maxNoOfChannels = (Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT);
+        _maxNoOfChannels = broker.getConnection_sessionCountLimit();
         _receivedLock = new ReentrantLock();
         _stateManager = new AMQStateManager(broker, this);
         _codecFactory = new AMQCodecFactory(true, this);
@@ -199,7 +199,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
                 getEventLogger().message(ConnectionMessages.OPEN(null, null, null, null, false, false, false, false));
 
-                _closeWhenNoRoute = (Boolean)_broker.getAttribute(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE);
+                _closeWhenNoRoute = _broker.getConnection_closeWhenNoRoute();
 
                 initialiseStatistics();
 

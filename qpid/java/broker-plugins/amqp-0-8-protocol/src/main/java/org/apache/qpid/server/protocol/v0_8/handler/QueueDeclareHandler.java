@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -32,20 +36,16 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueArgumentsConverter;
+import org.apache.qpid.server.protocol.v0_8.AMQChannel;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
-import java.util.Map;
-import java.util.UUID;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {

@@ -122,22 +122,6 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
 
     public void unblock();
 
-    long getDefaultAlertThresholdMessageAge();
-
-    long getDefaultAlertThresholdMessageSize();
-
-    long getDefaultAlertThresholdQueueDepthMessages();
-
-    long getDefaultAlertThresholdQueueDepthBytes();
-
-    long getDefaultAlertRepeatGap();
-
-    long getDefaultQueueFlowControlSizeBytes();
-
-    long getDefaultQueueFlowResumeSizeBytes();
-
-    int getDefaultMaximumDeliveryAttempts();
-
     boolean getDefaultDeadLetterQueueEnabled();
 
     TaskExecutor getTaskExecutor();
