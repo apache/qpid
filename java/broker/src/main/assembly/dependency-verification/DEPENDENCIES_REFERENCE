@@ -26,6 +26,8 @@
 From: 'an unknown organization'
   - Guava: Google Core Libraries for Java (http://code.google.com/p/guava-libraries/guava) com.google.guava:guava:bundle:14.0.1
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - bcel  org.apache.bcel:bcel:jar:5.2
+
   - CryptoJS (http://webjars.org) org.webjars:cryptojs:jar:3.1.2
     License: New BSD  (http://opensource.org/licenses/BSD-3-Clause)
 
@@ -117,8 +119,6 @@ From: 'The Apache Software Foundation' (http://www.apache.org/)
   - Qpid Common (http://qpid.apache.org/qpid-java-build/management/qpid-common) org.apache.qpid:qpid-common:jar
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
   - Qpid Management Common (http://qpid.apache.org/qpid-java-build/management/qpid-management-common) org.apache.qpid:qpid-management-common:jar
-    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
-  - Apache ServiceMix :: Bundles :: bcel (http://servicemix.apache.org/bundles-pom/org.apache.servicemix.bundles.bcel/) org.apache.servicemix.bundles:org.apache.servicemix.bundles.bcel:bundle:5.2_4
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 From: 'The Dojo Foundation' (http://dojotoolkit.org/foundation)
