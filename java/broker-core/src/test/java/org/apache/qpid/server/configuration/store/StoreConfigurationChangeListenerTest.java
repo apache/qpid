@@ -78,7 +78,7 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         notifyBrokerStarted();
         Broker broker = mock(Broker.class);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
-        _listener.attributeSet(broker, Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES, null, 1);
+        _listener.attributeSet(broker, Broker.CONNECTION_SESSION_COUNT_LIMIT, null, 1);
         verify(_store).update(eq(false),any(ConfiguredObjectRecord.class));
     }
 

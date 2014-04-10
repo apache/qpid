@@ -53,15 +53,6 @@ public class VirtualHostTest extends QpidTestCase
         TaskExecutor taskExecutor = mock(TaskExecutor.class);
         when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
         when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
-        when(_broker.getAttribute(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE)).thenReturn(0l);
-        when(_broker.getAttribute(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE)).thenReturn(0l);
-        when(_broker.getAttribute(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES)).thenReturn(0l);
-        when(_broker.getAttribute(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES)).thenReturn(0l);
-        when(_broker.getAttribute(Broker.QUEUE_ALERT_REPEAT_GAP)).thenReturn(10000l);
-        when(_broker.getAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS)).thenReturn(0);
-        when(_broker.getAttribute(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES)).thenReturn(0l);
-        when(_broker.getAttribute(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES)).thenReturn(0l);
-        when(_broker.getAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED)).thenReturn(false);
 
         _recovererProvider = mock(RecovererProvider.class);
         _statisticsGatherer = mock(StatisticsGatherer.class);

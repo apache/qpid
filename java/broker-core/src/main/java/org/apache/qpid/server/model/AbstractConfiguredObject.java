@@ -94,6 +94,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         SECURE_VALUES = Collections.unmodifiableMap(secureValues);
     }
 
+    private static final Map<String, String> _defaultContext =
+            Collections.synchronizedMap(new HashMap<String, String>());
+
     private final AtomicBoolean _open = new AtomicBoolean();
 
     private final Map<String,Object> _attributes = new HashMap<String, Object>();
@@ -1172,7 +1175,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         Map<String,String> inheritedContext = new HashMap<String, String>();
         generateInheritedContext(object, inheritedContext);
-        return Strings.expand(value, false, Strings.ENV_VARS_RESOLVER, Strings.JAVA_SYS_PROPS_RESOLVER, new Strings.MapResolver(inheritedContext));
+        return Strings.expand(value, false,
+                              new Strings.MapResolver(inheritedContext),
+                              Strings.JAVA_SYS_PROPS_RESOLVER,
+                              Strings.ENV_VARS_RESOLVER,
+                              new Strings.MapResolver(_defaultContext));
     }
 
     private static void generateInheritedContext(final ConfiguredObject<?> object,
@@ -1970,6 +1977,30 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             _allAttributeTypes.put(clazz, attrMap);
             _allAutomatedFields.put(clazz, fieldMap);
+
+            for(Field field : clazz.getDeclaredFields())
+            {
+                if(Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && field.isAnnotationPresent(ManagedContextDefault.class))
+                {
+                    try
+                    {
+                        String name = field.getAnnotation(ManagedContextDefault.class).name();
+                        Object value = field.get(null);
+                        if(!_defaultContext.containsKey(name))
+                        {
+                            _defaultContext.put(name,String.valueOf(value));
+                        }
+                        else
+                        {
+                            throw new IllegalArgumentException("Multiple definitions of the default context variable ${"+name+"}");
+                        }
+                    }
+                    catch (IllegalAccessException e)
+                    {
+                        throw new ServerScopedRuntimeException("Unkecpected illegal access exception (only inspecting public static fields)", e);
+                    }
+                }
+            }
         }
     }
 

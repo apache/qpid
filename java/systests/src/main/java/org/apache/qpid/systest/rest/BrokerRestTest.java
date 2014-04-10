@@ -134,22 +134,9 @@ public class BrokerRestTest extends QpidRestTestCase
     {
         Map<String, Object> invalidAttributes = new HashMap<String, Object>();
         invalidAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, "non-existing-host");
-        invalidAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, -1000);
-        invalidAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, -2000);
-        invalidAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, -3000);
-        invalidAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, -4000);
-        invalidAttributes.put(Broker.QUEUE_ALERT_REPEAT_GAP, -5000);
-        invalidAttributes.put(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES, -7000);
-        invalidAttributes.put(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES, -16000);
-        invalidAttributes.put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, -8);
-        invalidAttributes.put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, -90000);
         invalidAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, -10);
         invalidAttributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, -11000);
         invalidAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, -12000);
-        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, -13000);
-        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, -14000);
-        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, -15000);
-        invalidAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, -16000);
 
         for (Map.Entry<String, Object> entry : invalidAttributes.entrySet())
         {
@@ -159,12 +146,6 @@ public class BrokerRestTest extends QpidRestTestCase
             assertEquals("Unexpected update response for invalid attribute " + entry.getKey() + "=" + entry.getValue(), 409, response);
         }
 
-        // a special case when FLOW_CONTROL_RESUME_SIZE_BYTES > FLOW_CONTROL_SIZE_BYTES
-        Map<String, Object> brokerAttributes = getValidBrokerAttributes();
-        brokerAttributes.put(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES, 1000);
-        brokerAttributes.put(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES, 2000);
-        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", brokerAttributes);
-        assertEquals("Unexpected update response for flow resume size > flow size", 409, response);
     }
 
     public void testSetCloseOnNoRoute() throws Exception
@@ -198,24 +179,10 @@ public class BrokerRestTest extends QpidRestTestCase
     {
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, TEST3_VIRTUALHOST);
-        brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 1000);
-        brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 2000);
-        brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 3000);
-        brokerAttributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, 4000);
-        brokerAttributes.put(Broker.QUEUE_ALERT_REPEAT_GAP, 5000);
-        brokerAttributes.put(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES, 7000);
-        brokerAttributes.put(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES, 6000);
-        brokerAttributes.put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, 8);
-        brokerAttributes.put(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, true);
-        brokerAttributes.put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 90000);
         brokerAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, 10);
         brokerAttributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 11000);
         brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, 12000);
         brokerAttributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
-        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, 13000);
-        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, 14000);
-        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, 15000);
-        brokerAttributes.put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, 16000);
         return brokerAttributes;
     }
 

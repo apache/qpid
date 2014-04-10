@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -32,14 +35,11 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 
 
 public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<ConnectionStartOkBody>
@@ -112,9 +112,9 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
-                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody((Integer)broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT),
+                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
                                                                                           BrokerProperties.FRAME_SIZE,
-                                                                                          (Integer)broker.getAttribute(Broker.CONNECTION_HEART_BEAT_DELAY));
+                                                                                          broker.getConnection_heartBeatDelay());
                     session.writeFrame(tuneBody.generateFrame(0));
                     break;
                 case CONTINUE:

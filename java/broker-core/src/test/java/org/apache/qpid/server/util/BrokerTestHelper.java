@@ -21,7 +21,6 @@
 package org.apache.qpid.server.util;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,7 +39,6 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -72,9 +70,8 @@ public class BrokerTestHelper
         SubjectCreator subjectCreator = mock(SubjectCreator.class);
         when(subjectCreator.getMechanisms()).thenReturn("");
         Broker broker = mock(Broker.class);
-        when(broker.getAttribute(Broker.CONNECTION_SESSION_COUNT_LIMIT)).thenReturn(1);
-        when(broker.getAttribute(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE)).thenReturn(false);
-        when(broker.getAttribute(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD)).thenReturn(10000l);
+        when(broker.getConnection_sessionCountLimit()).thenReturn(1);
+        when(broker.getConnection_closeWhenNoRoute()).thenReturn(false);
         when(broker.getId()).thenReturn(UUID.randomUUID());
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
         when(broker.getVirtualHostRegistry()).thenReturn(new VirtualHostRegistry(new EventLogger()));
@@ -102,16 +99,6 @@ public class BrokerTestHelper
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         SecurityManager securityManager = new SecurityManager(broker, false);
         when(broker.getSecurityManager()).thenReturn(securityManager);
-        when(broker.getAttribute(eq(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD))).thenReturn(BrokerAdapter.DEFAULT_HOUSEKEEPING_CHECK_PERIOD);
-        when(broker.getAttribute(eq(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED))).thenReturn(BrokerAdapter.DEFAULT_DEAD_LETTER_QUEUE_ENABLED);
-        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE))).thenReturn(BrokerAdapter.DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE);
-        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE))).thenReturn(BrokerAdapter.DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE);
-        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES))).thenReturn(BrokerAdapter.DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT);
-        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES))).thenReturn(BrokerAdapter.DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH);
-        when(broker.getAttribute(eq(Broker.QUEUE_ALERT_REPEAT_GAP))).thenReturn(BrokerAdapter.DEFAULT_ALERT_REPEAT_GAP);
-        when(broker.getAttribute(eq(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES))).thenReturn(BrokerAdapter.DEFAULT_FLOW_CONTROL_SIZE_BYTES);
-        when(broker.getAttribute(eq(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES))).thenReturn(BrokerAdapter.DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES);
-        when(broker.getAttribute(eq(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS))).thenReturn(BrokerAdapter.DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS);
 
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactory();
         ConfiguredObjectTypeFactory factory = objectFactory.getConfiguredObjectTypeFactory(org.apache.qpid.server.model.VirtualHost.class,
@@ -120,10 +107,7 @@ public class BrokerTestHelper
         AbstractVirtualHost host = (AbstractVirtualHost) factory.create(attributes, broker);
 
         host.setDesiredState(host.getState(), State.ACTIVE);
-        /*if(virtualHostRegistry != null)
-        {
-            virtualHostRegistry.registerVirtualHost(host);
-        }*/
+
         return host;
     }
 

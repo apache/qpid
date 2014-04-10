@@ -55,25 +55,9 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String STORE_PATH = "storePath";
     String MODEL_VERSION = "modelVersion";
 
-    String QUEUE_ALERT_THRESHOLD_MESSAGE_AGE = "queue.alertThresholdMessageAge";
-    String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
-    String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "queue.alertThresholdQueueDepthBytes";
-    String QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE = "queue.alertThresholdMessageSize";
-    String QUEUE_ALERT_REPEAT_GAP = "queue.alertRepeatGap";
-    String QUEUE_FLOW_CONTROL_SIZE_BYTES = "queue.flowControlSizeBytes";
-    String QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES = "queue.flowResumeSizeBytes";
-    String QUEUE_MAXIMUM_DELIVERY_ATTEMPTS = "queue.maximumDeliveryAttempts";
-    String QUEUE_DEAD_LETTER_QUEUE_ENABLED = "queue.deadLetterQueueEnabled";
-
     String CONNECTION_SESSION_COUNT_LIMIT = "connection.sessionCountLimit";
     String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
     String CONNECTION_CLOSE_WHEN_NO_ROUTE = "connection.closeWhenNoRoute";
-
-    String VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD            = "virtualhost.housekeepingCheckPeriod";
-    String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "virtualhost.storeTransactionIdleTimeoutClose";
-    String VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "virtualhost.storeTransactionIdleTimeoutWarn";
-    String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "virtualhost.storeTransactionOpenTimeoutClose";
-    String VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "virtualhost.storeTransactionOpenTimeoutWarn";
 
     @ManagedAttribute( derived = true )
     String getBuildVersion();
@@ -102,67 +86,23 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     @ManagedAttribute( automate = true )
     String getDefaultVirtualHost();
 
-    @ManagedAttribute
-    int getQueue_alertThresholdMessageAge();
-
-    @ManagedAttribute
-    long getQueue_alertThresholdQueueDepthMessages();
-
-    @ManagedAttribute
-    long getQueue_alertThresholdQueueDepthBytes();
-
-    @ManagedAttribute
-    long getQueue_alertThresholdMessageSize();
-
-    @ManagedAttribute
-    long getQueue_alertRepeatGap();
-
-    @ManagedAttribute
-    long getQueue_flowControlSizeBytes();
-
-    @ManagedAttribute
-    long getQueue_flowResumeSizeBytes();
-
-    @ManagedAttribute
-    int getQueue_maximumDeliveryAttempts();
-
-    @ManagedAttribute
-    boolean isQueue_deadLetterQueueEnabled();
-
-    @ManagedAttribute
-    long getVirtualhost_housekeepingCheckPeriod();
-
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "256" )
     int getConnection_sessionCountLimit();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "0")
     int getConnection_heartBeatDelay();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "true" )
     boolean getConnection_closeWhenNoRoute();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "0" )
     int getStatisticsReportingPeriod();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "false")
     boolean getStatisticsReportingResetEnabled();
 
     @ManagedAttribute( derived = true )
     String getModelVersion();
-
-    @ManagedAttribute
-    long getVirtualhost_storeTransactionIdleTimeoutClose();
-
-    @ManagedAttribute
-    long getVirtualhost_storeTransactionIdleTimeoutWarn();
-
-    @ManagedAttribute
-    long getVirtualhost_storeTransactionOpenTimeoutClose();
-
-    @ManagedAttribute
-    long getVirtualhost_storeTransactionOpenTimeoutWarn();
-
-
 
     @ManagedStatistic
     long getBytesIn();

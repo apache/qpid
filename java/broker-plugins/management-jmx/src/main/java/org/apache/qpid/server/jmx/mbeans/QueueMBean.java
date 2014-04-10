@@ -149,12 +149,12 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Integer getMessageCount()
     {
-        return (int) _queue.getQueueDepthMessages();
+        return _queue.getQueueDepthMessages();
     }
 
     public Integer getMaximumDeliveryCount()
     {
-        return (Integer) _queue.getAttribute(Queue.MAXIMUM_DELIVERY_ATTEMPTS);
+        return _queue.getMaximumDeliveryAttempts();
     }
 
     public Long getReceivedMessageCount()
@@ -200,7 +200,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Long getMaximumMessageAge()
     {
-        return (Long) _queue.getAttribute(Queue.ALERT_THRESHOLD_MESSAGE_AGE);
+        return _queue.getAlertThresholdMessageAge();
     }
 
     public void setMaximumMessageAge(Long age)
@@ -210,7 +210,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Long getMaximumMessageSize()
     {
-        return (Long) _queue.getAttribute(Queue.ALERT_THRESHOLD_MESSAGE_SIZE);
+        return _queue.getAlertThresholdMessageSize();
     }
 
     public void setMaximumMessageSize(Long size)
@@ -220,7 +220,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Long getMaximumMessageCount()
     {
-        return (Long) _queue.getAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
+        return _queue.getAlertThresholdQueueDepthMessages();
     }
 
     public void setMaximumMessageCount(Long value)
@@ -230,7 +230,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Long getMaximumQueueDepth()
     {
-        return (Long) _queue.getAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
+        return _queue.getAlertThresholdQueueDepthBytes();
     }
 
     public void setMaximumQueueDepth(Long value)
@@ -240,7 +240,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Long getCapacity()
     {
-        return (Long) _queue.getAttribute(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES);
+        return (Long) _queue.getQueueFlowControlSizeBytes();
     }
 
     public void setCapacity(Long value)
@@ -250,7 +250,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Long getFlowResumeCapacity()
     {
-        return (Long) _queue.getAttribute(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES);
+        return _queue.getQueueFlowResumeSizeBytes();
     }
 
     public void setFlowResumeCapacity(Long value)

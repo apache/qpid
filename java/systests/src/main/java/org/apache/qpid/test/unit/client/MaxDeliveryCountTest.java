@@ -20,17 +20,11 @@
  */
 package org.apache.qpid.test.unit.client;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.RejectBehaviour;
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -43,11 +37,17 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.RejectBehaviour;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 /**
  * Test that the MaxRedelivery feature works as expected, allowing the client to reject
@@ -79,8 +79,8 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         //enable DLQ/maximumDeliveryCount support for all queues at the vhost level
 
         TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
-        brokerConfiguration.setBrokerAttribute(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, true);
-        brokerConfiguration.setBrokerAttribute(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, MAX_DELIVERY_COUNT);
+        setTestSystemProperty("queue.deadLetterQueueEnabled","true");
+        setTestSystemProperty("queue.maximumDeliveryAttempts", String.valueOf(MAX_DELIVERY_COUNT));
 
         //Ensure management is on
         brokerConfiguration.addJmxManagementConfiguration();

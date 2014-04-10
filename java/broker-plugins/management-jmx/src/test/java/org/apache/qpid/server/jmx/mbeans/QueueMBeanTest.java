@@ -18,12 +18,12 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.when;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -34,6 +34,11 @@ import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.OperationsException;
 import javax.management.openmbean.CompositeDataSupport;
+
+import org.mockito.ArgumentMatcher;
+import org.mockito.Matchers;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
@@ -47,10 +52,6 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.NotificationCheck;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.mockito.ArgumentMatcher;
-import org.mockito.Matchers;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 public class QueueMBeanTest extends QpidTestCase
 {
@@ -119,7 +120,8 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testGetQueueDescription() throws Exception
     {
-        assertAttribute("description", QUEUE_DESCRIPTION, Queue.DESCRIPTION);
+        when(_mockQueue.getAttribute(Queue.DESCRIPTION)).thenReturn(QUEUE_DESCRIPTION);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "description", QUEUE_DESCRIPTION);
     }
 
     public void testSetQueueDescription() throws Exception
@@ -129,17 +131,20 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testQueueType() throws Exception
     {
-        assertAttribute("queueType", QUEUE_TYPE, Queue.QUEUE_TYPE);
+        when(_mockQueue.getAttribute(Queue.QUEUE_TYPE)).thenReturn(QUEUE_TYPE);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "queueType", QUEUE_TYPE);
     }
 
     public void testMaximumDeliveryCount() throws Exception
     {
-        assertAttribute("maximumDeliveryCount", 5, Queue.MAXIMUM_DELIVERY_ATTEMPTS);
+        when(_mockQueue.getMaximumDeliveryAttempts()).thenReturn(5);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "maximumDeliveryCount", 5);
     }
 
     public void testOwner() throws Exception
     {
-        assertAttribute("owner", "testOwner", Queue.OWNER);
+        when(_mockQueue.getAttribute(Queue.OWNER)).thenReturn("testOwner");
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "owner", "testOwner");
     }
 
     public void testIsDurable() throws Exception
@@ -168,62 +173,92 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testGetMaximumMessageAge() throws Exception
     {
-        assertAttribute("maximumMessageAge", 10000l, Queue.ALERT_THRESHOLD_MESSAGE_AGE);
+        when(_mockQueue.getAlertThresholdMessageAge()).thenReturn(10000l);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "maximumMessageAge", 10000l);
     }
 
     public void testSetMaximumMessageAge() throws Exception
     {
-        testSetAttribute("maximumMessageAge", Queue.ALERT_THRESHOLD_MESSAGE_AGE, 1000l, 10000l);
+        when(_mockQueue.getAlertThresholdMessageAge()).thenReturn(1000l);
+
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, "maximumMessageAge", 10000l);
+
+        verify(_mockQueue).setAttribute(Queue.ALERT_THRESHOLD_MESSAGE_AGE, 1000l, 10000l);
     }
 
     public void testGetMaximumMessageSize() throws Exception
     {
-        assertAttribute("maximumMessageSize", 1024l, Queue.ALERT_THRESHOLD_MESSAGE_SIZE);
+        when(_mockQueue.getAlertThresholdMessageSize()).thenReturn(1024l);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "maximumMessageSize", 1024l);
     }
 
     public void testSetMaximumMessageSize() throws Exception
     {
-        testSetAttribute("maximumMessageSize", Queue.ALERT_THRESHOLD_MESSAGE_SIZE, 1024l, 2048l);
+        when(_mockQueue.getAlertThresholdMessageSize()).thenReturn(1024l);
+
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, "maximumMessageSize", 2048l);
+
+        verify(_mockQueue).setAttribute(Queue.ALERT_THRESHOLD_MESSAGE_SIZE, 1024l, 2048l);
     }
 
     public void testGetMaximumMessageCount() throws Exception
     {
-        assertAttribute("maximumMessageCount", 5000l, Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
+        when(_mockQueue.getAlertThresholdQueueDepthMessages()).thenReturn(5000l);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "maximumMessageCount", 5000l);
     }
 
     public void testSetMaximumMessageCount() throws Exception
     {
-        testSetAttribute("maximumMessageCount", Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 4000l, 5000l);
+        when(_mockQueue.getAlertThresholdQueueDepthMessages()).thenReturn(4000l);
+
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, "maximumMessageCount", 5000l);
+
+        verify(_mockQueue).setAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 4000l, 5000l);
     }
 
     public void testGetMaximumQueueDepth() throws Exception
     {
-        assertAttribute("maximumQueueDepth", 1048576l, Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
+        when(_mockQueue.getAlertThresholdQueueDepthBytes()).thenReturn(1048576l);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "maximumQueueDepth", 1048576l);
     }
 
     public void testSetMaximumQueueDepth() throws Exception
     {
-        testSetAttribute("maximumQueueDepth", Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,1048576l , 2097152l);
+        when(_mockQueue.getAlertThresholdQueueDepthBytes()).thenReturn(1048576l);
+
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, "maximumQueueDepth", 2097152l);
+
+        verify(_mockQueue).setAttribute(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 1048576l, 2097152l);
     }
 
     public void testGetCapacity() throws Exception
     {
-        assertAttribute("capacity", 1048576l, Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES);
+        when(_mockQueue.getQueueFlowControlSizeBytes()).thenReturn(1048576l);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "capacity", 1048576l);
     }
 
     public void testSetCapacity() throws Exception
     {
-        testSetAttribute("capacity", Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES,1048576l , 2097152l);
+        when(_mockQueue.getQueueFlowControlSizeBytes()).thenReturn(1048576l);
+
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, "capacity", 2097152l);
+
+        verify(_mockQueue).setAttribute(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 1048576l, 2097152l);
     }
 
     public void testGetFlowResumeCapacity() throws Exception
     {
-        assertAttribute("flowResumeCapacity", 1048576l, Queue.QUEUE_FLOW_RESUME_SIZE_BYTES);
+        when(_mockQueue.getQueueFlowResumeSizeBytes()).thenReturn(1048576l);
+        MBeanTestUtils.assertMBeanAttribute(_queueMBean, "flowResumeCapacity", 1048576l);
     }
 
     public void testSetFlowResumeCapacity() throws Exception
     {
-        testSetAttribute("flowResumeCapacity", Queue.QUEUE_FLOW_RESUME_SIZE_BYTES,1048576l , 2097152l);
+        when(_mockQueue.getQueueFlowResumeSizeBytes()).thenReturn(1048576l);
+
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, "flowResumeCapacity", 2097152l);
+
+        verify(_mockQueue).setAttribute(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 1048576l, 2097152l);
     }
 
 
@@ -367,12 +402,6 @@ public class QueueMBeanTest extends QpidTestCase
 
     private void assertStatistic(String jmxAttributeName, Object expectedValue) throws Exception
     {
-        MBeanTestUtils.assertMBeanAttribute(_queueMBean, jmxAttributeName, expectedValue);
-    }
-
-    private void assertAttribute(String jmxAttributeName, Object expectedValue, String underlyingAttributeName) throws Exception
-    {
-        when(_mockQueue.getAttribute(underlyingAttributeName)).thenReturn(expectedValue);
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, jmxAttributeName, expectedValue);
     }
 

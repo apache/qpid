@@ -256,24 +256,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
-    public int getQueue_maximumDeliveryAttempts()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getQueue_flowControlSizeBytes()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getQueue_flowResumeSizeBytes()
-    {
-        return 0;
-    }
-
-    @Override
     public long getStoreTransactionIdleTimeoutClose()
     {
         return 0;
@@ -293,36 +275,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     @Override
     public long getStoreTransactionOpenTimeoutWarn()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getQueue_alertRepeatGap()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getQueue_alertThresholdMessageAge()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getQueue_alertThresholdMessageSize()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getQueue_alertThresholdQueueDepthBytes()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getQueue_alertThresholdQueueDepthMessages()
     {
         return 0;
     }
@@ -699,54 +651,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     public void unblock()
     {
-    }
-
-    @Override
-    public long getDefaultAlertThresholdMessageAge()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getDefaultAlertThresholdMessageSize()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getDefaultAlertThresholdQueueDepthMessages()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getDefaultAlertThresholdQueueDepthBytes()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getDefaultAlertRepeatGap()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getDefaultQueueFlowControlSizeBytes()
-    {
-        return 0;
-    }
-
-    @Override
-    public long getDefaultQueueFlowResumeSizeBytes()
-    {
-        return 0;
-    }
-
-    @Override
-    public int getDefaultMaximumDeliveryAttempts()
-    {
-        return 0;
     }
 
     @Override

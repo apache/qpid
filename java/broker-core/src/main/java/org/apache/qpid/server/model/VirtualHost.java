@@ -33,15 +33,7 @@ import org.apache.qpid.server.store.MessageStore;
 public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>, E extends Exchange<?> > extends ConfiguredObject<X>
 {
 
-    String QUEUE_ALERT_REPEAT_GAP                     = "queue.alertRepeatGap";
-    String QUEUE_ALERT_THRESHOLD_MESSAGE_AGE          = "queue.alertThresholdMessageAge";
-    String QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE         = "queue.alertThresholdMessageSize";
-    String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES    = "queue.alertThresholdQueueDepthBytes";
-    String QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "queue.alertThresholdQueueDepthMessages";
     String QUEUE_DEAD_LETTER_QUEUE_ENABLED            = "queue.deadLetterQueueEnabled";
-    String QUEUE_MAXIMUM_DELIVERY_ATTEMPTS            = "queue.maximumDeliveryAttempts";
-    String QUEUE_FLOW_CONTROL_SIZE_BYTES              = "queue.flowControlSizeBytes";
-    String QUEUE_FLOW_RESUME_SIZE_BYTES               = "queue.flowResumeSizeBytes";
 
     String HOUSEKEEPING_CHECK_PERIOD            = "housekeepingCheckPeriod";
     String STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = "storeTransactionIdleTimeoutClose";
@@ -65,47 +57,41 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     @ManagedAttribute
     Collection<String> getSupportedQueueTypes();
 
-    @ManagedAttribute
+    @ManagedContextDefault( name = "queue.deadLetterQueueEnabled")
+    public static final boolean DEFAULT_DEAD_LETTER_QUEUE_ENABLED = false;
+
+    @ManagedAttribute( automate = true, defaultValue = "${queue.deadLetterQueueEnabled}")
     boolean isQueue_deadLetterQueueEnabled();
 
-    @ManagedAttribute
+    @ManagedContextDefault( name = "virtualhost.housekeepingCheckPeriod")
+    public static final long DEFAULT_HOUSEKEEPING_CHECK_PERIOD = 30000l;
+
+    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.housekeepingCheckPeriod}")
     long getHousekeepingCheckPeriod();
 
-    @ManagedAttribute
-    int getQueue_maximumDeliveryAttempts();
+    @ManagedContextDefault( name = "virtualhost.storeTransactionIdleTimeoutClose")
+    public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = 0l;
 
-    @ManagedAttribute
-    long getQueue_flowControlSizeBytes();
-
-    @ManagedAttribute
-    long getQueue_flowResumeSizeBytes();
-
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionIdleTimeoutClose}")
     long getStoreTransactionIdleTimeoutClose();
 
-    @ManagedAttribute
+    @ManagedContextDefault( name = "virtualhost.storeTransactionIdleTimeoutWarn")
+    public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 0l;
+
+    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionIdleTimeoutWarn}")
     long getStoreTransactionIdleTimeoutWarn();
 
-    @ManagedAttribute
+    @ManagedContextDefault( name = "virtualhost.storeTransactionOpenTimeoutClose")
+    public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = 0l;
+
+    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionOpenTimeoutClose}")
     long getStoreTransactionOpenTimeoutClose();
 
-    @ManagedAttribute
+    @ManagedContextDefault( name = "virtualhost.storeTransactionOpenTimeoutWarn")
+    public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
+
+    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionOpenTimeoutWarn}")
     long getStoreTransactionOpenTimeoutWarn();
-
-    @ManagedAttribute
-    long getQueue_alertRepeatGap();
-
-    @ManagedAttribute
-    long getQueue_alertThresholdMessageAge();
-
-    @ManagedAttribute
-    long getQueue_alertThresholdMessageSize();
-
-    @ManagedAttribute
-    long getQueue_alertThresholdQueueDepthBytes();
-
-    @ManagedAttribute
-    long getQueue_alertThresholdQueueDepthMessages();
 
     @ManagedAttribute
     String getSecurityAcl();

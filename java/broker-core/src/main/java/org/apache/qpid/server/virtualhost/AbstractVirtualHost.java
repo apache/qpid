@@ -138,15 +138,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         put(TYPE, String.class);
         put(STATE, State.class);
 
-        put(QUEUE_ALERT_REPEAT_GAP, Long.class);
-        put(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, Long.class);
-        put(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, Long.class);
-        put(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, Long.class);
-        put(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, Long.class);
         put(QUEUE_DEAD_LETTER_QUEUE_ENABLED, Boolean.class);
-        put(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, Integer.class);
-        put(QUEUE_FLOW_CONTROL_SIZE_BYTES, Long.class);
-        put(QUEUE_FLOW_RESUME_SIZE_BYTES, Long.class);
 
         put(HOUSEKEEPING_CHECK_PERIOD, Long.class);
         put(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Long.class);
@@ -176,6 +168,24 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     @ManagedAttributeField
     private Map<String, Object> _configurationStoreSettings;
+
+    @ManagedAttributeField
+    private boolean _queue_deadLetterQueueEnabled;
+
+    @ManagedAttributeField
+    private long _housekeepingCheckPeriod;
+
+    @ManagedAttributeField
+    private long _storeTransactionIdleTimeoutClose;
+
+    @ManagedAttributeField
+    private long _storeTransactionIdleTimeoutWarn;
+
+    @ManagedAttributeField
+    private long _storeTransactionOpenTimeoutClose;
+
+    @ManagedAttributeField
+    private long _storeTransactionOpenTimeoutWarn;
 
 
     public AbstractVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
@@ -1373,53 +1383,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     }
 
-    @Override
-    public long getDefaultAlertThresholdMessageAge()
-    {
-        return getQueue_alertThresholdMessageAge();
-    }
-
-    @Override
-    public long getDefaultAlertThresholdMessageSize()
-    {
-        return getQueue_alertThresholdMessageSize();
-    }
-
-    @Override
-    public long getDefaultAlertThresholdQueueDepthMessages()
-    {
-        return getQueue_alertThresholdQueueDepthMessages();
-    }
-
-    @Override
-    public long getDefaultAlertThresholdQueueDepthBytes()
-    {
-        return getQueue_alertThresholdQueueDepthBytes();
-    }
-
-    @Override
-    public long getDefaultAlertRepeatGap()
-    {
-        return getQueue_alertRepeatGap();
-    }
-
-    @Override
-    public long getDefaultQueueFlowControlSizeBytes()
-    {
-        return getQueue_flowControlSizeBytes();
-    }
-
-    @Override
-    public long getDefaultQueueFlowResumeSizeBytes()
-    {
-        return getQueue_flowResumeSizeBytes();
-    }
-
-    @Override
-    public int getDefaultMaximumDeliveryAttempts()
-    {
-        return getQueue_maximumDeliveryAttempts();
-    }
 
     @Override
     public boolean getDefaultDeadLetterQueueEnabled()
@@ -1539,62 +1502,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             return LifetimePolicy.PERMANENT;
         }
-        else if(QUEUE_ALERT_REPEAT_GAP.equals(name))
-        {
-            return getAttribute(QUEUE_ALERT_REPEAT_GAP, Broker.QUEUE_ALERT_REPEAT_GAP);
-        }
-        else if(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE.equals(name))
-        {
-            return getAttribute(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE);
-        }
-        else if(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE.equals(name))
-        {
-            return getAttribute(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE);
-        }
-        else if(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES.equals(name))
-        {
-            return getAttribute(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
-        }
-        else if(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES.equals(name))
-        {
-            return getAttribute(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
-        }
-        else if(QUEUE_DEAD_LETTER_QUEUE_ENABLED.equals(name))
-        {
-            return getAttribute(QUEUE_DEAD_LETTER_QUEUE_ENABLED, Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED);
-        }
-        else if(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS.equals(name))
-        {
-            return getAttribute(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS);
-        }
-        else if(QUEUE_FLOW_CONTROL_SIZE_BYTES.equals(name))
-        {
-            return getAttribute(QUEUE_FLOW_CONTROL_SIZE_BYTES, Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES);
-        }
-        else if(QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
-        {
-            return getAttribute(QUEUE_FLOW_RESUME_SIZE_BYTES, Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
-        }
-        else if(HOUSEKEEPING_CHECK_PERIOD.equals(name))
-        {
-            return getAttribute(HOUSEKEEPING_CHECK_PERIOD, Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD);
-        }
-        else if(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE.equals(name))
-        {
-            return getAttribute(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
-        }
-        else if(STORE_TRANSACTION_IDLE_TIMEOUT_WARN.equals(name))
-        {
-            return getAttribute(STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN);
-        }
-        else if(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE.equals(name))
-        {
-            return getAttribute(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
-        }
-        else if(STORE_TRANSACTION_OPEN_TIMEOUT_WARN.equals(name))
-        {
-            return getAttribute(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
-        }
         else if(SUPPORTED_EXCHANGE_TYPES.equals(name))
         {
             List<String> types = new ArrayList<String>();
@@ -1646,85 +1553,37 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public boolean isQueue_deadLetterQueueEnabled()
     {
-        return (Boolean)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED);
+        return _queue_deadLetterQueueEnabled;
     }
 
     @Override
     public long getHousekeepingCheckPeriod()
     {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.HOUSEKEEPING_CHECK_PERIOD);
-    }
-
-    @Override
-    public int getQueue_maximumDeliveryAttempts()
-    {
-        return (Integer)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS);
-    }
-
-    @Override
-    public long getQueue_flowControlSizeBytes()
-    {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_FLOW_CONTROL_SIZE_BYTES);
-    }
-
-    @Override
-    public long getQueue_flowResumeSizeBytes()
-    {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_FLOW_RESUME_SIZE_BYTES);
+        return _housekeepingCheckPeriod;
     }
 
     @Override
     public long getStoreTransactionIdleTimeoutClose()
     {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
+        return _storeTransactionIdleTimeoutClose;
     }
 
     @Override
     public long getStoreTransactionIdleTimeoutWarn()
     {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TRANSACTION_IDLE_TIMEOUT_WARN);
+        return _storeTransactionIdleTimeoutWarn;
     }
 
     @Override
     public long getStoreTransactionOpenTimeoutClose()
     {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
+        return _storeTransactionOpenTimeoutClose;
     }
 
     @Override
     public long getStoreTransactionOpenTimeoutWarn()
     {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
-    }
-
-    @Override
-    public long getQueue_alertRepeatGap()
-    {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_ALERT_REPEAT_GAP);
-    }
-
-    @Override
-    public long getQueue_alertThresholdMessageAge()
-    {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE);
-    }
-
-    @Override
-    public long getQueue_alertThresholdMessageSize()
-    {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE);
-    }
-
-    @Override
-    public long getQueue_alertThresholdQueueDepthBytes()
-    {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
-    }
-
-    @Override
-    public long getQueue_alertThresholdQueueDepthMessages()
-    {
-        return (Long)getAttribute(org.apache.qpid.server.model.VirtualHost.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
+        return _storeTransactionOpenTimeoutWarn;
     }
 
     @SuppressWarnings("unchecked")

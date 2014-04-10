@@ -72,19 +72,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
-        put(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, Long.class);
-        put(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, Long.class);
-        put(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, Long.class);
-        put(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, Long.class);
-        put(QUEUE_ALERT_REPEAT_GAP, Long.class);
-        put(QUEUE_FLOW_CONTROL_SIZE_BYTES, Long.class);
-        put(QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES, Long.class);
-        put(VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, Long.class);
 
-        put(QUEUE_DEAD_LETTER_QUEUE_ENABLED, Boolean.class);
         put(STATISTICS_REPORTING_RESET_ENABLED, Boolean.class);
 
-        put(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, Integer.class);
         put(CONNECTION_SESSION_COUNT_LIMIT, Integer.class);
         put(CONNECTION_HEART_BEAT_DELAY, Integer.class);
         put(CONNECTION_CLOSE_WHEN_NO_ROUTE, Boolean.class);
@@ -93,67 +83,22 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         put(NAME, String.class);
         put(DEFAULT_VIRTUAL_HOST, String.class);
 
-        put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Long.class);
-        put(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Long.class);
-        put(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Long.class);
-        put(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, Long.class);
         put(MODEL_VERSION, String.class);
         put(STORE_VERSION, String.class);
     }});
 
-    public static final int DEFAULT_STATISTICS_REPORTING_PERIOD = 0;
-    public static final boolean DEFAULT_STATISTICS_REPORTING_RESET_ENABLED = false;
-    public static final long DEFAULT_ALERT_REPEAT_GAP = 30000l;
-    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE = 0l;
-    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT = 0l;
-    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE = 0l;
-    public static final long DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH = 0l;
-    public static final boolean DEFAULT_DEAD_LETTER_QUEUE_ENABLED = false;
-    public static final int DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS = 0;
-    public static final long DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES = 0l;
-    public static final long DEFAULT_FLOW_CONTROL_SIZE_BYTES = 0l;
-    public static final long DEFAULT_HOUSEKEEPING_CHECK_PERIOD = 30000l;
-    public static final int DEFAULT_HEART_BEAT_DELAY = 0;
-    public static final int DEFAULT_SESSION_COUNT_LIMIT = 256;
     public static final String DEFAULT_NAME = "QpidBroker";
-    public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = 0l;
-    public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 0l;
-    public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = 0l;
-    public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
-    public static final boolean DEFAULT_CONNECTION_CLOSE_WHEN_NO_ROUTE = true;
 
     @SuppressWarnings("serial")
     private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
-        put(Broker.STATISTICS_REPORTING_PERIOD, DEFAULT_STATISTICS_REPORTING_PERIOD);
-        put(Broker.STATISTICS_REPORTING_RESET_ENABLED, DEFAULT_STATISTICS_REPORTING_RESET_ENABLED);
-        put(Broker.QUEUE_ALERT_REPEAT_GAP, DEFAULT_ALERT_REPEAT_GAP);
-        put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE);
-        put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT);
-        put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE);
-        put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH);
-        put(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, DEFAULT_DEAD_LETTER_QUEUE_ENABLED);
-        put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS);
-        put(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES, DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES);
-        put(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES, DEFAULT_FLOW_CONTROL_SIZE_BYTES);
-        put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, DEFAULT_HOUSEKEEPING_CHECK_PERIOD);
-        put(Broker.CONNECTION_HEART_BEAT_DELAY, DEFAULT_HEART_BEAT_DELAY);
-        put(Broker.CONNECTION_SESSION_COUNT_LIMIT, DEFAULT_SESSION_COUNT_LIMIT);
-        put(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE, DEFAULT_CONNECTION_CLOSE_WHEN_NO_ROUTE);
         put(Broker.NAME, DEFAULT_NAME);
-        put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
-        put(Broker.VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN);
-        put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
-        put(Broker.VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN, DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
+
     }});
     public static final String MANAGEMENT_MODE_AUTHENTICATION = "MANAGEMENT_MODE_AUTHENTICATION";
     private final ConfiguredObjectFactory _objectFactory;
 
-    private String[] POSITIVE_NUMERIC_ATTRIBUTES = { QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
-            QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, QUEUE_ALERT_REPEAT_GAP, QUEUE_FLOW_CONTROL_SIZE_BYTES,
-            QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES, QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, CONNECTION_SESSION_COUNT_LIMIT,
-            CONNECTION_HEART_BEAT_DELAY, STATISTICS_REPORTING_PERIOD, VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE,
-            VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN, VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE,
-            VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN};
+    private String[] POSITIVE_NUMERIC_ATTRIBUTES = { CONNECTION_SESSION_COUNT_LIMIT,
+            CONNECTION_HEART_BEAT_DELAY, STATISTICS_REPORTING_PERIOD };
 
 
     private EventLogger _eventLogger;
@@ -182,6 +127,16 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     @ManagedAttributeField
     private String _defaultVirtualHost;
+    @ManagedAttributeField
+    private int _connection_sessionCountLimit;
+    @ManagedAttributeField
+    private int _connection_heartBeatDelay;
+    @ManagedAttributeField
+    private boolean _connection_closeWhenNoRoute;
+    @ManagedAttributeField
+    private int _statisticsReportingPeriod;
+    @ManagedAttributeField
+    private boolean _statisticsReportingResetEnabled;
 
 
     public BrokerAdapter(UUID id,
@@ -355,123 +310,39 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
-    public int getQueue_alertThresholdMessageAge()
-    {
-        return (Integer) getAttribute(QUEUE_ALERT_THRESHOLD_MESSAGE_AGE);
-    }
-
-    @Override
-    public long getQueue_alertThresholdQueueDepthMessages()
-    {
-        return (Long) getAttribute(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES);
-    }
-
-    @Override
-    public long getQueue_alertThresholdQueueDepthBytes()
-    {
-        return (Long) getAttribute(QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES);
-    }
-
-    @Override
-    public long getQueue_alertThresholdMessageSize()
-    {
-        return (Long) getAttribute(QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE);
-    }
-
-    @Override
-    public long getQueue_alertRepeatGap()
-    {
-        return (Long) getAttribute(QUEUE_ALERT_REPEAT_GAP);
-    }
-
-    @Override
-    public long getQueue_flowControlSizeBytes()
-    {
-        return (Long) getAttribute(QUEUE_FLOW_CONTROL_SIZE_BYTES);
-    }
-
-    @Override
-    public long getQueue_flowResumeSizeBytes()
-    {
-        return (Long) getAttribute(QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
-    }
-
-    @Override
-    public int getQueue_maximumDeliveryAttempts()
-    {
-        return (Integer) getAttribute(QUEUE_MAXIMUM_DELIVERY_ATTEMPTS);
-    }
-
-    @Override
-    public boolean isQueue_deadLetterQueueEnabled()
-    {
-        return (Boolean) getAttribute(QUEUE_DEAD_LETTER_QUEUE_ENABLED);
-    }
-
-    @Override
-    public long getVirtualhost_housekeepingCheckPeriod()
-    {
-        return (Long) getAttribute(VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD);
-    }
-
-    @Override
     public int getConnection_sessionCountLimit()
     {
-        return (Integer) getAttribute(CONNECTION_SESSION_COUNT_LIMIT);
+        return _connection_sessionCountLimit;
     }
 
     @Override
     public int getConnection_heartBeatDelay()
     {
-        return (Integer) getAttribute(CONNECTION_HEART_BEAT_DELAY);
+        return _connection_heartBeatDelay;
     }
 
     @Override
     public boolean getConnection_closeWhenNoRoute()
     {
-        return (Boolean) getAttribute(CONNECTION_CLOSE_WHEN_NO_ROUTE);
+        return _connection_closeWhenNoRoute;
     }
 
     @Override
     public int getStatisticsReportingPeriod()
     {
-        return (Integer) getAttribute(STATISTICS_REPORTING_PERIOD);
+        return _statisticsReportingPeriod;
     }
 
     @Override
     public boolean getStatisticsReportingResetEnabled()
     {
-        return (Boolean) getAttribute(STATISTICS_REPORTING_RESET_ENABLED);
+        return _statisticsReportingResetEnabled;
     }
 
     @Override
     public String getModelVersion()
     {
         return Model.MODEL_VERSION;
-    }
-
-    @Override
-    public long getVirtualhost_storeTransactionIdleTimeoutClose()
-    {
-        return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE);
-    }
-
-    @Override
-    public long getVirtualhost_storeTransactionIdleTimeoutWarn()
-    {
-        return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_IDLE_TIMEOUT_WARN);
-    }
-
-    @Override
-    public long getVirtualhost_storeTransactionOpenTimeoutClose()
-    {
-        return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE);
-    }
-
-    @Override
-    public long getVirtualhost_storeTransactionOpenTimeoutWarn()
-    {
-        return (Long) getAttribute(VIRTUALHOST_STORE_TRANSACTION_OPEN_TIMEOUT_WARN);
     }
 
     public Collection<VirtualHost<?,?,?>> getVirtualHosts()
@@ -1336,23 +1207,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                         + " cannot be set as a default as it does not exist");
             }
         }
-        Long queueFlowControlSize = (Long) convertedAttributes.get(QUEUE_FLOW_CONTROL_SIZE_BYTES);
-        Long queueFlowControlResumeSize = (Long) convertedAttributes.get(QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
-        if (queueFlowControlSize != null || queueFlowControlResumeSize != null )
-        {
-            if (queueFlowControlSize == null)
-            {
-                queueFlowControlSize = (Long)getAttribute(QUEUE_FLOW_CONTROL_SIZE_BYTES);
-            }
-            if (queueFlowControlResumeSize == null)
-            {
-                queueFlowControlResumeSize = (Long)getAttribute(QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES);
-            }
-            if (queueFlowControlResumeSize > queueFlowControlSize)
-            {
-                throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
-            }
-        }
+
         for (String attributeName : POSITIVE_NUMERIC_ATTRIBUTES)
         {
             Number value = (Number) convertedAttributes.get(attributeName);

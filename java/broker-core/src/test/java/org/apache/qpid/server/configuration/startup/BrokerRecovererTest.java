@@ -91,16 +91,6 @@ public class BrokerRecovererTest extends TestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
-        attributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_AGE, 9l);
-        attributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 8l);
-        attributes.put(Broker.QUEUE_ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, 7l);
-        attributes.put(Broker.QUEUE_ALERT_THRESHOLD_MESSAGE_SIZE, 6l);
-        attributes.put(Broker.QUEUE_ALERT_REPEAT_GAP, 5l);
-        attributes.put(Broker.QUEUE_FLOW_CONTROL_SIZE_BYTES, 5l);
-        attributes.put(Broker.QUEUE_FLOW_CONTROL_RESUME_SIZE_BYTES, 3l);
-        attributes.put(Broker.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, 2);
-        attributes.put(Broker.QUEUE_DEAD_LETTER_QUEUE_ENABLED, true);
-        attributes.put(Broker.VIRTUALHOST_HOUSEKEEPING_CHECK_PERIOD, 1l);
         attributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, 1000);
         attributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 2000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);

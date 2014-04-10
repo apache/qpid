@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.test.client.destination;
 
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -70,7 +71,8 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.QUEUE_MAXIMUM_DELIVERY_ATTEMPTS, 0);
+        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.CONTEXT,
+                                  Collections.singletonMap("queue.maximumDeliveryAttempts","0"));
 
         super.setUp();
         _connection = getConnection() ;
