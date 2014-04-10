@@ -16,9 +16,9 @@
    limitations under the License.
 -->
 <dep>
-  <groupId>org.apache.servicemix.bundles</groupId>
-  <artifactId>org.apache.servicemix.bundles.bcel</artifactId>
-  <version>5.2_4</version>
+  <groupId>org.apache.bcel</groupId>
+  <artifactId>bcel</artifactId>
+  <version>5.2</version>
   <exclusions>
     <exclusion>
       <!--  Qpid doesn't require BCEL InstructionFinder, so does not need jakarta-regexp. -->

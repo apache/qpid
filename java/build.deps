@@ -24,7 +24,7 @@ commons-collections=lib/required/commons-collections-3.2.1.jar
 commons-lang=lib/required/commons-lang-2.6.jar
 commons-logging=lib/required/commons-logging-1.1.1.jar
 
-bcel=lib/required/org.apache.servicemix.bundles.bcel-5.2_4.jar
+bcel=lib/required/bcel-5.2.jar
 
 derby-db=lib/required/derby-10.8.2.2.jar
 
