@@ -81,8 +81,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.servicemix.bundles</groupId>
-      <artifactId>org.apache.servicemix.bundles.bcel</artifactId>
+      <groupId>org.apache.bcel</groupId>
+      <artifactId>bcel</artifactId>
       <exclusions>
         <exclusion>
           <!--  Qpid doesn't require BCEL InstructionFinder, so does not need jakarta-regexp. -->
