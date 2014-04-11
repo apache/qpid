@@ -134,7 +134,6 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
             host = _broker.getDefaultVirtualHost();
         }
         _vhost = _broker.getVirtualHostRegistry().getVirtualHost(host);
-        _vhost.getConnectionRegistry().registerConnection(this);
 
         if(_vhost == null)
         {
@@ -143,11 +142,14 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
             err.setDescription("Unknown hostname " + _conn.getLocalHostname());
             _conn.close(err);
         }
-        Subject authSubject = _subjectCreator.createSubjectWithGroups(_conn.getUser());
-        _subject.getPrincipals().addAll(authSubject.getPrincipals());
-        _subject.getPublicCredentials().addAll(authSubject.getPublicCredentials());
-        _subject.getPrivateCredentials().addAll(authSubject.getPrivateCredentials());
-
+        else
+        {
+            _vhost.getConnectionRegistry().registerConnection(this);
+            Subject authSubject = _subjectCreator.createSubjectWithGroups(_conn.getUser());
+            _subject.getPrincipals().addAll(authSubject.getPrincipals());
+            _subject.getPublicCredentials().addAll(authSubject.getPublicCredentials());
+            _subject.getPrivateCredentials().addAll(authSubject.getPrivateCredentials());
+        }
     }
 
     public void remoteSessionCreation(SessionEndpoint endpoint)
@@ -218,7 +220,10 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         {
             _closeTasks.clear();
         }
-        _vhost.getConnectionRegistry().deregisterConnection(this);
+        if(_vhost != null)
+        {
+            _vhost.getConnectionRegistry().deregisterConnection(this);
+        }
 
 
     }
