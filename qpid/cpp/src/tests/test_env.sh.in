@@ -94,3 +94,6 @@ test -z "$BOOST_TEST_CATCH_SYSTEM_ERRORS" && export BOOST_TEST_CATCH_SYSTEM_ERRO
 
 # Source this for useful common testing functions
 export QPID_TEST_COMMON=$srcdir/test_env_common.sh
+
+# Proton configuration
+export QPID_PROTON_VERSION=@Proton_VERSION@
