@@ -20,19 +20,20 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
-import org.apache.qpid.transport.NetworkTransportConfiguration;
-import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
-import javax.net.ssl.SSLContext;
 import java.net.InetSocketAddress;
 import java.util.Set;
 
-import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+import javax.net.ssl.SSLContext;
+
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
+import org.apache.qpid.transport.network.IncomingNetworkTransport;
 
 class TCPandSSLTransport implements AcceptingTransport
 {
@@ -41,14 +42,14 @@ class TCPandSSLTransport implements AcceptingTransport
     private SSLContext _sslContext;
     private InetSocketAddress _bindingSocketAddress;
     private Port<?> _port;
-    private Set<AmqpProtocolVersion> _supported;
-    private AmqpProtocolVersion _defaultSupportedProtocolReply;
+    private Set<Protocol> _supported;
+    private Protocol _defaultSupportedProtocolReply;
 
     TCPandSSLTransport(final Set<Transport> transports,
                        final SSLContext sslContext,
                        final Port<?> port,
-                       final Set<AmqpProtocolVersion> supported,
-                       final AmqpProtocolVersion defaultSupportedProtocolReply)
+                       final Set<Protocol> supported,
+                       final Protocol defaultSupportedProtocolReply)
     {
         _transports = transports;
         _sslContext = sslContext;

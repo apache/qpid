@@ -44,7 +44,7 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 
     // Attributes
 
-    @ManagedAttribute(automate = true)
+    @ManagedAttribute(automate = true, defaultValue = "*")
     String getBindingAddress();
 
     @ManagedAttribute(mandatory = true, automate = true)
@@ -53,7 +53,7 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     @ManagedAttribute( automate = true )
     Set<Protocol> getProtocols();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( automate = true, defaultValue = "TCP" )
     Set<Transport> getTransports();
 
     @ManagedAttribute( automate = true )
@@ -84,6 +84,7 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
                                                       AccessControlException,
                                                       IllegalArgumentException;
 
+    Collection<Protocol> getAvailableProtocols();
 
     //children
     Collection<VirtualHostAlias> getVirtualHostBindings();

@@ -27,10 +27,12 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -130,19 +132,19 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
             };
 
 
-    private byte[] getAmqpHeader(final AmqpProtocolVersion version)
+    private byte[] getAmqpHeader(final Protocol version)
     {
         switch(version)
         {
-            case v0_8:
+            case AMQP_0_8:
                 return AMQP_0_8_HEADER;
-            case v0_9:
+            case AMQP_0_9:
                 return AMQP_0_9_HEADER;
-            case v0_9_1:
+            case AMQP_0_9_1:
                 return AMQP_0_9_1_HEADER;
-            case v0_10:
+            case AMQP_0_10:
                 return AMQP_0_10_HEADER;
-            case v1_0_0:
+            case AMQP_1_0:
                 return AMQP_1_0_0_HEADER;
             default:
                 fail("unknown AMQP version, appropriate header must be added for new protocol version");
@@ -156,10 +158,10 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
      */
     public void testDifferentProtocolVersionsShareCommonIDNumberingSequence()
     {
-        Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
+        Set<Protocol> protocols = getAllAMQPProtocols();
 
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory(_broker, null, false, false, versions, null, null,
+            new MultiVersionProtocolEngineFactory(_broker, null, false, false, protocols, null, null,
                     org.apache.qpid.server.model.Transport.TCP);
 
         //create a dummy to retrieve the 'current' ID number
@@ -167,10 +169,10 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         //create a protocol engine and send the AMQP header for all supported AMQP verisons,
         //ensuring the ID assigned increases as expected
-        for(AmqpProtocolVersion version : versions)
+        for(Protocol protocol : protocols)
         {
             long expectedID = previousId + 1;
-            byte[] header = getAmqpHeader(version);
+            byte[] header = getAmqpHeader(protocol);
             assertNotNull("protocol header should not be null", header);
 
             ServerProtocolEngine engine = factory.newProtocolEngine();
@@ -187,18 +189,33 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         }
     }
 
+    protected Set<Protocol> getAllAMQPProtocols()
+    {
+        Set<Protocol> protocols = EnumSet.allOf(Protocol.class);
+        Iterator<Protocol> protoIter = protocols.iterator();
+        while(protoIter.hasNext())
+        {
+            Protocol protocol = protoIter.next();
+            if(protocol.getProtocolType() != Protocol.ProtocolType.AMQP)
+            {
+                protoIter.remove();
+            }
+        }
+        return protocols;
+    }
+
     /**
      * Test to verify that when requesting a ProtocolEngineFactory to produce engines having a default reply to unsupported
      * version initiations, there is enforcement that the default reply is itself a supported protocol version.
      */
     public void testUnsupportedDefaultReplyCausesIllegalArgumentException()
     {
-        Set<AmqpProtocolVersion> versions = EnumSet.allOf(AmqpProtocolVersion.class);
-        versions.remove(AmqpProtocolVersion.v0_9);
+        Set<Protocol> versions = getAllAMQPProtocols();
+        versions.remove(Protocol.AMQP_0_9);
 
         try
         {
-            new MultiVersionProtocolEngineFactory(_broker, null, false, false, versions, AmqpProtocolVersion.v0_9, null,
+            new MultiVersionProtocolEngineFactory(_broker, null, false, false, versions, Protocol.AMQP_0_9, null,
                     org.apache.qpid.server.model.Transport.TCP);
             fail("should not have been allowed to create the factory");
         }

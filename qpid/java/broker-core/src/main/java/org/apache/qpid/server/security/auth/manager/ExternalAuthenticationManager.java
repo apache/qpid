@@ -24,7 +24,6 @@ import java.util.Map;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedAttributeField;
@@ -42,10 +41,9 @@ public class ExternalAuthenticationManager extends AbstractAuthenticationManager
     private boolean _useFullDN;
 
     protected ExternalAuthenticationManager(final Broker broker,
-                                            final Map<String, Object> defaults,
                                             final Map<String, Object> attributes)
     {
-        super(broker, defaults, attributes);
+        super(broker, attributes);
     }
 
 

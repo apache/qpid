@@ -83,7 +83,7 @@ public class BindingImpl
 
     public BindingImpl(UUID id, Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
-        super(parentsMap(queue,exchange),Collections.EMPTY_MAP,combineIdWithAttributes(id,attributes),queue.getVirtualHost().getTaskExecutor());
+        super(parentsMap(queue,exchange),combineIdWithAttributes(id,attributes),queue.getVirtualHost().getTaskExecutor());
         _id = id;
         _bindingKey = (String)attributes.get(org.apache.qpid.server.model.Binding.NAME);
         _queue = queue;

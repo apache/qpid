@@ -63,8 +63,8 @@ import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
@@ -155,7 +155,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected BrokerCommandHelper _brokerCommandHelper = new BrokerCommandHelper(BROKER_COMMAND_TEMPLATE);
 
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
-    private final AmqpProtocolVersion _brokerVersion = AmqpProtocolVersion.valueOf(System.getProperty(BROKER_VERSION, ""));
+    private final Protocol _brokerVersion = Protocol.valueOf("AMQP_" + System.getProperty(BROKER_VERSION, " ").substring(1));
     protected String _output = System.getProperty(TEST_OUTPUT, System.getProperty("java.io.tmpdir"));
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
 
@@ -978,12 +978,12 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public boolean isBroker08()
     {
-        return _brokerVersion.equals(AmqpProtocolVersion.v0_8);
+        return _brokerVersion.equals(Protocol.AMQP_0_8);
     }
 
     public boolean isBroker010()
     {
-        return _brokerVersion.equals(AmqpProtocolVersion.v0_10);
+        return _brokerVersion.equals(Protocol.AMQP_0_10);
     }
 
     protected boolean isJavaBroker()

@@ -24,7 +24,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -46,7 +45,7 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedAttributeField;
@@ -98,22 +97,11 @@ public class SimpleLDAPAuthenticationManager extends AbstractAuthenticationManag
     private Class<? extends SocketFactory> _sslSocketFactoryOverrideClass;
 
     protected SimpleLDAPAuthenticationManager(final Broker broker,
-                                              final Map<String, Object> defaults,
                                               final Map<String, Object> attributes)
     {
-        super(broker, createDefaults(defaults, attributes), attributes);
+        super(broker, attributes);
     }
 
-    private static Map<String, Object> createDefaults(final Map<String, Object> defaults,
-                                                      final Map<String, Object> attributes)
-    {
-        final Map<String, Object> newDefaults = new HashMap<String, Object>(defaults);
-        if(!defaults.containsKey("providerAuthUrl") && attributes.containsKey("providerUrl"))
-        {
-            newDefaults.put("providerAuthUrl", attributes.get("providerUrl"));
-        }
-        return newDefaults;
-    }
 
     @Override
     public void initialise()
@@ -238,7 +226,8 @@ public class SimpleLDAPAuthenticationManager extends AbstractAuthenticationManag
             return new AuthenticationResult(AuthenticationStatus.CONTINUE);
         }
 
-        Hashtable<String, Object> env = createInitialDirContextEnvironment(_providerAuthUrl);
+        String providerAuthUrl = _providerAuthUrl == null ? _providerUrl : _providerAuthUrl;
+        Hashtable<String, Object> env = createInitialDirContextEnvironment(providerAuthUrl);
 
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, name);

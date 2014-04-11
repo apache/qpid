@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.security.Principal;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +105,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
         attrs.put(ConfiguredObject.ID, UUID.randomUUID());
         attrs.put(ConfiguredObject.NAME, getTestName());
         attrs.put("path", _passwordFileLocation);
-        _manager = new PrincipalDatabaseAuthenticationManager(mock(Broker.class), Collections.<String,Object>emptyMap(), attrs, recovering)
+        _manager = new PrincipalDatabaseAuthenticationManager(mock(Broker.class), attrs)
         {
             @Override
             protected PrincipalDatabase createDatabase()

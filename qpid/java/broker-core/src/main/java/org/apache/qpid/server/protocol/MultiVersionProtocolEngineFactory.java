@@ -22,14 +22,16 @@ package org.apache.qpid.server.protocol;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
 import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
-
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
@@ -39,8 +41,8 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
     private final Broker _broker;
-    private final Set<AmqpProtocolVersion> _supported;
-    private final AmqpProtocolVersion _defaultSupportedReply;
+    private final Set<Protocol> _supported;
+    private final Protocol _defaultSupportedReply;
     private final SSLContext _sslContext;
     private final boolean _wantClientAuth;
     private final boolean _needClientAuth;
@@ -52,8 +54,8 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
                                              SSLContext sslContext,
                                              boolean wantClientAuth,
                                              boolean needClientAuth,
-                                             final Set<AmqpProtocolVersion> supportedVersions,
-                                             final AmqpProtocolVersion defaultSupportedReply,
+                                             final Set<Protocol> supportedVersions,
+                                             final Protocol defaultSupportedReply,
                                              Port port,
                                              Transport transport)
     {

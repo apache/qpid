@@ -37,6 +37,7 @@ import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.Sender;
@@ -57,19 +58,19 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private final Transport _transport;
     private final ProtocolEngineCreator[] _creators;
 
-    private Set<AmqpProtocolVersion> _supported;
+    private Set<Protocol> _supported;
     private String _fqdn;
     private final Broker _broker;
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
-    private final AmqpProtocolVersion _defaultSupportedReply;
+    private final Protocol _defaultSupportedReply;
 
     private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
 
     public MultiVersionProtocolEngine(final Broker broker,
                                       SSLContext sslContext, boolean wantClientAuth, boolean needClientAuth,
-                                      final Set<AmqpProtocolVersion> supported,
-                                      final AmqpProtocolVersion defaultSupportedReply,
+                                      final Set<Protocol> supported,
+                                      final Protocol defaultSupportedReply,
                                       Port port, Transport transport, final long id, ProtocolEngineCreator[] creators)
     {
         if(defaultSupportedReply != null && !supported.contains(defaultSupportedReply))
@@ -307,7 +308,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                 ServerProtocolEngine newDelegate = null;
                 byte[] supportedReplyBytes = null;
                 byte[] defaultSupportedReplyBytes = null;
-                AmqpProtocolVersion supportedReplyVersion = null;
+                Protocol supportedReplyVersion = null;
 
                 //Check the supported versions for a header match, and if there is one save the
                 //delegate. Also save most recent supported version and associated reply header bytes

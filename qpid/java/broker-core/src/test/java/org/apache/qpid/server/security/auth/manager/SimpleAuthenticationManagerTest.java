@@ -21,7 +21,6 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.security.Principal;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -52,7 +51,8 @@ public class SimpleAuthenticationManagerTest extends QpidTestCase
         Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
         authManagerAttrs.put(AuthenticationProvider.NAME,"MANAGEMENT_MODE_AUTHENTICATION");
         authManagerAttrs.put(AuthenticationProvider.ID, UUID.randomUUID());
-        final SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(mock(Broker.class), Collections.<String,Object>emptyMap(),authManagerAttrs);
+        final SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(mock(Broker.class),
+                                                                                        authManagerAttrs);
         authManager.addUser(TEST_USER, TEST_PASSWORD);
         _authenticationManager = authManager;
 

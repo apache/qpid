@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
-import java.util.Set;
+
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
 
 class TCPandSSLTransportProvider implements TransportProvider
 {
@@ -33,8 +34,8 @@ class TCPandSSLTransportProvider implements TransportProvider
     public AcceptingTransport createTransport(final Set<Transport> transports,
                                               final SSLContext sslContext,
                                               final Port port,
-                                              final Set<AmqpProtocolVersion> supported,
-                                              final AmqpProtocolVersion defaultSupportedProtocolReply)
+                                              final Set<Protocol> supported,
+                                              final Protocol defaultSupportedProtocolReply)
     {
         return new TCPandSSLTransport(transports, sslContext, port, supported, defaultSupportedProtocolReply);
     }

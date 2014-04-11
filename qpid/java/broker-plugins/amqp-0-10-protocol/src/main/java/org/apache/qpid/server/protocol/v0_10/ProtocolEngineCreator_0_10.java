@@ -22,11 +22,12 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -50,9 +51,9 @@ public class ProtocolEngineCreator_0_10 implements ProtocolEngineCreator
     {
     }
 
-    public AmqpProtocolVersion getVersion()
+    public Protocol getVersion()
     {
-        return AmqpProtocolVersion.v0_10;
+        return Protocol.AMQP_0_10;
     }
 
 

@@ -21,7 +21,6 @@ package org.apache.qpid.server.security.auth.manager;
 import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
 import static org.mockito.Mockito.mock;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -49,13 +48,13 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         attrs.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrs.put(AuthenticationProvider.NAME, getTestName());
         attrs.put("useFullDN",false);
-        _manager = new ExternalAuthenticationManager(mock(Broker.class), Collections.<String,Object>emptyMap(), attrs);
+        _manager = new ExternalAuthenticationManager(mock(Broker.class), attrs);
         _manager.open();
         HashMap<String, Object> attrsFullDN = new HashMap<String, Object>();
         attrsFullDN.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrsFullDN.put(AuthenticationProvider.NAME, getTestName()+"FullDN");
         attrsFullDN.put("useFullDN",true);
-        _managerUsingFullDN = new ExternalAuthenticationManager(mock(Broker.class), Collections.<String,Object>emptyMap(), attrsFullDN);
+        _managerUsingFullDN = new ExternalAuthenticationManager(mock(Broker.class), attrsFullDN);
         _managerUsingFullDN.open();
     }
 

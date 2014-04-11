@@ -22,12 +22,14 @@ package org.apache.qpid.server.model.port;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 
 @ManagedObject( category = false, type = "RMI")
@@ -38,7 +40,7 @@ public class RmiPort extends AbstractPort<RmiPort>
                    final Map<String, Object> attributes,
                    final TaskExecutor taskExecutor)
     {
-        super(id, broker, attributes, Collections.<String,Object>emptyMap(), taskExecutor);
+        super(id, broker, attributes, taskExecutor);
     }
 
     @Override
@@ -53,5 +55,11 @@ public class RmiPort extends AbstractPort<RmiPort>
             throw new IllegalConfigurationException("Can't create RMI registry port which requires SSL");
         }
 
+    }
+
+    @Override
+    protected Set<Protocol> getDefaultProtocols()
+    {
+        return Collections.singleton(Protocol.RMI);
     }
 }

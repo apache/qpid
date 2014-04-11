@@ -20,15 +20,23 @@
 package org.apache.qpid.server.model.port;
 
 import java.security.GeneralSecurityException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
-
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
@@ -38,10 +46,8 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.TransportProviderFactory;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.transport.TransportProvider;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -54,7 +60,7 @@ public class AmqpPort extends PortWithAuthProvider<AmqpPort>
     public static final String DEFAULT_AMQP_RECEIVE_BUFFER_SIZE = "262144";
 
     public static final String DEFAULT_AMQP_TCP_NO_DELAY = "true";
-    public static final String DEFAULT_AMQP_BINDING = "*";
+    public static final String DEFAULT_BINDING_ADDRESS = "*";
 
     @ManagedAttributeField
     private boolean _tcpNoDelay;
@@ -73,22 +79,9 @@ public class AmqpPort extends PortWithAuthProvider<AmqpPort>
                     Map<String, Object> attributes,
                     TaskExecutor taskExecutor)
     {
-        super(id, broker, attributes, defaults(attributes), taskExecutor);
+        super(id, broker, attributes, Collections.<String,Object>emptyMap(), taskExecutor);
         _broker = broker;
     }
-
-    private static Map<String, Object> defaults(Map<String,Object> attributes)
-    {
-        Map<String,Object> defaults = new HashMap<String, Object>();
-
-        defaults.put(BINDING_ADDRESS, DEFAULT_AMQP_BINDING);
-        defaults.put(NAME, attributes.containsKey(BINDING_ADDRESS) ? attributes.get(BINDING_ADDRESS) : DEFAULT_AMQP_BINDING + ":" + attributes.get(PORT));
-        defaults.put(PROTOCOLS, getDefaultProtocols());
-
-
-        return defaults;
-    }
-
 
     @ManagedAttribute( automate = true , defaultValue = DEFAULT_AMQP_TCP_NO_DELAY )
     public boolean isTcpNoDelay()
@@ -108,7 +101,7 @@ public class AmqpPort extends PortWithAuthProvider<AmqpPort>
         return _receiveBufferSize;
     }
 
-    private static Set<Protocol> getDefaultProtocols()
+    protected Set<Protocol> getDefaultProtocols()
     {
         Set<Protocol> defaultProtocols = EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1,
                                                     Protocol.AMQP_0_10, Protocol.AMQP_1_0);
@@ -140,7 +133,6 @@ public class AmqpPort extends PortWithAuthProvider<AmqpPort>
     protected void onActivate()
     {
         Collection<Transport> transports = getTransports();
-        Set<AmqpProtocolVersion> supported = convertFromModelProtocolsToAmqp(getProtocols());
 
         TransportProvider transportProvider = null;
         final HashSet<Transport> transportSet = new HashSet<Transport>(transports);
@@ -163,12 +155,12 @@ public class AmqpPort extends PortWithAuthProvider<AmqpPort>
             sslContext = createSslContext();
         }
 
-        AmqpProtocolVersion defaultSupportedProtocolReply = getDefaultAmqpSupportedReply();
+        Protocol defaultSupportedProtocolReply = getDefaultAmqpSupportedReply();
 
         _transport = transportProvider.createTransport(transportSet,
                                                        sslContext,
                                                        this,
-                                                       supported,
+                                                       getAvailableProtocols(),
                                                        defaultSupportedProtocolReply);
 
         _transport.start();
@@ -189,16 +181,6 @@ public class AmqpPort extends PortWithAuthProvider<AmqpPort>
             }
             _transport.close();
         }
-    }
-
-    private Set<AmqpProtocolVersion> convertFromModelProtocolsToAmqp(Collection<Protocol> modelProtocols)
-    {
-        Set<AmqpProtocolVersion> amqpProtocols = new HashSet<AmqpProtocolVersion>();
-        for (Protocol protocol : modelProtocols)
-        {
-            amqpProtocols.add(protocol.toAmqpProtocolVersion());
-        }
-        return amqpProtocols;
     }
 
     private SSLContext createSslContext()
@@ -267,12 +249,12 @@ public class AmqpPort extends PortWithAuthProvider<AmqpPort>
         }
     }
 
-    private AmqpProtocolVersion getDefaultAmqpSupportedReply()
+    private Protocol getDefaultAmqpSupportedReply()
     {
         String defaultAmqpSupportedReply = System.getProperty(BrokerProperties.PROPERTY_DEFAULT_SUPPORTED_PROTOCOL_REPLY);
-        if (defaultAmqpSupportedReply != null)
+        if (defaultAmqpSupportedReply != null && defaultAmqpSupportedReply.length() != 0)
         {
-            return AmqpProtocolVersion.valueOf(defaultAmqpSupportedReply);
+            return Protocol.valueOf("AMQP_" + defaultAmqpSupportedReply.substring(1));
         }
         return null;
     }

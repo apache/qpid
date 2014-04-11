@@ -66,7 +66,7 @@ public class Base64MD5PasswordFileAuthenticationManagerFactory extends AbstractA
     public Base64MD5PasswordDatabaseAuthenticationManager createInstance(final Map<String, Object> attributes,
                                                                          final ConfiguredObject<?>... parents)
     {
-        return new Base64MD5PasswordDatabaseAuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(),attributes,false);
+        return new Base64MD5PasswordDatabaseAuthenticationManager(getParent(Broker.class, parents), attributes);
     }
 
     @Override
@@ -78,9 +78,8 @@ public class Base64MD5PasswordFileAuthenticationManagerFactory extends AbstractA
         attributes.put(ConfiguredObject.ID, record.getId());
         final Base64MD5PasswordDatabaseAuthenticationManager authenticationManager =
                 new Base64MD5PasswordDatabaseAuthenticationManager(getParent(Broker.class, parents),
-                                                                   Collections.<String, Object>emptyMap(),
-                                                                   attributes,
-                                                                   true);
+                                                                   attributes
+                );
         return ResolvedObject.newInstance(authenticationManager);
     }
 }

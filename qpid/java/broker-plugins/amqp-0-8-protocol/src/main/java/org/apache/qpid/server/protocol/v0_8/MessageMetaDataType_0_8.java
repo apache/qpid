@@ -21,15 +21,16 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 import java.nio.ByteBuffer;
+
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.store.StoredMessage;
 
 public class MessageMetaDataType_0_8 implements MessageMetaDataType<MessageMetaData>
 {
 
     public static final int TYPE = 0;
+    public static final String V0_8 = "v0_8";
 
     @Override
     public int ordinal()
@@ -62,6 +63,6 @@ public class MessageMetaDataType_0_8 implements MessageMetaDataType<MessageMetaD
     @Override
     public String getType()
     {
-        return AmqpProtocolVersion.v0_8.toString();
+        return V0_8;
     }
 }

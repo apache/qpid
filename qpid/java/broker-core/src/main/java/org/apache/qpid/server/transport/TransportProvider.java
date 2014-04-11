@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
-import java.net.InetSocketAddress;
-import java.util.Set;
+
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
 
 public interface TransportProvider
 {
     AcceptingTransport createTransport(Set<Transport> transports,
                                        SSLContext sslContext,
                                        Port port,
-                                       Set<AmqpProtocolVersion> supported,
-                                       AmqpProtocolVersion defaultSupportedProtocolReply);
+                                       Set<Protocol> supported,
+                                       Protocol defaultSupportedProtocolReply);
 }

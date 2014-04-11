@@ -24,7 +24,6 @@ package org.apache.qpid.server.jmx;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -89,7 +88,7 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
 
     public JMXManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, Collections.<String,Object>emptyMap(), attributes, broker);
+        super(id, attributes, broker);
     }
 
     @Override
@@ -192,12 +191,12 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
 
     private boolean isConnectorPort(Port port)
     {
-        return port.getProtocols().contains(Protocol.JMX_RMI);
+        return port.getAvailableProtocols().contains(Protocol.JMX_RMI);
     }
 
     private boolean isRegistryPort(Port port)
     {
-        return port.getProtocols().contains(Protocol.RMI);
+        return port.getAvailableProtocols().contains(Protocol.RMI);
     }
 
     private void stop()

@@ -68,7 +68,7 @@ public class PlainPasswordFileAuthenticationManagerFactory extends AbstractAuthe
     public PlainPasswordDatabaseAuthenticationManager createInstance(final Map<String, Object> attributes,
                                                                      final ConfiguredObject<?>... parents)
     {
-        return new PlainPasswordDatabaseAuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(),attributes,false);
+        return new PlainPasswordDatabaseAuthenticationManager(getParent(Broker.class, parents), attributes);
     }
 
     @Override
@@ -80,9 +80,8 @@ public class PlainPasswordFileAuthenticationManagerFactory extends AbstractAuthe
         attributes.put(ConfiguredObject.ID, record.getId());
         PlainPasswordDatabaseAuthenticationManager authManager = new PlainPasswordDatabaseAuthenticationManager(
                 getParent(Broker.class, parents),
-                Collections.<String, Object>emptyMap(),
-                attributes,
-                true);
+                attributes
+        );
 
         return ResolvedObject.newInstance(authManager);
     }

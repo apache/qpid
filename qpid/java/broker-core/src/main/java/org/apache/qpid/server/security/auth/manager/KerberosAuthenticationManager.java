@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
@@ -30,7 +31,6 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -43,10 +43,9 @@ public class KerberosAuthenticationManager extends AbstractAuthenticationManager
     private final CallbackHandler _callbackHandler = new GssApiCallbackHandler();
 
     protected KerberosAuthenticationManager(final Broker broker,
-                                            final Map<String, Object> defaults,
                                             final Map<String, Object> attributes)
     {
-        super(broker, defaults, attributes);
+        super(broker, attributes);
     }
 
 

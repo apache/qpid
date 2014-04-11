@@ -167,7 +167,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public AbstractVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
     {
         super(parentsMap(broker),
-              Collections.<String,Object>emptyMap(),
               enhanceWithId(attributes), broker.getTaskExecutor());
         _broker = broker;
         _dtxRegistry = new DtxRegistry();
@@ -250,7 +249,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             for(Port port :_broker.getPorts())
             {
-                if (Protocol.hasAmqpProtocol(port.getProtocols()))
+                if (Protocol.hasAmqpProtocol(port.getAvailableProtocols()))
                 {
                     _aliases.add(new VirtualHostAliasAdapter(this, port));
                 }
@@ -1479,13 +1478,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         return super.getAttribute(name);
     }
-
-
-    Object getAttribute(String name, String brokerAttributeName)
-    {
-        return getAttribute(name, _broker, brokerAttributeName);
-    }
-
 
     @Override
     public Collection<String> getAttributeNames()

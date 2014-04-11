@@ -54,7 +54,7 @@ public class FileBasedGroupProvider
                                   Map<String, Object> attributes)
     {
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
-              Collections.<String,Object>emptyMap(), combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
+              combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
 
 
         _broker = broker;

@@ -118,7 +118,7 @@ public class FileKeyStore extends AbstractConfiguredObject<FileKeyStore> impleme
     public FileKeyStore(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
-              Collections.<String,Object>emptyMap(), combineIdWithAttributes(id, attributes),
+              combineIdWithAttributes(id, attributes),
               broker.getTaskExecutor());
 
         _broker = broker;

@@ -51,10 +51,9 @@ public class AnonymousAuthenticationManager extends AbstractAuthenticationManage
     private static final AuthenticationResult ANONYMOUS_AUTHENTICATION = new AuthenticationResult(ANONYMOUS_PRINCIPAL);
 
     protected AnonymousAuthenticationManager(final Broker broker,
-                                             final Map<String, Object> defaults,
                                              final Map<String, Object> attributes)
     {
-        super(broker, defaults, attributes);
+        super(broker, attributes);
     }
 
     @Override

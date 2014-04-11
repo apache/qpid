@@ -52,7 +52,7 @@ public class KerberosAuthenticationManagerFactory extends AbstractAuthentication
     public KerberosAuthenticationManager createInstance(final Map<String, Object> attributes,
                                                         final ConfiguredObject<?>... parents)
     {
-        return new KerberosAuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(), attributes);
+        return new KerberosAuthenticationManager(getParent(Broker.class, parents), attributes);
     }
 
 }

@@ -86,11 +86,9 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     public AbstractPort(UUID id,
                         Broker<?> broker,
                         Map<String, Object> attributes,
-                        Map<String, Object> defaults,
                         TaskExecutor taskExecutor)
     {
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
-              updateDefaults(defaults, attributes),
               combineIdWithAttributes(id,attributes),
               taskExecutor);
         _broker = broker;
@@ -110,17 +108,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         {
             throw new IllegalConfigurationException("Can't create a port which uses a secure transport but has no KeyStore");
         }
-    }
-
-    private static Map<String, Object> updateDefaults(final Map<String, Object> defaults,
-                                                      final Map<String, Object> attributes)
-    {
-        Map<String, Object> updatedDefaults = new HashMap<String, Object>(defaults);
-        if(!defaults.containsKey(TRANSPORTS))
-        {
-            updatedDefaults.put(Port.TRANSPORTS, Collections.singleton(DEFAULT_TRANSPORT));
-        }
-        return updatedDefaults;
     }
 
     @Override
@@ -197,6 +184,19 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     {
         return null;
     }
+
+    @Override
+    public Set<Protocol> getAvailableProtocols()
+    {
+        Set<Protocol> protocols = getProtocols();
+        if(protocols == null || protocols.isEmpty())
+        {
+            protocols = getDefaultProtocols();
+        }
+        return protocols;
+    }
+
+    protected abstract Set<Protocol> getDefaultProtocols();
 
     @Override
     public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
@@ -530,11 +530,11 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
 
             for (Port<?> existingPort : existingPorts)
             {
-                Collection<Protocol> portProtocols = existingPort.getProtocols();
+                Collection<Protocol> portProtocols = existingPort.getAvailableProtocols();
                 if (portProtocols != null)
                 {
                     final ArrayList<Protocol> intersection = new ArrayList(portProtocols);
-                    intersection.retainAll(getProtocols());
+                    intersection.retainAll(getAvailableProtocols());
                     if(!intersection.isEmpty())
                     {
                         throw new IllegalConfigurationException("Port for protocols " + intersection + " already exists. Only one management port per protocol can be created.");

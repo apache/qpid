@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import java.security.AccessControlException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -28,19 +34,14 @@ import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.access.Operation;
 
-import java.security.AccessControlException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
-
 public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends AbstractConfiguredObject<X> implements Plugin<X>
 {
     private Broker _broker;
 
-    protected AbstractPluginAdapter(UUID id, Map<String, Object> defaults, Map<String, Object> attributes, Broker broker)
+    protected AbstractPluginAdapter(UUID id, Map<String, Object> attributes, Broker broker)
     {
-        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(Broker.class, broker), defaults, combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(Broker.class, broker),
+              combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
         _broker = broker;
     }
 
