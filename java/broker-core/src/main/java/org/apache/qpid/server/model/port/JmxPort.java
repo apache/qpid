@@ -22,11 +22,13 @@ package org.apache.qpid.server.model.port;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.Protocol;
 
 @ManagedObject( category = false, type = "JMX")
 public class JmxPort extends PortWithAuthProvider<JmxPort>
@@ -44,5 +46,11 @@ public class JmxPort extends PortWithAuthProvider<JmxPort>
     {
         super.validate();
         validateOnlyOneInstance();
+    }
+
+    @Override
+    protected Set<Protocol> getDefaultProtocols()
+    {
+        return Collections.singleton(Protocol.JMX_RMI);
     }
 }

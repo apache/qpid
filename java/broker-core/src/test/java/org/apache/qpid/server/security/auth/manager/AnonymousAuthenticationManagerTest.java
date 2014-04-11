@@ -31,7 +31,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.test.utils.QpidTestCase;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -47,7 +46,7 @@ public class AnonymousAuthenticationManagerTest extends QpidTestCase
         Map<String,Object> attrs = new HashMap<String, Object>();
         attrs.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrs.put(AuthenticationProvider.NAME, getTestName());
-        _manager = new AnonymousAuthenticationManager(mock(Broker.class), Collections.<String,Object>emptyMap(), attrs);
+        _manager = new AnonymousAuthenticationManager(mock(Broker.class), attrs);
 
     }
 

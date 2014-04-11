@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import java.util.Map;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 
 @ManagedObject( category = false, type = "Base64MD5PasswordFile" )
 public class Base64MD5PasswordDatabaseAuthenticationManager
@@ -39,11 +34,9 @@ public class Base64MD5PasswordDatabaseAuthenticationManager
 
 
     protected Base64MD5PasswordDatabaseAuthenticationManager(final Broker broker,
-                                                             final Map<String, Object> defaults,
-                                                             final Map<String, Object> attributes,
-                                                             final boolean recovering)
+                                                             final Map<String, Object> attributes)
     {
-        super(broker, defaults, attributes,recovering);
+        super(broker, attributes);
     }
 
     @Override

@@ -54,7 +54,7 @@ public class ACLFileAccessControlProvider
                                         Map<String, Object> attributes)
     {
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
-              Collections.<String,Object>emptyMap(), attributes, broker.getTaskExecutor());
+              attributes, broker.getTaskExecutor());
 
 
         _broker = broker;

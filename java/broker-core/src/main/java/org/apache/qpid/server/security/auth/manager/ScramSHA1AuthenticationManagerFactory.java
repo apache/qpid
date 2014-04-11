@@ -60,7 +60,7 @@ public class ScramSHA1AuthenticationManagerFactory extends AbstractAuthenticatio
     public ScramSHA1AuthenticationManager createInstance(final Map<String, Object> attributes,
                                                          final ConfiguredObject<?>... parents)
     {
-        return new ScramSHA1AuthenticationManager(getParent(Broker.class, parents), Collections.<String,Object>emptyMap(),attributes);
+        return new ScramSHA1AuthenticationManager(getParent(Broker.class, parents), attributes);
     }
 
 }

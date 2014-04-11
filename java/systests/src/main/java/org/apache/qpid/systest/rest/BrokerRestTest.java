@@ -88,7 +88,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         Collection<String> port1Protocols = (Collection<String>) amqpPort.get(Port.PROTOCOLS);
-        assertFalse("AMQP protocol list cannot contain HTTP", port1Protocols.contains("HTTP"));
+        assertFalse("AMQP protocol list cannot contain HTTP", port1Protocols != null && port1Protocols.contains("HTTP"));
 
         @SuppressWarnings("unchecked")
         Collection<String> port2Protocols = (Collection<String>) httpPort.get(Port.PROTOCOLS);

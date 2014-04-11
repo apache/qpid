@@ -20,25 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.security.auth.sasl.scram.ScramSHA1SaslServer;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.security.auth.login.AccountNotFoundException;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.AccessControlException;
@@ -55,6 +36,33 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.login.AccountNotFoundException;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
+import org.apache.qpid.server.configuration.RecovererProvider;
+import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.User;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.sasl.scram.ScramSHA1SaslServer;
+
 @ManagedObject( category = false, type = "SCRAM-SHA1" )
 public class ScramSHA1AuthenticationManager
         extends AbstractAuthenticationManager<ScramSHA1AuthenticationManager>
@@ -70,10 +78,9 @@ public class ScramSHA1AuthenticationManager
 
 
     protected ScramSHA1AuthenticationManager(final Broker broker,
-                                             final Map<String, Object> defaults,
                                              final Map<String, Object> attributes)
     {
-        super(broker, defaults, attributes);
+        super(broker, attributes);
     }
 
     @Override
@@ -435,7 +442,6 @@ public class ScramSHA1AuthenticationManager
         protected ScramAuthUser(final Map<String, Object> attributes, ScramSHA1AuthenticationManager parent)
         {
             super(parentsMap(parent),
-                  Collections.<String,Object>emptyMap(),
                   attributes, parent.getTaskExecutor());
             _authenticationManager = parent;
             if(!ASCII.newEncoder().canEncode(getName()))

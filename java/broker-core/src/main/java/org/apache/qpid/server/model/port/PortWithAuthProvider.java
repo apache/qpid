@@ -51,7 +51,7 @@ abstract public class PortWithAuthProvider<X extends PortWithAuthProvider<X>> ex
                                 final Map<String, Object> defaults,
                                 final TaskExecutor taskExecutor)
     {
-        super(id, broker, attributes, defaults, taskExecutor);
+        super(id, broker, attributes, taskExecutor);
     }
 
     @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )

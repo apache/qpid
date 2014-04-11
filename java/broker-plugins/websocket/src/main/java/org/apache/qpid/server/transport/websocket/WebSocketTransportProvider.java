@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.server.transport.websocket;
 
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.transport.AcceptingTransport;
-import org.apache.qpid.server.transport.TransportProvider;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
-import java.util.Set;
+
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.transport.AcceptingTransport;
+import org.apache.qpid.server.transport.TransportProvider;
 
 class WebSocketTransportProvider implements TransportProvider
 {
@@ -39,8 +40,8 @@ class WebSocketTransportProvider implements TransportProvider
     public AcceptingTransport createTransport(final Set<Transport> transports,
                                               final SSLContext sslContext,
                                               final Port port,
-                                              final Set<AmqpProtocolVersion> supported,
-                                              final AmqpProtocolVersion defaultSupportedProtocolReply)
+                                              final Set<Protocol> supported,
+                                              final Protocol defaultSupportedProtocolReply)
     {
         return new WebSocketProvider(transports.iterator().next(),
                                      sslContext,

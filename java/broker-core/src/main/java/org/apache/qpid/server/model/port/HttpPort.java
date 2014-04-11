@@ -20,13 +20,15 @@
  */
 package org.apache.qpid.server.model.port;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
+import org.apache.qpid.server.model.Protocol;
 
 @ManagedObject( category = false, type = "HTTP")
 public class HttpPort extends PortWithAuthProvider<HttpPort>
@@ -37,5 +39,11 @@ public class HttpPort extends PortWithAuthProvider<HttpPort>
                     final TaskExecutor taskExecutor)
     {
         super(id, broker, attributes, Collections.<String,Object>emptyMap(), taskExecutor);
+    }
+
+    @Override
+    protected Set<Protocol> getDefaultProtocols()
+    {
+        return Collections.singleton(Protocol.HTTP);
     }
 }

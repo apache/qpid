@@ -89,10 +89,12 @@ public class PortFactoryTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, 1);
-        attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
-        Port port = _portFactory.createPort(_portId, _broker, attributes);
+        attributes.put(Port.NAME, getName());
 
-        Collection<Protocol> protocols = port.getProtocols();
+        attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
+        Port<?> port = _portFactory.createPort(_portId, _broker, attributes);
+
+        Collection<Protocol> protocols = port.getAvailableProtocols();
 
         EnumSet<Protocol> expected = EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10,
                 Protocol.AMQP_1_0);
@@ -106,10 +108,11 @@ public class PortFactoryTest extends QpidTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, 1);
+        attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
-        Port port = _portFactory.createPort(_portId, _broker, attributes);
+        Port<?> port = _portFactory.createPort(_portId, _broker, attributes);
 
-        Collection<Protocol> protocols = port.getProtocols();
+        Collection<Protocol> protocols = port.getAvailableProtocols();
 
         EnumSet<Protocol> expected = EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1);
         assertEquals("Unexpected protocols", new HashSet<Protocol>(expected), new HashSet<Protocol>(protocols));
@@ -124,10 +127,11 @@ public class PortFactoryTest extends QpidTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, 1);
+        attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
-        Port port = _portFactory.createPort(_portId, _broker, attributes);
+        Port<?> port = _portFactory.createPort(_portId, _broker, attributes);
 
-        Collection<Protocol> protocols = port.getProtocols();
+        Collection<Protocol> protocols = port.getAvailableProtocols();
 
         EnumSet<Protocol> expected = EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10);
         assertEquals("Unexpected protocols", new HashSet<Protocol>(expected), new HashSet<Protocol>(protocols));
@@ -137,6 +141,7 @@ public class PortFactoryTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, 1);
+        attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         Port port = _portFactory.createPort(_portId, _broker, attributes);
 
@@ -145,7 +150,7 @@ public class PortFactoryTest extends QpidTestCase
         assertEquals("Unexpected port", 1, port.getPort());
         assertEquals("Unexpected transports", Collections.singleton(PortFactory.DEFAULT_TRANSPORT), port.getTransports());
         assertEquals("Unexpected protocols", EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10,
-                                                        Protocol.AMQP_1_0), port.getProtocols());
+                                                        Protocol.AMQP_1_0), port.getAvailableProtocols());
         assertEquals("Unexpected send buffer size", PortFactory.DEFAULT_AMQP_SEND_BUFFER_SIZE,
                 port.getAttribute(Port.SEND_BUFFER_SIZE));
         assertEquals("Unexpected receive buffer size", PortFactory.DEFAULT_AMQP_RECEIVE_BUFFER_SIZE,
@@ -291,7 +296,7 @@ public class PortFactoryTest extends QpidTestCase
         {
             assertEquals(_tcpTransports, port.getTransports());
         }
-        assertEquals(amqp010ProtocolSet, port.getProtocols());
+        assertEquals(amqp010ProtocolSet, port.getAvailableProtocols());
         assertEquals("Unexpected send buffer size", 2, port.getAttribute(Port.SEND_BUFFER_SIZE));
         assertEquals("Unexpected receive buffer size", 1, port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
         assertEquals("Unexpected need client auth", needClientAuth, port.getAttribute(Port.NEED_CLIENT_AUTH));
@@ -318,13 +323,12 @@ public class PortFactoryTest extends QpidTestCase
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
         assertEquals(_tcpTransports, port.getTransports());
-        assertEquals(nonAmqpProtocolSet, port.getProtocols());
+        assertEquals(nonAmqpProtocolSet, port.getAvailableProtocols());
         assertNull("Unexpected send buffer size", port.getAttribute(Port.SEND_BUFFER_SIZE));
         assertNull("Unexpected receive buffer size", port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
         assertNull("Unexpected need client auth", port.getAttribute(Port.NEED_CLIENT_AUTH));
         assertNull("Unexpected want client auth", port.getAttribute(Port.WANT_CLIENT_AUTH));
         assertNull("Unexpected tcp no delay", port.getAttribute(Port.TCP_NO_DELAY));
-        assertNull("Unexpected binding", port.getAttribute(Port.BINDING_ADDRESS));
     }
 
     public void testCreateNonAmqpPortWithPartiallySetAttributes()
@@ -344,13 +348,12 @@ public class PortFactoryTest extends QpidTestCase
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
         assertEquals(Collections.singleton(PortFactory.DEFAULT_TRANSPORT), port.getTransports());
-        assertEquals(nonAmqpProtocolSet, port.getProtocols());
+        assertEquals(nonAmqpProtocolSet, port.getAvailableProtocols());
         assertNull("Unexpected send buffer size", port.getAttribute(Port.SEND_BUFFER_SIZE));
         assertNull("Unexpected receive buffer size", port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
         assertNull("Unexpected need client auth", port.getAttribute(Port.NEED_CLIENT_AUTH));
         assertNull("Unexpected want client auth", port.getAttribute(Port.WANT_CLIENT_AUTH));
         assertNull("Unexpected tcp no delay", port.getAttribute(Port.TCP_NO_DELAY));
-        assertNull("Unexpected binding", port.getAttribute(Port.BINDING_ADDRESS));
     }
 
     public void testCreateMixedAmqpAndNonAmqpThrowsException()
@@ -378,7 +381,7 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
 
         Port rmiPort = mock(Port.class);
-        when(rmiPort.getProtocols()).thenReturn(Collections.singleton(Protocol.RMI));
+        when(rmiPort.getAvailableProtocols()).thenReturn(Collections.singleton(Protocol.RMI));
         when(_broker.getPorts()).thenReturn(Collections.singletonList(rmiPort));
 
         try

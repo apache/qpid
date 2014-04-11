@@ -20,21 +20,20 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.util.Map;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
-import java.util.Map;
-
 @ManagedObject( category = false, type = "PlainPasswordFile" )
 public class PlainPasswordDatabaseAuthenticationManager extends PrincipalDatabaseAuthenticationManager<PlainPasswordDatabaseAuthenticationManager>
 {
     protected PlainPasswordDatabaseAuthenticationManager(final Broker broker,
-                                                         final Map<String, Object> defaults,
-                                                         final Map<String, Object> attributes, final boolean recovering)
+                                                         final Map<String, Object> attributes)
     {
-        super(broker, defaults, attributes,recovering);
+        super(broker, attributes);
     }
 
     @Override

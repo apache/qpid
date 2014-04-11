@@ -26,12 +26,12 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 
 public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageMetaData>
 {
     //largest metadata type value the BDBMessageStore can store (it uses a byte)
     private static final byte TYPE = 7;
+    public static final String V0_8 = "v0_8";
 
     @Override
     public int ordinal()
@@ -64,7 +64,7 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
     @Override
     public String getType()
     {
-        return AmqpProtocolVersion.v0_8.toString();
+        return V0_8;
     }
 
 

@@ -114,7 +114,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @ManagedAttributeField
     private final UUID _id;
 
-    private final Map<String, Object> _defaultAttributes = new HashMap<String, Object>();
     private final TaskExecutor _taskExecutor;
 
     @ManagedAttributeField
@@ -160,19 +159,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                        TaskExecutor taskExecutor)
     {
         this(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>emptyMap(),
-             Collections.<String,Object>emptyMap(), attributes, taskExecutor, true);
+             attributes, taskExecutor, true);
     }
 
     protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
-                                       Map<String, Object> defaults,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor)
     {
-        this(parents, defaults, attributes, taskExecutor, true);
+        this(parents,  attributes, taskExecutor, true);
     }
 
     protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
-                                       Map<String, Object> defaults,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor,
                                        boolean filterAttributes)
@@ -254,10 +251,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         }
 
-        if (defaults != null)
-        {
-            _defaultAttributes.putAll(defaults);
-        }
         if(!_attributes.containsKey(CREATED_BY))
         {
             final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
@@ -273,7 +266,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         for(Attribute<?,?> attr : _attributeTypes.values())
         {
             if(attr.getAnnotation().mandatory() && !(_attributes.containsKey(attr.getName())
-                                                     || _defaultAttributes.containsKey(attr.getName())
                                                      || !"".equals(attr.getAnnotation().defaultValue())))
             {
                 throw new IllegalArgumentException("Mandatory attribute " + attr.getName() + " not supplied for instance of " + getClass().getName());
@@ -420,10 +412,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 if (_attributes.containsKey(attrName))
                 {
                     automatedSetValue(attrName, _attributes.get(attrName));
-                }
-                else if (_defaultAttributes.containsKey(attrName))
-                {
-                    automatedSetValue(attrName, _defaultAttributes.get(attrName));
                 }
                 else if (!"".equals(attrAnnotation.defaultValue()))
                 {
@@ -582,11 +570,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private final Object getDefaultAttribute(String name)
-    {
-        return _defaultAttributes.get(name);
-    }
-
     @Override
     public Object getAttribute(String name)
     {
@@ -607,32 +590,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         else
         {
             Object value = getActualAttribute(name);
-            if (value == null)
-            {
-                value = getDefaultAttribute(name);
-            }
             return value;
         }
     }
-
-    protected <T extends ConfiguredObject<?>> Object getAttribute(String name, T parent, String parentAttributeName)
-    {
-        Object value = getActualAttribute(name);
-        if (value != null )
-        {
-            return value;
-        }
-        if (parent != null)
-        {
-            value = parent.getAttribute(parentAttributeName);
-            if (value != null)
-            {
-                return value;
-            }
-        }
-        return getDefaultAttribute(name);
-    }
-
 
     @Override
     public String getDescription()
@@ -709,14 +669,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 Attribute<?,?> attr = _attributeTypes.get(name);
                 if(attr != null && attr.getAnnotation().automate())
                 {
-                    if(desired == null && _defaultAttributes.containsKey(name))
-                    {
-                        automatedSetValue(name, _defaultAttributes.get(name));
-                    }
-                    else
-                    {
-                        automatedSetValue(name, desired);
-                    }
+                    automatedSetValue(name, desired);
                 }
                 return true;
             }
@@ -954,11 +907,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         // allowed by default
     }
 
-    protected Map<String, Object> getDefaultAttributes()
-    {
-        return _defaultAttributes;
-    }
-
     /**
      * Returns a map of effective attribute values that would result
      * if applying the supplied changes. Does not apply the changes.
@@ -969,11 +917,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         //the result of applying the attribute changes, so we
         //can validate the configuration that would result
 
-        Map<String, Object> defaultValues = getDefaultAttributes();
         Map<String, Object> existingActualValues = getActualAttributes();
 
         //create a new merged map, starting with the defaults
-        Map<String, Object> merged =  new HashMap<String, Object>(defaultValues);
+        Map<String, Object> merged =  new HashMap<String, Object>();
 
         for(String name : getAttributeNames())
         {

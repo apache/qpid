@@ -75,6 +75,7 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SecurityManager;
@@ -242,8 +243,8 @@ public abstract class AbstractQueue
                             Map<String, Object> attributes,
                             QueueEntryListFactory entryListFactory)
     {
-        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(org.apache.qpid.server.model.VirtualHost.class, (org.apache.qpid.server.model.VirtualHost)virtualHost),
-              Collections.<String,Object>emptyMap(), attributes, virtualHost.getTaskExecutor());
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(VirtualHost.class, virtualHost),
+              attributes, virtualHost.getTaskExecutor());
 
         _entries = entryListFactory.createQueueEntryList(this);
         _virtualHost = virtualHost;

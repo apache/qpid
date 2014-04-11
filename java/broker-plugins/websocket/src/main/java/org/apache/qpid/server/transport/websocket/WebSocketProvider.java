@@ -20,38 +20,37 @@
  */
 package org.apache.qpid.server.transport.websocket;
 
-import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.protocol.AmqpProtocolVersion;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
-import org.apache.qpid.server.transport.AcceptingTransport;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.transport.Binary;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
-import org.eclipse.jetty.server.ssl.SslSocketConnector;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.websocket.WebSocket;
-import org.eclipse.jetty.websocket.WebSocketHandler;
-
-import javax.net.ssl.SSLContext;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
+
+import javax.net.ssl.SSLContext;
+import javax.servlet.http.HttpServletRequest;
+
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.websocket.WebSocket;
+import org.eclipse.jetty.websocket.WebSocketHandler;
+
+import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.protocol.ProtocolEngineFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
+import org.apache.qpid.server.transport.AcceptingTransport;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 class WebSocketProvider implements AcceptingTransport
 {
@@ -59,16 +58,16 @@ class WebSocketProvider implements AcceptingTransport
     private final Transport _transport;
     private final SSLContext _sslContext;
     private final Port<?> _port;
-    private final Set<AmqpProtocolVersion> _supported;
-    private final AmqpProtocolVersion _defaultSupportedProtocolReply;
+    private final Set<Protocol> _supported;
+    private final Protocol _defaultSupportedProtocolReply;
     private final ProtocolEngineFactory _factory;
     private Server _server;
 
     WebSocketProvider(final Transport transport,
                       final SSLContext sslContext,
                       final Port<?> port,
-                      final Set<AmqpProtocolVersion> supported,
-                      final AmqpProtocolVersion defaultSupportedProtocolReply)
+                      final Set<Protocol> supported,
+                      final Protocol defaultSupportedProtocolReply)
     {
         _transport = transport;
         _sslContext = sslContext;

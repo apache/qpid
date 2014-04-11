@@ -54,7 +54,7 @@ public class AnonymousAuthenticationManagerFactory extends AbstractConfiguredObj
     public AnonymousAuthenticationManager createInstance(final Map<String, Object> attributes,
                                                          final ConfiguredObject<?>... parents)
     {
-        return new AnonymousAuthenticationManager(getParent(Broker.class,parents), Collections.<String,Object>emptyMap(),attributes);
+        return new AnonymousAuthenticationManager(getParent(Broker.class,parents), attributes);
     }
 
 

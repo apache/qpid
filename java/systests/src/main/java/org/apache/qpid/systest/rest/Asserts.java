@@ -40,7 +40,6 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
@@ -266,17 +265,8 @@ public class Asserts
 
         @SuppressWarnings("unchecked")
         Collection<String> protocols = (Collection<String>) port.get(Port.PROTOCOLS);
-        assertNotNull("Unexpected value of attribute " + Port.PROTOCOLS, protocols);
-        boolean isAMQPPort = false;
-        for (String protocolName : protocols)
-        {
-            if (Protocol.valueOf(protocolName).isAMQP())
-            {
-                isAMQPPort = true;
-                break;
-            }
-        }
-        if (isAMQPPort)
+
+        if ("AMQP".equals(port.get(ConfiguredObject.TYPE)))
         {
             assertAttributesPresent(port,
                                     AbstractConfiguredObject.getAttributeNames(Port.class),
@@ -289,7 +279,8 @@ public class Asserts
                                     ConfiguredObject.CONTEXT,
                                     Port.AUTHENTICATION_PROVIDER,
                                     Port.KEY_STORE,
-                                    Port.TRUST_STORES);
+                                    Port.TRUST_STORES,
+                                    Port.PROTOCOLS);
             assertNotNull("Unexpected value of attribute " + Port.BINDING_ADDRESS, port.get(Port.BINDING_ADDRESS));
         }
         else
@@ -311,7 +302,8 @@ public class Asserts
                                     Port.NEED_CLIENT_AUTH,
                                     Port.WANT_CLIENT_AUTH,
                                     Port.KEY_STORE,
-                                    Port.TRUST_STORES);
+                                    Port.TRUST_STORES,
+                                    Port.PROTOCOLS);
         }
 
         @SuppressWarnings("unchecked")

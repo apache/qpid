@@ -137,7 +137,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                          SystemContext parent)
     {
         super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(SystemContext.class, parent),
-              Collections.<String,Object>emptyMap(), combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)), parent.getTaskExecutor());
+              combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)), parent.getTaskExecutor());
 
         _objectFactory = parent.getObjectFactory();
         _virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());
@@ -152,7 +152,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
             authManagerAttrs.put(NAME,"MANAGEMENT_MODE_AUTHENTICATION");
             authManagerAttrs.put(ID, UUID.randomUUID());
-            SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(this, Collections.<String,Object>emptyMap(), authManagerAttrs);
+            SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(this, authManagerAttrs);
             authManager.addUser(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
             _managementModeAuthenticationProvider = authManager;
         }

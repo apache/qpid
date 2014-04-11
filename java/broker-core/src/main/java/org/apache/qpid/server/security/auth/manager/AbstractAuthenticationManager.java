@@ -61,11 +61,10 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     private AtomicReference<State> _state = new AtomicReference<State>(State.INITIALISING);
 
     protected AbstractAuthenticationManager(final Broker broker,
-                                            final Map<String, Object> defaults,
                                             final Map<String, Object> attributes)
     {
         super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(Broker.class, broker),
-              defaults, attributes, broker.getTaskExecutor());
+              attributes, broker.getTaskExecutor());
         _broker = broker;
     }
 

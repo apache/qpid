@@ -124,7 +124,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
     public HttpManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, Collections.<String,Object>emptyMap(), attributes, broker);
+        super(id, attributes, broker);
     }
 
     @Override
@@ -419,7 +419,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         Collection<Port> httpPorts = new HashSet<Port>();
         for (Port port : ports)
         {
-            if (port.getProtocols().contains(Protocol.HTTP))
+            if (port.getAvailableProtocols().contains(Protocol.HTTP))
             {
                 httpPorts.add(port);
             }
