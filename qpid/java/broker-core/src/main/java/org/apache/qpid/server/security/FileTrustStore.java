@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -48,8 +49,36 @@ import org.apache.qpid.transport.network.security.ssl.QpidPeersOnlyTrustManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 @ManagedObject( category = false )
-public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> implements TrustStore<FileTrustStore>
+public class FileTrustStore extends AbstractConfiguredObject<FileTrustStore> implements TrustStore<FileTrustStore>
 {
+
+
+    @ManagedContextDefault(name = "trustStoreFile.trustStoreType")
+    public static final RuntimeDefault<String> DEFAULT_TRUSTSTORE_TYPE =
+            new RuntimeDefault<String>()
+            {
+                @Override
+                public String value()
+                {
+                    return java.security.KeyStore.getDefaultType();
+                }
+            };
+    @ManagedContextDefault(name = "trustStoreFile.trustManagerFactoryAlgorithm")
+    public static final RuntimeDefault<String> DEFAULT_TRUST_MANAGER_FACTORY_ALGORITHM =
+            new RuntimeDefault<String>()
+            {
+                @Override
+                public String value()
+                {
+                    return KeyManagerFactory.getDefaultAlgorithm();
+                }
+            };
+
+    public static final String TRUST_MANAGER_FACTORY_ALGORITHM = "trustManagerFactoryAlgorithm";
+    public static final String PEERS_ONLY = "peersOnly";
+    public static final String TRUST_STORE_TYPE = "trustStoreType";
+    public static final String PASSWORD = "password";
+    public static final String PATH = "path";
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
@@ -60,13 +89,6 @@ public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> impl
         put(TRUST_MANAGER_FACTORY_ALGORITHM, String.class);
     }});
 
-    @SuppressWarnings("serial")
-    public static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
-        put(TrustStore.TRUST_STORE_TYPE, DEFAULT_KEYSTORE_TYPE);
-        put(TrustStore.PEERS_ONLY, Boolean.FALSE);
-        put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, TrustManagerFactory.getDefaultAlgorithm());
-    }});
-
     @ManagedAttributeField
     private String _trustStoreType;
     @ManagedAttributeField
@@ -75,13 +97,16 @@ public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> impl
     private String _path;
     @ManagedAttributeField
     private boolean _peersOnly;
-
+    @ManagedAttributeField
+    private String _password;
 
     private Broker<?> _broker;
 
     public FileTrustStore(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
-        super(id, broker, DEFAULTS, attributes);
+        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
+              Collections.<String,Object>emptyMap(), combineIdWithAttributes(id, attributes),
+              broker.getTaskExecutor());
         _broker = broker;
     }
 
@@ -95,7 +120,43 @@ public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> impl
     @Override
     public Collection<String> getAttributeNames()
     {
-        return getAttributeNames(TrustStore.class);
+        return getAttributeNames(getClass());
+    }
+    @Override
+    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public State getState()
+    {
+        return State.ACTIVE;
+    }
+
+    @Override
+    public boolean isDurable()
+    {
+        return true;
+    }
+
+    @Override
+    public void setDurable(boolean durable) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public LifetimePolicy getLifetimePolicy()
+    {
+        return LifetimePolicy.PERMANENT;
+    }
+
+    @Override
+    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException, AccessControlException,
+                                                                                                    IllegalArgumentException
+    {
+        throw new IllegalStateException();
     }
 
     @Override
@@ -189,10 +250,16 @@ public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> impl
 
         Map<String, Object> merged = generateEffectiveAttributes(changedValues);
 
-        String trustStorePath = (String)merged.get(TrustStore.PATH);
-        String trustStorePassword = (String) merged.get(TrustStore.PASSWORD);
-        String trustStoreType = (String)merged.get(TrustStore.TRUST_STORE_TYPE);
-        String trustManagerFactoryAlgorithm = (String)merged.get(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM);
+        String trustStorePath = changedValues.containsKey(PATH) ? (String) changedValues.get(PATH) : getPath();
+        String trustStorePassword =
+                changedValues.containsKey(PASSWORD) ? (String) changedValues.get(PASSWORD) : getPassword();
+        String trustStoreType = changedValues.containsKey(TRUST_STORE_TYPE)
+                ? (String) changedValues.get(TRUST_STORE_TYPE)
+                : getTrustStoreType();
+        String trustManagerFactoryAlgorithm =
+                changedValues.containsKey(TRUST_MANAGER_FACTORY_ALGORITHM)
+                        ? (String) changedValues.get(TRUST_MANAGER_FACTORY_ALGORITHM)
+                        : getTrustManagerFactoryAlgorithm();
 
         validateTrustStoreAttributes(trustStoreType, trustStorePath,
                                      trustStorePassword, trustManagerFactoryAlgorithm);
@@ -223,29 +290,57 @@ public class FileTrustStore extends AbstractKeyStoreAdapter<FileTrustStore> impl
     }
 
     @Override
+    public Object getAttribute(String name)
+    {
+        if(STATE.equals(name))
+        {
+            return getState();
+        }
+        else if(DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if(org.apache.qpid.server.model.KeyStore.LIFETIME_POLICY.equals(name))
+        {
+            return getLifetimePolicy();
+        }
+
+        return super.getAttribute(name);
+    }
+    @ManagedAttribute( automate = true, mandatory = true )
     public String getPath()
     {
         return _path;
     }
 
-    @Override
+    @ManagedAttribute( automate = true, defaultValue = "${trustStoreFile.trustManagerFactoryAlgorithm}")
     public String getTrustManagerFactoryAlgorithm()
     {
         return _trustManagerFactoryAlgorithm;
     }
 
-    @Override
+    @ManagedAttribute( automate = true, defaultValue = "${trustStoreFile.trustStoreType}")
     public String getTrustStoreType()
     {
         return _trustStoreType;
     }
 
-    @Override
+    @ManagedAttribute( automate = true, defaultValue = "false" )
     public boolean isPeersOnly()
     {
         return _peersOnly;
     }
 
+    @ManagedAttribute( secure = true, automate = true, mandatory = true )
+    public String getPassword()
+    {
+        return _password;
+    }
+
+    public void setPassword(String password)
+    {
+        _password = password;
+    }
     public TrustManager[] getTrustManagers() throws GeneralSecurityException
     {
         String trustStorePath = _path;

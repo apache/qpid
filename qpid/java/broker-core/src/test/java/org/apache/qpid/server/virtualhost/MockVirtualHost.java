@@ -286,7 +286,7 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
-    public int getHouseKeepingThreadCount()
+    public int getHousekeepingThreadCount()
     {
         return 0;
     }
@@ -655,12 +655,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     @Override
     public TaskExecutor getTaskExecutor()
-    {
-        return null;
-    }
-
-    @Override
-    public org.apache.qpid.server.model.VirtualHost getModel()
     {
         return null;
     }

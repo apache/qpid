@@ -41,6 +41,8 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.security.FileKeyStore;
+import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
@@ -433,16 +435,16 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertKeyStoreExistence(keyStoreName, true);
         Map<String, Object> keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
-        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(KeyStore.CERTIFICATE_ALIAS));
+        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(FileKeyStore.CERTIFICATE_ALIAS));
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, keyStoreName);
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, updatedCertAlias);
+        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, updatedCertAlias);
         responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "PUT", attributes);
         assertEquals("Setting of keystore attributes should be allowed", 200, responseCode);
 
         keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
-        assertEquals("Unexpected certificateAlias attribute value", updatedCertAlias, keyStore.get(KeyStore.CERTIFICATE_ALIAS));
+        assertEquals("Unexpected certificateAlias attribute value", updatedCertAlias, keyStore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
     public void testSetKeyStoreAttributesDenied() throws Exception
@@ -460,18 +462,18 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertKeyStoreExistence(keyStoreName, true);
         Map<String, Object> keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
-        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(KeyStore.CERTIFICATE_ALIAS));
+        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(FileKeyStore.CERTIFICATE_ALIAS));
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, keyStoreName);
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, updatedCertAlias);
+        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, updatedCertAlias);
         responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "PUT", attributes);
         assertEquals("Setting of keystore attributes should be denied", 403, responseCode);
 
         keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
-        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(KeyStore.CERTIFICATE_ALIAS));
+        assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
     /* === TrustStore === */
@@ -561,16 +563,16 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertTrustStoreExistence(trustStoreName, true);
         Map<String, Object> trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
-        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(TrustStore.PEERS_ONLY));
+        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(FileTrustStore.PEERS_ONLY));
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, trustStoreName);
-        attributes.put(TrustStore.PEERS_ONLY, updatedPeersOnly);
+        attributes.put(FileTrustStore.PEERS_ONLY, updatedPeersOnly);
         responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "PUT", attributes);
         assertEquals("Setting of truststore attributes should be allowed", 200, responseCode);
 
         trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
-        assertEquals("Unexpected peersOnly attribute value", updatedPeersOnly, trustStore.get(TrustStore.PEERS_ONLY));
+        assertEquals("Unexpected peersOnly attribute value", updatedPeersOnly, trustStore.get(FileTrustStore.PEERS_ONLY));
     }
 
     public void testSetTrustStoreAttributesDenied() throws Exception
@@ -588,18 +590,18 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertTrustStoreExistence(trustStoreName, true);
         Map<String, Object> trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
-        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(TrustStore.PEERS_ONLY));
+        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(FileTrustStore.PEERS_ONLY));
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, trustStoreName);
-        attributes.put(TrustStore.PEERS_ONLY, updatedPeersOnly);
+        attributes.put(FileTrustStore.PEERS_ONLY, updatedPeersOnly);
         responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "PUT", attributes);
         assertEquals("Setting of truststore attributes should be denied", 403, responseCode);
 
         trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
-        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(TrustStore.PEERS_ONLY));
+        assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(FileTrustStore.PEERS_ONLY));
     }
 
     /* === Broker === */
@@ -928,11 +930,11 @@ public class BrokerACLTest extends QpidRestTestCase
                 details.get(HttpManagement.TIME_OUT));
         assertEquals("Unexpected http basic auth enabled", true,
                 details.get(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED));
-        assertEquals("Unexpected https basic auth enabled", HttpManagement.DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED,
+        assertEquals("Unexpected https basic auth enabled", true,
                 details.get(HttpManagement.HTTPS_BASIC_AUTHENTICATION_ENABLED));
-        assertEquals("Unexpected http sasl auth enabled", HttpManagement.DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED,
+        assertEquals("Unexpected http sasl auth enabled", true,
                 details.get(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED));
-        assertEquals("Unexpected https sasl auth enabled", HttpManagement.DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED,
+        assertEquals("Unexpected https sasl auth enabled", true,
                 details.get(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED));
     }
 
@@ -1041,9 +1043,9 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         Map<String, Object> keyStoreAttributes = new HashMap<String, Object>();
         keyStoreAttributes.put(KeyStore.NAME, name);
-        keyStoreAttributes.put(KeyStore.PATH, TestSSLConstants.KEYSTORE);
-        keyStoreAttributes.put(KeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
-        keyStoreAttributes.put(KeyStore.CERTIFICATE_ALIAS, certAlias);
+        keyStoreAttributes.put(FileKeyStore.PATH, TestSSLConstants.KEYSTORE);
+        keyStoreAttributes.put(FileKeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
+        keyStoreAttributes.put(FileKeyStore.CERTIFICATE_ALIAS, certAlias);
 
         return getRestTestHelper().submitRequest("/rest/keystore/" + name, "PUT", keyStoreAttributes);
     }
@@ -1052,9 +1054,9 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         Map<String, Object> trustStoreAttributes = new HashMap<String, Object>();
         trustStoreAttributes.put(TrustStore.NAME, name);
-        trustStoreAttributes.put(TrustStore.PATH, TestSSLConstants.KEYSTORE);
-        trustStoreAttributes.put(TrustStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
-        trustStoreAttributes.put(TrustStore.PEERS_ONLY, peersOnly);
+        trustStoreAttributes.put(FileTrustStore.PATH, TestSSLConstants.KEYSTORE);
+        trustStoreAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
+        trustStoreAttributes.put(FileTrustStore.PEERS_ONLY, peersOnly);
 
         return getRestTestHelper().submitRequest("/rest/truststore/" + name, "PUT", trustStoreAttributes);
     }

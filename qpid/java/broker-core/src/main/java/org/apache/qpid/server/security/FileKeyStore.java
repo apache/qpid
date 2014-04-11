@@ -38,12 +38,18 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.RuntimeDefault;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -52,8 +58,13 @@ import org.apache.qpid.transport.network.security.ssl.QpidClientX509KeyManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 @ManagedObject( category = false )
-public class FileKeyStore extends AbstractKeyStoreAdapter<FileKeyStore> implements KeyStore<FileKeyStore>
+public class FileKeyStore extends AbstractConfiguredObject<FileKeyStore> implements KeyStore<FileKeyStore>
 {
+    public static final String KEY_MANAGER_FACTORY_ALGORITHM = "keyManagerFactoryAlgorithm";
+    public static final String CERTIFICATE_ALIAS = "certificateAlias";
+    public static final String KEY_STORE_TYPE = "keyStoreType";
+    public static final String PASSWORD = "password";
+    public static final String PATH = "path";
     @SuppressWarnings("serial")
     public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
         put(NAME, String.class);
@@ -63,6 +74,30 @@ public class FileKeyStore extends AbstractKeyStoreAdapter<FileKeyStore> implemen
         put(CERTIFICATE_ALIAS, String.class);
         put(KEY_MANAGER_FACTORY_ALGORITHM, String.class);
     }});
+
+
+    @ManagedContextDefault(name = "keyStoreFile.keyStoreType")
+    public static final RuntimeDefault<String> DEFAULT_KEYSTORE_TYPE =
+            new RuntimeDefault<String>()
+            {
+                @Override
+                public String value()
+                {
+                    return java.security.KeyStore.getDefaultType();
+                }
+            };
+
+    @ManagedContextDefault(name = "keyStoreFile.keyManagerFactoryAlgorithm")
+    public static final RuntimeDefault<String> DEFAULT_KEY_MANAGER_FACTORY_ALGORITHM =
+            new RuntimeDefault<String>()
+            {
+                @Override
+                public String value()
+                {
+                    return KeyManagerFactory.getDefaultAlgorithm();
+                }
+            };
+
 
     @ManagedAttributeField
     private String _type;
@@ -74,18 +109,18 @@ public class FileKeyStore extends AbstractKeyStoreAdapter<FileKeyStore> implemen
     private String _keyManagerFactoryAlgorithm;
     @ManagedAttributeField
     private String _path;
+    @ManagedAttributeField
+    private String _password;
 
-    @SuppressWarnings("serial")
-    public static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
-        put(KeyStore.KEY_STORE_TYPE, DEFAULT_KEYSTORE_TYPE);
-        put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-    }});
 
     private Broker<?> _broker;
 
     public FileKeyStore(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
-        super(id, broker, DEFAULTS, attributes);
+        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
+              Collections.<String,Object>emptyMap(), combineIdWithAttributes(id, attributes),
+              broker.getTaskExecutor());
+
         _broker = broker;
     }
 
@@ -100,7 +135,62 @@ public class FileKeyStore extends AbstractKeyStoreAdapter<FileKeyStore> implemen
     @Override
     public Collection<String> getAttributeNames()
     {
-        return getAttributeNames(KeyStore.class);
+        return getAttributeNames(getClass());
+    }
+    @Override
+    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public State getState()
+    {
+        return State.ACTIVE;
+    }
+
+    @Override
+    public boolean isDurable()
+    {
+        return true;
+    }
+
+    @Override
+    public void setDurable(boolean durable) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public LifetimePolicy getLifetimePolicy()
+    {
+        return LifetimePolicy.PERMANENT;
+    }
+
+    @Override
+    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException, AccessControlException,
+                                                                                                    IllegalArgumentException
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public Object getAttribute(String name)
+    {
+        if(KeyStore.STATE.equals(name))
+        {
+            return getState();
+        }
+        else if(KeyStore.DURABLE.equals(name))
+        {
+            return isDurable();
+        }
+        else if(KeyStore.LIFETIME_POLICY.equals(name))
+        {
+            return getLifetimePolicy();
+        }
+
+        return super.getAttribute(name);
     }
 
     @Override
@@ -171,13 +261,13 @@ public class FileKeyStore extends AbstractKeyStoreAdapter<FileKeyStore> implemen
             }
         }
 
-        Map<String, Object> merged = generateEffectiveAttributes(changedValues);
-
-        String keyStorePath = (String)merged.get(KeyStore.PATH);
-        String keyStorePassword = (String) merged.get(KeyStore.PASSWORD);
-        String keyStoreType = (String)merged.get(KeyStore.KEY_STORE_TYPE);
-        String keyManagerFactoryAlgorithm = (String)merged.get(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM);
-        String certAlias = (String)merged.get(KeyStore.CERTIFICATE_ALIAS);
+        String keyStorePath = changedValues.containsKey(PATH) ? (String)changedValues.get(PATH) : getPath();
+        String keyStorePassword = changedValues.containsKey(PASSWORD) ? (String) changedValues.get(PASSWORD) : getPassword();
+        String keyStoreType = changedValues.containsKey(KEY_STORE_TYPE) ? (String)changedValues.get(KEY_STORE_TYPE) : getKeyStoreType();
+        String keyManagerFactoryAlgorithm = changedValues.containsKey(KEY_MANAGER_FACTORY_ALGORITHM) ?
+                (String)changedValues.get(KEY_MANAGER_FACTORY_ALGORITHM) : getKeyManagerFactoryAlgorithm();
+        String certAlias = changedValues.containsKey(CERTIFICATE_ALIAS) ? (String)changedValues.get(CERTIFICATE_ALIAS)
+                : getCertificateAlias();
 
         validateKeyStoreAttributes(keyStoreType, keyStorePath, keyStorePassword,
                                    certAlias, keyManagerFactoryAlgorithm);
@@ -229,28 +319,39 @@ public class FileKeyStore extends AbstractKeyStoreAdapter<FileKeyStore> implemen
         }
     }
 
-    @Override
+    @ManagedAttribute( automate = true, mandatory = true)
     public String getPath()
     {
         return _path;
     }
 
-    @Override
+    @ManagedAttribute( automate = true )
     public String getCertificateAlias()
     {
         return _certificateAlias;
     }
 
-    @Override
+    @ManagedAttribute( automate = true, defaultValue = "${keyStoreFile.keyManagerFactoryAlgorithm}" )
     public String getKeyManagerFactoryAlgorithm()
     {
         return _keyManagerFactoryAlgorithm;
     }
 
-    @Override
+    @ManagedAttribute( automate = true, defaultValue = "${keyStoreFile.keyStoreType}" )
     public String getKeyStoreType()
     {
         return _keyStoreType;
+    }
+
+    @ManagedAttribute( secure = true, automate = true, mandatory = true )
+    public String getPassword()
+    {
+        return _password;
+    }
+
+    public void setPassword(String password)
+    {
+        _password = password;
     }
 
     public KeyManager[] getKeyManagers() throws GeneralSecurityException

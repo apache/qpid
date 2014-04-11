@@ -44,6 +44,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -199,9 +200,9 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         //add the peersOnly store to the config
         Map<String, Object> sslTrustStoreAttributes = new HashMap<String, Object>();
         sslTrustStoreAttributes.put(TrustStore.NAME, peerStoreName);
-        sslTrustStoreAttributes.put(TrustStore.PATH, BROKER_PEERSTORE);
-        sslTrustStoreAttributes.put(TrustStore.PASSWORD, BROKER_PEERSTORE_PASSWORD);
-        sslTrustStoreAttributes.put(TrustStore.PEERS_ONLY, true);
+        sslTrustStoreAttributes.put(FileTrustStore.PATH, BROKER_PEERSTORE);
+        sslTrustStoreAttributes.put(FileTrustStore.PASSWORD, BROKER_PEERSTORE_PASSWORD);
+        sslTrustStoreAttributes.put(FileTrustStore.PEERS_ONLY, true);
         getBrokerConfiguration().addObjectConfiguration(TrustStore.class, sslTrustStoreAttributes);
 
         super.setUp();

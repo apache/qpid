@@ -38,11 +38,11 @@ public class HttpManagementRestTest extends QpidRestTestCase
                 details.get(HttpManagement.TIME_OUT));
         assertEquals("Unexpected http basic auth enabled", true,
                 details.get(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED));
-        assertEquals("Unexpected https basic auth enabled", HttpManagement.DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED,
+        assertEquals("Unexpected https basic auth enabled", true,
                 details.get(HttpManagement.HTTPS_BASIC_AUTHENTICATION_ENABLED));
-        assertEquals("Unexpected http sasl auth enabled", HttpManagement.DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED,
+        assertEquals("Unexpected http sasl auth enabled", true,
                 details.get(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED));
-        assertEquals("Unexpected https sasl auth enabled", HttpManagement.DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED,
+        assertEquals("Unexpected https sasl auth enabled", true,
                 details.get(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED));
     }
 

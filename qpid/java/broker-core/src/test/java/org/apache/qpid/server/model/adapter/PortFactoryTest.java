@@ -75,7 +75,7 @@ public class PortFactoryTest extends QpidTestCase
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);
         _portFactory = new PortFactory();
-
+        _attributes.put(Port.NAME, getName());
         _attributes.put(Port.PORT, _portNumber);
         _attributes.put(Port.TRANSPORTS, _tcpStringSet);
         _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
@@ -309,6 +309,7 @@ public class PortFactoryTest extends QpidTestCase
         _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         _attributes.put(Port.PORT, _portNumber);
         _attributes.put(Port.TRANSPORTS, _tcpStringSet);
+        _attributes.put(Port.NAME, getName());
 
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
 
@@ -334,6 +335,7 @@ public class PortFactoryTest extends QpidTestCase
         _attributes.put(Port.PROTOCOLS, nonAmqpStringSet);
         _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         _attributes.put(Port.PORT, _portNumber);
+        _attributes.put(Port.NAME, getName());
 
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
 
@@ -371,7 +373,7 @@ public class PortFactoryTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, 1);
-        attributes.put(Port.NAME, getTestName());
+        attributes.put(Port.NAME, getName());
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
 
@@ -396,7 +398,7 @@ public class PortFactoryTest extends QpidTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, 1);
-        attributes.put(Port.NAME, getTestName());
+        attributes.put(Port.NAME, getName());
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
         _attributes.put(Port.KEY_STORE, keyStoreName);

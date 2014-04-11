@@ -20,24 +20,25 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.message.InstanceProperties;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.UnknownExchangeException;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 /**
  * An exchange that binds queues based on a set of required headers and header values
@@ -66,6 +67,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *  amq.match - pub/sub on field content/value
  *  </pre>
  */
+@ManagedObject( category = false, type = "headers" )
 public class HeadersExchange extends AbstractExchange<HeadersExchange>
 {
 

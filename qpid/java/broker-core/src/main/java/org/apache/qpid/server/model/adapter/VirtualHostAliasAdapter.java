@@ -44,8 +44,8 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
 
     public VirtualHostAliasAdapter(VirtualHost virtualHost, Port port)
     {
-        super(Collections.<String, Object>emptyMap(),
-              createAttributes(virtualHost, port),
+        super(
+                createAttributes(virtualHost, port),
               virtualHost.getTaskExecutor());
         _vhost = virtualHost;
         _port = port;

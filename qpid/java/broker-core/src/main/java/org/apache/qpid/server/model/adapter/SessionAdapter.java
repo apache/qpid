@@ -45,7 +45,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
     public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)
     {
-        super(Collections.<String,Object>emptyMap(),createAttributes(session), taskExecutor);
+        super(createAttributes(session), taskExecutor);
         _session = session;
         _session.addConsumerListener(new ConsumerListener()
         {

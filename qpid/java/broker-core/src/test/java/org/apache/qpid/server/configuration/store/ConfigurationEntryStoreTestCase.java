@@ -39,6 +39,8 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
+import org.apache.qpid.server.security.FileKeyStore;
+import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -303,10 +305,10 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         UUID trustStoreId = UUID.randomUUID();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, getName());
-        attributes.put(TrustStore.PATH, "/path/to/truststore");
-        attributes.put(TrustStore.PASSWORD, "my-secret-password");
-        attributes.put(TrustStore.TRUST_STORE_TYPE, "NON-JKS");
-        attributes.put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        attributes.put(FileTrustStore.PATH, "/path/to/truststore");
+        attributes.put(FileTrustStore.PASSWORD, "my-secret-password");
+        attributes.put(FileTrustStore.TRUST_STORE_TYPE, "NON-JKS");
+        attributes.put(FileTrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(TrustStore.DESCRIPTION, "Description");
 
         ConfigurationEntry
@@ -327,12 +329,12 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         UUID keyStoreId = UUID.randomUUID();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, getName());
-        attributes.put(KeyStore.PATH, "/path/to/truststore");
-        attributes.put(KeyStore.PASSWORD, "my-secret-password");
-        attributes.put(KeyStore.KEY_STORE_TYPE, "NON-JKS");
-        attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        attributes.put(FileKeyStore.PATH, "/path/to/truststore");
+        attributes.put(FileKeyStore.PASSWORD, "my-secret-password");
+        attributes.put(FileKeyStore.KEY_STORE_TYPE, "NON-JKS");
+        attributes.put(FileKeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(KeyStore.DESCRIPTION, "Description");
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, "Alias");
+        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "Alias");
 
         ConfigurationEntry keyStoreEntry = new ConfigurationEntryImpl(keyStoreId, KeyStore.class.getSimpleName(), attributes, Collections.<UUID> emptySet(),
                 _store);
@@ -401,12 +403,12 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         UUID keyStoreId = UUID.randomUUID();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, getName());
-        attributes.put(KeyStore.PATH, "/path/to/truststore");
-        attributes.put(KeyStore.PASSWORD, "my-secret-password");
-        attributes.put(KeyStore.KEY_STORE_TYPE, "NON-JKS");
-        attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
+        attributes.put(FileKeyStore.PATH, "/path/to/truststore");
+        attributes.put(FileKeyStore.PASSWORD, "my-secret-password");
+        attributes.put(FileKeyStore.KEY_STORE_TYPE, "NON-JKS");
+        attributes.put(FileKeyStore.KEY_MANAGER_FACTORY_ALGORITHM, "NON-STANDARD");
         attributes.put(KeyStore.DESCRIPTION, "Description");
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, "Alias");
+        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "Alias");
 
         ConfigurationEntry keyStoreEntry = new ConfigurationEntryImpl(keyStoreId, KeyStore.class.getSimpleName(), attributes, Collections.<UUID> emptySet(),
                 _store);

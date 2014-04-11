@@ -65,7 +65,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     @ManagedAttribute
     String getDescription();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getType();
 
     @ManagedAttribute(automate = true)

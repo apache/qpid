@@ -27,7 +27,7 @@ public class ManagementNodeCreator implements SystemNodeCreator
     @Override
     public void register(final SystemNodeRegistry registry)
     {
-        ManagementNode managementNode = new ManagementNode(registry,registry.getVirtualHostModel());
+        ManagementNode managementNode = new ManagementNode(registry,registry.getVirtualHost());
         registry.registerSystemNode(managementNode);
     }
 

@@ -358,7 +358,7 @@ public class FileBasedGroupProvider
 
         public GroupAdapter(Map<String,Object> attributes, TaskExecutor taskExecutor)
         {
-            super(Collections.<String,Object>emptyMap(),attributes, taskExecutor);
+            super(attributes, taskExecutor);
         }
 
 
@@ -508,7 +508,7 @@ public class FileBasedGroupProvider
 
             public GroupMemberAdapter(Map<String,Object> attrMap, TaskExecutor taskExecutor)
             {
-                super(Collections.<String,Object>emptyMap(), attrMap, taskExecutor);
+                super(attrMap, taskExecutor);
             }
 
             @Override

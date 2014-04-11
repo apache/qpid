@@ -50,9 +50,6 @@ public class ACLFileAccessControlProvider
     @ManagedAttributeField
     private String _path;
 
-    @ManagedAttributeField
-    private String _type;
-
     public ACLFileAccessControlProvider(Broker broker,
                                         Map<String, Object> attributes)
     {
@@ -78,12 +75,6 @@ public class ACLFileAccessControlProvider
     public String getPath()
     {
         return _path;
-    }
-
-    @ManagedAttribute( automate = true )
-    public String getType()
-    {
-        return _type;
     }
 
     @Override

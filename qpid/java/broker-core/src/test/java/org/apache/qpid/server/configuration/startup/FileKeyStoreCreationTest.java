@@ -32,12 +32,13 @@ import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
-import org.apache.qpid.server.security.AbstractKeyStoreAdapter;
+import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.test.utils.TestSSLConstants;
 
@@ -59,7 +60,7 @@ public class FileKeyStoreCreationTest extends TestCase
 
         Broker broker = mock(Broker.class);
 
-        final KeyStore keyStore =
+        final FileKeyStore keyStore =
                 createKeyStore(attributes, broker);
 
 
@@ -75,7 +76,7 @@ public class FileKeyStoreCreationTest extends TestCase
                 assertNotNull(keyStore.getPassword());
                 assertEquals(TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD, keyStore.getPassword());
                 //verify that we haven't configured the key store with the actual dummy password value
-                assertFalse(AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK.equals(keyStore.getPassword()));
+                assertFalse(AbstractConfiguredObject.SECURED_STRING_VALUE.equals(keyStore.getPassword()));
                 return null;
             }
         });
@@ -83,7 +84,7 @@ public class FileKeyStoreCreationTest extends TestCase
 
         // Verify the remaining attributes, including that the password value returned
         // via getAttribute is actually the dummy value and not the real password
-        attributesCopy.put(KeyStore.PASSWORD, AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK);
+        attributesCopy.put(FileKeyStore.PASSWORD, AbstractConfiguredObject.SECURED_STRING_VALUE);
         for (Map.Entry<String, Object> attribute : attributesCopy.entrySet())
         {
             Object attributeValue = keyStore.getAttribute(attribute.getKey());
@@ -91,11 +92,11 @@ public class FileKeyStoreCreationTest extends TestCase
         }
     }
 
-    protected KeyStore createKeyStore(final Map<String, Object> attributes, final Broker broker)
+    protected FileKeyStore createKeyStore(final Map<String, Object> attributes, final Broker broker)
     {
         ConfiguredObjectTypeFactory configuredObjectTypeFactory =
                 _factory.getConfiguredObjectTypeFactory(KeyStore.class, attributes);
-        return (KeyStore) configuredObjectTypeFactory.create(attributes, broker);
+        return (FileKeyStore) configuredObjectTypeFactory.create(attributes, broker);
     }
 
     public void testCreateWithMissedRequiredAttributes()
@@ -105,7 +106,7 @@ public class FileKeyStoreCreationTest extends TestCase
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
 
-        String[] mandatoryProperties = {KeyStore.NAME, KeyStore.PATH, KeyStore.PASSWORD};
+        String[] mandatoryProperties = {KeyStore.NAME, FileKeyStore.PATH, FileKeyStore.PASSWORD};
         for (int i = 0; i < mandatoryProperties.length; i++)
         {
             Map<String, Object> properties =  new HashMap<String, Object>(attributes);
@@ -127,11 +128,11 @@ public class FileKeyStoreCreationTest extends TestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.ID, UUID.randomUUID());
         attributes.put(KeyStore.NAME, getName());
-        attributes.put(KeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
-        attributes.put(KeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
-        attributes.put(KeyStore.KEY_STORE_TYPE, "jks");
-        attributes.put(KeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, "java-broker");
+        attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
+        attributes.put(FileKeyStore.KEY_STORE_TYPE, "jks");
+        attributes.put(FileKeyStore.KEY_MANAGER_FACTORY_ALGORITHM, KeyManagerFactory.getDefaultAlgorithm());
+        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "java-broker");
         return attributes;
     }
 

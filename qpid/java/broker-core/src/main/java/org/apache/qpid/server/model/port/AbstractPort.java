@@ -120,10 +120,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         {
             updatedDefaults.put(Port.TRANSPORTS, Collections.singleton(DEFAULT_TRANSPORT));
         }
-        if(!defaults.containsKey(NAME))
-        {
-            updatedDefaults.put(NAME,  attributes.get(PORT) + "-" + attributes.get(TYPE));
-        }
         return updatedDefaults;
     }
 

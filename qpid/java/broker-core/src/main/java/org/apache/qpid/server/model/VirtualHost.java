@@ -96,8 +96,19 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     @ManagedAttribute
     String getSecurityAcl();
 
-    @ManagedAttribute
-    int getHouseKeepingThreadCount();
+    @ManagedContextDefault( name = "virtualhost.housekeepingThreadCount")
+    public static final RuntimeDefault<Integer> DEFAULT_HOUSEKEEPING_THREAD_COUNT =
+            new RuntimeDefault<Integer>()
+            {
+                @Override
+                public Integer value()
+                {
+                    return Runtime.getRuntime().availableProcessors();
+                }
+            };
+
+    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.housekeepingThreadCount}")
+    int getHousekeepingThreadCount();
 
     @ManagedAttribute( automate = true )
     Map<String, Object> getMessageStoreSettings();

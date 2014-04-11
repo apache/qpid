@@ -31,7 +31,6 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementTest extends QpidTestCase
@@ -54,6 +53,7 @@ public class HttpManagementTest extends QpidTestCase
         attributes.put(HttpManagement.NAME, getTestName());
         attributes.put(HttpManagement.TIME_OUT, 10000l);
         _management = new HttpManagement(_id, _broker, attributes);
+        _management.open();
     }
 
     public void testGetSessionTimeout()

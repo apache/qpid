@@ -28,29 +28,10 @@ public interface TrustStore<X extends TrustStore<X>> extends ConfiguredObject<X>
 {
     String DURABLE = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
-    String STATE = "state";
     String DESCRIPTION = "description";
-
-    String PATH = "path";
-    String PASSWORD = "password";
-    String TRUST_STORE_TYPE = "trustStoreType";
-    String PEERS_ONLY = "peersOnly";
-    String TRUST_MANAGER_FACTORY_ALGORITHM = "trustManagerFactoryAlgorithm";
 
     @ManagedAttribute( secure = true, automate = true, mandatory = true)
     public String getPassword();
-
-    @ManagedAttribute( automate = true, mandatory = true )
-    public String getPath();
-
-    @ManagedAttribute( automate = true )
-    public String getTrustManagerFactoryAlgorithm();
-
-    @ManagedAttribute( automate = true )
-    public String getTrustStoreType();
-
-    @ManagedAttribute( automate = true )
-    public boolean isPeersOnly();
 
 
     public void setPassword(String password);
