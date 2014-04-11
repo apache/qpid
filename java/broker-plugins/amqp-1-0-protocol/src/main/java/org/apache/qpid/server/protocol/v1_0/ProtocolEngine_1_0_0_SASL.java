@@ -28,24 +28,26 @@ import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
 import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
 import org.apache.qpid.amqp_1_0.framing.OversizeFrameException;
 import org.apache.qpid.amqp_1_0.framing.SASLFrameHandler;
-import org.apache.qpid.amqp_1_0.transport.SaslServerProvider;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.Container;
 import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
+import org.apache.qpid.amqp_1_0.transport.SaslServerProvider;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
@@ -185,7 +187,20 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         SubjectCreator subjectCreator = _broker.getSubjectCreator(getLocalAddress());
         _endpoint = new ConnectionEndpoint(container, asSaslServerProvider(subjectCreator));
+        _endpoint.setLogger(new ConnectionEndpoint.FrameReceiptLogger()
+        {
+            @Override
+            public boolean isEnabled()
+            {
+                return FRAME_LOGGER.isDebugEnabled();
+            }
 
+            @Override
+            public void received(final SocketAddress remoteAddress, final short channel, final Object frame)
+            {
+                FRAME_LOGGER.debug("RECV[" + remoteAddress + "|" + channel + "] : " + frame);
+            }
+        });
         Map<Symbol,Object> serverProperties = new LinkedHashMap<Symbol, Object>();
         serverProperties.put(Symbol.valueOf(ServerPropertyNames.PRODUCT), QpidProperties.getProductName());
         serverProperties.put(Symbol.valueOf(ServerPropertyNames.VERSION), QpidProperties.getReleaseVersion());
@@ -196,6 +211,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         _endpoint.setRemoteAddress(getRemoteAddress());
         _connection = new Connection_1_0(_broker, _endpoint, _connectionId, _port, _transport, subjectCreator);
+
         _endpoint.setConnectionEventListener(_connection);
         _endpoint.setFrameOutputHandler(this);
         _endpoint.setSaslFrameOutput(this);
@@ -262,13 +278,13 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         try
         {
             _lastReadTime = System.currentTimeMillis();
-            if(RAW_LOGGER.isLoggable(Level.FINE))
+            if(RAW_LOGGER.isDebugEnabled())
             {
                 ByteBuffer dup = msg.duplicate();
                 byte[] data = new byte[dup.remaining()];
                 dup.get(data);
                 Binary bin = new Binary(data);
-                RAW_LOGGER.fine("RECV[" + getRemoteAddress() + "] : " + bin.toString());
+                RAW_LOGGER.debug("RECV[" + getRemoteAddress() + "] : " + bin.toString());
             }
             _readBytes += msg.remaining();
             switch(_state)
@@ -454,9 +470,14 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         synchronized (_sendLock)
         {
             _lastWriteTime = System.currentTimeMillis();
-            if (FRAME_LOGGER.isLoggable(Level.FINE))
+            if (FRAME_LOGGER.isDebugEnabled())
             {
-                FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
+                FRAME_LOGGER.debug("SEND["
+                                   + getRemoteAddress()
+                                   + "|"
+                                   + amqFrame.getChannel()
+                                   + "] : "
+                                   + amqFrame.getFrameBody());
             }
 
             _frameWriter.setValue(amqFrame);
@@ -472,13 +493,13 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
             dup.flip();
             _writtenBytes += dup.limit();
 
-            if (RAW_LOGGER.isLoggable(Level.FINE))
+            if (RAW_LOGGER.isDebugEnabled())
             {
                 ByteBuffer dup2 = dup.duplicate();
                 byte[] data = new byte[dup2.remaining()];
                 dup2.get(data);
                 Binary bin = new Binary(data);
-                RAW_LOGGER.fine("SEND[" + getRemoteAddress() + "] : " + bin.toString());
+                RAW_LOGGER.debug("SEND[" + getRemoteAddress() + "] : " + bin.toString());
             }
 
             _sender.send(dup);

@@ -21,37 +21,50 @@
 
 package org.apache.qpid.amqp_1_0.transport;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
-import org.apache.qpid.amqp_1_0.codec.ValueWriter;
-import org.apache.qpid.amqp_1_0.framing.AMQFrame;
-import org.apache.qpid.amqp_1_0.framing.SASLFrame;
-import org.apache.qpid.amqp_1_0.type.*;
-import org.apache.qpid.amqp_1_0.type.security.SaslChallenge;
-import org.apache.qpid.amqp_1_0.type.security.SaslCode;
-import org.apache.qpid.amqp_1_0.type.security.SaslInit;
-import org.apache.qpid.amqp_1_0.type.security.SaslMechanisms;
-import org.apache.qpid.amqp_1_0.type.security.SaslOutcome;
-import org.apache.qpid.amqp_1_0.type.security.SaslResponse;
-import org.apache.qpid.amqp_1_0.type.transport.*;
-import org.apache.qpid.amqp_1_0.type.transport.Error;
-import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
-
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+
+import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
+import org.apache.qpid.amqp_1_0.codec.ValueWriter;
+import org.apache.qpid.amqp_1_0.framing.AMQFrame;
+import org.apache.qpid.amqp_1_0.framing.SASLFrame;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.FrameBody;
+import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.UnsignedShort;
+import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
+import org.apache.qpid.amqp_1_0.type.security.SaslChallenge;
+import org.apache.qpid.amqp_1_0.type.security.SaslCode;
+import org.apache.qpid.amqp_1_0.type.security.SaslInit;
+import org.apache.qpid.amqp_1_0.type.security.SaslMechanisms;
+import org.apache.qpid.amqp_1_0.type.security.SaslOutcome;
+import org.apache.qpid.amqp_1_0.type.security.SaslResponse;
+import org.apache.qpid.amqp_1_0.type.transport.Attach;
+import org.apache.qpid.amqp_1_0.type.transport.Begin;
+import org.apache.qpid.amqp_1_0.type.transport.Close;
+import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
+import org.apache.qpid.amqp_1_0.type.transport.Detach;
+import org.apache.qpid.amqp_1_0.type.transport.Disposition;
+import org.apache.qpid.amqp_1_0.type.transport.End;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
+import org.apache.qpid.amqp_1_0.type.transport.Flow;
+import org.apache.qpid.amqp_1_0.type.transport.Open;
+import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 
 
 public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Source, ValueWriter.Registry.Source,
@@ -718,13 +731,43 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         }
     }
 
-    private final Logger _logger = Logger.getLogger("FRM");
+    public static interface FrameReceiptLogger
+    {
+        boolean isEnabled();
+        void received(final SocketAddress remoteAddress, short channel, Object frame);
+    }
+
+
+
+    private FrameReceiptLogger _logger =
+            new FrameReceiptLogger()
+            {
+                Logger _underlying = Logger.getLogger("FRM");
+
+                @Override
+                public boolean isEnabled()
+                {
+                    return _underlying.isLoggable(Level.FINE);
+                }
+
+                @Override
+                public void received(final SocketAddress remoteAddress, final short channel, final Object frame)
+                {
+                    _underlying.fine("RECV[" + remoteAddress + "|" + channel + "] : " + frame);
+                }
+
+            };
+
+    public void setLogger(final FrameReceiptLogger logger)
+    {
+        _logger = logger;
+    }
 
     public synchronized void receive(final short channel, final Object frame)
     {
-        if (_logger.isLoggable(Level.FINE))
+        if (_logger.isEnabled())
         {
-            _logger.fine("RECV[" + _remoteAddress + "|" + channel + "] : " + frame);
+            _logger.received(_remoteAddress, channel, frame);
         }
         if (frame instanceof FrameBody)
         {
