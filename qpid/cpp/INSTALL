@@ -27,17 +27,15 @@ There are a number of prerequisite libraries that may need to be installed.
 If this is the first time that you have built Qpid please check the prerequisites
 section 5. below and/or check the output from running cmake for any errors.
 
-As of Qpid 0.22 cmake is the preferred way to build Qpid.
-
-*******************************************************************
-*      N.B. The automake build method is NOW DEPRECATED!!         *
-*   IT WILL BE DISABLED BY DEFAULT IN 0.24 AND REMOVED IN 0.26    *
-*    Please flag any cmake issues with: users@qpid.apache.org     *
-*******************************************************************
+As of Qpid 0.26 cmake (versions 2.6 or 2.8) is the only way to build Qpid.
 
 
 2. How to Build and Install Qpid from a Source Distribution
 ===========================================================
+It is strongly recommended that you use a separate build directory and do not try to
+build in the source directory. You may use a build directory in any convenient place.
+These instructions use a build directory inside the source tree but this isn't essential.
+
 In the cpp distribution directory (<qpid>/cpp), build the code with:
 
  # mkdir bld       # This is just a suggested name for the build directory
@@ -70,7 +68,7 @@ The available make targets can be listed using:
  # make help
 
 
-You can have multiple builds in the same working copy with different
+You can have multiple builds which use the same working copy with different
 configuration. For example you can do the following to build twice, once for
 debug, the other with optimization:
 
@@ -85,7 +83,54 @@ with debug information.
 
 To see and edit all the available cmake options:
 
- # cmake-gui ..    # ".." is the path to the distribution directory
+ # cmake-gui ..    # ".." is the path to the source directory
+
+Or if you have only have a command line environment available
+
+ # ccmake ..       # ".." is the path to the source directory
+
+2.1 Building as C++11 (Experimental)
+====================================
+Currently the Qpoid project uses C++ that conforms to the C++03 standard, as currently
+this is the C++ standard that is supported the most widely, so any new code must also
+compile as C++03. As an experiment (and to support a few extra platforms) the Qpid code
+will also now build as C++11.
+
+This will work under both gcc and clang. However when compiled under gcc you will hit some
+depracation watrnings which will need to be suppressed.
+
+To compile as C++11 under gcc configure using cmake like this:
+
+ # cmake -DCMAKE_CXX_FLAGS="-std=c++11 -Wno-error=deprecated-declarations" ..
+
+To compile as C++11 under clang configure using cmake like this:
+
+ # CXX=clang++ CC=clang cmake -DBUILD_PROBES=no -DCMAKE_CXX_FLAGS=-std=c++11 ..
+
+2.2 Building with the clang C++ compiler
+========================================
+Qpid will build with the clang compiler as well as gcc. When compiling using clang the probe
+code will not compile so will need to be turned off.
+
+To compile using clang configure with cmake as follows:
+
+ # CXX=clang++ CC=clang cmake -DBUILD_PROBES=no ..
+
+2.3 Building on FreeBSD
+=======================
+Qpid will build (and run) under FreeBSD using the clang compiler, compiling on FreeBSD using gcc
+is not being worked on, and indeed from FreeBSD 10 and onwards the system compiler is clang.
+
+Under FreeBSD 10 the C++ standard library is provided by libc++ rather than libstdc++ (which is the
+norm under Linux). There seems to be a bug in boost::lexical_cast which exhibits when compiling Qpid
+under C++03 with libc++ but not C++11 with libc++. This means that you have to compile Qpid as C++11
+under FreeBSD 10.
+
+ # cmake -DCMAKE_CXX_FLAGS=-std=c++ ..
+
+It is not necessary to specify CXX=clang++ because it is the system compiler under FreeBSD 10;
+similarly we don't try to build the probe code on FreeBSD at this point because it doesn't work
+there yet, so it doesn't need to be explicitly turned off.
 
 
 3. Building a Repository Working Copy
@@ -118,18 +163,18 @@ these as a recommended minimum version.
 ===========================================
 The following libraries and header files must be installed to build
 a source distribution:
- * boost      <http://www.boost.org>                    (1.35)(*)
+ * boost      <http://www.boost.org>                    (1.41) (*)
  * libuuid    <http://kernel.org/~kzak/util-linux/>     (2.19)
  * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/>  (0.21)
 
-(*) earlier versions of boost e.g. 1.33 also work and there is a patch
-to get 1.32 working in the svn tree though that is only recommended as
-a last resort.
+(*) Boost 1.33 will also work.
 
 Optional support for AMQP 1.0 requires (see AMQP_1.0 for details):
 * Qpid proton-c <http://qpid.apache.org/proton>         (0.5)
-Note: pkg-config is used to locate this, so set PKG_CONFIG_PATH if you
-are using a non-standard location
+Note: If you are using a custom installed Proton it is recommended that
+you use version 0.7 or later and use the same install prefix for both Proton
+and Qpid. This is the easiest way that will ensure that Qpid finds and uses
+Proton.
 
 Optional XML exchange requires:
  * xqilla  <http://xqilla.sourceforge.net/HomePage>     (2.0.0)
@@ -139,12 +184,16 @@ Optional SSL support requires:
 * nss <http://www.mozilla.org/projects/security/pki/nss/>
 * nspr <http://www.mozilla.org/projects/nspr/>
 
+Optional RDMA transport protocol requires:
+* libibverbs <http://www.openfabrics.org/>              (1.1)
+* librdmacm  <http://www.openfabrics.org/>              (1.0)
+
 Optional binding support for ruby requires:
 * ruby and ruby devel <http://www.ruby-lang.org/en/>
 * swig <http://www.swig.org/>
 
 Qpid has been built using the GNU C++ compiler:
- * gcc     <http://gcc.gnu.org/>            		    (3.4.6)
+ * gcc     <http://gcc.gnu.org/>            		(4.1.2)
 
 If you want to build directly from the SVN repository you will need
 all of the above plus:
