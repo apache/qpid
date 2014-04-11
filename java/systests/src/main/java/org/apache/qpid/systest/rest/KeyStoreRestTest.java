@@ -30,10 +30,11 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.security.AbstractKeyStoreAdapter;
+import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestSSLConstants;
 
@@ -107,8 +108,8 @@ public class KeyStoreRestTest extends QpidRestTestCase
         //add a new key store config to use
         Map<String, Object> sslKeyStoreAttributes = new HashMap<String, Object>();
         sslKeyStoreAttributes.put(KeyStore.NAME, name);
-        sslKeyStoreAttributes.put(KeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
-        sslKeyStoreAttributes.put(KeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
+        sslKeyStoreAttributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        sslKeyStoreAttributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
         getBrokerConfiguration().addObjectConfiguration(KeyStore.class,sslKeyStoreAttributes);
 
         //add the SSL port using it
@@ -152,7 +153,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, name);
-        attributes.put(KeyStore.PATH, TestSSLConstants.UNTRUSTED_KEYSTORE);
+        attributes.put(FileKeyStore.PATH, TestSSLConstants.UNTRUSTED_KEYSTORE);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for keystore update", 200, responseCode);
@@ -175,7 +176,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, name);
-        attributes.put(KeyStore.PATH, "does.not.exist");
+        attributes.put(FileKeyStore.PATH, "does.not.exist");
 
         int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for keystore update", 409, responseCode);
@@ -204,7 +205,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         //Update the certAlias from app1 to app2
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, name);
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, "app2");
+        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "app2");
 
         int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for keystore update", 200, responseCode);
@@ -217,7 +218,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         //Update the certAlias to clear it (i.e go from from app1 to null)
         attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, name);
-        attributes.put(KeyStore.CERTIFICATE_ALIAS, null);
+        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, null);
 
         responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for keystore update", 200, responseCode);
@@ -242,9 +243,9 @@ public class KeyStoreRestTest extends QpidRestTestCase
     {
         Map<String, Object> keyStoreAttributes = new HashMap<String, Object>();
         keyStoreAttributes.put(KeyStore.NAME, name);
-        keyStoreAttributes.put(KeyStore.PATH, TestSSLConstants.KEYSTORE);
-        keyStoreAttributes.put(KeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
-        keyStoreAttributes.put(KeyStore.CERTIFICATE_ALIAS, certAlias);
+        keyStoreAttributes.put(FileKeyStore.PATH, TestSSLConstants.KEYSTORE);
+        keyStoreAttributes.put(FileKeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
+        keyStoreAttributes.put(FileKeyStore.CERTIFICATE_ALIAS, certAlias);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name, "PUT", keyStoreAttributes);
         assertEquals("Unexpected response code", 201, responseCode);
@@ -255,17 +256,17 @@ public class KeyStoreRestTest extends QpidRestTestCase
         assertEquals("default systests key store is missing",
                 name, keystore.get(KeyStore.NAME));
         assertEquals("unexpected path to key store",
-                path, keystore.get(KeyStore.PATH));
+                path, keystore.get(FileKeyStore.PATH));
         assertEquals("unexpected (dummy) password of default systests key store",
-                AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK, keystore.get(KeyStore.PASSWORD));
+                     AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected type of default systests key store",
-                java.security.KeyStore.getDefaultType(), keystore.get(KeyStore.KEY_STORE_TYPE));
+                java.security.KeyStore.getDefaultType(), keystore.get(FileKeyStore.KEY_STORE_TYPE));
         assertEquals("unexpected certificateAlias value",
-                certAlias, keystore.get(KeyStore.CERTIFICATE_ALIAS));
+                certAlias, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
         if(certAlias == null)
         {
             assertFalse("should not be a certificateAlias attribute",
-                            keystore.containsKey(KeyStore.CERTIFICATE_ALIAS));
+                            keystore.containsKey(FileKeyStore.CERTIFICATE_ALIAS));
         }
     }
 }

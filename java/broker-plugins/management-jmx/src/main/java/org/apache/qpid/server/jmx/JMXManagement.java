@@ -24,6 +24,7 @@ package org.apache.qpid.server.jmx;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -44,6 +45,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.model.Port;
@@ -71,13 +73,6 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
     public static final boolean DEFAULT_USE_PLATFORM_MBEAN_SERVER = true;
 
     @SuppressWarnings("serial")
-    private static final Map<String, Object> DEFAULTS = new HashMap<String, Object>(){{
-        put(USE_PLATFORM_MBEAN_SERVER, DEFAULT_USE_PLATFORM_MBEAN_SERVER);
-        put(NAME, DEFAULT_NAME);
-        put(TYPE, PLUGIN_TYPE);
-    }};
-
-    @SuppressWarnings("serial")
     private static final Map<String, Type> ATTRIBUTE_TYPES = new HashMap<String, Type>(){{
         put(USE_PLATFORM_MBEAN_SERVER, Boolean.class);
         put(NAME, String.class);
@@ -89,9 +84,12 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
 
     private final Map<ConfiguredObject, AMQManagedObject> _children = new HashMap<ConfiguredObject, AMQManagedObject>();
 
+    @ManagedAttributeField
+    private boolean _usePlatformMBeanServer;
+
     public JMXManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker);
+        super(id, Collections.<String,Object>emptyMap(), attributes, broker);
     }
 
     @Override
@@ -363,15 +361,9 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
         }
     }
 
-    @Override
-    public String getPluginType()
-    {
-        return PLUGIN_TYPE;
-    }
-
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "true" )
     public boolean getUsePlatformMBeanServer()
     {
-        return (Boolean)getAttribute(USE_PLATFORM_MBEAN_SERVER);
+        return _usePlatformMBeanServer;
     }
 }

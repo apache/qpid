@@ -68,18 +68,13 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
     public static String PATH = "path";
     public static final String PROVIDER_TYPE = "FileSystemPreferences";
 
-    @SuppressWarnings("serial")
-    private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>()
-    {{
-            put(TYPE, FileSystemPreferencesProvider.class.getSimpleName());
-    }});
+
 
     @SuppressWarnings("serial")
     private static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>()
     {{
             put(NAME, String.class);
             put(PATH, String.class);
-            put(TYPE, String.class);
     }});
 
     private final AuthenticationProvider<? extends AuthenticationProvider> _authenticationProvider;
@@ -91,7 +86,7 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
                                             AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {
         super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(AuthenticationProvider.class, authenticationProvider),
-              DEFAULTS,
+              Collections.<String,Object>emptyMap(),
               combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)),
               authenticationProvider.getParent(Broker.class).getTaskExecutor());
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
@@ -341,7 +336,7 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
         }
         String newType = (String) attributes.get(TYPE);
         String currentType = (String) getAttribute(TYPE);
-        if (!currentType.equals(newType))
+        if (newType != null && !currentType.equals(newType))
         {
             throw new IllegalConfigurationException("Changing the type of preferences provider is not supported");
         }

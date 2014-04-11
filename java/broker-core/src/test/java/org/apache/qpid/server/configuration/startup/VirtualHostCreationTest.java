@@ -76,7 +76,7 @@ public class VirtualHostCreationTest extends TestCase
         attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
         attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE,
                                                                                     TestMemoryMessageStore.TYPE));
-        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.TYPE, VirtualHost.MESSAGE_STORE_SETTINGS};
+        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.MESSAGE_STORE_SETTINGS};
 
         checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
     }

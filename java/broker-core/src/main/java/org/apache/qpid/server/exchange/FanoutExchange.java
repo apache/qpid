@@ -20,11 +20,13 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.binding.BindingImpl;
@@ -34,14 +36,14 @@ import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import java.util.ArrayList;
-
+@ManagedObject( category = false, type = "fanout" )
 public class FanoutExchange extends AbstractExchange<FanoutExchange>
 {
     private static final Logger _logger = Logger.getLogger(FanoutExchange.class);

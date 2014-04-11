@@ -20,11 +20,14 @@
  */
 package org.apache.qpid.server.model;
 
-@ManagedObject
-public interface Plugin<X extends Plugin<X>> extends ConfiguredObject<X>
+public abstract class RuntimeDefault<T>
 {
-    //Hack, using it for the class name only for consistency with the other things.
-    String DURABLE                              = "durable";
-    String LIFETIME_POLICY                      = "lifetimePolicy";
+    public abstract T value();
+
+    final public String toString()
+    {
+        T value = value();
+        return value == null ? null : value.toString();
+    }
 
 }

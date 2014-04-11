@@ -20,6 +20,20 @@
  */
 package org.apache.qpid.server.configuration;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.StringWriter;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -32,19 +46,6 @@ import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-
-import java.io.File;
-import java.io.StringWriter;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
 {
@@ -117,7 +118,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
 
-        String defaultBrokerName = "Broker";
+        String defaultBrokerName = "${broker.name}";
         String testBrokerName = getTestName();
 
         Map<String, Object> brokerObjectMap = new HashMap<String, Object>();

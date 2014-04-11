@@ -38,6 +38,7 @@ import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -45,6 +46,7 @@ import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
+@ManagedObject( category = false, type = "topic" )
 public class TopicExchange extends AbstractExchange<TopicExchange>
 {
     public static final ExchangeType<TopicExchange> TYPE = new TopicExchangeType();

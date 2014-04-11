@@ -60,7 +60,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
 
     public ConnectionAdapter(final AMQConnectionModel conn, TaskExecutor taskExecutor)
     {
-        super(Collections.<String,Object>emptyMap(), createAttributes(conn), taskExecutor);
+        super(createAttributes(conn), taskExecutor);
         _connection = conn;
         open();
         conn.addSessionListener(this);

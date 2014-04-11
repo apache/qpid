@@ -30,10 +30,11 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.security.AbstractKeyStoreAdapter;
+import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestSSLConstants;
 
@@ -105,8 +106,8 @@ public class TrustStoreRestTest extends QpidRestTestCase
         //add a new trust store config to use
         Map<String, Object> sslTrustStoreAttributes = new HashMap<String, Object>();
         sslTrustStoreAttributes.put(TrustStore.NAME, name);
-        sslTrustStoreAttributes.put(TrustStore.PATH, TestSSLConstants.TRUSTSTORE);
-        sslTrustStoreAttributes.put(TrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
+        sslTrustStoreAttributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        sslTrustStoreAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
         getBrokerConfiguration().addObjectConfiguration(TrustStore.class,sslTrustStoreAttributes);
 
         //add the SSL port using it
@@ -151,7 +152,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, name);
-        attributes.put(TrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for truststore update", 200, responseCode);
@@ -174,7 +175,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, name);
-        attributes.put(TrustStore.PATH, "does.not.exist");
+        attributes.put(FileTrustStore.PATH, "does.not.exist");
 
         int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for trust store update", 409, responseCode);
@@ -199,7 +200,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         //update the peersOnly attribute from false to true
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, name);
-        attributes.put(TrustStore.PEERS_ONLY, true);
+        attributes.put(FileTrustStore.PEERS_ONLY, true);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for trust store update", 200, responseCode);
@@ -212,7 +213,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         //Update peersOnly to clear it (i.e go from from true to null, which will default to false)
         attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, name);
-        attributes.put(TrustStore.PEERS_ONLY, null);
+        attributes.put(FileTrustStore.PEERS_ONLY, null);
 
         responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for trust store update", 200, responseCode);
@@ -238,9 +239,9 @@ public class TrustStoreRestTest extends QpidRestTestCase
         Map<String, Object> trustStoreAttributes = new HashMap<String, Object>();
         trustStoreAttributes.put(TrustStore.NAME, name);
         //deliberately using the client trust store to differentiate from the one we are already for broker
-        trustStoreAttributes.put(TrustStore.PATH, TestSSLConstants.TRUSTSTORE);
-        trustStoreAttributes.put(TrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
-        trustStoreAttributes.put(TrustStore.PEERS_ONLY, peersOnly);
+        trustStoreAttributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        trustStoreAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
+        trustStoreAttributes.put(FileTrustStore.PEERS_ONLY, peersOnly);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name, "PUT", trustStoreAttributes);
         assertEquals("Unexpected response code", 201, responseCode);
@@ -251,12 +252,12 @@ public class TrustStoreRestTest extends QpidRestTestCase
         assertEquals("default systests trust store is missing",
                 name, truststore.get(TrustStore.NAME));
         assertEquals("unexpected path to trust store",
-                path, truststore.get(TrustStore.PATH));
+                path, truststore.get(FileTrustStore.PATH));
         assertEquals("unexpected (dummy) password of default systests trust store",
-                AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK, truststore.get(TrustStore.PASSWORD));
+                     AbstractConfiguredObject.SECURED_STRING_VALUE, truststore.get(FileTrustStore.PASSWORD));
         assertEquals("unexpected type of default systests trust store",
-                java.security.KeyStore.getDefaultType(), truststore.get(TrustStore.TRUST_STORE_TYPE));
+                java.security.KeyStore.getDefaultType(), truststore.get(FileTrustStore.TRUST_STORE_TYPE));
         assertEquals("unexpected peersOnly value",
-                peersOnly, truststore.get(TrustStore.PEERS_ONLY));
+                peersOnly, truststore.get(FileTrustStore.PEERS_ONLY));
     }
 }

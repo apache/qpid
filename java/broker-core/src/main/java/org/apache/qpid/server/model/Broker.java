@@ -59,6 +59,9 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
     String CONNECTION_CLOSE_WHEN_NO_ROUTE = "connection.closeWhenNoRoute";
 
+    @ManagedContextDefault(name = "broker.name")
+    static final String DEFAULT_BROKER_NAME = "Broker";
+
     @ManagedAttribute( derived = true )
     String getBuildVersion();
 

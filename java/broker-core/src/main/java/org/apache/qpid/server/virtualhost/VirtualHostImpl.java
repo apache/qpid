@@ -126,7 +126,5 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
 
     TaskExecutor getTaskExecutor();
 
-    org.apache.qpid.server.model.VirtualHost getModel();
-
     EventLogger getEventLogger();
 }

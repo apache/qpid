@@ -80,10 +80,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private static final Map<Class<? extends ConfiguredObject>, Map<String, Field>> _allAutomatedFields =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, Field>>());
     private static final Map<Class, Object> SECURE_VALUES;
+
+    public static final String SECURED_STRING_VALUE = "********";
+
     static
     {
         Map<Class,Object> secureValues = new HashMap<Class, Object>();
-        secureValues.put(String.class, "********");
+        secureValues.put(String.class, SECURED_STRING_VALUE);
         secureValues.put(Integer.class, 0);
         secureValues.put(Long.class, 0l);
         secureValues.put(Byte.class, (byte)0);
@@ -135,12 +138,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private final Map<String, Attribute<?,?>> _attributeTypes;
     private final Map<String, Field> _automatedFields;
 
+    @ManagedAttributeField
+    private String _type;
+
     protected AbstractConfiguredObject(UUID id,
-                                       Map<String, Object> defaults,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor)
     {
-        this(defaults, combineIdWithAttributes(id,attributes), taskExecutor);
+        this(combineIdWithAttributes(id,attributes), taskExecutor);
     }
 
     public static Map<String,Object> combineIdWithAttributes(UUID id, Map<String,Object> attributes)
@@ -151,20 +156,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
 
-    protected AbstractConfiguredObject(UUID id, Map<String, Object> defaults, Map<String, Object> attributes,
-                                       TaskExecutor taskExecutor, boolean filterAttributes)
-
-    {
-        this(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>emptyMap(),
-             defaults, combineIdWithAttributes(id, attributes), taskExecutor, filterAttributes);
-    }
-
-    protected AbstractConfiguredObject(Map<String, Object> defaults,
-                                       Map<String, Object> attributes,
+    protected AbstractConfiguredObject(Map<String, Object> attributes,
                                        TaskExecutor taskExecutor)
     {
         this(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>emptyMap(),
-             defaults, attributes, taskExecutor, true);
+             Collections.<String,Object>emptyMap(), attributes, taskExecutor, true);
     }
 
     protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
@@ -198,6 +194,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         _attributeTypes = getAttributeTypes(getClass());
         _automatedFields = getAutomatedFields(getClass());
+        _type = getType(getClass());
+        if(attributes.get(TYPE) != null)
+        {
+            if(!_type.equals(attributes.get(TYPE)))
+            {
+                throw new IllegalConfigurationException("Provided type is " + attributes.get(TYPE)
+                                                        + " but calculated type is " + _type);
+            }
+        }
 
         for (Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(getCategoryClass()))
         {
@@ -277,11 +282,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     }
 
-    private void automatedSetValue(final String name, final Object value)
+    private void automatedSetValue(final String name, Object value)
     {
         try
         {
             final Attribute attribute = _attributeTypes.get(name);
+            if(value == null && !"".equals(attribute.getAnnotation().defaultValue()))
+            {
+                value = attribute.getAnnotation().defaultValue();
+            }
             _automatedFields.get(name).set(this, attribute.convert(value, this));
         }
         catch (IllegalAccessException e)
@@ -292,7 +301,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected AbstractConfiguredObject(UUID id, TaskExecutor taskExecutor)
     {
-        this(id, Collections.<String,Object>emptyMap(), Collections.<String,Object>emptyMap(), taskExecutor);
+        this(id, Collections.<String,Object>emptyMap(), taskExecutor);
     }
 
     public void open()
@@ -1037,9 +1046,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     @Override
-    public String getType()
+    public final String getType()
     {
-        return (String)getAttribute(TYPE);
+        return _type;
     }
 
 

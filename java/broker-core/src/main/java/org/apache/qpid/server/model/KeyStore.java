@@ -31,29 +31,6 @@ public interface KeyStore<X extends KeyStore<X>> extends ConfiguredObject<X>
     String STATE = "state";
     String DESCRIPTION = "description";
 
-    String PATH = "path";
-    String PASSWORD = "password";
-    String KEY_STORE_TYPE = "keyStoreType";
-    String CERTIFICATE_ALIAS = "certificateAlias";
-    String KEY_MANAGER_FACTORY_ALGORITHM = "keyManagerFactoryAlgorithm";
-
-    @ManagedAttribute( secure = true, automate = true, mandatory = true )
-    public String getPassword();
-    
-    @ManagedAttribute( automate = true, mandatory = true)
-    public String getPath();
-
-    @ManagedAttribute( automate = true )
-    public String getCertificateAlias();
-
-    @ManagedAttribute( automate = true )
-    public String getKeyManagerFactoryAlgorithm();
-
-    @ManagedAttribute( automate = true )
-    public String getKeyStoreType();
-
-    public void setPassword(String password);
-
     public KeyManager[] getKeyManagers() throws GeneralSecurityException;
 
 }

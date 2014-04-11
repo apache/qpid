@@ -19,7 +19,7 @@
  *
  */
 {
-  "name": "Broker",
+  "name": "${broker.name}",
   "storeVersion": 1,
   "modelVersion": "1.4",
   "defaultVirtualHost" : "default",

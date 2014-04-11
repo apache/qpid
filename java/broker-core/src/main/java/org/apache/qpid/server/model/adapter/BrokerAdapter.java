@@ -87,13 +87,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         put(STORE_VERSION, String.class);
     }});
 
-    public static final String DEFAULT_NAME = "QpidBroker";
-
-    @SuppressWarnings("serial")
-    private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
-        put(Broker.NAME, DEFAULT_NAME);
-
-    }});
     public static final String MANAGEMENT_MODE_AUTHENTICATION = "MANAGEMENT_MODE_AUTHENTICATION";
     private final ConfiguredObjectFactory _objectFactory;
 
@@ -143,7 +136,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                          Map<String, Object> attributes,
                          SystemContext parent)
     {
-        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(SystemContext.class, parent), DEFAULTS, combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)), parent.getTaskExecutor());
+        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(SystemContext.class, parent),
+              Collections.<String,Object>emptyMap(), combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)), parent.getTaskExecutor());
 
         _objectFactory = parent.getObjectFactory();
         _virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());

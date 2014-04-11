@@ -121,8 +121,8 @@ class QueueConsumerImpl
                       final Class<? extends ServerMessage> messageClass,
                       EnumSet<Option> optionSet)
     {
-        super(Collections.<String,Object>emptyMap(),
-              createAttributeMap(consumerName,filters,optionSet),
+        super(
+                createAttributeMap(consumerName,filters,optionSet),
               queue.getVirtualHost().getTaskExecutor());
         _messageClass = messageClass;
         _sessionReference = target.getSessionModel().getConnectionReference();

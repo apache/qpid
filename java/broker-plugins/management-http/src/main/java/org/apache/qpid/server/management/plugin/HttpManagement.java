@@ -20,21 +20,25 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import java.lang.reflect.Type;
+import java.net.SocketAddress;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.servlet.DispatcherType;
+
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFilter;
-import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
-import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
-import org.apache.qpid.server.management.plugin.servlet.FileServlet;
-import org.apache.qpid.server.management.plugin.servlet.LogFileServlet;
-import org.apache.qpid.server.management.plugin.servlet.rest.*;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
-import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
@@ -45,15 +49,30 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.servlet.DispatcherType;
-import java.lang.reflect.Type;
-import java.net.SocketAddress;
-import java.security.GeneralSecurityException;
-import java.util.*;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFilter;
+import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
+import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
+import org.apache.qpid.server.management.plugin.servlet.FileServlet;
+import org.apache.qpid.server.management.plugin.servlet.LogFileServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.HelperServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LogFileListingServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LoggedOnUserPreferencesServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServlet;
+import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
+import org.apache.qpid.server.model.port.PortWithAuthProvider;
+import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
 @ManagedObject( category = false, type = "MANAGEMENT-HTTP" )
 public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implements HttpManagementConfiguration<HttpManagement>
@@ -62,12 +81,6 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
     // 10 minutes by default
     public static final int DEFAULT_TIMEOUT_IN_SECONDS = 60 * 10;
-    public static final boolean DEFAULT_HTTP_BASIC_AUTHENTICATION_ENABLED = false;
-    public static final boolean DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED = true;
-    public static final boolean DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED = true;
-    public static final boolean DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED = true;
-    public static final String DEFAULT_NAME = "httpManagement";
-
     public static final String TIME_OUT = "sessionTimeout";
     public static final String HTTP_BASIC_AUTHENTICATION_ENABLED = "httpBasicAuthenticationEnabled";
     public static final String HTTPS_BASIC_AUTHENTICATION_ENABLED = "httpsBasicAuthenticationEnabled";
@@ -78,17 +91,6 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
     private static final String OPERATIONAL_LOGGING_NAME = "Web";
 
-
-    @SuppressWarnings("serial")
-    public static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>()
-            {{
-                put(HTTP_BASIC_AUTHENTICATION_ENABLED, DEFAULT_HTTP_BASIC_AUTHENTICATION_ENABLED);
-                put(HTTPS_BASIC_AUTHENTICATION_ENABLED, DEFAULT_HTTPS_BASIC_AUTHENTICATION_ENABLED);
-                put(HTTP_SASL_AUTHENTICATION_ENABLED, DEFAULT_HTTP_SASL_AUTHENTICATION_ENABLED);
-                put(HTTPS_SASL_AUTHENTICATION_ENABLED, DEFAULT_HTTPS_SASL_AUTHENTICATION_ENABLED);
-                put(TIME_OUT, DEFAULT_TIMEOUT_IN_SECONDS);
-                put(NAME, DEFAULT_NAME);
-            }});
 
     @SuppressWarnings("serial")
     private static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
@@ -105,9 +107,24 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
     private Server _server;
 
+    @ManagedAttributeField
+    private boolean _httpsSaslAuthenticationEnabled;
+
+    @ManagedAttributeField
+    private boolean _httpSaslAuthenticationEnabled;
+
+    @ManagedAttributeField
+    private boolean _httpsBasicAuthenticationEnabled;
+
+    @ManagedAttributeField
+    private boolean _httpBasicAuthenticationEnabled;
+
+    @ManagedAttributeField
+    private int _sessionTimeout;
+
     public HttpManagement(UUID id, Broker broker, Map<String, Object> attributes)
     {
-        super(id, DEFAULTS, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES), broker);
+        super(id, Collections.<String,Object>emptyMap(), attributes, broker);
     }
 
     @Override
@@ -165,7 +182,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
     public int getSessionTimeout()
     {
-        return (Integer)getAttribute(TIME_OUT);
+        return _sessionTimeout;
     }
 
     @SuppressWarnings("unchecked")
@@ -201,8 +218,8 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
                     throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
                 }
                 SslContextFactory factory = new SslContextFactory();
-                final boolean needClientAuth = Boolean.valueOf(String.valueOf(port.getAttribute(Port.NEED_CLIENT_AUTH)));
-                final boolean wantClientAuth = Boolean.valueOf(String.valueOf(port.getAttribute(Port.WANT_CLIENT_AUTH)));
+                final boolean needClientAuth = port instanceof PortWithAuthProvider && ((PortWithAuthProvider)port).getNeedClientAuth();
+                final boolean wantClientAuth = port instanceof PortWithAuthProvider && ((PortWithAuthProvider)port).getWantClientAuth();
                 boolean needClientCert = needClientAuth || wantClientAuth;
                 if (needClientCert && trustStores.isEmpty())
                 {
@@ -419,25 +436,25 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     @Override
     public boolean isHttpsSaslAuthenticationEnabled()
     {
-        return (Boolean)getAttribute(HTTPS_SASL_AUTHENTICATION_ENABLED);
+        return _httpsSaslAuthenticationEnabled;
     }
 
     @Override
     public boolean isHttpSaslAuthenticationEnabled()
     {
-        return (Boolean)getAttribute(HTTP_SASL_AUTHENTICATION_ENABLED);
+        return _httpSaslAuthenticationEnabled;
     }
 
     @Override
     public boolean isHttpsBasicAuthenticationEnabled()
     {
-        return (Boolean)getAttribute(HTTPS_BASIC_AUTHENTICATION_ENABLED);
+        return _httpsBasicAuthenticationEnabled;
     }
 
     @Override
     public boolean isHttpBasicAuthenticationEnabled()
     {
-        return (Boolean)getAttribute(HTTP_BASIC_AUTHENTICATION_ENABLED);
+        return _httpBasicAuthenticationEnabled;
     }
 
     @Override
@@ -475,10 +492,4 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         }
     }
 
-
-    @Override
-    public String getPluginType()
-    {
-        return PLUGIN_TYPE;
-    }
 }

@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -89,7 +88,6 @@ import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.MapValueConverter;
-import org.apache.qpid.server.util.ParameterizedTypeImpl;
 
 public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> extends AbstractConfiguredObject<X>
         implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener,
@@ -101,7 +99,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private final long _createTime = System.currentTimeMillis();
 
-    private final ScheduledThreadPoolExecutor _houseKeepingTasks;
+    private ScheduledThreadPoolExecutor _houseKeepingTasks;
 
     private final Broker<?> _broker;
 
@@ -131,31 +129,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             Collections.synchronizedMap(new HashMap<String,MessageSource>());
 
     private final EventLogger _eventLogger;
-
-    @SuppressWarnings("serial")
-    public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
-        put(NAME, String.class);
-        put(TYPE, String.class);
-        put(STATE, State.class);
-
-        put(QUEUE_DEAD_LETTER_QUEUE_ENABLED, Boolean.class);
-
-        put(HOUSEKEEPING_CHECK_PERIOD, Long.class);
-        put(STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE, Long.class);
-        put(STORE_TRANSACTION_IDLE_TIMEOUT_WARN, Long.class);
-        put(STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE, Long.class);
-        put(STORE_TRANSACTION_OPEN_TIMEOUT_WARN, Long.class);
-
-        put(MESSAGE_STORE_SETTINGS, new ParameterizedTypeImpl(Map.class, String.class, Object.class));
-        put(CONFIGURATION_STORE_SETTINGS, new ParameterizedTypeImpl(Map.class, String.class, Object.class));
-
-    }});
-
-    @SuppressWarnings("serial")
-    private static final Map<String, Object> DEFAULTS = Collections.unmodifiableMap(new HashMap<String, Object>(){{
-        put(HOUSE_KEEPING_THREAD_COUNT, Runtime.getRuntime().availableProcessors());
-    }});
-
 
     private final Map<AMQConnectionModel, ConnectionAdapter> _connectionAdapters =
             new HashMap<AMQConnectionModel, ConnectionAdapter>();
@@ -187,10 +160,15 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @ManagedAttributeField
     private long _storeTransactionOpenTimeoutWarn;
 
+    @ManagedAttributeField
+    private int _housekeepingThreadCount;
+
 
     public AbstractVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
     {
-        super(parentsMap(broker), DEFAULTS, enhanceWithId(attributes), broker.getTaskExecutor());
+        super(parentsMap(broker),
+              Collections.<String,Object>emptyMap(),
+              enhanceWithId(attributes), broker.getTaskExecutor());
         _broker = broker;
         _dtxRegistry = new DtxRegistry();
 
@@ -200,9 +178,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
-
-        _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHouseKeepingThreadCount());
-
 
         _queueRegistry = new DefaultQueueRegistry(this);
 
@@ -249,6 +224,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     protected void onOpen()
     {
         super.onOpen();
+        _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());
 
         registerSystemNodes();
 
@@ -377,12 +353,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             throws IllegalStateException, AccessControlException
     {
         throw new IllegalStateException();
-    }
-
-
-    public String getType()
-    {
-        return (String)getAttribute(TYPE);
     }
 
     public String setType(final String currentType, final String desiredType)
@@ -526,19 +496,22 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     protected void shutdownHouseKeeping()
     {
-        _houseKeepingTasks.shutdown();
+        if(_houseKeepingTasks != null)
+        {
+            _houseKeepingTasks.shutdown();
 
-        try
-        {
-            if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
+            try
             {
-                _houseKeepingTasks.shutdownNow();
+                if (!_houseKeepingTasks.awaitTermination(HOUSEKEEPING_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS))
+                {
+                    _houseKeepingTasks.shutdownNow();
+                }
             }
-        }
-        catch (InterruptedException e)
-        {
-            _logger.warn("Interrupted during Housekeeping shutdown:", e);
-            Thread.currentThread().interrupt();
+            catch (InterruptedException e)
+            {
+                _logger.warn("Interrupted during Housekeeping shutdown:", e);
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -1375,12 +1348,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             return AbstractVirtualHost.this;
         }
 
-        @Override
-        public org.apache.qpid.server.model.VirtualHost getVirtualHostModel()
-        {
-            return AbstractVirtualHost.this;
-        }
-
     }
 
 
@@ -1388,12 +1355,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public boolean getDefaultDeadLetterQueueEnabled()
     {
         return isQueue_deadLetterQueueEnabled();
-    }
-
-    @Override
-    public org.apache.qpid.server.model.VirtualHost getModel()
-    {
-        return this;
     }
 
 
@@ -1649,9 +1610,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    public int getHouseKeepingThreadCount()
+    public int getHousekeepingThreadCount()
     {
-        return (Integer)getAttribute(HOUSE_KEEPING_THREAD_COUNT);
+        return _housekeepingThreadCount;
     }
 
 
@@ -1661,24 +1622,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         if (desiredState == State.ACTIVE)
         {
-/*
-            try
-            {
-                onOpen();
-            }
-            catch(RuntimeException e)
-            {
-                changeAttribute(STATE, State.INITIALISING, State.ERRORED);
-                if (_broker.isManagementMode())
-                {
-                    _logger.warn("Failed to activate virtual host: " + getName(), e);
-                }
-                else
-                {
-                    throw e;
-                }
-            }
-*/
             return true;
         }
         else if (desiredState == State.STOPPED)
@@ -1722,7 +1665,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                         _logger.warn("Exception occurred on store deletion", e);
                     }
                 }
-                setAttribute(org.apache.qpid.server.model.VirtualHost.STATE, getState(), State.DELETED);
+                setAttribute(VirtualHost.STATE, getState(), State.DELETED);
                 deleted();
             }
 

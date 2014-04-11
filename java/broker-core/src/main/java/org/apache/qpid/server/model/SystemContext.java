@@ -24,7 +24,6 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -64,7 +63,7 @@ public class SystemContext extends AbstractConfiguredObject<SystemContext>
                          final LogRecorder logRecorder,
                          final BrokerOptions brokerOptions)
     {
-        super(SYSTEM_ID, Collections.<String,Object>emptyMap(), createAttributes(brokerOptions), taskExecutor);
+        super(SYSTEM_ID, createAttributes(brokerOptions), taskExecutor);
         _eventLogger = eventLogger;
         getTaskExecutor().start();
         _objectFactory = configuredObjectFactory;

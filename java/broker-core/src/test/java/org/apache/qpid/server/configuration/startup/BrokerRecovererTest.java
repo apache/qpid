@@ -76,7 +76,11 @@ public class BrokerRecovererTest extends TestCase
 
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getType()).thenReturn(Broker.class.getSimpleName());
-        when(_brokerEntry.getAttributes()).thenReturn(Collections.<String, Object>singletonMap(Broker.MODEL_VERSION, Model.MODEL_VERSION));
+        Map<String, Object> attributesMap = new HashMap<String, Object>();
+        attributesMap.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
+        attributesMap.put(Broker.NAME, getName());
+
+        when(_brokerEntry.getAttributes()).thenReturn(attributesMap);
         when(_brokerEntry.getParents()).thenReturn(Collections.singletonMap(SystemContext.class.getSimpleName(), _systemContext.asObjectRecord()));
 
         //Add a base AuthenticationProvider for all tests
@@ -90,6 +94,7 @@ public class BrokerRecovererTest extends TestCase
     public void testCreateBrokerAttributes()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Broker.NAME, getName());
         attributes.put(Broker.DEFAULT_VIRTUAL_HOST, "test");
         attributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, 1000);
         attributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 2000);
@@ -270,6 +275,7 @@ public class BrokerRecovererTest extends TestCase
             // need to reset all the shared objects for every iteration of the test
             setUp();
             brokerAttributes.put(Broker.MODEL_VERSION, incompatibleVersion);
+            brokerAttributes.put(Broker.NAME, getName());
             when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
 
             try
@@ -293,6 +299,8 @@ public class BrokerRecovererTest extends TestCase
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         String incompatibleVersion = Model.MODEL_MAJOR_VERSION + "." + Integer.MAX_VALUE;
         brokerAttributes.put(Broker.MODEL_VERSION, incompatibleVersion);
+        brokerAttributes.put(Broker.NAME, getName());
+
         when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
 
         try
@@ -311,6 +319,8 @@ public class BrokerRecovererTest extends TestCase
     public void testIncorrectModelVersion() throws Exception
     {
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
+        brokerAttributes.put(Broker.NAME, getName());
+
         String[] versions = { Integer.MAX_VALUE + "_" + 0, "", null };
         for (String modelVersion : versions)
         {

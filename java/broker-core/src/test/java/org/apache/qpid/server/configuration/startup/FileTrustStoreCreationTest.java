@@ -30,9 +30,9 @@ import java.util.UUID;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.Subject;
 
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.security.AbstractKeyStoreAdapter;
 import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -48,7 +48,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
 
-        final TrustStore trustStore = new FileTrustStore(id, broker, attributes);
+        final FileTrustStore trustStore = new FileTrustStore(id, broker, attributes);
         trustStore.open();
         assertNotNull("Trust store configured object is not created", trustStore);
         assertEquals(id, trustStore.getId());
@@ -62,7 +62,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
                 assertEquals(TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD, trustStore.getPassword());
                 assertNotNull(trustStore.getPassword());
                 //verify that we haven't configured the trust store with the actual dummy password value
-                assertFalse(AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK.equals(trustStore.getPassword()));
+                assertFalse(AbstractConfiguredObject.SECURED_STRING_VALUE.equals(trustStore.getPassword()));
                 return null;
             }
         });
@@ -70,7 +70,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
 
         // Verify the remaining attributes, including that the password value returned
         // via getAttribute is actually the dummy value and not the real password
-        attributesCopy.put(TrustStore.PASSWORD, AbstractKeyStoreAdapter.DUMMY_PASSWORD_MASK);
+        attributesCopy.put(FileTrustStore.PASSWORD, AbstractConfiguredObject.SECURED_STRING_VALUE);
         for (Map.Entry<String, Object> attribute : attributesCopy.entrySet())
         {
             Object attributeValue = trustStore.getAttribute(attribute.getKey());
@@ -85,7 +85,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
 
-        String[] mandatoryProperties = {TrustStore.NAME, TrustStore.PATH, TrustStore.PASSWORD};
+        String[] mandatoryProperties = {TrustStore.NAME, FileTrustStore.PATH, FileTrustStore.PASSWORD};
         for (int i = 0; i < mandatoryProperties.length; i++)
         {
             Map<String, Object> properties =  new HashMap<String, Object>(attributes);
@@ -107,11 +107,11 @@ public class FileTrustStoreCreationTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, getName());
-        attributes.put(TrustStore.PATH, TestSSLConstants.BROKER_TRUSTSTORE);
-        attributes.put(TrustStore.PASSWORD, TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD);
-        attributes.put(TrustStore.TRUST_STORE_TYPE, "jks");
-        attributes.put(TrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, TrustManagerFactory.getDefaultAlgorithm());
-        attributes.put(TrustStore.PEERS_ONLY, Boolean.TRUE);
+        attributes.put(FileTrustStore.PATH, TestSSLConstants.BROKER_TRUSTSTORE);
+        attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD);
+        attributes.put(FileTrustStore.TRUST_STORE_TYPE, "jks");
+        attributes.put(FileTrustStore.TRUST_MANAGER_FACTORY_ALGORITHM, TrustManagerFactory.getDefaultAlgorithm());
+        attributes.put(FileTrustStore.PEERS_ONLY, Boolean.TRUE);
         return attributes;
     }
 

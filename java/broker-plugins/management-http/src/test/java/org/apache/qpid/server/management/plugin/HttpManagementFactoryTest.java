@@ -18,15 +18,15 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.test.utils.QpidTestCase;
+import static org.mockito.Mockito.mock;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementFactoryTest extends QpidTestCase
 {
@@ -40,11 +40,13 @@ public class HttpManagementFactoryTest extends QpidTestCase
 
     public void testCreateInstance() throws Exception
     {
+        _attributes.put(ConfiguredObject.NAME, getName());
         _attributes.put(ConfiguredObject.TYPE, HttpManagement.PLUGIN_TYPE);
         _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
         _attributes.put(ConfiguredObject.ID, _id);
 
         HttpManagement management = _pluginFactory.createInstance(_attributes, _broker);
+        management.open();
 
         assertEquals(_broker, management.getParent(Broker.class));
         assertEquals(SESSION_TIMEOUT, management.getSessionTimeout());
