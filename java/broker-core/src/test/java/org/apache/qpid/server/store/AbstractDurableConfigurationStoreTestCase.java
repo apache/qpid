@@ -33,6 +33,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -51,10 +56,6 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
-import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTestCase
 {
@@ -415,6 +416,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(queue.isExclusive()).thenReturn(exclusive);
         when(queue.getId()).thenReturn(_queueId);
         when(queue.getAlternateExchange()).thenReturn(alternateExchange);
+        when(queue.getCategoryClass()).thenReturn((Class)Queue.class);
         final VirtualHostImpl vh = mock(VirtualHostImpl.class);
         when(vh.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(queue.getVirtualHost()).thenReturn(vh);
@@ -466,6 +468,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchange.getTypeName()).thenReturn(getName() + "Type");
         when(exchange.isAutoDelete()).thenReturn(true);
         when(exchange.getId()).thenReturn(_exchangeId);
+        when(exchange.getCategoryClass()).thenReturn(Exchange.class);
+
         ConfiguredObjectRecord exchangeRecord = mock(ConfiguredObjectRecord.class);
         when(exchangeRecord.getId()).thenReturn(_exchangeId);
         when(exchangeRecord.getType()).thenReturn(Exchange.class.getSimpleName());

@@ -43,9 +43,11 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     @ManagedAttributeField
     private int _channelId;
 
-    public SessionAdapter(final AMQSessionModel session, TaskExecutor taskExecutor)
+    public SessionAdapter(final ConnectionAdapter connectionAdapter,
+                          final AMQSessionModel session,
+                          TaskExecutor taskExecutor)
     {
-        super(createAttributes(session), taskExecutor);
+        super(parentsMap(connectionAdapter), createAttributes(session), taskExecutor);
         _session = session;
         _session.addConsumerListener(new ConsumerListener()
         {

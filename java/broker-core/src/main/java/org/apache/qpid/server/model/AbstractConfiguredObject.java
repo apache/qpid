@@ -21,18 +21,13 @@
 package org.apache.qpid.server.model;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,8 +42,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
-
-import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
@@ -65,17 +58,16 @@ import org.apache.qpid.util.Strings;
 
 public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> implements ConfiguredObject<X>
 {
-    private static final Logger LOGGER = Logger.getLogger(AbstractConfiguredObject.class);
     private static final String ID = "id";
 
-    private static final Map<Class<? extends ConfiguredObject>, Collection<Attribute<?,?>>> _allAttributes =
-            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<Attribute<?, ?>>>());
+    private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _allAttributes =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?, ?>>>());
 
-    private static final Map<Class<? extends ConfiguredObject>, Collection<Statistic<?,?>>> _allStatistics =
-            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<Statistic<?, ?>>>());
+    private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?,?>>> _allStatistics =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?, ?>>>());
 
-    private static final Map<Class<? extends ConfiguredObject>, Map<String, Attribute<?,?>>> _allAttributeTypes =
-            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, Attribute<?, ?>>>());
+    private static final Map<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?,?>>> _allAttributeTypes =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?, ?>>>());
 
     private static final Map<Class<? extends ConfiguredObject>, Map<String, Field>> _allAutomatedFields =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, Field>>());
@@ -134,45 +126,35 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @ManagedAttributeField
     private Map<String,String> _context;
 
-    private final Map<String, Attribute<?,?>> _attributeTypes;
+    private final Map<String, ConfiguredObjectAttribute<?,?>> _attributeTypes;
     private final Map<String, Field> _automatedFields;
 
     @ManagedAttributeField
     private String _type;
 
-    protected AbstractConfiguredObject(UUID id,
-                                       Map<String, Object> attributes,
-                                       TaskExecutor taskExecutor)
-    {
-        this(combineIdWithAttributes(id,attributes), taskExecutor);
-    }
-
-    public static Map<String,Object> combineIdWithAttributes(UUID id, Map<String,Object> attributes)
+    protected static Map<String,Object> combineIdWithAttributes(UUID id, Map<String,Object> attributes)
     {
         Map<String,Object> combined = new HashMap<String, Object>(attributes);
         combined.put(ID, id);
         return combined;
     }
 
-
-    protected AbstractConfiguredObject(Map<String, Object> attributes,
-                                       TaskExecutor taskExecutor)
+    protected static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(ConfiguredObject<?>... parents)
     {
-        this(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>emptyMap(),
-             attributes, taskExecutor, true);
+        final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap =
+                new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject<?>>();
+
+        for(ConfiguredObject<?> parent : parents)
+        {
+            parentsMap.put(parent.getCategoryClass(), parent);
+        }
+        return parentsMap;
     }
+
 
     protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor)
-    {
-        this(parents,  attributes, taskExecutor, true);
-    }
-
-    protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
-                                       Map<String, Object> attributes,
-                                       TaskExecutor taskExecutor,
-                                       boolean filterAttributes)
     {
         _taskExecutor = taskExecutor;
         Object idObj = attributes.get(ID);
@@ -184,14 +166,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         else
         {
-            uuid = UUID_CONVERTER.convert(idObj, this);
+            uuid = AttributeValueConverter.UUID_CONVERTER.convert(idObj, this);
         }
         _id = uuid;
 
 
         _attributeTypes = getAttributeTypes(getClass());
         _automatedFields = getAutomatedFields(getClass());
-        _type = getType(getClass());
+        _type = Model.getType(getClass());
         if(attributes.get(TYPE) != null)
         {
             if(!_type.equals(attributes.get(TYPE)))
@@ -216,39 +198,25 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         for(Map.Entry<Class<? extends ConfiguredObject>, ConfiguredObject<?>> entry : parents.entrySet())
         {
-            addParent((Class<ConfiguredObject>) entry.getKey(), entry.getValue());
+            addParent((Class<ConfiguredObject<?>>) entry.getKey(), entry.getValue());
         }
 
-        _name = STRING_CONVERTER.convert(attributes.get(NAME),this);
+        _name = AttributeValueConverter.STRING_CONVERTER.convert(attributes.get(NAME),this);
 
         Collection<String> names = getAttributeNames();
         if(names!=null)
         {
-            if(filterAttributes)
+            for (String name : names)
             {
-                for (String name : names)
+                if (attributes.containsKey(name))
                 {
-                    if (attributes.containsKey(name))
+                    final Object value = attributes.get(name);
+                    if(value != null)
                     {
-                        final Object value = attributes.get(name);
-                        if(value != null)
-                        {
-                            _attributes.put(name, value);
-                        }
+                        _attributes.put(name, value);
                     }
                 }
             }
-            else
-            {
-                for(Map.Entry<String, Object> entry : attributes.entrySet())
-                {
-                    if(entry.getValue()!=null)
-                    {
-                        _attributes.put(entry.getKey(),entry.getValue());
-                    }
-                }
-            }
-
         }
 
         if(!_attributes.containsKey(CREATED_BY))
@@ -263,7 +231,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             _attributes.put(CREATED_TIME, System.currentTimeMillis());
         }
-        for(Attribute<?,?> attr : _attributeTypes.values())
+        for(ConfiguredObjectAttribute<?,?> attr : _attributeTypes.values())
         {
             if(attr.getAnnotation().mandatory() && !(_attributes.containsKey(attr.getName())
                                                      || !"".equals(attr.getAnnotation().defaultValue())))
@@ -278,7 +246,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         try
         {
-            final Attribute attribute = _attributeTypes.get(name);
+            final ConfiguredObjectAttribute attribute = _attributeTypes.get(name);
             if(value == null && !"".equals(attribute.getAnnotation().defaultValue()))
             {
                 value = attribute.getAnnotation().defaultValue();
@@ -289,11 +257,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             throw new ServerScopedRuntimeException("Unable to set the automated attribute " + name + " on the configure object type " + getClass().getName(),e);
         }
-    }
-
-    protected AbstractConfiguredObject(UUID id, TaskExecutor taskExecutor)
-    {
-        this(id, Collections.<String,Object>emptyMap(), taskExecutor);
     }
 
     public void open()
@@ -403,7 +366,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected void resolve()
     {
-        for (Attribute<?, ?> attr : _attributeTypes.values())
+        for (ConfiguredObjectAttribute<?, ?> attr : _attributeTypes.values())
         {
             String attrName = attr.getName();
             ManagedAttribute attrAnnotation = attr.getAnnotation();
@@ -443,7 +406,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public Class<? extends ConfiguredObject> getCategoryClass()
     {
-        return getCategory(getClass());
+        return Model.getCategory(getClass());
     }
 
     public Map<String,String> getContext()
@@ -573,7 +536,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public Object getAttribute(String name)
     {
-        Attribute<X,?> attr = (Attribute<X, ?>) _attributeTypes.get(name);
+        ConfiguredObjectAttribute<X,?> attr = (ConfiguredObjectAttribute<X, ?>) _attributeTypes.get(name);
         if(attr != null && attr.getAnnotation().automate())
         {
             Object value = attr.getValue((X)this);
@@ -601,7 +564,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     @Override
-    public <T> T getAttribute(final Attribute<? super X, T> attr)
+    public <T> T getAttribute(final ConfiguredObjectAttribute<? super X, T> attr)
     {
         return (T) getAttribute(attr.getName());
     }
@@ -666,7 +629,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 //TODO: don't put nulls
                 _attributes.put(name, desired);
-                Attribute<?,?> attr = _attributeTypes.get(name);
+                ConfiguredObjectAttribute<?,?> attr = _attributeTypes.get(name);
                 if(attr != null && attr.getAnnotation().automate())
                 {
                     automatedSetValue(name, desired);
@@ -695,14 +658,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             _parents.put(clazz, parent);
         }
 
-    }
-
-    protected <T extends ConfiguredObject> void removeParent(Class<T> clazz)
-    {
-        synchronized (this)
-        {
-            _parents.remove(clazz);
-        }
     }
 
     public Collection<String> getAttributeNames()
@@ -808,7 +763,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private <C extends ConfiguredObject> void registerChild(final C child)
     {
-        _children.get(child.getCategoryClass()).add(child);
+        Class categoryClass = child.getCategoryClass();
+        _children.get(categoryClass).add(child);
     }
 
 
@@ -1002,9 +958,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public Map<String,Number> getStatistics()
     {
-        Collection<Statistic> stats = getStatistics(getClass());
+        Collection<ConfiguredObjectStatistic> stats = getStatistics(getClass());
         Map<String,Number> map = new HashMap<String,Number>();
-        for(Statistic stat : stats)
+        for(ConfiguredObjectStatistic stat : stats)
         {
             map.put(stat.getName(), (Number) stat.getValue(this));
         }
@@ -1027,107 +983,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     //=========================================================================================
 
-    private static abstract class AttributeOrStatistic<C extends ConfiguredObject, T>
-    {
-
-        protected final String _name;
-        protected final Class<T> _type;
-        protected final Converter<T> _converter;
-        protected final Method _getter;
-
-        private AttributeOrStatistic(final Method getter)
-        {
-
-            _getter = getter;
-            _type = (Class<T>) getTypeFromMethod(getter);
-            _name = getNameFromMethod(getter, _type);
-            _converter = getConverter(_type, getter.getGenericReturnType());
-
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public Class<T> getType()
-        {
-            return _type;
-        }
-
-        public T getValue(C configuredObject)
-        {
-            try
-            {
-                return (T) _getter.invoke(configuredObject);
-            }
-            catch (IllegalAccessException e)
-            {
-                Object o = configuredObject.getAttribute(_name);
-                return _converter.convert(o, configuredObject);
-            }
-            catch (InvocationTargetException e)
-            {
-                Object o = configuredObject.getAttribute(_name);
-                return _converter.convert(o, configuredObject);
-            }
-
-        }
-
-        public Method getGetter()
-        {
-            return _getter;
-        }
-    }
-
-    private static final class Statistic<C extends ConfiguredObject, T extends Number> extends AttributeOrStatistic<C,T>
-    {
-        private Statistic(Class<C> clazz, final Method getter)
-        {
-            super(getter);
-            if(getter.getParameterTypes().length != 0)
-            {
-                throw new IllegalArgumentException("ManagedStatistic annotation should only be added to no-arg getters");
-            }
-
-            if(!Number.class.isAssignableFrom(getType()))
-            {
-                throw new IllegalArgumentException("ManagedStatistic annotation should only be added to getters returning a Number type");
-            }
-            addToStatisticsSet(clazz, this);
-        }
-    }
-
-    public static final class Attribute<C extends ConfiguredObject, T> extends AttributeOrStatistic<C,T>
-    {
-
-        private final ManagedAttribute _annotation;
-
-        private Attribute(Class<C> clazz,
-                          final Method getter,
-                          final ManagedAttribute annotation)
-        {
-            super(getter);
-            if(getter.getParameterTypes().length != 0)
-            {
-                throw new IllegalArgumentException("ManagedAttribute annotation should only be added to no-arg getters");
-            }
-            _annotation = annotation;
-            addToAttributesSet(clazz, this);
-        }
-
-        public ManagedAttribute getAnnotation()
-        {
-            return _annotation;
-        }
-
-        public T convert(final Object value, C object)
-        {
-            return _converter.convert(value, object);
-        }
-    }
-
-    private static String interpolate(ConfiguredObject<?> object, String value)
+    static String interpolate(ConfiguredObject<?> object, String value)
     {
         Map<String,String> inheritedContext = new HashMap<String, String>();
         generateInheritedContext(object, inheritedContext);
@@ -1138,7 +994,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                               new Strings.MapResolver(_defaultContext));
     }
 
-    private static void generateInheritedContext(final ConfiguredObject<?> object,
+    static void generateInheritedContext(final ConfiguredObject<?> object,
                                                  final Map<String, String> inheritedContext)
     {
         Collection<Class<? extends ConfiguredObject>> parents =
@@ -1157,628 +1013,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private static interface Converter<T>
-    {
-        T convert(Object value, final ConfiguredObject object);
-    }
 
-    private static final Converter<String> STRING_CONVERTER = new Converter<String>()
-    {
-        @Override
-        public String convert(final Object value, final ConfiguredObject object)
-        {
-            return value == null ? null : interpolate(object, value.toString());
-        }
-    };
-
-    private static final Converter<UUID> UUID_CONVERTER = new Converter<UUID>()
-    {
-        @Override
-        public UUID convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof UUID)
-            {
-                return (UUID) value;
-            }
-            else if(value instanceof String)
-            {
-                return UUID.fromString(interpolate(object, (String) value));
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a UUID");
-            }
-        }
-    };
-
-    private static final Converter<Long> LONG_CONVERTER = new Converter<Long>()
-    {
-
-        @Override
-        public Long convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Long)
-            {
-                return (Long) value;
-            }
-            else if(value instanceof Number)
-            {
-                return ((Number) value).longValue();
-            }
-            else if(value instanceof String)
-            {
-                return Long.valueOf(interpolate(object, (String) value));
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Long");
-            }
-        }
-    };
-
-    private static final Converter<Integer> INT_CONVERTER = new Converter<Integer>()
-    {
-
-        @Override
-        public Integer convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Integer)
-            {
-                return (Integer) value;
-            }
-            else if(value instanceof Number)
-            {
-                return ((Number) value).intValue();
-            }
-            else if(value instanceof String)
-            {
-                try
-                {
-                    return Integer.valueOf(interpolate(object, (String) value));
-                }
-                catch (NumberFormatException e)
-                {
-                    Map<String,String> context = new HashMap<String, String>();
-                    generateInheritedContext(object, context);
-                    LOGGER.debug(context.toString());
-                    throw e;
-                }
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to an Integer");
-            }
-        }
-    };
-
-
-    private static final Converter<Short> SHORT_CONVERTER = new Converter<Short>()
-    {
-
-        @Override
-        public Short convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Short)
-            {
-                return (Short) value;
-            }
-            else if(value instanceof Number)
-            {
-                return ((Number) value).shortValue();
-            }
-            else if(value instanceof String)
-            {
-                return Short.valueOf(interpolate(object, (String) value));
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Short");
-            }
-        }
-    };
-
-    private static final Converter<Boolean> BOOLEAN_CONVERTER = new Converter<Boolean>()
-    {
-
-        @Override
-        public Boolean convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Boolean)
-            {
-                return (Boolean) value;
-            }
-            else if(value instanceof String)
-            {
-                return Boolean.valueOf(interpolate(object, (String) value));
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Boolean");
-            }
-        }
-    };
-
-    private static final Converter<List> LIST_CONVERTER = new Converter<List>()
-    {
-        @Override
-        public List convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof List)
-            {
-                return Collections.unmodifiableList((List) value);
-            }
-            else if(value instanceof Object[])
-            {
-                return convert(Arrays.asList((Object[])value),object);
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a List");
-            }
-        }
-    };
-
-    public static class GenericListConverter implements Converter<List>
-    {
-
-        private final Converter<?> _memberConverter;
-
-        public GenericListConverter(final Type genericType)
-        {
-            _memberConverter = getConverter(getRawType(genericType),genericType);
-        }
-
-        private static Class getRawType(Type t)
-        {
-            if(t instanceof Class)
-            {
-                return (Class)t;
-            }
-            else if(t instanceof ParameterizedType)
-            {
-                return (Class)((ParameterizedType)t).getRawType();
-            }
-            else if(t instanceof TypeVariable)
-            {
-                Type[] bounds = ((TypeVariable)t).getBounds();
-                if(bounds.length == 1)
-                {
-                    return getRawType(bounds[0]);
-                }
-            }
-            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
-        }
-
-        @Override
-        public List convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Collection)
-            {
-                Collection original = (Collection)value;
-                List converted = new ArrayList(original.size());
-                for(Object member : original)
-                {
-                    converted.add(_memberConverter.convert(member, object));
-                }
-                return Collections.unmodifiableList(converted);
-            }
-            else if(value instanceof Object[])
-            {
-                return convert(Arrays.asList((Object[])value),object);
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                return Collections.unmodifiableList(Collections.singletonList(_memberConverter.convert(value, object)));
-            }
-        }
-    }
-
-
-    private static final Converter<Set> SET_CONVERTER = new Converter<Set>()
-    {
-        @Override
-        public Set convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Set)
-            {
-                return Collections.unmodifiableSet((Set) value);
-            }
-
-            else if(value instanceof Object[])
-            {
-                return convert(new HashSet(Arrays.asList((Object[])value)),object);
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a List");
-            }
-        }
-    };
-
-    public static class GenericSetConverter implements Converter<Set>
-    {
-
-        private final Converter<?> _memberConverter;
-
-        public GenericSetConverter(final Type genericType)
-        {
-            _memberConverter = getConverter(getRawType(genericType),genericType);
-        }
-
-        private static Class getRawType(Type t)
-        {
-            if(t instanceof Class)
-            {
-                return (Class)t;
-            }
-            else if(t instanceof ParameterizedType)
-            {
-                return (Class)((ParameterizedType)t).getRawType();
-            }
-            else if(t instanceof TypeVariable)
-            {
-                Type[] bounds = ((TypeVariable)t).getBounds();
-                if(bounds.length == 1)
-                {
-                    return getRawType(bounds[0]);
-                }
-            }
-            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
-        }
-
-        @Override
-        public Set convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Collection)
-            {
-                Collection original = (Collection)value;
-                Set converted = new HashSet(original.size());
-                for(Object member : original)
-                {
-                    converted.add(_memberConverter.convert(member, object));
-                }
-                return Collections.unmodifiableSet(converted);
-            }
-            else if(value instanceof Object[])
-            {
-                return convert(new HashSet(Arrays.asList((Object[])value)),object);
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                return Collections.unmodifiableSet(Collections.singleton(_memberConverter.convert(value, object)));
-            }
-        }
-    }
-
-
-    private static final Converter<Collection> COLLECTION_CONVERTER = new Converter<Collection>()
-    {
-        @Override
-        public Collection convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Collection)
-            {
-                return Collections.unmodifiableCollection((Collection) value);
-            }
-            else if(value instanceof Object[])
-            {
-                return convert(Arrays.asList((Object[]) value), object);
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a List");
-            }
-        }
-    };
-
-
-    public static class GenericCollectionConverter implements Converter<Collection>
-    {
-
-        private final Converter<?> _memberConverter;
-
-        public GenericCollectionConverter(final Type genericType)
-        {
-            _memberConverter = getConverter(getRawType(genericType),genericType);
-        }
-
-        private static Class getRawType(Type t)
-        {
-            if(t instanceof Class)
-            {
-                return (Class)t;
-            }
-            else if(t instanceof ParameterizedType)
-            {
-                return (Class)((ParameterizedType)t).getRawType();
-            }
-            else if(t instanceof TypeVariable)
-            {
-                Type[] bounds = ((TypeVariable)t).getBounds();
-                if(bounds.length == 1)
-                {
-                    return getRawType(bounds[0]);
-                }
-            }
-            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
-        }
-
-        @Override
-        public Collection convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Collection)
-            {
-                Collection original = (Collection)value;
-                Collection converted = new ArrayList(original.size());
-                for(Object member : original)
-                {
-                    converted.add(_memberConverter.convert(member, object));
-                }
-                return Collections.unmodifiableCollection(converted);
-            }
-            else if(value instanceof Object[])
-            {
-                return convert(Arrays.asList((Object[])value),object);
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                return Collections.unmodifiableCollection(Collections.singletonList(_memberConverter.convert(value, object)));
-            }
-        }
-    }
-
-    private static final Converter<Map> MAP_CONVERTER = new Converter<Map>()
-    {
-        @Override
-        public Map convert(final Object value, final ConfiguredObject object)
-        {
-            if(value instanceof Map)
-            {
-                Map<Object,Object> originalMap = (Map) value;
-                Map resolvedMap = new LinkedHashMap(originalMap.size());
-                for(Map.Entry<Object,Object> entry : originalMap.entrySet())
-                {
-                    Object key = entry.getKey();
-                    Object val = entry.getValue();
-                    resolvedMap.put(key instanceof String ? interpolate(object, (String)key) : key,
-                                    val instanceof String ? interpolate(object, (String)val) : val);
-                }
-                return Collections.unmodifiableMap(resolvedMap);
-            }
-            else if(value == null)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Map");
-            }
-        }
-    };
-
-    private static final class EnumConverter<X extends Enum<X>> implements Converter<X>
-    {
-        private final Class<X> _klazz;
-
-        private EnumConverter(final Class<X> klazz)
-        {
-            _klazz = klazz;
-        }
-
-        @Override
-        public X convert(final Object value, final ConfiguredObject object)
-        {
-            if(value == null)
-            {
-                return null;
-            }
-            else if(_klazz.isInstance(value))
-            {
-                return (X) value;
-            }
-            else if(value instanceof String)
-            {
-                return Enum.valueOf(_klazz, interpolate(object, (String) value));
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a " + _klazz.getName());
-            }
-        }
-    }
-
-
-    private static final class ConfiguredObjectConverter<X extends ConfiguredObject<X>> implements Converter<X>
-    {
-        private final Class<X> _klazz;
-
-        private ConfiguredObjectConverter(final Class<X> klazz)
-        {
-            _klazz = klazz;
-        }
-
-        @Override
-        public X convert(final Object value, final ConfiguredObject object)
-        {
-            if(value == null)
-            {
-                return null;
-            }
-            else if(_klazz.isInstance(value))
-            {
-                return (X) value;
-            }
-            else if(value instanceof UUID)
-            {
-                Collection<X> reachable = getReachableObjects(object,_klazz);
-                for(X candidate : reachable)
-                {
-                    if(candidate.getId().equals(value))
-                    {
-                        return candidate;
-                    }
-                }
-                throw new IllegalArgumentException("Cannot find a " + _klazz.getName() + " with id " + value);
-            }
-            else if(value instanceof String)
-            {
-                String valueStr = interpolate(object, (String) value);
-                Collection<X> reachable = getReachableObjects(object,_klazz);
-                for(X candidate : reachable)
-                {
-                    if(candidate.getName().equals(valueStr))
-                    {
-                        return candidate;
-                    }
-                }
-                try
-                {
-                    UUID id = UUID.fromString(valueStr);
-                    return convert(id, object);
-                }
-                catch (IllegalArgumentException e)
-                {
-                    throw new IllegalArgumentException("Cannot find a " + _klazz.getSimpleName() + " with name '" + valueStr + "'");
-                }
-            }
-            else
-            {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a " + _klazz.getName());
-            }
-        }
-
-    }
-
-    private static <X> Converter<X> getConverter(final Class<X> type, final Type returnType)
-    {
-        if(type == String.class)
-        {
-            return (Converter<X>) STRING_CONVERTER;
-        }
-        else if(type == Integer.class)
-        {
-            return (Converter<X>) INT_CONVERTER;
-        }
-        else if(type == Short.class)
-        {
-            return (Converter<X>) SHORT_CONVERTER;
-        }
-        else if(type == Long.class)
-        {
-            return (Converter<X>) LONG_CONVERTER;
-        }
-        else if(type == Boolean.class)
-        {
-            return (Converter<X>) BOOLEAN_CONVERTER;
-        }
-        else if(type == UUID.class)
-        {
-            return (Converter<X>) UUID_CONVERTER;
-        }
-        else if(Enum.class.isAssignableFrom(type))
-        {
-            return (Converter<X>) new EnumConverter((Class<? extends Enum>)type);
-        }
-        else if(List.class.isAssignableFrom(type))
-        {
-            if (returnType instanceof ParameterizedType)
-            {
-                Type parameterizedType = ((ParameterizedType) returnType).getActualTypeArguments()[0];
-                return (Converter<X>) new GenericListConverter(parameterizedType);
-            }
-            else
-            {
-                return (Converter<X>) LIST_CONVERTER;
-            }
-        }
-        else if(Set.class.isAssignableFrom(type))
-        {
-            if (returnType instanceof ParameterizedType)
-            {
-                Type parameterizedType = ((ParameterizedType) returnType).getActualTypeArguments()[0];
-                return (Converter<X>) new GenericSetConverter(parameterizedType);
-            }
-            else
-            {
-                return (Converter<X>) SET_CONVERTER;
-            }
-        }
-        else if(Map.class.isAssignableFrom(type))
-        {
-            return (Converter<X>) MAP_CONVERTER;
-        }
-        else if(Collection.class.isAssignableFrom(type))
-        {
-            if (returnType instanceof ParameterizedType)
-            {
-                Type parameterizedType = ((ParameterizedType) returnType).getActualTypeArguments()[0];
-                return (Converter<X>) new GenericCollectionConverter(parameterizedType);
-            }
-            else
-            {
-                return (Converter<X>) COLLECTION_CONVERTER;
-            }
-        }
-        else if(ConfiguredObject.class.isAssignableFrom(type))
-        {
-            return (Converter<X>) new ConfiguredObjectConverter(type);
-        }
-        throw new IllegalArgumentException("Cannot create attributes of type " + type.getName());
-    }
-
-    private static void addToAttributesSet(final Class<? extends ConfiguredObject> clazz, final Attribute<?, ?> attribute)
+    private static void addToAttributesSet(final Class<? extends ConfiguredObject> clazz, final ConfiguredObjectAttribute<?, ?> attribute)
     {
         synchronized (_allAttributes)
         {
-            Collection<Attribute<?,?>> classAttributes = _allAttributes.get(clazz);
+            Collection<ConfiguredObjectAttribute<?,?>> classAttributes = _allAttributes.get(clazz);
             if(classAttributes == null)
             {
-                classAttributes = new ArrayList<Attribute<?, ?>>();
-                for(Map.Entry<Class<? extends ConfiguredObject>, Collection<Attribute<?,?>>> entry : _allAttributes.entrySet())
+                classAttributes = new ArrayList<ConfiguredObjectAttribute<?, ?>>();
+                for(Map.Entry<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> entry : _allAttributes.entrySet())
                 {
                     if(entry.getKey().isAssignableFrom(clazz))
                     {
@@ -1788,7 +1032,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 _allAttributes.put(clazz, classAttributes);
 
             }
-            for(Map.Entry<Class<? extends ConfiguredObject>, Collection<Attribute<?,?>>> entry : _allAttributes.entrySet())
+            for(Map.Entry<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> entry : _allAttributes.entrySet())
             {
                 if(clazz.isAssignableFrom(entry.getKey()))
                 {
@@ -1798,15 +1042,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         }
     }
-    private static void addToStatisticsSet(final Class<? extends ConfiguredObject> clazz, final Statistic<?, ?> statistic)
+    private static void addToStatisticsSet(final Class<? extends ConfiguredObject> clazz, final ConfiguredObjectStatistic<?, ?> statistic)
     {
         synchronized (_allStatistics)
         {
-            Collection<Statistic<?,?>> classAttributes = _allStatistics.get(clazz);
+            Collection<ConfiguredObjectStatistic<?,?>> classAttributes = _allStatistics.get(clazz);
             if(classAttributes == null)
             {
-                classAttributes = new ArrayList<Statistic<?, ?>>();
-                for(Map.Entry<Class<? extends ConfiguredObject>, Collection<Statistic<?,?>>> entry : _allStatistics.entrySet())
+                classAttributes = new ArrayList<ConfiguredObjectStatistic<?, ?>>();
+                for(Map.Entry<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?,?>>> entry : _allStatistics.entrySet())
                 {
                     if(entry.getKey().isAssignableFrom(clazz))
                     {
@@ -1816,7 +1060,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 _allStatistics.put(clazz, classAttributes);
 
             }
-            for(Map.Entry<Class<? extends ConfiguredObject>, Collection<Statistic<?,?>>> entry : _allStatistics.entrySet())
+            for(Map.Entry<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?,?>>> entry : _allStatistics.entrySet())
             {
                 if(clazz.isAssignableFrom(entry.getKey()))
                 {
@@ -1851,8 +1095,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 processAttributes((Class<? extends ConfiguredObject>) superclass);
             }
 
-            final ArrayList<Attribute<?, ?>> attributeList = new ArrayList<Attribute<?, ?>>();
-            final ArrayList<Statistic<?, ?>> statisticList = new ArrayList<Statistic<?, ?>>();
+            final ArrayList<ConfiguredObjectAttribute<?, ?>> attributeList = new ArrayList<ConfiguredObjectAttribute<?, ?>>();
+            final ArrayList<ConfiguredObjectStatistic<?, ?>> statisticList = new ArrayList<ConfiguredObjectStatistic<?, ?>>();
 
             _allAttributes.put(clazz, attributeList);
             _allStatistics.put(clazz, statisticList);
@@ -1861,16 +1105,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 if(ConfiguredObject.class.isAssignableFrom(parent))
                 {
-                    Collection<Attribute<?, ?>> attrs = _allAttributes.get(parent);
-                    for(Attribute<?,?> attr : attrs)
+                    Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(parent);
+                    for(ConfiguredObjectAttribute<?,?> attr : attrs)
                     {
                         if(!attributeList.contains(attr))
                         {
                             attributeList.add(attr);
                         }
                     }
-                    Collection<Statistic<?, ?>> stats = _allStatistics.get(parent);
-                    for(Statistic<?,?> stat : stats)
+                    Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(parent);
+                    for(ConfiguredObjectStatistic<?,?> stat : stats)
                     {
                         if(!statisticList.contains(stat))
                         {
@@ -1881,16 +1125,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
             {
-                Collection<Attribute<?, ?>> attrs = _allAttributes.get(superclass);
-                Collection<Statistic<?, ?>> stats = _allStatistics.get(superclass);
-                for(Attribute<?,?> attr : attrs)
+                Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(superclass);
+                Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(superclass);
+                for(ConfiguredObjectAttribute<?,?> attr : attrs)
                 {
                     if(!attributeList.contains(attr))
                     {
                         attributeList.add(attr);
                     }
                 }
-                for(Statistic<?,?> stat : stats)
+                for(ConfiguredObjectStatistic<?,?> stat : stats)
                 {
                     if(!statisticList.contains(stat))
                     {
@@ -1905,24 +1149,24 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
                 if(annotation != null)
                 {
-                    Attribute<X,?> newAttr = new Attribute(clazz, m, annotation);
+                    addToAttributesSet(clazz, new ConfiguredObjectAttribute(clazz, m, annotation));
                 }
                 else
                 {
                     ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
                     if(statAnnotation != null)
                     {
-                        Statistic<X,?> newStat = new Statistic(clazz,m);
+                        addToStatisticsSet(clazz, new ConfiguredObjectStatistic(clazz,m));
                     }
                 }
             }
 
-            Map<String,Attribute<?,?>> attrMap = new HashMap<String, Attribute<?, ?>>();
+            Map<String,ConfiguredObjectAttribute<?,?>> attrMap = new HashMap<String, ConfiguredObjectAttribute<?, ?>>();
             Map<String,Field> fieldMap = new HashMap<String, Field>();
 
 
-            Collection<Attribute<?, ?>> attrCol = _allAttributes.get(clazz);
-            for(Attribute<?,?> attr : attrCol)
+            Collection<ConfiguredObjectAttribute<?, ?>> attrCol = _allAttributes.get(clazz);
+            for(ConfiguredObjectAttribute<?,?> attr : attrCol)
             {
                 attrMap.put(attr.getName(), attr);
                 if(attr.getAnnotation().automate())
@@ -1960,7 +1204,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private static Field findField(final Attribute<?, ?> attr, Class<?> objClass)
+    private static Field findField(final ConfiguredObjectAttribute<?, ?> attr, Class<?> objClass)
     {
         Class<?> clazz = objClass;
         while(clazz != null)
@@ -1982,94 +1226,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         throw new ServerScopedRuntimeException("Unable to find field definition for automated field " + attr.getName() + " in class " + objClass.getName());
     }
 
-    private static String getNameFromMethod(final Method m, final Class<?> type)
-    {
-        String methodName = m.getName();
-        String baseName;
-
-        if(type == Boolean.class )
-        {
-            if((methodName.startsWith("get") || methodName.startsWith("has")) && methodName.length() >= 4)
-            {
-                baseName = methodName.substring(3);
-            }
-            else if(methodName.startsWith("is") && methodName.length() >= 3)
-            {
-                baseName = methodName.substring(2);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Method name " + methodName + " does not conform to the required pattern for ManagedAttributes");
-            }
-        }
-        else
-        {
-            if(methodName.startsWith("get") && methodName.length() >= 4)
-            {
-                baseName = methodName.substring(3);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Method name " + methodName + " does not conform to the required pattern for ManagedAttributes");
-            }
-        }
-
-        String name = baseName.length() == 1 ? baseName.toLowerCase() : baseName.substring(0,1).toLowerCase() + baseName.substring(1);
-        name = name.replace('_','.');
-        return name;
-    }
-
-    private static Class<?> getTypeFromMethod(final Method m)
-    {
-        Class<?> type = m.getReturnType();
-        if(type.isPrimitive())
-        {
-            if(type == Boolean.TYPE)
-            {
-                type = Boolean.class;
-            }
-            else if(type == Byte.TYPE)
-            {
-                type = Byte.class;
-            }
-            else if(type == Short.TYPE)
-            {
-                type = Short.class;
-            }
-            else if(type == Integer.TYPE)
-            {
-                type = Integer.class;
-            }
-            else if(type == Long.TYPE)
-            {
-                type = Long.class;
-            }
-            else if(type == Float.TYPE)
-            {
-                type = Float.class;
-            }
-            else if(type == Double.TYPE)
-            {
-                type = Double.class;
-            }
-            else if(type == Character.TYPE)
-            {
-                type = Character.class;
-            }
-        }
-        return type;
-    }
-
     public static <X extends ConfiguredObject> Collection<String> getAttributeNames(Class<X> clazz)
     {
-        final Collection<Attribute<? super X, ?>> attrs = getAttributes(clazz);
+        final Collection<ConfiguredObjectAttribute<? super X, ?>> attrs = getAttributes(clazz);
 
         return new AbstractCollection<String>()
         {
             @Override
             public Iterator<String> iterator()
             {
-                final Iterator<Attribute<? super X, ?>> underlyingIterator = attrs.iterator();
+                final Iterator<ConfiguredObjectAttribute<? super X, ?>> underlyingIterator = attrs.iterator();
                 return new Iterator<String>()
                 {
                     @Override
@@ -2101,29 +1267,29 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     }
 
-    protected static <X extends ConfiguredObject> Collection<Attribute<? super X, ?>> getAttributes(final Class<X> clazz)
+    protected static <X extends ConfiguredObject> Collection<ConfiguredObjectAttribute<? super X, ?>> getAttributes(final Class<X> clazz)
     {
         if(!_allAttributes.containsKey(clazz))
         {
             processAttributes(clazz);
         }
-        final Collection<Attribute<? super X, ?>> attributes = (Collection) _allAttributes.get(clazz);
+        final Collection<ConfiguredObjectAttribute<? super X, ?>> attributes = (Collection) _allAttributes.get(clazz);
         return attributes;
     }
 
 
-    protected static Collection<Statistic> getStatistics(final Class<? extends ConfiguredObject> clazz)
+    protected static Collection<ConfiguredObjectStatistic> getStatistics(final Class<? extends ConfiguredObject> clazz)
     {
         if(!_allStatistics.containsKey(clazz))
         {
             processAttributes(clazz);
         }
-        final Collection<Statistic> statistics = (Collection) _allStatistics.get(clazz);
+        final Collection<ConfiguredObjectStatistic> statistics = (Collection) _allStatistics.get(clazz);
         return statistics;
     }
 
 
-    private static Map<String, Attribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
+    private static Map<String, ConfiguredObjectAttribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
     {
         if(!_allAttributeTypes.containsKey(clazz))
         {
@@ -2141,10 +1307,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _allAutomatedFields.get(clazz);
     }
 
-    private static <X extends ConfiguredObject<X>> Collection<X> getReachableObjects(final ConfiguredObject<?> object,
+    static <X extends ConfiguredObject<X>> Collection<X> getReachableObjects(final ConfiguredObject<?> object,
                                                                                      final Class<X> clazz)
     {
-        Class<? extends ConfiguredObject> category = getCategory(object.getClass());
+        Class<? extends ConfiguredObject> category = Model.getCategory(object.getClass());
         Class<? extends ConfiguredObject> ancestorClass = getAncestorClassWithGivenDescendant(category, clazz);
         if(ancestorClass != null)
         {
@@ -2259,74 +1425,5 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return allDescendants.contains(descendantClass);
     }
 
-    static Class<? extends ConfiguredObject> getCategory(final Class<?> clazz)
-    {
-        ManagedObject annotation = clazz.getAnnotation(ManagedObject.class);
-        if(annotation != null && annotation.category())
-        {
-            return (Class<? extends ConfiguredObject>) clazz;
-        }
-        for(Class<?> iface : clazz.getInterfaces() )
-        {
-            Class<? extends ConfiguredObject> cat = getCategory(iface);
-            if(cat != null)
-            {
-                return cat;
-            }
-        }
-        if(clazz.getSuperclass() != null)
-        {
-            return getCategory(clazz.getSuperclass());
-        }
-        return null;
-    }
 
-
-    protected static String getType(final Class<? extends ConfiguredObject> clazz)
-    {
-        ManagedObject annotation = clazz.getAnnotation(ManagedObject.class);
-        if(annotation != null)
-        {
-            if(!"".equals(annotation.type()))
-            {
-                return annotation.type();
-            }
-        }
-
-        if(clazz.getSuperclass() != null && ConfiguredObject.class.isAssignableFrom(clazz.getSuperclass()))
-        {
-            String type = getType((Class<? extends ConfiguredObject>) clazz.getSuperclass());
-            if(!"".equals(type))
-            {
-                return type;
-            }
-        }
-
-        for(Class<?> iface : clazz.getInterfaces() )
-        {
-            if(ConfiguredObject.class.isAssignableFrom(iface))
-            {
-                String type = getType((Class<? extends ConfiguredObject>) iface);
-                if(!"".equals(type))
-                {
-                    return type;
-                }
-            }
-        }
-        Class<? extends ConfiguredObject> category = getCategory(clazz);
-        if(category == null)
-        {
-            return "";
-        }
-        annotation = category.getAnnotation(ManagedObject.class);
-        if(annotation == null)
-        {
-            throw new NullPointerException("No definition found for category " + category.getSimpleName());
-        }
-        if(!"".equals(annotation.defaultType()))
-        {
-            return annotation.defaultType();
-        }
-        return category.getSimpleName();
-    }
 }

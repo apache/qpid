@@ -136,7 +136,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                          Map<String, Object> attributes,
                          SystemContext parent)
     {
-        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(SystemContext.class, parent),
+        super(parentsMap(parent),
               combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)), parent.getTaskExecutor());
 
         _objectFactory = parent.getObjectFactory();

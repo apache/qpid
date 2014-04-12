@@ -60,7 +60,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
 
     public ConnectionAdapter(final AMQConnectionModel conn, TaskExecutor taskExecutor)
     {
-        super(createAttributes(conn), taskExecutor);
+        super(parentsMap(conn.getVirtualHost()),createAttributes(conn), taskExecutor);
         _connection = conn;
         open();
         conn.addSessionListener(this);
@@ -344,7 +344,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         {
             if(!_sessionAdapters.containsKey(session))
             {
-                SessionAdapter adapter = new SessionAdapter(session, getTaskExecutor());
+                SessionAdapter adapter = new SessionAdapter(this, session, getTaskExecutor());
                 _sessionAdapters.put(session, adapter);
                 childAdded(adapter);
             }

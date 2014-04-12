@@ -85,7 +85,7 @@ public class FileSystemPreferencesProvider extends AbstractConfiguredObject<File
     public FileSystemPreferencesProvider(UUID id, Map<String, Object> attributes,
                                             AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {
-        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(AuthenticationProvider.class, authenticationProvider),
+        super(parentsMap(authenticationProvider),
               combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)),
               authenticationProvider.getParent(Broker.class).getTaskExecutor());
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);

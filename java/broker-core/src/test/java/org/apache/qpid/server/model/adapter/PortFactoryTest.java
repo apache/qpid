@@ -71,6 +71,7 @@ public class PortFactoryTest extends QpidTestCase
     {
         when(_authProvider.getName()).thenReturn(_authProviderName);
         when(_broker.getChildren(eq(AuthenticationProvider.class))).thenReturn(Collections.singleton(_authProvider));
+        when(_broker.getCategoryClass()).thenReturn(Broker.class);
 
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);

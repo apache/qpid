@@ -52,7 +52,6 @@ import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -109,8 +108,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     public AbstractExchange(VirtualHostImpl vhost, Map<String, Object> attributes) throws UnknownExchangeException
     {
-        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(VirtualHost.class, vhost),
-              attributes, vhost.getTaskExecutor());
+        super(parentsMap(vhost), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
 
         _durable = MapValueConverter.getBooleanAttribute(org.apache.qpid.server.model.Exchange.DURABLE, attributes);

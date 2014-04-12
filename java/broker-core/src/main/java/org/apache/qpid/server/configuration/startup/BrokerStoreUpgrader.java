@@ -20,6 +20,7 @@ package org.apache.qpid.server.configuration.startup;/*
  */
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -41,6 +43,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreUpgrader;
 import org.apache.qpid.server.store.NonNullUpgrader;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.server.util.Action;
 
 public class BrokerStoreUpgrader
 {
@@ -732,9 +735,47 @@ public class BrokerStoreUpgrader
 
             _systemContext.resolveObjects(_records.values().toArray(new ConfiguredObjectRecord[_records.size()]));
 
-            _systemContext.getBroker().addChangeListener(new StoreConfigurationChangeListener(_store));
+            final StoreConfigurationChangeListener configChangeListener = new StoreConfigurationChangeListener(_store);
+            applyRecursively(_systemContext.getBroker(),
+                             new Action<ConfiguredObject<?>>()
+                             {
+                                 @Override
+                                 public void performAction(final ConfiguredObject<?> object)
+                                 {
+                                     object.addChangeListener(configChangeListener);
+                                 }
+
+
+                             });
 
             return _version;
+        }
+
+        private void applyRecursively(final ConfiguredObject<?> object, final Action<ConfiguredObject<?>> action)
+        {
+            applyRecursively(object, action, new HashSet<ConfiguredObject<?>>());
+        }
+
+        private void applyRecursively(final ConfiguredObject<?> object,
+                                      final Action<ConfiguredObject<?>> action,
+                                      final HashSet<ConfiguredObject<?>> visited)
+        {
+            if(!visited.contains(object))
+            {
+                visited.add(object);
+                action.performAction(object);
+                for(Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(object.getCategoryClass()))
+                {
+                    Collection<? extends ConfiguredObject> children = object.getChildren(childClass);
+                    if(children != null)
+                    {
+                        for(ConfiguredObject<?> child : children)
+                        {
+                            applyRecursively(child, action, visited);
+                        }
+                    }
+                }
+            }
         }
 
         private String getCurrentVersion()

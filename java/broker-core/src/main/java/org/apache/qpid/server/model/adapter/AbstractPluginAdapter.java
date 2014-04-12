@@ -40,7 +40,7 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
 
     protected AbstractPluginAdapter(UUID id, Map<String, Object> attributes, Broker broker)
     {
-        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(Broker.class, broker),
+        super(parentsMap(broker),
               combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
         _broker = broker;
     }

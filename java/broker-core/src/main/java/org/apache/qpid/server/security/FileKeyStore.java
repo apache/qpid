@@ -40,7 +40,6 @@ import javax.net.ssl.KeyManagerFactory;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -117,7 +116,7 @@ public class FileKeyStore extends AbstractConfiguredObject<FileKeyStore> impleme
 
     public FileKeyStore(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
-        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
+        super(parentsMap(broker),
               combineIdWithAttributes(id, attributes),
               broker.getTaskExecutor());
 

@@ -69,7 +69,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         final BrokerOptions brokerOptions = mock(BrokerOptions.class);
         when(brokerOptions.getConfigurationStoreLocation()).thenReturn(_userStoreLocation.getAbsolutePath());
         _systemContext = new SystemContext(new TaskExecutor(),
-                                                  new ConfiguredObjectFactory(),
+                                                  new ConfiguredObjectFactory(Model.getInstance()),
                                                   mock(EventLogger.class),
                                                   mock(LogRecorder.class),
                                                   brokerOptions);

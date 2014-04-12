@@ -88,7 +88,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
                         Map<String, Object> attributes,
                         TaskExecutor taskExecutor)
     {
-        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
+        super(parentsMap(broker),
               combineIdWithAttributes(id,attributes),
               taskExecutor);
         _broker = broker;

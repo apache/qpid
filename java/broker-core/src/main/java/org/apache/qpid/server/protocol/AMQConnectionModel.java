@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.net.SocketAddress;
+import java.security.Principal;
+import java.util.List;
+
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.Deletable;
-import org.apache.qpid.transport.SessionListener;
-
-import java.net.SocketAddress;
-import java.security.Principal;
-import java.util.List;
-import java.util.UUID;
 
 public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends AMQSessionModel<S,T>> extends StatisticsGatherer, Deletable<T>
 {
@@ -95,6 +94,8 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
     void stop();
 
     boolean isStopped();
+
+    VirtualHost<?,?,?> getVirtualHost();
 
     String getVirtualHostName();
 

@@ -104,7 +104,7 @@ public class FileTrustStore extends AbstractConfiguredObject<FileTrustStore> imp
 
     public FileTrustStore(UUID id, Broker<?> broker, Map<String, Object> attributes)
     {
-        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
+        super(parentsMap(broker),
               combineIdWithAttributes(id, attributes),
               broker.getTaskExecutor());
         _broker = broker;

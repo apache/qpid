@@ -27,7 +27,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,7 +47,6 @@ import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -272,7 +270,7 @@ public class ScramSHA1AuthenticationManager
                 userAttrs.put(User.PASSWORD, createStoredPassword(password));
                 userAttrs.put(User.TYPE, SCRAM_USER_TYPE);
                 ScramAuthUser user = new ScramAuthUser(userAttrs, this);
-                _users.put(username, user);
+                user.create();
 
                 return true;
             }
@@ -420,14 +418,6 @@ public class ScramSHA1AuthenticationManager
 
     }
 
-    private static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(final ScramSHA1AuthenticationManager scramSHA1AuthenticationManager)
-    {
-
-        final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> map = new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject<?>>();
-        map.put(AuthenticationProvider.class, scramSHA1AuthenticationManager);
-        return map;
-    }
-
     @Override
     public ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(final String type)
     {
@@ -452,12 +442,20 @@ public class ScramSHA1AuthenticationManager
         }
 
         @Override
+        protected void onOpen()
+        {
+            super.onOpen();
+            _authenticationManager._users.put(getName(), this);
+        }
+
+        @Override
         protected boolean setState(final State currentState, final State desiredState)
         {
             if(desiredState == State.DELETED)
             {
                 _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.DELETE, getName());
                 _authenticationManager._users.remove(getName());
+                _authenticationManager.unregisterChild(this);
                 _authenticationManager.childRemoved(this);
                 return true;
             }
@@ -652,13 +650,12 @@ public class ScramSHA1AuthenticationManager
         {
             String username = (String) attributes.get("name");
             String password = (String) attributes.get("password");
-            Principal p = new UsernamePrincipal(username);
 
             if(createUser(username, password,null))
             {
                 @SuppressWarnings("unchecked")
-                C principalAdapter = (C) _users.get(username);
-                return principalAdapter;
+                C user = (C) _users.get(username);
+                return user;
             }
             else
             {
@@ -669,25 +666,4 @@ public class ScramSHA1AuthenticationManager
         return super.addChild(childClass, attributes, otherParents);
     }
 
-    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
-    {
-        if(clazz == User.class)
-        {
-            return new ArrayList(_users.values());
-        }
-        else
-        {
-            return super.getChildren(clazz);
-        }
-    }
-
-    public void instantiateUser(User<?> user)
-    {
-        if(!(user instanceof ScramAuthUser))
-        {
-            throw new IllegalArgumentException("Only users of type " + ScramAuthUser.class.getSimpleName() + " can be add to a " + getClass().getSimpleName());
-        }
-        _users.put(user.getName(), (ScramAuthUser) user);
-
-    }
 }

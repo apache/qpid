@@ -53,7 +53,7 @@ public class FileBasedGroupProvider
                                   Broker broker,
                                   Map<String, Object> attributes)
     {
-        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
+        super(parentsMap(broker),
               combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
 
 
@@ -358,7 +358,7 @@ public class FileBasedGroupProvider
 
         public GroupAdapter(Map<String,Object> attributes, TaskExecutor taskExecutor)
         {
-            super(attributes, taskExecutor);
+            super(parentsMap(FileBasedGroupProvider.this), attributes, taskExecutor);
         }
 
 
@@ -508,7 +508,8 @@ public class FileBasedGroupProvider
 
             public GroupMemberAdapter(Map<String,Object> attrMap, TaskExecutor taskExecutor)
             {
-                super(attrMap, taskExecutor);
+                // TODO - need to relate to the User object
+                super(parentsMap(GroupAdapter.this),attrMap, taskExecutor);
             }
 
             @Override

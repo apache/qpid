@@ -438,7 +438,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         return _subject;
     }
 
-    VirtualHostImpl getVirtualHost()
+    public VirtualHostImpl getVirtualHost()
     {
         return _vhost;
     }

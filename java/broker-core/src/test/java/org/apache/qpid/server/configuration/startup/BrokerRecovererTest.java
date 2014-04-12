@@ -70,7 +70,7 @@ public class BrokerRecovererTest extends TestCase
     {
         super.setUp();
 
-        _configuredObjectFactory = new ConfiguredObjectFactory();
+        _configuredObjectFactory = new ConfiguredObjectFactory(Model.getInstance());
         _systemContext = new SystemContext(mock(TaskExecutor.class),
                                            _configuredObjectFactory, mock(EventLogger.class), mock(LogRecorder.class), mock(BrokerOptions.class));
 
