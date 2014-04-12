@@ -198,13 +198,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return attributes;
     }
 
-    private static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(Broker<?> broker)
-    {
-        final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap = new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject<?>>();
-        parentsMap.put(Broker.class, broker);
-        return parentsMap;
-    }
-
     public void validate()
     {
         super.validate();

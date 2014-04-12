@@ -39,6 +39,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.SystemContext;
@@ -74,7 +75,8 @@ public class TestBrokerConfiguration
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation)
     {
-        _store = new MemoryConfigurationEntryStore(new SystemContext(new TaskExecutor(), new ConfiguredObjectFactory(),
+        _store = new MemoryConfigurationEntryStore(new SystemContext(new TaskExecutor(), new ConfiguredObjectFactory(
+                Model.getInstance()),
                                                                      mock(EventLogger.class), mock(LogRecorder.class),
                                                                      mock(BrokerOptions.class)),
                                                    intialStoreLocation,

@@ -39,8 +39,12 @@ public class ConfiguredObjectFactory
             new HashMap<String, Map<String, ConfiguredObjectTypeFactory>>();
     private final Map<String, Collection<String>> _supportedTypes = new HashMap<String, Collection<String>>();
 
-    public ConfiguredObjectFactory()
+    private final Model _model;
+
+    public ConfiguredObjectFactory(Model model)
     {
+        _model = model;
+
         QpidServiceLoader<ConfiguredObjectTypeFactory> serviceLoader = new QpidServiceLoader<ConfiguredObjectTypeFactory>();
         Iterable<ConfiguredObjectTypeFactory> allFactories = serviceLoader.instancesOf(ConfiguredObjectTypeFactory.class);
         for(ConfiguredObjectTypeFactory factory : allFactories)
@@ -81,7 +85,7 @@ public class ConfiguredObjectFactory
 
         String type = (String) record.getAttributes().get(ConfiguredObject.TYPE);
 
-        ConfiguredObjectTypeFactory factory = getConfiguredObjectTypeFactory(category, type);
+        ConfiguredObjectTypeFactory<X> factory = getConfiguredObjectTypeFactory(category, type);
 
         if(factory == null)
         {
@@ -101,7 +105,7 @@ public class ConfiguredObjectFactory
         }
         String type = (String) attributes.get(ConfiguredObject.TYPE);
 
-        ConfiguredObjectTypeFactory factory;
+        ConfiguredObjectTypeFactory<X> factory;
 
         if(type != null)
         {
@@ -119,7 +123,7 @@ public class ConfiguredObjectFactory
         return factory;
     }
 
-    public ConfiguredObjectTypeFactory getConfiguredObjectTypeFactory(final String category, final String type)
+    public <X extends ConfiguredObject<X>> ConfiguredObjectTypeFactory<X> getConfiguredObjectTypeFactory(final String category, final String type)
     {
         Map<String, ConfiguredObjectTypeFactory> categoryFactories = _allFactories.get(category);
         if(categoryFactories == null)
@@ -138,4 +142,11 @@ public class ConfiguredObjectFactory
     {
         return Collections.unmodifiableCollection(_supportedTypes.get(category.getSimpleName()));
     }
+
+
+    public Model getModel()
+    {
+        return _model;
+    }
+
 }

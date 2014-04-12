@@ -49,9 +49,9 @@ public abstract class AbstractUnresolvedObject<C extends ConfiguredObject<C>> im
         _record = record;
         _parents = parents;
 
-        Collection<AbstractConfiguredObject.Attribute<? super C, ?>> attributes =
+        Collection<ConfiguredObjectAttribute<? super C, ?>> attributes =
                 AbstractConfiguredObject.getAttributes(clazz);
-        for(AbstractConfiguredObject.Attribute<? super C, ?> attribute : attributes)
+        for(ConfiguredObjectAttribute<? super C, ?> attribute : attributes)
         {
             final Class<?> attributeType = attribute.getType();
             if(ConfiguredObject.class.isAssignableFrom(attributeType))

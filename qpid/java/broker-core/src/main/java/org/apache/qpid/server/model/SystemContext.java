@@ -63,7 +63,9 @@ public class SystemContext extends AbstractConfiguredObject<SystemContext>
                          final LogRecorder logRecorder,
                          final BrokerOptions brokerOptions)
     {
-        super(SYSTEM_ID, createAttributes(brokerOptions), taskExecutor);
+        super(parentsMap(),
+              combineIdWithAttributes(SYSTEM_ID, createAttributes(brokerOptions)),
+              taskExecutor);
         _eventLogger = eventLogger;
         getTaskExecutor().start();
         _objectFactory = configuredObjectFactory;

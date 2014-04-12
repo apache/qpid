@@ -47,6 +47,7 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
@@ -99,7 +100,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
         final BrokerOptions brokerOptions = mock(BrokerOptions.class);
         when(brokerOptions.getConfigurationStoreLocation()).thenReturn(absolutePath);
         SystemContext context = new SystemContext(new TaskExecutor(),
-                                                  new ConfiguredObjectFactory(),
+                                                  new ConfiguredObjectFactory(Model.getInstance()),
                                                   mock(EventLogger.class),
                                                   mock(LogRecorder.class),
                                                   brokerOptions);

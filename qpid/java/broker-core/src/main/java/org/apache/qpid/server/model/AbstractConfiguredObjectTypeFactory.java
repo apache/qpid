@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.store.ConfiguredObjectDependency;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
-
-import java.util.HashMap;
-import java.util.Map;
 
 abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConfiguredObject<X>> implements ConfiguredObjectTypeFactory<X>
 {
@@ -40,13 +40,13 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
     @Override
     public final String getType()
     {
-        return AbstractConfiguredObject.getType(_clazz);
+        return Model.getType(_clazz);
     }
 
     @Override
     public final Class<? super X> getCategoryClass()
     {
-        return (Class<? super X>) AbstractConfiguredObject.getCategory(_clazz);
+        return (Class<? super X>) Model.getCategory(_clazz);
     }
 
     @Override

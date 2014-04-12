@@ -21,6 +21,15 @@
 
 package org.apache.qpid.server.consumer;
 
+import java.net.SocketAddress;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.Filterable;
@@ -32,6 +41,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.ConsumerListener;
@@ -40,15 +50,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
-
-import java.net.SocketAddress;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class MockConsumer implements ConsumerTarget
 {
@@ -562,6 +563,12 @@ public class MockConsumer implements ConsumerTarget
 
         @Override
         public String getVirtualHostName()
+        {
+            return null;
+        }
+
+        @Override
+        public VirtualHost<?, ?, ?> getVirtualHost()
         {
             return null;
         }

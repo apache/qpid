@@ -44,6 +44,7 @@ import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -134,7 +135,7 @@ public class Broker
         LogRecorder logRecorder = new LogRecorder();
         TaskExecutor taskExecutor = new TaskExecutor();
         taskExecutor.start();
-        ConfiguredObjectFactory configuredObjectFactory = new ConfiguredObjectFactory();
+        ConfiguredObjectFactory configuredObjectFactory = new ConfiguredObjectFactory(Model.getInstance());
         SystemContext systemContext = new SystemContext(taskExecutor, configuredObjectFactory, _eventLogger, logRecorder, options);
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();

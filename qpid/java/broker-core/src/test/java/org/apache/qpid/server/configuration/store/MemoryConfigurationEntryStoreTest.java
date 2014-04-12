@@ -41,6 +41,7 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 
 public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTestCase
@@ -51,7 +52,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
     public void setUp() throws Exception
     {
         super.setUp();
-        _systemContext = new SystemContext(new TaskExecutor(), new ConfiguredObjectFactory(),
+        _systemContext = new SystemContext(new TaskExecutor(), new ConfiguredObjectFactory(Model.getInstance()),
                                            mock(EventLogger.class), mock(LogRecorder.class),
                                            new BrokerOptions());
 

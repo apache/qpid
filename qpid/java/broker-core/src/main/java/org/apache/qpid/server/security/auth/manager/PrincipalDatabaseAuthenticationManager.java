@@ -354,7 +354,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
 
         public PrincipalAdapter(Principal user)
         {
-            super(createPrincipalAttributes(PrincipalDatabaseAuthenticationManager.this, user),
+            super(parentsMap(PrincipalDatabaseAuthenticationManager.this),createPrincipalAttributes(PrincipalDatabaseAuthenticationManager.this, user),
                   PrincipalDatabaseAuthenticationManager.this.getTaskExecutor());
             _user = user;
 

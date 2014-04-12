@@ -36,6 +36,7 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -100,7 +101,7 @@ public class BrokerTestHelper
         SecurityManager securityManager = new SecurityManager(broker, false);
         when(broker.getSecurityManager()).thenReturn(securityManager);
 
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactory();
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactory(Model.getInstance());
         ConfiguredObjectTypeFactory factory = objectFactory.getConfiguredObjectTypeFactory(org.apache.qpid.server.model.VirtualHost.class,
                                                                       attributes);
 

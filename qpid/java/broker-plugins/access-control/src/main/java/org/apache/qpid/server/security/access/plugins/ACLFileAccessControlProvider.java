@@ -53,7 +53,7 @@ public class ACLFileAccessControlProvider
     public ACLFileAccessControlProvider(Broker broker,
                                         Map<String, Object> attributes)
     {
-        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker),
+        super(parentsMap(broker),
               attributes, broker.getTaskExecutor());
 
 

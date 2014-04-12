@@ -29,14 +29,11 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Protocol.ProtocolType;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.model.port.AmqpPort;
-import org.apache.qpid.server.model.port.HttpPort;
-import org.apache.qpid.server.model.port.JmxPort;
-import org.apache.qpid.server.model.port.RmiPort;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
@@ -136,7 +133,7 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
         {
             if(_configuredObjectFactory == null)
             {
-                _configuredObjectFactory = new ConfiguredObjectFactory();
+                _configuredObjectFactory = new ConfiguredObjectFactory(Model.getInstance());
             }
         }
         return _configuredObjectFactory.getConfiguredObjectTypeFactory(Port.class.getSimpleName(), type);

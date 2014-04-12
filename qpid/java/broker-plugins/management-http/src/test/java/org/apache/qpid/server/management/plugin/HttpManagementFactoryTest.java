@@ -19,6 +19,7 @@
 package org.apache.qpid.server.management.plugin;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +45,7 @@ public class HttpManagementFactoryTest extends QpidTestCase
         _attributes.put(ConfiguredObject.TYPE, HttpManagement.PLUGIN_TYPE);
         _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
         _attributes.put(ConfiguredObject.ID, _id);
+        when(_broker.getCategoryClass()).thenReturn(Broker.class);
 
         HttpManagement management = _pluginFactory.createInstance(_attributes, _broker);
         management.open();

@@ -37,7 +37,6 @@ import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
@@ -101,15 +100,6 @@ public class BindingImpl
 
 
     }
-
-    private static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(final AMQQueue queue, final ExchangeImpl exchange)
-    {
-        final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents = new HashMap<Class<? extends ConfiguredObject>, ConfiguredObject<?>>();
-        parents.put(Queue.class, queue);
-        parents.put(Exchange.class, exchange);
-        return parents;
-    }
-
 
     public String getBindingKey()
     {

@@ -23,7 +23,6 @@ package org.apache.qpid.server.security.auth.manager;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -40,6 +39,7 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
@@ -63,7 +63,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     protected AbstractAuthenticationManager(final Broker broker,
                                             final Map<String, Object> attributes)
     {
-        super(Collections.<Class<? extends ConfiguredObject>, ConfiguredObject<?>>singletonMap(Broker.class, broker),
+        super(parentsMap(broker),
               attributes, broker.getTaskExecutor());
         _broker = broker;
     }
@@ -176,7 +176,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         if(childClass == PreferencesProvider.class)
         {
             // TODO RG - get the configured object factory from parents
-            ConfiguredObjectFactory factory = new ConfiguredObjectFactory();
+            ConfiguredObjectFactory factory = new ConfiguredObjectFactory(Model.getInstance());
             attributes = new HashMap<String, Object>(attributes);
             attributes.put(ConfiguredObject.ID, UUID.randomUUID());
             final ConfiguredObjectTypeFactory preferencesFactory =

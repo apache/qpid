@@ -25,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-public class Model
+public abstract class Model
 {
     /*
      * API version for the broker model
@@ -41,87 +43,208 @@ public class Model
     public static final int MODEL_MINOR_VERSION = 4;
     public static final String MODEL_VERSION = MODEL_MAJOR_VERSION + "." + MODEL_MINOR_VERSION;
 
-    private static final Model MODEL_INSTANCE = new Model();
-
-    private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>
-            _parents = new HashMap<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>();
-
-    private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>
-            _children = new HashMap<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>();
+    private static final Model MODEL_INSTANCE = new ModelImpl();
 
     public static Model getInstance()
     {
         return MODEL_INSTANCE;
     }
 
-    private Model()
+    public static Class<? extends ConfiguredObject> getCategory(final Class<?> clazz)
     {
-        addRelationship(SystemContext.class, Broker.class);
-
-        addRelationship(Broker.class, VirtualHost.class);
-        addRelationship(Broker.class, Port.class);
-        addRelationship(Broker.class, AccessControlProvider.class);
-        addRelationship(Broker.class, AuthenticationProvider.class);
-        addRelationship(Broker.class, GroupProvider.class);
-        addRelationship(Broker.class, TrustStore.class);
-        addRelationship(Broker.class, KeyStore.class);
-        addRelationship(Broker.class, Plugin.class);
-
-        addRelationship(VirtualHost.class, Exchange.class);
-        addRelationship(VirtualHost.class, Queue.class);
-        addRelationship(VirtualHost.class, Connection.class);
-        addRelationship(VirtualHost.class, VirtualHostAlias.class);
-
-        addRelationship(AuthenticationProvider.class, User.class);
-        addRelationship(AuthenticationProvider.class, PreferencesProvider.class);
-        addRelationship(User.class, GroupMember.class);
-
-        addRelationship(GroupProvider.class, Group.class);
-        addRelationship(Group.class, GroupMember.class);
-
-        addRelationship(Connection.class, Session.class);
-
-        addRelationship(Queue.class, Binding.class);
-        addRelationship(Queue.class, Consumer.class);
-
-        addRelationship(Exchange.class, Binding.class);
-        addRelationship(Exchange.class, Publisher.class);
-
-        addRelationship(Session.class, Consumer.class);
-        addRelationship(Session.class, Publisher.class);
-    }
-
-    public Collection<Class<? extends ConfiguredObject>> getParentTypes(Class<? extends ConfiguredObject> child)
-    {
-        Collection<Class<? extends ConfiguredObject>> parentTypes = _parents.get(child);
-        return parentTypes == null ? Collections.<Class<? extends ConfiguredObject>>emptyList()
-                                   : Collections.unmodifiableCollection(parentTypes);
-    }
-
-    public Collection<Class<? extends ConfiguredObject>> getChildTypes(Class<? extends ConfiguredObject> parent)
-    {
-        Collection<Class<? extends ConfiguredObject>> childTypes = _children.get(parent);
-        return childTypes == null ? Collections.<Class<? extends ConfiguredObject>>emptyList()
-                                  : Collections.unmodifiableCollection(childTypes);
-    }
-
-    private void addRelationship(Class<? extends ConfiguredObject> parent, Class<? extends ConfiguredObject> child)
-    {
-        Collection<Class<? extends ConfiguredObject>> parents = _parents.get(child);
-        if(parents == null)
+        ManagedObject annotation = clazz.getAnnotation(ManagedObject.class);
+        if(annotation != null && annotation.category())
         {
-            parents = new ArrayList<Class<? extends ConfiguredObject>>();
-            _parents.put(child, parents);
+            return (Class<? extends ConfiguredObject>) clazz;
         }
-        parents.add(parent);
-
-        Collection<Class<? extends ConfiguredObject>> children = _children.get(parent);
-        if(children == null)
+        for(Class<?> iface : clazz.getInterfaces() )
         {
-            children = new ArrayList<Class<? extends ConfiguredObject>>();
-            _children.put(parent, children);
+            Class<? extends ConfiguredObject> cat = getCategory(iface);
+            if(cat != null)
+            {
+                return cat;
+            }
         }
-        children.add(child);
+        if(clazz.getSuperclass() != null)
+        {
+            return getCategory(clazz.getSuperclass());
+        }
+        return null;
     }
 
+    public static String getType(final Class<? extends ConfiguredObject> clazz)
+    {
+        ManagedObject annotation = clazz.getAnnotation(ManagedObject.class);
+        if(annotation != null)
+        {
+            if(!"".equals(annotation.type()))
+            {
+                return annotation.type();
+            }
+        }
+
+        if(clazz.getSuperclass() != null && ConfiguredObject.class.isAssignableFrom(clazz.getSuperclass()))
+        {
+            String type = getType((Class<? extends ConfiguredObject>) clazz.getSuperclass());
+            if(!"".equals(type))
+            {
+                return type;
+            }
+        }
+
+        for(Class<?> iface : clazz.getInterfaces() )
+        {
+            if(ConfiguredObject.class.isAssignableFrom(iface))
+            {
+                String type = getType((Class<? extends ConfiguredObject>) iface);
+                if(!"".equals(type))
+                {
+                    return type;
+                }
+            }
+        }
+        Class<? extends ConfiguredObject> category = getCategory(clazz);
+        if(category == null)
+        {
+            return "";
+        }
+        annotation = category.getAnnotation(ManagedObject.class);
+        if(annotation == null)
+        {
+            throw new NullPointerException("No definition found for category " + category.getSimpleName());
+        }
+        if(!"".equals(annotation.defaultType()))
+        {
+            return annotation.defaultType();
+        }
+        return category.getSimpleName();
+    }
+
+    public abstract Collection<Class<? extends ConfiguredObject>> getSupportedCategories();
+    public abstract Collection<Class<? extends ConfiguredObject>> getChildTypes(Class<? extends ConfiguredObject> parent);
+
+    public abstract Class<? extends ConfiguredObject<?>> getRootCategory();
+
+    public abstract Collection<Class<? extends ConfiguredObject>> getParentTypes(Class<? extends ConfiguredObject> child);
+    public abstract int getMajorVersion();
+    public abstract int getMinorVersion();
+
+    private static class ModelImpl extends Model
+    {
+
+        private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>> _parents =
+                new HashMap<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>();
+
+        private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>> _children =
+                new HashMap<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>>();
+
+        private final Set<Class<? extends ConfiguredObject>> _supportedTypes =
+                new HashSet<Class<? extends ConfiguredObject>>();
+
+        private final Class<? extends ConfiguredObject<?>> _rootCategory;
+
+        private ModelImpl()
+        {
+            _rootCategory = SystemContext.class;
+
+            addRelationship(SystemContext.class, Broker.class);
+
+            addRelationship(Broker.class, VirtualHost.class);
+            addRelationship(Broker.class, Port.class);
+            addRelationship(Broker.class, AccessControlProvider.class);
+            addRelationship(Broker.class, AuthenticationProvider.class);
+            addRelationship(Broker.class, GroupProvider.class);
+            addRelationship(Broker.class, TrustStore.class);
+            addRelationship(Broker.class, KeyStore.class);
+            addRelationship(Broker.class, Plugin.class);
+
+            addRelationship(VirtualHost.class, Exchange.class);
+            addRelationship(VirtualHost.class, Queue.class);
+            addRelationship(VirtualHost.class, Connection.class);
+            addRelationship(VirtualHost.class, VirtualHostAlias.class);
+
+            addRelationship(Port.class, VirtualHostAlias.class);
+
+
+            addRelationship(AuthenticationProvider.class, User.class);
+            addRelationship(AuthenticationProvider.class, PreferencesProvider.class);
+            addRelationship(User.class, GroupMember.class);
+
+            addRelationship(GroupProvider.class, Group.class);
+            addRelationship(Group.class, GroupMember.class);
+
+            addRelationship(Connection.class, Session.class);
+
+            addRelationship(Queue.class, Binding.class);
+            addRelationship(Queue.class, Consumer.class);
+
+            addRelationship(Exchange.class, Binding.class);
+            addRelationship(Exchange.class, Publisher.class);
+
+            addRelationship(Session.class, Consumer.class);
+            addRelationship(Session.class, Publisher.class);
+        }
+
+        @Override
+        public Class<? extends ConfiguredObject<?>> getRootCategory()
+        {
+            return _rootCategory;
+        }
+
+        public Collection<Class<? extends ConfiguredObject>> getParentTypes(Class<? extends ConfiguredObject> child)
+        {
+            Collection<Class<? extends ConfiguredObject>> parentTypes = _parents.get(child);
+            return parentTypes == null ? Collections.<Class<? extends ConfiguredObject>>emptyList()
+                    : Collections.unmodifiableCollection(parentTypes);
+        }
+
+        @Override
+        public int getMajorVersion()
+        {
+            return MODEL_MAJOR_VERSION;
+        }
+
+        @Override
+        public int getMinorVersion()
+        {
+            return MODEL_MINOR_VERSION;
+        }
+
+        public Collection<Class<? extends ConfiguredObject>> getChildTypes(Class<? extends ConfiguredObject> parent)
+        {
+            Collection<Class<? extends ConfiguredObject>> childTypes = _children.get(parent);
+            return childTypes == null ? Collections.<Class<? extends ConfiguredObject>>emptyList()
+                    : Collections.unmodifiableCollection(childTypes);
+        }
+
+        @Override
+        public Collection<Class<? extends ConfiguredObject>> getSupportedCategories()
+        {
+            return Collections.unmodifiableSet(_supportedTypes);
+        }
+
+        private void addRelationship(Class<? extends ConfiguredObject> parent, Class<? extends ConfiguredObject> child)
+        {
+            Collection<Class<? extends ConfiguredObject>> parents = _parents.get(child);
+            if (parents == null)
+            {
+                parents = new ArrayList<Class<? extends ConfiguredObject>>();
+                _parents.put(child, parents);
+            }
+            parents.add(parent);
+
+            Collection<Class<? extends ConfiguredObject>> children = _children.get(parent);
+            if (children == null)
+            {
+                children = new ArrayList<Class<? extends ConfiguredObject>>();
+                _children.put(parent, children);
+            }
+            children.add(child);
+
+            _supportedTypes.add(parent);
+            _supportedTypes.add(child);
+
+        }
+
+    }
 }

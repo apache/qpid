@@ -29,13 +29,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import junit.framework.TestCase;
+
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.TrustStore;
-
-
-import junit.framework.TestCase;
 
 public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 {
@@ -52,7 +51,7 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 
         when(_trustStore.getName()).thenReturn("mytruststore");
         when(_trustStore.getId()).thenReturn(UUID.randomUUID());
-
+        when(_broker.getCategoryClass()).thenReturn(Broker.class);
         when(_broker.getParent(eq(SystemContext.class))).thenReturn(_systemContext);
         when(_systemContext.getChildren(eq(Broker.class))).thenReturn(Collections.singleton(_broker));
 
