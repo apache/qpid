@@ -19,19 +19,19 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
 public class ScramSHA1AuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<ScramSHA1AuthenticationManager>
 {
 
-    public static final String PROVIDER_TYPE = "SCRAM-SHA1";
+    public static final String PROVIDER_TYPE = "SCRAM-SHA-1";
 
     public static final String ATTRIBUTE_NAME = "name";
 
