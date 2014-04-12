@@ -63,7 +63,7 @@ import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.scram.ScramSHA1SaslServer;
 
-@ManagedObject( category = false, type = "SCRAM-SHA1" )
+@ManagedObject( category = false, type = "SCRAM-SHA-1" )
 public class ScramSHA1AuthenticationManager
         extends AbstractAuthenticationManager<ScramSHA1AuthenticationManager>
     implements PasswordCredentialManagingAuthenticationProvider<ScramSHA1AuthenticationManager>,
