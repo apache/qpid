@@ -50,27 +50,29 @@
     <java.source>1.6</java.source>
     <java.target>1.6</java.target>
 
-    <readme.text>Documentation for the Qpid components can be accessed on our website at:${line.separator}http://qpid.apache.org/documentation.html</readme.text>
-    <notice.text>Apache Qpid${line.separator}Copyright ${project.inceptionYear}-2014${line.separator}Apache Software Foundation${line.separator}This product includes software developed at Apache Software Foundation (http://www.apache.org/)</notice.text>
-
     <!-- enforcer plugin config properties -->
-    <supported-test-profiles-regex>(java-mms.0-9|java-mms.0-9-1|java-mms.0-10|java-bdb.0-9|java-bdb.0-9-1|java-bdb.0-10|java-dby-mem.0-9|java-dby-mem.0-9-1|java-dby-mem.0-10)</supported-test-profiles-regex>
-
-    <!-- plugin properties-->
-    <license-maven-plugin-output-dir>${project.build.directory}/generated-licenses</license-maven-plugin-output-dir>
-    <skipLicensing>false</skipLicensing>
+    <supported-test-profiles-regex>(java-mms.0-9|java-mms.0-9-1|java-mms.0-10|java-bdb.0-9|java-bdb.0-9-1|java-bdb.0-10|java-dby.0-9|java-dby.0-9-1|java-dby.0-10|java-dby-mem.0-9|java-dby-mem.0-9-1|java-dby-mem.0-10|cpp)</supported-test-profiles-regex>
 
     <!-- test profile properties and defaults-->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
     <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
     <qpid.work>${project.build.directory}${file.separator}QPID_WORK</qpid.work>
+
     <profile>java-mms.0-10</profile>
-    <profile.excludes>JavaTransientExcludes Java010Excludes</profile.excludes>
+    <profile.broker.language>java</profile.broker.language>
+    <profile.broker.type>internal</profile.broker.type>
+    <profile.broker.stopped>Exception</profile.broker.stopped>
+    <profile.broker.ready>BRK-1004</profile.broker.ready>
+    <profile.broker.command>${qpid.home}${file.separator}bin${file.separator}qpid-server -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</profile.broker.command>
+    <profile.broker.command.windows>${qpid.home}${file.separator}bin${file.separator}qpid-server.bat -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</profile.broker.command.windows>
+    <profile.test.excludes>Excludes JavaExcludes ${profile}.excludes ${profile.specific.excludes}</profile.test.excludes>
+    <profile.specific.excludes>JavaTransientExcludes Java010Excludes</profile.specific.excludes>
     <profile.broker.version>v0_10</profile.broker.version>
     <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
     <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</profile.broker.virtualhosts-config>
     <profile.broker.persistent>false</profile.broker.persistent>
     <profile.messagestore.class.name>org.apache.qpid.server.store.MemoryMessageStore</profile.messagestore.class.name>
+    <profile.broker.clean.between.tests>true</profile.broker.clean.between.tests>
   </properties>
 
   <modules>
@@ -117,6 +119,7 @@
   </modules>
 
   <dependencies>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -147,25 +150,16 @@
               <tasks>
                 <echo>Qpid Test Profile Properties</echo>
                 <echo>[profile] ${profile}</echo>
-                <echo>[profile.excludes] ${profile.excludes}</echo>
+                <echo>[profile.broker.language] ${profile.broker.language}</echo>
+                <echo>[profile.broker.type] ${profile.broker.type}</echo>
+                <echo>[profile.broker.command] ${profile.broker.command}</echo>
+                <echo>[profile.specific.excludes] ${profile.specific.excludes}</echo>
+                <echo>[profile.test.excludes] ${profile.test.excludes}</echo>
                 <echo>[profile.broker.version] ${profile.broker.version}</echo>
                 <echo>[profile.qpid.broker_default_amqp_protocol_excludes] ${profile.qpid.broker_default_amqp_protocol_excludes}</echo>
                 <echo>[profile.broker.virtualhosts-config] ${profile.broker.virtualhosts-config}</echo>
                 <echo>[profile.broker.persistent] ${profile.broker.persistent}</echo>
                 <echo>[profile.messagestore.class.name] ${profile.messagestore.class.name}</echo>
-            </tasks>
-            </configuration>
-          </execution>
-          <execution>
-            <id>generate-notice-and-readme</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <tasks>
-                <echo file="${license-maven-plugin-output-dir}/README" message="${readme.text}" />
-                <echo file="${license-maven-plugin-output-dir}/NOTICE" message="${notice.text}" />
             </tasks>
             </configuration>
           </execution>
@@ -218,21 +212,22 @@
             <test.exclude>true</test.exclude>
             <test.mem>512M</test.mem>
             <profile.clustered>false</profile.clustered>
-            <broker.language>java</broker.language>
-            <broker.type>internal</broker.type>
-            <broker.stopped>Exception</broker.stopped>
-            <broker.ready>BRK-1004</broker.ready>
-            <broker.command>${qpid.home}${file.separator}bin${file.separator}qpid-server -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</broker.command>
-            <broker.command.windows>${qpid.home}${file.separator}bin${file.separator}qpid-server.bat -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE</broker.command.windows>
 
             <!-- Profile Based Values -->
-            <test.excludes>Excludes JavaExcludes ${profile}.excludes ${profile.excludes}</test.excludes>
+            <profile>${profile}</profile>
+            <broker.language>${profile.broker.language}</broker.language>
+            <broker.type>${profile.broker.type}</broker.type>
+            <broker.stopped>${profile.broker.stopped}</broker.stopped>
+            <broker.ready>${profile.broker.ready}</broker.ready>
+            <broker.command>${profile.broker.command}</broker.command>
+            <broker.command.windows>${profile.broker.command.windows}</broker.command.windows>
+            <test.excludes>${profile.test.excludes}</test.excludes>
             <broker.version>${profile.broker.version}</broker.version>
             <qpid.broker_default_amqp_protocol_excludes>${profile.qpid.broker_default_amqp_protocol_excludes}</qpid.broker_default_amqp_protocol_excludes>
             <broker.virtualhosts-config>${profile.broker.virtualhosts-config}</broker.virtualhosts-config>
             <broker.persistent>${profile.broker.persistent}</broker.persistent>
             <messagestore.class.name>${profile.messagestore.class.name}</messagestore.class.name>
-            <profile>${profile}</profile>
+            <broker.clean.between.tests>${profile.broker.clean.between.tests}</broker.clean.between.tests>
 
             <!-- This must be a child of qpid home currently due to the horrible mechanics of QBTC  -->
             <test.output>${qpid.home.qbtc.output}</test.output>
@@ -266,51 +261,6 @@
               </rules>
               <fail>true</fail>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <configuration>
-          <skipUpdateProjectLicense>${skipLicensing}</skipUpdateProjectLicense>
-          <skipDownloadLicenses>${skipLicensing}</skipDownloadLicenses>
-          <skipAddThirdParty>${skipLicensing}</skipAddThirdParty>
-          <includedScopes>compile,system</includedScopes>
-          <licenseName>apache_v2</licenseName>
-          <failIfWarning>true</failIfWarning>
-          <outputDirectory>${license-maven-plugin-output-dir}</outputDirectory>
-          <licenseFile>${license-maven-plugin-output-dir}/LICENSE</licenseFile>
-          <licensesOutputDirectory>${license-maven-plugin-output-dir}/licenses</licensesOutputDirectory>
-          <licensesOutputFile>${license-maven-plugin-output-dir}/licenses.xml</licensesOutputFile>
-          <thirdPartyFilename>THIRDPARTY</thirdPartyFilename>
-          <excludedGroups>org.apache.qpid</excludedGroups>
-          <fileTemplate>/org/codehaus/mojo/license/third-party-file-groupByLicense.ftl</fileTemplate>
-          <includedLicenses>
-            <includedLicense>Apache Software License, Version 2.0</includedLicense>
-            <includedLicense>The MIT License</includedLicense>
-            <includedLicense>Eclipse Public License - Version 1.0</includedLicense>
-            <includedLicense>Common Public License Version 1.0</includedLicense>
-            <includedLicense>BSD License</includedLicense>
-            <includedLicense>Academic Free License v2.1</includedLicense>
-          </includedLicenses>
-          <licenseMerges>
-            <licenseMerge>Apache Software License, Version 2.0|The Apache Software License, Version 2.0|Apache Software License - Version 2.0|Apache v2|Apache 2</licenseMerge>
-            <licenseMerge>The MIT License|MIT License</licenseMerge>
-          </licenseMerges>
-          <useMissingFile>true</useMissingFile>
-          <useRepositoryMissingFiles>false</useRepositoryMissingFiles>
-        </configuration>
-        <executions>
-          <execution>
-            <id>generate-license-files</id>
-            <goals>
-              <goal>update-project-license</goal>
-              <goal>download-licenses</goal>
-              <goal>add-third-party</goal>
-            </goals>
-            <phase>generate-resources</phase>
           </execution>
         </executions>
       </plugin>
@@ -419,7 +369,7 @@
       </activation>
       <properties>
         <profile>java-mms.0-10</profile>
-        <profile.excludes>JavaTransientExcludes Java010Excludes</profile.excludes>
+        <profile.specific.excludes>JavaTransientExcludes Java010Excludes</profile.specific.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</profile.broker.virtualhosts-config>
@@ -438,7 +388,7 @@
       </activation>
       <properties>
         <profile>java-mms.0-9-1</profile>
-        <profile.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.excludes>
+        <profile.specific.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.specific.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</profile.broker.virtualhosts-config>
@@ -457,7 +407,7 @@
       </activation>
       <properties>
         <profile>java-mms.0-9</profile>
-        <profile.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.excludes>
+        <profile.specific.excludes>JavaTransientExcludes XAExcludes JavaPre010Excludes</profile.specific.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests.xml</profile.broker.virtualhosts-config>
@@ -476,7 +426,7 @@
       </activation>
       <properties>
         <profile>java-bdb.0-10</profile>
-        <profile.excludes>JavaPersistentExcludes Java010Excludes JavaBDBExcludes</profile.excludes>
+        <profile.specific.excludes>JavaPersistentExcludes Java010Excludes JavaBDBExcludes</profile.specific.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-bdb.xml</profile.broker.virtualhosts-config>
@@ -495,7 +445,7 @@
       </activation>
       <properties>
         <profile>java-bdb.0-9-1</profile>
-        <profile.excludes>JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes</profile.excludes>
+        <profile.specific.excludes>JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes</profile.specific.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-bdb.xml</profile.broker.virtualhosts-config>
@@ -514,7 +464,7 @@
       </activation>
       <properties>
         <profile>java-bdb.0-9</profile>
-        <profile.excludes>JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes</profile.excludes>
+        <profile.specific.excludes>JavaPersistentExcludes XAExcludes JavaPre010Excludes JavaBDBExcludes</profile.specific.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-bdb.xml</profile.broker.virtualhosts-config>
@@ -533,7 +483,7 @@
       </activation>
       <properties>
         <profile>java-dby-mem.0-10</profile>
-        <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes Java010Excludes</profile.excludes>
+        <profile.specific.excludes>JavaPersistentExcludes JavaDerbyExcludes Java010Excludes</profile.specific.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby-mem.xml</profile.broker.virtualhosts-config>
@@ -552,7 +502,7 @@
       </activation>
       <properties>
         <profile>java-dby-mem.0-9-1</profile>
-        <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.excludes>
+        <profile.specific.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.specific.excludes>
         <profile.broker.version>v0_9_1</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby-mem.xml</profile.broker.virtualhosts-config>
@@ -571,13 +521,118 @@
       </activation>
       <properties>
         <profile>java-dby-mem.0-9</profile>
-        <profile.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.excludes>
+        <profile.specific.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.specific.excludes>
         <profile.broker.version>v0_9</profile.broker.version>
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby-mem.xml</profile.broker.virtualhosts-config>
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.messagestore.class.name>org.apache.qpid.server.store.derby.DerbyMessageStore</profile.messagestore.class.name>
       </properties>
+    </profile>
+
+    <profile>
+      <id>java-dby.0-10</id>
+      <activation>
+        <property>
+          <name>profile</name>
+          <value>java-dby.0-10</value>
+        </property>
+      </activation>
+      <properties>
+        <profile>java-dby.0-10</profile>
+        <profile.specific.excludes>JavaPersistentExcludes JavaDerbyExcludes Java010Excludes</profile.specific.excludes>
+        <profile.broker.version>v0_10</profile.broker.version>
+        <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0</profile.qpid.broker_default_amqp_protocol_excludes>
+        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby.xml</profile.broker.virtualhosts-config>
+        <profile.broker.persistent>true</profile.broker.persistent>
+        <profile.messagestore.class.name>org.apache.qpid.server.store.derby.DerbyMessageStore</profile.messagestore.class.name>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>java-dby.0-9-1</id>
+      <activation>
+        <property>
+          <name>profile</name>
+          <value>java-dby.0-9-1</value>
+        </property>
+      </activation>
+      <properties>
+        <profile>java-dby.0-9-1</profile>
+        <profile.specific.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.specific.excludes>
+        <profile.broker.version>v0_9_1</profile.broker.version>
+        <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
+        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby.xml</profile.broker.virtualhosts-config>
+        <profile.broker.persistent>true</profile.broker.persistent>
+        <profile.messagestore.class.name>org.apache.qpid.server.store.derby.DerbyMessageStore</profile.messagestore.class.name>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>java-dby.0-9</id>
+      <activation>
+        <property>
+          <name>profile</name>
+          <value>java-dby.0-9</value>
+        </property>
+      </activation>
+      <properties>
+        <profile>java-dby.0-9</profile>
+        <profile.specific.excludes>JavaPersistentExcludes JavaDerbyExcludes XAExcludes JavaPre010Excludes</profile.specific.excludes>
+        <profile.broker.version>v0_9</profile.broker.version>
+        <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10,AMQP_0_9_1</profile.qpid.broker_default_amqp_protocol_excludes>
+        <profile.broker.virtualhosts-config>${QPID_HOME}${file.separator}etc${file.separator}virtualhosts-systests-derby.xml</profile.broker.virtualhosts-config>
+        <profile.broker.persistent>true</profile.broker.persistent>
+        <profile.messagestore.class.name>org.apache.qpid.server.store.derby.DerbyMessageStore</profile.messagestore.class.name>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>cpp</id>
+      <activation>
+        <property>
+          <name>profile</name>
+          <value>cpp</value>
+        </property>
+      </activation>
+      <properties>
+        <profile>cpp</profile>
+        <profile.broker.language>cpp</profile.broker.language>
+        <profile.broker.type>spawned</profile.broker.type>
+        <profile.broker.stopped>Exception constructed</profile.broker.stopped>
+        <profile.broker.ready>Listening on TCP</profile.broker.ready>
+        <profile.broker.command>${cpp-broker-dir}/qpidd -p @PORT --data-dir ${qpid.work}/@PORT -t --auth no --no-module-dir</profile.broker.command>
+        <profile.broker.command.windows></profile.broker.command.windows>
+        <profile.test.excludes>Excludes CPPExcludes ${profile}.excludes ${profile.specific.excludes} cpp.excludes</profile.test.excludes>
+        <profile.specific.excludes>CPPPrefetchExcludes CPPTransientExcludes</profile.specific.excludes>
+        <profile.broker.version>v0_10</profile.broker.version>
+        <profile.broker.persistent>false</profile.broker.persistent>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-cpp-broker-dir-defined</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireProperty>
+                      <property>cpp-broker-dir</property>
+                      <message>You must set a the CPP broker directory property for this profile. (e.g. -Dcpp-broker-dir=/somedir/cpp/src)</message>
+                    </requireProperty>
+                  </rules>
+                  <fail>true</fail>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
 
   </profiles>

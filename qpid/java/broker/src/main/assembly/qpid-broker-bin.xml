@@ -17,13 +17,12 @@
       <directoryMode>0755</directoryMode>
     </fileSet>
     <fileSet>
-      <directory>${project.build.directory}/generated-licenses/</directory>
+      <directory>${basedir}/src/main/assembly/</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
         <include>LICENSE</include>
-        <include>THIRDPARTY</include>
         <include>NOTICE</include>
-        <include>README</include>
+        <include>README.txt</include>
       </includes>
       <fileMode>0644</fileMode>
       <directoryMode>0755</directoryMode>

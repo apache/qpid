@@ -1,24 +1,17 @@
-<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0" 
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
   <id>bin</id>
   <formats>
     <format>tar.gz</format>
   </formats>
-  <baseDirectory>qpid-perftests-${project.version}</baseDirectory>
+  <baseDirectory>qpid-amqp-1-0-client-websocket/${project.version}</baseDirectory>
   <fileSets>
     <fileSet>
-      <directory>${project.basedir}</directory>
+      <directory>${basedir}/src/main/assembly/</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
-        <include>etc/</include>
-      </includes>
-    </fileSet>
-    <fileSet>
-      <directory>${project.build.outputDirectory}/META-INF/</directory>
-      <outputDirectory>/</outputDirectory>
-      <includes>
-        <include>README</include>
+        <include>README.txt</include>
         <include>NOTICE</include>
         <include>LICENSE</include>
       </includes>
@@ -30,11 +23,6 @@
     <dependencySet>
       <outputDirectory>/lib</outputDirectory>
       <useProjectArtifact>true</useProjectArtifact>
-      <excludes>
-        <!-- Exclude client artifacts, user provides appropriate version -->
-        <exclude>org.apache.qpid:qpid-client</exclude>
-        <exclude>org.apache.qpid:qpid-common</exclude>
-      </excludes>
     </dependencySet>
   </dependencySets>
 </assembly>

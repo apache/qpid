@@ -28,6 +28,10 @@
   <name>Qpid AMQP 1.0 Client JMS</name>
   <description>AMQP 1.0 compliant JMS module</description>
 
+  <properties>
+    <dependency-change-verification>true</dependency-change-verification>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>

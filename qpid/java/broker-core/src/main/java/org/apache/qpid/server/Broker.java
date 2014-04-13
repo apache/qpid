@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
@@ -41,7 +42,6 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.TaskPrincipal;
 
 import javax.security.auth.Subject;
 
@@ -52,6 +52,7 @@ public class Broker
     private volatile Thread _shutdownHookThread;
     private volatile IApplicationRegistry _applicationRegistry;
     private EventLogger _eventLogger;
+    private boolean _configuringOwnLogging = false;
 
     protected static class InitException extends RuntimeException
     {
@@ -71,11 +72,20 @@ public class Broker
         }
         finally
         {
-            if (_applicationRegistry != null)
+            try
             {
-                _applicationRegistry.close();
+                if (_applicationRegistry != null)
+                {
+                    _applicationRegistry.close();
+                }
             }
-
+            finally
+            {
+                if (_configuringOwnLogging)
+                {
+                    LogManager.shutdown();
+                }
+            }
         }
     }
 
@@ -166,6 +176,7 @@ public class Broker
 
     private void configureLogging(File logConfigFile, int logWatchTime) throws InitException, IOException
     {
+        _configuringOwnLogging = true;
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
             _eventLogger.message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
