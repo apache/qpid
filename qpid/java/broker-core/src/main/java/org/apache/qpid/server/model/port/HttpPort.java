@@ -20,30 +20,25 @@
  */
 package org.apache.qpid.server.model.port;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Port;
 
 @ManagedObject( category = false, type = "HTTP")
-public class HttpPort extends PortWithAuthProvider<HttpPort>
+public interface HttpPort<X extends HttpPort<X>> extends Port<X>
 {
-    public HttpPort(final UUID id,
-                    final Broker<?> broker,
-                    final Map<String, Object> attributes,
-                    final TaskExecutor taskExecutor)
-    {
-        super(id, broker, attributes, Collections.<String,Object>emptyMap(), taskExecutor);
-    }
 
-    @Override
-    protected Set<Protocol> getDefaultProtocols()
-    {
-        return Collections.singleton(Protocol.HTTP);
-    }
+    String DEFAULT_AMQP_NEED_CLIENT_AUTH = "false";
+    String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
+
+
+    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )
+    boolean getNeedClientAuth();
+
+    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_WANT_CLIENT_AUTH )
+    boolean getWantClientAuth();
+
+    @ManagedAttribute( automate = true, mandatory = true )
+    AuthenticationProvider getAuthenticationProvider();
 }

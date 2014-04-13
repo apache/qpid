@@ -21,29 +21,29 @@
 
 package org.apache.qpid.server.model.adapter;
 
-import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.ConfiguredObject;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class FileSystemPreferencesProviderFactory extends AbstractConfiguredObjectTypeFactory<FileSystemPreferencesProvider>
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+public class FileSystemPreferencesProviderFactory extends AbstractConfiguredObjectTypeFactory<FileSystemPreferencesProviderImpl>
 {
 
     public FileSystemPreferencesProviderFactory()
     {
-        super(FileSystemPreferencesProvider.class);
+        super(FileSystemPreferencesProviderImpl.class);
     }
 
     @Override
-    public FileSystemPreferencesProvider createInstance(final Map<String, Object> attributes,
+    public FileSystemPreferencesProviderImpl createInstance(final Map<String, Object> attributes,
                                                         final ConfiguredObject<?>... parents)
     {
         Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
         Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
         UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new FileSystemPreferencesProvider(id, attributesWithoutId, getParent(AuthenticationProvider.class,parents));
+        return new FileSystemPreferencesProviderImpl(id, attributesWithoutId, getParent(AuthenticationProvider.class,parents));
     }
 }

@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -913,19 +914,14 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
 
     @Override
-    protected void changeAttributes(Map<String, Object> attributes)
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
     {
+        super.validateChange(proxyForValidation, changedAttributes);
         throw new UnsupportedOperationException("Changing attributes on exchange is not supported.");
     }
 
     @Override
-    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
-    {
-        _virtualHost.getSecurityManager().authoriseUpdate(this);
-    }
-
-    @Override
-    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         _virtualHost.getSecurityManager().authoriseUpdate(this);
     }

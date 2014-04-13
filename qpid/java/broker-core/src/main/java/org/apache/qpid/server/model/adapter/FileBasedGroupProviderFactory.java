@@ -20,29 +20,29 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class FileBasedGroupProviderFactory extends AbstractConfiguredObjectTypeFactory<FileBasedGroupProvider>
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+public class FileBasedGroupProviderFactory extends AbstractConfiguredObjectTypeFactory<FileBasedGroupProviderImpl>
 {
     public FileBasedGroupProviderFactory()
     {
-        super(FileBasedGroupProvider.class);
+        super(FileBasedGroupProviderImpl.class);
     }
 
     @Override
-    public FileBasedGroupProvider createInstance(final Map<String, Object> attributes,
+    public FileBasedGroupProviderImpl createInstance(final Map<String, Object> attributes,
                                                  final ConfiguredObject<?>... parents)
     {
         Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
         Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
         UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new FileBasedGroupProvider(id, getParent(Broker.class, parents), attributesWithoutId);
+        return new FileBasedGroupProviderImpl(id, getParent(Broker.class, parents), attributesWithoutId);
     }
 
 }

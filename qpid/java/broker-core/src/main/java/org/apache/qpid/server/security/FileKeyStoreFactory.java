@@ -20,29 +20,29 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class FileKeyStoreFactory extends AbstractConfiguredObjectTypeFactory<FileKeyStore>
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+public class FileKeyStoreFactory extends AbstractConfiguredObjectTypeFactory<FileKeyStoreImpl>
 {
     public FileKeyStoreFactory()
     {
-        super(FileKeyStore.class);
+        super(FileKeyStoreImpl.class);
     }
 
 
     @Override
-    public FileKeyStore createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
+    public FileKeyStoreImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
         HashMap<String, Object> attributesWithoutId = new HashMap<String, Object>(attributes);
         Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
         UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new FileKeyStore(id, getParent(Broker.class, parents), attributesWithoutId);
+        return new FileKeyStoreImpl(id, getParent(Broker.class, parents), attributesWithoutId);
     }
 
 }

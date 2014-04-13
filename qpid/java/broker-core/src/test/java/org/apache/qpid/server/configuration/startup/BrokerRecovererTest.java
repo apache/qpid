@@ -47,11 +47,13 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 
 public class BrokerRecovererTest extends TestCase
 {
@@ -71,7 +73,7 @@ public class BrokerRecovererTest extends TestCase
         super.setUp();
 
         _configuredObjectFactory = new ConfiguredObjectFactory(Model.getInstance());
-        _systemContext = new SystemContext(mock(TaskExecutor.class),
+        _systemContext = new SystemContextImpl(mock(TaskExecutor.class),
                                            _configuredObjectFactory, mock(EventLogger.class), mock(LogRecorder.class), mock(BrokerOptions.class));
 
         when(_brokerEntry.getId()).thenReturn(_brokerId);
@@ -305,7 +307,10 @@ public class BrokerRecovererTest extends TestCase
 
         try
         {
-            Broker broker = (Broker) _configuredObjectFactory.recover(_brokerEntry, _systemContext).resolve();
+            UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
+                    _configuredObjectFactory.recover(_brokerEntry, _systemContext);
+
+            Broker<?> broker = (Broker<?>) recover.resolve();
             broker.open();
             fail("The broker creation should fail due to unsupported model version");
         }
@@ -329,7 +334,9 @@ public class BrokerRecovererTest extends TestCase
 
             try
             {
-                Broker broker = (Broker) _configuredObjectFactory.recover(_brokerEntry, _systemContext).resolve();
+                UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
+                        _configuredObjectFactory.recover(_brokerEntry, _systemContext);
+                Broker<?> broker = (Broker<?>) recover.resolve();
                 broker.open();
                 fail("The broker creation should fail due to unsupported model version");
             }

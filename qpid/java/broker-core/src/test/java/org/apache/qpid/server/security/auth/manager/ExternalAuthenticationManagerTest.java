@@ -48,13 +48,13 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         attrs.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrs.put(AuthenticationProvider.NAME, getTestName());
         attrs.put("useFullDN",false);
-        _manager = new ExternalAuthenticationManager(mock(Broker.class), attrs);
+        _manager = new ExternalAuthenticationManagerImpl(mock(Broker.class), attrs);
         _manager.open();
         HashMap<String, Object> attrsFullDN = new HashMap<String, Object>();
         attrsFullDN.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrsFullDN.put(AuthenticationProvider.NAME, getTestName()+"FullDN");
         attrsFullDN.put("useFullDN",true);
-        _managerUsingFullDN = new ExternalAuthenticationManager(mock(Broker.class), attrsFullDN);
+        _managerUsingFullDN = new ExternalAuthenticationManagerImpl(mock(Broker.class), attrsFullDN);
         _managerUsingFullDN.open();
     }
 
@@ -198,7 +198,7 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         assertNull(saslServer.getAuthorizationID());
     }
 
-    private void createSaslServerTestImpl(AuthenticationManager manager) throws Exception
+    private void createSaslServerTestImpl(AuthenticationProvider<?> manager) throws Exception
     {
         SaslServer server = manager.createSaslServer("EXTERNAL", "example.example.com", null);
 

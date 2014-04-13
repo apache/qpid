@@ -50,6 +50,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
@@ -75,7 +76,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _store = mock(DurableConfigurationStore.class);
 
 
-        _systemContext = new SystemContext(new TaskExecutor(), new ConfiguredObjectFactory(Model.getInstance()), mock(
+        _systemContext = new SystemContextImpl(new TaskExecutor(), new ConfiguredObjectFactory(Model.getInstance()), mock(
                 EventLogger.class), mock(LogRecorder.class), new BrokerOptions());
 
 

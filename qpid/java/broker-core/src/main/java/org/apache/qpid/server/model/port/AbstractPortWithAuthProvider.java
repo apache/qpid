@@ -27,11 +27,10 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Transport;
 
-abstract public class PortWithAuthProvider<X extends PortWithAuthProvider<X>> extends AbstractPort<X>
+abstract public class AbstractPortWithAuthProvider<X extends AbstractPortWithAuthProvider<X>> extends AbstractPort<X>
 {
     public static final String DEFAULT_AMQP_NEED_CLIENT_AUTH = "false";
     public static final String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
@@ -45,28 +44,25 @@ abstract public class PortWithAuthProvider<X extends PortWithAuthProvider<X>> ex
     @ManagedAttributeField
     private boolean _wantClientAuth;
 
-    public PortWithAuthProvider(final UUID id,
-                                final Broker<?> broker,
-                                final Map<String, Object> attributes,
-                                final Map<String, Object> defaults,
-                                final TaskExecutor taskExecutor)
+    public AbstractPortWithAuthProvider(final UUID id,
+                                        final Broker<?> broker,
+                                        final Map<String, Object> attributes,
+                                        final Map<String, Object> defaults,
+                                        final TaskExecutor taskExecutor)
     {
         super(id, broker, attributes, taskExecutor);
     }
 
-    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )
     public boolean getNeedClientAuth()
     {
         return _needClientAuth;
     }
 
-    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_WANT_CLIENT_AUTH )
     public boolean getWantClientAuth()
     {
         return _wantClientAuth;
     }
 
-    @ManagedAttribute( automate = true, mandatory = true )
     public AuthenticationProvider getAuthenticationProvider()
     {
         Broker<?> broker = getParent(Broker.class);

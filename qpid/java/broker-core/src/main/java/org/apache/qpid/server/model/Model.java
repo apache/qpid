@@ -74,6 +74,34 @@ public abstract class Model
 
     public static String getType(final Class<? extends ConfiguredObject> clazz)
     {
+        String type = getActualType(clazz);
+
+        if("".equals(type))
+        {
+            Class<? extends ConfiguredObject> category = getCategory(clazz);
+            if (category == null)
+            {
+                throw new IllegalArgumentException("No category for " + clazz.getSimpleName());
+            }
+            ManagedObject annotation = category.getAnnotation(ManagedObject.class);
+            if (annotation == null)
+            {
+                throw new NullPointerException("No definition found for category " + category.getSimpleName());
+            }
+            if (!"".equals(annotation.defaultType()))
+            {
+                type = annotation.defaultType();
+            }
+            else
+            {
+                type = category.getSimpleName();
+            }
+        }
+        return type;
+    }
+
+    private static String getActualType(final Class<? extends ConfiguredObject> clazz)
+    {
         ManagedObject annotation = clazz.getAnnotation(ManagedObject.class);
         if(annotation != null)
         {
@@ -83,47 +111,34 @@ public abstract class Model
             }
         }
 
-        if(clazz.getSuperclass() != null && ConfiguredObject.class.isAssignableFrom(clazz.getSuperclass()))
-        {
-            String type = getType((Class<? extends ConfiguredObject>) clazz.getSuperclass());
-            if(!"".equals(type))
-            {
-                return type;
-            }
-        }
-
         for(Class<?> iface : clazz.getInterfaces() )
         {
             if(ConfiguredObject.class.isAssignableFrom(iface))
             {
-                String type = getType((Class<? extends ConfiguredObject>) iface);
+                String type = getActualType((Class<? extends ConfiguredObject>) iface);
                 if(!"".equals(type))
                 {
                     return type;
                 }
             }
         }
-        Class<? extends ConfiguredObject> category = getCategory(clazz);
-        if(category == null)
+
+        if(clazz.getSuperclass() != null && ConfiguredObject.class.isAssignableFrom(clazz.getSuperclass()))
         {
-            return "";
+            String type = getActualType((Class<? extends ConfiguredObject>) clazz.getSuperclass());
+            if(!"".equals(type))
+            {
+                return type;
+            }
         }
-        annotation = category.getAnnotation(ManagedObject.class);
-        if(annotation == null)
-        {
-            throw new NullPointerException("No definition found for category " + category.getSimpleName());
-        }
-        if(!"".equals(annotation.defaultType()))
-        {
-            return annotation.defaultType();
-        }
-        return category.getSimpleName();
+
+        return "";
     }
 
     public abstract Collection<Class<? extends ConfiguredObject>> getSupportedCategories();
     public abstract Collection<Class<? extends ConfiguredObject>> getChildTypes(Class<? extends ConfiguredObject> parent);
 
-    public abstract Class<? extends ConfiguredObject<?>> getRootCategory();
+    public abstract Class<? extends ConfiguredObject> getRootCategory();
 
     public abstract Collection<Class<? extends ConfiguredObject>> getParentTypes(Class<? extends ConfiguredObject> child);
     public abstract int getMajorVersion();
@@ -141,11 +156,11 @@ public abstract class Model
         private final Set<Class<? extends ConfiguredObject>> _supportedTypes =
                 new HashSet<Class<? extends ConfiguredObject>>();
 
-        private final Class<? extends ConfiguredObject<?>> _rootCategory;
+        private Class<? extends ConfiguredObject> _rootCategory;
 
         private ModelImpl()
         {
-            _rootCategory = SystemContext.class;
+            setRootCategory(SystemContext.class);
 
             addRelationship(SystemContext.class, Broker.class);
 
@@ -186,7 +201,7 @@ public abstract class Model
         }
 
         @Override
-        public Class<? extends ConfiguredObject<?>> getRootCategory()
+        public Class<? extends ConfiguredObject> getRootCategory()
         {
             return _rootCategory;
         }
@@ -221,6 +236,11 @@ public abstract class Model
         public Collection<Class<? extends ConfiguredObject>> getSupportedCategories()
         {
             return Collections.unmodifiableSet(_supportedTypes);
+        }
+
+        public void setRootCategory(final Class<? extends ConfiguredObject> rootCategory)
+        {
+            _rootCategory = rootCategory;
         }
 
         private void addRelationship(Class<? extends ConfiguredObject> parent, Class<? extends ConfiguredObject> child)

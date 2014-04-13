@@ -34,6 +34,7 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.FileTrustStore;
+import org.apache.qpid.server.security.FileTrustStoreImpl;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestSSLConstants;
@@ -48,7 +49,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
 
-        final FileTrustStore trustStore = new FileTrustStore(id, broker, attributes);
+        final FileTrustStore trustStore = new FileTrustStoreImpl(id, broker, attributes);
         trustStore.open();
         assertNotNull("Trust store configured object is not created", trustStore);
         assertEquals(id, trustStore.getId());
@@ -92,7 +93,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
             properties.remove(mandatoryProperties[i]);
             try
             {
-                TrustStore trustStore = new FileTrustStore(id, broker, properties);
+                TrustStore trustStore = new FileTrustStoreImpl(id, broker, properties);
                 trustStore.open();
                 fail("Cannot create key store without a " + mandatoryProperties[i]);
             }

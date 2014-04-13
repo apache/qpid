@@ -20,9 +20,14 @@
  */
 package org.apache.qpid.server.model;
 
+import java.security.Principal;
 import java.util.Collection;
 
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.AuthenticationResult;
 
 @ManagedObject( creatable = false )
 public interface AuthenticationProvider<X extends AuthenticationProvider<X>> extends ConfiguredObject<X>
@@ -55,4 +60,44 @@ public interface AuthenticationProvider<X extends AuthenticationProvider<X>> ext
     void setPreferencesProvider(PreferencesProvider preferencesProvider);
 
     void recoverUser(User user);
+
+    /**
+     * Gets the SASL mechanisms known to this manager.
+     *
+     * @return SASL mechanism names, space separated.
+     */
+    String getMechanisms();
+
+    /**
+     * Creates a SASL server for the specified mechanism name for the given
+     * fully qualified domain name.
+     *
+     * @param mechanism mechanism name
+     * @param localFQDN domain name
+     * @param externalPrincipal externally authenticated Principal
+     * @return SASL server
+     * @throws javax.security.sasl.SaslException
+     */
+    SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException;
+
+    /**
+     * Authenticates a user using SASL negotiation.
+     *
+     * @param server SASL server
+     * @param response SASL response to process
+     *
+     * @return authentication result
+     */
+    AuthenticationResult authenticate(SaslServer server, byte[] response);
+
+    /**
+     * Authenticates a user using their username and password.
+     *
+     * @param username username
+     * @param password password
+     *
+     * @return authentication result
+     */
+    AuthenticationResult authenticate(String username, String password);
+
 }

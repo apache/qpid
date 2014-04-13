@@ -43,9 +43,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedAttributeField;
-import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -56,20 +54,16 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
-@ManagedObject( category = false , type = "MANAGEMENT-JMX" )
-public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implements ConfigurationChangeListener
+public class JMXManagementPluginImpl
+        extends AbstractPluginAdapter<JMXManagementPluginImpl> implements ConfigurationChangeListener,
+                                                                          JMXManagementPlugin<JMXManagementPluginImpl>
 {
-    private static final Logger LOGGER = Logger.getLogger(JMXManagement.class);
+    private static final Logger LOGGER = Logger.getLogger(JMXManagementPluginImpl.class);
 
-    public static final String PLUGIN_TYPE = "MANAGEMENT-JMX";
-
-    // attributes
-    public static final String USE_PLATFORM_MBEAN_SERVER = "usePlatformMBeanServer";
     public static final String NAME = "name";
 
     // default values
     public static final String DEFAULT_NAME = "JMXManagement";
-    public static final boolean DEFAULT_USE_PLATFORM_MBEAN_SERVER = true;
 
     @SuppressWarnings("serial")
     private static final Map<String, Type> ATTRIBUTE_TYPES = new HashMap<String, Type>(){{
@@ -86,7 +80,7 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
     @ManagedAttributeField
     private boolean _usePlatformMBeanServer;
 
-    public JMXManagement(UUID id, Broker broker, Map<String, Object> attributes)
+    public JMXManagementPluginImpl(UUID id, Broker broker, Map<String, Object> attributes)
     {
         super(id, attributes, broker);
     }
@@ -321,7 +315,7 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
     @Override
     public Collection<String> getAttributeNames()
     {
-        return getAttributeNames(JMXManagement.class);
+        return getAttributeNames(JMXManagementPluginImpl.class);
     }
 
     @Override
@@ -335,9 +329,9 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
 
     private void validateAttributes(Map<String, Object> convertedAttributes)
     {
-        if(convertedAttributes.containsKey(JMXManagement.NAME))
+        if(convertedAttributes.containsKey(JMXManagementPluginImpl.NAME))
         {
-            String newName = (String) convertedAttributes.get(JMXManagement.NAME);
+            String newName = (String) convertedAttributes.get(JMXManagementPluginImpl.NAME);
             if(!getName().equals(newName))
             {
                 throw new IllegalConfigurationException("Changing the name of jmx management plugin is not allowed");
@@ -360,7 +354,7 @@ public class JMXManagement extends AbstractPluginAdapter<JMXManagement> implemen
         }
     }
 
-    @ManagedAttribute( automate = true, defaultValue = "true" )
+    @Override
     public boolean getUsePlatformMBeanServer()
     {
         return _usePlatformMBeanServer;

@@ -24,6 +24,7 @@ import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -130,16 +131,7 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     }
 
     @Override
-    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Plugin.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of plugin attribute is denied");
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Plugin.class, Operation.UPDATE))
         {

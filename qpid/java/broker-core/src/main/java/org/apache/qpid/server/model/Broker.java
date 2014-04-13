@@ -32,7 +32,7 @@ import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-@ManagedObject( defaultType = "adapter" )
+@ManagedObject( defaultType = "broker" )
 public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventLoggerProvider, StatisticsGatherer
 {
 

@@ -24,12 +24,10 @@ import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,12 +96,6 @@ public abstract class AbstractQueue
                    MessageGroupManager.ConsumerResetHelper
 {
 
-    private static final Set<String> ALERT_ATTRIBUTE_NAMES =
-            Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(Queue.ALERT_THRESHOLD_MESSAGE_AGE,
-                                                                          Queue.ALERT_THRESHOLD_MESSAGE_SIZE,
-                                                                          Queue.ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
-                                                                          Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES)));
-
     private static final Logger _logger = Logger.getLogger(AbstractQueue.class);
 
     public static final String SHARED_MSG_GROUP_ARG_VALUE = "1";
@@ -126,7 +118,6 @@ public abstract class AbstractQueue
     private final VirtualHostImpl _virtualHost;
     private final DeletedChildListener _deletedChildListener = new DeletedChildListener();
 
-    /** null means shared */
     private String _description;
 
     private boolean _durable;
@@ -164,19 +155,19 @@ public abstract class AbstractQueue
     private final AtomicInteger _bindingCountHigh = new AtomicInteger();
 
     /** max allowed size(KB) of a single message */
-    @ManagedAttributeField
+    @ManagedAttributeField( afterSet = "updateAlertChecks" )
     private long _alertThresholdMessageSize;
 
     /** max allowed number of messages on a queue. */
-    @ManagedAttributeField
+    @ManagedAttributeField( afterSet = "updateAlertChecks" )
     private long _alertThresholdQueueDepthMessages;
 
     /** max queue depth for the queue */
-    @ManagedAttributeField
+    @ManagedAttributeField( afterSet = "updateAlertChecks" )
     private long _alertThresholdQueueDepthBytes;
 
     /** maximum message age before alerts occur */
-    @ManagedAttributeField
+    @ManagedAttributeField( afterSet = "updateAlertChecks" )
     private long _alertThresholdMessageAge;
 
     /** the minimum interval between sending out consecutive alerts of the same type */
@@ -186,7 +177,7 @@ public abstract class AbstractQueue
     @ManagedAttributeField
     private long _queueFlowControlSizeBytes;
 
-    @ManagedAttributeField
+    @ManagedAttributeField( afterSet = "checkCapacity" )
     private long _queueFlowResumeSizeBytes;
 
     @ManagedAttributeField
@@ -2890,17 +2881,7 @@ public abstract class AbstractQueue
                 return true;
             }
 
-            final boolean updated = super.changeAttribute(name, expected, desired);
-
-            if(updated && ALERT_ATTRIBUTE_NAMES.contains(name))
-            {
-                updateAlertChecks();
-            }
-            else if(updated && QUEUE_FLOW_RESUME_SIZE_BYTES.equals(name))
-            {
-                checkCapacity();
-            }
-            return updated;
+            return super.changeAttribute(name, expected, desired);
         }
         finally
         {
@@ -2917,14 +2898,9 @@ public abstract class AbstractQueue
     {
         return getAttributeNames(getClass());
     }
-    @Override
-    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
-    {
-        _virtualHost.getSecurityManager().authoriseUpdate(this);
-    }
 
     @Override
-    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         _virtualHost.getSecurityManager().authoriseUpdate(this);
     }

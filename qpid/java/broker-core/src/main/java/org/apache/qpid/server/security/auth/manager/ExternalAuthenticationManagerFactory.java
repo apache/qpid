@@ -19,17 +19,17 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.util.ResourceBundleLoader;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class ExternalAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<ExternalAuthenticationManager>
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.util.ResourceBundleLoader;
+
+public class ExternalAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<ExternalAuthenticationManagerImpl>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.ExternalAuthenticationProviderAttributeDescriptions";
     public static final String PROVIDER_TYPE = "External";
@@ -41,7 +41,7 @@ public class ExternalAuthenticationManagerFactory extends AbstractAuthentication
 
     public ExternalAuthenticationManagerFactory()
     {
-        super(ExternalAuthenticationManager.class);
+        super(ExternalAuthenticationManagerImpl.class);
     }
 
     @Override
@@ -57,10 +57,10 @@ public class ExternalAuthenticationManagerFactory extends AbstractAuthentication
     }
 
     @Override
-    public ExternalAuthenticationManager createInstance(final Map<String, Object> attributes,
+    public ExternalAuthenticationManagerImpl createInstance(final Map<String, Object> attributes,
                                                         final ConfiguredObject<?>... parents)
     {
-        return new ExternalAuthenticationManager(getParent(Broker.class, parents), attributes);
+        return new ExternalAuthenticationManagerImpl(getParent(Broker.class, parents), attributes);
     }
 
 }

@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -48,8 +49,8 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
 import org.apache.qpid.server.model.port.AmqpPort;
-import org.apache.qpid.server.model.port.PortWithAuthProvider;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.security.SecurityManager;
@@ -63,7 +64,6 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
 
-@ManagedObject(category = false, type = "adapter")
 public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, ConfigurationChangeListener, StatisticsGatherer, StatisticsGatherer.Source
 {
     private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
@@ -1136,9 +1136,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         Collection<Port<?>> ports = getPorts();
         for (Port<?> p : ports)
         {
-            if (p instanceof PortWithAuthProvider && inetSocketAddress.getPort() == p.getPort())
+            if (p instanceof AbstractPortWithAuthProvider && inetSocketAddress.getPort() == p.getPort())
             {
-                provider = ((PortWithAuthProvider<?>) p).getAuthenticationProvider();
+                provider = ((AbstractPortWithAuthProvider<?>) p).getAuthenticationProvider();
                 break;
             }
         }
@@ -1214,15 +1214,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
-    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
-    {
-        if (!_securityManager.authoriseConfiguringBroker(getName(), Broker.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of broker attributes is denied");
-        }
-    }
-
-    @Override
     protected <C extends ConfiguredObject> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes,
             ConfiguredObject... otherParents) throws AccessControlException
     {
@@ -1233,7 +1224,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
-    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         if (!_securityManager.authoriseConfiguringBroker(getName(), Broker.class, Operation.UPDATE))
         {

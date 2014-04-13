@@ -21,6 +21,7 @@
 package org.apache.qpid.server.registry;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;

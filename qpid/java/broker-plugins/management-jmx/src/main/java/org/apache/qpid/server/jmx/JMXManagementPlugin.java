@@ -18,18 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.adapter;
+package org.apache.qpid.server.jmx;
 
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.*;
 
-@ManagedObject( category = false, type = "FileSystemPreferences" )
-public interface FileSystemPreferencesProvider<X extends FileSystemPreferencesProvider<X>> extends PreferencesProvider<X>
+@org.apache.qpid.server.model.ManagedObject( category = false , type = "MANAGEMENT-JMX" )
+public interface JMXManagementPlugin<X extends JMXManagementPlugin<X>> extends Plugin<X>
 {
-    String PATH = "path";
-    String PROVIDER_TYPE = "FileSystemPreferences";
+    String PLUGIN_TYPE = "MANAGEMENT-JMX";
+    // attributes
+    String USE_PLATFORM_MBEAN_SERVER = "usePlatformMBeanServer";
+    String DEFAULT_USE_PLATFORM_MBEAN_SERVER = "true";
 
-    @ManagedAttribute
-    String getPath();
+    @ManagedAttribute( automate = true, defaultValue = DEFAULT_USE_PLATFORM_MBEAN_SERVER )
+    boolean getUsePlatformMBeanServer();
 }

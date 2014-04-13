@@ -50,6 +50,7 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -99,7 +100,7 @@ public class JsonConfigurationEntryStoreTest extends ConfigurationEntryStoreTest
     {
         final BrokerOptions brokerOptions = mock(BrokerOptions.class);
         when(brokerOptions.getConfigurationStoreLocation()).thenReturn(absolutePath);
-        SystemContext context = new SystemContext(new TaskExecutor(),
+        SystemContext context = new SystemContextImpl(new TaskExecutor(),
                                                   new ConfiguredObjectFactory(Model.getInstance()),
                                                   mock(EventLogger.class),
                                                   mock(LogRecorder.class),

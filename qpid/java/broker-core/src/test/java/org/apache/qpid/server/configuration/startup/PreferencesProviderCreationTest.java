@@ -25,6 +25,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
+import org.apache.qpid.server.model.adapter.FileSystemPreferencesProviderImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -96,11 +97,12 @@ public class PreferencesProviderCreationTest extends QpidTestCase
         try
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
-            PreferencesProvider provider = new FileSystemPreferencesProvider(id,attributes,_authenticationProvider);
+            PreferencesProvider provider = new FileSystemPreferencesProviderImpl(id,attributes,_authenticationProvider);
             assertNotNull("Preferences provider was not recovered", provider);
             assertEquals("Unexpected name", "test-provider", provider.getName());
             assertEquals("Unexpected id", id, provider.getId());
-            assertEquals("Unexpected path", file.getAbsolutePath(), provider.getAttribute(FileSystemPreferencesProvider.PATH));
+            assertEquals("Unexpected path", file.getAbsolutePath(), provider.getAttribute(
+                    FileSystemPreferencesProvider.PATH));
         }
         finally
         {

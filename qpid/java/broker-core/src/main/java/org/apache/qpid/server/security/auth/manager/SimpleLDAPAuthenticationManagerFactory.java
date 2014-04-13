@@ -19,17 +19,17 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.util.ResourceBundleLoader;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class SimpleLDAPAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<SimpleLDAPAuthenticationManager>
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.util.ResourceBundleLoader;
+
+public class SimpleLDAPAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<SimpleLDAPAuthenticationManagerImpl>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationProviderAttributeDescriptions";
 
@@ -55,7 +55,7 @@ public class SimpleLDAPAuthenticationManagerFactory extends AbstractAuthenticati
 
     public SimpleLDAPAuthenticationManagerFactory()
     {
-        super(SimpleLDAPAuthenticationManager.class);
+        super(SimpleLDAPAuthenticationManagerImpl.class);
     }
 
     @Override
@@ -71,10 +71,10 @@ public class SimpleLDAPAuthenticationManagerFactory extends AbstractAuthenticati
     }
 
     @Override
-    public SimpleLDAPAuthenticationManager createInstance(final Map<String, Object> attributes,
+    public SimpleLDAPAuthenticationManagerImpl createInstance(final Map<String, Object> attributes,
                                                           final ConfiguredObject<?>... parents)
     {
-        return new SimpleLDAPAuthenticationManager(getParent(Broker.class, parents), attributes);
+        return new SimpleLDAPAuthenticationManagerImpl(getParent(Broker.class, parents), attributes);
     }
 
 }

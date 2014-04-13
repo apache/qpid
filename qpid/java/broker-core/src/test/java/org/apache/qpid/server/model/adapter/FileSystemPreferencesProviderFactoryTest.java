@@ -131,7 +131,8 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
             assertNotNull("Preferences provider was not recovered", provider);
             assertEquals("Unexpected name", "test-provider", provider.getName());
             assertEquals("Unexpected id", id, provider.getId());
-            assertEquals("Unexpected path", file.getAbsolutePath(), provider.getAttribute(FileSystemPreferencesProvider.PATH));
+            assertEquals("Unexpected path", file.getAbsolutePath(), provider.getAttribute(
+                    FileSystemPreferencesProvider.PATH));
             assertTrue("Preferences store file should  exist", file.exists());
         }
         finally

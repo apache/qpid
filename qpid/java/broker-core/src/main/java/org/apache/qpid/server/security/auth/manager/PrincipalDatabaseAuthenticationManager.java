@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslException;
@@ -48,7 +49,7 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 public abstract class PrincipalDatabaseAuthenticationManager<T extends PrincipalDatabaseAuthenticationManager<T>>
         extends AbstractAuthenticationManager<T>
-        implements PasswordCredentialManagingAuthenticationProvider<T>
+        implements ExternalFileBasedAuthenticationManager<T>
 {
 
     private static final Logger LOGGER = Logger.getLogger(PrincipalDatabaseAuthenticationManager.class);
@@ -96,7 +97,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     protected abstract PrincipalDatabase createDatabase();
 
 
-    @ManagedAttribute( automate = true , mandatory = true )
+    @Override
     public String getPath()
     {
         return _path;
@@ -316,30 +317,25 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         super.childRemoved(child);
     }
 
-    protected void validateAttributes(Map<String, Object> attributes)
+    @Override
+    protected void validateChange(final ConfiguredObject<?> updatedObject, final Set<String> changedAttributes)
     {
-        super.validateChangeAttributes(attributes);
+        super.validateChange(updatedObject, changedAttributes);
 
-        String newName = (String)attributes.get(NAME);
-        String currentName = getName();
-        if (!currentName.equals(newName))
+        ExternalFileBasedAuthenticationManager<?> updated = (ExternalFileBasedAuthenticationManager<?>) updatedObject;
+        if (changedAttributes.contains(NAME) &&  !getName().equals(updated.getName()))
         {
             throw new IllegalConfigurationException("Changing the name of authentication provider is not supported");
         }
-        String newType = (String)attributes.get(TYPE);
-        String currentType = (String)getAttribute(TYPE);
-        if (!currentType.equals(newType))
+        if (changedAttributes.contains(TYPE) && !getType().equals(updated.getType()))
         {
             throw new IllegalConfigurationException("Changing the type of authentication provider is not supported");
         }
-
     }
 
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        Map<String, Object> effectiveAttributes = super.generateEffectiveAttributes(attributes);
-        validateAttributes(effectiveAttributes);
         super.changeAttributes(attributes);
         initialise();
 

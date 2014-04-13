@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ScheduledFuture;
@@ -302,16 +303,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), org.apache.qpid.server.model.VirtualHost.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of virtual host attributes is denied");
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), org.apache.qpid.server.model.VirtualHost.class, Operation.UPDATE))
         {
