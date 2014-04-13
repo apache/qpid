@@ -182,7 +182,7 @@
     <zip destfile="${release.zip}">
       <zipfileset dir="${build}" prefix="${project.namever}" filemode="755">
         <include name="bin/*"/>
-	<exclude name="bin/*.txt"/>
+        <exclude name="bin/*.txt"/>
       </zipfileset>
 
       <zipfileset dir="${build}" prefix="${project.namever}" filemode="644">
@@ -191,10 +191,14 @@
 
       <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}" filemode="644" dirmode="755">
         <exclude name="bin/**"/>
-	<exclude name="scratch/**"/>
+        <exclude name="scratch/**"/>
       </zipfileset>
 
-      <zipfileset dir="${resources}" prefix="${project.namever}" filemode="644"/>
+      <zipfileset dir="${resources}" prefix="${project.namever}" filemode="644">
+        <include name="README.txt"/>
+      </zipfileset>
+
+      <zipfileset dir="${resources}/java-binary-release" prefix="${project.namever}" filemode="644"/>
     </zip>
   </target>
 

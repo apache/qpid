@@ -533,7 +533,7 @@
 
   <target name="copy-project-resources-metainf">
     <copy todir="${module.metainf}" failonerror="true">
-        <fileset dir="${project.root}/resources/"/>
+      <fileset dir="${project.root}/resources/jar"/>
     </copy>
   </target>
 
@@ -606,15 +606,19 @@
   <target name="libs-release" description="copy dependencies into module release" depends="libs-release-basic,libs-release-module-depends">
   </target>
 
-  <target name="resources" description="copy resources into build tree">
-    <copy todir="${build}" failonerror="false" flatten="true">
-      <fileset dir="${basedir}${file.separator}.." includes="${resources}"/>
-    </copy>
-  </target>
-
   <target name="resources-release" description="copy resources into module release">
     <copy todir="${module.release}" failonerror="false" flatten="true">
-      <fileset dir="${resources}" excludes="META-INF"/>
+      <fileset dir="${resources}">
+        <exclude name="jar/**"/>
+        <exclude name="java-binary-release/**"/>
+      </fileset>
+    </copy>
+
+    <copy todir="${module.release}" failonerror="false" overwrite="true">
+      <fileset dir="src/main/assembly">
+        <include name="LICENSE"/>
+        <include name="NOTICE"/>
+      </fileset>
     </copy>
   </target>
 
