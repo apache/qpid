@@ -21,8 +21,11 @@
 package org.apache.qpid.server.model;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -69,8 +72,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private static final Map<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?,?>>> _allAttributeTypes =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?, ?>>>());
 
-    private static final Map<Class<? extends ConfiguredObject>, Map<String, Field>> _allAutomatedFields =
-            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, Field>>());
+    private static final Map<Class<? extends ConfiguredObject>, Map<String, AutomatedField>> _allAutomatedFields =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, AutomatedField>>());
     private static final Map<Class, Object> SECURE_VALUES;
 
     public static final String SECURED_STRING_VALUE = "********";
@@ -108,6 +111,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private final TaskExecutor _taskExecutor;
 
+    private final Class<? extends ConfiguredObject> _category;
+    private final Class<? extends ConfiguredObject> _bestFitInterface;
+
     @ManagedAttributeField
     private long _createdTime;
 
@@ -127,7 +133,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private Map<String,String> _context;
 
     private final Map<String, ConfiguredObjectAttribute<?,?>> _attributeTypes;
-    private final Map<String, Field> _automatedFields;
+    private final Map<String, AutomatedField> _automatedFields;
 
     @ManagedAttributeField
     private String _type;
@@ -173,7 +179,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         _attributeTypes = getAttributeTypes(getClass());
         _automatedFields = getAutomatedFields(getClass());
+
+        _category = Model.getCategory(getClass());
         _type = Model.getType(getClass());
+        _bestFitInterface = calculateBestFitInterface();
+
         if(attributes.get(TYPE) != null)
         {
             if(!_type.equals(attributes.get(TYPE)))
@@ -239,7 +249,61 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 throw new IllegalArgumentException("Mandatory attribute " + attr.getName() + " not supplied for instance of " + getClass().getName());
             }
         }
+    }
 
+    private Class<? extends ConfiguredObject> calculateBestFitInterface()
+    {
+        Set<Class<? extends ConfiguredObject>> candidates = new HashSet<Class<? extends ConfiguredObject>>();
+        findBestFitInterface(getClass(), candidates);
+        switch(candidates.size())
+        {
+            case 0:
+                throw new ServerScopedRuntimeException("The configured object class " + getClass().getSimpleName() + " does not seem to implement an interface");
+            case 1:
+                return candidates.iterator().next();
+            default:
+                throw new ServerScopedRuntimeException("The configured object class " + getClass().getSimpleName() + " implements no single common interface which extends ConfiguredObject");
+        }
+    }
+
+    private static final void findBestFitInterface(Class<? extends ConfiguredObject> clazz, Set<Class<? extends ConfiguredObject>> candidates)
+    {
+        for(Class<?> interfaceClass : clazz.getInterfaces())
+        {
+            if(ConfiguredObject.class.isAssignableFrom(interfaceClass))
+            {
+                checkCandidate((Class<? extends ConfiguredObject>) interfaceClass, candidates);
+            }
+        }
+        if(clazz.getSuperclass() != null & ConfiguredObject.class.isAssignableFrom(clazz.getSuperclass()))
+        {
+            findBestFitInterface((Class<? extends ConfiguredObject>) clazz.getSuperclass(), candidates);
+        }
+    }
+
+    private static void checkCandidate(final Class<? extends ConfiguredObject> interfaceClass,
+                                       final Set<Class<? extends ConfiguredObject>> candidates)
+    {
+        if(!candidates.contains(interfaceClass))
+        {
+            Iterator<Class<? extends ConfiguredObject>> candidateIterator = candidates.iterator();
+
+            while(candidateIterator.hasNext())
+            {
+                Class<? extends ConfiguredObject> existingCandidate = candidateIterator.next();
+                if(existingCandidate.isAssignableFrom(interfaceClass))
+                {
+                    candidateIterator.remove();
+                }
+                else if(interfaceClass.isAssignableFrom(existingCandidate))
+                {
+                    return;
+                }
+            }
+
+            candidates.add(interfaceClass);
+
+        }
     }
 
     private void automatedSetValue(final String name, Object value)
@@ -251,9 +315,24 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 value = attribute.getAnnotation().defaultValue();
             }
-            _automatedFields.get(name).set(this, attribute.convert(value, this));
+            AutomatedField field = _automatedFields.get(name);
+
+            if(field.getPreSettingAction() != null)
+            {
+                field.getPreSettingAction().invoke(this);
+            }
+            field.getField().set(this, attribute.convert(value, this));
+
+            if(field.getPostSettingAction() != null)
+            {
+                field.getPostSettingAction().invoke(this);
+            }
         }
         catch (IllegalAccessException e)
+        {
+            throw new ServerScopedRuntimeException("Unable to set the automated attribute " + name + " on the configure object type " + getClass().getName(),e);
+        }
+        catch (InvocationTargetException e)
         {
             throw new ServerScopedRuntimeException("Unable to set the automated attribute " + name + " on the configure object type " + getClass().getName(),e);
         }
@@ -406,7 +485,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public Class<? extends ConfiguredObject> getCategoryClass()
     {
-        return Model.getCategory(getClass());
+        return _category;
     }
 
     public Map<String,String> getContext()
@@ -602,7 +681,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if (_taskExecutor.isTaskExecutorThread())
         {
-            authoriseSetAttribute(name, expected, desired);
+            authoriseSetAttributes(createProxyForValidation(Collections.singletonMap(name, desired)),
+                                   Collections.singleton(name));
+
             if (changeAttribute(name, expected, desired))
             {
                 attributeSet(name, expected, desired);
@@ -803,7 +884,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if (getTaskExecutor().isTaskExecutorThread())
         {
-            authoriseSetAttributes(attributes);
+            authoriseSetAttributes(createProxyForValidation(attributes), attributes.keySet());
             changeAttributes(attributes);
         }
         else
@@ -812,9 +893,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    protected void authoriseSetAttributes(final ConfiguredObject<?> proxyForValidation,
+                                          final Set<String> modifiedAttributes)
+    {
+
+    }
+
     protected void changeAttributes(final Map<String, Object> attributes)
     {
-        validateChangeAttributes(attributes);
+        validateChange(createProxyForValidation(attributes), attributes.keySet());
         Collection<String> names = getAttributeNames();
         for (String name : names)
         {
@@ -830,17 +917,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected void validateChangeAttributes(final Map<String, Object> attributes)
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
     {
-        if (attributes.containsKey(ID))
+        if(!getId().equals(proxyForValidation.getId()))
         {
-            UUID id = getId();
-            Object idAttributeValue = attributes.get(ID);
-            if (idAttributeValue != null && !(idAttributeValue.equals(id) || idAttributeValue.equals(id.toString())))
-            {
-                throw new IllegalConfigurationException("Cannot change existing configured object id");
-            }
+            throw new IllegalConfigurationException("Cannot change existing configured object id");
         }
+    }
+
+    private ConfiguredObject<?> createProxyForValidation(final Map<String, Object> attributes)
+    {
+        return (ConfiguredObject<?>) Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{_bestFitInterface},
+                                      new AttributeGettingHandler(attributes));
     }
 
     protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
@@ -848,17 +936,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         // allowed by default
     }
 
-    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
-    {
-        // allowed by default
-    }
-
     protected <C extends ConfiguredObject> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents) throws AccessControlException
-    {
-        // allowed by default
-    }
-
-    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
     {
         // allowed by default
     }
@@ -1071,6 +1149,34 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    private static class AutomatedField
+    {
+        private final Field _field;
+        private final Method _preSettingAction;
+        private final Method _postSettingAction;
+
+        private AutomatedField(final Field field, final Method preSettingAction, final Method postSettingAction)
+        {
+            _field = field;
+            _preSettingAction = preSettingAction;
+            _postSettingAction = postSettingAction;
+        }
+
+        public Field getField()
+        {
+            return _field;
+        }
+
+        public Method getPreSettingAction()
+        {
+            return _preSettingAction;
+        }
+
+        public Method getPostSettingAction()
+        {
+            return _postSettingAction;
+        }
+    }
 
     private static <X extends ConfiguredObject> void processAttributes(final Class<X> clazz)
     {
@@ -1149,6 +1255,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
                 if(annotation != null)
                 {
+                    if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
+                    {
+                        throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
+                    }
                     addToAttributesSet(clazz, new ConfiguredObjectAttribute(clazz, m, annotation));
                 }
                 else
@@ -1156,13 +1266,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
                     if(statAnnotation != null)
                     {
+                        if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
+                        {
+                            throw new ServerScopedRuntimeException("Can only define ManagedStatistics on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
+                        }
                         addToStatisticsSet(clazz, new ConfiguredObjectStatistic(clazz,m));
                     }
                 }
             }
 
             Map<String,ConfiguredObjectAttribute<?,?>> attrMap = new HashMap<String, ConfiguredObjectAttribute<?, ?>>();
-            Map<String,Field> fieldMap = new HashMap<String, Field>();
+            Map<String,AutomatedField> fieldMap = new HashMap<String, AutomatedField>();
 
 
             Collection<ConfiguredObjectAttribute<?, ?>> attrCol = _allAttributes.get(clazz);
@@ -1204,17 +1318,46 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private static Field findField(final ConfiguredObjectAttribute<?, ?> attr, Class<?> objClass)
+    private static AutomatedField findField(final ConfiguredObjectAttribute<?, ?> attr, Class<?> objClass)
     {
         Class<?> clazz = objClass;
         while(clazz != null)
         {
             for(Field field : clazz.getDeclaredFields())
             {
-                if(field.getAnnotation(ManagedAttributeField.class) != null && field.getName().equals("_" + attr.getName().replace('.','_')))
+                if(field.isAnnotationPresent(ManagedAttributeField.class) && field.getName().equals("_" + attr.getName().replace('.','_')))
                 {
-                    field.setAccessible(true);
-                    return field;
+                    try
+                    {
+                        ManagedAttributeField annotation = field.getAnnotation(ManagedAttributeField.class);
+                        field.setAccessible(true);
+                        Method beforeSet;
+                        if (!"".equals(annotation.beforeSet()))
+                        {
+                            beforeSet = clazz.getDeclaredMethod(annotation.beforeSet());
+                            beforeSet.setAccessible(true);
+                        }
+                        else
+                        {
+                            beforeSet = null;
+                        }
+                        Method afterSet;
+                        if (!"".equals(annotation.afterSet()))
+                        {
+                            afterSet = clazz.getDeclaredMethod(annotation.afterSet());
+                            afterSet.setAccessible(true);
+                        }
+                        else
+                        {
+                            afterSet = null;
+                        }
+                        return new AutomatedField(field, beforeSet, afterSet);
+                    }
+                    catch (NoSuchMethodException e)
+                    {
+                        throw new ServerScopedRuntimeException("Cannot find method referenced by annotation for pre/post setting action", e);
+                    }
+
                 }
             }
             clazz = clazz.getSuperclass();
@@ -1298,7 +1441,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _allAttributeTypes.get(clazz);
     }
 
-    private static Map<String, Field> getAutomatedFields(Class<? extends ConfiguredObject> clazz)
+    private static Map<String, AutomatedField> getAutomatedFields(Class<? extends ConfiguredObject> clazz)
     {
         if(!_allAutomatedFields.containsKey(clazz))
         {
@@ -1426,4 +1569,66 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
 
+    private class AttributeGettingHandler implements InvocationHandler
+    {
+        private Map<String,Object> _attributes;
+
+        AttributeGettingHandler(final Map<String, Object> modifiedAttributes)
+        {
+            Map<String,Object> combinedAttributes = new HashMap<String, Object>(getActualAttributes());
+            combinedAttributes.putAll(modifiedAttributes);
+            _attributes = combinedAttributes;
+        }
+
+        @Override
+        public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable
+        {
+
+            if(method.isAnnotationPresent(ManagedAttribute.class))
+            {
+                ConfiguredObjectAttribute attribute = getAttributeFromMethod(method);
+                return getValue(attribute);
+            }
+            else if(method.getName().equals("getAttribute") && args != null && args.length == 1 && args[0] instanceof String)
+            {
+                ConfiguredObjectAttribute attribute = _attributeTypes.get((String)args[0]);
+                if(attribute != null)
+                {
+                    return getValue(attribute);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            throw new UnsupportedOperationException("This class is only intended for value validation, and only getters on managed attributes are permitted.");
+        }
+
+        protected Object getValue(final ConfiguredObjectAttribute attribute)
+        {
+            ManagedAttribute annotation = attribute.getAnnotation();
+            if(annotation.automate())
+            {
+                Object value = _attributes.get(attribute.getName());
+                return attribute.convert(value == null && !"".equals(annotation.defaultValue()) ? annotation.defaultValue() : value , AbstractConfiguredObject.this);
+            }
+            else
+            {
+                return _attributes.get(attribute.getName());
+            }
+        }
+
+        private ConfiguredObjectAttribute getAttributeFromMethod(final Method method)
+        {
+            for(ConfiguredObjectAttribute attribute : _attributeTypes.values())
+            {
+                if(attribute.getGetter().getName().equals(method.getName())
+                   && !Modifier.isStatic(method.getModifiers()))
+                {
+                    return attribute;
+                }
+            }
+            throw new ServerScopedRuntimeException("Unable to find attribute definition for method " + method.getName());
+        }
+    }
 }

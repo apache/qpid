@@ -34,6 +34,7 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -43,7 +44,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
 {
     private static final String TEST_PREFERENCES = "{\"user1\":{\"pref1\":\"pref1User1Value\", \"pref2\": true, \"pref3\": 1.0, \"pref4\": 2},"
             + "\"user2\":{\"pref1\":\"pref1User2Value\", \"pref2\": false, \"pref3\": 2.0, \"pref4\": 3}}";
-    private FileSystemPreferencesProvider _preferencesProvider;
+    private FileSystemPreferencesProviderImpl _preferencesProvider;
     private AuthenticationProvider _authenticationProvider;
     private Broker _broker;
     private String _user1, _user2;
@@ -96,8 +97,8 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(FileSystemPreferencesProvider.PATH, nonExistingFile.getAbsolutePath());
-            attributes.put(FileSystemPreferencesProvider.NAME, getTestName());
-            _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider);
+            attributes.put(ConfiguredObject.NAME, getTestName());
+            _preferencesProvider = new FileSystemPreferencesProviderImpl(UUID.randomUUID(), attributes, _authenticationProvider);
             _preferencesProvider.createStoreIfNotExist();
             assertEquals(State.INITIALISING, _preferencesProvider.getState());
             assertTrue("Preferences file was not created", nonExistingFile.exists());
@@ -116,9 +117,9 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         try
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
-            attributes.put(FileSystemPreferencesProvider.NAME, getTestName());
+            attributes.put(ConfiguredObject.NAME, getTestName());
             attributes.put(FileSystemPreferencesProvider.PATH, emptyPrefsFile.getAbsolutePath());
-            _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider);
+            _preferencesProvider = new FileSystemPreferencesProviderImpl(UUID.randomUUID(), attributes, _authenticationProvider);
             assertEquals(State.INITIALISING, _preferencesProvider.getState());
         }
         finally
@@ -273,12 +274,12 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         assertEquals("Unexpected user names", new HashSet<String>(Arrays.asList("user1", "user2")), userNames);
     }
 
-    private FileSystemPreferencesProvider createPreferencesProvider()
+    private FileSystemPreferencesProviderImpl createPreferencesProvider()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(FileSystemPreferencesProvider.PATH, _preferencesFile.getAbsolutePath());
-        attributes.put(FileSystemPreferencesProvider.NAME, "test");
-        return _preferencesProvider = new FileSystemPreferencesProvider(UUID.randomUUID(), attributes, _authenticationProvider);
+        attributes.put(ConfiguredObject.NAME, "test");
+        return _preferencesProvider = new FileSystemPreferencesProviderImpl(UUID.randomUUID(), attributes, _authenticationProvider);
     }
 
     private void assertUser1Preferences(Map<String, Object> preferences1)

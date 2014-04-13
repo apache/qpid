@@ -81,13 +81,13 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
      public JMXManagedObjectRegistry(
             Broker broker,
             Port connectorPort, Port registryPort,
-            JMXManagement jmxManagement)
+            JMXManagementPlugin jmxManagement)
     {
         _broker = broker;
         _registryPort = registryPort;
         _connectorPort = connectorPort;
 
-        boolean usePlatformServer = (Boolean)jmxManagement.getAttribute(JMXManagement.USE_PLATFORM_MBEAN_SERVER);
+        boolean usePlatformServer = (Boolean)jmxManagement.getAttribute(JMXManagementPlugin.USE_PLATFORM_MBEAN_SERVER);
 
         _mbeanServer =
                 usePlatformServer ? ManagementFactory.getPlatformMBeanServer()

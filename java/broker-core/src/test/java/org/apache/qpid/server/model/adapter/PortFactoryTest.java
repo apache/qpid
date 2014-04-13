@@ -320,7 +320,7 @@ public class PortFactoryTest extends QpidTestCase
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
 
         assertNotNull(port);
-        assertFalse("Port should be a PortAdapter, not its AMQP-specific subclass", port instanceof AmqpPort);
+        assertFalse("Port should not be an AMQP-specific subclass", port instanceof AmqpPort);
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
         assertEquals(_tcpTransports, port.getTransports());
@@ -345,7 +345,7 @@ public class PortFactoryTest extends QpidTestCase
         Port port = _portFactory.createPort(_portId, _broker, _attributes);
 
         assertNotNull(port);
-        assertFalse("Port should be a PortAdapter, not its AMQP-specific subclass", port instanceof AmqpPort);
+        assertFalse("Port not be an AMQP-specific port subclass", port instanceof AmqpPort);
         assertEquals(_portId, port.getId());
         assertEquals(_portNumber, port.getPort());
         assertEquals(Collections.singleton(PortFactory.DEFAULT_TRANSPORT), port.getTransports());

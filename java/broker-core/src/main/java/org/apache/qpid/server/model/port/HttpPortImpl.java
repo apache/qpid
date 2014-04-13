@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,30 +16,32 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.server.jmx;
+package org.apache.qpid.server.model.port;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Protocol;
 
-public class JMXManagementFactory extends AbstractConfiguredObjectTypeFactory<JMXManagementPluginImpl>
+public class HttpPortImpl extends AbstractPortWithAuthProvider<HttpPortImpl> implements HttpPort<HttpPortImpl>
 {
-    public JMXManagementFactory()
+    public HttpPortImpl(final UUID id,
+                        final Broker<?> broker,
+                        final Map<String, Object> attributes,
+                        final TaskExecutor taskExecutor)
     {
-        super(JMXManagementPluginImpl.class);
+        super(id, broker, attributes, Collections.<String,Object>emptyMap(), taskExecutor);
     }
 
     @Override
-    public JMXManagementPluginImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
+    protected Set<Protocol> getDefaultProtocols()
     {
-        Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
-        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
-        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new JMXManagementPluginImpl(id, getParent(Broker.class,parents),attributes);
+        return Collections.singleton(Protocol.HTTP);
     }
 }

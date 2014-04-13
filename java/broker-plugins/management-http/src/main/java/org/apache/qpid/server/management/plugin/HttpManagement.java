@@ -69,7 +69,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServlet;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
-import org.apache.qpid.server.model.port.PortWithAuthProvider;
+import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
@@ -218,8 +218,10 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
                     throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
                 }
                 SslContextFactory factory = new SslContextFactory();
-                final boolean needClientAuth = port instanceof PortWithAuthProvider && ((PortWithAuthProvider)port).getNeedClientAuth();
-                final boolean wantClientAuth = port instanceof PortWithAuthProvider && ((PortWithAuthProvider)port).getWantClientAuth();
+                final boolean needClientAuth = port instanceof AbstractPortWithAuthProvider
+                                               && ((AbstractPortWithAuthProvider)port).getNeedClientAuth();
+                final boolean wantClientAuth = port instanceof AbstractPortWithAuthProvider
+                                               && ((AbstractPortWithAuthProvider)port).getWantClientAuth();
                 boolean needClientCert = needClientAuth || wantClientAuth;
                 if (needClientCert && trustStores.isEmpty())
                 {

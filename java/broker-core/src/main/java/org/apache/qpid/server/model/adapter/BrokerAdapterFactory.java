@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.SystemContext;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.SystemContext;
 
 public class BrokerAdapterFactory  extends AbstractConfiguredObjectTypeFactory<BrokerAdapter>
 {

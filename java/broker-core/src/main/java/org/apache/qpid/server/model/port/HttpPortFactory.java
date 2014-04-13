@@ -20,30 +20,30 @@
  */
 package org.apache.qpid.server.model.port;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-public class HttpPortFactory extends AbstractConfiguredObjectTypeFactory<HttpPort>
+public class HttpPortFactory extends AbstractConfiguredObjectTypeFactory<HttpPortImpl>
 {
     public HttpPortFactory()
     {
-        super(HttpPort.class);
+        super(HttpPortImpl.class);
     }
 
     @Override
-    public HttpPort createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
+    public HttpPortImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
         Broker broker = getParent(Broker.class, parents);
         Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
         Object idObj = attributesWithoutId.remove(Port.ID);
         UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new HttpPort(id, broker, attributesWithoutId, broker.getTaskExecutor());
+        return new HttpPortImpl(id, broker, attributesWithoutId, broker.getTaskExecutor());
     }
 
 }

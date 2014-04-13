@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class FileTrustStoreFactory extends AbstractConfiguredObjectTypeFactory<FileTrustStore>
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+public class FileTrustStoreFactory extends AbstractConfiguredObjectTypeFactory<FileTrustStoreImpl>
 {
     public FileTrustStoreFactory()
     {
-        super(FileTrustStore.class);
+        super(FileTrustStoreImpl.class);
     }
 
     protected final Broker getBroker(ConfiguredObject<?>... parents)
@@ -45,12 +45,12 @@ public class FileTrustStoreFactory extends AbstractConfiguredObjectTypeFactory<F
     }
 
     @Override
-    public FileTrustStore createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
+    public FileTrustStoreImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
         HashMap<String, Object> attributesWithoutId = new HashMap<String, Object>(attributes);
         Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
         UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new FileTrustStore(id, getParent(Broker.class, parents), attributesWithoutId);
+        return new FileTrustStoreImpl(id, getParent(Broker.class, parents), attributesWithoutId);
     }
 
 }

@@ -38,8 +38,8 @@ import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public interface AMQQueue<X extends AMQQueue<X>>
-        extends Comparable<AMQQueue>, ExchangeReferrer, BaseQueue, MessageSource, CapacityChecker, MessageDestination,
-                Deletable<AMQQueue>, Queue<X>
+        extends Queue<X>, Comparable<AMQQueue>, ExchangeReferrer, BaseQueue, MessageSource, CapacityChecker, MessageDestination,
+                Deletable<AMQQueue>
 {
 
     boolean isExclusive();

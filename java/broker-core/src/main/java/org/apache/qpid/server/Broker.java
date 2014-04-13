@@ -46,6 +46,7 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
@@ -136,7 +137,7 @@ public class Broker
         TaskExecutor taskExecutor = new TaskExecutor();
         taskExecutor.start();
         ConfiguredObjectFactory configuredObjectFactory = new ConfiguredObjectFactory(Model.getInstance());
-        SystemContext systemContext = new SystemContext(taskExecutor, configuredObjectFactory, _eventLogger, logRecorder, options);
+        SystemContext systemContext = new SystemContextImpl(taskExecutor, configuredObjectFactory, _eventLogger, logRecorder, options);
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
         DurableConfigurationStore store = storeCreator.createStore(systemContext, storeType, options.getInitialConfigurationLocation(),

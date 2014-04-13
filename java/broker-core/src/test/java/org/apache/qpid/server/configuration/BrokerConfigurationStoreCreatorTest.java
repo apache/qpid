@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
@@ -68,7 +69,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         _userStoreLocation = new File(TMP_FOLDER, "_store_" + System.currentTimeMillis() + "_" + getTestName());
         final BrokerOptions brokerOptions = mock(BrokerOptions.class);
         when(brokerOptions.getConfigurationStoreLocation()).thenReturn(_userStoreLocation.getAbsolutePath());
-        _systemContext = new SystemContext(new TaskExecutor(),
+        _systemContext = new SystemContextImpl(new TaskExecutor(),
                                                   new ConfiguredObjectFactory(Model.getInstance()),
                                                   mock(EventLogger.class),
                                                   mock(LogRecorder.class),

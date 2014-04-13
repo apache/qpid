@@ -20,31 +20,31 @@
  */
 package org.apache.qpid.server.model.port;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-public class AmqpPortFactory extends AbstractConfiguredObjectTypeFactory<AmqpPort>
+public class AmqpPortFactory extends AbstractConfiguredObjectTypeFactory<AmqpPortImpl>
 {
     public AmqpPortFactory()
     {
-        super(AmqpPort.class);
+        super(AmqpPortImpl.class);
     }
 
     @Override
-    public AmqpPort createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
+    public AmqpPortImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
         Broker broker = getParent(Broker.class, parents);
         Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
         Object idObj = attributesWithoutId.remove(Port.ID);
         UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
 
-        return new AmqpPort(id, broker, attributesWithoutId, broker.getTaskExecutor());
+        return new AmqpPortImpl(id, broker, attributesWithoutId, broker.getTaskExecutor());
     }
 
 }

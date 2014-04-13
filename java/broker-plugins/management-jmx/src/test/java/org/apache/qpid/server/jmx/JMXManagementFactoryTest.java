@@ -38,14 +38,14 @@ public class JMXManagementFactoryTest extends QpidTestCase
     public void testJMXConfigured() throws Exception
     {
         _attributes.put(ConfiguredObject.ID,UUID.randomUUID());
-        _attributes.put(ConfiguredObject.TYPE, JMXManagement.PLUGIN_TYPE);
+        _attributes.put(ConfiguredObject.TYPE, JMXManagementPlugin.PLUGIN_TYPE);
         _attributes.put(ConfiguredObject.NAME, getName());
 
-        JMXManagement jmxManagement = _jmxManagementFactory.createInstance( _attributes, _broker);
+        JMXManagementPlugin jmxManagement = _jmxManagementFactory.createInstance( _attributes, _broker);
         jmxManagement.open();
         assertNotNull(jmxManagement);
-        assertEquals("Unexpected plugin type", JMXManagement.PLUGIN_TYPE, jmxManagement.getType());
-        assertEquals("Unexpected default mbean platform", JMXManagement.DEFAULT_USE_PLATFORM_MBEAN_SERVER, jmxManagement.getAttribute(JMXManagement.USE_PLATFORM_MBEAN_SERVER));
+        assertEquals("Unexpected plugin type", JMXManagementPlugin.PLUGIN_TYPE, jmxManagement.getType());
+        assertEquals("Unexpected default mbean platform", Boolean.parseBoolean(JMXManagementPlugin.DEFAULT_USE_PLATFORM_MBEAN_SERVER), jmxManagement.getUsePlatformMBeanServer());
     }
 
 

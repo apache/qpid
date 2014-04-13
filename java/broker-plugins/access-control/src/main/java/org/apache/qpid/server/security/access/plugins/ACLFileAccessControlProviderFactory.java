@@ -20,21 +20,21 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
+import java.util.Map;
+
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.AccessControlProviderFactory;
 import org.apache.qpid.server.util.ResourceBundleLoader;
 
-import java.util.Map;
-
-public class ACLFileAccessControlProviderFactory extends AbstractConfiguredObjectTypeFactory<ACLFileAccessControlProvider> implements AccessControlProviderFactory<ACLFileAccessControlProvider>
+public class ACLFileAccessControlProviderFactory extends AbstractConfiguredObjectTypeFactory<ACLFileAccessControlProviderImpl> implements AccessControlProviderFactory<ACLFileAccessControlProviderImpl>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.access.plugins.FileAccessControlProviderAttributeDescriptions";
 
     public ACLFileAccessControlProviderFactory()
     {
-        super(ACLFileAccessControlProvider.class);
+        super(ACLFileAccessControlProviderImpl.class);
     }
 
     @Override
@@ -44,10 +44,10 @@ public class ACLFileAccessControlProviderFactory extends AbstractConfiguredObjec
     }
 
     @Override
-    public ACLFileAccessControlProvider createInstance(final Map<String, Object> attributes,
+    public ACLFileAccessControlProviderImpl createInstance(final Map<String, Object> attributes,
                                                        final ConfiguredObject<?>... parents)
     {
-        return new ACLFileAccessControlProvider(getParent(Broker.class,parents), attributes);
+        return new ACLFileAccessControlProviderImpl(getParent(Broker.class,parents), attributes);
     }
 
 }

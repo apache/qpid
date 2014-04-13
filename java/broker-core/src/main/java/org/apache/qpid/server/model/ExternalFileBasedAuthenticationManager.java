@@ -18,18 +18,10 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.adapter;
+package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.PreferencesProvider;
-
-@ManagedObject( category = false, type = "FileSystemPreferences" )
-public interface FileSystemPreferencesProvider<X extends FileSystemPreferencesProvider<X>> extends PreferencesProvider<X>
+public interface ExternalFileBasedAuthenticationManager<X extends ExternalFileBasedAuthenticationManager<X>> extends PasswordCredentialManagingAuthenticationProvider<X>
 {
-    String PATH = "path";
-    String PROVIDER_TYPE = "FileSystemPreferences";
-
-    @ManagedAttribute
-    String getPath();
+    @ManagedAttribute( automate = true , mandatory = true )
+    public String getPath();
 }

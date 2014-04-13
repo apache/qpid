@@ -349,6 +349,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         // no-op: expected to be overridden by subclass
     }
 
+
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
@@ -481,16 +482,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     }
 
     @Override
-    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Port.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of port attributes is denied");
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Port.class, Operation.UPDATE))
         {

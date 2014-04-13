@@ -147,7 +147,7 @@ public class QueueRestTest extends QpidRestTestCase
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
 
         responseCode = getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
-        assertEquals("Setting of queue attribites should be allowed", 200, responseCode);
+        assertEquals("Setting of queue attributes should be allowed", 200, responseCode);
 
         Map<String, Object> queueData = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
         assertEquals("Unexpected " + Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 100000, queueData.get(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES) );

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -45,7 +46,7 @@ import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHostAlias;
-import org.apache.qpid.server.model.port.PortWithAuthProvider;
+import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
@@ -203,16 +204,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @Override
-    protected void authoriseSetAttribute(String name, Object expected, Object desired) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AuthenticationProvider.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of authentication provider attributes is denied");
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(Map<String, Object> attributes) throws AccessControlException
+    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AuthenticationProvider.class, Operation.UPDATE))
         {
@@ -233,7 +225,8 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
             Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
             for (Port port : ports)
             {
-                if(port instanceof PortWithAuthProvider && ((PortWithAuthProvider<?>)port).getAuthenticationProvider() == this)
+                if(port instanceof AbstractPortWithAuthProvider
+                   && ((AbstractPortWithAuthProvider<?>)port).getAuthenticationProvider() == this)
                 {
                     throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
                 }

@@ -42,7 +42,7 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.group.FileGroupManagerFactory;
@@ -75,7 +75,7 @@ public class TestBrokerConfiguration
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation)
     {
-        _store = new MemoryConfigurationEntryStore(new SystemContext(new TaskExecutor(), new ConfiguredObjectFactory(
+        _store = new MemoryConfigurationEntryStore(new SystemContextImpl(new TaskExecutor(), new ConfiguredObjectFactory(
                 Model.getInstance()),
                                                                      mock(EventLogger.class), mock(LogRecorder.class),
                                                                      mock(BrokerOptions.class)),
