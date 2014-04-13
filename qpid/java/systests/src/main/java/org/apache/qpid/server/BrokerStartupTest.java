@@ -31,6 +31,7 @@ import junit.framework.AssertionFailedError;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.util.LogMonitor;
 
@@ -52,8 +53,6 @@ public class BrokerStartupTest extends AbstractTestLogging
      * This test simply tests that the broker will startup even if there is no config file (i.e. that it can use the
      * currently packaged initial config file (all system tests by default generate their own config file).
      *
-     * It makes the assumption that setting the system property qpid.amqp_port
-     * to the value of getPort(0) will allow a connection to be established with getConnection()
      *
      * @throws Exception
      */
@@ -70,7 +69,12 @@ public class BrokerStartupTest extends AbstractTestLogging
             setTestSystemProperty("qpid.rmi_port",String.valueOf(connectorServerPort));
             startBroker(port, null);
 
-            Connection conn = getConnection();
+            AMQConnectionURL url = new AMQConnectionURL(String.format("amqp://"
+                                                                      + GUEST_USERNAME
+                                                                      + ":"
+                                                                      + GUEST_PASSWORD
+                                                                      + "@clientid/?brokerlist='localhost:%d'", port));
+            Connection conn = getConnection(url);
             assertNotNull(conn);
             conn.close();
         }
