@@ -71,13 +71,38 @@ http://www.w3.org/Consortium/Legal/
 
 ###############################################
 
+Commons Logging
+Copyright 2001-2007 The Apache Software Foundation
+
+###############################################
+
 Apache Commons Codec
 Copyright 2002-2013 The Apache Software Foundation
 
 ###############################################
 
+Apache Commons BeanUtils
+Copyright 2000-2010 The Apache Software Foundation
+
+###############################################
+
 Apache Commons CLI
 Copyright 2001-2009 The Apache Software Foundation
+
+###############################################
+
+Apache Commons Collections
+Copyright 2001-2008 The Apache Software Foundation
+
+###############################################
+
+Apache Commons Configuration
+Copyright 2001-2012 The Apache Software Foundation
+
+###############################################
+
+Apache Commons Digester
+Copyright 2001-2008 The Apache Software Foundation
 
 ###############################################
 
@@ -90,4 +115,3 @@ Apache log4j
 Copyright 2007 The Apache Software Foundation
 
 ###############################################
-
