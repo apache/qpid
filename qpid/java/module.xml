@@ -687,7 +687,7 @@
       <manifest>
         <attribute name="Class-Path" value="${qpid.jar.classpath}"/>
       </manifest>
-      <metainf dir="${project.root}/resources/"/>
+      <metainf dir="${project.root}/resources/jar"/>
     </jar>
 
     <touch file="${module.qpid.jar}"/>
