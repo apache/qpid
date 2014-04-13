@@ -61,10 +61,10 @@
     }
   } ],
   "plugins" : [ {
-    "pluginType" : "MANAGEMENT-HTTP",
+    "type" : "MANAGEMENT-HTTP",
     "name" : "httpManagement"
   }, {
-    "pluginType" : "MANAGEMENT-JMX",
+    "type" : "MANAGEMENT-JMX",
     "name" : "jmxManagement"
   } ]
 }

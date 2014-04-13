@@ -689,7 +689,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         String testConfig = getTestConfigFile(port);
         String relative = getPathRelativeToWorkingDirectory(testConfig);
-        if (!testConfiguration.isSaved())
+        if (testConfiguration != null && !testConfiguration.isSaved())
         {
             _logger.info("Saving test broker configuration at: " + testConfig);
             testConfiguration.save(new File(testConfig));

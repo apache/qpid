@@ -203,20 +203,20 @@ public class MainTest extends QpidTestCase
     {
         //short name
         String newPort = "12345";
-        BrokerOptions options = startDummyMain("-prop name=value -prop " + BrokerOptions.QPID_AMQP_PORT + "=" + newPort);
+        BrokerOptions options = startDummyMain("-prop name=value -prop " + org.apache.qpid.server.model.Broker.QPID_AMQP_PORT + "=" + newPort);
 
         Map<String, String> props = options.getConfigProperties();
 
-        assertEquals(newPort, props.get(BrokerOptions.QPID_AMQP_PORT));
+        assertEquals(newPort, props.get(org.apache.qpid.server.model.Broker.QPID_AMQP_PORT));
         assertEquals("value", props.get("name"));
 
         //long name
         newPort = "678910";
-        options = startDummyMain("--config-property name2=value2 --config-property " + BrokerOptions.QPID_AMQP_PORT + "=" + newPort);
+        options = startDummyMain("--config-property name2=value2 --config-property " + org.apache.qpid.server.model.Broker.QPID_AMQP_PORT + "=" + newPort);
 
         props = options.getConfigProperties();
 
-        assertEquals(newPort, props.get(BrokerOptions.QPID_AMQP_PORT));
+        assertEquals(newPort, props.get(org.apache.qpid.server.model.Broker.QPID_AMQP_PORT));
         assertEquals("value2", props.get("name2"));
     }
 

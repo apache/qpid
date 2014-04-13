@@ -59,8 +59,23 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
     String CONNECTION_CLOSE_WHEN_NO_ROUTE = "connection.closeWhenNoRoute";
 
+
+    String QPID_AMQP_PORT = "qpid.amqp_port";
+    String QPID_HTTP_PORT = "qpid.http_port";
+    String QPID_RMI_PORT  = "qpid.rmi_port";
+    String QPID_JMX_PORT  = "qpid.jmx_port";
+
     @ManagedContextDefault(name = "broker.name")
     static final String DEFAULT_BROKER_NAME = "Broker";
+
+    @ManagedContextDefault(name = QPID_AMQP_PORT)
+    public static final String DEFAULT_AMQP_PORT_NUMBER = "5672";
+    @ManagedContextDefault(name = QPID_HTTP_PORT)
+    public static final String DEFAULT_HTTP_PORT_NUMBER = "8080";
+    @ManagedContextDefault(name = QPID_RMI_PORT)
+    public static final String DEFAULT_RMI_PORT_NUMBER  = "8999";
+    @ManagedContextDefault(name = QPID_JMX_PORT)
+    public static final String DEFAULT_JMX_PORT_NUMBER  = "9099";
 
     @ManagedAttribute( derived = true )
     String getBuildVersion();
