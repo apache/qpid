@@ -48,15 +48,6 @@ public class BrokerOptions
      * set in the "QPID_HOME" system property if that was set, or remains unset if it was not.
      */
     public static final String QPID_HOME_DIR  = "qpid.home_dir";
-    public static final String QPID_AMQP_PORT = "qpid.amqp_port";
-    public static final String QPID_HTTP_PORT = "qpid.http_port";
-    public static final String QPID_RMI_PORT  = "qpid.rmi_port";
-    public static final String QPID_JMX_PORT  = "qpid.jmx_port";
-
-    public static final String DEFAULT_AMQP_PORT_NUMBER = "5672";
-    public static final String DEFAULT_HTTP_PORT_NUMBER = "8080";
-    public static final String DEFAULT_RMI_PORT_NUMBER  = "8999";
-    public static final String DEFAULT_JMX_PORT_NUMBER  = "9099";
 
     public static final String DEFAULT_INITIAL_CONFIG_NAME = "initial-config.json";
     public static final String DEFAULT_STORE_TYPE = "json";
@@ -307,10 +298,6 @@ public class BrokerOptions
         ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String,String>();
         properties.putAll(_configProperties);
 
-        properties.putIfAbsent(QPID_AMQP_PORT, String.valueOf(DEFAULT_AMQP_PORT_NUMBER));
-        properties.putIfAbsent(QPID_HTTP_PORT, String.valueOf(DEFAULT_HTTP_PORT_NUMBER));
-        properties.putIfAbsent(QPID_RMI_PORT, String.valueOf(DEFAULT_RMI_PORT_NUMBER));
-        properties.putIfAbsent(QPID_JMX_PORT, String.valueOf(DEFAULT_JMX_PORT_NUMBER));
         properties.putIfAbsent(QPID_WORK_DIR, getWorkDir());
 
         String homeDir = getHomeDir();
