@@ -149,13 +149,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;
-    }
-
-    @Override
     public State getDesiredState()
     {
         return null;
@@ -493,21 +486,7 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
-    {
-        return null;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return null;
     }

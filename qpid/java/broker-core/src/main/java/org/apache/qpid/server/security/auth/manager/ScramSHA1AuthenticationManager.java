@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -449,6 +450,25 @@ public class ScramSHA1AuthenticationManager
         }
 
         @Override
+        public void validate()
+        {
+            super.validate();
+            if(!isDurable())
+            {
+                throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+            }
+        }
+
+        @Override
+        protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+        {
+            super.validateChange(proxyForValidation, changedAttributes);
+            if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
+            {
+                throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+            }
+        }
+        @Override
         protected boolean setState(final State currentState, final State desiredState)
         {
             if(desiredState == State.DELETED)
@@ -526,47 +546,15 @@ public class ScramSHA1AuthenticationManager
         }
 
         @Override
-        public String setName(final String currentName, final String desiredName)
-                throws IllegalStateException, AccessControlException
-        {
-            throw new IllegalStateException("Names cannot be updated");
-        }
-
-        @Override
         public State getState()
         {
             return State.ACTIVE;
         }
 
         @Override
-        public boolean isDurable()
-        {
-            return true;
-        }
-
-        @Override
-        public void setDurable(final boolean durable)
-                throws IllegalStateException, AccessControlException, IllegalArgumentException
-        {
-
-        }
-
-        @Override
         public LifetimePolicy getLifetimePolicy()
         {
             return LifetimePolicy.PERMANENT;
-        }
-
-        @Override
-        public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-                throws IllegalStateException, AccessControlException, IllegalArgumentException
-        {
-            if(expected == desired && expected == LifetimePolicy.PERMANENT)
-            {
-                return LifetimePolicy.PERMANENT;
-            }
-            throw new IllegalArgumentException("Cannot change lifetime policy of a user");
-
         }
 
         @Override

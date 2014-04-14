@@ -21,7 +21,6 @@
 
 package org.apache.qpid.server.model.adapter;
 
-import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,41 +77,15 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
     }
 
     @Override
-    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
-    {
-        throw new IllegalStateException();  // TODO - Implement
-    }
-
-    @Override
     public State getState()
     {
         return State.ACTIVE;  // TODO - Implement
     }
 
     @Override
-    public boolean isDurable()
-    {
-        return true;  // TODO - Implement
-    }
-
-    @Override
-    public void setDurable(boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;  // TODO - Implement
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();  // TODO - Implement
     }
 
     @Override

@@ -77,8 +77,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     private ExchangeImpl _alternateExchange;
 
-    private boolean _durable;
-
     private VirtualHostImpl _virtualHost;
 
     private final List<Action<ExchangeImpl>> _closeTaskList = new CopyOnWriteArrayList<Action<ExchangeImpl>>();
@@ -112,7 +110,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         super(parentsMap(vhost), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
 
-        _durable = MapValueConverter.getBooleanAttribute(org.apache.qpid.server.model.Exchange.DURABLE, attributes);
         _lifetimePolicy = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
                                                                                 org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
                                                                                 attributes,
@@ -168,8 +165,14 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 }
             }
         };
+    }
+
+    @Override
+    protected void onOpen()
+    {
+        super.onOpen();
         // Log Exchange creation
-        getEventLogger().message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), _durable));
+        getEventLogger().message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), isDurable()));
     }
 
     @Override
@@ -184,11 +187,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     public String getTypeName()
     {
         return getExchangeType().getType();
-    }
-
-    public boolean isDurable()
-    {
-        return _durable;
     }
 
     public boolean isAutoDelete()
@@ -726,40 +724,14 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;
-    }
-
-    @Override
     public State getState()
     {
         return _closed.get() ? State.DELETED : State.ACTIVE;
     }
 
     @Override
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        if(durable == isDurable())
-        {
-            return;
-        }
-        throw new IllegalArgumentException();
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
-        return _lifetimePolicy;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        // TODO
         return _lifetimePolicy;
     }
 

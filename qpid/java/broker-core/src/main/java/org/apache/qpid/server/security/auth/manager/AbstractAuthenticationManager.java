@@ -78,6 +78,21 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         {
             throw new IllegalConfigurationException("Only one preference provider can be configured for an authentication provider");
         }
+
+        if(!isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+        if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
     }
 
     protected final Broker getBroker()
@@ -132,42 +147,15 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @Override
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;
-    }
-
-    @Override
     public State getState()
     {
         return _state.get();
     }
 
     @Override
-    public boolean isDurable()
-    {
-        return true;
-    }
-
-    @Override
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return null;
     }
 
     @SuppressWarnings("unchecked")

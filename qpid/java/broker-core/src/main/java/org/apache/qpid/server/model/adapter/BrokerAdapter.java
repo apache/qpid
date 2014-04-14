@@ -185,6 +185,20 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                                                     + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'");
         }
 
+        if(!isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+        if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
     }
 
     protected void onOpen()
@@ -436,39 +450,15 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return true;
     }
 
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;  //TODO
-    }
-
 
     public State getState()
     {
         return null;  //TODO
     }
 
-
-    public boolean isDurable()
-    {
-        return true;
-    }
-
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
     }
 
     public long getTimeToLive()

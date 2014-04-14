@@ -37,6 +37,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     public static final String NAME = "name";
     public static final String TYPE = "type";
     public static final String DESCRIPTION = "description";
+    public static final String DURABLE = "durable";
     public static final String CONTEXT = "context";
     public static final String LAST_UPDATED_BY = "lastUpdatedBy";
     public static final String LAST_UPDATED_TIME = "lastUpdatedTime";
@@ -82,23 +83,6 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
 
     @ManagedAttribute
     long getCreatedTime();
-
-    /**
-     * Attempt to change the name of the object
-     *
-     * Request a change to the name of the object.  The caller must pass in the name it believes the object currently
-     * has. If the current name differs from this expected value, then no name change will occur
-     *
-     * @param currentName the name the caller believes the object to have
-     * @param desiredName the name the caller would like the object to have
-     * @return the new name for the object
-     * @throws IllegalStateException if the name of the object may not be changed in in the current state
-     * @throws AccessControlException if the current context does not have permission to change the name
-     * @throws IllegalArgumentException if the provided name is not legal
-     * @throws NullPointerException if the desired name is null
-     */
-    String setName(String currentName, String desiredName) throws IllegalStateException,
-                                                                  AccessControlException;
 
 
     /**
@@ -170,21 +154,8 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the durability
      */
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "true" )
     boolean isDurable();
-
-    /**
-     * Sets the durability of the object
-     *
-     * @param durable true iff the caller wishes the object to store its configuration durably
-     *
-     * @throws IllegalStateException if the durability cannot be changed in the current state
-     * @throws AccessControlException if the current context does not have sufficient permission to change the durability
-     * @throws IllegalArgumentException if the object does not support the requested durability
-     */
-    void setDurable(boolean durable) throws IllegalStateException,
-                                            AccessControlException,
-                                            IllegalArgumentException;
 
     /**
      * Return the lifetime policy for the object
@@ -193,20 +164,6 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      */
     @ManagedAttribute
     LifetimePolicy getLifetimePolicy();
-
-    /**
-     * Set the lifetime policy of the object
-     *
-     * @param expected The lifetime policy the caller believes the object currently has
-     * @param desired The lifetime policy the caller desires the object to have
-     * @return the new lifetime policy
-     * @throws IllegalStateException if the lifetime policy cannot be changed in the current state
-     * @throws AccessControlException if the caller does not have permission to change the lifetime policy
-     * @throws IllegalArgumentException if the object does not support the requested lifetime policy
-     */
-    LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException,
-                                                                                             AccessControlException,
-                                                                                             IllegalArgumentException;
 
     /**
      * Get the names of attributes that are set on this object

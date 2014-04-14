@@ -48,9 +48,23 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
 
 
     @Override
-    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
+    public void validate()
     {
-        throw new UnsupportedOperationException();
+        super.validate();
+        if(!isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+        if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
     }
 
     @Override
@@ -60,28 +74,9 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     }
 
     @Override
-    public boolean isDurable()
-    {
-        return true;
-    }
-
-    @Override
-    public void setDurable(boolean durable) throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException,
-            AccessControlException, IllegalArgumentException
-    {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -99,17 +94,9 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     @Override
     public Object getAttribute(String name)
     {
-        if (ID.equals(name))
-        {
-            return getId();
-        }
-        else if (STATE.equals(name))
+        if (STATE.equals(name))
         {
             return getState();
-        }
-        else if (DURABLE.equals(name))
-        {
-            return isDurable();
         }
         else if (LIFETIME_POLICY.equals(name))
         {

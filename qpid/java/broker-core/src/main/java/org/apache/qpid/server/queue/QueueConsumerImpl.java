@@ -22,7 +22,6 @@ package org.apache.qpid.server.queue;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
 
-import java.security.AccessControlException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Collections;
@@ -102,8 +101,6 @@ class QueueConsumerImpl
             getEventLogger().message(QueueConsumerImpl.this, SubscriptionMessages.STATE(newState.toString()));
         }
     };
-    @ManagedAttributeField
-    private boolean _durable;
     @ManagedAttributeField
     private boolean _exclusive;
     @ManagedAttributeField
@@ -518,36 +515,9 @@ class QueueConsumerImpl
     }
 
     @Override
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;
-    }
-
-    @Override
-    public boolean isDurable()
-    {
-        return _durable;
-    }
-
-    @Override
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.DELETE_ON_SESSION_END;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return null;
     }
 
     @Override

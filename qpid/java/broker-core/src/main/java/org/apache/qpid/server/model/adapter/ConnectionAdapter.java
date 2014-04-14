@@ -77,6 +77,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         attributes.put(PORT, conn.getPort());
         attributes.put(INCOMING, true);
         attributes.put(REMOTE_ADDRESS, conn.getRemoteAddressString());
+        attributes.put(DURABLE, false);
         return attributes;
     }
 
@@ -173,48 +174,14 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         _connection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
     }
 
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;  //TODO
-    }
-
     public State getState()
     {
         return null;  //TODO
     }
 
-    public boolean isDurable()
-    {
-        return false;  //TODO
-    }
-
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        //TODO
-    }
-
     public LifetimePolicy getLifetimePolicy()
     {
         return null;  //TODO
-    }
-
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return null;  //TODO
-    }
-
-    public long getTimeToLive()
-    {
-        return 0;  //TODO
-    }
-
-    public long setTimeToLive(final long expected, final long desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return 0;  //TODO
     }
 
     @Override

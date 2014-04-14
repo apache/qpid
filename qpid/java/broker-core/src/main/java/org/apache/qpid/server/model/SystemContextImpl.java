@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -208,42 +207,15 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     }
 
     @Override
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;
-    }
-
-    @Override
     public State getState()
     {
         return State.ACTIVE;
     }
 
     @Override
-    public boolean isDurable()
-    {
-        return true;
-    }
-
-    @Override
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalArgumentException("Cannot change the durability of the SystemContext object");
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalArgumentException("Cannot change the lifetime of the SystemContext object");
     }
 
     @Override

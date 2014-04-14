@@ -108,6 +108,21 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         {
             throw new IllegalConfigurationException("Can't create a port which uses a secure transport but has no KeyStore");
         }
+
+        if(!isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+        if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
     }
 
     @Override
@@ -199,41 +214,15 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     protected abstract Set<Protocol> getDefaultProtocols();
 
     @Override
-    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
     public State getState()
     {
         return _state.get();
     }
 
     @Override
-    public boolean isDurable()
-    {
-        return false;
-    }
-
-    @Override
-    public void setDurable(boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
     }
 
     @Override
@@ -252,17 +241,9 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     @Override
     public Object getAttribute(String name)
     {
-        if(ID.equals(name))
-        {
-            return getId();
-        }
-        else if(STATE.equals(name))
+        if(STATE.equals(name))
         {
             return getState();
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
         }
         else if(LIFETIME_POLICY.equals(name))
         {

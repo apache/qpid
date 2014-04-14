@@ -357,6 +357,26 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
 
         @Override
+        public void validate()
+        {
+            super.validate();
+            if(!isDurable())
+            {
+                throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+            }
+        }
+
+        @Override
+        protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+        {
+            super.validateChange(proxyForValidation, changedAttributes);
+            if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
+            {
+                throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+            }
+        }
+
+        @Override
         public String getPassword()
         {
             return (String)getAttribute(PASSWORD);
@@ -377,42 +397,15 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
 
 
         @Override
-        public String setName(String currentName, String desiredName)
-                throws IllegalStateException, AccessControlException
-        {
-            throw new IllegalStateException("Names cannot be updated");
-        }
-
-        @Override
         public State getState()
         {
             return State.ACTIVE;
         }
 
         @Override
-        public boolean isDurable()
-        {
-            return true;
-        }
-
-        @Override
-        public void setDurable(boolean durable)
-                throws IllegalStateException, AccessControlException, IllegalArgumentException
-        {
-            throw new IllegalStateException("Durability cannot be updated");
-        }
-
-        @Override
         public LifetimePolicy getLifetimePolicy()
         {
             return LifetimePolicy.PERMANENT;
-        }
-
-        @Override
-        public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired)
-                throws IllegalStateException, AccessControlException, IllegalArgumentException
-        {
-            throw new IllegalStateException("LifetimePolicy cannot be updated");
         }
 
         @Override
