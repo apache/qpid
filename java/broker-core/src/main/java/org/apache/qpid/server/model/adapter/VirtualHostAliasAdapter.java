@@ -101,9 +101,4 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
         return false;
     }
 
-    @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
 }

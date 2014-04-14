@@ -266,12 +266,6 @@ public class BindingImpl
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(Binding.class);
-    }
-
-    @Override
     public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
                                                                                                       AccessControlException, IllegalArgumentException
     {

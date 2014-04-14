@@ -86,12 +86,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(Plugin.class);
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
         if (STATE.equals(name))

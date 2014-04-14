@@ -415,12 +415,6 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
 
         @Override
-        public Collection<String> getAttributeNames()
-        {
-            return getAttributeNames(User.class);
-        }
-
-        @Override
         public Object getAttribute(String name)
         {
             if(ID.equals(name))

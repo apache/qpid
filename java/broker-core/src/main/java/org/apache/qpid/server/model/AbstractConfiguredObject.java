@@ -752,12 +752,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     }
 
-    public Collection<String> getAttributeNames()
+    public final Collection<String> getAttributeNames()
     {
-        synchronized(_attributes)
-        {
-            return new ArrayList<String>(_attributes.keySet());
-        }
+        return getAttributeNames(getClass());
     }
 
     @Override

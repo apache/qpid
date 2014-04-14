@@ -108,13 +108,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         return null;  //TODO
     }
 
-
-    @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(Session.class);
-    }
-
     @Override
     public Object getAttribute(String name)
     {

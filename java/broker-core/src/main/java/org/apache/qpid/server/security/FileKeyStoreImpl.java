@@ -101,12 +101,6 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public State getState()
     {
         return State.ACTIVE;

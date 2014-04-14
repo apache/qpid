@@ -117,12 +117,6 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
         if(DURABLE.equals(name))

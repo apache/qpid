@@ -253,12 +253,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public boolean setState(State currentState, State desiredState)
     {
         State state = _state.get();

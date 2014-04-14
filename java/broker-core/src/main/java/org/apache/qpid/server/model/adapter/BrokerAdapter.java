@@ -800,12 +800,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(Broker.class);
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
         if(ID.equals(name))

@@ -537,12 +537,6 @@ class QueueConsumerImpl
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public String toLogString()
     {
         String logString;

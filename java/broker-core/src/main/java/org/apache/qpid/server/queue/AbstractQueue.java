@@ -2858,12 +2858,6 @@ public abstract class AbstractQueue
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         _virtualHost.getSecurityManager().authoriseUpdate(this);

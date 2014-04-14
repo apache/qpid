@@ -302,12 +302,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public Object getAttribute(final String name)
     {
         if(STATE.equals(name))
