@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 @ManagedObject
 public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
 {
-    String DURABLE                              = "durable";
     String LIFETIME_POLICY                      = "lifetimePolicy";
     String STATE                                = "state";
     String ALTERNATE_EXCHANGE                   = "alternateExchange";

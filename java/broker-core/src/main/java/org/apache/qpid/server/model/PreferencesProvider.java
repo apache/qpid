@@ -27,7 +27,6 @@ import java.util.Set;
 @ManagedObject
 public interface PreferencesProvider<X extends PreferencesProvider<X>> extends ConfiguredObject<X>
 {
-    String DURABLE         = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
 
     /**
