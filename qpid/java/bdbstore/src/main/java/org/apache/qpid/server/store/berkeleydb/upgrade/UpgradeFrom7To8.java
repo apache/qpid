@@ -20,32 +20,38 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
-import com.sleepycat.bind.tuple.ByteBinding;
-import com.sleepycat.bind.tuple.IntegerBinding;
-import com.sleepycat.bind.tuple.TupleBinding;
-import com.sleepycat.bind.tuple.TupleInput;
-import com.sleepycat.bind.tuple.TupleOutput;
-import com.sleepycat.je.*;
-
-import org.apache.qpid.server.model.ConfiguredObject;
-
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.berkeleydb.BDBConfiguredObjectRecord;
-import org.apache.qpid.server.store.berkeleydb.entry.HierarchyKey;
-import org.apache.qpid.server.store.berkeleydb.tuple.ConfiguredObjectBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.HierarchyKeyBinding;
-import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
-import org.codehaus.jackson.map.ObjectMapper;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.berkeleydb.tuple.ConfiguredObjectBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
+
+import com.sleepycat.bind.tuple.IntegerBinding;
+import com.sleepycat.bind.tuple.TupleBinding;
+import com.sleepycat.bind.tuple.TupleInput;
+import com.sleepycat.bind.tuple.TupleOutput;
+import com.sleepycat.je.Cursor;
+import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseConfig;
+import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.LockMode;
+import com.sleepycat.je.OperationStatus;
+import com.sleepycat.je.Transaction;
+
 public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 {
+    private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<HashMap<String,Object>>(){};
 
     @Override
     public void performUpgrade(Environment environment, UpgradeInteractionHandler handler, ConfiguredObject<?> parent)
@@ -58,8 +64,24 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 
         Database hierarchyDb = environment.openDatabase(null, "CONFIGURED_OBJECT_HIERARCHY", dbConfig);
         Database configuredObjectsDb = environment.openDatabase(null, "CONFIGURED_OBJECTS", dbConfig);
+        Database configVersionDb = environment.openDatabase(null, "CONFIG_VERSION", dbConfig);
 
         Cursor objectsCursor = null;
+
+        String stringifiedConfigVersion = Model.MODEL_VERSION;
+        int configVersion = getConfigVersion(configVersionDb);
+        if (configVersion > -1)
+        {
+            stringifiedConfigVersion = "0." + configVersion;
+        }
+        configVersionDb.close();
+
+        Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        virtualHostAttributes.put("modelVersion", stringifiedConfigVersion);
+
+        String virtualHostName = parent.getName();
+        UUID virtualHostId = UUIDGenerator.generateVhostUUID(virtualHostName);
+        ConfiguredObjectRecord virtualHostRecord = new org.apache.qpid.server.store.ConfiguredObjectRecordImpl(virtualHostId, "VirtualHost", virtualHostAttributes);
 
         Transaction txn = environment.beginTransaction(null, null);
 
@@ -69,9 +91,6 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
 
-            Map<UUID, BDBConfiguredObjectRecord> configuredObjects =
-                    new HashMap<UUID, BDBConfiguredObjectRecord>();
-
             while (objectsCursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
@@ -80,7 +99,7 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 
                 if(!type.endsWith("Binding"))
                 {
-                    UUIDTupleBinding.getInstance().objectToEntry(parent.getId(),value);
+                    UUIDTupleBinding.getInstance().objectToEntry(virtualHostId, value);
                     TupleOutput tupleOutput = new TupleOutput();
                     tupleOutput.writeLong(id.getMostSignificantBits());
                     tupleOutput.writeLong(id.getLeastSignificantBits());
@@ -97,7 +116,7 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
                         DatabaseEntry hierarchyKey = new DatabaseEntry();
                         DatabaseEntry hierarchyValue = new DatabaseEntry();
 
-                        Map<String,Object> attributes = mapper.readValue(json, Map.class);
+                        Map<String,Object> attributes = mapper.readValue(json, MAP_TYPE_REFERENCE);
                         Object queueIdString = attributes.remove("queue");
                         if(queueIdString instanceof String)
                         {
@@ -134,13 +153,8 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
                     {
                         throw new StoreException(e);
                     }
-
                 }
-
-
             }
-
-
         }
         finally
         {
@@ -149,13 +163,51 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
                 objectsCursor.close();
             }
         }
+
+        storeConfiguredObjectEntry(configuredObjectsDb, txn, virtualHostRecord);
         txn.commit();
 
         hierarchyDb.close();
         configuredObjectsDb.close();
 
-
-
         reportFinished(environment, 8);
+    }
+
+    private int getConfigVersion(Database configVersionDb)
+    {
+        Cursor cursor = null;
+        try
+        {
+            cursor = configVersionDb.openCursor(null, null);
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                return IntegerBinding.entryToInt(value);
+            }
+            return -1;
+        }
+        finally
+        {
+            cursor.close();
+        }
+    }
+
+    private void storeConfiguredObjectEntry(Database configuredObjectsDb, final Transaction txn, ConfiguredObjectRecord configuredObject)
+    {
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding uuidBinding = UUIDTupleBinding.getInstance();
+        uuidBinding.objectToEntry(configuredObject.getId(), key);
+
+        DatabaseEntry value = new DatabaseEntry();
+        ConfiguredObjectBinding configuredObjectBinding = ConfiguredObjectBinding.getInstance();
+
+        configuredObjectBinding.objectToEntry(configuredObject, value);
+        OperationStatus status = configuredObjectsDb.put(txn, key, value);
+        if (status != OperationStatus.SUCCESS)
+        {
+            throw new StoreException("Error writing configured object " + configuredObject + " to database: "
+                    + status);
+        }
     }
 }

@@ -48,6 +48,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
@@ -84,7 +86,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     private static final int DEFAULT_CONFIG_VERSION = 0;
 
-    public static final Set<String> CONFIGURATION_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURATION_VERSION_TABLE_NAME));
+    public static final Set<String> CONFIGURATION_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(CONFIGURED_OBJECTS_TABLE_NAME, CONFIGURED_OBJECT_HIERARCHY_TABLE_NAME));
     public static final Set<String> MESSAGE_STORE_TABLE_NAMES = new HashSet<String>(Arrays.asList(DB_VERSION_TABLE_NAME,
                                                                                                   META_DATA_TABLE_NAME, MESSAGE_CONTENT_TABLE_NAME,
                                                                                                     QUEUE_ENTRY_TABLE_NAME,
@@ -100,10 +102,8 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     private static final String UPDATE_DB_VERSION = "UPDATE " + DB_VERSION_TABLE_NAME + " SET version = ?";
 
 
-    private static final String CREATE_CONFIG_VERSION_TABLE = "CREATE TABLE "+ CONFIGURATION_VERSION_TABLE_NAME + " ( version int not null )";
-    private static final String INSERT_INTO_CONFIG_VERSION = "INSERT INTO "+ CONFIGURATION_VERSION_TABLE_NAME + " ( version ) VALUES ( ? )";
     private static final String SELECT_FROM_CONFIG_VERSION = "SELECT version FROM " + CONFIGURATION_VERSION_TABLE_NAME;
-    private static final String UPDATE_CONFIG_VERSION = "UPDATE " + CONFIGURATION_VERSION_TABLE_NAME + " SET version = ?";
+    private static final String DROP_CONFIG_VERSION_TABLE = "DROP TABLE "+ CONFIGURATION_VERSION_TABLE_NAME;
 
 
     private static final String INSERT_INTO_QUEUE_ENTRY = "INSERT INTO " + QUEUE_ENTRY_TABLE_NAME + " (queue_id, message_id) values (?,?)";
@@ -230,16 +230,9 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
         try
         {
-            int configVersion = getConfigVersion();
-
-            handler.begin(configVersion);
+            handler.begin();
             doVisitAllConfiguredObjectRecords(handler);
-
-            int newConfigVersion = handler.end();
-            if(newConfigVersion != configVersion)
-            {
-                setConfigVersion(newConfigVersion);
-            }
+            handler.end();
         }
         catch (SQLException e)
         {
@@ -470,6 +463,32 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         Connection connection = newConnection();
         try
         {
+            UUID virtualHostId = UUIDGenerator.generateVhostUUID(parent.getName());
+
+            String stringifiedConfigVersion = Model.MODEL_VERSION;
+            boolean tableExists = tableExists(CONFIGURATION_VERSION_TABLE_NAME, connection);
+            if(tableExists)
+            {
+                int configVersion = getConfigVersion(connection);
+                if (getLogger().isDebugEnabled())
+                {
+                    getLogger().debug("Upgrader read existing config version " + configVersion);
+                }
+
+                stringifiedConfigVersion = "0." + configVersion;
+            }
+
+            Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+            virtualHostAttributes.put("modelVersion", stringifiedConfigVersion);
+
+            ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecordImpl(virtualHostId, "VirtualHost", virtualHostAttributes);
+            insertConfiguredObject(configuredObject, connection);
+
+            if (getLogger().isDebugEnabled())
+            {
+                getLogger().debug("Upgrader created VirtualHost configuration entry with config version " + stringifiedConfigVersion);
+            }
+
             Map<UUID,Map<String,Object>> bindingsToUpdate = new HashMap<UUID, Map<String, Object>>();
             List<UUID> others = new ArrayList<UUID>();
             final ObjectMapper objectMapper = new ObjectMapper();
@@ -525,7 +544,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 {
                     stmt.setString(1, id.toString());
                     stmt.setString(2, "VirtualHost");
-                    stmt.setString(3, parent.getId().toString());
+                    stmt.setString(3, virtualHostId.toString());
                     stmt.execute();
                 }
                 for(Map.Entry<UUID, Map<String,Object>> bindingEntry : bindingsToUpdate.entrySet())
@@ -586,6 +605,11 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                 stmt.close();
             }
             connection.commit();
+
+            if (tableExists)
+            {
+                dropConfigVersionTable(connection);
+            }
         }
         finally
         {
@@ -643,7 +667,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
     {
         Connection conn = newAutoCommitConnection();
 
-        createConfigVersionTable(conn);
         createConfiguredObjectsTable(conn);
         createConfiguredObjectHierarchyTable(conn);
 
@@ -677,29 +700,18 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    private void createConfigVersionTable(final Connection conn) throws SQLException
+    private void dropConfigVersionTable(final Connection conn) throws SQLException
     {
         if(!tableExists(CONFIGURATION_VERSION_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
             try
             {
-                stmt.execute(CREATE_CONFIG_VERSION_TABLE);
+                stmt.execute(DROP_CONFIG_VERSION_TABLE);
             }
             finally
             {
                 stmt.close();
-            }
-
-            PreparedStatement pstmt = conn.prepareStatement(INSERT_INTO_CONFIG_VERSION);
-            try
-            {
-                pstmt.setInt(1, DEFAULT_CONFIG_VERSION);
-                pstmt.execute();
-            }
-            finally
-            {
-                pstmt.close();
             }
         }
     }
@@ -872,63 +884,30 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    private void setConfigVersion(int version) throws SQLException
+    private int getConfigVersion(Connection conn) throws SQLException
     {
-        Connection conn = newAutoCommitConnection();
+        Statement stmt = conn.createStatement();
         try
         {
-
-            PreparedStatement stmt = conn.prepareStatement(UPDATE_CONFIG_VERSION);
+            ResultSet rs = stmt.executeQuery(SELECT_FROM_CONFIG_VERSION);
             try
             {
-                stmt.setInt(1, version);
-                stmt.execute();
 
+                if(rs.next())
+                {
+                    return rs.getInt(1);
+                }
+                return DEFAULT_CONFIG_VERSION;
             }
             finally
             {
-                stmt.close();
+                rs.close();
             }
+
         }
         finally
         {
-            conn.close();
-        }
-    }
-
-    private int getConfigVersion() throws SQLException
-    {
-        Connection conn = newAutoCommitConnection();
-        try
-        {
-
-            Statement stmt = conn.createStatement();
-            try
-            {
-                ResultSet rs = stmt.executeQuery(SELECT_FROM_CONFIG_VERSION);
-                try
-                {
-
-                    if(rs.next())
-                    {
-                        return rs.getInt(1);
-                    }
-                    return DEFAULT_CONFIG_VERSION;
-                }
-                finally
-                {
-                    rs.close();
-                }
-
-            }
-            finally
-            {
-                stmt.close();
-            }
-        }
-        finally
-        {
-            conn.close();
+            stmt.close();
         }
 
     }

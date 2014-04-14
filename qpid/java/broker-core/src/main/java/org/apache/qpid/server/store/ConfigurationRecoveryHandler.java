@@ -20,12 +20,10 @@
 */
 package org.apache.qpid.server.store;
 
-import java.util.Map;
-import java.util.UUID;
 
 public interface ConfigurationRecoveryHandler
 {
-    void beginConfigurationRecovery(DurableConfigurationStore store, int configVersion);
+    void beginConfigurationRecovery(DurableConfigurationStore store);
 
     void configuredObject(ConfiguredObjectRecord object);
 
@@ -33,6 +31,6 @@ public interface ConfigurationRecoveryHandler
      *
      * @return the model version of the configuration
      */
-    int completeConfigurationRecovery();
+    String completeConfigurationRecovery();
 
 }

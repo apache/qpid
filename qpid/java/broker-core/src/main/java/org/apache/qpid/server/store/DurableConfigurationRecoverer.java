@@ -33,8 +33,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-
-import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
+import org.apache.qpid.server.model.Model;
 
 public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandler
 {
@@ -44,6 +43,7 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
 
     private final Map<String, Map<UUID, UnresolvedObject>> _unresolvedObjects =
             new HashMap<String, Map<UUID, UnresolvedObject>>();
+    private final List<ConfiguredObjectRecord> _records = new ArrayList<ConfiguredObjectRecord>();
 
     private final Map<String, Map<UUID, List<DependencyListener>>> _dependencyListeners =
             new HashMap<String, Map<UUID, List<DependencyListener>>>();
@@ -69,19 +69,56 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
     }
 
     @Override
-    public void beginConfigurationRecovery(final DurableConfigurationStore store, final int configVersion)
+    public void beginConfigurationRecovery(final DurableConfigurationStore store)
     {
         _logSubject = new MessageStoreLogSubject(_name, store.getClass().getSimpleName());
 
         _store = store;
-        _upgrader = _upgraderProvider.getUpgrader(configVersion, this);
         _eventLogger.message(_logSubject, ConfigStoreMessages.RECOVERY_START());
     }
 
     @Override
     public void configuredObject(ConfiguredObjectRecord record)
     {
-        _upgrader.configuredObject(record);
+        _records.add(record);
+    }
+
+    @Override
+    public String completeConfigurationRecovery()
+    {
+        String configVersion = getConfigVersionFromRecords();
+
+        _upgrader = _upgraderProvider.getUpgrader(configVersion, this);
+
+        for (ConfiguredObjectRecord record : _records)
+        {
+            // We don't yet recover the VirtualHost record.
+            if (!"VirtualHost".equals(record.getType()))
+            {
+                _upgrader.configuredObject(record);
+            }
+        }
+        _upgrader.complete();
+        checkUnresolvedDependencies();
+        applyUpgrade();
+
+        _eventLogger.message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
+        return Model.MODEL_VERSION;
+    }
+
+    private String getConfigVersionFromRecords()
+    {
+        String configVersion = Model.MODEL_VERSION;
+        for (ConfiguredObjectRecord record : _records)
+        {
+            if ("VirtualHost".equals(record.getType()))
+            {
+                configVersion = (String) record.getAttributes().get("modelVersion");
+                _logger.debug("Confifuration has config version : " + configVersion);
+                break;
+            }
+        }
+        return configVersion;
     }
 
     void onConfiguredObject(ConfiguredObjectRecord record)
@@ -94,21 +131,11 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
         recoverer.load(this, record);
     }
 
+
     private DurableConfiguredObjectRecoverer getRecoverer(final String type)
     {
         DurableConfiguredObjectRecoverer recoverer = _recoverers.get(type);
         return recoverer;
-    }
-
-    @Override
-    public int completeConfigurationRecovery()
-    {
-        _upgrader.complete();
-        checkUnresolvedDependencies();
-        applyUpgrade();
-
-        _eventLogger.message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
-        return CURRENT_CONFIG_VERSION;
     }
 
     private void applyUpgrade()

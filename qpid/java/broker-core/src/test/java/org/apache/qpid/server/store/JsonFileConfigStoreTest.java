@@ -121,32 +121,11 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     {
         _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
         _store.visitConfiguredObjectRecords(_handler);
+
         InOrder inorder = inOrder(_handler);
-        inorder.verify(_handler).begin(eq(0));
+        inorder.verify(_handler).begin();
         inorder.verify(_handler,never()).handle(any(ConfiguredObjectRecord.class));
         inorder.verify(_handler).end();
-        _store.closeConfigurationStore();
-    }
-
-    public void testUpdatedConfigVersionIsRetained() throws Exception
-    {
-        final int NEW_CONFIG_VERSION = 42;
-        when(_handler.end()).thenReturn(NEW_CONFIG_VERSION);
-
-        _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.visitConfiguredObjectRecords(_handler);
-        _store.closeConfigurationStore();
-
-        _store.openConfigurationStore(_virtualHost, _configurationStoreSettings);
-        _store.visitConfiguredObjectRecords(_handler);
-        InOrder inorder = inOrder(_handler);
-
-        // first time the config version should be the initial version - 0
-        inorder.verify(_handler).begin(eq(0));
-
-        // second time the config version should be the updated version
-        inorder.verify(_handler).begin(eq(NEW_CONFIG_VERSION));
-
         _store.closeConfigurationStore();
     }
 

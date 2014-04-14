@@ -241,7 +241,6 @@ public class TestBrokerConfiguration
         private final Class<? extends ConfiguredObject> _category;
         private final String _objectName;
         public ConfiguredObjectRecord _foundRecord;
-        private int _version;
 
         public RecordFindingVisitor(final Class<? extends ConfiguredObject> category, final String objectName)
         {
@@ -250,9 +249,8 @@ public class TestBrokerConfiguration
         }
 
         @Override
-        public void begin(final int configVersion)
+        public void begin()
         {
-            _version = configVersion;
         }
 
         @Override
@@ -269,9 +267,8 @@ public class TestBrokerConfiguration
         }
 
         @Override
-        public int end()
+        public void end()
         {
-            return _version;
         }
 
         public ConfiguredObjectRecord getFoundRecord()

@@ -124,11 +124,9 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
             final Collection<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>();
             final ConfiguredObjectRecordHandler replayHandler = new ConfiguredObjectRecordHandler()
             {
-                private int _configVersion;
                 @Override
-                public void begin(final int configVersion)
+                public void begin()
                 {
-                    _configVersion = configVersion;
                 }
 
                 @Override
@@ -139,9 +137,8 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                 }
 
                 @Override
-                public int end()
+                public void end()
                 {
-                    return _configVersion;
                 }
             };
 
@@ -363,7 +360,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     public void visitConfiguredObjectRecords(final ConfiguredObjectRecordHandler recoveryHandler) throws StoreException
     {
 
-        recoveryHandler.begin(0);
+        recoveryHandler.begin();
 
         final Map<UUID,Map<String,UUID>> parentMap = new HashMap<UUID, Map<String, UUID>>();
 

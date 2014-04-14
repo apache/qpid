@@ -471,9 +471,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         private int _version;
 
         @Override
-        public void begin(final int configVersion)
+        public void begin()
         {
-            _version = configVersion;
         }
 
         @Override
@@ -488,9 +487,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
 
         @Override
-        public int end()
+        public void end()
         {
-            return _version;
         }
 
         public ConfiguredObjectRecord getBrokerRecord()
@@ -503,7 +501,6 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         private final UUID _id;
         private ConfiguredObjectRecord _foundRecord;
-        private int _version;
 
         private RecordFinder(final UUID id)
         {
@@ -511,9 +508,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
 
         @Override
-        public void begin(final int configVersion)
+        public void begin()
         {
-            _version = configVersion;
         }
 
         @Override
@@ -528,9 +524,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
 
         @Override
-        public int end()
+        public void end()
         {
-            return _version;
         }
 
         public ConfiguredObjectRecord getFoundRecord()
@@ -543,7 +538,6 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         private final Collection<UUID> _childIds = new HashSet<UUID>();
         private final ConfiguredObjectRecord _parent;
-        private int _version;
 
         private ChildFinder(final ConfiguredObjectRecord parent)
         {
@@ -551,9 +545,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
 
         @Override
-        public void begin(final int configVersion)
+        public void begin()
         {
-            _version = configVersion;
         }
 
         @Override
@@ -575,9 +568,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
 
         @Override
-        public int end()
+        public void end()
         {
-            return _version;
         }
 
         public Collection<UUID> getChildIds()

@@ -89,9 +89,8 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
             private boolean _quiesceHttpPort = _options.getManagementModeHttpPortOverride() > 0;
 
             @Override
-            public void begin(final int configVersion)
+            public void begin()
             {
-                _version = configVersion;
             }
 
             @Override
@@ -160,9 +159,8 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
 
 
             @Override
-            public int end()
+            public void end()
             {
-                return _version;
             }
         };
 
@@ -186,7 +184,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     {
 
 
-        recoveryHandler.begin(0);
+        recoveryHandler.begin();
 
         for(ConfiguredObjectRecord record : _records.values())
         {
@@ -366,7 +364,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
         _store.visitConfiguredObjectRecords(new ConfiguredObjectRecordHandler()
         {
             @Override
-            public void begin(final int configVersion)
+            public void begin()
             {
 
             }
@@ -428,9 +426,8 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
 
 
             @Override
-            public int end()
+            public void end()
             {
-                return 0;
             }
         });
 
