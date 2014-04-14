@@ -319,4 +319,58 @@ of 500 messages, that deletes itself (thus ending the subscription) if
 that limit is exceeded and is bound to 'amq.topic' with the key
 'my-key'.
 
+* 'Policies': a mechanism for broker configured, on-demand creation of
+  nodes
+
+As the core AMQP 1.0 protocol deliberately doesn't cover the creation
+of nodes, a new mechanism has been added that allows nodes to be
+created on-demand requiring only broker configuration. A client can
+establish a link to or from a node, and if the desired target/source
+matches a preconfigured policy, then the node will be created on
+demand in accprdance with that policy.
+
+There are currently two types of policy: QueuePolicy and
+TopicPolicy. These allow for the on-demand creation of queues or
+'topics' (in the JMS sense of the word), which are currently backed by
+pre-1.0 AMQP style exchanges.
+
+Policies of either type can be created using the qpid-config tool,
+e.g.
+
+  qpid-config add QueuePolicy queue_ --argument qpid.max_count=500
+
+will create a policy such that any attempt to establish a link to or
+from a node that begins with queue_ will result on a queue with the
+required name being created if it doesn't exist. In this example the
+queue would have a max depth of 500 messages.
+
+* Broker Initiated Links
+
+The existing 'federation' mechanism is quite tightly bound to the AMQP
+0-10 implementation at present. The AMQP 1.0 support includes a
+slightly different mechanism that offers the ability to establish
+links to and from nodes in remote containers, and thus setup the
+automatic transfer of messages.
+
+To begin with, a 'domain' entity must be created describing how to
+connect to the given external process (i.e. the remote
+container). This can again be done with qpid-config, e.g.
+
+  qpid-config add domain another-broker --argument url=host.acme.com
+
+Incoming or outgoing links can then be established, e.g.
+
+  qpid-config add incoming link_a --argument domain=another-broker \
+  --argument src=some_remote_queue --argument dest=my_local_queue
+
+will cause messages on a node named 'some_remote_queue' on the process
+reachable through the default AMQP port on host.acme.com, to be
+transferred to a queue, on the qpidd instance these command were
+issued to, named my_local_queue.
+
+Note that at present there is no automatic re-establishment of these
+broker initiated AMQP 1.0 based links, nor is there any loop
+prevention mechanism for messages transmitted over them in the event
+that the links form circular paths.
+
 [1] https://issues.apache.org/jira/browse/QPID-4710
