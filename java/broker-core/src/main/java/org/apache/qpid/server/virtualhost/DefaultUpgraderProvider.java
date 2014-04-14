@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -34,6 +32,7 @@ import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
@@ -76,14 +75,16 @@ public class DefaultUpgraderProvider implements UpgraderProvider
         _defaultExchangeIds = Collections.unmodifiableMap(defaultExchangeIds);
     }
 
-    public DurableConfigurationStoreUpgrader getUpgrader(final int configVersion, DurableConfigurationRecoverer recoverer)
+    public DurableConfigurationStoreUpgrader getUpgrader(final String configVersion, DurableConfigurationRecoverer recoverer)
     {
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Getting upgrader for configVersion:  " + configVersion);
         }
         DurableConfigurationStoreUpgrader currentUpgrader = null;
-        switch(configVersion)
+
+        int conigVersionAsInteger = Integer.parseInt(configVersion.replace(".", ""));
+        switch(conigVersionAsInteger)
         {
             case 0:
                 currentUpgrader = addUpgrader(currentUpgrader, new Version0Upgrader());
@@ -95,7 +96,7 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 currentUpgrader = addUpgrader(currentUpgrader, new Version3Upgrader());
             case 4:
                 currentUpgrader = addUpgrader(currentUpgrader, new Version4Upgrader());
-            case CURRENT_CONFIG_VERSION:
+            case (Model.MODEL_MAJOR_VERSION * 10) + Model.MODEL_MINOR_VERSION:
                 currentUpgrader = addUpgrader(currentUpgrader, new NullUpgrader(recoverer));
                 break;
 

@@ -70,7 +70,6 @@ import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.util.FileUtils;
 
 import com.sleepycat.bind.tuple.ByteBinding;
-import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.je.CheckpointConfig;
 import com.sleepycat.je.Cursor;
@@ -109,8 +108,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private static String BRIDGEDB_NAME = "BRIDGES";
     private static String LINKDB_NAME = "LINKS";
     private static String XID_DB_NAME = "XIDS";
-    private static String CONFIG_VERSION_DB_NAME = "CONFIG_VERSION";
-    private static final String[] CONFIGURATION_STORE_DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, CONFIG_VERSION_DB_NAME , CONFIGURED_OBJECT_HIERARCHY_DB_NAME};
+    private static final String[] CONFIGURATION_STORE_DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, CONFIGURED_OBJECT_HIERARCHY_DB_NAME};
     private static final String[] MESSAGE_STORE_DATABASE_NAMES = new String[] { MESSAGE_META_DATA_DB_NAME, MESSAGE_CONTENT_DB_NAME, DELIVERY_DB_NAME, BRIDGEDB_NAME, LINKDB_NAME, XID_DB_NAME };
 
     private EnvironmentFacade _environmentFacade;
@@ -182,16 +180,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         try
         {
-            int configVersion = getConfigVersion();
-
-            handler.begin(configVersion);
+            handler.begin();
             doVisitAllConfiguredObjectRecords(handler);
-
-            int newConfigVersion = handler.end();
-            if(newConfigVersion != configVersion)
-            {
-                updateConfigVersion(newConfigVersion);
-            }
+            handler.end();
         }
         catch (DatabaseException e)
         {
@@ -369,70 +360,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             {
                 throw new StoreException("Exception occured on message store close", e);
             }
-        }
-    }
-
-    @SuppressWarnings("resource")
-    private void updateConfigVersion(int newConfigVersion) throws StoreException
-    {
-        Transaction txn = null;
-        Cursor cursor = null;
-        try
-        {
-            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
-            cursor = getConfigVersionDb().openCursor(txn, null);
-            DatabaseEntry key = new DatabaseEntry();
-            ByteBinding.byteToEntry((byte) 0,key);
-            DatabaseEntry value = new DatabaseEntry();
-
-            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
-            {
-                IntegerBinding.intToEntry(newConfigVersion, value);
-                OperationStatus status = cursor.put(key, value);
-                if (status != OperationStatus.SUCCESS)
-                {
-                    throw new StoreException("Error setting config version: " + status);
-                }
-            }
-            cursor.close();
-            cursor = null;
-            txn.commit();
-            txn = null;
-        }
-        finally
-        {
-            closeCursorSafely(cursor);
-            abortTransactionIgnoringException("Error setting config version", txn);;
-        }
-
-    }
-
-    private int getConfigVersion() throws StoreException
-    {
-        Cursor cursor = null;
-        try
-        {
-            cursor = getConfigVersionDb().openCursor(null, null);
-            DatabaseEntry key = new DatabaseEntry();
-            DatabaseEntry value = new DatabaseEntry();
-            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
-            {
-                return IntegerBinding.entryToInt(value);
-            }
-
-            // Insert 0 as the default config version
-            IntegerBinding.intToEntry(0,value);
-            ByteBinding.byteToEntry((byte) 0,key);
-            OperationStatus status = getConfigVersionDb().put(null, key, value);
-            if (status != OperationStatus.SUCCESS)
-            {
-                throw new StoreException("Error initialising config version: " + status);
-            }
-            return 0;
-        }
-        finally
-        {
-            closeCursorSafely(cursor);
         }
     }
 
@@ -1622,11 +1549,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         return _environmentFacade.getOpenDatabase(MESSAGE_CONTENT_DB_NAME);
     }
 
-    private Database getConfigVersionDb()
-    {
-        return _environmentFacade.getOpenDatabase(CONFIG_VERSION_DB_NAME);
-    }
-
     private Database getMessageMetaDataDb()
     {
         return _environmentFacade.getOpenDatabase(MESSAGE_META_DATA_DB_NAME);
@@ -1644,8 +1566,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     class UpgradeTask implements EnvironmentFacadeTask
     {
-
-        private ConfiguredObject<?> _parent;
+        private final ConfiguredObject<?> _parent;
 
         public UpgradeTask(ConfiguredObject<?> parent)
         {

@@ -601,7 +601,6 @@ public class BrokerStoreUpgrader
         private DurableConfigurationStoreUpgrader _upgrader;
         private DurableConfigurationStore _store;
         private final Map<UUID, ConfiguredObjectRecord> _records = new HashMap<UUID, ConfiguredObjectRecord>();
-        private int _version;
         private final SystemContext _systemContext;
 
         private BrokerStoreRecoveryHandler(final SystemContext systemContext, DurableConfigurationStore store)
@@ -612,9 +611,8 @@ public class BrokerStoreUpgrader
 
 
         @Override
-        public void begin(final int configVersion)
+        public void begin()
         {
-            _version = configVersion;
         }
 
         @Override
@@ -625,7 +623,7 @@ public class BrokerStoreUpgrader
         }
 
         @Override
-        public int end()
+        public void end()
         {
             String version = getCurrentVersion();
 
@@ -748,7 +746,6 @@ public class BrokerStoreUpgrader
 
                              });
 
-            return _version;
         }
 
         private void applyRecursively(final ConfiguredObject<?> object, final Action<ConfiguredObject<?>> action)

@@ -41,8 +41,10 @@ import org.apache.qpid.server.exchange.FanoutExchange;
 import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueFactory;
@@ -63,11 +65,11 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.apache.qpid.server.model.VirtualHost.CURRENT_CONFIG_VERSION;
 
 public class DurableConfigurationRecovererTest extends QpidTestCase
 {
     private static final String VIRTUAL_HOST_NAME = "test";
+    private static final UUID VIRTUAL_HOST_ID = UUID.randomUUID();
     private static final UUID QUEUE_ID = new UUID(0,0);
     private static final UUID TOPIC_EXCHANGE_ID = UUIDGenerator.generateExchangeUUID(TopicExchange.TYPE.getDefaultExchangeName(), VIRTUAL_HOST_NAME);
     private static final UUID DIRECT_EXCHANGE_ID = UUIDGenerator.generateExchangeUUID(DirectExchange.TYPE.getDefaultExchangeName(), VIRTUAL_HOST_NAME);
@@ -205,19 +207,22 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
     public void testUpgradeEmptyStore() throws Exception
     {
-        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 0);
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
         assertEquals("Did not upgrade to the expected version",
-                     CURRENT_CONFIG_VERSION,
+                     Model.MODEL_VERSION,
                      _durableConfigurationRecoverer.completeConfigurationRecovery());
     }
 
     public void testUpgradeNewerStoreFails() throws Exception
     {
+        String bumpedModelVersion = Model.MODEL_MAJOR_VERSION + "." + (Model.MODEL_MINOR_VERSION + 1);
         try
         {
-            _durableConfigurationRecoverer.beginConfigurationRecovery(_store, CURRENT_CONFIG_VERSION + 1);
-            _durableConfigurationRecoverer.completeConfigurationRecovery();
-            fail("Should not be able to start when config model is newer than current");
+
+            _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
+            _durableConfigurationRecoverer.configuredObject(getVirtualHostModelRecord(bumpedModelVersion));
+            String newVersion = _durableConfigurationRecoverer.completeConfigurationRecovery();
+            fail("Should not be able to start when config model is newer than current.  Actually upgraded to " + newVersion);
         }
         catch (IllegalStateException e)
         {
@@ -225,10 +230,20 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         }
     }
 
+    private ConfiguredObjectRecordImpl getVirtualHostModelRecord(
+            String modelVersion)
+    {
+        ConfiguredObjectRecordImpl virtualHostRecord = new ConfiguredObjectRecordImpl(VIRTUAL_HOST_ID,
+                                                                                      VirtualHost.class.getSimpleName(),
+                                                                                      Collections.<String,Object>singletonMap("modelVersion", modelVersion));
+        return virtualHostRecord;
+    }
+
     public void testUpgradeRemovesBindingsToNonTopicExchanges() throws Exception
     {
 
-        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 0);
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
+        _durableConfigurationRecoverer.configuredObject(getVirtualHostModelRecord("0.0"));
 
         _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                            "org.apache.qpid.server.model.Binding",
@@ -252,7 +267,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     public void testUpgradeOnlyRemovesSelectorBindings() throws Exception
     {
 
-        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 0);
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
+        _durableConfigurationRecoverer.configuredObject(getVirtualHostModelRecord("0.0"));
 
         _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                            "org.apache.qpid.server.model.Binding",
@@ -336,7 +352,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     public void testUpgradeKeepsBindingsToTopicExchanges() throws Exception
     {
 
-        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 0);
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
+        _durableConfigurationRecoverer.configuredObject(getVirtualHostModelRecord("0.0"));
 
         _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                            "org.apache.qpid.server.model.Binding",
@@ -358,7 +375,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     public void testUpgradeDoesNotRecur() throws Exception
     {
 
-        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
+        _durableConfigurationRecoverer.configuredObject(getVirtualHostModelRecord("0.0"));
 
         _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
                                                            "Binding",
@@ -375,7 +393,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
     public void testFailsWithUnresolvedObjects()
     {
-        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
 
 
         _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(new UUID(1, 0),
@@ -400,7 +418,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
     public void testFailsWithUnknownObjectType()
     {
-        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
 
 
         try
@@ -468,7 +486,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
             }
         });
 
-        _durableConfigurationRecoverer.beginConfigurationRecovery(_store, 2);
+        _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
 
         _durableConfigurationRecoverer.configuredObject(new ConfiguredObjectRecordImpl(queueId, Queue.class.getSimpleName(),
                                                         createQueue("testQueue", exchangeId)));

@@ -22,5 +22,5 @@ package org.apache.qpid.server.store;
 
 public interface UpgraderProvider
 {
-    DurableConfigurationStoreUpgrader getUpgrader(int configVersion, DurableConfigurationRecoverer recoverer);
+    DurableConfigurationStoreUpgrader getUpgrader(String configVersion, DurableConfigurationRecoverer recoverer);
 }

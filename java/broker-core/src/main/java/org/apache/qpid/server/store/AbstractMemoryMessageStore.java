@@ -261,7 +261,7 @@ abstract class AbstractMemoryMessageStore implements MessageStore, DurableConfig
     @Override
     public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException
     {
-        handler.begin(VirtualHost.CURRENT_CONFIG_VERSION);
+        handler.begin();
         for (ConfiguredObjectRecord record : _configuredObjectRecords.values())
         {
             if (!handler.handle(record))

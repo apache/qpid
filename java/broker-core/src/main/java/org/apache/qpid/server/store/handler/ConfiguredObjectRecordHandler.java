@@ -24,8 +24,7 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 public interface ConfiguredObjectRecordHandler
 {
-    // TODO configVersion argument will be removed.
-    void begin(int configVersion);
+    void begin();
 
     /**
      * Handles the given record.
@@ -35,7 +34,5 @@ public interface ConfiguredObjectRecordHandler
      */
     boolean handle(ConfiguredObjectRecord record);
 
-    //TODO: return should be void
-    // temporarily returning new config version
-    int end();
+    void end();
 }

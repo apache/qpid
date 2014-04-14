@@ -126,11 +126,9 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
             final Collection<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>();
             final ConfiguredObjectRecordHandler replayHandler = new ConfiguredObjectRecordHandler()
             {
-                private int _configVersion;
                 @Override
-                public void begin(final int configVersion)
+                public void begin()
                 {
-                    _configVersion = configVersion;
                 }
 
                 @Override
@@ -141,9 +139,8 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
                 }
 
                 @Override
-                public int end()
+                public void end()
                 {
-                    return _configVersion;
                 }
             };
 

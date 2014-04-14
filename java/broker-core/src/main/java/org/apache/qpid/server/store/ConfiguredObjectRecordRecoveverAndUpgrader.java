@@ -39,9 +39,9 @@ public class ConfiguredObjectRecordRecoveverAndUpgrader implements ConfiguredObj
     }
 
     @Override
-    public void begin(int configVersion)
+    public void begin()
     {
-        _configRecoverer.beginConfigurationRecovery(_store, configVersion);
+        _configRecoverer.beginConfigurationRecovery(_store);
     }
 
     @Override
@@ -52,9 +52,9 @@ public class ConfiguredObjectRecordRecoveverAndUpgrader implements ConfiguredObj
     }
 
     @Override
-    public int end()
+    public void end()
     {
-        return _configRecoverer.completeConfigurationRecovery();
+        _configRecoverer.completeConfigurationRecovery();
     }
 
 }

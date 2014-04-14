@@ -100,7 +100,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     @Override
     public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler)
     {
-        handler.begin(_configVersion);
+        handler.begin();
         List<ConfiguredObjectRecord> records = new ArrayList<ConfiguredObjectRecord>(_objectsById.values());
         for(ConfiguredObjectRecord record : records)
         {
@@ -110,12 +110,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 break;
             }
         }
-        int oldConfigVersion = _configVersion;
-        _configVersion = handler.end();
-        if(oldConfigVersion != _configVersion)
-        {
-            save();
-        }
+        handler.end();
     }
 
 
