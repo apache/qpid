@@ -430,12 +430,6 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(HttpManagement.class);
-    }
-
-    @Override
     public boolean isHttpsSaslAuthenticationEnabled()
     {
         return _httpsSaslAuthenticationEnabled;

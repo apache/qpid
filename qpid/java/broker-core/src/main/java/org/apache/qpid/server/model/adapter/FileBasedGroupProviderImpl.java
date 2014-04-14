@@ -133,12 +133,6 @@ public class FileBasedGroupProviderImpl
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
         if (DURABLE.equals(name))
@@ -424,12 +418,6 @@ public class FileBasedGroupProviderImpl
         }
 
         @Override
-        public Collection<String> getAttributeNames()
-        {
-            return getAttributeNames(Group.class);
-        }
-
-        @Override
         public Object getAttribute(String name)
         {
             if (ID.equals(name))
@@ -501,13 +489,6 @@ public class FileBasedGroupProviderImpl
                     throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
                 }
             }
-
-            @Override
-            public Collection<String> getAttributeNames()
-            {
-                return getAttributeNames(GroupMember.class);
-            }
-
 
             @Override
             public State getState()

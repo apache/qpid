@@ -214,13 +214,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(Connection.class);
-    }
-
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         if(clazz == Session.class)

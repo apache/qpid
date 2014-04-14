@@ -88,12 +88,6 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public State getState()
     {
         return State.ACTIVE;

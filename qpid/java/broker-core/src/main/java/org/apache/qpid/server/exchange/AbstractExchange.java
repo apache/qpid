@@ -861,12 +861,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public Object getAttribute(final String name)
     {
         if(ConfiguredObject.STATE.equals(name))

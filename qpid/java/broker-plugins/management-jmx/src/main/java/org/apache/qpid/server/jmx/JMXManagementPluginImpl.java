@@ -313,12 +313,6 @@ public class JMXManagementPluginImpl
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(JMXManagementPluginImpl.class);
-    }
-
-    @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
         Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);

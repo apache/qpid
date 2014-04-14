@@ -101,12 +101,6 @@ public class FileSystemPreferencesProviderImpl
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(FileSystemPreferencesProviderImpl.class);
-    }
-
-    @Override
     public String getPath()
     {
         return (String) getAttribute(PATH);

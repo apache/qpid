@@ -281,12 +281,6 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(getClass());
-    }
-
-    @Override
     public Broker getBroker()
     {
         Collection<Broker> children = getChildren(Broker.class);

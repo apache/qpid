@@ -1456,12 +1456,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    public Collection<String> getAttributeNames()
-    {
-        return getAttributeNames(org.apache.qpid.server.model.VirtualHost.class);
-    }
-
-    @Override
     public Collection<String> getSupportedExchangeTypes()
     {
         List<String> types = new ArrayList<String>();

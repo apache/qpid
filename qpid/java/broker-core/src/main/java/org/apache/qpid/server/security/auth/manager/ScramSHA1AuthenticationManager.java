@@ -608,11 +608,6 @@ public class ScramSHA1AuthenticationManager
             return deleted.length == 1;
         }
 
-        @Override
-        public Collection<String> getAttributeNames()
-        {
-            return getAttributeNames(getClass());
-        }
     }
 
     @Override
