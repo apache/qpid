@@ -29,7 +29,6 @@ import org.apache.qpid.server.queue.QueueEntryVisitor;
 public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 {
 
-    public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
 
     public static final String ALERT_REPEAT_GAP = "alertRepeatGap";

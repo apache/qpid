@@ -29,7 +29,6 @@ import java.util.Map;
 @ManagedObject
 public interface User<X extends User<X>> extends ConfiguredObject<X>
 {
-    String DURABLE         = "durable";
     String LIFETIME_POLICY = "lifetimePolicy";
     String STATE           = "state";
     String PASSWORD        = "password";

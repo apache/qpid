@@ -34,7 +34,6 @@ public interface AuthenticationProvider<X extends AuthenticationProvider<X>> ext
 {
 
     public static final String DESCRIPTION = "description";
-    public static final String DURABLE = "durable";
     public static final String LIFETIME_POLICY = "lifetimePolicy";
 
     //children
