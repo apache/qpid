@@ -258,7 +258,7 @@ public class Asserts
     public static void assertPortAttributes(Map<String, Object> port, State state)
     {
         assertNotNull("Unexpected value of attribute " + Port.ID, port.get(Port.ID));
-        assertEquals("Unexpected value of attribute " + Port.DURABLE, Boolean.FALSE, port.get(Port.DURABLE));
+        assertEquals("Unexpected value of attribute " + Port.DURABLE, Boolean.TRUE, port.get(Port.DURABLE));
         assertEquals("Unexpected value of attribute " + Port.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                      port.get(Broker.LIFETIME_POLICY));
         assertEquals("Unexpected value of attribute " + Port.STATE, state.name(), port.get(Port.STATE));

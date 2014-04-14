@@ -105,28 +105,11 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     {
         return getAttributeNames(getClass());
     }
-    @Override
-    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
-    {
-        throw new IllegalStateException();
-    }
 
     @Override
     public State getState()
     {
         return State.ACTIVE;
-    }
-
-    @Override
-    public boolean isDurable()
-    {
-        return true;
-    }
-
-    @Override
-    public void setDurable(boolean durable) throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
     }
 
     @Override
@@ -136,22 +119,11 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     }
 
     @Override
-    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException, AccessControlException,
-                                                                                                    IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
         if(KeyStore.STATE.equals(name))
         {
             return getState();
-        }
-        else if(KeyStore.DURABLE.equals(name))
-        {
-            return isDurable();
         }
         else if(KeyStore.LIFETIME_POLICY.equals(name))
         {
@@ -259,6 +231,11 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
         {
             throw new IllegalConfigurationException("Unknown keyManagerFactoryAlgorithm: "
                     + fileKeyStore.getKeyManagerFactoryAlgorithm());
+        }
+
+        if(!fileKeyStore.isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
     }
 

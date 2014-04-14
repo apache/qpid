@@ -72,6 +72,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         attributes.put(ID, UUID.randomUUID());
         attributes.put(NAME, String.valueOf(session.getChannelId()));
         attributes.put(CHANNEL_ID, session.getChannelId());
+        attributes.put(DURABLE, false);
         return attributes;
     }
 
@@ -97,35 +98,12 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         return Collections.emptySet();  //TODO
     }
 
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;  //TODO
-    }
-
     public State getState()
     {
         return null;  //TODO
     }
 
-    public boolean isDurable()
-    {
-        return false;  //TODO
-    }
-
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        //TODO
-    }
-
     public LifetimePolicy getLifetimePolicy()
-    {
-        return null;  //TODO
-    }
-
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         return null;  //TODO
     }

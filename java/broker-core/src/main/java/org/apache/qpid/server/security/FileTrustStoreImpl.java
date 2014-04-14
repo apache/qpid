@@ -21,15 +21,12 @@
 package org.apache.qpid.server.security;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -51,24 +48,12 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManagerFactory;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 import org.apache.qpid.transport.network.security.ssl.QpidPeersOnlyTrustManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreImpl> implements FileTrustStore<FileTrustStoreImpl>
 {
-
-
-    @SuppressWarnings("serial")
-    public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
-        put(NAME, String.class);
-        put(PATH, String.class);
-        put(PASSWORD, String.class);
-        put(TRUST_STORE_TYPE, String.class);
-        put(PEERS_ONLY, Boolean.class);
-        put(TRUST_MANAGER_FACTORY_ALGORITHM, String.class);
-    }});
 
     @ManagedAttributeField
     private String _trustStoreType;
@@ -95,18 +80,17 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     public void validate()
     {
         super.validate();
-        validateTrustStoreAttributes(_trustStoreType, _path, getPassword(), _trustManagerFactoryAlgorithm);
+        validateTrustStore(this);
+        if(!isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
     }
 
     @Override
     public Collection<String> getAttributeNames()
     {
         return getAttributeNames(getClass());
-    }
-    @Override
-    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
-    {
-        throw new IllegalStateException();
     }
 
     @Override
@@ -116,28 +100,9 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
 
     @Override
-    public boolean isDurable()
-    {
-        return true;
-    }
-
-    @Override
-    public void setDurable(boolean durable) throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException, AccessControlException,
-                                                                                                    IllegalArgumentException
-    {
-        throw new IllegalStateException();
     }
 
     @Override
@@ -206,56 +171,40 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
 
     @Override
-    protected void changeAttributes(Map<String, Object> attributes)
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
     {
-        Map<String, Object> changedValues = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
-        if(changedValues.containsKey(TrustStore.NAME))
+        super.validateChange(proxyForValidation, changedAttributes);
+        FileTrustStore updated = (FileTrustStore) proxyForValidation;
+        if(changedAttributes.contains(TrustStore.NAME) && !getName().equals(updated.getName()))
         {
-            String newName = (String) changedValues.get(TrustStore.NAME);
-            if(!getName().equals(newName))
-            {
-                throw new IllegalConfigurationException("Changing the trust store name is not allowed");
-            }
+            throw new IllegalConfigurationException("Changing the trust store name is not allowed");
         }
-
-        Map<String, Object> merged = generateEffectiveAttributes(changedValues);
-
-        String trustStorePath = changedValues.containsKey(PATH) ? (String) changedValues.get(PATH) : getPath();
-        String trustStorePassword =
-                changedValues.containsKey(PASSWORD) ? (String) changedValues.get(PASSWORD) : getPassword();
-        String trustStoreType = changedValues.containsKey(TRUST_STORE_TYPE)
-                ? (String) changedValues.get(TRUST_STORE_TYPE)
-                : getTrustStoreType();
-        String trustManagerFactoryAlgorithm =
-                changedValues.containsKey(TRUST_MANAGER_FACTORY_ALGORITHM)
-                        ? (String) changedValues.get(TRUST_MANAGER_FACTORY_ALGORITHM)
-                        : getTrustManagerFactoryAlgorithm();
-
-        validateTrustStoreAttributes(trustStoreType, trustStorePath,
-                                     trustStorePassword, trustManagerFactoryAlgorithm);
-
-        super.changeAttributes(changedValues);
+        if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+        validateTrustStore(updated);
     }
 
-    private void validateTrustStoreAttributes(String type, String trustStorePath,
-                                              String password, String trustManagerFactoryAlgorithm)
+
+    private static void validateTrustStore(FileTrustStore trustStore)
     {
         try
         {
-            SSLUtil.getInitializedKeyStore(trustStorePath, password, type);
+            SSLUtil.getInitializedKeyStore(trustStore.getPath(), trustStore.getPassword(), trustStore.getTrustStoreType());
         }
         catch (Exception e)
         {
-            throw new IllegalConfigurationException("Cannot instantiate trust store at " + trustStorePath, e);
+            throw new IllegalConfigurationException("Cannot instantiate trust store at " + trustStore.getPath(), e);
         }
 
         try
         {
-            TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
+            TrustManagerFactory.getInstance(trustStore.getTrustManagerFactoryAlgorithm());
         }
         catch (NoSuchAlgorithmException e)
         {
-            throw new IllegalConfigurationException("Unknown trustManagerFactoryAlgorithm: " + trustManagerFactoryAlgorithm);
+            throw new IllegalConfigurationException("Unknown trustManagerFactoryAlgorithm: " + trustStore.getTrustManagerFactoryAlgorithm());
         }
     }
 

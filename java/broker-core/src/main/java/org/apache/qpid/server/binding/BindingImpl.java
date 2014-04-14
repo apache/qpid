@@ -82,7 +82,7 @@ public class BindingImpl
 
     public BindingImpl(UUID id, Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
-        super(parentsMap(queue,exchange),combineIdWithAttributes(id,attributes),queue.getVirtualHost().getTaskExecutor());
+        super(parentsMap(queue,exchange),enhanceWithDurable(combineIdWithAttributes(id, attributes), queue, exchange),queue.getVirtualHost().getTaskExecutor());
         _id = id;
         _bindingKey = (String)attributes.get(org.apache.qpid.server.model.Binding.NAME);
         _queue = queue;
@@ -99,6 +99,18 @@ public class BindingImpl
                                                                       && !getArguments().isEmpty()));
 
 
+    }
+
+    private static Map<String, Object> enhanceWithDurable(Map<String, Object> attributes,
+                                                          final AMQQueue queue,
+                                                          final ExchangeImpl exchange)
+    {
+        if(!attributes.containsKey(DURABLE))
+        {
+            attributes = new HashMap<String, Object>(attributes);
+            attributes.put(DURABLE, queue.isDurable() && exchange.isDurable());
+        }
+        return attributes;
     }
 
     public String getBindingKey()
@@ -138,33 +150,9 @@ public class BindingImpl
         return _matches.get();
     }
 
-    public boolean isDurable()
-    {
-        return _queue.isDurable() && _exchange.isDurable();
-    }
-
-    @Override
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        if(durable != isDurable())
-        {
-            throw new IllegalArgumentException("Cannot change the durability of a binding");
-        }
-    }
-
-
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        // TODO
-        return null;
     }
 
     @Override
@@ -230,14 +218,6 @@ public class BindingImpl
             }
             getEventLogger().message(_logSubject, BindingMessages.DELETED());
         }
-    }
-
-    @Override
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        // TODO
-        return null;
     }
 
     public State getState()

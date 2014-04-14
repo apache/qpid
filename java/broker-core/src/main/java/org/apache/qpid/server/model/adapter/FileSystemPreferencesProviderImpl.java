@@ -91,6 +91,16 @@ public class FileSystemPreferencesProviderImpl
     }
 
     @Override
+    public void validate()
+    {
+        super.validate();
+        if(!isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+    }
+
+    @Override
     public Collection<String> getAttributeNames()
     {
         return getAttributeNames(FileSystemPreferencesProviderImpl.class);
@@ -103,40 +113,15 @@ public class FileSystemPreferencesProviderImpl
     }
 
     @Override
-    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public State getState()
     {
         return _state.get();
     }
 
     @Override
-    public boolean isDurable()
-    {
-        return true;
-    }
-
-    @Override
-    public void setDurable(boolean durable) throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired) throws IllegalStateException,
-            AccessControlException, IllegalArgumentException
-    {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -338,6 +323,12 @@ public class FileSystemPreferencesProviderImpl
         {
             throw new IllegalConfigurationException("Path to preferences file is not specified");
         }
+
+        if(changedAttributes.contains(DURABLE) && !updated.isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+
     }
 
     public void createStoreIfNotExist()

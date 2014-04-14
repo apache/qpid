@@ -72,6 +72,26 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
+    public void validate()
+    {
+        super.validate();
+        if(!isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+        if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
+        {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+    }
+
+    @Override
     protected void onOpen()
     {
         super.onOpen();
@@ -85,40 +105,15 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
-    public String setName(String currentName, String desiredName) throws IllegalStateException, AccessControlException
-    {
-        return null;
-    }
-
-    @Override
     public State getState()
     {
         return _state.get();
     }
 
     @Override
-    public boolean isDurable()
-    {
-        return true;
-    }
-
-    @Override
-    public void setDurable(boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(LifetimePolicy expected, LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return null;
     }
 
     @Override

@@ -178,6 +178,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         Map<String,Object> map = new HashMap<String, Object>();
         map.put(Binding.NAME, ROUTING_KEY);
         map.put(Binding.ARGUMENTS,_bindingArgs);
+        map.put(Binding.DURABLE,true);
 
         Map<String,UUID> parents = new HashMap<String, UUID>();
 
@@ -417,6 +418,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(queue.getId()).thenReturn(_queueId);
         when(queue.getAlternateExchange()).thenReturn(alternateExchange);
         when(queue.getCategoryClass()).thenReturn((Class)Queue.class);
+        when(queue.isDurable()).thenReturn(true);
         final VirtualHostImpl vh = mock(VirtualHostImpl.class);
         when(vh.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(queue.getVirtualHost()).thenReturn(vh);
@@ -469,6 +471,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchange.isAutoDelete()).thenReturn(true);
         when(exchange.getId()).thenReturn(_exchangeId);
         when(exchange.getCategoryClass()).thenReturn(Exchange.class);
+        when(exchange.isDurable()).thenReturn(true);
 
         ConfiguredObjectRecord exchangeRecord = mock(ConfiguredObjectRecord.class);
         when(exchangeRecord.getId()).thenReturn(_exchangeId);

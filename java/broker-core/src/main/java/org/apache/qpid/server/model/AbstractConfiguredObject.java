@@ -132,6 +132,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @ManagedAttributeField
     private Map<String,String> _context;
 
+    @ManagedAttributeField
+    private boolean _durable;
+
     private final Map<String, ConfiguredObjectAttribute<?,?>> _attributeTypes;
     private final Map<String, AutomatedField> _automatedFields;
 
@@ -212,6 +215,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
 
         _name = AttributeValueConverter.STRING_CONVERTER.convert(attributes.get(NAME),this);
+        Object durableObj = attributes.get(DURABLE);
+        _durable = AttributeValueConverter.BOOLEAN_CONVERTER.convert(durableObj == null ? _attributeTypes.get(DURABLE).getAnnotation().defaultValue() : durableObj, this);
 
         Collection<String> names = getAttributeNames();
         if(names!=null)
@@ -482,6 +487,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         return _name;
     }
+
+    public final boolean isDurable()
+    {
+        return _durable;
+    }
+
 
     public Class<? extends ConfiguredObject> getCategoryClass()
     {

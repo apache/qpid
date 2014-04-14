@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 @ManagedObject
@@ -30,7 +27,6 @@ public interface Binding<X extends Binding<X>> extends ConfiguredObject<X>
 {
 
     public String ARGUMENTS = "arguments";
-    public String DURABLE = "durable";
     public String LIFETIME_POLICY = "lifetimePolicy";
     public String STATE = "state";
     public String TIME_TO_LIVE = "timeToLive";

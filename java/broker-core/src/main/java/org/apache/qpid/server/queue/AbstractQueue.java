@@ -120,8 +120,6 @@ public abstract class AbstractQueue
 
     private String _description;
 
-    private boolean _durable;
-
     private ExchangeImpl _alternateExchange;
 
 
@@ -301,9 +299,6 @@ public abstract class AbstractQueue
 
         Map<String,Object> attributes = getActualAttributes();
 
-        boolean durable = MapValueConverter.getBooleanAttribute(Queue.DURABLE, attributes, false);
-
-
         _exclusive = MapValueConverter.getEnumAttribute(ExclusivityPolicy.class,
                                                                 Queue.EXCLUSIVE,
                                                                 attributes,
@@ -313,7 +308,6 @@ public abstract class AbstractQueue
                                                              attributes,
                                                              LifetimePolicy.PERMANENT);
 
-        _durable = durable;
         final LinkedHashMap<String, Object> arguments = new LinkedHashMap<String, Object>(attributes);
 
         arguments.put(Queue.EXCLUSIVE, _exclusive);
@@ -432,8 +426,8 @@ public abstract class AbstractQueue
                                                        _entries.getPriorities(),
                                                        ownerString != null,
                                                        _lifetimePolicy != LifetimePolicy.PERMANENT,
-                                                       durable,
-                                                       !durable,
+                                                       isDurable(),
+                                                       !isDurable(),
                                                        _entries.getPriorities() > 0));
 
         if(attributes != null && attributes.containsKey(Queue.MESSAGE_GROUP_KEY))
@@ -509,11 +503,6 @@ public abstract class AbstractQueue
     public void setNoLocal(boolean nolocal)
     {
         _noLocal = nolocal;
-    }
-
-    public boolean isDurable()
-    {
-        return _durable;
     }
 
     public boolean isExclusive()
@@ -595,10 +584,6 @@ public abstract class AbstractQueue
                 return "priority";
             }
             return "standard";
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
         }
         else if(LIFETIME_POLICY.equals(name))
         {
@@ -2779,30 +2764,9 @@ public abstract class AbstractQueue
 
 
     @Override
-    public String setName(final String currentName, final String desiredName)
-            throws IllegalStateException, AccessControlException
-    {
-        return null;
-    }
-
-    @Override
     public State getState()
     {
         return isDeleted() ? State.DELETED : State.ACTIVE;
-    }
-
-    @Override
-    public void setDurable(final boolean durable)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-
-    }
-
-    @Override
-    public LifetimePolicy setLifetimePolicy(final LifetimePolicy expected, final LifetimePolicy desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        return null;
     }
 
     @Override

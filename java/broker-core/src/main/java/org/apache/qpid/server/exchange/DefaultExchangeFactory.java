@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -28,10 +32,6 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class DefaultExchangeFactory implements ExchangeFactory
 {
@@ -99,6 +99,13 @@ public class DefaultExchangeFactory implements ExchangeFactory
     public ExchangeImpl createExchange(final Map<String, Object> attributes)
             throws AMQUnknownExchangeType, UnknownExchangeException
     {
+        ExchangeImpl exchange = createExchangeInstance(attributes);
+        ((AbstractExchange)exchange).create();
+        return exchange;
+    }
+
+    private ExchangeImpl createExchangeInstance(final Map<String, Object> attributes)
+    {
         String type = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.TYPE, attributes);
         ExchangeType<? extends ExchangeImpl> exchType = _exchangeClassMap.get(type);
         if (exchType == null)
@@ -106,13 +113,16 @@ public class DefaultExchangeFactory implements ExchangeFactory
             throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
         }
         return exchType.newInstance(_host, attributes);
+
     }
 
     @Override
     public ExchangeImpl restoreExchange(Map<String,Object> attributes)
             throws AMQUnknownExchangeType, UnknownExchangeException
     {
-        return createExchange(attributes);
+        ExchangeImpl exchange = createExchangeInstance(attributes);
+        exchange.open();
+        return exchange;
 
     }
 }
