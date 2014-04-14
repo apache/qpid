@@ -232,11 +232,17 @@ int main(int argc, char ** argv)
                             if (msg.getDurable()) std::cout << "Durable: true" << std::endl;
                             if (msg.getRedelivered()) std::cout << "Redelivered: true" << std::endl;
                             std::cout << "Properties: " << msg.getProperties() << std::endl;
+                            if (msg.getContentType().size()) std::cout << "ContentType: " << msg.getContentType() << std::endl;
                             std::cout << std::endl;
                         }
                         if (opts.printContent) {
-                            if (!msg.getContentObject().isVoid()) std::cout << msg.getContentObject() << std::endl;
-                            else std::cout << msg.getContent() << std::endl;
+                            if (!msg.getContentObject().isVoid()) {
+                              std::cout << "[Object: " << getTypeName(msg.getContentObject().getType()) << "]" << std::endl
+                                        << msg.getContentObject() << std::endl;
+                            }
+                            else {
+                              std::cout << msg.getContent() << std::endl;
+                            }
                         }
                         if (opts.messages && count >= opts.messages) done = true;
                     }
