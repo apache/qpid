@@ -606,13 +606,25 @@ void AsynchIO::notifyEof(void) {
 }
 
 void AsynchIO::notifyDisconnect(void) {
-    if (disCallback)
-        disCallback(*this);
+    if (disCallback) {
+        DisconnectCallback dcb = disCallback;
+        closedCallback = 0;
+        disCallback = 0;
+        dcb(*this);
+        // May have just been deleted.
+        return;
+    }
 }
 
 void AsynchIO::notifyClosed(void) {
-    if (closedCallback)
-        closedCallback(*this, socket);
+    if (closedCallback) {
+        ClosedCallback ccb = closedCallback;
+        closedCallback = 0;
+        disCallback = 0;
+        ccb(*this, socket);
+        // May have just been deleted.
+        return;
+    }
 }
 
 void AsynchIO::notifyBuffersEmpty(void) {

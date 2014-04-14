@@ -93,7 +93,6 @@ protected:
     // time to notify the upper layer that the session is up, and also to
     // know when it's not legit to pass data through to either side.
     enum { Negotiating, Running, Redo, ShuttingDown } state;
-    bool sessionUp;
     CtxtHandle ctxtHandle;
     TimeStamp credExpiry;
 
@@ -111,13 +110,17 @@ private:
     // These are callbacks from AsynchIO to here.
     void sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff);
     void idle(qpid::sys::AsynchIO&);
+    void reapCheck();
 
     // These callbacks are to the layer above.
     ReadCallback readCallback;
     IdleCallback idleCallback;
     NegotiateDoneCallback negotiateDoneCallback;
-    volatile unsigned int callbacksInProgress;   // >0 if w/in callbacks
+
     volatile bool queuedDelete;
+    volatile bool queuedClose;
+    volatile bool reapCheckPending;
+    bool started;
 
     // Address of peer, in case it's needed for logging.
     std::string peerAddress;
