@@ -348,6 +348,9 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     {
         private final Principal _user;
 
+        @ManagedAttributeField
+        private String _password;
+
         public PrincipalAdapter(Principal user)
         {
             super(parentsMap(PrincipalDatabaseAuthenticationManager.this),createPrincipalAttributes(PrincipalDatabaseAuthenticationManager.this, user),
@@ -379,7 +382,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         @Override
         public String getPassword()
         {
-            return (String)getAttribute(PASSWORD);
+            return _password;
         }
 
         @Override
@@ -400,36 +403,6 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         public State getState()
         {
             return State.ACTIVE;
-        }
-
-        @Override
-        public LifetimePolicy getLifetimePolicy()
-        {
-            return LifetimePolicy.PERMANENT;
-        }
-
-        @Override
-        public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
-        {
-            return null;
-        }
-
-        @Override
-        public Object getAttribute(String name)
-        {
-            if(ID.equals(name))
-            {
-                return getId();
-            }
-            else if(PASSWORD.equals(name))
-            {
-                return null; // for security reasons we don't expose the password
-            }
-            else if(NAME.equals(name))
-            {
-                return getName();
-            }
-            return super.getAttribute(name);
         }
 
         @Override

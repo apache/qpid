@@ -73,6 +73,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         attributes.put(NAME, String.valueOf(session.getChannelId()));
         attributes.put(CHANNEL_ID, session.getChannelId());
         attributes.put(DURABLE, false);
+        attributes.put(LIFETIME_POLICY, LifetimePolicy.DELETE_ON_SESSION_END);
         return attributes;
     }
 
@@ -99,11 +100,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     }
 
     public State getState()
-    {
-        return null;  //TODO
-    }
-
-    public LifetimePolicy getLifetimePolicy()
     {
         return null;  //TODO
     }

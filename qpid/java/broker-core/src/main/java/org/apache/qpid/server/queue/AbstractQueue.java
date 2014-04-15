@@ -181,7 +181,6 @@ public abstract class AbstractQueue
     @ManagedAttributeField
     private ExclusivityPolicy _exclusive;
 
-    private LifetimePolicy _lifetimePolicy;
     private Object _exclusiveOwner; // could be connection, session or Principal
 
     private final Set<NotificationCheck> _notificationChecks =
@@ -303,15 +302,11 @@ public abstract class AbstractQueue
                                                                 Queue.EXCLUSIVE,
                                                                 attributes,
                                                                 ExclusivityPolicy.NONE);
-        _lifetimePolicy = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
-                                                             Queue.LIFETIME_POLICY,
-                                                             attributes,
-                                                             LifetimePolicy.PERMANENT);
 
         final LinkedHashMap<String, Object> arguments = new LinkedHashMap<String, Object>(attributes);
 
         arguments.put(Queue.EXCLUSIVE, _exclusive);
-        arguments.put(Queue.LIFETIME_POLICY, _lifetimePolicy);
+        arguments.put(Queue.LIFETIME_POLICY, getLifetimePolicy());
 
         _arguments = Collections.synchronizedMap(arguments);
         _description = MapValueConverter.getStringAttribute(Queue.DESCRIPTION, attributes, null);
@@ -384,7 +379,7 @@ public abstract class AbstractQueue
         }
 
 
-        if(_lifetimePolicy == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE)
+        if(getLifetimePolicy() == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE)
         {
             if(sessionModel != null)
             {
@@ -393,11 +388,11 @@ public abstract class AbstractQueue
             else
             {
                 throw new IllegalArgumentException("Queues created with a lifetime policy of "
-                                                   + _lifetimePolicy
+                                                   + getLifetimePolicy()
                                                    + " must be created from a connection.");
             }
         }
-        else if(_lifetimePolicy == LifetimePolicy.DELETE_ON_SESSION_END)
+        else if(getLifetimePolicy() == LifetimePolicy.DELETE_ON_SESSION_END)
         {
             if(sessionModel != null)
             {
@@ -406,7 +401,7 @@ public abstract class AbstractQueue
             else
             {
                 throw new IllegalArgumentException("Queues created with a lifetime policy of "
-                                                   + _lifetimePolicy
+                                                   + getLifetimePolicy()
                                                    + " must be created from a connection.");
             }
         }
@@ -425,7 +420,7 @@ public abstract class AbstractQueue
                                  QueueMessages.CREATED(ownerString,
                                                        _entries.getPriorities(),
                                                        ownerString != null,
-                                                       _lifetimePolicy != LifetimePolicy.PERMANENT,
+                                                       getLifetimePolicy() != LifetimePolicy.PERMANENT,
                                                        isDurable(),
                                                        !isDurable(),
                                                        _entries.getPriorities() > 0));
@@ -585,10 +580,6 @@ public abstract class AbstractQueue
             }
             return "standard";
         }
-        else if(LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
-        }
         else if(STATE.equals(name))
         {
             return State.ACTIVE; // TODO
@@ -606,12 +597,6 @@ public abstract class AbstractQueue
         }
 
         return super.getAttribute(name);
-    }
-
-    @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return _lifetimePolicy;
     }
 
     public String getOwner()
@@ -829,8 +814,8 @@ public abstract class AbstractQueue
             // auto-delete queues must be deleted if there are no remaining subscribers
 
             if(!consumer.isTransient()
-               && ( _lifetimePolicy == LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS
-                    || _lifetimePolicy == LifetimePolicy.DELETE_ON_NO_LINKS )
+               && ( getLifetimePolicy() == LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS
+                    || getLifetimePolicy() == LifetimePolicy.DELETE_ON_NO_LINKS )
                && getConsumerCount() == 0)
             {
 

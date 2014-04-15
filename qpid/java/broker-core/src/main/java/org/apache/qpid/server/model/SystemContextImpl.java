@@ -213,12 +213,6 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     }
 
     @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
     public ConfiguredObjectFactory getObjectFactory()
     {
         return _objectFactory;

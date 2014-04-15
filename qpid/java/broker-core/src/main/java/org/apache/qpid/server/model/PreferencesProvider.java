@@ -27,7 +27,6 @@ import java.util.Set;
 @ManagedObject
 public interface PreferencesProvider<X extends PreferencesProvider<X>> extends ConfiguredObject<X>
 {
-    String LIFETIME_POLICY = "lifetimePolicy";
 
     /**
      * Returns preferences {@link Map} for a given user ID

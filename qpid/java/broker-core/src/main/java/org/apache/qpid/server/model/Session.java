@@ -20,20 +20,17 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 @ManagedObject
 public interface Session<X extends Session<X>> extends ConfiguredObject<X>
 {
-    public static final String STATE = "state";
-    public static final String LIFETIME_POLICY = "lifetimePolicy";
+    String STATE = "state";
 
-    public static final String CHANNEL_ID = "channelId";
+    String CHANNEL_ID = "channelId";
     // PRODUCER_FLOW_BLOCKED is exposed as an interim step.  We will expose attribute(s) that exposing
     // available credit of both producer and consumer sides.
-    public static final String PRODUCER_FLOW_BLOCKED = "producerFlowBlocked";
+    String PRODUCER_FLOW_BLOCKED = "producerFlowBlocked";
 
     @ManagedAttribute( automate = true )
     int getChannelId();

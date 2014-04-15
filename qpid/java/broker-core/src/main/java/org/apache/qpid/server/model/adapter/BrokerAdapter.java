@@ -456,11 +456,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return null;  //TODO
     }
 
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
-
     public long getTimeToLive()
     {
         return 0;
@@ -802,21 +797,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public Object getAttribute(String name)
     {
-        if(ID.equals(name))
-        {
-            return getId();
-        }
-        else if(STATE.equals(name))
+        if(STATE.equals(name))
         {
             return State.ACTIVE;
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
-        }
-        else if(LIFETIME_POLICY.equals(name))
-        {
-            return LifetimePolicy.PERMANENT;
         }
         else if(BUILD_VERSION.equals(name))
         {

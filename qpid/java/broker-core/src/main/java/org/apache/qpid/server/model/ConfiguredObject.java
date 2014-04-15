@@ -33,17 +33,19 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
  */
 public interface ConfiguredObject<X extends ConfiguredObject<X>>
 {
-    public static final String ID = "id";
-    public static final String NAME = "name";
-    public static final String TYPE = "type";
-    public static final String DESCRIPTION = "description";
-    public static final String DURABLE = "durable";
-    public static final String CONTEXT = "context";
-    public static final String LAST_UPDATED_BY = "lastUpdatedBy";
-    public static final String LAST_UPDATED_TIME = "lastUpdatedTime";
-    public static final String STATE = "state";
-    public static final String CREATED_BY = "createdBy";
-    public static final String CREATED_TIME = "createdTime";
+    String ID = "id";
+    String NAME = "name";
+    String TYPE = "type";
+    String DESCRIPTION = "description";
+    String DURABLE = "durable";
+    String CONTEXT = "context";
+    String LIFETIME_POLICY = "lifetimePolicy";
+
+    String LAST_UPDATED_BY = "lastUpdatedBy";
+    String LAST_UPDATED_TIME = "lastUpdatedTime";
+    String STATE = "state";
+    String CREATED_BY = "createdBy";
+    String CREATED_TIME = "createdTime";
 
 
     /**
@@ -162,7 +164,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the lifetime policy
      */
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "PERMANENT" )
     LifetimePolicy getLifetimePolicy();
 
     /**

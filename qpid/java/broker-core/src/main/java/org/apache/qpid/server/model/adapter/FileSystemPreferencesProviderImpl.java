@@ -54,7 +54,6 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -113,12 +112,6 @@ public class FileSystemPreferencesProviderImpl
     }
 
     @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptySet();
@@ -127,19 +120,7 @@ public class FileSystemPreferencesProviderImpl
     @Override
     public Object getAttribute(String name)
     {
-        if (DURABLE.equals(name))
-        {
-            return true;
-        }
-        else if (ID.equals(name))
-        {
-            return getId();
-        }
-        else if (LIFETIME_POLICY.equals(name))
-        {
-            return LifetimePolicy.PERMANENT;
-        }
-        else if (STATE.equals(name))
+        if (STATE.equals(name))
         {
             return getState();
         }

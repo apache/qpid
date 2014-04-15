@@ -29,7 +29,6 @@ import java.util.Map;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationMethod;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -80,12 +79,6 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
     public State getState()
     {
         return State.ACTIVE;  // TODO - Implement
-    }
-
-    @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;  // TODO - Implement
     }
 
     @Override

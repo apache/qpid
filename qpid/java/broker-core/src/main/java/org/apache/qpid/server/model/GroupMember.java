@@ -22,7 +22,6 @@ package org.apache.qpid.server.model;
 @ManagedObject
 public interface GroupMember<X extends GroupMember<X>> extends ConfiguredObject<X>
 {
-    String LIFETIME_POLICY = "lifetimePolicy";
     String STATE           = "state";
 
 }

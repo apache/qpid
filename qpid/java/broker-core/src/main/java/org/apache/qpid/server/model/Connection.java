@@ -29,7 +29,6 @@ public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
     // Attributes
 
     public static final String STATE = "state";
-    public static final String LIFETIME_POLICY = "lifetimePolicy";
 
     public static final String CLIENT_ID = "clientId";
     public static final String CLIENT_VERSION = "clientVersion";

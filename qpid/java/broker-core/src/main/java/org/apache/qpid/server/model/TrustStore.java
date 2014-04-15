@@ -26,7 +26,6 @@ import javax.net.ssl.TrustManager;
 @ManagedObject( defaultType = "FileTrustStore" )
 public interface TrustStore<X extends TrustStore<X>> extends ConfiguredObject<X>
 {
-    String LIFETIME_POLICY = "lifetimePolicy";
     String DESCRIPTION = "description";
 
     @ManagedAttribute( secure = true, automate = true, mandatory = true)

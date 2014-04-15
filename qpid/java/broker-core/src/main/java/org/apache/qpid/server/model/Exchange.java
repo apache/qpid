@@ -26,19 +26,19 @@ import java.util.Map;
 @ManagedObject
 public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
 {
-    String LIFETIME_POLICY                      = "lifetimePolicy";
     String STATE                                = "state";
     String ALTERNATE_EXCHANGE                   = "alternateExchange";
 
     // Attributes
 
-    @ManagedAttribute
+    @ManagedAttribute(automate = true)
     Exchange<?> getAlternateExchange();
 
     //children
     Collection<? extends Binding> getBindings();
     Collection<Publisher> getPublishers();
 
+    // Statistics
     @ManagedStatistic
     long getBindingCount();
 
@@ -62,7 +62,6 @@ public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>
                           Map<String, Object> attributes);
 
 
-    // Statistics
 
     void delete();
 }

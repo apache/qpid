@@ -23,8 +23,6 @@ package org.apache.qpid.server.queue;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
 
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -50,7 +48,6 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
@@ -160,6 +157,7 @@ class QueueConsumerImpl
         attributes.put(NO_LOCAL, optionSet.contains(Option.NO_LOCAL));
         attributes.put(DISTRIBUTION_MODE, optionSet.contains(Option.ACQUIRES) ? "MOVE" : "COPY");
         attributes.put(DURABLE,false);
+        attributes.put(LIFETIME_POLICY, LifetimePolicy.DELETE_ON_SESSION_END);
         if(filters != null)
         {
             Iterator<MessageFilter> iter = filters.filters();
@@ -515,24 +513,8 @@ class QueueConsumerImpl
     }
 
     @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.DELETE_ON_SESSION_END;
-    }
-
-    @Override
-    public <C extends ConfiguredObject> Collection<C> getChildren(final Class<C> clazz)
-    {
-        return Collections.<C>emptyList();
-    }
-
-    @Override
     public Object getAttribute(final String name)
     {
-        if(LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
-        }
         return super.getAttribute(name);
     }
 

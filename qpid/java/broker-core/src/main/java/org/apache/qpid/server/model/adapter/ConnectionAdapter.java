@@ -179,11 +179,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         return null;  //TODO
     }
 
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return null;  //TODO
-    }
-
     @Override
     public Object getAttribute(String name)
     {

@@ -42,7 +42,6 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
     String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
-    String LIFETIME_POLICY                      = "lifetimePolicy";
     String SECURITY_ACL                         = "securityAcl";
     String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
     String CONFIGURATION_STORE_SETTINGS         = "configurationStoreSettings";

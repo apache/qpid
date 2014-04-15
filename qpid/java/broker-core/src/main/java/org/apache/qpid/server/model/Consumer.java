@@ -20,10 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-
 @ManagedObject
 public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
 {
@@ -32,7 +28,6 @@ public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
     public String NO_LOCAL = "noLocal";
     public String SELECTOR = "selector";
     public String SETTLEMENT_MODE = "settlementMode";
-    public String LIFETIME_POLICY = "lifetimePolicy";
     public String STATE = "state";
 
     @ManagedAttribute( automate = true )

@@ -219,11 +219,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         return _state.get();
     }
 
-    @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
 
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
@@ -244,10 +239,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         if(STATE.equals(name))
         {
             return getState();
-        }
-        else if(LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
         }
         return super.getAttribute(name);
     }
