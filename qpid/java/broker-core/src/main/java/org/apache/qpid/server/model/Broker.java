@@ -99,6 +99,9 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     @ManagedAttribute( derived = true )
     Collection<String> getSupportedPreferencesProviderTypes();
 
+    @ManagedAttribute( derived = true )
+    Collection<String> getSupportedVirtualHostTypes();
+
     @ManagedAttribute( automate = true )
     String getDefaultVirtualHost();
 

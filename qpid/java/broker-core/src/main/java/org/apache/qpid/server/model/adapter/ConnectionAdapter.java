@@ -39,25 +39,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
             new HashMap<AMQSessionModel, SessionAdapter>();
 
-    @ManagedAttributeField
-    private String _remoteAddress;
-    @ManagedAttributeField
-    private String _localAddress;
-    @ManagedAttributeField
-    private String _clientId;
-    @ManagedAttributeField
-    private String _clientVersion;
-    @ManagedAttributeField
-    private boolean _incoming;
-    @ManagedAttributeField
-    private Transport _transport;
-    @ManagedAttributeField
-    private Port _port;
-    @ManagedAttributeField
-    private String _remoteProcessName;
-    @ManagedAttributeField
-    private String _remoteProcessPid;
-
     public ConnectionAdapter(final AMQConnectionModel conn, TaskExecutor taskExecutor)
     {
         super(parentsMap(conn.getVirtualHost()),createAttributes(conn), taskExecutor);
@@ -66,17 +47,11 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         conn.addSessionListener(this);
     }
 
-    private static Map<String, Object> createAttributes(final AMQConnectionModel conn)
+    private static Map<String, Object> createAttributes(final AMQConnectionModel _connection)
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(ID, UUID.randomUUID());
-        attributes.put(NAME, conn.getRemoteAddressString().replaceAll("/", ""));
-        attributes.put(CLIENT_ID, conn.getClientId() );
-        attributes.put(CLIENT_VERSION, conn.getClientVersion());
-        attributes.put(TRANSPORT, conn.getTransport());
-        attributes.put(PORT, conn.getPort());
-        attributes.put(INCOMING, true);
-        attributes.put(REMOTE_ADDRESS, conn.getRemoteAddressString());
+        attributes.put(NAME, _connection.getRemoteAddressString().replaceAll("/", ""));
         attributes.put(DURABLE, false);
         return attributes;
     }
@@ -84,25 +59,25 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public String getClientId()
     {
-        return _clientId;
+        return _connection.getClientId();
     }
 
     @Override
     public String getClientVersion()
     {
-        return _clientVersion;
+        return _connection.getClientVersion();
     }
 
     @Override
     public boolean isIncoming()
     {
-        return _incoming;
+        return true;
     }
 
     @Override
     public String getLocalAddress()
     {
-        return _localAddress;
+        return null;
     }
 
     @Override
@@ -115,19 +90,19 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public String getRemoteAddress()
     {
-        return _remoteAddress;
+        return _connection.getRemoteAddressString();
     }
 
     @Override
     public String getRemoteProcessName()
     {
-        return _remoteProcessName;
+        return null;
     }
 
     @Override
     public String getRemoteProcessPid()
     {
-        return _remoteProcessPid;
+        return null;
     }
 
     @Override
@@ -139,13 +114,13 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public Transport getTransport()
     {
-        return _transport;
+        return _connection.getTransport();
     }
 
     @Override
     public Port getPort()
     {
-        return _port;
+        return _connection.getPort();
     }
 
     public Collection<Session> getSessions()
@@ -179,34 +154,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         return null;  //TODO
     }
 
-    @Override
-    public Object getAttribute(String name)
-    {
-
-        if(name.equals(PRINCIPAL))
-        {
-            final Principal authorizedPrincipal = _connection.getAuthorizedPrincipal();
-            return authorizedPrincipal == null ? null : authorizedPrincipal.getName();
-        }
-        else if(name.equals(PROPERTIES))
-        {
-
-        }
-        else if(name.equals(SESSION_COUNT_LIMIT))
-        {
-            return _connection.getSessionCountLimit();
-        }
-        else if(name.equals(TRANSPORT))
-        {
-            return String.valueOf(_connection.getTransport());
-        }
-        else if(name.equals(PORT))
-        {
-            Port port = _connection.getPort();
-            return String.valueOf(port == null ? null : port.getName());
-        }
-        return super.getAttribute(name);
-    }
 
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)

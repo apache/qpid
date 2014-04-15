@@ -194,19 +194,6 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     void setNotificationListener(QueueNotificationListener listener);
 
-    /**
-     * Sets the free text description of this queue.
-     *
-     * @param description
-     *
-     */
-    void setDescription(String description);
-
-    /**
-     * Gets the free text description of this queue.
-     */
-    String getDescription();
-
     long getPersistentDequeuedBytes();
 
     long getPersistentDequeuedMessages();

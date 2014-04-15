@@ -118,8 +118,6 @@ public abstract class AbstractQueue
     private final VirtualHostImpl _virtualHost;
     private final DeletedChildListener _deletedChildListener = new DeletedChildListener();
 
-    private String _description;
-
     private ExchangeImpl _alternateExchange;
 
 
@@ -309,7 +307,6 @@ public abstract class AbstractQueue
         arguments.put(Queue.LIFETIME_POLICY, getLifetimePolicy());
 
         _arguments = Collections.synchronizedMap(arguments);
-        _description = MapValueConverter.getStringAttribute(Queue.DESCRIPTION, attributes, null);
 
         _noLocal = MapValueConverter.getBooleanAttribute(Queue.NO_LOCAL, attributes, false);
 
@@ -2406,18 +2403,6 @@ public abstract class AbstractQueue
         _notificationListener = listener;
     }
 
-    @Override
-    public void setDescription(String description)
-    {
-        _description = description;
-    }
-
-    @Override
-    public String getDescription()
-    {
-        return _description;
-    }
-
     public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
                                                                                         final String routingAddress,
                                                                                         final InstanceProperties instanceProperties,
@@ -2823,11 +2808,6 @@ public abstract class AbstractQueue
                     }
                 }
                 return false;
-            }
-            else if (DESCRIPTION.equals(name))
-            {
-                setDescription((String) desired);
-                return true;
             }
 
             return super.changeAttribute(name, expected, desired);

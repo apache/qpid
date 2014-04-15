@@ -137,7 +137,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                          SystemContext parent)
     {
         super(parentsMap(parent),
-              combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)), parent.getTaskExecutor());
+              combineIdWithAttributes(id, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)),
+              parent.getTaskExecutor());
 
         _objectFactory = parent.getObjectFactory();
         _virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());
@@ -266,37 +267,45 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public String getBuildVersion()
     {
-        return (String) getAttribute(BUILD_VERSION);
+        return QpidProperties.getBuildVersion();
     }
 
     @Override
     public String getOperatingSystem()
     {
-        return (String) getAttribute(OPERATING_SYSTEM);
+        return SystemUtils.getOSString();
     }
 
     @Override
     public String getPlatform()
     {
-        return (String) getAttribute(PLATFORM);
+        return System.getProperty("java.vendor") + " "
+                      + System.getProperty("java.runtime.version", System.getProperty("java.version"));
     }
 
     @Override
     public String getProcessPid()
     {
-        return (String) getAttribute(PROCESS_PID);
+        // TODO
+        return null;
     }
 
     @Override
     public String getProductVersion()
     {
-        return (String) getAttribute(PRODUCT_VERSION);
+        return QpidProperties.getReleaseVersion();
     }
 
     @Override
     public Collection<String> getSupportedVirtualHostStoreTypes()
     {
         return _supportedVirtualHostStoreTypes;
+    }
+
+    @Override
+    public Collection<String> getSupportedVirtualHostTypes()
+    {
+        return _objectFactory.getSupportedTypes(VirtualHost.class);
     }
 
     @Override
@@ -800,47 +809,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         if(STATE.equals(name))
         {
             return State.ACTIVE;
-        }
-        else if(BUILD_VERSION.equals(name))
-        {
-            return QpidProperties.getBuildVersion();
-        }
-        else if(OPERATING_SYSTEM.equals(name))
-        {
-            return SystemUtils.getOSString();
-        }
-        else if(PLATFORM.equals(name))
-        {
-            return System.getProperty("java.vendor") + " "
-                   + System.getProperty("java.runtime.version", System.getProperty("java.version"));
-        }
-        else if(PROCESS_PID.equals(name))
-        {
-            // TODO
-        }
-        else if(PRODUCT_VERSION.equals(name))
-        {
-            return QpidProperties.getReleaseVersion();
-        }
-        else if(SUPPORTED_VIRTUALHOST_STORE_TYPES.equals(name))
-        {
-            return _supportedVirtualHostStoreTypes;
-        }
-        else if(SUPPORTED_VIRTUALHOST_TYPES.equals(name))
-        {
-            return _objectFactory.getSupportedTypes(VirtualHost.class);
-        }
-        else if(SUPPORTED_AUTHENTICATION_PROVIDERS.equals(name))
-        {
-            return getSupportedAuthenticationProviders();
-        }
-        else if (SUPPORTED_PREFERENCES_PROVIDER_TYPES.equals(name))
-        {
-            return getSupportedPreferencesProviderTypes();
-        }
-        else if (MODEL_VERSION.equals(name))
-        {
-            return Model.MODEL_VERSION;
         }
         return super.getAttribute(name);
     }

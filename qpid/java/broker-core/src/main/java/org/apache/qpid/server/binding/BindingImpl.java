@@ -122,13 +122,13 @@ public class BindingImpl
     }
 
     @Override
-    public Queue getQueue()
+    public Queue<?> getQueue()
     {
         return _queue;
     }
 
     @Override
-    public ExchangeImpl getExchange()
+    public ExchangeImpl<?> getExchange()
     {
         return _exchange;
     }

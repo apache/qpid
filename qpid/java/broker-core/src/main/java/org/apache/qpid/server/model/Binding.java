@@ -31,11 +31,13 @@ public interface Binding<X extends Binding<X>> extends ConfiguredObject<X>
     public String QUEUE = "queue";
     public String EXCHANGE = "exchange";
 
-    @ManagedAttribute
-    Queue getQueue();
+    // TODO - this is a hack
+    @ManagedAttribute( derived = true )
+    Queue<?> getQueue();
 
-    @ManagedAttribute
-    Exchange getExchange();
+    // TODO - this is a hack
+    @ManagedAttribute( derived = true )
+    Exchange<?> getExchange();
 
     @ManagedAttribute
     Map<String,Object> getArguments();

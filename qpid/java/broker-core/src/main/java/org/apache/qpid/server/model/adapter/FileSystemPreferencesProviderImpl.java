@@ -54,6 +54,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -76,6 +77,11 @@ public class FileSystemPreferencesProviderImpl
 
     private FileSystemPreferencesStore _store;
 
+    @ManagedAttributeField( afterSet = "openNewStore" )
+    private String _path;
+
+    private boolean _open;
+
     public FileSystemPreferencesProviderImpl(UUID id, Map<String, Object> attributes,
                                              AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {
@@ -85,8 +91,15 @@ public class FileSystemPreferencesProviderImpl
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
         _authenticationProvider = authenticationProvider;
-        _store = new FileSystemPreferencesStore(new File(MapValueConverter.getStringAttribute(PATH, attributes)));
+    }
+
+    @Override
+    protected void onOpen()
+    {
+        super.onOpen();
+        _store = new FileSystemPreferencesStore(new File(_path));
         createStoreIfNotExist();
+        _open = true;
     }
 
     @Override
@@ -102,7 +115,7 @@ public class FileSystemPreferencesProviderImpl
     @Override
     public String getPath()
     {
-        return (String) getAttribute(PATH);
+        return _path;
     }
 
     @Override
@@ -127,6 +140,11 @@ public class FileSystemPreferencesProviderImpl
         return super.getAttribute(name);
     }
 
+    public void close()
+    {
+        setDesiredState(getState(), State.STOPPED);
+    }
+
     @Override
     public boolean setState(State currentState, State desiredState) throws IllegalStateTransitionException, AccessControlException
     {
@@ -136,15 +154,18 @@ public class FileSystemPreferencesProviderImpl
             if ((state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED || state == State.ERRORED)
                     && _state.compareAndSet(state, State.DELETED))
             {
-                try
+                if(_store != null)
                 {
-                    _store.close();
-                }
-                finally
-                {
-                    _store.delete();
-                    deleted();
-                    _authenticationProvider.setPreferencesProvider(null);
+                    try
+                    {
+                        _store.close();
+                    }
+                    finally
+                    {
+                        _store.delete();
+                        deleted();
+                        _authenticationProvider.setPreferencesProvider(null);
+                    }
                 }
                 return true;
             }
@@ -194,7 +215,10 @@ public class FileSystemPreferencesProviderImpl
         {
             if (_state.compareAndSet(state, State.STOPPED))
             {
-                _store.close();
+                if(_store != null)
+                {
+                    _store.close();
+                }
                 return true;
             }
             else
@@ -235,47 +259,38 @@ public class FileSystemPreferencesProviderImpl
         return _authenticationProvider;
     }
 
+
+
     @Override
     protected void changeAttributes(Map<String, Object> attributes)
     {
-        Map<String, Object> effectiveAttributes = MapValueConverter.convert(super.generateEffectiveAttributes(attributes),
-                ATTRIBUTE_TYPES);
 
-        String effectivePath = (String) effectiveAttributes.get(PATH);
-        String currentPath = (String) getAttribute(PATH);
+        super.changeAttributes(attributes);
 
-        File storeFile = new File(effectivePath);
-        FileSystemPreferencesStore newStore = null;
-        if (!effectivePath.equals(currentPath))
-        {
-            if (!storeFile.exists())
-            {
-                throw new IllegalConfigurationException("Path to preferences file does not exist!");
-            }
-            newStore = new FileSystemPreferencesStore(storeFile);
-            newStore.open();
-        }
-
-        try
-        {
-            super.changeAttributes(attributes);
-
-            if (newStore != null)
-            {
-                _store.close();
-                _store = newStore;
-                newStore = null;
-            }
-        }
-        finally
-        {
-            if (newStore != null)
-            {
-                newStore.close();
-            }
-        }
         // if provider was previously in ERRORED state then set its state to ACTIVE
         _state.compareAndSet(State.ERRORED, State.ACTIVE);
+    }
+
+    private void openNewStore()
+    {
+        if(_open)
+        {
+            if (_store != null)
+            {
+                _store.close();
+            }
+
+            if (_path == null)
+            {
+                _store = null;
+            }
+            else
+            {
+                _store = new FileSystemPreferencesStore(new File(_path));
+                createStoreIfNotExist();
+                _store.open();
+            }
+        }
     }
 
     @Override
@@ -294,15 +309,30 @@ public class FileSystemPreferencesProviderImpl
             throw new IllegalConfigurationException("Changing the type of preferences provider is not supported");
         }
 
-        if (changedAttributes.contains(PATH) && (updated.getPath() == null || updated.getPath().equals("")))
+        if (changedAttributes.contains(PATH))
         {
-            throw new IllegalConfigurationException("Path to preferences file is not specified");
+            if(updated.getPath() == null || updated.getPath().equals(""))
+            {
+                throw new IllegalConfigurationException("Path to preferences file is not specified");
+            }
+            else if(!updated.getPath().equals(getPath()))
+            {
+                File storeFile = new File(updated.getPath());
+
+                if (!storeFile.exists())
+                {
+                    throw new IllegalConfigurationException("Path to preferences file does not exist!");
+                }
+
+            }
         }
 
         if(changedAttributes.contains(DURABLE) && !updated.isDurable())
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
+
+
 
     }
 

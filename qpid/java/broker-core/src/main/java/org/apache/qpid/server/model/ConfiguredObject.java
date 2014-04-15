@@ -65,7 +65,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     String getName();
 
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getDescription();
 
     @ManagedAttribute( automate = true )
@@ -74,16 +74,16 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     @ManagedAttribute(automate = true)
     Map<String, String> getContext();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getLastUpdatedBy();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     long getLastUpdatedTime();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getCreatedBy();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     long getCreatedTime();
 
 

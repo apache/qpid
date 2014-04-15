@@ -28,53 +28,52 @@ public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
 
     // Attributes
 
-    public static final String STATE = "state";
+    String STATE = "state";
 
-    public static final String CLIENT_ID = "clientId";
-    public static final String CLIENT_VERSION = "clientVersion";
-    public static final String INCOMING = "incoming";
-    public static final String LOCAL_ADDRESS = "localAddress";
-    public static final String PRINCIPAL = "principal";
-    public static final String PROPERTIES = "properties";
-    public static final String REMOTE_ADDRESS = "remoteAddress";
-    public static final String REMOTE_PROCESS_NAME = "remoteProcessName";
-    public static final String REMOTE_PROCESS_PID = "remoteProcessPid";
-    public static final String SESSION_COUNT_LIMIT = "sessionCountLimit";
-    public static final String TRANSPORT = "transport";
-    /** Name of port associated with the connection */
-    public static final String PORT = "port";
+    String CLIENT_ID = "clientId";
+    String CLIENT_VERSION = "clientVersion";
+    String INCOMING = "incoming";
+    String LOCAL_ADDRESS = "localAddress";
+    String PRINCIPAL = "principal";
+    String PROPERTIES = "properties";
+    String REMOTE_ADDRESS = "remoteAddress";
+    String REMOTE_PROCESS_NAME = "remoteProcessName";
+    String REMOTE_PROCESS_PID = "remoteProcessPid";
+    String SESSION_COUNT_LIMIT = "sessionCountLimit";
+    String TRANSPORT = "transport";
+    String PORT = "port";
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( derived = true )
     String getClientId();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( derived = true )
     String getClientVersion();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( derived = true )
     boolean isIncoming();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( derived = true )
     String getLocalAddress();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getPrincipal();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( derived = true )
     String getRemoteAddress();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( derived = true )
     String getRemoteProcessName();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( derived = true )
     String getRemoteProcessPid();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     long getSessionCountLimit();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     Transport getTransport();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     Port getPort();
 
     @ManagedStatistic
