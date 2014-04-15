@@ -85,8 +85,10 @@ SslAsynchIO::SslAsynchIO(const qpid::sys::Socket& s,
     readCallback(rCb),
     idleCallback(iCb),
     negotiateDoneCallback(nCb),
-    callbacksInProgress(0),
     queuedDelete(false),
+    queuedClose(false),
+    reapCheckPending(false),
+    started(false),
     leftoverPlaintext(0)
 {
     SecInvalidateHandle(&ctxtHandle);
@@ -105,16 +107,38 @@ SslAsynchIO::~SslAsynchIO() {
 }
 
 void SslAsynchIO::queueForDeletion() {
+    // Called exactly once, always on the IO completion thread.
+    bool authenticated = (state != Negotiating);
+    state = ShuttingDown;
+    if (authenticated) {
+        // Tell SChannel we are done.
+        DWORD shutdown = SCHANNEL_SHUTDOWN;
+        SecBuffer shutBuff;
+        shutBuff.cbBuffer = sizeof(DWORD);
+        shutBuff.BufferType = SECBUFFER_TOKEN;
+        shutBuff.pvBuffer = &shutdown;
+        SecBufferDesc desc;
+        desc.ulVersion = SECBUFFER_VERSION;
+        desc.cBuffers = 1;
+        desc.pBuffers = &shutBuff;
+        ::ApplyControlToken(&ctxtHandle, &desc);
+        negotiateStep(0);
+    }
+
+    queueWriteClose();
+    queuedDelete = true;
+
     // This method effectively disconnects the layer above; pass it on the
     // AsynchIO and delete.
     aio->queueForDeletion();
-    queuedDelete = true;
-    if (!callbacksInProgress)
-        delete this;
+
+    if (!reapCheckPending)
+        delete(this);
 }
 
 void SslAsynchIO::start(qpid::sys::Poller::shared_ptr poller) {
     aio->start(poller);
+    started = true;
     startNegotiate();
 }
 
@@ -182,32 +206,23 @@ void SslAsynchIO::notifyPendingWrite() {
 }
 
 void SslAsynchIO::queueWriteClose() {
-    {
-        qpid::sys::Mutex::ScopedLock l(lock);
-        if (state == Negotiating) {
-            // Never got going, so don't bother trying to close SSL down orderly.
-            state = ShuttingDown;
-            aio->queueWriteClose();
-            return;
-        }
-        if (state == ShuttingDown)
-            return;
-        state = ShuttingDown;
+    qpid::sys::Mutex::ScopedLock l(lock);
+    if (queuedClose)
+        return;
+    queuedClose = true;
+    if (started) {
+        reapCheckPending = true;
+        // Move tear down logic to an IO thread.
+        aio->requestCallback(boost::bind(&SslAsynchIO::reapCheck, this));
     }
+    aio->queueWriteClose();
+}
 
-    DWORD shutdown = SCHANNEL_SHUTDOWN;
-    SecBuffer shutBuff;
-    shutBuff.cbBuffer = sizeof(DWORD);
-    shutBuff.BufferType = SECBUFFER_TOKEN;
-    shutBuff.pvBuffer = &shutdown;
-    SecBufferDesc desc;
-    desc.ulVersion = SECBUFFER_VERSION;
-    desc.cBuffers = 1;
-    desc.pBuffers = &shutBuff;
-    ::ApplyControlToken(&ctxtHandle, &desc);
-    negotiateStep(0);
-    // When the shutdown sequence is done, negotiateDone() will handle
-    // shutting down aio.
+void SslAsynchIO::reapCheck() {
+    // Serialized check in the IO thread whether to self-delete.
+    reapCheckPending = false;
+    if (queuedDelete)
+        delete(this);
 }
 
 bool SslAsynchIO::writeQueueEmpty() {
@@ -259,7 +274,6 @@ void SslAsynchIO::negotiationDone() {
         state = Running;
         break;
     case ShuttingDown:
-        aio->queueWriteClose();
         break;
     default:
         assert(0);
@@ -276,6 +290,9 @@ void SslAsynchIO::negotiationFailed(SECURITY_STATUS status) {
 }
 
 void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
+    if (state == ShuttingDown) {
+        return;
+    }
     if (state != Running) {
         negotiateStep(buff);
         return;
@@ -398,9 +415,7 @@ void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
         if (readCallback) {
             // The callback guard here is to prevent an upcall from deleting
             // this out from under us via queueForDeletion().
-            ++callbacksInProgress;
             readCallback(*this, temp);
-            --callbacksInProgress;
         }
         else
             a.queueReadBuffer(temp); // What else can we do with this???
@@ -410,11 +425,6 @@ void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
     // go back and handle that.
     if (extraBuff != 0)
         sslDataIn(a, extraBuff);
-
-    // If the upper layer queued for delete, do that now that all the
-    // callbacks are done.
-    if (queuedDelete && callbacksInProgress == 0)
-        delete this;
 }
 
 void SslAsynchIO::idle(qpid::sys::AsynchIO&) {
