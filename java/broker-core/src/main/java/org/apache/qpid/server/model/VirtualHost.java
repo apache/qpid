@@ -47,10 +47,12 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String CONFIGURATION_STORE_SETTINGS         = "configurationStoreSettings";
     String MESSAGE_STORE_SETTINGS               = "messageStoreSettings";
 
-    @ManagedAttribute
+    // TODO - this isn't really an attribute
+    @ManagedAttribute( derived = true )
     Collection<String> getSupportedExchangeTypes();
 
-    @ManagedAttribute
+    // TODO - this isn't really an attribute
+    @ManagedAttribute( derived = true )
     Collection<String> getSupportedQueueTypes();
 
     @ManagedContextDefault( name = "queue.deadLetterQueueEnabled")
@@ -89,7 +91,7 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionOpenTimeoutWarn}")
     long getStoreTransactionOpenTimeoutWarn();
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getSecurityAcl();
 
     @ManagedContextDefault( name = "virtualhost.housekeepingThreadCount")

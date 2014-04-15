@@ -136,6 +136,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private boolean _durable;
 
     @ManagedAttributeField
+    private String _description;
+
+    @ManagedAttributeField
     private LifetimePolicy _lifetimePolicy;
 
     private final Map<String, ConfiguredObjectAttribute<?,?>> _attributeTypes;
@@ -342,6 +345,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         catch (InvocationTargetException e)
         {
+            if(e.getCause() instanceof RuntimeException)
+            {
+                throw (RuntimeException) e.getCause();
+            }
             throw new ServerScopedRuntimeException("Unable to set the automated attribute " + name + " on the configure object type " + getClass().getName(),e);
         }
     }
@@ -630,7 +637,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public Object getAttribute(String name)
     {
         ConfiguredObjectAttribute<X,?> attr = (ConfiguredObjectAttribute<X, ?>) _attributeTypes.get(name);
-        if(attr != null && attr.getAnnotation().automate())
+        if(attr != null && (attr.getAnnotation().automate() || attr.getAnnotation().derived()))
         {
             Object value = attr.getValue((X)this);
             if(value != null && attr.getAnnotation().secure() &&
@@ -653,7 +660,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public String getDescription()
     {
-        return (String) getAttribute(DESCRIPTION);
+        return _description;
     }
 
     @Override
@@ -926,7 +933,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 Object desired = attributes.get(name);
                 Object expected = getAttribute(name);
-                if (changeAttribute(name, expected, desired))
+                if(((_attributes.get(name) != null && !_attributes.get(name).equals(attributes.get(name)))
+                     || attributes.get(name) != null)
+                    && changeAttribute(name, expected, desired))
                 {
                     attributeSet(name, expected, desired);
                 }
@@ -1005,19 +1014,19 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     @Override
-    public String getLastUpdatedBy()
+    public final String getLastUpdatedBy()
     {
         return _lastUpdatedBy;
     }
 
     @Override
-    public long getLastUpdatedTime()
+    public final long getLastUpdatedTime()
     {
         return _lastUpdatedTime;
     }
 
     @Override
-    public String getCreatedBy()
+    public final String getCreatedBy()
     {
         return _createdBy;
     }
@@ -1038,7 +1047,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     @Override
-    public long getCreatedTime()
+    public final long getCreatedTime()
     {
         return _createdTime;
     }

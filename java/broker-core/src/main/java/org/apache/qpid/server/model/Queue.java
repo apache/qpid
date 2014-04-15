@@ -101,7 +101,7 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 
 
     // TODO - this is not an attribute
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     boolean isQueueFlowStopped();
 
     @ManagedContextDefault( name = "queue.alertThresholdMessageAge")

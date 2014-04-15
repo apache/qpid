@@ -21,6 +21,14 @@
 
 package org.apache.qpid.server.configuration.startup;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.PreferencesProvider;
@@ -29,14 +37,6 @@ import org.apache.qpid.server.model.adapter.FileSystemPreferencesProviderImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /*
 *
@@ -98,6 +98,7 @@ public class PreferencesProviderCreationTest extends QpidTestCase
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
             PreferencesProvider provider = new FileSystemPreferencesProviderImpl(id,attributes,_authenticationProvider);
+            provider.open();
             assertNotNull("Preferences provider was not recovered", provider);
             assertEquals("Unexpected name", "test-provider", provider.getName());
             assertEquals("Unexpected id", id, provider.getId());

@@ -77,7 +77,7 @@ public class SecurityManagerTest extends QpidTestCase
 
     public void testAuthoriseCreateBinding()
     {
-        ExchangeImpl<?> exchange = mock(ExchangeImpl.class);
+        ExchangeImpl exchange = mock(ExchangeImpl.class);
         when(exchange.getParent(VirtualHost.class)).thenReturn(_virtualHost);
         when(exchange.getName()).thenReturn(TEST_EXCHANGE);
 
@@ -470,7 +470,7 @@ public class SecurityManagerTest extends QpidTestCase
 
     public void testAuthoriseUnbind()
     {
-        ExchangeImpl<?> exchange = mock(ExchangeImpl.class);
+        ExchangeImpl exchange = mock(ExchangeImpl.class);
         when(exchange.getParent(VirtualHost.class)).thenReturn(_virtualHost);
         when(exchange.getName()).thenReturn(TEST_EXCHANGE);
 

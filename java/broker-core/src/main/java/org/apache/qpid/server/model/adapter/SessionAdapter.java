@@ -40,8 +40,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
     private AMQSessionModel _session;
 
-    @ManagedAttributeField
-    private int _channelId;
 
     public SessionAdapter(final ConnectionAdapter connectionAdapter,
                           final AMQSessionModel session,
@@ -71,7 +69,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(ID, UUID.randomUUID());
         attributes.put(NAME, String.valueOf(session.getChannelId()));
-        attributes.put(CHANNEL_ID, session.getChannelId());
         attributes.put(DURABLE, false);
         attributes.put(LIFETIME_POLICY, LifetimePolicy.DELETE_ON_SESSION_END);
         return attributes;
@@ -80,7 +77,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     @Override
     public int getChannelId()
     {
-        return _channelId;
+        return _session.getChannelId();
     }
 
     @Override

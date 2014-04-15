@@ -164,6 +164,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @ManagedAttributeField
     private int _housekeepingThreadCount;
 
+    @ManagedAttributeField
+    private String _securityAcl;
+
 
     public AbstractVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
     {
@@ -1550,7 +1553,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public String getSecurityAcl()
     {
-        return (String)getAttribute(SECURITY_ACL);
+        return _securityAcl;
     }
 
     @Override
