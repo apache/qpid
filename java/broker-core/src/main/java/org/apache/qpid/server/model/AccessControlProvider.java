@@ -19,17 +19,11 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.UUID;
-
 import org.apache.qpid.server.security.AccessControl;
 
 @ManagedObject
 public interface AccessControlProvider<X extends AccessControlProvider<X>> extends ConfiguredObject<X>
 {
-    public static final String LIFETIME_POLICY = "lifetimePolicy";
     public static final String TYPE = "type";
 
     //retrieve the underlying AccessControl object

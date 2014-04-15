@@ -34,7 +34,6 @@ import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.plugin.AccessControlProviderFactory;
@@ -111,23 +110,9 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
-        if(DURABLE.equals(name))
-        {
-            return true;
-        }
-        else if(LIFETIME_POLICY.equals(name))
-        {
-            return LifetimePolicy.PERMANENT;
-        }
-        else if(STATE.equals(name))
+        if(STATE.equals(name))
         {
             return getState();
         }

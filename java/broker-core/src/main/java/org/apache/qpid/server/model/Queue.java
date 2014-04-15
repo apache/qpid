@@ -29,30 +29,28 @@ import org.apache.qpid.server.queue.QueueEntryVisitor;
 public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 {
 
-    public static final String LIFETIME_POLICY = "lifetimePolicy";
+    String ALERT_REPEAT_GAP = "alertRepeatGap";
+    String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
+    String ALERT_THRESHOLD_MESSAGE_SIZE = "alertThresholdMessageSize";
+    String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "alertThresholdQueueDepthBytes";
+    String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "alertThresholdQueueDepthMessages";
+    String ALTERNATE_EXCHANGE = "alternateExchange";
+    String EXCLUSIVE = "exclusive";
+    String MESSAGE_GROUP_KEY = "messageGroupKey";
+    String MESSAGE_GROUP_SHARED_GROUPS = "messageGroupSharedGroups";
+    String MESSAGE_GROUP_DEFAULT_GROUP = "messageGroupDefaultGroup";
+    String LVQ_KEY = "lvqKey";
+    String MAXIMUM_DELIVERY_ATTEMPTS = "maximumDeliveryAttempts";
+    String NO_LOCAL = "noLocal";
+    String OWNER = "owner";
+    String QUEUE_FLOW_CONTROL_SIZE_BYTES = "queueFlowControlSizeBytes";
+    String QUEUE_FLOW_RESUME_SIZE_BYTES = "queueFlowResumeSizeBytes";
+    String QUEUE_FLOW_STOPPED = "queueFlowStopped";
+    String SORT_KEY = "sortKey";
+    String QUEUE_TYPE = "queueType";
+    String PRIORITIES = "priorities";
 
-    public static final String ALERT_REPEAT_GAP = "alertRepeatGap";
-    public static final String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";
-    public static final String ALERT_THRESHOLD_MESSAGE_SIZE = "alertThresholdMessageSize";
-    public static final String ALERT_THRESHOLD_QUEUE_DEPTH_BYTES = "alertThresholdQueueDepthBytes";
-    public static final String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "alertThresholdQueueDepthMessages";
-    public static final String ALTERNATE_EXCHANGE = "alternateExchange";
-    public static final String EXCLUSIVE = "exclusive";
-    public static final String MESSAGE_GROUP_KEY = "messageGroupKey";
-    public static final String MESSAGE_GROUP_SHARED_GROUPS = "messageGroupSharedGroups";
-    public static final String MESSAGE_GROUP_DEFAULT_GROUP = "messageGroupDefaultGroup";
-    public static final String LVQ_KEY = "lvqKey";
-    public static final String MAXIMUM_DELIVERY_ATTEMPTS = "maximumDeliveryAttempts";
-    public static final String NO_LOCAL = "noLocal";
-    public static final String OWNER = "owner";
-    public static final String QUEUE_FLOW_CONTROL_SIZE_BYTES = "queueFlowControlSizeBytes";
-    public static final String QUEUE_FLOW_RESUME_SIZE_BYTES = "queueFlowResumeSizeBytes";
-    public static final String QUEUE_FLOW_STOPPED = "queueFlowStopped";
-    public static final String SORT_KEY = "sortKey";
-    public static final String QUEUE_TYPE = "queueType";
-    public static final String PRIORITIES = "priorities";
-
-    public static final String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
+    String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
 
     @ManagedAttribute
     String getQueueType();
@@ -84,19 +82,19 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     boolean isMessageGroupSharedGroups();
 
     @ManagedContextDefault( name = "queue.maximumDeliveryAttempts")
-    public static final int DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS = 0;
+    int DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS = 0;
 
     @ManagedAttribute( automate = true, defaultValue = "${queue.maximumDeliveryAttempts}")
     int getMaximumDeliveryAttempts();
 
     @ManagedContextDefault( name = "queue.queueFlowControlSizeBytes")
-    public static final long DEFAULT_FLOW_CONTROL_SIZE_BYTES = 0l;
+    long DEFAULT_FLOW_CONTROL_SIZE_BYTES = 0l;
 
     @ManagedAttribute( automate = true, defaultValue = "${queue.queueFlowControlSizeBytes}")
     long getQueueFlowControlSizeBytes();
 
     @ManagedContextDefault( name = "queue.queueFlowResumeSizeBytes")
-    public static final long DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES = 0l;
+    long DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES = 0l;
 
     @ManagedAttribute( automate = true, defaultValue = "${queue.queueFlowResumeSizeBytes}")
     long getQueueFlowResumeSizeBytes();
@@ -107,32 +105,32 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     boolean isQueueFlowStopped();
 
     @ManagedContextDefault( name = "queue.alertThresholdMessageAge")
-    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE = 0l;
+    long DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE = 0l;
 
     @ManagedAttribute( automate = true, defaultValue = "${queue.alertThresholdMessageAge}")
     long getAlertThresholdMessageAge();
 
     @ManagedContextDefault( name = "queue.alertThresholdMessageSize")
-    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE = 0l;
+    long DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE = 0l;
 
     @ManagedAttribute( automate = true, defaultValue = "${queue.alertThresholdMessageSize}")
     long getAlertThresholdMessageSize();
 
     @ManagedContextDefault( name = "queue.alertThresholdQueueDepthBytes")
-    public static final long DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH = 0l;
+    long DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH = 0l;
 
     @ManagedAttribute( automate = true, defaultValue = "${queue.alertThresholdQueueDepthBytes}")
     long getAlertThresholdQueueDepthBytes();
 
     @ManagedContextDefault( name = "queue.alertThresholdQueueDepthMessages")
-    public static final long DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT = 0l;
+    long DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT = 0l;
 
     @ManagedAttribute( automate = true, defaultValue = "${queue.alertThresholdQueueDepthMessages}")
     long getAlertThresholdQueueDepthMessages();
 
 
     @ManagedContextDefault( name = "queue.alertRepeatGap")
-    public static final long DEFAULT_ALERT_REPEAT_GAP = 30000l;
+    long DEFAULT_ALERT_REPEAT_GAP = 30000l;
 
     @ManagedAttribute( automate = true, defaultValue = "${queue.alertRepeatGap}")
     long getAlertRepeatGap();

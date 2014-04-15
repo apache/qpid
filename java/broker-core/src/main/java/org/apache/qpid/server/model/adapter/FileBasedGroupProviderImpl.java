@@ -126,24 +126,11 @@ public class FileBasedGroupProviderImpl
         return _state.get();
     }
 
-    @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
 
     @Override
     public Object getAttribute(String name)
     {
-        if (DURABLE.equals(name))
-        {
-            return true;
-        }
-        else if (LIFETIME_POLICY.equals(name))
-        {
-            return LifetimePolicy.PERMANENT;
-        }
-        else if (STATE.equals(name))
+        if (STATE.equals(name))
         {
             return getState();
         }
@@ -360,12 +347,6 @@ public class FileBasedGroupProviderImpl
         }
 
         @Override
-        public LifetimePolicy getLifetimePolicy()
-        {
-            return LifetimePolicy.PERMANENT;
-        }
-
-        @Override
         public <C extends ConfiguredObject> Collection<C> getChildren(
                 Class<C> clazz)
         {
@@ -415,20 +396,6 @@ public class FileBasedGroupProviderImpl
             throw new IllegalArgumentException(
                     "This group provider does not support creating children of type: "
                             + childClass);
-        }
-
-        @Override
-        public Object getAttribute(String name)
-        {
-            if (ID.equals(name))
-            {
-                return getId();
-            }
-            else if (NAME.equals(name))
-            {
-                return getName();
-            }
-            return super.getAttribute(name);
         }
 
         @Override
@@ -492,12 +459,6 @@ public class FileBasedGroupProviderImpl
 
             @Override
             public State getState()
-            {
-                return null;
-            }
-
-            @Override
-            public LifetimePolicy getLifetimePolicy()
             {
                 return null;
             }

@@ -20,16 +20,12 @@
 package org.apache.qpid.server.model;
 
 import java.security.Principal;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 @ManagedObject
 public interface GroupProvider<X extends GroupProvider<X>> extends ConfiguredObject<X>
 {
     public static final String DESCRIPTION = "description";
-    public static final String LIFETIME_POLICY = "lifetimePolicy";
 
     Set<Principal> getGroupPrincipalsForUser(String username);
 }

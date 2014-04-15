@@ -27,9 +27,7 @@ public interface Binding<X extends Binding<X>> extends ConfiguredObject<X>
 {
 
     public String ARGUMENTS = "arguments";
-    public String LIFETIME_POLICY = "lifetimePolicy";
     public String STATE = "state";
-    public String TIME_TO_LIVE = "timeToLive";
     public String QUEUE = "queue";
     public String EXCHANGE = "exchange";
 

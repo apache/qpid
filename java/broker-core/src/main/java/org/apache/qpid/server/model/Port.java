@@ -27,7 +27,6 @@ import java.util.Set;
 @ManagedObject
 public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 {
-    String LIFETIME_POLICY                      = "lifetimePolicy";
     String BINDING_ADDRESS                      = "bindingAddress";
     String PORT                                 = "port";
     String PROTOCOLS                            = "protocols";

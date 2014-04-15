@@ -39,7 +39,6 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.IntegrityViolationException;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
@@ -150,12 +149,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     public State getState()
     {
         return _state.get();
-    }
-
-    @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
     }
 
     @SuppressWarnings("unchecked")
@@ -307,14 +300,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         if(STATE.equals(name))
         {
             return getState();
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
-        }
-        else if(LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
         }
         return super.getAttribute(name);
     }

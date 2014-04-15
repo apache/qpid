@@ -135,6 +135,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @ManagedAttributeField
     private boolean _durable;
 
+    @ManagedAttributeField
+    private LifetimePolicy _lifetimePolicy;
+
     private final Map<String, ConfiguredObjectAttribute<?,?>> _attributeTypes;
     private final Map<String, AutomatedField> _automatedFields;
 
@@ -651,6 +654,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public String getDescription()
     {
         return (String) getAttribute(DESCRIPTION);
+    }
+
+    @Override
+    public LifetimePolicy getLifetimePolicy()
+    {
+        return _lifetimePolicy;
     }
 
     @Override
@@ -1563,7 +1572,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         int oldSize = 0;
         Model model = Model.getInstance();
 
-        Set<Class<? extends ConfiguredObject>> allDescendants = new HashSet<Class<? extends ConfiguredObject>>(Collections.singleton(candidate));
+        Set<Class<? extends ConfiguredObject>> allDescendants = new HashSet<Class<? extends ConfiguredObject>>(model.getChildTypes(candidate));
         while(allDescendants.size() > oldSize)
         {
             oldSize = allDescendants.size();
@@ -1571,6 +1580,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             for(Class<? extends ConfiguredObject> clazz : prev)
             {
                 allDescendants.addAll(model.getChildTypes(clazz));
+            }
+            if(allDescendants.contains(descendantClass))
+            {
+                break;
             }
         }
         return allDescendants.contains(descendantClass);

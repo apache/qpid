@@ -45,7 +45,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String SUPPORTED_VIRTUALHOST_STORE_TYPES = "supportedVirtualHostStoreTypes";
     String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
     String SUPPORTED_PREFERENCES_PROVIDER_TYPES = "supportedPreferencesProviderTypes";
-    String LIFETIME_POLICY = "lifetimePolicy";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";

@@ -44,7 +44,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Port;
@@ -107,21 +106,11 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     }
 
     @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
         if(KeyStore.STATE.equals(name))
         {
             return getState();
-        }
-        else if(KeyStore.LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
         }
 
         return super.getAttribute(name);

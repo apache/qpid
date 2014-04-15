@@ -30,7 +30,6 @@ import java.util.UUID;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.access.Operation;
@@ -74,12 +73,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     }
 
     @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptyList();
@@ -91,10 +84,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
         if (STATE.equals(name))
         {
             return getState();
-        }
-        else if (LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
         }
         return super.getAttribute(name);
     }

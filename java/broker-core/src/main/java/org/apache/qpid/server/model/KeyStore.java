@@ -26,7 +26,6 @@ import javax.net.ssl.KeyManager;
 @ManagedObject( defaultType = "FileKeyStore" )
 public interface KeyStore<X extends KeyStore<X>> extends ConfiguredObject<X>
 {
-    String LIFETIME_POLICY = "lifetimePolicy";
     String STATE = "state";
     String DESCRIPTION = "description";
 

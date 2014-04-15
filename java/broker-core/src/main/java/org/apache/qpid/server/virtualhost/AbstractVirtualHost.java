@@ -381,12 +381,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     }
 
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
-    }
-
-
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
@@ -1422,21 +1416,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public Object getAttribute(String name)
     {
-        if(ID.equals(name))
-        {
-            return getId();
-        }
-        else if(STATE.equals(name))
+        if(STATE.equals(name))
         {
             return getState();
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
-        }
-        else if(LIFETIME_POLICY.equals(name))
-        {
-            return LifetimePolicy.PERMANENT;
         }
         else if(SUPPORTED_EXCHANGE_TYPES.equals(name))
         {

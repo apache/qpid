@@ -23,7 +23,4 @@ package org.apache.qpid.server.model;
 @ManagedObject
 public interface Plugin<X extends Plugin<X>> extends ConfiguredObject<X>
 {
-    //Hack, using it for the class name only for consistency with the other things.
-    String LIFETIME_POLICY                      = "lifetimePolicy";
-
 }

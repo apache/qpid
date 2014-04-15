@@ -48,7 +48,9 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
@@ -60,7 +62,6 @@ import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
@@ -72,10 +73,10 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         implements ExchangeImpl<T>
 {
     private static final Logger _logger = Logger.getLogger(AbstractExchange.class);
-    private final LifetimePolicy _lifetimePolicy;
     private final AtomicBoolean _closed = new AtomicBoolean();
 
-    private ExchangeImpl _alternateExchange;
+    @ManagedAttributeField(beforeSet = "preSetAlternateExchange", afterSet = "postSetAlternateExchange" )
+    private Exchange<?> _alternateExchange;
 
     private VirtualHostImpl _virtualHost;
 
@@ -109,51 +110,11 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     {
         super(parentsMap(vhost), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
-
-        _lifetimePolicy = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
-                                                                                org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
-                                                                                attributes,
-                                                                                LifetimePolicy.PERMANENT);
-        _autoDelete = _lifetimePolicy != LifetimePolicy.PERMANENT;
-        _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
-
-
         // check ACL
         _virtualHost.getSecurityManager().authoriseCreateExchange(this);
 
-        Object alternateExchangeAttr = attributes.get(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE);
-        if(alternateExchangeAttr != null)
-        {
-            if(alternateExchangeAttr instanceof ExchangeImpl)
-            {
-                setAlternateExchange((ExchangeImpl) alternateExchangeAttr);
-            }
-            else if(alternateExchangeAttr instanceof UUID)
-            {
-                setAlternateExchange(vhost.getExchange((UUID) alternateExchangeAttr));
-            }
-            else if(alternateExchangeAttr instanceof String)
-            {
-                setAlternateExchange(vhost.getExchange((String) alternateExchangeAttr));
-                if(_alternateExchange == null)
-                {
-                    try
-                    {
-                        UUID altExcAsUUID = UUID.fromString((String)alternateExchangeAttr);
-                        setAlternateExchange(vhost.getExchange(altExcAsUUID));
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        // ignore - we'll throw an exception shortly because _alternateExchange will be null
-                    }
-                }
-            }
-            if(_alternateExchange == null)
-            {
-                throw new UnknownExchangeException(alternateExchangeAttr.toString());
-            }
+        _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
-        }
         _bindingListener = new StateChangeListener<BindingImpl, State>()
         {
             @Override
@@ -171,6 +132,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     protected void onOpen()
     {
         super.onOpen();
+        postSetAlternateExchange();
         // Log Exchange creation
         getEventLogger().message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), isDurable()));
     }
@@ -191,7 +153,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     public boolean isAutoDelete()
     {
-        return _autoDelete;
+        return getLifetimePolicy() != LifetimePolicy.PERMANENT;
     }
 
     public void close()
@@ -208,7 +170,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
             if(_alternateExchange != null)
             {
-                _alternateExchange.removeReference(this);
+                ((ExchangeImpl)_alternateExchange).removeReference(this);
             }
 
             getEventLogger().message(_logSubject, ExchangeMessages.DELETED());
@@ -334,23 +296,25 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return !_bindings.isEmpty();
     }
 
-    public ExchangeImpl getAlternateExchange()
+    public Exchange<?> getAlternateExchange()
     {
         return _alternateExchange;
     }
 
-    public void setAlternateExchange(ExchangeImpl exchange)
+    private void preSetAlternateExchange()
+    {
+        if (_alternateExchange != null)
+        {
+            ((ExchangeImpl) _alternateExchange).removeReference(this);
+        }
+    }
+
+    private void postSetAlternateExchange()
     {
         if(_alternateExchange != null)
         {
-            _alternateExchange.removeReference(this);
+            ((ExchangeImpl)_alternateExchange).addReference(this);
         }
-        if(exchange != null)
-        {
-            exchange.addReference(this);
-        }
-        _alternateExchange = exchange;
-
     }
 
     public void removeReference(ExchangeReferrer exchange)
@@ -481,10 +445,10 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
         if(queues == null || queues.isEmpty())
         {
-            ExchangeImpl altExchange = getAlternateExchange();
+            Exchange altExchange = getAlternateExchange();
             if(altExchange != null)
             {
-                return altExchange.send(message, routingAddress, instanceProperties, txn, postEnqueueAction);
+                return ((ExchangeImpl)altExchange).send(message, routingAddress, instanceProperties, txn, postEnqueueAction);
             }
             else
             {
@@ -678,6 +642,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         if (existingMapping == null || force)
         {
             b.addStateChangeListener(_bindingListener);
+            b.open();
             if (existingMapping != null)
             {
                 existingMapping.delete();
@@ -727,12 +692,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     public State getState()
     {
         return _closed.get() ? State.DELETED : State.ACTIVE;
-    }
-
-    @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return _lifetimePolicy;
     }
 
     @Override

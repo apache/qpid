@@ -26,13 +26,12 @@ import java.util.Map;
 @ManagedObject
 public interface User<X extends User<X>> extends ConfiguredObject<X>
 {
-    String LIFETIME_POLICY = "lifetimePolicy";
     String STATE           = "state";
     String PASSWORD        = "password";
 
     // Attributes
 
-    @ManagedAttribute( secure = true )
+    @ManagedAttribute( secure = true , automate = true )
     String getPassword();
 
     public void setPassword(String password);

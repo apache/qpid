@@ -41,7 +41,6 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
@@ -91,12 +90,6 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     public State getState()
     {
         return State.ACTIVE;
-    }
-
-    @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
     }
 
     @Override
@@ -208,14 +201,6 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
         if(STATE.equals(name))
         {
             return getState();
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
-        }
-        else if(org.apache.qpid.server.model.KeyStore.LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
         }
 
         return super.getAttribute(name);

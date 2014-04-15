@@ -35,9 +35,7 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -148,11 +146,6 @@ public class BindingImpl
     public long getMatches()
     {
         return _matches.get();
-    }
-
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
     }
 
     @Override

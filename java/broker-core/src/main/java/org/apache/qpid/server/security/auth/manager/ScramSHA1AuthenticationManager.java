@@ -50,7 +50,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.model.PreferencesProvider;
@@ -430,6 +430,9 @@ public class ScramSHA1AuthenticationManager
     {
 
         private ScramSHA1AuthenticationManager _authenticationManager;
+        @ManagedAttributeField
+        private String _password;
+
         protected ScramAuthUser(final Map<String, Object> attributes, ScramSHA1AuthenticationManager parent)
         {
             super(parentsMap(parent),
@@ -516,17 +519,13 @@ public class ScramSHA1AuthenticationManager
         @Override
         public Object getAttribute(final String name)
         {
-            if(PASSWORD.equals(name))
-            {
-                return null; // for security reasons we don't expose the password
-            }
             return super.getAttribute(name);
         }
 
         @Override
         public String getPassword()
         {
-            return (String) getActualAttributes().get(PASSWORD);
+            return _password;
         }
 
         @Override
@@ -549,12 +548,6 @@ public class ScramSHA1AuthenticationManager
         public State getState()
         {
             return State.ACTIVE;
-        }
-
-        @Override
-        public LifetimePolicy getLifetimePolicy()
-        {
-            return LifetimePolicy.PERMANENT;
         }
 
         @Override
