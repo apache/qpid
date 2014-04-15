@@ -661,7 +661,7 @@ void ServerSslAsynchIO::negotiateStep(BufferBase* buff) {
         return;
     }
     // There may have been a token generated; if so, send it to the client.
-    if (sendBuffs[0].cbBuffer > 0) {
+    if (sendBuffs[0].cbBuffer > 0 && state != ShuttingDown) {
         sendbuff->dataCount = sendBuffs[0].cbBuffer;
         aio->queueWrite(sendbuff);
     }
