@@ -31,7 +31,6 @@
 #include "qpid/management/ManagementAgent.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/enable_shared_from_this.hpp>
 
 namespace _qmf = qmf::org::apache::qpid::broker;
 
@@ -134,9 +133,10 @@ bool get(const std::string& key, const qpid::types::Variant::Map& map)
 class InterconnectFactory : public BrokerContext, public qpid::sys::ConnectionCodec::Factory, public boost::enable_shared_from_this<InterconnectFactory>
 {
   public:
-    InterconnectFactory(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, Domain&, BrokerContext&);
+    InterconnectFactory(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties,
+                        boost::shared_ptr<Domain>, BrokerContext&);
     InterconnectFactory(bool incoming, const std::string& name, const std::string& source, const std::string& target,
-                        Domain&, BrokerContext&, boost::shared_ptr<Relay>);
+                        boost::shared_ptr<Domain>, BrokerContext&, boost::shared_ptr<Relay>);
     qpid::sys::ConnectionCodec* create(framing::ProtocolVersion, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     qpid::sys::ConnectionCodec* create(qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     bool connect();
@@ -149,13 +149,13 @@ class InterconnectFactory : public BrokerContext, public qpid::sys::ConnectionCo
     qpid::Url url;
     qpid::Url::iterator next;
     std::string hostname;
-    Domain& domain;
+    boost::shared_ptr<Domain> domain;
     qpid::Address address;
     boost::shared_ptr<Relay> relay;
 };
 
-InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const qpid::types::Variant::Map& properties, Domain& d, BrokerContext& c)
-    : BrokerContext(c), incoming(i), name(n), url(d.getUrl()), domain(d)
+InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const qpid::types::Variant::Map& properties, boost::shared_ptr<Domain> d, BrokerContext& c)
+    : BrokerContext(c), incoming(i), name(n), url(d->getUrl()), domain(d)
 {
     get(source, SOURCE, properties);
     get(target, TARGET, properties);
@@ -163,8 +163,8 @@ InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const qpi
 }
 
 InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const std::string& source_, const std::string& target_,
-                                         Domain& d, BrokerContext& c, boost::shared_ptr<Relay> relay_)
-    : BrokerContext(c), incoming(i), name(n), source(source_), target(target_), url(d.getUrl()), domain(d), relay(relay_)
+                                         boost::shared_ptr<Domain> d, BrokerContext& c, boost::shared_ptr<Relay> relay_)
+    : BrokerContext(c), incoming(i), name(n), source(source_), target(target_), url(d->getUrl()), domain(d), relay(relay_)
 {
     next = url.begin();
 }
@@ -175,20 +175,20 @@ qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::framing::ProtocolV
 }
 qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::sys::OutputControl& out, const std::string& id, const qpid::sys::SecuritySettings& t)
 {
-    bool useSasl = domain.getMechanisms() != NONE;
-    boost::shared_ptr<Interconnect> connection(new Interconnect(out, id, *this, useSasl, incoming, name, source, target, domain));
+    bool useSasl = domain->getMechanisms() != NONE;
+    boost::shared_ptr<Interconnect> connection(new Interconnect(out, id, *this, useSasl, incoming, name, source, target));
     if (!relay) getInterconnects().add(name, connection);
     else connection->setRelay(relay);
 
     std::auto_ptr<qpid::sys::ConnectionCodec> codec;
     if (useSasl) {
         QPID_LOG(info, "Using AMQP 1.0 (with SASL layer) on connect");
-        codec = std::auto_ptr<qpid::sys::ConnectionCodec>(new qpid::broker::amqp::SaslClient(out, id, connection, domain.sasl(hostname), hostname, domain.getMechanisms(), t));
+        codec = std::auto_ptr<qpid::sys::ConnectionCodec>(new qpid::broker::amqp::SaslClient(out, id, connection, domain->sasl(hostname), hostname, domain->getMechanisms(), t));
     } else {
         QPID_LOG(info, "Using AMQP 1.0 (no SASL layer) on connect");
         codec = std::auto_ptr<qpid::sys::ConnectionCodec>(new Wrapper(connection));
     }
-    domain.removePending(shared_from_this());//(TODO: add support for retry on connection failure)
+    domain->removePending(shared_from_this());//(TODO: add support for retry on connection failure)
     return codec.release();
 }
 
@@ -207,7 +207,7 @@ void InterconnectFactory::failed(int, std::string text)
 {
     QPID_LOG (info, "Inter-broker connection failed (" << address << "): " << text);
     if (!connect()) {
-        domain.removePending(shared_from_this());//give up (TODO: add support for periodic retry)
+        domain->removePending(shared_from_this());//give up (TODO: add support for periodic retry)
     }
 }
 
@@ -268,14 +268,14 @@ std::auto_ptr<qpid::Sasl> Domain::sasl(const std::string& hostname)
 
 void Domain::connect(bool incoming, const std::string& name, const qpid::types::Variant::Map& properties, BrokerContext& context)
 {
-    boost::shared_ptr<InterconnectFactory> factory(new InterconnectFactory(incoming, name, properties, *this, context));
+    boost::shared_ptr<InterconnectFactory> factory(new InterconnectFactory(incoming, name, properties, shared_from_this(), context));
     factory->connect();
     addPending(factory);
 }
 
 void Domain::connect(bool incoming, const std::string& name, const std::string& source, const std::string& target, BrokerContext& context, boost::shared_ptr<Relay> relay)
 {
-    boost::shared_ptr<InterconnectFactory> factory(new InterconnectFactory(incoming, name, source, target, *this, context, relay));
+    boost::shared_ptr<InterconnectFactory> factory(new InterconnectFactory(incoming, name, source, target, shared_from_this(), context, relay));
     factory->connect();
     addPending(factory);
 }

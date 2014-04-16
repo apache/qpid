@@ -30,6 +30,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qmf/org/apache/qpid/broker/Domain.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <memory>
 #include <set>
 
@@ -46,7 +47,7 @@ class InterconnectFactory;
 class BrokerContext;
 class Relay;
 
-class Domain : public PersistableObject, public qpid::management::Manageable
+class Domain : public PersistableObject, public qpid::management::Manageable, public boost::enable_shared_from_this<Domain>
 {
   public:
     Domain(const std::string& name, const qpid::types::Variant::Map& properties, Broker&);

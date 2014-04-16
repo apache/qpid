@@ -38,7 +38,7 @@ class Interconnect : public Connection
 {
   public:
     Interconnect(qpid::sys::OutputControl& out, const std::string& id, BrokerContext& broker, bool saslInUse,
-                 bool incoming, const std::string& name, const std::string& source, const std::string& target, Domain&);
+                 bool incoming, const std::string& name, const std::string& source, const std::string& target);
     void setRelay(boost::shared_ptr<Relay>);
     ~Interconnect();
     size_t encode(char* buffer, size_t size);
@@ -50,7 +50,6 @@ class Interconnect : public Connection
     std::string name;
     std::string source;
     std::string target;
-    Domain& domain;
     bool headerDiscarded;
     boost::shared_ptr<Relay> relay;
     bool closeRequested;
