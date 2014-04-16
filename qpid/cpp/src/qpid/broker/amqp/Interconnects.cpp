@@ -54,7 +54,7 @@ bool Interconnects::createObject(Broker& broker, const std::string& type, const 
             if (domain->isDurable()) broker.getStore().create(*domain);
             return true;
         } else {
-            return false;
+            throw qpid::Exception(QPID_MSG("A domain named " << name << " already exists"));
         }
     } else if (type == INCOMING_TYPE || type == OUTGOING_TYPE) {
         QPID_LOG(notice, "Creating interconnect " << name << ", " << properties);
