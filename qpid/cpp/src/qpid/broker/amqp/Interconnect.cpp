@@ -28,6 +28,7 @@
 #include "qpid/SaslFactory.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/OutputControl.h"
+#include "qpid/sys/SystemInfo.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
 extern "C" {
@@ -40,9 +41,9 @@ namespace broker {
 namespace amqp {
 
 Interconnect::Interconnect(qpid::sys::OutputControl& out, const std::string& id, BrokerContext& broker, bool saslInUse,
-                           bool i, const std::string& n, const std::string& s, const std::string& t)
-    : Connection(out, id, broker, true), incoming(i), name(n), source(s), target(t), headerDiscarded(saslInUse),
-      closeRequested(false), isTransportDeleted(false)
+                           bool i, const std::string& n, const std::string& s, const std::string& t, const std::string& d)
+    : Connection(out, id, broker, true, true), incoming(i), name(n), source(s), target(t), domain(d), headerDiscarded(saslInUse),
+      isOpened(false), closeRequested(false), isTransportDeleted(false)
 {}
 
 Interconnect::~Interconnect()
@@ -74,6 +75,32 @@ size_t Interconnect::encode(char* buffer, size_t size)
     }
 }
 
+namespace {
+const std::string CLIENT_PROCESS_NAME("qpid.client_process");
+const std::string CLIENT_PID("qpid.client_pid");
+pn_bytes_t convert(const std::string& s)
+{
+    pn_bytes_t result;
+    result.start = const_cast<char*>(s.data());
+    result.size = s.size();
+    return result;
+}
+void setProperties(pn_connection_t* connection)
+{
+    pn_data_t* data = pn_connection_properties(connection);
+    pn_data_put_map(data);
+    pn_data_enter(data);
+
+    pn_data_put_symbol(data, convert(CLIENT_PROCESS_NAME));
+    std::string processName = sys::SystemInfo::getProcessName();
+    pn_data_put_string(data, convert(processName));
+
+    pn_data_put_symbol(data, convert(CLIENT_PID));
+    pn_data_put_int(data, sys::SystemInfo::getProcessId());
+    pn_data_exit(data);
+}
+}
+
 void Interconnect::process()
 {
     QPID_LOG(trace, id << " processing interconnect");
@@ -81,8 +108,23 @@ void Interconnect::process()
         close();
     } else {
         if ((pn_connection_state(connection) & UNINIT) == UNINIT) {
-            QPID_LOG_CAT(debug, model, id << " interconnect opened");
-            open();
+            QPID_LOG_CAT(debug, model, id << " interconnect open initiated");
+            pn_connection_set_container(connection, getBroker().getFederationTag().c_str());
+            setProperties(connection);
+            pn_connection_open(connection);
+            out.connectionEstablished();
+            setInterconnectDomain(domain);
+        }
+        if (!isOpened && (pn_connection_state(connection) & PN_REMOTE_ACTIVE)) {
+            QPID_LOG_CAT(debug, model, id << " interconnect open completed, attaching link");
+            isOpened = true;
+            readPeerProperties();
+            const char* containerid(pn_connection_remote_container(connection));
+            if (containerid) {
+                setContainerId(std::string(containerid));
+            }
+            opened();
+            getBroker().getConnectionObservers().opened(*this);
             pn_session_t* s = pn_session(connection);
             pn_session_open(s);
             boost::shared_ptr<Session> ssn(new Session(s, *this, out));

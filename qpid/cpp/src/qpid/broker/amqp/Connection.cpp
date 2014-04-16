@@ -66,8 +66,8 @@ void Connection::trace(const char* message) const
     QPID_LOG_CAT(trace, protocol, "[" << id << "]: " << message);
 }
 
-Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, BrokerContext& b, bool saslInUse)
-    : BrokerContext(b), ManagedConnection(getBroker(), i),
+Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, BrokerContext& b, bool saslInUse, bool brokerInitiated)
+    : BrokerContext(b), ManagedConnection(getBroker(), i, brokerInitiated),
       connection(pn_connection()),
       transport(pn_transport()),
       out(o), id(i), haveOutput(true), closeInitiated(false), closeRequested(false)

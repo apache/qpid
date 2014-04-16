@@ -46,7 +46,7 @@ class Session;
 class Connection : public BrokerContext, public sys::ConnectionCodec, public ManagedConnection
 {
   public:
-    Connection(qpid::sys::OutputControl& out, const std::string& id, BrokerContext& context, bool saslInUse);
+    Connection(qpid::sys::OutputControl& out, const std::string& id, BrokerContext& context, bool saslInUse, bool brokerInitiated);
     virtual ~Connection();
     size_t decode(const char* buffer, size_t size);
     virtual size_t encode(char* buffer, size_t size);

@@ -36,7 +36,8 @@ ManagedOutgoingLink::ManagedOutgoingLink(Broker& broker, ManagedSession& p, cons
 {
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent) {
-        outgoing = _qmf::Outgoing::shared_ptr(new _qmf::Outgoing(agent, this, &parent, parent.getParent().getContainerId(), _name, source, target));
+        outgoing = _qmf::Outgoing::shared_ptr(new _qmf::Outgoing(agent, this, &parent, parent.getParent().getContainerId(), _name, source, target,
+                                                                 parent.getParent().getInterconnectDomain()));
         agent->addObject(outgoing);
     }
 }

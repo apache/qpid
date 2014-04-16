@@ -126,7 +126,7 @@ qpid::sys::ConnectionCodec* ProtocolImpl::create(const qpid::framing::ProtocolVe
                 throw qpid::Exception("SASL layer required!");
             } else {
                 QPID_LOG(info, "Using AMQP 1.0 (no SASL layer)");
-                return new qpid::broker::amqp::Connection(out, id, *this, false);
+                return new qpid::broker::amqp::Connection(out, id, *this, false, false);
             }
         }
     }
