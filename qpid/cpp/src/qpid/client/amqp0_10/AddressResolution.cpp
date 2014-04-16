@@ -215,7 +215,7 @@ class Exchange : protected Node
     const std::string specifiedType;
   private:
     const bool durable;
-    const bool autoDelete;
+    bool autoDelete;
     const std::string alternateExchange;
     FieldTable arguments;
 };
@@ -326,6 +326,7 @@ struct Opt
     bool asBool(bool defaultValue) const;
     const Variant::List& asList() const;
     void collect(qpid::framing::FieldTable& args) const;
+    bool hasKey(const std::string&) const;
 
     const Variant::Map* options;
     const Variant* value;
@@ -382,6 +383,15 @@ void Opt::collect(qpid::framing::FieldTable& args) const
 {
     if (value) {
         translate(value->asMap(), args);
+    }
+}
+bool Opt::hasKey(const std::string& key) const
+{
+    if (value) {
+        Variant::Map::const_iterator i = value->asMap().find(key);
+        return i != value->asMap().end();
+    } else {
+        return false;
     }
 }
 
@@ -727,8 +737,9 @@ Queue::Queue(const Address& a) : Node(a),
     linkBindings.setDefaultQueue(name);
     if (qpid::messaging::AddressImpl::isTemporary(a) && createPolicy.isVoid()) {
         createPolicy = "always";
-        autoDelete = true;
-        exclusive = true;
+        Opt specified = Opt(a)/NODE/X_DECLARE;
+        if (!specified.hasKey(AUTO_DELETE)) autoDelete = true;
+        if (!specified.hasKey(EXCLUSIVE)) exclusive = true;
     }
 }
 
@@ -816,6 +827,10 @@ Exchange::Exchange(const Address& a) : Node(a),
     (Opt(a)/NODE/X_DECLARE/ARGUMENTS).collect(arguments);
     nodeBindings.setDefaultExchange(name);
     linkBindings.setDefaultExchange(name);
+    if (qpid::messaging::AddressImpl::isTemporary(a) && createPolicy.isVoid()) {
+        createPolicy = "always";
+        if (!(Opt(a)/NODE/X_DECLARE).hasKey(AUTO_DELETE)) autoDelete = true;
+    }
 }
 
 bool Exchange::isReservedName()
