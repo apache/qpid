@@ -60,6 +60,7 @@ struct Options : public qpid::Options
     uint tx;
     uint rollbackFrequency;
     bool printContent;
+    bool printContentObjectType;
     bool printHeaders;
     bool failoverUpdates;
     qpid::log::Options log;
@@ -86,6 +87,7 @@ struct Options : public qpid::Options
           tx(0),
           rollbackFrequency(0),
           printContent(true),
+          printContentObjectType(false),
           printHeaders(false),
           failoverUpdates(false),
           log(argv0),
@@ -110,6 +112,7 @@ struct Options : public qpid::Options
             ("tx", qpid::optValue(tx, "N"), "batch size for transactions (0 implies transaction are not used)")
             ("rollback-frequency", qpid::optValue(rollbackFrequency, "N"), "rollback frequency (0 implies no transaction will be rolledback)")
             ("print-content", qpid::optValue(printContent, "yes|no"), "print out message content")
+            ("print-content-object-type", qpid::optValue(printContentObjectType, "yes|no"), "print a description of the content's object type if relevant")
             ("print-headers", qpid::optValue(printHeaders, "yes|no"), "print out message headers")
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("report-total", qpid::optValue(reportTotal), "Report total throughput and latency statistics")
@@ -237,11 +240,12 @@ int main(int argc, char ** argv)
                         }
                         if (opts.printContent) {
                             if (!msg.getContentObject().isVoid()) {
-                              std::cout << "[Object: " << getTypeName(msg.getContentObject().getType()) << "]" << std::endl
-                                        << msg.getContentObject() << std::endl;
-                            }
-                            else {
-                              std::cout << msg.getContent() << std::endl;
+                                if (opts.printContentObjectType) {
+                                    std::cout << "[Object: " << getTypeName(msg.getContentObject().getType()) << "]" << std::endl;
+                                }
+                                std::cout << msg.getContentObject() << std::endl;
+                            } else {
+                                std::cout << msg.getContent() << std::endl;
                             }
                         }
                         if (opts.messages && count >= opts.messages) done = true;
