@@ -678,8 +678,10 @@ Address AddressResolution::convert(const qpid::framing::ReplyTo& rt)
 {
     Address address;
     if (rt.getExchange().empty()) {//if default exchange, treat as queue
-        address.setName(rt.getRoutingKey());
-        address.setType(QUEUE_ADDRESS);
+        if (!rt.getRoutingKey().empty()) {
+            address.setName(rt.getRoutingKey());
+            address.setType(QUEUE_ADDRESS);
+        }
     } else {
         address.setName(rt.getExchange());
         address.setSubject(rt.getRoutingKey());
