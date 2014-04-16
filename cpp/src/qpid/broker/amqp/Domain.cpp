@@ -31,6 +31,7 @@
 #include "qpid/management/ManagementAgent.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
+#include <sstream>
 
 namespace _qmf = qmf::org::apache::qpid::broker;
 
@@ -176,7 +177,7 @@ qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::framing::ProtocolV
 qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::sys::OutputControl& out, const std::string& id, const qpid::sys::SecuritySettings& t)
 {
     bool useSasl = domain->getMechanisms() != NONE;
-    boost::shared_ptr<Interconnect> connection(new Interconnect(out, id, *this, useSasl, incoming, name, source, target));
+    boost::shared_ptr<Interconnect> connection(new Interconnect(out, id, *this, useSasl, incoming, name, source, target, domain->getName()));
     if (!relay) getInterconnects().add(name, connection);
     else connection->setRelay(relay);
 
@@ -199,7 +200,9 @@ bool InterconnectFactory::connect()
     next++;
     hostname = address.host;
     QPID_LOG (info, "Inter-broker connection initiated (" << address << ")");
-    getBroker().connect(name, address.host, boost::lexical_cast<std::string>(address.port), address.protocol, this, boost::bind(&InterconnectFactory::failed, this, _1, _2));
+    std::stringstream identifier;
+    identifier << name << "@" << domain->getName();
+    getBroker().connect(identifier.str(), address.host, boost::lexical_cast<std::string>(address.port), address.protocol, this, boost::bind(&InterconnectFactory::failed, this, _1, _2));
     return true;
 }
 

@@ -36,7 +36,8 @@ ManagedIncomingLink::ManagedIncomingLink(Broker& broker, ManagedSession& p, cons
 {
     qpid::management::ManagementAgent* agent = broker.getManagementAgent();
     if (agent) {
-        incoming = _qmf::Incoming::shared_ptr(new _qmf::Incoming(agent, this, &parent, parent.getParent().getContainerId(), _name, source, target));
+        incoming = _qmf::Incoming::shared_ptr(new _qmf::Incoming(agent, this, &parent, parent.getParent().getContainerId(), _name, source, target,
+                                                                 parent.getParent().getInterconnectDomain()));
         agent->addObject(incoming);
     }
 }

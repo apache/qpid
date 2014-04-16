@@ -399,6 +399,7 @@
     <property name="name"           type="sstr"     access="RC" index="y"/>
     <property name="source"         type="sstr"     access="RC"/>
     <property name="target"         type="sstr"     access="RC"/>
+    <property name="domain"         type="sstr"     access="RC"/>
     <statistic name="transfers"     type="count64"  unit="message" desc="Messages transfered"/>
   </class>
   <!--
@@ -412,6 +413,7 @@
     <property name="name"           type="sstr"     access="RC" index="y"/>
     <property name="source"         type="sstr"     access="RC"/>
     <property name="target"         type="sstr"     access="RC"/>
+    <property name="domain"         type="sstr"     access="RC"/>
     <statistic name="transfers"     type="count64"  unit="message" desc="Messages transfered"/>
   </class>
   <!--

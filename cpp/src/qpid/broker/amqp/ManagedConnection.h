@@ -39,7 +39,7 @@ namespace amqp {
 class ManagedConnection : public qpid::management::Manageable, public OwnershipToken, public qpid::broker::Connection
 {
   public:
-    ManagedConnection(Broker& broker, const std::string id);
+    ManagedConnection(Broker& broker, const std::string id, bool brokerInitiated);
     virtual ~ManagedConnection();
     virtual void setUserId(const std::string&);
     std::string getId() const;
@@ -47,6 +47,8 @@ class ManagedConnection : public qpid::management::Manageable, public OwnershipT
     void setSaslSsf(int);
     void setContainerId(const std::string&);
     const std::string& getContainerId() const;
+    void setInterconnectDomain(const std::string&);
+    const std::string& getInterconnectDomain() const;
     void setPeerProperties(std::map<std::string, types::Variant>&);
     qpid::management::ManagementObject::shared_ptr GetManagementObject() const;
     bool isLocal(const OwnershipToken* t) const;
@@ -70,6 +72,7 @@ class ManagedConnection : public qpid::management::Manageable, public OwnershipT
     const std::string id;
     std::string userid;
     std::string containerid;
+    std::string domain;
     qmf::org::apache::qpid::broker::Connection::shared_ptr connection;
     qpid::management::ManagementAgent* agent;
     std::map<std::string, types::Variant> peerProperties;

@@ -47,14 +47,14 @@ template <typename T> T getProperty(const std::string& key, const qpid::types::V
     }
 }
 }
-ManagedConnection::ManagedConnection(Broker& broker, const std::string i) : id(i), agent(0)
+ManagedConnection::ManagedConnection(Broker& broker, const std::string i, bool brokerInitiated) : id(i), agent(0)
 {
     //management integration:
     agent = broker.getManagementAgent();
     if (agent != 0) {
         qpid::management::Manageable* parent = broker.GetVhostObject();
         // TODO set last bool true if system connection
-        connection = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, id, true, false, "AMQP 1.0"));
+        connection = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, id, !brokerInitiated, brokerInitiated, "AMQP 1.0"));
         connection->set_shadow(false);
         agent->addObject(connection);
     }
@@ -130,6 +130,15 @@ void ManagedConnection::setContainerId(const std::string& container)
 const std::string& ManagedConnection::getContainerId() const
 {
     return containerid;
+}
+
+void ManagedConnection::setInterconnectDomain(const std::string& d)
+{
+    domain = d;
+}
+const std::string& ManagedConnection::getInterconnectDomain() const
+{
+    return domain;
 }
 
 qpid::management::ManagementObject::shared_ptr ManagedConnection::GetManagementObject() const
