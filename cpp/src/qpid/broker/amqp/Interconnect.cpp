@@ -40,8 +40,8 @@ namespace broker {
 namespace amqp {
 
 Interconnect::Interconnect(qpid::sys::OutputControl& out, const std::string& id, BrokerContext& broker, bool saslInUse,
-                           bool i, const std::string& n, const std::string& s, const std::string& t, Domain& d)
-    : Connection(out, id, broker, true), incoming(i), name(n), source(s), target(t), domain(d), headerDiscarded(saslInUse),
+                           bool i, const std::string& n, const std::string& s, const std::string& t)
+    : Connection(out, id, broker, true), incoming(i), name(n), source(s), target(t), headerDiscarded(saslInUse),
       closeRequested(false), isTransportDeleted(false)
 {}
 
