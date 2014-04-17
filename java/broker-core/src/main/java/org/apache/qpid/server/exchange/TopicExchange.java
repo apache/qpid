@@ -72,6 +72,67 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
         return TYPE;
     }
 
+    @Override
+    protected void onBindingUpdated(final BindingImpl binding, final Map<String, Object> oldArguments)
+    {
+        final String bindingKey = binding.getBindingKey();
+        AMQQueue queue = binding.getAMQQueue();
+        Map<String,Object> args = binding.getArguments();
+
+        assert queue != null;
+        assert bindingKey != null;
+
+        _logger.debug("Registering queue " + queue.getName() + " with routing key " + bindingKey);
+
+
+        String routingKey = TopicNormalizer.normalize(bindingKey);
+
+        try
+        {
+
+            if (_bindings.containsKey(binding))
+            {
+                Map<String, Object> oldArgs = _bindings.get(binding);
+                TopicExchangeResult result = _topicExchangeResults.get(routingKey);
+
+                if (FilterSupport.argumentsContainFilter(args))
+                {
+                    if (FilterSupport.argumentsContainFilter(oldArgs))
+                    {
+                        result.replaceQueueFilter(queue,
+                                                  FilterSupport.createMessageFilter(oldArgs, queue),
+                                                  FilterSupport.createMessageFilter(args, queue));
+                    }
+                    else
+                    {
+                        result.addFilteredQueue(queue, FilterSupport.createMessageFilter(args, queue));
+                        result.removeUnfilteredQueue(queue);
+                    }
+                }
+                else
+                {
+                    if (FilterSupport.argumentsContainFilter(oldArgs))
+                    {
+                        result.addUnfilteredQueue(queue);
+                        result.removeFilteredQueue(queue, FilterSupport.createMessageFilter(oldArgs, queue));
+                    }
+                    else
+                    {
+                        // TODO - fix control flow
+                        return;
+                    }
+                }
+
+            }
+        }
+        catch (AMQInvalidArgumentException e)
+        {
+            throw new ConnectionScopedRuntimeException(e);
+        }
+
+
+    }
+
     protected synchronized void registerQueue(final BindingImpl binding) throws AMQInvalidArgumentException
     {
         final String bindingKey = binding.getBindingKey();

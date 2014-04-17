@@ -30,27 +30,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import junit.framework.TestCase;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
 public class FanoutExchangeTest extends TestCase
 {
     private FanoutExchange _exchange;
     private VirtualHostImpl _virtualHost;
+    private TaskExecutor _taskExecutor;
 
     public void setUp() throws UnknownExchangeException
     {
@@ -59,11 +62,21 @@ public class FanoutExchangeTest extends TestCase
         attributes.put(Exchange.NAME, "test");
         attributes.put(Exchange.DURABLE, false);
 
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
         _virtualHost = mock(VirtualHostImpl.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
+        when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
         _exchange = new FanoutExchange(_virtualHost, attributes);
+        _exchange.open();
+    }
+
+    public void tearDown() throws Exception
+    {
+        super.tearDown();
+        _taskExecutor.stop();
     }
 
     public void testIsBoundStringMapAMQQueueWhenQueueIsNull()
@@ -115,6 +128,7 @@ public class FanoutExchangeTest extends TestCase
     {
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getVirtualHost()).thenReturn(_virtualHost);
+        when(queue.getCategoryClass()).thenReturn(Queue.class);
         return queue;
     }
 
@@ -122,6 +136,7 @@ public class FanoutExchangeTest extends TestCase
     {
         AMQQueue queue1 = mockQueue();
         AMQQueue queue2 = mockQueue();
+
 
         _exchange.addBinding("key",queue1, null);
         _exchange.addBinding("key",queue2, null);

@@ -49,6 +49,7 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
+import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 
 @MBeanDescription("This MBean exposes the broker level management features")
 public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<VirtualHost> implements ManagedBroker
@@ -184,6 +185,10 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         try
         {
             theExchange.delete();
+        }
+        catch(RequiredExchangeException e)
+        {
+            throw new UnsupportedOperationException(e.getMessage(), e);
         }
         catch (IllegalStateException ex)
         {

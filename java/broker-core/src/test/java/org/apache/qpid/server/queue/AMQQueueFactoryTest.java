@@ -39,7 +39,6 @@ import org.mockito.stubbing.Answer;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -237,7 +236,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
 
         String queueName = "testDeadLetterQueueEnabled";
-        String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
+        String dlExchangeName = queueName + VirtualHostImpl.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
@@ -277,7 +276,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
 
         String queueName = "testDeadLetterQueueEnabled";
-        String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
+        String dlExchangeName = queueName + VirtualHostImpl.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
@@ -320,7 +319,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
 
         String queueName = "testDeadLetterQueueDisabled";
-        String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
+        String dlExchangeName = queueName + VirtualHostImpl.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));
@@ -350,7 +349,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
     {
 
         String queueName = "testDeadLetterQueueNotCreatedForAutodeleteQueues";
-        String dlExchangeName = queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX;
+        String dlExchangeName = queueName + VirtualHostImpl.DEFAULT_DLE_NAME_SUFFIX;
         String dlQueueName = queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX;
 
         assertNull("The DLQ should not yet exist", _virtualHost.getQueue(dlQueueName));

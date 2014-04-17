@@ -299,6 +299,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         stopAllSubscriptions(conn, dtc);
         Session ssn = conn.getSession(dtc.getChannel());
         ((ServerSession)ssn).setClose(true);
+        ((ServerSession)ssn).getModelObject().delete();
         super.sessionDetach(conn, dtc);
     }
 

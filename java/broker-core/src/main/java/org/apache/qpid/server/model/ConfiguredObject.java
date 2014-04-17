@@ -233,6 +233,10 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      */
     <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz);
 
+    <C extends ConfiguredObject> C getChildById(Class<C> clazz, UUID id);
+
+    <C extends ConfiguredObject> C getChildByName(Class<C> clazz, String name);
+
 
     <C extends ConfiguredObject> C createChild(Class<C> childClass,
                                                Map<String, Object> attributes,

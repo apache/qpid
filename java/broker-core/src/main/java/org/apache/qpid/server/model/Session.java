@@ -56,4 +56,6 @@ public interface Session<X extends Session<X>> extends ConfiguredObject<X>
 
     @ManagedStatistic
     long getUnacknowledgedMessages();
+
+    void delete();
 }

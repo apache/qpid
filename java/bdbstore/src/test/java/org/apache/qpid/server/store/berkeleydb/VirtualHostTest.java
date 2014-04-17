@@ -38,6 +38,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
@@ -145,7 +146,7 @@ public class VirtualHostTest extends QpidTestCase
 
     private VirtualHost<?,?,?> createHost(Map<String, Object> attributes)
     {
-        ConfiguredObjectFactory factory = new ConfiguredObjectFactory(Model.getInstance());
+        ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(Model.getInstance());
         ConfiguredObjectTypeFactory vhostFactory =
                 factory.getConfiguredObjectTypeFactory(VirtualHost.class, attributes);
         attributes = new HashMap<String, Object>(attributes);

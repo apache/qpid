@@ -37,9 +37,7 @@ public interface QueueRegistry
 
     AMQQueue<?> getQueue(String queue);
 
-    void addRegistryChangeListener(RegistryChangeListener listener);
-
-    void stopAllAndUnregisterMBeans();
+    void close();
 
     AMQQueue<?> getQueue(UUID queueId);
 

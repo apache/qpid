@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -155,6 +156,21 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
 
         _bindingHeaderMatchers.add(new HeadersBinding(binding));
         bindings.add(binding);
+
+    }
+
+    @Override
+    protected void onBindingUpdated(final BindingImpl binding, final Map<String, Object> oldArguments)
+    {
+        HeadersBinding headersBinding = new HeadersBinding(binding);
+        ListIterator<HeadersBinding> iter = _bindingHeaderMatchers.listIterator();
+        while(iter.hasNext())
+        {
+            if(iter.next().equals(headersBinding))
+            {
+                iter.set(headersBinding);
+            }
+        }
 
     }
 

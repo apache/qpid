@@ -41,13 +41,14 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.adapter.FileBasedGroupProvider;
+import org.apache.qpid.server.model.adapter.FileBasedGroupProviderImpl;
 import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
-import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
@@ -738,8 +739,8 @@ public class BrokerACLTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, groupProviderName);
-        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-        attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
+        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
         responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
         assertEquals("Setting of group provider attributes should be allowed but not supported", 409, responseCode);
     }
@@ -761,8 +762,8 @@ public class BrokerACLTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, groupProviderName);
-        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-        attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
+        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
         responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
         assertEquals("Setting of group provider attributes should be denied", 403, responseCode);
     }
@@ -852,8 +853,8 @@ public class BrokerACLTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, accessControlProviderName);
-        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-        attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
+        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
         responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
         assertEquals("Setting of access control provider attributes should be allowed but not supported", 409, responseCode);
     }
@@ -875,8 +876,8 @@ public class BrokerACLTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, accessControlProviderName);
-        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-        attributes.put(FileGroupManagerFactory.PATH, "/path/to/file");
+        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
         responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
         assertEquals("Setting of access control provider attributes should be denied", 403, responseCode);
     }
@@ -1073,8 +1074,8 @@ public class BrokerACLTest extends QpidRestTestCase
         File file = TestFileUtils.createTempFile(this, ".groups");
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, groupProviderName);
-        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-        attributes.put(FileGroupManagerFactory.PATH, file.getAbsoluteFile());
+        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileBasedGroupProvider.PATH, file.getAbsoluteFile());
 
         return getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
     }

@@ -44,7 +44,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -67,6 +67,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     private ConfiguredObjectRecord _portEntry;
     private UUID _rootId, _portEntryId;
     private SystemContext _systemContext;
+    private TaskExecutor _taskExecutor;
 
     protected void setUp() throws Exception
     {
@@ -74,9 +75,10 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _rootId = UUID.randomUUID();
         _portEntryId = UUID.randomUUID();
         _store = mock(DurableConfigurationStore.class);
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
 
-
-        _systemContext = new SystemContextImpl(new TaskExecutor(), new ConfiguredObjectFactory(Model.getInstance()), mock(
+        _systemContext = new SystemContextImpl(_taskExecutor, new ConfiguredObjectFactoryImpl(Model.getInstance()), mock(
                 EventLogger.class), mock(LogRecorder.class), new BrokerOptions());
 
 
@@ -111,6 +113,13 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _handler = new ManagementModeStoreHandler(_store, _options);
 
         _handler.openConfigurationStore(_systemContext,Collections.<String,Object>emptyMap());
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        _taskExecutor.stop();
+        super.tearDown();
     }
 
     private ConfiguredObjectRecord getRootEntry()

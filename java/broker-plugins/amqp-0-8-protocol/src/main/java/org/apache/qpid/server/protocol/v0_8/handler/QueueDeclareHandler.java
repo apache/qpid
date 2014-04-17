@@ -36,7 +36,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
@@ -192,7 +191,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 QueueArgumentsConverter.convertWireArgsToModel(FieldTable.convertToMap(body.getArguments()));
         final String queueNameString = AMQShortString.toString(queueName);
         attributes.put(Queue.NAME, queueNameString);
-        attributes.put(Queue.ID, UUIDGenerator.generateQueueUUID(queueNameString, virtualHost.getName()));
+        attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.DURABLE, durable);
 
         LifetimePolicy lifetimePolicy;

@@ -826,6 +826,7 @@ public abstract class AbstractQueue
                 // we need to manually fire the event to the removed consumer (which was the last one left for this
                 // queue. This is because the delete method uses the consumer set which has just been cleared
                 consumer.queueDeleted();
+
             }
         }
 
@@ -1645,7 +1646,7 @@ public abstract class AbstractQueue
 
             _deleteTaskList.clear();
             stop();
-
+            deleted();
             //Log Queue Deletion
             getEventLogger().message(_logSubject, QueueMessages.DELETED());
 

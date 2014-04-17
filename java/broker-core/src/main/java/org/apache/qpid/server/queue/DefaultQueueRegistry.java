@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,8 +32,6 @@ public class DefaultQueueRegistry implements QueueRegistry
     private ConcurrentMap<String, AMQQueue<?>> _queueMap = new ConcurrentHashMap<String, AMQQueue<?>>();
 
     private final VirtualHostImpl _virtualHost;
-    private final Collection<RegistryChangeListener> _listeners =
-            new ArrayList<RegistryChangeListener>();
 
     public DefaultQueueRegistry(VirtualHostImpl virtualHost)
     {
@@ -49,28 +46,11 @@ public class DefaultQueueRegistry implements QueueRegistry
     public void registerQueue(AMQQueue queue)
     {
         _queueMap.put(queue.getName(), queue);
-        synchronized (_listeners)
-        {
-            for(RegistryChangeListener listener : _listeners)
-            {
-                listener.queueRegistered(queue);
-            }
-        }
     }
 
     public void unregisterQueue(String name)
     {
         AMQQueue q = _queueMap.remove(name);
-        if(q != null)
-        {
-            synchronized (_listeners)
-            {
-                for(RegistryChangeListener listener : _listeners)
-                {
-                    listener.queueUnregistered(q);
-                }
-            }
-        }
     }
 
 
@@ -84,31 +64,12 @@ public class DefaultQueueRegistry implements QueueRegistry
         return queue == null ? null : _queueMap.get(queue);
     }
 
-    public void addRegistryChangeListener(RegistryChangeListener listener)
-    {
-        synchronized(_listeners)
-        {
-            _listeners.add(listener);
-        }
-    }
-
     @Override
-    public void stopAllAndUnregisterMBeans()
+    public void close()
     {
         for (final AMQQueue queue : getQueues())
         {
             queue.stop();
-
-            //TODO: this is a bit of a hack, what if the listeners aren't aware
-            //that we are just unregistering the MBean because of HA, and aren't
-            //actually removing the queue as such.
-            synchronized (_listeners)
-            {
-                for(RegistryChangeListener listener : _listeners)
-                {
-                    listener.queueUnregistered(queue);
-                }
-            }
         }
         _queueMap.clear();
     }

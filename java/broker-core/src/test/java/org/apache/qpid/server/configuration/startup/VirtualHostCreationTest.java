@@ -35,6 +35,9 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
@@ -49,8 +52,11 @@ public class VirtualHostCreationTest extends TestCase
     {
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
         Broker parent = mock(Broker.class);
+        when(parent.getObjectFactory()).thenReturn(objectFactory);
         when(parent.getSecurityManager()).thenReturn(securityManager);
+        when(parent.getCategoryClass()).thenReturn(Broker.class);
         VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
         when(virtualHostRegistry.getEventLogger()).thenReturn(mock(EventLogger.class));
         when(parent.getVirtualHostRegistry()).thenReturn(virtualHostRegistry);

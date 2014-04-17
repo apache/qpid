@@ -29,7 +29,6 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
@@ -191,7 +190,7 @@ public class AMQQueueFactory implements QueueFactory
                 {
 
 
-                    args.put(Queue.ID, UUIDGenerator.generateQueueUUID(dlQueueName, _virtualHost.getName()));
+                    args.put(Queue.ID, UUID.randomUUID());
                     args.put(Queue.NAME, dlQueueName);
                     args.put(Queue.DURABLE, true);
                     dlQueue = _virtualHost.createQueue(args);
@@ -269,7 +268,7 @@ public class AMQQueueFactory implements QueueFactory
 
     private static String getDeadLetterExchangeName(String name)
     {
-        return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+        return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, VirtualHostImpl.DEFAULT_DLE_NAME_SUFFIX);
     }
 
 }

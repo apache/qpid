@@ -23,27 +23,48 @@ import java.io.File;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.security.group.FileGroupManager;
-import org.apache.qpid.server.security.group.GroupManager;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Group;
+import org.apache.qpid.server.model.GroupMember;
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.group.FileGroupDatabase;
+import org.apache.qpid.server.security.group.GroupPrincipal;
 import org.apache.qpid.server.util.MapValueConverter;
 
 public class FileBasedGroupProviderImpl
         extends AbstractConfiguredObject<FileBasedGroupProviderImpl> implements FileBasedGroupProvider<FileBasedGroupProviderImpl>
 {
+    public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.group.FileGroupProviderAttributeDescriptions";
+    public static final String GROUP_FILE_PROVIDER_TYPE = "GroupFile";
     private static Logger LOGGER = Logger.getLogger(FileBasedGroupProviderImpl.class);
 
-    private GroupManager _groupManager;
     private final Broker<?> _broker;
     private AtomicReference<State> _state;
+
+    private FileGroupDatabase _groupDatabase;
 
     @ManagedAttributeField
     private String _path;
@@ -100,18 +121,74 @@ public class FileBasedGroupProviderImpl
     protected void onOpen()
     {
         super.onOpen();
-        if(_groupManager == null)
+        if(_groupDatabase == null)
         {
-            _groupManager = new FileGroupManager(getPath());
+            _groupDatabase = new FileGroupDatabase();
+            try
+            {
+                _groupDatabase.setGroupFile(getPath());
+            }
+            catch (IOException e)
+            {
+                setState(getState(), State.ERRORED);
+                LOGGER.warn(("Unable to open preferences file at " + _path));
+            }
         }
+        Set<Principal> groups = getGroupPrincipals();
+        Collection<Group> principals = new ArrayList<Group>(groups.size());
+        for (Principal group : groups)
+        {
+            Map<String,Object> attrMap = new HashMap<String, Object>();
+            UUID id = UUIDGenerator.generateGroupUUID(getName(),group.getName());
+            attrMap.put(Group.ID, id);
+            attrMap.put(Group.NAME, group.getName());
+            GroupAdapter groupAdapter = new GroupAdapter(attrMap, getTaskExecutor());
+            principals.add(groupAdapter);
+        }
+
     }
 
     @Override
     protected void onCreate()
     {
         super.onCreate();
-        _groupManager = new FileGroupManager(getPath());
-        _groupManager.onCreate();
+        _groupDatabase = new FileGroupDatabase();
+
+        File file = new File(_path);
+        if (!file.exists())
+        {
+            File parent = file.getParentFile();
+            if (!parent.exists())
+            {
+                parent.mkdirs();
+            }
+            if (parent.exists())
+            {
+                try
+                {
+                    file.createNewFile();
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalConfigurationException("Cannot create group file");
+                }
+            }
+            else
+            {
+                throw new IllegalConfigurationException("Cannot create group file");
+            }
+        }
+        try
+        {
+            _groupDatabase.setGroupFile(getPath());
+        }
+        catch (IOException e)
+        {
+            setState(getState(), State.ERRORED);
+            LOGGER.warn(("Unable to open preferences file at " + _path));
+        }
+
+
     }
 
     @Override
@@ -147,12 +224,16 @@ public class FileBasedGroupProviderImpl
             String groupName = (String) attributes.get(Group.NAME);
 
             getSecurityManager().authoriseGroupOperation(Operation.CREATE, groupName);
-                _groupManager.createGroup(groupName);
+
+            _groupDatabase.createGroup(groupName);
+
             Map<String,Object> attrMap = new HashMap<String, Object>();
             UUID id = UUIDGenerator.generateGroupUUID(getName(),groupName);
             attrMap.put(Group.ID, id);
             attrMap.put(Group.NAME, groupName);
-                return (C) new GroupAdapter(attrMap, getTaskExecutor());
+            GroupAdapter groupAdapter = new GroupAdapter(attrMap, getTaskExecutor());
+            groupAdapter.create();
+            return (C) groupAdapter;
 
         }
 
@@ -161,35 +242,25 @@ public class FileBasedGroupProviderImpl
                         + childClass);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
+    private Set<Principal> getGroupPrincipals()
     {
-        if (clazz == Group.class)
+
+        Set<String> groups = _groupDatabase == null ? Collections.<String>emptySet() : _groupDatabase.getAllGroups();
+        if (groups.isEmpty())
         {
-            Set<Principal> groups = _groupManager == null ? Collections.<Principal>emptySet() : _groupManager.getGroupPrincipals();
-            Collection<Group> principals = new ArrayList<Group>(groups.size());
-            for (Principal group : groups)
-            {
-                Map<String,Object> attrMap = new HashMap<String, Object>();
-                UUID id = UUIDGenerator.generateGroupUUID(getName(),group.getName());
-                attrMap.put(Group.ID, id);
-                attrMap.put(Group.NAME, group.getName());
-                principals.add(new GroupAdapter(attrMap, getTaskExecutor()));
-            }
-            return (Collection<C>) Collections
-                    .unmodifiableCollection(principals);
+            return Collections.emptySet();
         }
         else
         {
-            return null;
+            Set<Principal> principals = new HashSet<Principal>();
+            for (String groupName : groups)
+            {
+                principals.add(new GroupPrincipal(groupName));
+            }
+            return principals;
         }
     }
 
-    public GroupManager getGroupManager()
-    {
-        return _groupManager;
-    }
 
     private SecurityManager getSecurityManager()
     {
@@ -207,7 +278,15 @@ public class FileBasedGroupProviderImpl
             {
                 try
                 {
-                    _groupManager.open();
+                    try
+                    {
+                        _groupDatabase.setGroupFile(getPath());
+                    }
+                    catch (IOException e)
+                    {
+                        throw new IllegalConfigurationException("Unable to set group file " + getPath(), e);
+                    }
+
                     return true;
                 }
                 catch(RuntimeException e)
@@ -232,7 +311,6 @@ public class FileBasedGroupProviderImpl
         {
             if (_state.compareAndSet(state, State.STOPPED))
             {
-                _groupManager.close();
                 return true;
             }
             else
@@ -245,8 +323,15 @@ public class FileBasedGroupProviderImpl
             if ((state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED || state == State.ERRORED)
                     && _state.compareAndSet(state, State.DELETED))
             {
-                _groupManager.close();
-                _groupManager.onDelete();
+                File file = new File(getPath());
+                if (file.exists())
+                {
+                    if (!file.delete())
+                    {
+                        throw new IllegalConfigurationException("Cannot delete group file");
+                    }
+                }
+
                 deleted();
                 return true;
             }
@@ -267,7 +352,20 @@ public class FileBasedGroupProviderImpl
 
     public Set<Principal> getGroupPrincipalsForUser(String username)
     {
-        return _groupManager.getGroupPrincipalsForUser(username);
+        Set<String> groups = _groupDatabase.getGroupsForUser(username);
+        if (groups.isEmpty())
+        {
+            return Collections.emptySet();
+        }
+        else
+        {
+            Set<Principal> principals = new HashSet<Principal>();
+            for (String groupName : groups)
+            {
+                principals.add(new GroupPrincipal(groupName));
+            }
+            return principals;
+        }
     }
 
     @Override
@@ -337,6 +435,24 @@ public class FileBasedGroupProviderImpl
         }
 
         @Override
+        protected void onOpen()
+        {
+            super.onOpen();
+            Set<Principal> usersInGroup = getUserPrincipalsForGroup(getName());
+            Collection<GroupMember> members = new ArrayList<GroupMember>();
+            for (Principal principal : usersInGroup)
+            {
+                UUID id = UUIDGenerator.generateGroupMemberUUID(FileBasedGroupProviderImpl.this.getName(), getName(), principal.getName());
+                Map<String,Object> attrMap = new HashMap<String, Object>();
+                attrMap.put(GroupMember.ID,id);
+                attrMap.put(GroupMember.NAME, principal.getName());
+                GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap, getTaskExecutor());
+                groupMemberAdapter.open();
+                members.add(groupMemberAdapter);
+            }
+        }
+
+        @Override
         protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
         {
             super.validateChange(proxyForValidation, changedAttributes);
@@ -346,32 +462,24 @@ public class FileBasedGroupProviderImpl
             }
         }
 
-        @Override
-        public <C extends ConfiguredObject> Collection<C> getChildren(
-                Class<C> clazz)
+        private Set<Principal> getUserPrincipalsForGroup(String group)
         {
-            if (clazz == GroupMember.class)
+            Set<String> users = _groupDatabase.getUsersInGroup(group);
+            if (users.isEmpty())
             {
-                Set<Principal> usersInGroup = _groupManager
-                        .getUserPrincipalsForGroup(getName());
-                Collection<GroupMember> members = new ArrayList<GroupMember>();
-                for (Principal principal : usersInGroup)
-                {
-                    UUID id = UUIDGenerator.generateGroupMemberUUID(FileBasedGroupProviderImpl.this.getName(), getName(), principal.getName());
-                    Map<String,Object> attrMap = new HashMap<String, Object>();
-                    attrMap.put(GroupMember.ID,id);
-                    attrMap.put(GroupMember.NAME, principal.getName());
-                    members.add(new GroupMemberAdapter(attrMap, getTaskExecutor()));
-                }
-                return (Collection<C>) Collections
-                        .unmodifiableCollection(members);
+                return Collections.emptySet();
             }
             else
             {
-                return null;
+                Set<Principal> principals = new HashSet<Principal>();
+                for (String user : users)
+                {
+                    principals.add(new UsernamePrincipal(user));
+                }
+                return principals;
             }
-
         }
+
 
         @Override
         public <C extends ConfiguredObject> C addChild(Class<C> childClass,
@@ -384,12 +492,14 @@ public class FileBasedGroupProviderImpl
 
                 getSecurityManager().authoriseGroupOperation(Operation.UPDATE, getName());
 
-                _groupManager.addUserToGroup(memberName, getName());
+                _groupDatabase.addUserToGroup(memberName, getName());
                 UUID id = UUIDGenerator.generateGroupMemberUUID(FileBasedGroupProviderImpl.this.getName(), getName(), memberName);
                 Map<String,Object> attrMap = new HashMap<String, Object>();
                 attrMap.put(GroupMember.ID,id);
                 attrMap.put(GroupMember.NAME, memberName);
-                return (C) new GroupMemberAdapter(attrMap, getTaskExecutor());
+                GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap, getTaskExecutor());
+                groupMemberAdapter.create();
+                return (C) groupMemberAdapter;
 
             }
 
@@ -405,7 +515,8 @@ public class FileBasedGroupProviderImpl
             if (desiredState == State.DELETED)
             {
                 getSecurityManager().authoriseGroupOperation(Operation.DELETE, getName());
-                _groupManager.removeGroup(getName());
+                _groupDatabase.removeGroup(getName());
+                deleted();
                 return true;
             }
 
@@ -479,7 +590,8 @@ public class FileBasedGroupProviderImpl
                 {
                     getSecurityManager().authoriseGroupOperation(Operation.UPDATE, GroupAdapter.this.getName());
 
-                    _groupManager.removeUserFromGroup(getName(), GroupAdapter.this.getName());
+                    _groupDatabase.removeUserFromGroup(getName(), GroupAdapter.this.getName());
+                    deleted();
                     return true;
 
                 }

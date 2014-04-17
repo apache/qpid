@@ -36,7 +36,8 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.security.group.FileGroupManagerFactory;
+import org.apache.qpid.server.model.adapter.FileBasedGroupProvider;
+import org.apache.qpid.server.model.adapter.FileBasedGroupProviderImpl;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
 
@@ -76,11 +77,11 @@ public class GroupProviderRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
         for (Map<String, Object> provider : providerDetails)
         {
-            assertProvider(FILE_GROUP_MANAGER, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE, provider);
+            assertProvider(FILE_GROUP_MANAGER, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE, provider);
             Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/"
                     + provider.get(GroupProvider.NAME));
             assertNotNull("Cannot load data for " + provider.get(GroupProvider.NAME), data);
-            assertProvider(FILE_GROUP_MANAGER, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE, data);
+            assertProvider(FILE_GROUP_MANAGER, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE, data);
         }
     }
 
@@ -127,16 +128,16 @@ public class GroupProviderRestTest extends QpidRestTestCase
             String providerName = getTestName();
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(GroupProvider.NAME, providerName);
-            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+            attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
             int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Group provider was not created", 201, responseCode);
 
             Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + providerName + "?depth=2");
-            assertProvider(providerName, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE, data);
+            assertProvider(providerName, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE, data);
             assertEquals("Unexpected name", providerName, data.get(GroupProvider.NAME));
-            assertEquals("Unexpected path", groupFile.getAbsolutePath(), data.get(FileGroupManagerFactory.PATH));
+            assertEquals("Unexpected path", groupFile.getAbsolutePath(), data.get(FileBasedGroupProvider.PATH));
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> groups = (List<Map<String, Object>>) data.get("groups");
@@ -174,7 +175,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
         String providerName = getTestName();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, providerName);
-        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
         assertEquals("Group provider was created", 409, responseCode);
@@ -189,15 +190,15 @@ public class GroupProviderRestTest extends QpidRestTestCase
             String providerName = getTestName();
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(GroupProvider.NAME, providerName);
-            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+            attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
             int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Group provider was not created", 201, responseCode);
 
             Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + providerName);
             assertEquals("Unexpected name", providerName, data.get(GroupProvider.NAME));
-            assertEquals("Unexpected path", groupFile.getAbsolutePath(), data.get(FileGroupManagerFactory.PATH));
+            assertEquals("Unexpected path", groupFile.getAbsolutePath(), data.get(FileBasedGroupProvider.PATH));
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> groups = (List<Map<String, Object>>) data.get("groups");
@@ -220,8 +221,8 @@ public class GroupProviderRestTest extends QpidRestTestCase
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(GroupProvider.NAME, providerName);
-            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+            attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
             int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Group provider was not created", 201, responseCode);
@@ -244,8 +245,8 @@ public class GroupProviderRestTest extends QpidRestTestCase
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(GroupProvider.NAME, providerName);
-            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+            attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
             int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Expected to fail because we can have only one password provider", 201, responseCode);
@@ -271,14 +272,14 @@ public class GroupProviderRestTest extends QpidRestTestCase
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(GroupProvider.NAME, providerName);
-            attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-            attributes.put(FileGroupManagerFactory.PATH, groupFile.getAbsolutePath());
+            attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+            attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
             int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Expected to fail because we can have only one password provider", 201, responseCode);
 
             File newGroupFile = new File(TMP_FOLDER + File.separator + getTestName() + File.separator + "groups");
-            attributes.put(FileGroupManagerFactory.PATH, newGroupFile.getAbsolutePath());
+            attributes.put(FileBasedGroupProvider.PATH, newGroupFile.getAbsolutePath());
 
             responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Expected to fail because we can have only one password provider", 409, responseCode);
@@ -310,7 +311,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
 
         Map<String, Object> groupProvider = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
         assertEquals("Unexpected id", id.toString(), groupProvider.get(GroupProvider.ID));
-        assertEquals("Unexpected path", file.getAbsolutePath() , groupProvider.get(FileGroupManagerFactory.PATH));
+        assertEquals("Unexpected path", file.getAbsolutePath() , groupProvider.get(FileBasedGroupProvider.PATH));
         assertEquals("Unexpected state", State.ERRORED.name() , groupProvider.get(GroupProvider.STATE));
 
         int status = getRestTestHelper().submitRequest("/rest/groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE, "DELETE", null);

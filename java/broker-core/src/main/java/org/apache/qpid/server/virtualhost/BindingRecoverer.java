@@ -24,10 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -40,13 +41,10 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
 {
     private static final Logger _logger = Logger.getLogger(BindingRecoverer.class);
 
-    private final ExchangeRegistry _exchangeRegistry;
     private final VirtualHostImpl _virtualHost;
 
-    public BindingRecoverer(final VirtualHostImpl virtualHost,
-                            final ExchangeRegistry exchangeRegistry)
+    public BindingRecoverer(final VirtualHostImpl virtualHost)
     {
-        _exchangeRegistry = exchangeRegistry;
         _virtualHost = virtualHost;
     }
 
@@ -81,7 +79,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
             _bindingId = record.getId();
             _exchangeId = record.getParents().get(Exchange.class.getSimpleName()).getId();
             _queueId = record.getParents().get(Queue.class.getSimpleName()).getId();
-            _exchange = _exchangeRegistry.getExchange(_exchangeId);
+            _exchange = _virtualHost.getExchange(_exchangeId);
             if(_exchange == null)
             {
                 _unresolvedDependencies.add(new ExchangeDependency());

@@ -36,11 +36,10 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
@@ -53,7 +52,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
     public void setUp() throws Exception
     {
         super.setUp();
-        _systemContext = new SystemContextImpl(new TaskExecutor(), new ConfiguredObjectFactory(Model.getInstance()),
+        _systemContext = new SystemContextImpl(getTaskExecutor(), new ConfiguredObjectFactoryImpl(Model.getInstance()),
                                            mock(EventLogger.class), mock(LogRecorder.class),
                                            new BrokerOptions());
 

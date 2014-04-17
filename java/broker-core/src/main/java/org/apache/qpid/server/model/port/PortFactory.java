@@ -29,6 +29,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -133,7 +134,7 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
         {
             if(_configuredObjectFactory == null)
             {
-                _configuredObjectFactory = new ConfiguredObjectFactory(Model.getInstance());
+                _configuredObjectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
             }
         }
         return _configuredObjectFactory.getConfiguredObjectTypeFactory(Port.class.getSimpleName(), type);

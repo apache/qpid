@@ -86,6 +86,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.CapacityChecker;
@@ -195,6 +196,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     private final CopyOnWriteArrayList<Consumer<?>> _consumers = new CopyOnWriteArrayList<Consumer<?>>();
     private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
     private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
+    private Session<?> _modelObject;
 
 
     public AMQChannel(T session, int channelId, final MessageStore messageStore)
@@ -737,6 +739,10 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
 
         _transaction.rollback();
+        if(_modelObject != null)
+        {
+            _modelObject.delete();
+        }
 
         try
         {
@@ -1758,5 +1764,17 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     public void removeConsumerListener(ConsumerListener listener)
     {
         _consumerListeners.remove(listener);
+    }
+
+    @Override
+    public void setModelObject(final Session<?> session)
+    {
+        _modelObject = session;
+    }
+
+    @Override
+    public Session<?> getModelObject()
+    {
+        return _modelObject;
     }
 }

@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -104,7 +105,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             new ArrayList<ConfigurationChangeListener>();
 
     private final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObject<?>>> _children =
-            new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObject<?>>>();
+            new ConcurrentHashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObject<?>>>();
+    private final Map<Class<? extends ConfiguredObject>, Map<UUID,ConfiguredObject<?>>> _childrenById =
+            new ConcurrentHashMap<Class<? extends ConfiguredObject>, Map<UUID,ConfiguredObject<?>>>();
+    private final Map<Class<? extends ConfiguredObject>, Map<String,ConfiguredObject<?>>> _childrenByName =
+            new ConcurrentHashMap<Class<? extends ConfiguredObject>, Map<String,ConfiguredObject<?>>>();
+
 
     @ManagedAttributeField
     private final UUID _id;
@@ -178,6 +184,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         if(idObj == null)
         {
             uuid = UUID.randomUUID();
+            attributes = new HashMap<String, Object>(attributes);
+            attributes.put(ID, uuid);
         }
         else
         {
@@ -185,6 +193,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         _id = uuid;
 
+        _name = AttributeValueConverter.STRING_CONVERTER.convert(attributes.get(NAME),this);
 
         _attributeTypes = getAttributeTypes(getClass());
         _automatedFields = getAutomatedFields(getClass());
@@ -205,6 +214,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         for (Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(getCategoryClass()))
         {
             _children.put(childClass, new CopyOnWriteArrayList<ConfiguredObject<?>>());
+            _childrenById.put(childClass, new ConcurrentHashMap<UUID, ConfiguredObject<?>>());
+            _childrenByName.put(childClass, new ConcurrentHashMap<String, ConfiguredObject<?>>());
         }
 
         for(ConfiguredObject<?> parent : parents.values())
@@ -220,7 +231,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             addParent((Class<ConfiguredObject<?>>) entry.getKey(), entry.getValue());
         }
 
-        _name = AttributeValueConverter.STRING_CONVERTER.convert(attributes.get(NAME),this);
         Object durableObj = attributes.get(DURABLE);
         _durable = AttributeValueConverter.BOOLEAN_CONVERTER.convert(durableObj == null ? _attributeTypes.get(DURABLE).getAnnotation().defaultValue() : durableObj, this);
 
@@ -353,7 +363,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    public void open()
+    public final void open()
     {
         if(_open.compareAndSet(false,true))
         {
@@ -364,7 +374,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
 
-    public void create()
+    public final void create()
     {
         if(_open.compareAndSet(false,true))
         {
@@ -391,7 +401,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         });
     }
 
-    protected void doValidation()
+    protected final void doValidation()
     {
         applyToChildren(new Action<ConfiguredObject<?>>()
         {
@@ -407,7 +417,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         validate();
     }
 
-    protected void doResolution()
+    protected final void doResolution()
     {
         resolve();
         applyToChildren(new Action<ConfiguredObject<?>>()
@@ -423,7 +433,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         });
     }
 
-    protected void doCreation()
+    protected final void doCreation()
     {
         onCreate();
         applyToChildren(new Action<ConfiguredObject<?>>()
@@ -454,7 +464,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    public void validate()
+    public void
+    validate()
     {
     }
 
@@ -868,29 +879,78 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private <C extends ConfiguredObject> void registerChild(final C child)
     {
+
         Class categoryClass = child.getCategoryClass();
+        UUID childId = child.getId();
+        String name = child.getName();
+        if(_childrenById.get(categoryClass).containsKey(childId))
+        {
+            throw new DuplicateIdException(child);
+        }
+        if(_childrenByName.get(categoryClass).containsKey(name))
+        {
+            Collection<Class<? extends ConfiguredObject>> parentTypes =
+                    new ArrayList<Class<? extends ConfiguredObject>>(Model.getInstance().getParentTypes(categoryClass));
+            parentTypes.remove(getCategoryClass());
+            boolean duplicate = true;
+
+            C existing = (C) _childrenByName.get(categoryClass).get(name);
+            for(Class<? extends ConfiguredObject> parentType : parentTypes)
+            {
+                ConfiguredObject existingParent = existing.getParent(parentType);
+                ConfiguredObject childParent = child.getParent(parentType);
+                duplicate =  existingParent == childParent;
+                if(!duplicate)
+                {
+                    break;
+                }
+            }
+
+            if(duplicate)
+            {
+                throw new DuplicateNameException(child);
+            }
+        }
         _children.get(categoryClass).add(child);
+        _childrenById.get(categoryClass).put(childId,child);
+        _childrenByName.get(categoryClass).put(name, child);
+
     }
 
 
     protected void deleted()
     {
-        for(ConfiguredObject<?> parent : _parents.values())
+        for (ConfiguredObject<?> parent : _parents.values())
         {
-            if(parent instanceof AbstractConfiguredObject<?>)
+            if (parent instanceof AbstractConfiguredObject<?>)
             {
-                ((AbstractConfiguredObject<?>)parent).unregisterChild(this);
+                AbstractConfiguredObject<?> parentObj = (AbstractConfiguredObject<?>) parent;
+                parentObj.unregisterChild(this);
+                parentObj.childRemoved(this);
             }
         }
     }
 
 
-    protected <C extends ConfiguredObject> void unregisterChild(final C child)
+    private <C extends ConfiguredObject> void unregisterChild(final C child)
     {
-        _children.get(child.getCategoryClass()).remove(child);
+        Class categoryClass = child.getCategoryClass();
+        _children.get(categoryClass).remove(child);
+        _childrenById.get(categoryClass).remove(child.getId());
+        _childrenByName.get(categoryClass).remove(child.getName());
     }
 
+    @Override
+    public final <C extends ConfiguredObject> C getChildById(final Class<C> clazz, final UUID id)
+    {
+        return (C) _childrenById.get(Model.getCategory(clazz)).get(id);
+    }
 
+    @Override
+    public final <C extends ConfiguredObject> C getChildByName(final Class<C> clazz, final String name)
+    {
+        return (C) _childrenByName.get(Model.getCategory(clazz)).get(name);
+    }
 
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(final Class<C> clazz)
@@ -1581,7 +1641,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         int oldSize = 0;
         Model model = Model.getInstance();
 
-        Set<Class<? extends ConfiguredObject>> allDescendants = new HashSet<Class<? extends ConfiguredObject>>(model.getChildTypes(candidate));
+        Set<Class<? extends ConfiguredObject>> allDescendants = new HashSet<Class<? extends ConfiguredObject>>(model.getChildTypes(
+                candidate));
         while(allDescendants.size() > oldSize)
         {
             oldSize = allDescendants.size();
@@ -1659,6 +1720,29 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
             }
             throw new ServerScopedRuntimeException("Unable to find attribute definition for method " + method.getName());
+        }
+    }
+
+    protected final static class DuplicateIdException extends RuntimeException
+    {
+        public DuplicateIdException(final ConfiguredObject<?> child)
+        {
+            super("Child of type " + child.getClass().getSimpleName() + " already exists with id of " + child.getId());
+        }
+    }
+
+    protected final static class DuplicateNameException extends RuntimeException
+    {
+        private final String _name;
+        public DuplicateNameException(final ConfiguredObject<?> child)
+        {
+            super("Child of type " + child.getClass().getSimpleName() + " already exists with name of " + child.getName());
+            _name = child.getName();
+        }
+
+        public String getName()
+        {
+            return _name;
         }
     }
 }

@@ -21,6 +21,9 @@
 
 package org.apache.qpid.server.consumer;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -40,6 +43,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -229,6 +233,13 @@ public class MockConsumer implements ConsumerTarget
     private static class MockSessionModel implements AMQSessionModel
     {
         private final UUID _id = UUID.randomUUID();
+        private Session _modelObject;
+
+        private MockSessionModel()
+        {
+            _modelObject = mock(Session.class);
+            when(_modelObject.getCategoryClass()).thenReturn(Session.class);
+        }
 
         @Override
         public UUID getId()
@@ -349,6 +360,18 @@ public class MockConsumer implements ConsumerTarget
         public void addConsumerListener(final ConsumerListener listener)
         {
 
+        }
+
+        @Override
+        public void setModelObject(final Session session)
+        {
+            _modelObject = session;
+        }
+
+        @Override
+        public Session<?> getModelObject()
+        {
+            return _modelObject;
         }
 
         @Override

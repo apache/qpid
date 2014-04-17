@@ -130,6 +130,7 @@ public class ServerSession extends Session
     private final CheckCapacityAction _checkCapacityAction = new CheckCapacityAction();
     private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
     private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
+    private org.apache.qpid.server.model.Session<?> _modelObject;
 
 
     public static interface MessageDispositionChangeListener
@@ -859,6 +860,10 @@ public class ServerSession extends Session
         // unregister subscriptions in order to prevent sending of new messages
         // to subscriptions with closing session
         unregisterSubscriptions();
+        if(_modelObject != null)
+        {
+            _modelObject.delete();
+        }
         super.close();
     }
 
@@ -1001,6 +1006,18 @@ public class ServerSession extends Session
     public void removeConsumerListener(final ConsumerListener listener)
     {
         _consumerListeners.remove(listener);
+    }
+
+    @Override
+    public void setModelObject(final org.apache.qpid.server.model.Session<?> session)
+    {
+        _modelObject = session;
+    }
+
+    @Override
+    public org.apache.qpid.server.model.Session<?> getModelObject()
+    {
+        return _modelObject;
     }
 
     private void consumerAdded(Consumer<?> consumer)

@@ -24,12 +24,17 @@ import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Publisher;
+import org.apache.qpid.server.model.Session;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.ConsumerListener;
 
@@ -59,8 +64,10 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
             public void consumerRemoved(final Consumer<?> consumer)
             {
                 childRemoved(consumer);
+
             }
         });
+        session.setModelObject(this);
         open();
     }
 
@@ -157,6 +164,12 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     public long getUnacknowledgedMessages()
     {
         return _session.getUnacknowledgedMessageCount();
+    }
+
+    @Override
+    public void delete()
+    {
+        deleted();
     }
 
 

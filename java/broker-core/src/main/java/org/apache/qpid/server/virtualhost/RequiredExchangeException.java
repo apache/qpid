@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-public class RequiredExchangeException extends Exception
+public class RequiredExchangeException extends RuntimeException
 {
     public RequiredExchangeException(String name)
     {
-        super(name);
+        super("'" + name + "' is a reserved exchange and can't be deleted");
     }
 }

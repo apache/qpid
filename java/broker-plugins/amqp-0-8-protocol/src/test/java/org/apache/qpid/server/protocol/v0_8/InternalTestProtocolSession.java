@@ -272,11 +272,13 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
     }
 
+    private static final AtomicInteger portNumber = new AtomicInteger(0);
+    
     private static class TestNetworkConnection implements NetworkConnection
     {
         private String _remoteHost = "127.0.0.1";
         private String _localHost = "127.0.0.1";
-        private int _port = 1;
+        private int _port = portNumber.incrementAndGet();
         private final Sender<ByteBuffer> _sender;
 
         public TestNetworkConnection()

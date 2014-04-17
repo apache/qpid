@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
@@ -54,7 +55,6 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -65,6 +65,7 @@ import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
+import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -111,7 +112,15 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         super(parentsMap(vhost), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
         // check ACL
-        _virtualHost.getSecurityManager().authoriseCreateExchange(this);
+        try
+        {
+            _virtualHost.getSecurityManager().authoriseCreateExchange(this);
+        }
+        catch (AccessControlException e)
+        {
+            deleted();
+            throw e;
+        }
 
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
@@ -129,12 +138,49 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
+    public void validate()
+    {
+        super.validate();
+
+        if(!_virtualHost.getSecurityManager().isSystemProcess())
+        {
+            if (isReservedExchangeName(getName()))
+            {
+                deleted();
+                throw new ReservedExchangeNameException(getName());
+            }
+        }
+    }
+
+    private boolean isReservedExchangeName(String name)
+    {
+        if (name == null || ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equals(name)
+            || name.startsWith("amq.") || name.startsWith("qpid."))
+        {
+            return true;
+        }
+        return false;
+    }
+
+
+    @Override
     protected void onOpen()
     {
         super.onOpen();
-        postSetAlternateExchange();
+
         // Log Exchange creation
         getEventLogger().message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), isDurable()));
+    }
+
+    @Override
+    protected void onCreate()
+    {
+        super.onCreate();
+        if(isDurable())
+        {
+            DurableConfigurationStoreHelper.createExchange(getVirtualHost().getDurableConfigurationStore(), this);
+        }
+
     }
 
     @Override
@@ -156,8 +202,25 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return getLifetimePolicy() != LifetimePolicy.PERMANENT;
     }
 
-    public void close()
+    public void delete()
     {
+        _virtualHost.getSecurityManager().authoriseDelete(this);
+
+        if(hasReferrers())
+        {
+            throw new ExchangeIsAlternateException(getName());
+        }
+
+        if(getExchangeType().getDefaultExchangeName().equals( getName() ))
+        {
+            throw new RequiredExchangeException(getName());
+        }
+
+        if (isDurable() && !isAutoDelete())
+        {
+            DurableConfigurationStoreHelper.removeExchange(getVirtualHost().getDurableConfigurationStore(), this);
+
+        }
 
         if(_closed.compareAndSet(false,true))
         {
@@ -180,7 +243,15 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 task.performAction(this);
             }
             _closeTaskList.clear();
+
+            if (isDurable() && !isAutoDelete())
+            {
+                DurableConfigurationStoreHelper.removeExchange(getVirtualHost().getDurableConfigurationStore(), this);
+
+            }
         }
+        deleted();
+
     }
 
     public String toString()
@@ -623,10 +694,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
         if (id == null)
         {
-            id = UUIDGenerator.generateBindingUUID(getName(),
-                                                   queue.getName(),
-                                                   bindingKey,
-                                                   _virtualHost.getName());
+            id = UUID.randomUUID();
         }
 
         Map<String,Object> attributes = new HashMap<String, Object>();
@@ -636,35 +704,46 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             attributes.put(org.apache.qpid.server.model.Binding.ARGUMENTS, arguments);
         }
 
-        BindingImpl b = new BindingImpl(id, attributes, queue, this);
-
-        BindingImpl existingMapping = _bindingsMap.putIfAbsent(new BindingIdentifier(bindingKey,queue), b);
-        if (existingMapping == null || force)
+        BindingImpl existingMapping;
+        synchronized(this)
         {
-            b.addStateChangeListener(_bindingListener);
-            b.open();
-            if (existingMapping != null)
+            BindingIdentifier bindingIdentifier = new BindingIdentifier(bindingKey, queue);
+            existingMapping = _bindingsMap.get(bindingIdentifier);
+
+            if (existingMapping == null)
             {
-                existingMapping.delete();
-            }
+                BindingImpl b = new BindingImpl(id, attributes, queue, this);
+                b.addStateChangeListener(_bindingListener);
+                b.open();
 
-            if (b.isDurable() && !restore)
+                if (b.isDurable() && !restore)
+                {
+                    DurableConfigurationStoreHelper.createBinding(_virtualHost.getDurableConfigurationStore(), b);
+                }
+                _bindingsMap.put(bindingIdentifier, b);
+                queue.addBinding(b);
+                childAdded(b);
+
+                doAddBinding(b);
+
+                return true;
+            }
+            else if(force)
             {
-                DurableConfigurationStoreHelper.createBinding(_virtualHost.getDurableConfigurationStore(), b);
+                Map<String,Object> oldArguments = existingMapping.getArguments();
+                existingMapping.setArguments(arguments);
+                onBindingUpdated(existingMapping, oldArguments);
+                return true;
             }
-
-            queue.addBinding(b);
-            childAdded(b);
-
-            doAddBinding(b);
-
-            return true;
-        }
-        else
-        {
-            return false;
+            else
+            {
+                return false;
+            }
         }
     }
+
+    protected abstract void onBindingUpdated(final BindingImpl binding,
+                                             final Map<String, Object> oldArguments);
 
     @Override
     protected boolean setState(final State currentState, final State desiredState)
@@ -803,36 +882,11 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
-    public void delete()
-    {
-        try
-        {
-            _virtualHost.removeExchange(this,true);
-        }
-        catch (ExchangeIsAlternateException e)
-        {
-            throw new UnsupportedOperationException(e.getMessage(),e);
-        }
-        catch (RequiredExchangeException e)
-        {
-            throw new UnsupportedOperationException("'"+e.getMessage()+"' is a reserved exchange and can't be deleted",e);
-        }
-    }
-
-    @Override
     public Object getAttribute(final String name)
     {
         if(ConfiguredObject.STATE.equals(name))
         {
             return getState();
-        }
-        else if(LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
         }
         return super.getAttribute(name);
     }

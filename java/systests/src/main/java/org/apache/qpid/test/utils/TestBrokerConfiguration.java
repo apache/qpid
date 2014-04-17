@@ -37,15 +37,16 @@ import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.adapter.FileBasedGroupProvider;
+import org.apache.qpid.server.model.adapter.FileBasedGroupProviderImpl;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
-import org.apache.qpid.server.security.group.FileGroupManagerFactory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
@@ -73,9 +74,9 @@ public class TestBrokerConfiguration
     private MemoryConfigurationEntryStore _store;
     private boolean _saved;
 
-    public TestBrokerConfiguration(String storeType, String intialStoreLocation)
+    public TestBrokerConfiguration(String storeType, String intialStoreLocation, final TaskExecutor taskExecutor)
     {
-        _store = new MemoryConfigurationEntryStore(new SystemContextImpl(new TaskExecutor(), new ConfiguredObjectFactory(
+        _store = new MemoryConfigurationEntryStore(new SystemContextImpl(taskExecutor, new ConfiguredObjectFactoryImpl(
                 Model.getInstance()),
                                                                      mock(EventLogger.class), mock(LogRecorder.class),
                                                                      mock(BrokerOptions.class)),
@@ -163,8 +164,8 @@ public class TestBrokerConfiguration
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(GroupProvider.NAME, ENTRY_NAME_GROUP_FILE);
-        attributes.put(GroupProvider.TYPE, FileGroupManagerFactory.GROUP_FILE_PROVIDER_TYPE);
-        attributes.put(FileGroupManagerFactory.PATH, groupFilePath);
+        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
+        attributes.put(FileBasedGroupProvider.PATH, groupFilePath);
 
         return addObjectConfiguration(GroupProvider.class, attributes);
     }

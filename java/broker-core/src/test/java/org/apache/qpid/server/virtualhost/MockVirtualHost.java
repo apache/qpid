@@ -35,12 +35,12 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectAttribute;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostAlias;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -433,20 +433,15 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
         return null;
     }
 
-    @Override
-    public Collection<ExchangeType<? extends ExchangeImpl>> getExchangeTypes()
-    {
-        return null;
-    }
-
     public SecurityManager getSecurityManager()
     {
         return null;
     }
 
     @Override
-    public void addVirtualHostListener(VirtualHostListener listener)
+    public ConfiguredObjectFactory getObjectFactory()
     {
+        return null;
     }
 
     public LinkRegistry getLinkRegistry(String remoteContainerId)
@@ -530,6 +525,18 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(final Class<C> clazz)
+    {
+        return null;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C getChildById(final Class<C> clazz, final UUID id)
+    {
+        return null;
+    }
+
+    @Override
+    public <C extends ConfiguredObject> C getChildByName(final Class<C> clazz, final String name)
     {
         return null;
     }

@@ -126,18 +126,21 @@ public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost
         getEventLogger().message(_messageStoreLogSubject, MessageStoreMessages.CREATED());
 
         Map<String, Object> configurationStoreSettings = virtualHost.getConfigurationStoreSettings();
-        String configurationStoreType = configurationStoreSettings == null ? null : (String) configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE);
+        String configurationStoreType = configurationStoreSettings == null
+                ? null
+                : (String) configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE);
         _durableConfigurationStore = initialiseConfigurationStore(configurationStoreType);
         boolean combinedStores = _durableConfigurationStore == _messageStore;
         if (combinedStores)
         {
-            configurationStoreSettings = new HashMap<String,Object>(messageStoreSettings);
+            configurationStoreSettings = new HashMap<String, Object>(messageStoreSettings);
             configurationStoreSettings.put(DurableConfigurationStore.IS_MESSAGE_STORE_TOO, true);
         }
 
         if (!combinedStores)
         {
-            _configurationStoreLogSubject = new MessageStoreLogSubject(getName(), _durableConfigurationStore.getClass().getSimpleName());
+            _configurationStoreLogSubject =
+                    new MessageStoreLogSubject(getName(), _durableConfigurationStore.getClass().getSimpleName());
             getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.CREATED());
         }
 
@@ -145,25 +148,32 @@ public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost
 
         _messageStore.openMessageStore(virtualHost, virtualHost.getMessageStoreSettings());
 
-        getEventLogger().message(_messageStoreLogSubject, MessageStoreMessages.STORE_LOCATION(_messageStore.getStoreLocation()));
+        getEventLogger().message(_messageStoreLogSubject,
+                                 MessageStoreMessages.STORE_LOCATION(_messageStore.getStoreLocation()));
 
         if (_configurationStoreLogSubject != null)
         {
-            getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.STORE_LOCATION(configurationStoreSettings.toString()));
+            getEventLogger().message(_configurationStoreLogSubject,
+                                     ConfigStoreMessages.STORE_LOCATION(configurationStoreSettings.toString()));
             getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.RECOVERY_START());
         }
 
-        ConfiguredObjectRecordHandler upgraderRecoverer = new ConfiguredObjectRecordRecoveverAndUpgrader(this, getDurableConfigurationRecoverers());
 
-        _durableConfigurationStore.visitConfiguredObjectRecords(upgraderRecoverer);
+        if (isStoreEmpty())
+        {
+            createDefaultExchanges();
+        }
+        else
+        {
+            ConfiguredObjectRecordHandler upgraderRecoverer =
+                    new ConfiguredObjectRecordRecoveverAndUpgrader(this, getDurableConfigurationRecoverers());
+            _durableConfigurationStore.visitConfiguredObjectRecords(upgraderRecoverer);
+        }
 
         if (_configurationStoreLogSubject != null)
         {
             getEventLogger().message(_configurationStoreLogSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
         }
-
-        // If store does not have entries for standard exchanges (amq.*), the following will create them.
-        initialiseModel();
 
         new MessageStoreRecoverer(this, getMessageStoreLogSubject()).recover();
 
@@ -193,4 +203,5 @@ public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost
     {
         return _configurationStoreLogSubject;
     }
+
 }

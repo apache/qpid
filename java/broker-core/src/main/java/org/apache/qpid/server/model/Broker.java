@@ -194,4 +194,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     void setEventLogger(EventLogger eventLogger);
 
     AuthenticationProvider<?> getManagementModeAuthenticationProvider();
+
+    ConfiguredObjectFactory getObjectFactory();
 }

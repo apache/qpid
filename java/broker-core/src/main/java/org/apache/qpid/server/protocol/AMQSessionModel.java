@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.Deletable;
 
@@ -94,4 +95,8 @@ public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQCo
     void addConsumerListener(ConsumerListener listener);
 
     void removeConsumerListener(ConsumerListener listener);
+
+    void setModelObject(Session<?> session);
+
+    Session<?> getModelObject();
 }

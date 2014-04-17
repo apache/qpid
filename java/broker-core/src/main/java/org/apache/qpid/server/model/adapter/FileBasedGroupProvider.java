@@ -27,6 +27,8 @@ import org.apache.qpid.server.model.ManagedObject;
 @ManagedObject( category = false, type = "GroupFile" )
 public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> extends GroupProvider<X>
 {
+    String PATH="path";
+
     @ManagedAttribute( automate = true, mandatory = true)
     String getPath();
 }
