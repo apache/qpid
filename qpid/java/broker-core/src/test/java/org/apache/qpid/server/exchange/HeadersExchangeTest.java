@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.server.exchange;
 
+import static org.mockito.Matchers.anySet;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,40 +33,44 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import junit.framework.TestCase;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import static org.mockito.Matchers.anySet;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class HeadersExchangeTest extends TestCase
 {
     private HeadersExchange _exchange;
     private VirtualHostImpl _virtualHost;
+    private TaskExecutor _taskExecutor;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
         _virtualHost = mock(VirtualHostImpl.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
+        when(_virtualHost.getCategoryClass()).thenReturn(VirtualHost.class);
+        when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Exchange.ID, UUID.randomUUID());
         attributes.put(Exchange.NAME, "test");
@@ -69,6 +78,12 @@ public class HeadersExchangeTest extends TestCase
 
         _exchange = new HeadersExchange(_virtualHost, attributes);
 
+    }
+
+    public void tearDown() throws Exception
+    {
+        super.tearDown();
+        _taskExecutor.stop();
     }
 
     protected void routeAndTest(ServerMessage msg, AMQQueue... expected) throws Exception
@@ -127,6 +142,7 @@ public class HeadersExchangeTest extends TestCase
         AMQQueue q = mock(AMQQueue.class);
         when(q.toString()).thenReturn(name);
         when(q.getVirtualHost()).thenReturn(_virtualHost);
+        when(q.getCategoryClass()).thenReturn(Queue.class);
         return q;
     }
 

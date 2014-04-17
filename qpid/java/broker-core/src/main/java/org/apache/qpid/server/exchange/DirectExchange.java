@@ -70,6 +70,11 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
             recalculateQueues();
         }
 
+        public synchronized void updateBinding(BindingImpl binding)
+        {
+            recalculateQueues();
+        }
+
         private void recalculateQueues()
         {
             List<BaseQueue> queues = new ArrayList<BaseQueue>(_bindings.size());
@@ -186,6 +191,19 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
         }
 
 
+    }
+
+    @Override
+    protected void onBindingUpdated(final BindingImpl binding, final Map<String, Object> oldArguments)
+    {
+        String bindingKey = binding.getBindingKey();
+        AMQQueue queue = binding.getAMQQueue();
+
+        assert queue != null;
+        assert bindingKey != null;
+
+        BindingSet bindings = _bindingsByKey.get(bindingKey);
+        bindings.updateBinding(binding);
     }
 
     protected void onBind(final BindingImpl binding)

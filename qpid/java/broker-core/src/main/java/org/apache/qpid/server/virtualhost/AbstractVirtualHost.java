@@ -42,15 +42,13 @@ import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
-import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
-import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.DefaultDestination;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
@@ -64,7 +62,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
 import org.apache.qpid.server.model.adapter.VirtualHostAliasAdapter;
-import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -78,6 +76,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
@@ -85,6 +84,7 @@ import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -105,10 +105,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private final Broker<?> _broker;
 
     private final QueueRegistry _queueRegistry;
-
-    private final ExchangeRegistry _exchangeRegistry;
-
-    private final ExchangeFactory _exchangeFactory;
 
     private final ConnectionRegistry _connectionRegistry;
 
@@ -166,6 +162,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     @ManagedAttributeField
     private String _securityAcl;
+    private MessageDestination _defaultDestination;
 
 
     public AbstractVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
@@ -186,9 +183,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _queueFactory = new AMQQueueFactory(this, _queueRegistry);
 
-        _exchangeFactory = new DefaultExchangeFactory(this);
-
-        _exchangeRegistry = new DefaultExchangeRegistry(this, _queueRegistry);
+        _defaultDestination = new DefaultDestination(this);
 
     }
 
@@ -294,6 +289,40 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     abstract protected void initialiseStorage(org.apache.qpid.server.model.VirtualHost<?,?,?> virtualHost);
 
+    protected boolean isStoreEmpty()
+    {
+        final IsStoreEmptyHandler isStoreEmptyHandler = new IsStoreEmptyHandler();
+
+        getDurableConfigurationStore().visitConfiguredObjectRecords(isStoreEmptyHandler);
+
+        return isStoreEmptyHandler.isEmpty();
+    }
+
+    protected void createDefaultExchanges()
+    {
+        Subject.doAs(getSecurityManager().getSubjectWithAddedSystemRights(), new PrivilegedAction<Void>()
+        {
+            @Override
+            public Void run()
+            {
+                addStandardExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
+                addStandardExchange(ExchangeDefaults.TOPIC_EXCHANGE_NAME, ExchangeDefaults.TOPIC_EXCHANGE_CLASS);
+                addStandardExchange(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
+                addStandardExchange(ExchangeDefaults.FANOUT_EXCHANGE_NAME, ExchangeDefaults.FANOUT_EXCHANGE_CLASS);
+                return null;
+            }
+
+            void addStandardExchange(String name, String type)
+            {
+                Map<String, Object> attributes = new HashMap<String, Object>();
+                attributes.put(Exchange.NAME, name);
+                attributes.put(Exchange.TYPE, type);
+                attributes.put(Exchange.ID, UUIDGenerator.generateExchangeUUID(name, getName()));
+                childAdded(addExchange(attributes));
+            }
+        });
+    }
+
     abstract protected MessageStoreLogSubject getMessageStoreLogSubject();
 
     public IConnectionRegistry getConnectionRegistry()
@@ -387,11 +416,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        if(clazz == Exchange.class)
-        {
-            return (Collection<C>) getExchanges();
-        }
-        else if(clazz == Queue.class)
+        if(clazz == Queue.class)
         {
             return (Collection<C>) getQueues();
         }
@@ -405,12 +430,12 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
         else
         {
-            return Collections.emptySet();
+            return super.getChildren(clazz);
         }
     }
 
     @Override
-    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    protected <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         checkVHostStateIsActive();
         if(childClass == Exchange.class)
@@ -436,13 +461,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     public Collection<String> getExchangeTypeNames()
     {
-        Collection<String> exchangeTypes = new ArrayList<String>();
-
-        for(ExchangeType<? extends ExchangeImpl> type : getExchangeTypes())
-        {
-            exchangeTypes.add(type.getType());
-        }
-        return Collections.unmodifiableCollection(exchangeTypes);
+        return getObjectFactory().getSupportedTypes(Exchange.class);
     }
 
 
@@ -540,20 +559,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
 
-    protected void initialiseModel()
-    {
-        Subject.doAs(getSecurityManager().getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
-                     {
-                         @Override
-                         public Object run()
-                         {
-                             _exchangeRegistry.initialise(_exchangeFactory);
-                             return null;
-                         }
-                     });
-    }
-
-
     public long getCreateTime()
     {
         return _createTime;
@@ -562,63 +567,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public QueueRegistry getQueueRegistry()
     {
         return _queueRegistry;
-    }
-
-    protected ExchangeRegistry getExchangeRegistry()
-    {
-        return _exchangeRegistry;
-    }
-
-    protected ExchangeFactory getExchangeFactory()
-    {
-        return _exchangeFactory;
-    }
-
-    @Override
-    public void addVirtualHostListener(final VirtualHostListener listener)
-    {
-        _exchangeRegistry.addRegistryChangeListener(new ExchangeRegistry.RegistryChangeListener()
-        {
-            @Override
-            public void exchangeRegistered(ExchangeImpl exchange)
-            {
-                listener.exchangeRegistered(exchange);
-            }
-
-            @Override
-            public void exchangeUnregistered(ExchangeImpl exchange)
-            {
-                listener.exchangeUnregistered(exchange);
-            }
-        });
-        _queueRegistry.addRegistryChangeListener(new QueueRegistry.RegistryChangeListener()
-        {
-            @Override
-            public void queueRegistered(AMQQueue queue)
-            {
-                listener.queueRegistered(queue);
-            }
-
-            @Override
-            public void queueUnregistered(AMQQueue queue)
-            {
-                listener.queueUnregistered(queue);
-            }
-        });
-        _connectionRegistry.addRegistryChangeListener(new IConnectionRegistry.RegistryChangeListener()
-        {
-            @Override
-            public void connectionRegistered(AMQConnectionModel connection)
-            {
-                listener.connectionRegistered(connection);
-            }
-
-            @Override
-            public void connectionUnregistered(AMQConnectionModel connection)
-            {
-                listener.connectionUnregistered(connection);
-            }
-        });
     }
 
     @Override
@@ -716,7 +664,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             if(!attributes.containsKey(Queue.ID))
             {
 
-                UUID id = UUIDGenerator.generateQueueUUID(queueName, getName());
+                UUID id = UUID.randomUUID();
                 while(_queueRegistry.getQueue(id) != null)
                 {
                     id = UUID.randomUUID();
@@ -749,31 +697,26 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public ExchangeImpl getExchange(String name)
     {
-        return _exchangeRegistry.getExchange(name);
+        return getChildByName(ExchangeImpl.class,name);
     }
 
     @Override
     public ExchangeImpl getExchange(UUID id)
     {
-        return _exchangeRegistry.getExchange(id);
+        return getChildById(ExchangeImpl.class, id);
     }
 
     @Override
     public MessageDestination getDefaultDestination()
     {
-        return _exchangeRegistry.getDefaultExchange();
+        return _defaultDestination;
     }
 
     @Override
     public Collection<ExchangeImpl<?>> getExchanges()
     {
-        return Collections.unmodifiableCollection(_exchangeRegistry.getExchanges());
-    }
-
-    @Override
-    public Collection<ExchangeType<? extends ExchangeImpl>> getExchangeTypes()
-    {
-        return _exchangeFactory.getRegisteredTypes();
+        Collection children = getChildren(Exchange.class);
+        return children;
     }
 
     public ExchangeImpl<?> createExchange(final String name,
@@ -889,69 +832,27 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType
     {
-        String name = MapValueConverter.getStringAttribute(org.apache.qpid.server.model.Exchange.NAME, attributes);
-        if(attributes.get(Exchange.DURABLE) == null)
+        Broker<?> broker = getParent(Broker.class);
+
+        ConfiguredObjectTypeFactory<? extends Exchange> factory =
+                broker.getObjectFactory().getConfiguredObjectTypeFactory(Exchange.class, attributes);
+
+        try
         {
-            attributes = new HashMap<String, Object>(attributes);
-            attributes.put(Exchange.DURABLE, false);
+            return (ExchangeImpl) factory.create(attributes, this);
         }
-        boolean durable =
-                MapValueConverter.getBooleanAttribute(Exchange.DURABLE, attributes);
-
-
-        synchronized (_exchangeRegistry)
+        catch (DuplicateNameException e)
         {
-            ExchangeImpl existing;
-            if((existing = _exchangeRegistry.getExchange(name)) !=null)
-            {
-                throw new ExchangeExistsException(name,existing);
-            }
-            if(_exchangeRegistry.isReservedExchangeName(name))
-            {
-                throw new ReservedExchangeNameException(name);
-            }
-
-
-            if(attributes.get(org.apache.qpid.server.model.Exchange.ID) == null)
-            {
-                attributes = new LinkedHashMap<String, Object>(attributes);
-                attributes.put(org.apache.qpid.server.model.Exchange.ID,
-                               UUIDGenerator.generateExchangeUUID(name, getName()));
-            }
-
-            ExchangeImpl exchange = _exchangeFactory.createExchange(attributes);
-
-            _exchangeRegistry.registerExchange(exchange);
-            if(durable)
-            {
-                DurableConfigurationStoreHelper.createExchange(getDurableConfigurationStore(), exchange);
-            }
-            return exchange;
+            throw new ExchangeExistsException(getExchange(e.getName()));
         }
+
     }
 
     @Override
     public void removeExchange(ExchangeImpl exchange, boolean force)
             throws ExchangeIsAlternateException, RequiredExchangeException
     {
-        if(exchange.hasReferrers())
-        {
-            throw new ExchangeIsAlternateException(exchange.getName());
-        }
-
-        for(ExchangeType type : getExchangeTypes())
-        {
-            if(type.getDefaultExchangeName().equals( exchange.getName() ))
-            {
-                throw new RequiredExchangeException(exchange.getName());
-            }
-        }
-        _exchangeRegistry.unregisterExchange(exchange.getName(), !force);
-        if (exchange.isDurable() && !exchange.isAutoDelete())
-        {
-            DurableConfigurationStoreHelper.removeExchange(getDurableConfigurationStore(), exchange);
-        }
-
+        exchange.delete();
     }
 
     public SecurityManager getSecurityManager()
@@ -959,17 +860,20 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _broker.getSecurityManager();
     }
 
+    @Override
+    public ConfiguredObjectFactory getObjectFactory()
+    {
+        return _broker.getObjectFactory();
+    }
+
     public void close()
     {
         //Stop Connections
         _connectionRegistry.close();
-        _queueRegistry.stopAllAndUnregisterMBeans();
+        _queueRegistry.close();
         _dtxRegistry.close();
         closeStorage();
         shutdownHouseKeeping();
-
-        // clear exchange objects
-        _exchangeRegistry.clearAndUnregisterMbeans();
 
         _state = VirtualHostState.STOPPED;
 
@@ -1220,9 +1124,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     protected Map<String, DurableConfiguredObjectRecoverer> getDurableConfigurationRecoverers()
     {
         DurableConfiguredObjectRecoverer[] recoverers = {
-          new QueueRecoverer(this, getExchangeRegistry(), _queueFactory),
-          new ExchangeRecoverer(getExchangeRegistry(), getExchangeFactory()),
-          new BindingRecoverer(this, getExchangeRegistry())
+          new QueueRecoverer(this, _queueFactory),
+          new ExchangeRecoverer(this),
+          new BindingRecoverer(this)
         };
 
         final Map<String, DurableConfiguredObjectRecoverer> recovererMap= new HashMap<String, DurableConfiguredObjectRecoverer>();
@@ -1231,6 +1135,35 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             recovererMap.put(recoverer.getType(), recoverer);
         }
         return recovererMap;
+    }
+
+    private static class IsStoreEmptyHandler implements ConfiguredObjectRecordHandler
+    {
+        private boolean _empty = true;
+
+        @Override
+        public void begin()
+        {
+        }
+
+        @Override
+        public boolean handle(final ConfiguredObjectRecord record)
+        {
+            // if there is a non vhost record then the store is not empty and we can stop looking at the records
+            _empty = record.getType().equals(VirtualHost.class.getSimpleName());
+            return _empty;
+        }
+
+        @Override
+        public void end()
+        {
+
+        }
+
+        public boolean isEmpty()
+        {
+            return _empty;
+        }
     }
 
     private class VirtualHostHouseKeepingTask extends HouseKeepingTask
@@ -1425,12 +1358,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
         else if(SUPPORTED_EXCHANGE_TYPES.equals(name))
         {
-            List<String> types = new ArrayList<String>();
-            for(ExchangeType<?> type : getExchangeTypes())
-            {
-                types.add(type.getType());
-            }
-            return Collections.unmodifiableCollection(types);
+            return getObjectFactory().getSupportedTypes(Exchange.class);
         }
         else if(SUPPORTED_QUEUE_TYPES.equals(name))
         {
@@ -1443,12 +1371,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public Collection<String> getSupportedExchangeTypes()
     {
-        List<String> types = new ArrayList<String>();
-        for(ExchangeType<?> type : getExchangeTypes())
-        {
-            types.add(type.getType());
-        }
-        return Collections.unmodifiableCollection(types);
+        return getObjectFactory().getSupportedTypes(Exchange.class);
     }
 
     @Override

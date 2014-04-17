@@ -44,6 +44,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
     public void testAutoDeleteQueue() throws Exception
     {
         getQueue().stop();
+        getQueue().delete();
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getQname());

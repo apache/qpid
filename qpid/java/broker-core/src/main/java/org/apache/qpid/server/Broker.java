@@ -44,6 +44,7 @@ import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
@@ -60,6 +61,7 @@ public class Broker
     private volatile IApplicationRegistry _applicationRegistry;
     private EventLogger _eventLogger;
     private boolean _configuringOwnLogging = false;
+    private final TaskExecutor _taskExecutor = new TaskExecutor();
 
     protected static class InitException extends RuntimeException
     {
@@ -85,6 +87,8 @@ public class Broker
                 {
                     _applicationRegistry.close();
                 }
+                _taskExecutor.stop();
+
             }
             finally
             {
@@ -134,10 +138,10 @@ public class Broker
         }
 
         LogRecorder logRecorder = new LogRecorder();
-        TaskExecutor taskExecutor = new TaskExecutor();
-        taskExecutor.start();
-        ConfiguredObjectFactory configuredObjectFactory = new ConfiguredObjectFactory(Model.getInstance());
-        SystemContext systemContext = new SystemContextImpl(taskExecutor, configuredObjectFactory, _eventLogger, logRecorder, options);
+
+        _taskExecutor.start();
+        ConfiguredObjectFactory configuredObjectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        SystemContext systemContext = new SystemContextImpl(_taskExecutor, configuredObjectFactory, _eventLogger, logRecorder, options);
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
         DurableConfigurationStore store = storeCreator.createStore(systemContext, storeType, options.getInitialConfigurationLocation(),

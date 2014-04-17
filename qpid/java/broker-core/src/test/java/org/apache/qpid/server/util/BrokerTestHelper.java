@@ -21,24 +21,33 @@
 package org.apache.qpid.server.util;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.SocketAddress;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.security.auth.Subject;
+
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -46,6 +55,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
@@ -68,6 +78,7 @@ public class BrokerTestHelper
 
     public static Broker createBrokerMock()
     {
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
         SubjectCreator subjectCreator = mock(SubjectCreator.class);
         when(subjectCreator.getMechanisms()).thenReturn("");
         Broker broker = mock(Broker.class);
@@ -77,7 +88,9 @@ public class BrokerTestHelper
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
         when(broker.getVirtualHostRegistry()).thenReturn(new VirtualHostRegistry(new EventLogger()));
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(mock(Broker.class), false));
+        when(broker.getObjectFactory()).thenReturn(objectFactory);
         when(broker.getEventLogger()).thenReturn(new EventLogger());
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
         return broker;
     }
 
@@ -94,14 +107,20 @@ public class BrokerTestHelper
     {
 
         //VirtualHostFactory factory = new PluggableFactoryLoader<VirtualHostFactory>(VirtualHostFactory.class).get(hostType);
-
+        SystemContext systemContext = new SystemContextImpl(TASK_EXECUTOR,
+                                                            new ConfiguredObjectFactoryImpl(Model.getInstance()),
+                                                            mock(EventLogger.class),
+                                                            mock(LogRecorder.class),
+                                                            new BrokerOptions());
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
         Broker broker = mock(Broker.class);
+        when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
         when(broker.getVirtualHostRegistry()).thenReturn(virtualHostRegistry);
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         SecurityManager securityManager = new SecurityManager(broker, false);
         when(broker.getSecurityManager()).thenReturn(securityManager);
-
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactory(Model.getInstance());
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
+        when(broker.getObjectFactory()).thenReturn(objectFactory);
         ConfiguredObjectTypeFactory factory = objectFactory.getConfiguredObjectTypeFactory(org.apache.qpid.server.model.VirtualHost.class,
                                                                       attributes);
 
@@ -165,17 +184,29 @@ public class BrokerTestHelper
     public static ExchangeImpl createExchange(String hostName, final boolean durable, final EventLogger eventLogger) throws Exception
     {
         SecurityManager securityManager = new SecurityManager(mock(Broker.class), false);
-        VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
+        final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getName()).thenReturn(hostName);
         when(virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(virtualHost.getEventLogger()).thenReturn(eventLogger);
-        DefaultExchangeFactory factory = new DefaultExchangeFactory(virtualHost);
-        Map<String,Object> attributes = new HashMap<String, Object>();
+        when(virtualHost.getDurableConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        final Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.Exchange.ID, UUIDGenerator.generateExchangeUUID("amp.direct", virtualHost.getName()));
         attributes.put(org.apache.qpid.server.model.Exchange.NAME, "amq.direct");
         attributes.put(org.apache.qpid.server.model.Exchange.TYPE, "direct");
         attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, durable);
-        return factory.createExchange(attributes);
+        final ConfiguredObjectTypeFactory<? extends Exchange> exchangeFactory =
+                objectFactory.getConfiguredObjectTypeFactory(Exchange.class, attributes);
+        return Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<ExchangeImpl>()
+        {
+            @Override
+            public ExchangeImpl run()
+            {
+
+                return (ExchangeImpl) exchangeFactory.create(attributes, virtualHost);
+            }
+        });
+
     }
 
     public static AMQQueue createQueue(String queueName, VirtualHostImpl virtualHost)

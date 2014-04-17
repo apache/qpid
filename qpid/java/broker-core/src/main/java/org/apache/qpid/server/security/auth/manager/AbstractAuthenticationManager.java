@@ -37,6 +37,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.Model;
@@ -158,7 +159,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         if(childClass == PreferencesProvider.class)
         {
             // TODO RG - get the configured object factory from parents
-            ConfiguredObjectFactory factory = new ConfiguredObjectFactory(Model.getInstance());
+            ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(Model.getInstance());
             attributes = new HashMap<String, Object>(attributes);
             attributes.put(ConfiguredObject.ID, UUID.randomUUID());
             final ConfiguredObjectTypeFactory preferencesFactory =
@@ -236,7 +237,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
             {
                 try
                 {
-                    initialise();
                     if (_preferencesProvider != null)
                     {
                         _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.ACTIVE);
@@ -255,6 +255,10 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
                         throw e;
                     }
                 }
+            }
+            if(state == State.ERRORED)
+            {
+                return false;
             }
             else
             {

@@ -25,26 +25,35 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ExternalFileBasedAuthenticationManager;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 public abstract class PrincipalDatabaseAuthenticationManager<T extends PrincipalDatabaseAuthenticationManager<T>>
@@ -54,6 +63,8 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
 
     private static final Logger LOGGER = Logger.getLogger(PrincipalDatabaseAuthenticationManager.class);
 
+
+    private final Map<Principal, PrincipalAdapter> _userMap = new ConcurrentHashMap<Principal, PrincipalAdapter>();
 
     private PrincipalDatabase _principalDatabase;
     @ManagedAttributeField
@@ -92,6 +103,21 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     {
         super.onOpen();
         _principalDatabase = createDatabase();
+        try
+        {
+            initialise();
+            List<Principal> users =
+                    _principalDatabase == null ? Collections.<Principal>emptyList() : _principalDatabase.getUsers();
+            for (Principal user : users)
+            {
+                _userMap.put(user, new PrincipalAdapter(user));
+            }
+        }
+        catch(IllegalConfigurationException e)
+        {
+            updateState(getState(), State.ERRORED);
+
+        }
     }
 
     protected abstract PrincipalDatabase createDatabase();
@@ -202,16 +228,41 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     public boolean createUser(String username, String password, Map<String, String> attributes)
     {
         getSecurityManager().authoriseUserOperation(Operation.CREATE, username);
-        return getPrincipalDatabase().createPrincipal(new UsernamePrincipal(username), password.toCharArray());
+        Principal principal = new UsernamePrincipal(username);
+        boolean created =
+                getPrincipalDatabase().createPrincipal(principal, password.toCharArray());
+        if(created)
+        {
+            principal = getPrincipalDatabase().getUser(username);
 
+            _userMap.put(principal, new PrincipalAdapter(principal));
+        }
+        return created;
+
+    }
+
+
+    private void deleteUserFromDatabase(String username) throws AccountNotFoundException
+    {
+        getSecurityManager().authoriseUserOperation(Operation.DELETE, username);
+        UsernamePrincipal principal = new UsernamePrincipal(username);
+        getPrincipalDatabase().deletePrincipal(principal);
+        _userMap.remove(principal);
     }
 
     @Override
     public void deleteUser(String username) throws AccountNotFoundException
     {
-        getSecurityManager().authoriseUserOperation(Operation.DELETE, username);
-        getPrincipalDatabase().deletePrincipal(new UsernamePrincipal(username));
-
+        UsernamePrincipal principal = new UsernamePrincipal(username);
+        PrincipalAdapter user = _userMap.get(principal);
+        if(user != null)
+        {
+            user.setState(user.getState(), State.DELETED);
+        }
+        else
+        {
+            deleteUserFromDatabase(username);
+        }
     }
 
     private org.apache.qpid.server.security.SecurityManager getSecurityManager()
@@ -258,9 +309,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
 
             if(createUser(username, password,null))
             {
-                @SuppressWarnings("unchecked")
-                C principalAdapter = (C) new PrincipalAdapter(p);
-                return principalAdapter;
+                return (C) _userMap.get(p);
             }
             else
             {
@@ -276,23 +325,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        if(clazz == User.class)
-        {
-            PrincipalDatabase principalDatabase = getPrincipalDatabase();
-            List<Principal> users = principalDatabase == null ? Collections.<Principal>emptyList() : principalDatabase.getUsers();
-            Collection<User> principals = new ArrayList<User>(users.size());
-            for(Principal user : users)
-            {
-                principals.add(new PrincipalAdapter(user));
-            }
-            @SuppressWarnings("unchecked")
-            Collection<C> unmodifiablePrincipals = (Collection<C>) Collections.unmodifiableCollection(principals);
-            return unmodifiablePrincipals;
-        }
-        else
-        {
-            return super.getChildren(clazz);
-        }
+        return super.getChildren(clazz);
     }
 
     @Override
@@ -426,12 +459,13 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
                 try
                 {
                     String userName = _user.getName();
-                    deleteUser(userName);
+                    deleteUserFromDatabase(userName);
                     PreferencesProvider preferencesProvider = getPreferencesProvider();
                     if (preferencesProvider != null)
                     {
                         preferencesProvider.deletePreferences(userName);
                     }
+                    deleted();
                 }
                 catch (AccountNotFoundException e)
                 {

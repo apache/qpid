@@ -38,8 +38,10 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.StateChangeListener;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class BindingImpl
         extends AbstractConfiguredObject<BindingImpl>
@@ -48,8 +50,7 @@ public class BindingImpl
     private final String _bindingKey;
     private final AMQQueue _queue;
     private final ExchangeImpl _exchange;
-    private final Map<String, Object> _arguments;
-    private final UUID _id;
+    private Map<String, Object> _arguments;
     private final AtomicLong _matches = new AtomicLong();
     private final BindingLogSubject _logSubject;
 
@@ -81,7 +82,6 @@ public class BindingImpl
     public BindingImpl(UUID id, Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
         super(parentsMap(queue,exchange),enhanceWithDurable(combineIdWithAttributes(id, attributes), queue, exchange),queue.getVirtualHost().getTaskExecutor());
-        _id = id;
         _bindingKey = (String)attributes.get(org.apache.qpid.server.model.Binding.NAME);
         _queue = queue;
         _exchange = exchange;
@@ -198,7 +198,7 @@ public class BindingImpl
 
     public String toString()
     {
-        return "Binding{bindingKey="+_bindingKey+", exchange="+_exchange+", queue="+_queue+", id= " + _id + " }";
+        return "Binding{bindingKey="+_bindingKey+", exchange="+_exchange+", queue="+_queue+", id= " + getId() + " }";
     }
 
     public void delete()
@@ -229,36 +229,6 @@ public class BindingImpl
     }
 
     @Override
-    public Object getAttribute(final String name)
-    {
-        if(ID.equals(name))
-        {
-            return getId();
-        }
-        else if(NAME.equals(name))
-        {
-            return _bindingKey;
-        }
-        else if(DURABLE.equals(name))
-        {
-            return isDurable();
-        }
-        else if(LIFETIME_POLICY.equals(name))
-        {
-            return getLifetimePolicy();
-        }
-        else if(QUEUE.equals(name))
-        {
-            return _queue;
-        }
-        else if(EXCHANGE.equals(name))
-        {
-            return _exchange;
-        }
-        return super.getAttribute(name);
-    }
-
-    @Override
     public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
                                                                                                       AccessControlException, IllegalArgumentException
     {
@@ -275,5 +245,30 @@ public class BindingImpl
     private EventLogger getEventLogger()
     {
         return _exchange.getEventLogger();
+    }
+
+    public void setArguments(final Map<String, Object> arguments)
+    {
+        if(getTaskExecutor().isTaskExecutorThread())
+        {
+            _arguments = arguments;
+            super.setAttribute(ARGUMENTS, getActualAttributes().get(ARGUMENTS), arguments);
+            if (isDurable())
+            {
+                VirtualHostImpl<?, ?, ?> vhost = (VirtualHostImpl<?, ?, ?>) _exchange.getParent(VirtualHost.class);
+                vhost.getDurableConfigurationStore().update(true, asObjectRecord());
+            }
+        }
+        else
+        {
+            getTaskExecutor().submitAndWait(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    setArguments(arguments);
+                }
+            });
+        }
     }
 }

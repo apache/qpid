@@ -62,6 +62,7 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.VirtualHost;
@@ -77,6 +78,8 @@ import org.apache.qpid.util.SystemUtils;
  */
 public class QpidBrokerTestCase extends QpidTestCase
 {
+    private TaskExecutor _taskExecutor;
+
     public enum BrokerType
     {
         EXTERNAL /** Test case relies on a Broker started independently of the test-suite */,
@@ -226,7 +229,12 @@ public class QpidBrokerTestCase extends QpidTestCase
     public TestBrokerConfiguration createBrokerConfiguration(int port)
     {
         int actualPort = getPort(port);
-        TestBrokerConfiguration  configuration = new TestBrokerConfiguration(System.getProperty(_brokerStoreType), _configFile.getAbsolutePath());
+        if(_taskExecutor == null)
+        {
+            _taskExecutor = new TaskExecutor();
+            _taskExecutor.start();
+        }
+        TestBrokerConfiguration  configuration = new TestBrokerConfiguration(System.getProperty(_brokerStoreType), _configFile.getAbsolutePath(), _taskExecutor);
         synchronized (_brokerConfigurations)
         {
             _brokerConfigurations.put(actualPort, configuration);
@@ -341,7 +349,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
         if (!_configFile.exists())
         {
             fail("Unable to test without config file:" + _configFile);
@@ -1191,6 +1200,10 @@ public class QpidBrokerTestCase extends QpidTestCase
         for (Connection c : _connections)
         {
             c.close();
+        }
+        if(_taskExecutor != null)
+        {
+            _taskExecutor.stop();
         }
     }
 

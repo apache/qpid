@@ -127,10 +127,16 @@ public class BDBHAVirtualHost extends AbstractVirtualHost<BDBHAVirtualHost>
         {
             _messageStore.getEnvironmentFacade().getEnvironment().flushLog(true);
 
-            ConfiguredObjectRecordHandler upgraderRecoverer = new ConfiguredObjectRecordRecoveverAndUpgrader(this, getDurableConfigurationRecoverers());
-            _messageStore.visitConfiguredObjectRecords(upgraderRecoverer);
-
-            initialiseModel();
+            if(isStoreEmpty())
+            {
+                createDefaultExchanges();
+            }
+            else
+            {
+                ConfiguredObjectRecordHandler upgraderRecoverer =
+                        new ConfiguredObjectRecordRecoveverAndUpgrader(this, getDurableConfigurationRecoverers());
+                _messageStore.visitConfiguredObjectRecords(upgraderRecoverer);
+            }
 
             new MessageStoreRecoverer(this, getMessageStoreLogSubject()).recover();
 
@@ -157,8 +163,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost<BDBHAVirtualHost>
             getConnectionRegistry().close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
             removeHouseKeepingTasks();
 
-            getQueueRegistry().stopAllAndUnregisterMBeans();
-            getExchangeRegistry().clearAndUnregisterMbeans();
+            getQueueRegistry().close();
             getDtxRegistry().close();
 
             finalState = VirtualHostState.PASSIVE;

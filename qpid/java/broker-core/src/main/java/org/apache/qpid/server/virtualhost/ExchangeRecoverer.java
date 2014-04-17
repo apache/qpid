@@ -22,26 +22,32 @@ package org.apache.qpid.server.virtualhost;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+
 import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<ExchangeImpl>
 {
-    private final ExchangeRegistry _exchangeRegistry;
-    private final ExchangeFactory _exchangeFactory;
+    private final VirtualHostImpl<?,?,?> _vhost;
+    private final ConfiguredObjectFactory _objectFactory;
 
-    public ExchangeRecoverer(final ExchangeRegistry exchangeRegistry, final ExchangeFactory exchangeFactory)
+    public ExchangeRecoverer(final VirtualHostImpl vhost)
     {
-        _exchangeRegistry = exchangeRegistry;
-        _exchangeFactory = exchangeFactory;
+        _vhost = vhost;
+        Broker<?> broker = _vhost.getParent(Broker.class);
+        SystemContext<?> systemContext = broker.getParent(SystemContext.class);
+        _objectFactory = systemContext.getObjectFactory();
     }
 
     @Override
@@ -53,31 +59,36 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
     @Override
     public UnresolvedObject<ExchangeImpl> createUnresolvedObject(final ConfiguredObjectRecord record)
     {
-        return new UnresolvedExchange(record.getId(), record.getAttributes());
+        return new UnresolvedExchange(record);
     }
 
     private class UnresolvedExchange implements UnresolvedObject<ExchangeImpl>
     {
         private ExchangeImpl<?> _exchange;
 
-        public UnresolvedExchange(final UUID id,
-                                  final Map<String, Object> attributeMap)
+        public UnresolvedExchange(ConfiguredObjectRecord record)
         {
+            Map<String,Object> attributeMap = record.getAttributes();
             String exchangeName = (String) attributeMap.get(org.apache.qpid.server.model.Exchange.NAME);
             try
             {
-                _exchange = _exchangeRegistry.getExchange(id);
+                _exchange = _vhost.getExchange(record.getId());
                 if(_exchange == null)
                 {
-                    _exchange = _exchangeRegistry.getExchange(exchangeName);
+                    _exchange = _vhost.getExchange(exchangeName);
                 }
                 if (_exchange == null)
                 {
                     Map<String,Object> attributesWithId = new HashMap<String,Object>(attributeMap);
-                    attributesWithId.put(org.apache.qpid.server.model.Exchange.ID,id);
+                    attributesWithId.put(org.apache.qpid.server.model.Exchange.ID,record.getId());
                     attributesWithId.put(org.apache.qpid.server.model.Exchange.DURABLE,true);
-                    _exchange = _exchangeFactory.restoreExchange(attributesWithId);
-                    _exchangeRegistry.registerExchange(_exchange);
+
+                    ConfiguredObjectTypeFactory<? extends Exchange> configuredObjectTypeFactory =
+                            _objectFactory.getConfiguredObjectTypeFactory(Exchange.class, attributesWithId);
+                    UnresolvedConfiguredObject<? extends Exchange> unresolvedConfiguredObject =
+                            configuredObjectTypeFactory.recover(record, _vhost);
+                    _exchange = (ExchangeImpl<?>) unresolvedConfiguredObject.resolve();
+
                 }
             }
             catch (AMQUnknownExchangeType e)
@@ -101,6 +112,7 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
         @Override
         public ExchangeImpl resolve()
         {
+            _exchange.open();
             return _exchange;
         }
     }

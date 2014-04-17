@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
@@ -66,14 +67,17 @@ public class BrokerRecovererTest extends TestCase
     private UUID _authenticationProvider1Id = UUID.randomUUID();
     private SystemContext _systemContext;
     private ConfiguredObjectFactory _configuredObjectFactory;
+    private TaskExecutor _taskExecutor;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        _configuredObjectFactory = new ConfiguredObjectFactory(Model.getInstance());
-        _systemContext = new SystemContextImpl(mock(TaskExecutor.class),
+        _configuredObjectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
+        _systemContext = new SystemContextImpl(_taskExecutor,
                                            _configuredObjectFactory, mock(EventLogger.class), mock(LogRecorder.class), mock(BrokerOptions.class));
 
         when(_brokerEntry.getId()).thenReturn(_brokerId);
@@ -91,6 +95,13 @@ public class BrokerRecovererTest extends TestCase
         when(_authenticationProvider1.getId()).thenReturn(_authenticationProvider1Id);
         _authenticationProviderEntry1 = mock(ConfiguredObjectRecord.class);
         _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1));
+    }
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        _taskExecutor.stop();
     }
 
     public void testCreateBrokerAttributes()

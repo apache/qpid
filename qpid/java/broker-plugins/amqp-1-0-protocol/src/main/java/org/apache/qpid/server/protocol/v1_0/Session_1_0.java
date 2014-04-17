@@ -78,7 +78,7 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
-import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.ConsumerListener;
 import org.apache.qpid.server.protocol.LinkRegistry;
@@ -112,6 +112,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     private final CopyOnWriteArrayList<Consumer<?>> _consumers = new CopyOnWriteArrayList<Consumer<?>>();
     private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
     private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
+    private Session<?> _modelObject;
 
 
     public Session_1_0(final Connection_1_0 connection, final SessionEndpoint endpoint)
@@ -433,7 +434,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                                             ? null
                                             : (LifetimePolicy) properties.get(LIFETIME_POLICY);
             Map<String,Object> attributes = new HashMap<String,Object>();
-            attributes.put(org.apache.qpid.server.model.Queue.ID, UUIDGenerator.generateQueueUUID(queueName, getVirtualHost().getName()));
+            attributes.put(org.apache.qpid.server.model.Queue.ID, UUID.randomUUID());
             attributes.put(org.apache.qpid.server.model.Queue.NAME, queueName);
             attributes.put(org.apache.qpid.server.model.Queue.DURABLE, false);
 
@@ -570,6 +571,10 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     {
         performCloseTasks();
         _endpoint.end();
+        if(_modelObject != null)
+        {
+            _modelObject.delete();
+        }
     }
 
     protected void performCloseTasks()
@@ -842,6 +847,18 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     public void removeConsumerListener(final ConsumerListener listener)
     {
         _consumerListeners.remove(listener);
+    }
+
+    @Override
+    public void setModelObject(final Session<?> session)
+    {
+        _modelObject = session;
+    }
+
+    @Override
+    public Session<?> getModelObject()
+    {
+        return _modelObject;
     }
 
     private void consumerAdded(Consumer<?> consumer)

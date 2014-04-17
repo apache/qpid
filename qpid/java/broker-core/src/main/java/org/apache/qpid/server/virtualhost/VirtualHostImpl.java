@@ -34,8 +34,8 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -50,6 +50,8 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
                 EventLoggerProvider,
                 VirtualHost<X,Q,E>
 {
+    String DEFAULT_DLE_NAME_SUFFIX = "_DLE";
+
     IConnectionRegistry getConnectionRegistry();
 
     String getName();
@@ -82,15 +84,13 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
 
     Collection<E> getExchanges();
 
-    Collection<ExchangeType<? extends ExchangeImpl>> getExchangeTypes();
-
     DurableConfigurationStore getDurableConfigurationStore();
 
     MessageStore getMessageStore();
 
     SecurityManager getSecurityManager();
 
-    void addVirtualHostListener(VirtualHostListener listener);
+    ConfiguredObjectFactory getObjectFactory();
 
     void close();
 

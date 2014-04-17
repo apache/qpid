@@ -62,7 +62,7 @@ public interface ExchangeImpl<T extends ExchangeImpl<T>> extends Exchange<T>, Ex
     void restoreBinding(UUID id, String bindingKey, AMQQueue queue,
                         Map<String, Object> argumentMap);
 
-    void close();
+    void delete();
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments

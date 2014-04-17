@@ -40,7 +40,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
@@ -53,6 +53,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
     private File _userStoreLocation;
     private BrokerConfigurationStoreCreator _storeCreator;
     private SystemContext _systemContext;
+    private TaskExecutor _taskExecutor;
 
     public void setUp() throws Exception
     {
@@ -69,8 +70,10 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         _userStoreLocation = new File(TMP_FOLDER, "_store_" + System.currentTimeMillis() + "_" + getTestName());
         final BrokerOptions brokerOptions = mock(BrokerOptions.class);
         when(brokerOptions.getConfigurationStoreLocation()).thenReturn(_userStoreLocation.getAbsolutePath());
-        _systemContext = new SystemContextImpl(new TaskExecutor(),
-                                                  new ConfiguredObjectFactory(Model.getInstance()),
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
+        _systemContext = new SystemContextImpl(_taskExecutor,
+                                                  new ConfiguredObjectFactoryImpl(Model.getInstance()),
                                                   mock(EventLogger.class),
                                                   mock(LogRecorder.class),
                                                   brokerOptions);
@@ -81,6 +84,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         try
         {
             super.tearDown();
+            _taskExecutor.stop();
         }
         finally
         {

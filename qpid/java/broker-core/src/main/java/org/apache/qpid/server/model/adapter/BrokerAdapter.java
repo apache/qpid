@@ -166,11 +166,13 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         String modelVersion = (String) getActualAttributes().get(Broker.MODEL_VERSION);
         if (modelVersion == null)
         {
+            deleted();
             throw new IllegalConfigurationException("Broker " + Broker.MODEL_VERSION + " must be specified");
         }
 
         if (!MODEL_VERSION_PATTERN.matcher(modelVersion).matches())
         {
+            deleted();
             throw new IllegalConfigurationException("Broker " + Broker.MODEL_VERSION + " is specified in incorrect format: "
                                                     + modelVersion);
         }
@@ -182,12 +184,14 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
         if (majorModelVersion != Model.MODEL_MAJOR_VERSION || minorModelVersion > Model.MODEL_MINOR_VERSION)
         {
+            deleted();
             throw new IllegalConfigurationException("The model version '" + modelVersion
                                                     + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'");
         }
 
         if(!isDurable())
         {
+            deleted();
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
     }
@@ -1200,6 +1204,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     public EventLogger getEventLogger()
     {
         return _eventLogger;
+    }
+
+    @Override
+    public ConfiguredObjectFactory getObjectFactory()
+    {
+        return _objectFactory;
     }
 
     @Override

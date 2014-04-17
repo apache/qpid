@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-public class ExchangeIsAlternateException extends Exception
+public class ExchangeIsAlternateException extends RuntimeException
 {
     public ExchangeIsAlternateException(String name)
     {

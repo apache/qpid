@@ -125,6 +125,80 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
 
     }
 
+    @Override
+    protected synchronized void onBindingUpdated(final BindingImpl binding, final Map<String, Object> oldArguments)
+    {
+        AMQQueue queue = binding.getAMQQueue();
+
+        if (binding.getArguments() == null || binding.getArguments().isEmpty() || !FilterSupport.argumentsContainFilter(
+                binding.getArguments()))
+        {
+            if(oldArguments != null && !oldArguments.isEmpty() && FilterSupport.argumentsContainFilter(oldArguments))
+            {
+                _unfilteredQueues.add(queue);
+                if(_queues.containsKey(queue))
+                {
+                    _queues.put(queue,_queues.get(queue)+1);
+                }
+                else
+                {
+                    _queues.put(queue, ONE);
+                }
+
+                // No longer any reason to check filters for this queue
+                _filteredQueues.remove(queue);
+            }
+            // else - nothing has changed, remains unfiltered
+        }
+        else
+        {
+            HashMap<AMQQueue,Map<BindingImpl, MessageFilter>> filteredBindings =
+                    new HashMap<AMQQueue,Map<BindingImpl, MessageFilter>>(_filteredBindings.get());
+
+            Map<BindingImpl,MessageFilter> bindingsForQueue;
+
+            final MessageFilter messageFilter;
+
+            try
+            {
+                messageFilter = FilterSupport.createMessageFilter(binding.getArguments(), binding.getAMQQueue());
+            }
+            catch (AMQInvalidArgumentException e)
+            {
+                _logger.warn("Cannot bind queue " + queue + " to exchange this " + this + " because selector cannot be parsed.", e);
+                return;
+            }
+
+
+            if (oldArguments != null && !oldArguments.isEmpty() && FilterSupport.argumentsContainFilter(oldArguments))
+            {
+                bindingsForQueue = new HashMap<BindingImpl,MessageFilter>(filteredBindings.remove(binding.getAMQQueue()));
+            }
+            else // previously unfiltered
+            {
+                bindingsForQueue = new HashMap<BindingImpl,MessageFilter>();
+
+                Integer oldValue = _queues.remove(queue);
+                if (ONE.equals(oldValue))
+                {
+                    // should start checking filters for this queue
+                    _filteredQueues.add(queue);
+                    _unfilteredQueues.remove(queue);
+                }
+                else
+                {
+                    _queues.put(queue, oldValue - 1);
+                }
+
+            }
+            bindingsForQueue.put(binding, messageFilter);
+            filteredBindings.put(binding.getAMQQueue(),bindingsForQueue);
+
+            _filteredBindings.set(filteredBindings);
+
+        }
+
+    }
 
     protected synchronized void onBind(final BindingImpl binding)
     {
@@ -156,8 +230,7 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
                         new HashMap<AMQQueue,Map<BindingImpl, MessageFilter>>(_filteredBindings.get());
 
                 Map<BindingImpl, MessageFilter> bindingsForQueue = filteredBindings.remove(binding.getAMQQueue());
-                final
-                MessageFilter messageFilter =
+                final MessageFilter messageFilter =
                         FilterSupport.createMessageFilter(binding.getArguments(), binding.getAMQQueue());
 
                 if(bindingsForQueue != null)

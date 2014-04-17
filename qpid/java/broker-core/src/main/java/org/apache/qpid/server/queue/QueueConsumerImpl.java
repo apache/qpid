@@ -115,7 +115,7 @@ class QueueConsumerImpl
                       final Class<? extends ServerMessage> messageClass,
                       EnumSet<Option> optionSet)
     {
-        super(parentsMap(queue),
+        super(parentsMap(queue, target.getSessionModel().getModelObject()),
               createAttributeMap(consumerName, filters, optionSet),
               queue.getVirtualHost().getTaskExecutor());
         _messageClass = messageClass;
@@ -255,6 +255,7 @@ class QueueConsumerImpl
                 _target.close();
                 _target.consumerRemoved(this);
                 _queue.unregisterConsumer(this);
+                deleted();
             }
             finally
             {

@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -58,9 +59,14 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     private Map<String, Object> _virtualHostAttributes;
     private Map<String, Object> _authenticationProviderAttributes;
 
+    private TaskExecutor _taskExecutor;
+
     public void setUp() throws Exception
     {
         super.setUp();
+
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
 
         _brokerId = UUID.randomUUID();
         _brokerAttributes = new HashMap<String, Object>();
@@ -83,6 +89,18 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _store = createStore(_brokerId, _brokerAttributes);
         addConfiguration(_virtualHostId, VirtualHost.class.getSimpleName(), _virtualHostAttributes);
         addConfiguration(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(), _authenticationProviderAttributes);
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        super.tearDown();
+        _taskExecutor.stop();
+    }
+
+    protected TaskExecutor getTaskExecutor()
+    {
+        return _taskExecutor;
     }
 
     // ??? perhaps it should not be abstract

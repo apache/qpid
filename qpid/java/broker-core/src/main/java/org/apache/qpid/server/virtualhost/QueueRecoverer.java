@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueFactory;
@@ -40,15 +41,12 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
 {
     private static final Logger _logger = Logger.getLogger(QueueRecoverer.class);
     private final VirtualHostImpl _virtualHost;
-    private final ExchangeRegistry _exchangeRegistry;
     private final QueueFactory _queueFactory;
 
     public QueueRecoverer(final VirtualHostImpl virtualHost,
-                          final ExchangeRegistry exchangeRegistry,
                           final QueueFactory queueFactory)
     {
         _virtualHost = virtualHost;
-        _exchangeRegistry = exchangeRegistry;
         _queueFactory = queueFactory;
     }
 
@@ -82,7 +80,7 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
             _id = id;
             if (_alternateExchangeId != null)
             {
-                _alternateExchange = _exchangeRegistry.getExchange(_alternateExchangeId);
+                _alternateExchange = _virtualHost.getExchange(_alternateExchangeId);
                 if(_alternateExchange == null)
                 {
                     _dependencies.add(new AlternateExchangeDependency());

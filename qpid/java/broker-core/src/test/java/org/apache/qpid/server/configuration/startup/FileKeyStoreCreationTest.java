@@ -36,6 +36,7 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
@@ -51,7 +52,7 @@ public class FileKeyStoreCreationTest extends TestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _factory = new ConfiguredObjectFactory(Model.getInstance());
+        _factory = new ConfiguredObjectFactoryImpl(Model.getInstance());
     }
 
     public void testCreateWithAllAttributesProvided()

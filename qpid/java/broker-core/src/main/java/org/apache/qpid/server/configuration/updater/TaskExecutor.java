@@ -142,6 +142,19 @@ public class TaskExecutor
         return future;
     }
 
+    public void submitAndWait(final Runnable task) throws CancellationException
+    {
+        submitAndWait(new Task<Void>()
+        {
+            @Override
+            public Void call()
+            {
+                task.run();
+                return null;
+            }
+        });
+    }
+
     public <T> T submitAndWait(Task<T> task) throws CancellationException
     {
         try

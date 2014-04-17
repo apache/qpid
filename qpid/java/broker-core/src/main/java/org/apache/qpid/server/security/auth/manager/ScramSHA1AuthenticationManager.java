@@ -478,8 +478,8 @@ public class ScramSHA1AuthenticationManager
             {
                 _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.DELETE, getName());
                 _authenticationManager._users.remove(getName());
-                _authenticationManager.unregisterChild(this);
-                _authenticationManager.childRemoved(this);
+                _authenticationManager.deleted();
+                deleted();
                 return true;
             }
             else
