@@ -112,7 +112,7 @@ struct Options : public qpid::Options
             ("tx", qpid::optValue(tx, "N"), "batch size for transactions (0 implies transaction are not used)")
             ("rollback-frequency", qpid::optValue(rollbackFrequency, "N"), "rollback frequency (0 implies no transaction will be rolledback)")
             ("print-content", qpid::optValue(printContent, "yes|no"), "print out message content")
-            ("print-content-object-type", qpid::optValue(printContentObjectType, "yes|no"), "print a description of the content's object type if relevant")
+            ("print-object-type", qpid::optValue(printContentObjectType, "yes|no"), "print a description of the content's object type if relevant")
             ("print-headers", qpid::optValue(printHeaders, "yes|no"), "print out message headers")
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("report-total", qpid::optValue(reportTotal), "Report total throughput and latency statistics")
