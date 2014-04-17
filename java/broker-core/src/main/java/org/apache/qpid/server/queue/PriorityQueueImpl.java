@@ -30,7 +30,7 @@ public class PriorityQueueImpl extends OutOfOrderQueue<PriorityQueueImpl> implem
 
     public static final int DEFAULT_PRIORITY_LEVELS = 10;
 
-    protected PriorityQueueImpl(VirtualHostImpl virtualHost,
+    public PriorityQueueImpl(VirtualHostImpl virtualHost,
                                 Map<String, Object> attributes)
     {
         super(virtualHost, attributes, entryList(attributes));

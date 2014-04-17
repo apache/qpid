@@ -31,7 +31,7 @@ public class LastValueQueueImpl extends AbstractQueue<LastValueQueueImpl> implem
     public static final String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
 
 
-    protected LastValueQueueImpl(VirtualHostImpl virtualHost,
+    public LastValueQueueImpl(VirtualHostImpl virtualHost,
                                  Map<String, Object> attributes)
     {
         super(virtualHost, attributes, entryList(attributes));

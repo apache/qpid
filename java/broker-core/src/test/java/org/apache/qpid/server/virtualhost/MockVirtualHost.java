@@ -652,6 +652,12 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
+    public AMQQueue restoreQueue(final Map<String, Object> attributes)
+    {
+        return null;
+    }
+
+    @Override
     public boolean getDefaultDeadLetterQueueEnabled()
     {
         return false;

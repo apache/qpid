@@ -43,6 +43,7 @@ import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
@@ -69,13 +70,13 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.LastValueQueue;
 import org.apache.qpid.server.queue.LastValueQueueImpl;
-import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.PriorityQueue;
-import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.PriorityQueueImpl;
 import org.apache.qpid.server.queue.SortedQueue;
+import org.apache.qpid.server.queue.SortedQueueImpl;
+import org.apache.qpid.server.queue.StandardQueueImpl;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -91,12 +92,17 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.MapValueConverter;
 
 public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> extends AbstractConfiguredObject<X>
         implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener,
                    VirtualHost<X,AMQQueue<?>, ExchangeImpl<?>>
 {
+    public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
+    public static final String DLQ_ROUTING_KEY = "dlq";
+    private static final int MAX_LENGTH = 255;
+
     private static final Logger _logger = Logger.getLogger(AbstractVirtualHost.class);
 
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
@@ -107,12 +113,10 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private final Broker<?> _broker;
 
-    private final QueueRegistry _queueRegistry;
-
     private final ConnectionRegistry _connectionRegistry;
 
     private final DtxRegistry _dtxRegistry;
-    private final AMQQueueFactory _queueFactory;
+
     private final SystemNodeRegistry _systemNodeRegistry = new SystemNodeRegistry();
 
     private volatile VirtualHostState _state = VirtualHostState.INITIALISING;
@@ -181,10 +185,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _connectionRegistry = new ConnectionRegistry();
         _connectionRegistry.addRegistryChangeListener(this);
-
-        _queueRegistry = new DefaultQueueRegistry(this);
-
-        _queueFactory = new AMQQueueFactory(this, _queueRegistry);
 
         _defaultDestination = new DefaultDestination(this);
 
@@ -419,11 +419,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        if(clazz == Queue.class)
-        {
-            return (Collection<C>) getQueues();
-        }
-        else if(clazz == Connection.class)
+        if(clazz == Connection.class)
         {
             return (Collection<C>) getConnections();
         }
@@ -567,15 +563,10 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _createTime;
     }
 
-    public QueueRegistry getQueueRegistry()
-    {
-        return _queueRegistry;
-    }
-
     @Override
     public AMQQueue<?> getQueue(String name)
     {
-        return _queueRegistry.getQueue(name);
+        return (AMQQueue<?>) getChildByName(Queue.class, name);
     }
 
     @Override
@@ -588,34 +579,31 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public AMQQueue<?> getQueue(UUID id)
     {
-        return _queueRegistry.getQueue(id);
+        return (AMQQueue<?>) getChildById(Queue.class, id);
     }
 
     @Override
     public Collection<AMQQueue<?>> getQueues()
     {
-        return _queueRegistry.getQueues();
+        Collection children = getChildren(Queue.class);
+        return children;
     }
 
     @Override
     public int removeQueue(AMQQueue<?> queue)
     {
-        synchronized (getQueueRegistry())
-        {
-            int purged = queue.delete();
+        int purged = queue.delete();
 
-            getQueueRegistry().unregisterQueue(queue.getName());
-            if (queue.isDurable() && !(queue.getLifetimePolicy()
-                                       == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
-                                       || queue.getLifetimePolicy()
-                                          == LifetimePolicy.DELETE_ON_SESSION_END))
-            {
-                DurableConfigurationStore store = getDurableConfigurationStore();
-                DurableConfigurationStoreHelper.removeQueue(store, queue);
-            }
-            return purged;
+        if (queue.isDurable() && !(queue.getLifetimePolicy()
+                                   == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
+                                   || queue.getLifetimePolicy()
+                                      == LifetimePolicy.DELETE_ON_SESSION_END))
+        {
+            DurableConfigurationStore store = getDurableConfigurationStore();
+            DurableConfigurationStoreHelper.removeQueue(store, queue);
         }
-    }
+        return purged;
+}
 
     public AMQQueue<?> createQueue(Map<String, Object> attributes) throws QueueExistsException
     {
@@ -656,36 +644,21 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             }
         }
 
-        String queueName = MapValueConverter.getStringAttribute(Queue.NAME, attributes);
-
-        synchronized (_queueRegistry)
+        if(!attributes.containsKey(Queue.ID))
         {
-            if(_queueRegistry.getQueue(queueName) != null)
-            {
-                throw new QueueExistsException("Queue with name " + queueName + " already exists", _queueRegistry.getQueue(queueName));
-            }
-            if(!attributes.containsKey(Queue.ID))
-            {
-
-                UUID id = UUID.randomUUID();
-                while(_queueRegistry.getQueue(id) != null)
-                {
-                    id = UUID.randomUUID();
-                }
-                attributes.put(Queue.ID, id);
-
-            }
-            else if(_queueRegistry.getQueue(MapValueConverter.getUUIDAttribute(Queue.ID, attributes)) != null)
-            {
-                throw new QueueExistsException("Queue with id "
-                                               + MapValueConverter.getUUIDAttribute(Queue.ID,
-                                                                                    attributes)
-                                               + " already exists", _queueRegistry.getQueue(queueName));
-            }
-
-
-            return _queueFactory.createQueue(attributes);
+            UUID id = UUID.randomUUID();
+            attributes.put(Queue.ID, id);
         }
+
+        boolean createDLQ = shouldCreateDLQ(attributes, getDefaultDeadLetterQueueEnabled());
+        if (createDLQ)
+        {
+            // TODO - this isn't really correct - what if the name has ${foo} in it?
+            validateDLNames(String.valueOf(attributes.get(Queue.NAME)));
+        }
+
+        return createOrRestoreQueue(attributes, true);
+
 
     }
 
@@ -873,7 +846,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         //Stop Connections
         _connectionRegistry.close();
-        _queueRegistry.close();
         _dtxRegistry.close();
         closeStorage();
         shutdownHouseKeeping();
@@ -1127,7 +1099,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     protected Map<String, DurableConfiguredObjectRecoverer> getDurableConfigurationRecoverers()
     {
         DurableConfiguredObjectRecoverer[] recoverers = {
-          new QueueRecoverer(this, _queueFactory),
+          new QueueRecoverer(this),
           new ExchangeRecoverer(this),
           new BindingRecoverer(this)
         };
@@ -1178,7 +1150,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         public void execute()
         {
-            for (AMQQueue<?> q : _queueRegistry.getQueues())
+            for (AMQQueue<?> q : getQueues())
             {
                 if (_logger.isDebugEnabled())
                 {
@@ -1551,5 +1523,221 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         return Collections.unmodifiableCollection(_aliases);
     }
+
+
+    // TODO - remove
+    public AMQQueue restoreQueue(Map<String, Object> attributes)
+    {
+        return createOrRestoreQueue(attributes, false);
+
+    }
+
+
+    private AMQQueue createOrRestoreQueue(Map<String, Object> attributes, boolean createInStore)
+    {
+        String queueName = MapValueConverter.getStringAttribute(Queue.NAME,attributes);
+        boolean createDLQ = createInStore && shouldCreateDLQ(attributes, getDefaultDeadLetterQueueEnabled());
+        if (createDLQ)
+        {
+            validateDLNames(queueName);
+        }
+
+        AMQQueue queue;
+
+        try
+        {
+
+
+            if (attributes.containsKey(SortedQueue.SORT_KEY))
+            {
+                queue = new SortedQueueImpl(this, attributes);
+            }
+            else if (attributes.containsKey(LastValueQueue.LVQ_KEY))
+            {
+                queue = new LastValueQueueImpl(this, attributes);
+            }
+            else if (attributes.containsKey(PriorityQueue.PRIORITIES))
+            {
+                queue = new PriorityQueueImpl(this, attributes);
+            }
+            else
+            {
+                queue = new StandardQueueImpl(this, attributes);
+            }
+            queue.open();
+        }
+        catch(DuplicateNameException e)
+        {
+
+            throw new QueueExistsException(e.getName(), getQueue(e.getName()));
+        }
+
+        if(createDLQ)
+        {
+            createDLQ(queue);
+        }
+        else if(attributes != null && attributes.get(Queue.ALTERNATE_EXCHANGE) instanceof String)
+        {
+
+            final String altExchangeAttr = (String) attributes.get(Queue.ALTERNATE_EXCHANGE);
+            ExchangeImpl altExchange;
+            try
+            {
+                altExchange = getExchange(UUID.fromString(altExchangeAttr));
+            }
+            catch(IllegalArgumentException e)
+            {
+                altExchange = getExchange(altExchangeAttr);
+            }
+            queue.setAlternateExchange(altExchange);
+        }
+
+        if (createInStore && queue.isDurable() && !(queue.getLifetimePolicy()
+                                                    == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
+                                                    || queue.getLifetimePolicy()
+                                                       == LifetimePolicy.DELETE_ON_SESSION_END))
+        {
+            DurableConfigurationStoreHelper.createQueue(getDurableConfigurationStore(), queue);
+        }
+
+        return queue;
+    }
+
+
+
+    private void createDLQ(final AMQQueue queue)
+    {
+        final String queueName = queue.getName();
+        final String dlExchangeName = getDeadLetterExchangeName(queueName);
+        final String dlQueueName = getDeadLetterQueueName(queueName);
+
+        ExchangeImpl dlExchange = null;
+        final UUID dlExchangeId = UUIDGenerator.generateExchangeUUID(dlExchangeName, getName());
+
+        try
+        {
+            Map<String,Object> attributes = new HashMap<String, Object>();
+
+            attributes.put(org.apache.qpid.server.model.Exchange.ID, dlExchangeId);
+            attributes.put(org.apache.qpid.server.model.Exchange.NAME, dlExchangeName);
+            attributes.put(org.apache.qpid.server.model.Exchange.TYPE, ExchangeDefaults.FANOUT_EXCHANGE_CLASS);
+            attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, true);
+            attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
+                           false ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
+            attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
+            dlExchange = createExchange(attributes);
+        }
+        catch(ExchangeExistsException e)
+        {
+            // We're ok if the exchange already exists
+            dlExchange = e.getExistingExchange();
+        }
+        catch (ReservedExchangeNameException e)
+        {
+            throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
+        }
+        catch (AMQUnknownExchangeType e)
+        {
+            throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
+        }
+        catch (UnknownExchangeException e)
+        {
+            throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
+        }
+
+        AMQQueue dlQueue = null;
+
+        {
+            dlQueue = getQueue(dlQueueName);
+
+            if(dlQueue == null)
+            {
+                //set args to disable DLQ-ing/MDC from the DLQ itself, preventing loops etc
+                final Map<String, Object> args = new HashMap<String, Object>();
+                args.put(Queue.CREATE_DLQ_ON_CREATION, false);
+                args.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 0);
+
+                try
+                {
+
+
+                    args.put(Queue.ID, UUID.randomUUID());
+                    args.put(Queue.NAME, dlQueueName);
+                    args.put(Queue.DURABLE, true);
+                    dlQueue = createQueue(args);
+                }
+                catch (QueueExistsException e)
+                {
+                    // TODO - currently theoretically for two threads to be creating a queue at the same time.
+                    // All model changing operations should be moved to the task executor of the virtual host
+                }
+            }
+        }
+
+        //ensure the queue is bound to the exchange
+        if(!dlExchange.isBound(AbstractVirtualHost.DLQ_ROUTING_KEY, dlQueue))
+        {
+            //actual routing key used does not matter due to use of fanout exchange,
+            //but we will make the key 'dlq' as it can be logged at creation.
+            dlExchange.addBinding(AbstractVirtualHost.DLQ_ROUTING_KEY, dlQueue, null);
+        }
+        queue.setAlternateExchange(dlExchange);
+    }
+
+    private static void validateDLNames(String name)
+    {
+        // check if DLQ name and DLQ exchange name do not exceed 255
+        String exchangeName = getDeadLetterExchangeName(name);
+        if (exchangeName.length() > MAX_LENGTH)
+        {
+            throw new IllegalArgumentException("DL exchange name '" + exchangeName
+                                               + "' length exceeds limit of " + MAX_LENGTH + " characters for queue " + name);
+        }
+        String queueName = getDeadLetterQueueName(name);
+        if (queueName.length() > MAX_LENGTH)
+        {
+            throw new IllegalArgumentException("DLQ queue name '" + queueName + "' length exceeds limit of "
+                                               + MAX_LENGTH + " characters for queue " + name);
+        }
+    }
+
+    private static boolean shouldCreateDLQ(Map<String, Object> arguments, boolean virtualHostDefaultDeadLetterQueueEnabled)
+    {
+        boolean autoDelete = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
+                                                                Queue.LIFETIME_POLICY,
+                                                                arguments,
+                                                                LifetimePolicy.PERMANENT) != LifetimePolicy.PERMANENT;
+
+        //feature is not to be enabled for temporary queues or when explicitly disabled by argument
+        if (!(autoDelete || (arguments != null && arguments.containsKey(Queue.ALTERNATE_EXCHANGE))))
+        {
+            boolean dlqArgumentPresent = arguments != null
+                                         && arguments.containsKey(Queue.CREATE_DLQ_ON_CREATION);
+            if (dlqArgumentPresent)
+            {
+                boolean dlqEnabled = true;
+                if (dlqArgumentPresent)
+                {
+                    Object argument = arguments.get(Queue.CREATE_DLQ_ON_CREATION);
+                    dlqEnabled = (argument instanceof Boolean && ((Boolean)argument).booleanValue())
+                                 || (argument instanceof String && Boolean.parseBoolean(argument.toString()));
+                }
+                return dlqEnabled;
+            }
+            return virtualHostDefaultDeadLetterQueueEnabled;
+        }
+        return false;
+    }
+
+    private static String getDeadLetterQueueName(String name)
+    {
+        return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_QUEUE_SUFFIX, AbstractVirtualHost.DEFAULT_DLQ_NAME_SUFFIX);
+    }
+
+    private static String getDeadLetterExchangeName(String name)
+    {
+        return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, VirtualHostImpl.DEFAULT_DLE_NAME_SUFFIX);
+    }
+
 
 }

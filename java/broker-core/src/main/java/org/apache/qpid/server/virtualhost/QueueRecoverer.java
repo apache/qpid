@@ -31,7 +31,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueFactory;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedDependency;
@@ -41,13 +40,10 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
 {
     private static final Logger _logger = Logger.getLogger(QueueRecoverer.class);
     private final VirtualHostImpl _virtualHost;
-    private final QueueFactory _queueFactory;
 
-    public QueueRecoverer(final VirtualHostImpl virtualHost,
-                          final QueueFactory queueFactory)
+    public QueueRecoverer(final VirtualHostImpl virtualHost)
     {
         _virtualHost = virtualHost;
-        _queueFactory = queueFactory;
     }
 
     @Override
@@ -110,7 +106,7 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
                 Map<String, Object> attributes = new LinkedHashMap<String, Object>(_attributes);
                 attributes.put(Queue.ID, _id);
                 attributes.put(Queue.DURABLE, true);
-                _queue = _queueFactory.restoreQueue(attributes);
+                _queue = _virtualHost.restoreQueue(attributes);
             }
             return _queue;
         }

@@ -60,7 +60,6 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueFactory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationRecoverer;
@@ -83,7 +82,6 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     private DurableConfigurationRecoverer _durableConfigurationRecoverer;
     private VirtualHostImpl _vhost;
     private DurableConfigurationStore _store;
-    private QueueFactory _queueFactory;
     private ConfiguredObjectFactory _configuredObjectFactory;
     private ConfiguredObjectTypeFactory _exchangeFactory;
 
@@ -135,9 +133,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         final ArgumentCaptor<Map> attributesArg = ArgumentCaptor.forClass(Map.class);
 
-        _queueFactory = mock(QueueFactory.class);
-
-        when(_queueFactory.restoreQueue(attributesArg.capture())).then(
+        when(_vhost.restoreQueue(attributesArg.capture())).then(
                 new Answer()
                 {
 
@@ -184,7 +180,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
 
         DurableConfiguredObjectRecoverer[] recoverers = {
-                new QueueRecoverer(_vhost, _queueFactory),
+                new QueueRecoverer(_vhost),
                 new ExchangeRecoverer(_vhost),
                 new BindingRecoverer(_vhost)
         };
