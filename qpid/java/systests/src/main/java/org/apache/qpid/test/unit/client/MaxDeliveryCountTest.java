@@ -45,7 +45,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.RejectBehaviour;
 import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -305,11 +305,11 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         AMQDestination checkQueueDLQ;
         if(durableSub)
         {
-            checkQueueDLQ = new AMQQueue("amq.topic", "clientid" + ":" + getName() + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+            checkQueueDLQ = new AMQQueue("amq.topic", "clientid" + ":" + getName() + AbstractVirtualHost.DEFAULT_DLQ_NAME_SUFFIX);
         }
         else
         {
-            checkQueueDLQ = new AMQQueue("amq.direct", getTestQueueName() + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+            checkQueueDLQ = new AMQQueue("amq.direct", getTestQueueName() + AbstractVirtualHost.DEFAULT_DLQ_NAME_SUFFIX);
         }
 
         assertEquals("The DLQ should have " + expected + " msgs on it", expected,
@@ -323,12 +323,12 @@ public class MaxDeliveryCountTest extends QpidBrokerTestCase
         MessageConsumer consumer;
         if(durableSub)
         {
-            consumer = clientSession.createConsumer(clientSession.createQueue("clientid:" +getName() + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX));
+            consumer = clientSession.createConsumer(clientSession.createQueue("clientid:" +getName() + AbstractVirtualHost.DEFAULT_DLQ_NAME_SUFFIX));
         }
         else
         {
             consumer = clientSession.createConsumer(
-                    clientSession.createQueue(destName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX));
+                    clientSession.createQueue(destName + AbstractVirtualHost.DEFAULT_DLQ_NAME_SUFFIX));
         }
 
         //keep track of the message we expect to still be on the DLQ

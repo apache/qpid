@@ -127,4 +127,7 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
     TaskExecutor getTaskExecutor();
 
     EventLogger getEventLogger();
+
+    // TODO - remove
+    public AMQQueue restoreQueue(Map<String, Object> attributes);
 }

@@ -44,7 +44,7 @@ public class SortedQueueImpl extends OutOfOrderQueue<SortedQueueImpl> implements
     }
 
 
-    protected SortedQueueImpl(VirtualHostImpl virtualHost,
+    public SortedQueueImpl(VirtualHostImpl virtualHost,
                               Map<String, Object> attributes)
     {
         this(virtualHost,

@@ -313,7 +313,16 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
         _logSubject = new QueueLogSubject(this);
 
-        _virtualHost.getSecurityManager().authoriseCreateQueue(this);
+        try
+        {
+
+            _virtualHost.getSecurityManager().authoriseCreateQueue(this);
+        }
+        catch(AccessControlException e)
+        {
+            deleted();
+            throw e;
+        }
 
         Subject activeSubject = Subject.getSubject(AccessController.getContext());
         Set<SessionPrincipal> sessionPrincipals = activeSubject == null ? Collections.<SessionPrincipal>emptySet() : activeSubject.getPrincipals(SessionPrincipal.class);

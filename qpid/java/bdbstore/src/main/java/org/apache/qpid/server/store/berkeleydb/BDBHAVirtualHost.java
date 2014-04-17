@@ -163,7 +163,6 @@ public class BDBHAVirtualHost extends AbstractVirtualHost<BDBHAVirtualHost>
             getConnectionRegistry().close(IConnectionRegistry.VHOST_PASSIVATE_REPLY_TEXT);
             removeHouseKeepingTasks();
 
-            getQueueRegistry().close();
             getDtxRegistry().close();
 
             finalState = VirtualHostState.PASSIVE;
