@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 public class StandardQueueEntryListTest extends QueueEntryListTestBase
 {
 
-    private StandardQueue _testQueue;
+    private StandardQueueImpl _testQueue;
     private StandardQueueEntryList _sqel;
 
     private static final String SCAVENGE_PROP = "qpid.queue.scavenge_count";
@@ -55,7 +55,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        _testQueue = new StandardQueue(virtualHost, queueAttributes);
+        _testQueue = new StandardQueueImpl(virtualHost, queueAttributes);
 
         _sqel = (StandardQueueEntryList) _testQueue.getEntries();
         for(int i = 1; i <= 100; i++)
@@ -101,7 +101,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
             when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
             when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-            StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
+            StandardQueueImpl queue = new StandardQueueImpl(virtualHost, queueAttributes);
 
             return (StandardQueueEntryList) queue.getEntries();
         }
@@ -132,7 +132,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
     }
 
     @Override
-    protected StandardQueue getTestQueue()
+    protected StandardQueueImpl getTestQueue()
     {
         return _testQueue;
     }

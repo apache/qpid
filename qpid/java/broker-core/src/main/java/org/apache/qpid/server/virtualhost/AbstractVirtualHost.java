@@ -70,9 +70,12 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.ConflationQueue;
+import org.apache.qpid.server.queue.LastValueQueue;
+import org.apache.qpid.server.queue.LastValueQueueImpl;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
+import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.SortedQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -627,9 +630,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         // make a copy as we may augment (with an ID for example)
         attributes = new LinkedHashMap<String, Object>(attributes);
-        if (attributes.containsKey(Queue.QUEUE_TYPE))
+        if (attributes.containsKey(Queue.TYPE))
         {
-            String typeAttribute = MapValueConverter.getStringAttribute(Queue.QUEUE_TYPE, attributes, null);
+            String typeAttribute = MapValueConverter.getStringAttribute(Queue.TYPE, attributes, null);
             QueueType queueType = null;
             try
             {
@@ -639,15 +642,15 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             {
                 throw new IllegalArgumentException("Unsupported queue type :" + typeAttribute);
             }
-            if (queueType == QueueType.LVQ && attributes.get(Queue.LVQ_KEY) == null)
+            if (queueType == QueueType.LVQ && attributes.get(LastValueQueue.LVQ_KEY) == null)
             {
-                attributes.put(Queue.LVQ_KEY, ConflationQueue.DEFAULT_LVQ_KEY);
+                attributes.put(LastValueQueue.LVQ_KEY, LastValueQueueImpl.DEFAULT_LVQ_KEY);
             }
-            else if (queueType == QueueType.PRIORITY && attributes.get(Queue.PRIORITIES) == null)
+            else if (queueType == QueueType.PRIORITY && attributes.get(PriorityQueue.PRIORITIES) == null)
             {
-                attributes.put(Queue.PRIORITIES, 10);
+                attributes.put(PriorityQueue.PRIORITIES, 10);
             }
-            else if (queueType == QueueType.SORTED && attributes.get(Queue.SORT_KEY) == null)
+            else if (queueType == QueueType.SORTED && attributes.get(SortedQueue.SORT_KEY) == null)
             {
                 throw new IllegalArgumentException("Sort key is not specified for sorted queue");
             }

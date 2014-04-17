@@ -199,7 +199,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
 
-        StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
+        StandardQueueImpl queue = new StandardQueueImpl(virtualHost, queueAttributes);
         OrderedQueueEntryList queueEntryList = (OrderedQueueEntryList) queue.getEntries();
 
         // create test entries

@@ -36,17 +36,17 @@ public class SortedQueueEntryList implements QueueEntryList
     private SortedQueueEntry _root;
     private long _entryId = Long.MIN_VALUE;
     private final Object _lock = new Object();
-    private final SortedQueue _queue;
+    private final SortedQueueImpl _queue;
     private final String _propertyName;
 
-    public SortedQueueEntryList(final SortedQueue queue, final String propertyName)
+    public SortedQueueEntryList(final SortedQueueImpl queue, final String propertyName)
     {
         _queue = queue;
         _head = new SortedQueueEntry(this);
         _propertyName = propertyName;
     }
 
-    public SortedQueue getQueue()
+    public SortedQueueImpl getQueue()
     {
         return _queue;
     }

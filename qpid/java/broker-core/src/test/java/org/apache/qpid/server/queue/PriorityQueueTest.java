@@ -20,7 +20,12 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
+
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.server.consumer.ConsumerImpl;
@@ -28,20 +33,13 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-
-import org.apache.qpid.server.model.Queue;
-
-import static org.mockito.Mockito.when;
-
 public class PriorityQueueTest extends AbstractQueueTestBase
 {
 
     @Override
     public void setUp() throws Exception
     {
-        setArguments(Collections.singletonMap(Queue.PRIORITIES,(Object)3));
+        setArguments(Collections.singletonMap(PriorityQueue.PRIORITIES,(Object)3));
         super.setUp();
     }
 

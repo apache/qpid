@@ -26,7 +26,7 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
 {
 
 
-    public PriorityQueueList(final PriorityQueue queue,
+    public PriorityQueueList(final PriorityQueueImpl queue,
                              final HeadCreator headCreator)
     {
         super(queue, headCreator);
@@ -43,12 +43,12 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
                         return null;
                     }
                 };
-        private final PriorityQueue _queue;
+        private final PriorityQueueImpl _queue;
         private final PriorityQueueEntrySubList[] _priorityLists;
         private final int _priorities;
         private final int _priorityOffset;
 
-        public PriorityQueueMasterList(PriorityQueue queue, int priorities)
+        public PriorityQueueMasterList(PriorityQueueImpl queue, int priorities)
         {
             super(queue, DUMMY_HEAD_CREATOR);
             _queue = queue;
@@ -67,7 +67,7 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
         }
 
         @Override
-        public PriorityQueue getQueue()
+        public PriorityQueueImpl getQueue()
         {
             return _queue;
         }
@@ -196,7 +196,7 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
 
         public PriorityQueueList createQueueEntryList(AMQQueue<?> queue)
         {
-            return new PriorityQueueMasterList((PriorityQueue) queue, _priorities);
+            return new PriorityQueueMasterList((PriorityQueueImpl) queue, _priorities);
         }
     }
 
@@ -212,7 +212,7 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
         };
         private int _listPriority;
 
-        public PriorityQueueEntrySubList(PriorityQueue queue, int listPriority)
+        public PriorityQueueEntrySubList(PriorityQueueImpl queue, int listPriority)
         {
             super(queue, HEAD_CREATOR);
             _listPriority = listPriority;

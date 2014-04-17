@@ -1105,7 +1105,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
     }
 
 
-    private static class NonAsyncDeliverQueue extends AbstractQueue
+    private static class NonAsyncDeliverQueue extends AbstractQueue<NonAsyncDeliverQueue>
     {
         public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHostImpl vhost)
         {

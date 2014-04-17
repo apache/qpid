@@ -43,6 +43,9 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.queue.LastValueQueue;
+import org.apache.qpid.server.queue.PriorityQueue;
+import org.apache.qpid.server.queue.SortedQueue;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class Asserts
@@ -113,11 +116,11 @@ public class Asserts
                                         Queue.ALTERNATE_EXCHANGE,
                                         Queue.OWNER,
                                         Queue.NO_LOCAL,
-                                        Queue.LVQ_KEY,
-                                        Queue.SORT_KEY,
+                                        LastValueQueue.LVQ_KEY,
+                                        SortedQueue.SORT_KEY,
                                         Queue.MESSAGE_GROUP_KEY,
                                         Queue.MESSAGE_GROUP_SHARED_GROUPS,
-                                        Queue.PRIORITIES,
+                                        PriorityQueue.PRIORITIES,
                                         ConfiguredObject.CONTEXT);
 
         assertEquals("Unexpected value of queue attribute " + Queue.NAME, queueName, queueData.get(Queue.NAME));
@@ -127,9 +130,9 @@ public class Asserts
                      queueData.get(Queue.STATE));
         assertEquals("Unexpected value of queue attribute " + Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT.name(),
                      queueData.get(Queue.LIFETIME_POLICY));
-        assertEquals("Unexpected value of queue attribute " + Queue.QUEUE_TYPE,
+        assertEquals("Unexpected value of queue attribute " + Queue.TYPE,
                      queueType,
-                     queueData.get(Queue.QUEUE_TYPE));
+                     queueData.get(Queue.TYPE));
         if (expectedAttributes == null)
         {
             assertEquals("Unexpected value of queue attribute " + Queue.EXCLUSIVE,

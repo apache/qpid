@@ -19,7 +19,15 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
@@ -29,15 +37,6 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class SortedQueueEntryListTest extends QueueEntryListTestBase
 {
@@ -71,7 +70,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     private final static String keysSorted[] = keys.clone();
 
-    private SortedQueue _testQueue;
+    private SortedQueueImpl _testQueue;
 
     @Override
     protected void setUp() throws Exception
@@ -81,19 +80,19 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
         attributes.put(Queue.NAME, getName());
         attributes.put(Queue.DURABLE, false);
         attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
-        attributes.put(Queue.SORT_KEY, "KEY");
+        attributes.put(SortedQueue.SORT_KEY, "KEY");
 
         // Create test list
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        _testQueue = new SortedQueue(virtualHost, attributes, new QueueEntryListFactory()
+        _testQueue = new SortedQueueImpl(virtualHost, attributes, new QueueEntryListFactory()
         {
 
             @Override
             public SortedQueueEntryList createQueueEntryList(final AMQQueue queue)
             {
-                return new SelfValidatingSortedQueueEntryList((SortedQueue) queue, "KEY");
+                return new SelfValidatingSortedQueueEntryList((SortedQueueImpl) queue, "KEY");
             }
         });
         _sqel = (SelfValidatingSortedQueueEntryList) _testQueue.getEntries();
@@ -149,7 +148,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
     }
 
     @Override
-    protected SortedQueue getTestQueue()
+    protected SortedQueueImpl getTestQueue()
     {
         return _testQueue;
     }

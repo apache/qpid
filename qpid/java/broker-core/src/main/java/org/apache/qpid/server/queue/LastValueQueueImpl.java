@@ -23,35 +23,52 @@ package org.apache.qpid.server.queue;
 
 import java.util.Map;
 
-import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-public class ConflationQueue extends AbstractQueue
+public class LastValueQueueImpl extends AbstractQueue<LastValueQueueImpl> implements LastValueQueue<LastValueQueueImpl>
 {
     public static final String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
 
 
-    protected ConflationQueue(VirtualHostImpl virtualHost,
-                              Map<String, Object> attributes)
+    protected LastValueQueueImpl(VirtualHostImpl virtualHost,
+                                 Map<String, Object> attributes)
     {
         super(virtualHost, attributes, entryList(attributes));
     }
 
-    private static ConflationQueueList.Factory entryList(final Map<String, Object> attributes)
+    private static LastValueQueueList.Factory entryList(final Map<String, Object> attributes)
     {
 
-        String conflationKey = MapValueConverter.getStringAttribute(Queue.LVQ_KEY,
+        String conflationKey = MapValueConverter.getStringAttribute(LVQ_KEY,
                                                                     attributes,
                                                                     DEFAULT_LVQ_KEY);
 
         // conflation key can still be null if it was present in the map with a null value
-        return new ConflationQueueList.Factory(conflationKey == null ? DEFAULT_LVQ_KEY : conflationKey);
+        return new LastValueQueueList.Factory(conflationKey == null ? DEFAULT_LVQ_KEY : conflationKey);
     }
 
     public String getConflationKey()
     {
-        return ((ConflationQueueList)getEntries()).getConflationKey();
+        return ((LastValueQueueList)getEntries()).getConflationKey();
     }
 
+    @Override
+    public Object getAttribute(final String name)
+    {
+        if(LVQ_KEY.equals(name))
+        {
+            if(this instanceof LastValueQueueImpl)
+            {
+                return getConflationKey();
+            }
+        }
+        return super.getAttribute(name);
+    }
+
+    @Override
+    public String getLvqKey()
+    {
+        return getConflationKey();
+    }
 }

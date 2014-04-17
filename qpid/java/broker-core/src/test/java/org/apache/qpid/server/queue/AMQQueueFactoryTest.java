@@ -195,12 +195,12 @@ public class AMQQueueFactoryTest extends QpidTestCase
         attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.NAME, "testPriorityQueue");
 
-        attributes.put(Queue.PRIORITIES, 5);
+        attributes.put(PriorityQueue.PRIORITIES, 5);
 
 
         AMQQueue queue = _queueFactory.createQueue(attributes);
 
-        assertEquals("Queue not a priority queue", PriorityQueue.class, queue.getClass());
+        assertEquals("Queue not a priority queue", PriorityQueueImpl.class, queue.getClass());
         verifyQueueRegistered("testPriorityQueue");
         verifyRegisteredQueueCount(1);
     }
@@ -217,7 +217,7 @@ public class AMQQueueFactoryTest extends QpidTestCase
 
 
         AMQQueue queue = _queueFactory.createQueue(attributes);
-        assertEquals("Queue not a simple queue", StandardQueue.class, queue.getClass());
+        assertEquals("Queue not a simple queue", StandardQueueImpl.class, queue.getClass());
         verifyQueueRegistered(queueName);
 
         //verify that no alternate exchange or DLQ were produced

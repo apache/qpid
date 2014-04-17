@@ -89,9 +89,9 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-public abstract class AbstractQueue
-        extends AbstractConfiguredObject<AbstractQueue>
-        implements AMQQueue<AbstractQueue>,
+public abstract class AbstractQueue<X extends AbstractQueue<X>>
+        extends AbstractConfiguredObject<X>
+        implements AMQQueue<X>,
                    StateChangeListener<QueueConsumer<?>, State>,
                    MessageGroupManager.ConsumerResetHelper
 {
@@ -543,39 +543,9 @@ public abstract class AbstractQueue
             //We only return the boolean value if message groups are actually in use
             return _arguments.get(MESSAGE_GROUP_KEY) == null ? null : _arguments.get(MESSAGE_GROUP_SHARED_GROUPS);
         }
-        else if(LVQ_KEY.equals(name))
-        {
-            if(this instanceof ConflationQueue)
-            {
-                return ((ConflationQueue)this).getConflationKey();
-            }
-        }
         else if(QUEUE_FLOW_STOPPED.equals(name))
         {
             return isOverfull();
-        }
-        else if(SORT_KEY.equals(name))
-        {
-            if(this instanceof SortedQueue)
-            {
-                return ((SortedQueue)this).getSortedPropertyName();
-            }
-        }
-        else if(QUEUE_TYPE.equals(name))
-        {
-            if(this instanceof SortedQueue)
-            {
-                return "sorted";
-            }
-            if(this instanceof ConflationQueue)
-            {
-                return "lvq";
-            }
-            if(this instanceof PriorityQueue)
-            {
-                return "priority";
-            }
-            return "standard";
         }
         else if(STATE.equals(name))
         {
@@ -584,13 +554,6 @@ public abstract class AbstractQueue
         else if (DESCRIPTION.equals(name))
         {
             return getDescription();
-        }
-        else if(PRIORITIES.equals(name))
-        {
-            if(this instanceof PriorityQueue)
-            {
-                return ((PriorityQueue)this).getPriorities();
-            }
         }
 
         return super.getAttribute(name);
@@ -2679,12 +2642,6 @@ public abstract class AbstractQueue
     }
 
     @Override
-    public String getQueueType()
-    {
-        return null;
-    }
-
-    @Override
     public ExclusivityPolicy getExclusive()
     {
         return _exclusive;
@@ -2694,18 +2651,6 @@ public abstract class AbstractQueue
     public boolean getNoLocal()
     {
         return _noLocal;
-    }
-
-    @Override
-    public String getLvqKey()
-    {
-        return null;
-    }
-
-    @Override
-    public String getSortKey()
-    {
-        return null;
     }
 
     @Override
@@ -2726,13 +2671,6 @@ public abstract class AbstractQueue
     {
         return false;
     }
-
-    @Override
-    public int getPriorities()
-    {
-        return 0;
-    }
-
 
     @Override
     public State getState()

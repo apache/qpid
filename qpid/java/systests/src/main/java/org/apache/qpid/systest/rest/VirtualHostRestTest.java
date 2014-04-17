@@ -37,7 +37,10 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.ConflationQueue;
+import org.apache.qpid.server.queue.LastValueQueue;
+import org.apache.qpid.server.queue.LastValueQueueImpl;
+import org.apache.qpid.server.queue.PriorityQueue;
+import org.apache.qpid.server.queue.SortedQueue;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.util.FileUtils;
@@ -193,15 +196,15 @@ public class VirtualHostRestTest extends QpidRestTestCase
         createQueue(queueName + "-standard", "standard", null);
 
         Map<String, Object> sortedQueueAttributes = new HashMap<String, Object>();
-        sortedQueueAttributes.put(Queue.SORT_KEY, "sortme");
+        sortedQueueAttributes.put(SortedQueue.SORT_KEY, "sortme");
         createQueue(queueName + "-sorted", "sorted", sortedQueueAttributes);
 
         Map<String, Object> priorityQueueAttributes = new HashMap<String, Object>();
-        priorityQueueAttributes.put(Queue.PRIORITIES, 10);
+        priorityQueueAttributes.put(PriorityQueue.PRIORITIES, 10);
         createQueue(queueName + "-priority", "priority", priorityQueueAttributes);
 
         Map<String, Object> lvqQueueAttributes = new HashMap<String, Object>();
-        lvqQueueAttributes.put(Queue.LVQ_KEY, "LVQ");
+        lvqQueueAttributes.put(LastValueQueue.LVQ_KEY, "LVQ");
         createQueue(queueName + "-lvq", "lvq", lvqQueueAttributes);
 
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
@@ -223,9 +226,9 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.TRUE, priorityQueue.get(Queue.DURABLE));
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.TRUE, lvqQueue.get(Queue.DURABLE));
 
-        assertEquals("Unexpected sorted key attribute", "sortme", sortedQueue.get(Queue.SORT_KEY));
-        assertEquals("Unexpected lvq key attribute", "LVQ", lvqQueue.get(Queue.LVQ_KEY));
-        assertEquals("Unexpected priorities key attribute", 10, priorityQueue.get(Queue.PRIORITIES));
+        assertEquals("Unexpected sorted key attribute", "sortme", sortedQueue.get(SortedQueue.SORT_KEY));
+        assertEquals("Unexpected lvq key attribute", "LVQ", lvqQueue.get(LastValueQueue.LVQ_KEY));
+        assertEquals("Unexpected priorities key attribute", 10, priorityQueue.get(PriorityQueue.PRIORITIES));
     }
 
     public void testPutCreateExchange() throws Exception
@@ -271,7 +274,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         Asserts.assertQueue(queueName , "lvq", lvqQueue);
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.TRUE, lvqQueue.get(Queue.DURABLE));
-        assertEquals("Unexpected lvq key attribute", ConflationQueue.DEFAULT_LVQ_KEY, lvqQueue.get(Queue.LVQ_KEY));
+        assertEquals("Unexpected lvq key attribute", LastValueQueueImpl.DEFAULT_LVQ_KEY, lvqQueue.get(LastValueQueue.LVQ_KEY));
     }
 
     public void testPutCreateSortedQueueWithoutKey() throws Exception
@@ -302,7 +305,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         Asserts.assertQueue(queueName , "priority", priorityQueue);
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.TRUE, priorityQueue.get(Queue.DURABLE));
-        assertEquals("Unexpected number of priorities", 10, priorityQueue.get(Queue.PRIORITIES));
+        assertEquals("Unexpected number of priorities", 10, priorityQueue.get(PriorityQueue.PRIORITIES));
     }
 
     public void testPutCreateStandardQueueWithoutType() throws Exception
@@ -401,17 +404,17 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         Map<String, Object> sortedQueueAttributes = new HashMap<String, Object>();
         sortedQueueAttributes.putAll(attributes);
-        sortedQueueAttributes.put(Queue.SORT_KEY, "sortme");
+        sortedQueueAttributes.put(SortedQueue.SORT_KEY, "sortme");
         createQueue(queueName + "-sorted", "sorted", sortedQueueAttributes);
 
         Map<String, Object> priorityQueueAttributes = new HashMap<String, Object>();
         priorityQueueAttributes.putAll(attributes);
-        priorityQueueAttributes.put(Queue.PRIORITIES, 10);
+        priorityQueueAttributes.put(PriorityQueue.PRIORITIES, 10);
         createQueue(queueName + "-priority", "priority", priorityQueueAttributes);
 
         Map<String, Object> lvqQueueAttributes = new HashMap<String, Object>();
         lvqQueueAttributes.putAll(attributes);
-        lvqQueueAttributes.put(Queue.LVQ_KEY, "LVQ");
+        lvqQueueAttributes.put(LastValueQueue.LVQ_KEY, "LVQ");
         createQueue(queueName + "-lvq", "lvq", lvqQueueAttributes);
 
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
@@ -429,9 +432,9 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Asserts.assertQueue(queueName + "-priority", "priority", priorityQueue, attributes);
         Asserts.assertQueue(queueName + "-lvq", "lvq", lvqQueue, attributes);
 
-        assertEquals("Unexpected sorted key attribute", "sortme", sortedQueue.get(Queue.SORT_KEY));
-        assertEquals("Unexpected lvq key attribute", "LVQ", lvqQueue.get(Queue.LVQ_KEY));
-        assertEquals("Unexpected priorities key attribute", 10, priorityQueue.get(Queue.PRIORITIES));
+        assertEquals("Unexpected sorted key attribute", "sortme", sortedQueue.get(SortedQueue.SORT_KEY));
+        assertEquals("Unexpected lvq key attribute", "LVQ", lvqQueue.get(LastValueQueue.LVQ_KEY));
+        assertEquals("Unexpected priorities key attribute", 10, priorityQueue.get(PriorityQueue.PRIORITIES));
     }
 
     @SuppressWarnings("unchecked")
@@ -506,7 +509,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         queueData.put(Queue.DURABLE, Boolean.TRUE);
         if (queueType != null)
         {
-            queueData.put(Queue.QUEUE_TYPE, queueType);
+            queueData.put(Queue.TYPE, queueType);
         }
         if (attributes != null)
         {
