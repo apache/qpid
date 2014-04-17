@@ -47,9 +47,9 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class ConflationQueueTest extends QpidBrokerTestCase
+public class LastValueQueueTest extends QpidBrokerTestCase
 {
-    private static final Logger LOGGER = Logger.getLogger(ConflationQueueTest.class);
+    private static final Logger LOGGER = Logger.getLogger(LastValueQueueTest.class);
 
     private static final String MESSAGE_SEQUENCE_NUMBER_PROPERTY = "msg";
     private static final String KEY_PROPERTY = "key";

@@ -23,6 +23,10 @@ package org.apache.qpid.server.queue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
@@ -32,10 +36,6 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class PriorityQueueListTest extends QpidTestCase
 {
@@ -54,11 +54,11 @@ public class PriorityQueueListTest extends QpidTestCase
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
-        queueAttributes.put(Queue.PRIORITIES, 10);
+        queueAttributes.put(PriorityQueue.PRIORITIES, 10);
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        PriorityQueue queue = new PriorityQueue(virtualHost, queueAttributes);
+        PriorityQueueImpl queue = new PriorityQueueImpl(virtualHost, queueAttributes);
         _list = (PriorityQueueList) queue.getEntries();
 
         for (int i = 0; i < PRIORITIES.length; i++)

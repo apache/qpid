@@ -47,7 +47,7 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        StandardQueue queue = new StandardQueue(virtualHost, queueAttributes);
+        StandardQueueImpl queue = new StandardQueueImpl(virtualHost, queueAttributes);
 
         queueEntryList = (OrderedQueueEntryList) queue.getEntries();
 

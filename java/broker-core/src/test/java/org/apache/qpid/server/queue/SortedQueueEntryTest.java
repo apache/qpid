@@ -19,6 +19,10 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,10 +35,6 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class SortedQueueEntryTest extends QueueEntryImplTestBase
 {
@@ -51,18 +51,18 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
         attributes.put(Queue.NAME, getName());
         attributes.put(Queue.DURABLE, false);
         attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
-        attributes.put(Queue.SORT_KEY, "KEY");
+        attributes.put(SortedQueue.SORT_KEY, "KEY");
 
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        SortedQueue queue = new SortedQueue(virtualHost, attributes, new QueueEntryListFactory()
+        SortedQueueImpl queue = new SortedQueueImpl(virtualHost, attributes, new QueueEntryListFactory()
         {
 
             @Override
             public SortedQueueEntryList createQueueEntryList(final AMQQueue queue)
             {
-                return new SelfValidatingSortedQueueEntryList((SortedQueue) queue, "KEY");
+                return new SelfValidatingSortedQueueEntryList((SortedQueueImpl) queue, "KEY");
             }
         });
         _queueEntryList = (SelfValidatingSortedQueueEntryList) queue.getEntries();

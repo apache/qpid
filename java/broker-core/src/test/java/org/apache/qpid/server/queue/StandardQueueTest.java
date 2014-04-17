@@ -49,7 +49,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getQname());
         queueAttributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
-        final StandardQueue queue = new StandardQueue(getVirtualHost(), queueAttributes);
+        final StandardQueueImpl queue = new StandardQueueImpl(getVirtualHost(), queueAttributes);
         queue.open();
         setQueue(queue);
 
@@ -72,7 +72,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, "testActiveConsumerCount");
         queueAttributes.put(Queue.OWNER, "testOwner");
-        final StandardQueue queue = new StandardQueue(getVirtualHost(), queueAttributes);
+        final StandardQueueImpl queue = new StandardQueueImpl(getVirtualHost(), queueAttributes);
         queue.open();
         //verify adding an active consumer increases the count
         final MockConsumer consumer1 = new MockConsumer();
@@ -180,7 +180,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, "test");
         // create queue with overridden method deliverAsync
-        StandardQueue testQueue = new StandardQueue(getVirtualHost(), queueAttributes)
+        StandardQueueImpl testQueue = new StandardQueueImpl(getVirtualHost(), queueAttributes)
         {
             @Override
             public void deliverAsync(QueueConsumer sub)

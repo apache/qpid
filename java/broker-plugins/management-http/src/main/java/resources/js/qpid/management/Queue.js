@@ -277,7 +277,7 @@ define(["dojo/_base/xhr",
                            "exclusive",
                            "owner",
                            "lifetimePolicy",
-                           "queueType",
+                           "type",
                            "typeQualifier",
                            "alertRepeatGap",
                            "alertRepeatGapUnits",
@@ -359,14 +359,14 @@ define(["dojo/_base/xhr",
                bytesDepth = formatter.formatBytes( this.queueData["unacknowledgedBytes"] );
                this.unacknowledgedBytes.innerHTML = "(" + bytesDepth.value;
                this.unacknowledgedBytesUnits.innerHTML = bytesDepth.units + ")";
-               this.queueType.innerHTML = entities.encode(this.queueData[ "queueType" ]);
-               if (this.queueData.queueType == "standard")
+               this["type" ].innerHTML = entities.encode(this.queueData[ "type" ]);
+               if (this.queueData["type"] == "standard")
                {
                    this.typeQualifier.style.display = "none";
                }
                else
                {
-                   this.typeQualifier.innerHTML = entities.encode("(" + queueTypeKeyNames[this.queueData.queueType] + ": " + this.queueData[queueTypeKeys[this.queueData.queueType]] + ")");
+                   this.typeQualifier.innerHTML = entities.encode("(" + queueTypeKeyNames[this.queueData[ "type" ]] + ": " + this.queueData[queueTypeKeys[this.queueData[ "type" ]]] + ")");
                }
 
                if(this.queueData["messageGroupKey"])

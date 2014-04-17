@@ -32,6 +32,6 @@ public class SortedQueueEntryListFactory implements QueueEntryListFactory
     @Override
     public SortedQueueEntryList createQueueEntryList(final AMQQueue<?> queue)
     {
-        return new SortedQueueEntryList((SortedQueue) queue, _propertyName);
+        return new SortedQueueEntryList((SortedQueueImpl) queue, _propertyName);
     }
 }

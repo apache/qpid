@@ -50,9 +50,11 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.ConflationQueue;
+import org.apache.qpid.server.queue.LastValueQueue;
+import org.apache.qpid.server.queue.LastValueQueueImpl;
 import org.apache.qpid.server.queue.PriorityQueue;
-import org.apache.qpid.server.queue.StandardQueue;
+import org.apache.qpid.server.queue.PriorityQueueImpl;
+import org.apache.qpid.server.queue.StandardQueueImpl;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -553,18 +555,18 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         if (usePriority)
         {
-            assertEquals("Queue is no longer a Priority Queue", PriorityQueue.class, queue.getClass());
+            assertEquals("Queue is no longer a Priority Queue", PriorityQueueImpl.class, queue.getClass());
             assertEquals("Priority Queue does not have set priorities",
-                    DEFAULT_PRIORTY_LEVEL, ((PriorityQueue) queue).getPriorities());
+                    DEFAULT_PRIORTY_LEVEL, ((PriorityQueueImpl) queue).getPriorities());
         }
         else if (lastValueQueue)
         {
-            assertEquals("Queue is no longer a LastValue Queue", ConflationQueue.class, queue.getClass());
-            assertEquals("LastValue Queue Key has changed", LVQ_KEY, ((ConflationQueue) queue).getConflationKey());
+            assertEquals("Queue is no longer a LastValue Queue", LastValueQueueImpl.class, queue.getClass());
+            assertEquals("LastValue Queue Key has changed", LVQ_KEY, ((LastValueQueueImpl) queue).getConflationKey());
         }
         else
         {
-            assertEquals("Queue is not 'simple'", StandardQueue.class, queue.getClass());
+            assertEquals("Queue is not 'simple'", StandardQueueImpl.class, queue.getClass());
         }
 
         assertEquals("Queue owner is not as expected for queue " + queue.getName(), exclusive ? queueOwner : null, queue.getOwner());
@@ -660,12 +662,12 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         if (usePriority)
         {
-            queueArguments.put(Queue.PRIORITIES, DEFAULT_PRIORTY_LEVEL);
+            queueArguments.put(PriorityQueue.PRIORITIES, DEFAULT_PRIORTY_LEVEL);
         }
 
         if (lastValueQueue)
         {
-            queueArguments.put(Queue.LVQ_KEY, LVQ_KEY);
+            queueArguments.put(LastValueQueue.LVQ_KEY, LVQ_KEY);
         }
 
         queueArguments.put(Queue.ID, UUIDGenerator.generateRandomUUID());

@@ -21,21 +21,22 @@ package org.apache.qpid.server.queue;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import junit.framework.TestCase;
-
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class ConflationQueueListTest extends TestCase
+import junit.framework.TestCase;
+
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+
+public class LastValueQueueListTest extends TestCase
 {
     private static final String CONFLATION_KEY = "CONFLATION_KEY";
 
@@ -43,8 +44,8 @@ public class ConflationQueueListTest extends TestCase
     private static final String TEST_KEY_VALUE1 = "testKeyValue1";
     private static final String TEST_KEY_VALUE2 = "testKeyValue2";
 
-    private ConflationQueueList _list;
-    private ConflationQueue _queue;
+    private LastValueQueueList _list;
+    private LastValueQueueImpl _queue;
 
     @Override
     protected void setUp() throws Exception
@@ -53,12 +54,12 @@ public class ConflationQueueListTest extends TestCase
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, getName());
-        queueAttributes.put(Queue.LVQ_KEY, CONFLATION_KEY);
+        queueAttributes.put(LastValueQueue.LVQ_KEY, CONFLATION_KEY);
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        _queue = new ConflationQueue(virtualHost, queueAttributes);
-        _list = (ConflationQueueList) _queue.getEntries();
+        _queue = new LastValueQueueImpl(virtualHost, queueAttributes);
+        _list = (LastValueQueueList) _queue.getEntries();
     }
 
     public void testListHasNoEntries()
@@ -188,7 +189,7 @@ public class ConflationQueueListTest extends TestCase
         assertEquals(0, _list.getLatestValuesMap().size());
     }
 
-    private int countEntries(ConflationQueueList list)
+    private int countEntries(LastValueQueueList list)
     {
         QueueEntryIterator iterator =
                 list.iterator();

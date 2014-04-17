@@ -96,7 +96,7 @@ define(["dojo/_base/xhr",
                             }
                         }
                         else if (!typeSpecificFields.hasOwnProperty(propName) ||
-                                        formValues.queueType === typeSpecificFields[ propName ]) {
+                                        formValues[ "type" ] === typeSpecificFields[ propName ]) {
                             if(formValues[ propName ] !== "") {
                                 if (fieldConverters.hasOwnProperty(propName))
                                 {
@@ -130,7 +130,7 @@ define(["dojo/_base/xhr",
                             theForm = registry.byId("formAddQueue");
                             array.forEach(theForm.getDescendants(), function(widget)
                                 {
-                                    if(widget.name === "queueType") {
+                                    if(widget.name === "type") {
                                         widget.on("change", function(isChecked) {
 
                                             var objId = widget.id + ":fields";

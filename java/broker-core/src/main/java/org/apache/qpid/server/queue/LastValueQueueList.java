@@ -21,20 +21,21 @@
 
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ConflationQueueList extends OrderedQueueEntryList
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+
+public class LastValueQueueList extends OrderedQueueEntryList
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConflationQueueList.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LastValueQueueList.class);
 
     private static final HeadCreator HEAD_CREATOR = new HeadCreator()
     {
@@ -42,7 +43,7 @@ public class ConflationQueueList extends OrderedQueueEntryList
         @Override
         public ConflationQueueEntry createHead(final QueueEntryList list)
         {
-            return ((ConflationQueueList)list).createHead();
+            return ((LastValueQueueList)list).createHead();
         }
     };
 
@@ -53,7 +54,7 @@ public class ConflationQueueList extends OrderedQueueEntryList
     private final ConflationQueueEntry _deleteInProgress = new ConflationQueueEntry(this);
     private final ConflationQueueEntry _newerEntryAlreadyBeenAndGone = new ConflationQueueEntry(this);
 
-    public ConflationQueueList(ConflationQueue queue, String conflationKey)
+    public LastValueQueueList(LastValueQueueImpl queue, String conflationKey)
     {
         super(queue, HEAD_CREATOR);
         _conflationKey = conflationKey;
@@ -199,12 +200,12 @@ public class ConflationQueueList extends OrderedQueueEntryList
 
         private AtomicReference<ConflationQueueEntry> _latestValueReference;
 
-        private ConflationQueueEntry(final ConflationQueueList queueEntryList)
+        private ConflationQueueEntry(final LastValueQueueList queueEntryList)
         {
             super(queueEntryList);
         }
 
-        public ConflationQueueEntry(ConflationQueueList queueEntryList, ServerMessage message)
+        public ConflationQueueEntry(LastValueQueueList queueEntryList, ServerMessage message)
         {
             super(queueEntryList, message);
         }
@@ -264,9 +265,9 @@ public class ConflationQueueList extends OrderedQueueEntryList
         }
 
         @Override
-        public ConflationQueueList createQueueEntryList(final AMQQueue<?> queue)
+        public LastValueQueueList createQueueEntryList(final AMQQueue<?> queue)
         {
-            return new ConflationQueueList((ConflationQueue)queue, _conflationKey);
+            return new LastValueQueueList((LastValueQueueImpl)queue, _conflationKey);
         }
     }
 }

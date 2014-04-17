@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedObject;
+import java.util.Map;
 
-@ManagedObject( category = false, type="sorted" )
-public interface SortedQueue<X extends SortedQueue<X>> extends AMQQueue<X>
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+
+public class StandardQueueImpl extends AbstractQueue<StandardQueueImpl> implements StandardQueue<StandardQueueImpl>
 {
-    String SORT_KEY = "sortKey";
-
-    @ManagedAttribute
-    String getSortKey();
-
-
+    public StandardQueueImpl(final VirtualHostImpl virtualHost,
+                             final Map<String, Object> arguments)
+    {
+        super(virtualHost, arguments, new StandardQueueEntryList.Factory());
+    }
 }

@@ -185,7 +185,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     @Override
     public String getQueueType()
     {
-        return (String) _queue.getAttribute(Queue.QUEUE_TYPE);
+        return (String) _queue.getAttribute(Queue.TYPE);
     }
 
     public boolean isDurable()

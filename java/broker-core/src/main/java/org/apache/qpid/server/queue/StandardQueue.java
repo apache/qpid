@@ -20,15 +20,9 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.Map;
+import org.apache.qpid.server.model.ManagedObject;
 
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-public class StandardQueue extends AbstractQueue
+@ManagedObject( category = false, type="standard" )
+public interface StandardQueue<X extends StandardQueue<X>> extends AMQQueue<X>
 {
-    public StandardQueue(final VirtualHostImpl virtualHost,
-                         final Map<String, Object> arguments)
-    {
-        super(virtualHost, arguments, new StandardQueueEntryList.Factory());
-    }
 }

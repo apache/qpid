@@ -82,21 +82,21 @@ public class AMQQueueFactory implements QueueFactory
 
         AMQQueue queue;
 
-        if(attributes.containsKey(Queue.SORT_KEY))
+        if(attributes.containsKey(SortedQueue.SORT_KEY))
         {
-            queue = new SortedQueue(_virtualHost, attributes);
+            queue = new SortedQueueImpl(_virtualHost, attributes);
         }
-        else if(attributes.containsKey(Queue.LVQ_KEY))
+        else if(attributes.containsKey(LastValueQueue.LVQ_KEY))
         {
-            queue = new ConflationQueue(_virtualHost, attributes);
+            queue = new LastValueQueueImpl(_virtualHost, attributes);
         }
-        else if(attributes.containsKey(Queue.PRIORITIES))
+        else if(attributes.containsKey(PriorityQueue.PRIORITIES))
         {
-            queue = new PriorityQueue(_virtualHost, attributes);
+            queue = new PriorityQueueImpl(_virtualHost, attributes);
         }
         else
         {
-            queue = new StandardQueue(_virtualHost, attributes);
+            queue = new StandardQueueImpl(_virtualHost, attributes);
         }
         queue.open();
         //Register the new queue

@@ -131,7 +131,7 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testQueueType() throws Exception
     {
-        when(_mockQueue.getAttribute(Queue.QUEUE_TYPE)).thenReturn(QUEUE_TYPE);
+        when(_mockQueue.getAttribute(Queue.TYPE)).thenReturn(QUEUE_TYPE);
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, "queueType", QUEUE_TYPE);
     }
 

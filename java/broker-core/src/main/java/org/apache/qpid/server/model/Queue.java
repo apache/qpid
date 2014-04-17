@@ -24,8 +24,7 @@ import java.util.Collection;
 
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 
-@ManagedObject
-
+@ManagedObject( defaultType = "standard" )
 public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 {
 
@@ -39,21 +38,14 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     String MESSAGE_GROUP_KEY = "messageGroupKey";
     String MESSAGE_GROUP_SHARED_GROUPS = "messageGroupSharedGroups";
     String MESSAGE_GROUP_DEFAULT_GROUP = "messageGroupDefaultGroup";
-    String LVQ_KEY = "lvqKey";
     String MAXIMUM_DELIVERY_ATTEMPTS = "maximumDeliveryAttempts";
     String NO_LOCAL = "noLocal";
     String OWNER = "owner";
     String QUEUE_FLOW_CONTROL_SIZE_BYTES = "queueFlowControlSizeBytes";
     String QUEUE_FLOW_RESUME_SIZE_BYTES = "queueFlowResumeSizeBytes";
     String QUEUE_FLOW_STOPPED = "queueFlowStopped";
-    String SORT_KEY = "sortKey";
-    String QUEUE_TYPE = "queueType";
-    String PRIORITIES = "priorities";
 
     String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
-
-    @ManagedAttribute
-    String getQueueType();
 
     @ManagedAttribute
     Exchange getAlternateExchange();
@@ -67,11 +59,6 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     @ManagedAttribute
     boolean getNoLocal();
 
-    @ManagedAttribute
-    String getLvqKey();
-
-    @ManagedAttribute
-    String getSortKey();
 
     @ManagedAttribute
     String getMessageGroupKey();
@@ -135,8 +122,6 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     @ManagedAttribute( automate = true, defaultValue = "${queue.alertRepeatGap}")
     long getAlertRepeatGap();
 
-    @ManagedAttribute
-    int getPriorities();
 
     //children
     Collection<? extends Binding> getBindings();

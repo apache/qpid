@@ -34,7 +34,7 @@ public class StandardQueueEntryList extends OrderedQueueEntryList
         }
     };
 
-    public StandardQueueEntryList(final StandardQueue queue)
+    public StandardQueueEntryList(final StandardQueueImpl queue)
     {
         super(queue, HEAD_CREATOR);
     }
@@ -50,7 +50,7 @@ public class StandardQueueEntryList extends OrderedQueueEntryList
 
         public StandardQueueEntryList createQueueEntryList(AMQQueue<?> queue)
         {
-            return new StandardQueueEntryList((StandardQueue) queue);
+            return new StandardQueueEntryList((StandardQueueImpl) queue);
         }
     }
 
