@@ -709,8 +709,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
     private AbstractQueue createNonAsyncDeliverQueue()
     {
-        TestSimpleQueueEntryListFactory factory = new TestSimpleQueueEntryListFactory();
-        return new NonAsyncDeliverQueue(factory, getVirtualHost());
+        return new NonAsyncDeliverQueue(getVirtualHost());
     }
 
     /**
@@ -830,7 +829,8 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         QueueNotificationListener listener = mock(QueueNotificationListener .class);
 
         _queue.setNotificationListener(listener);
-        _queue.setAlertThresholdQueueDepthMessages(2);
+        _queue.setAttributes(Collections.<String, Object>singletonMap(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                                                                      Integer.valueOf(2)));
 
         _queue.enqueue(createMessage(new Long(24)), null);
         verifyZeroInteractions(listener);
@@ -849,7 +849,8 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _queue.enqueue(createMessage(new Long(26)), null);
 
         _queue.setNotificationListener(listener);
-        _queue.setAlertThresholdQueueDepthMessages(2);
+        _queue.setAttributes(Collections.<String, Object>singletonMap(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+                                                                      Integer.valueOf(2)));
 
         verifyZeroInteractions(listener);
 
@@ -1046,17 +1047,6 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         return _consumerTarget;
     }
 
-
-    static class TestSimpleQueueEntryListFactory implements QueueEntryListFactory
-    {
-
-        @Override
-        public NonAsyncDeliverList createQueueEntryList(final AMQQueue<?> queue)
-        {
-            return new NonAsyncDeliverList((NonAsyncDeliverQueue) queue);
-        }
-    }
-
     private static class NonAsyncDeliverEntry extends OrderedQueueEntry
     {
 
@@ -1107,9 +1097,23 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
     private static class NonAsyncDeliverQueue extends AbstractQueue<NonAsyncDeliverQueue>
     {
-        public NonAsyncDeliverQueue(final TestSimpleQueueEntryListFactory factory, VirtualHostImpl vhost)
+        private QueueEntryList _entries = new NonAsyncDeliverList(this);
+
+        public NonAsyncDeliverQueue(VirtualHostImpl vhost)
         {
-            super(vhost, attributes(), factory);
+            super(vhost, attributes());
+        }
+
+        @Override
+        protected void onOpen()
+        {
+            super.onOpen();
+        }
+
+        @Override
+        QueueEntryList getEntries()
+        {
+            return _entries;
         }
 
         private static Map<String,Object> attributes()

@@ -194,6 +194,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         _id = uuid;
 
         _name = AttributeValueConverter.STRING_CONVERTER.convert(attributes.get(NAME),this);
+        if(_name == null)
+        {
+            throw new IllegalArgumentException("The name attribute is mandatory for " + getClass().getSimpleName() + " creation.");
+        }
 
         _attributeTypes = getAttributeTypes(getClass());
         _automatedFields = getAutomatedFields(getClass());
@@ -267,6 +271,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             if(attr.getAnnotation().mandatory() && !(_attributes.containsKey(attr.getName())
                                                      || !"".equals(attr.getAnnotation().defaultValue())))
             {
+                deleted();
                 throw new IllegalArgumentException("Mandatory attribute " + attr.getName() + " not supplied for instance of " + getClass().getName());
             }
         }
@@ -367,9 +372,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(_open.compareAndSet(false,true))
         {
-            doResolution();
-            doValidation();
-            doOpening();
+            doResolution(true);
+            doValidation(true);
+            doOpening(true);
         }
     }
 
@@ -378,75 +383,87 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(_open.compareAndSet(false,true))
         {
-            doResolution();
-            doValidation();
-            doCreation();
-            doOpening();
+            doResolution(true);
+            doValidation(true);
+            doCreation(true);
+            doOpening(true);
         }
     }
 
-    protected void doOpening()
+    protected void doOpening(final boolean skipCheck)
     {
-        onOpen();
-        applyToChildren(new Action<ConfiguredObject<?>>()
+        if(skipCheck || _open.compareAndSet(false,true))
         {
-            @Override
-            public void performAction(final ConfiguredObject<?> child)
+            onOpen();
+            applyToChildren(new Action<ConfiguredObject<?>>()
             {
-                if(child instanceof AbstractConfiguredObject)
+                @Override
+                public void performAction(final ConfiguredObject<?> child)
                 {
-                    ((AbstractConfiguredObject)child).doOpening();
+                    if (child instanceof AbstractConfiguredObject)
+                    {
+                        ((AbstractConfiguredObject) child).doOpening(false);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
-    protected final void doValidation()
+    protected final void doValidation(final boolean skipCheck)
     {
-        applyToChildren(new Action<ConfiguredObject<?>>()
+        if(skipCheck || !_open.get())
         {
-            @Override
-            public void performAction(final ConfiguredObject<?> child)
+            applyToChildren(new Action<ConfiguredObject<?>>()
             {
-                if(child instanceof AbstractConfiguredObject)
+                @Override
+                public void performAction(final ConfiguredObject<?> child)
                 {
-                    ((AbstractConfiguredObject)child).doValidation();
+                    if (child instanceof AbstractConfiguredObject)
+                    {
+                        ((AbstractConfiguredObject) child).doValidation(false);
+                    }
                 }
-            }
-        });
-        validate();
+            });
+            validate();
+        }
     }
 
-    protected final void doResolution()
+    protected final void doResolution(final boolean skipCheck)
     {
-        resolve();
-        applyToChildren(new Action<ConfiguredObject<?>>()
+        if(skipCheck || !_open.get())
         {
-            @Override
-            public void performAction(final ConfiguredObject<?> child)
+            resolve();
+            applyToChildren(new Action<ConfiguredObject<?>>()
             {
-                if(child instanceof AbstractConfiguredObject)
+                @Override
+                public void performAction(final ConfiguredObject<?> child)
                 {
-                    ((AbstractConfiguredObject)child).doResolution();
+                    if (child instanceof AbstractConfiguredObject)
+                    {
+                        ((AbstractConfiguredObject) child).doResolution(false);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
-    protected final void doCreation()
+    protected final void doCreation(final boolean skipCheck)
     {
-        onCreate();
-        applyToChildren(new Action<ConfiguredObject<?>>()
+        if(skipCheck || !_open.get())
         {
-            @Override
-            public void performAction(final ConfiguredObject<?> child)
+            onCreate();
+            applyToChildren(new Action<ConfiguredObject<?>>()
             {
-                if(child instanceof AbstractConfiguredObject)
+                @Override
+                public void performAction(final ConfiguredObject<?> child)
                 {
-                    ((AbstractConfiguredObject)child).doCreation();
+                    if (child instanceof AbstractConfiguredObject)
+                    {
+                        ((AbstractConfiguredObject) child).doCreation(false);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     private void applyToChildren(Action<ConfiguredObject<?>> action)

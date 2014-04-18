@@ -20,20 +20,20 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class StandardQueueEntryListTest extends QueueEntryListTestBase
 {
@@ -56,8 +56,8 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         _testQueue = new StandardQueueImpl(virtualHost, queueAttributes);
-
-        _sqel = (StandardQueueEntryList) _testQueue.getEntries();
+        _testQueue.open();
+        _sqel = _testQueue.getEntries();
         for(int i = 1; i <= 100; i++)
         {
             final ServerMessage message = mock(ServerMessage.class);
@@ -102,8 +102,8 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
             when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
             StandardQueueImpl queue = new StandardQueueImpl(virtualHost, queueAttributes);
-
-            return (StandardQueueEntryList) queue.getEntries();
+            queue.open();
+            return queue.getEntries();
         }
         else
         {

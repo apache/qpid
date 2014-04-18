@@ -39,11 +39,11 @@ public class SortedQueueEntryList implements QueueEntryList
     private final SortedQueueImpl _queue;
     private final String _propertyName;
 
-    public SortedQueueEntryList(final SortedQueueImpl queue, final String propertyName)
+    public SortedQueueEntryList(final SortedQueueImpl queue)
     {
         _queue = queue;
         _head = new SortedQueueEntry(this);
-        _propertyName = propertyName;
+        _propertyName = queue.getSortKey();
     }
 
     public SortedQueueImpl getQueue()

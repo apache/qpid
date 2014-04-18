@@ -21,8 +21,8 @@
 
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -30,8 +30,9 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class PersistentStoreTest extends QpidBrokerTestCase
 {

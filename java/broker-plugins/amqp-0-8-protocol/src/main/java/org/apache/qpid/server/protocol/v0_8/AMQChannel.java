@@ -63,7 +63,6 @@ import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -86,6 +85,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -1616,7 +1616,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 {
                     final AMQQueue queue = (AMQQueue) owningResource;
 
-                    final ExchangeImpl altExchange = queue.getAlternateExchange();
+                    final Exchange altExchange = queue.getAlternateExchange();
 
                     if (altExchange == null)
                     {

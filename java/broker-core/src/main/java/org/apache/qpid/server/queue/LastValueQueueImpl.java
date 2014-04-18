@@ -23,52 +23,39 @@ package org.apache.qpid.server.queue;
 
 import java.util.Map;
 
-import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class LastValueQueueImpl extends AbstractQueue<LastValueQueueImpl> implements LastValueQueue<LastValueQueueImpl>
 {
-    public static final String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
+    private LastValueQueueList _entries;
+
+    @ManagedAttributeField
+    private String _lvqKey;
 
 
     public LastValueQueueImpl(VirtualHostImpl virtualHost,
                                  Map<String, Object> attributes)
     {
-        super(virtualHost, attributes, entryList(attributes));
-    }
-
-    private static LastValueQueueList.Factory entryList(final Map<String, Object> attributes)
-    {
-
-        String conflationKey = MapValueConverter.getStringAttribute(LVQ_KEY,
-                                                                    attributes,
-                                                                    DEFAULT_LVQ_KEY);
-
-        // conflation key can still be null if it was present in the map with a null value
-        return new LastValueQueueList.Factory(conflationKey == null ? DEFAULT_LVQ_KEY : conflationKey);
-    }
-
-    public String getConflationKey()
-    {
-        return ((LastValueQueueList)getEntries()).getConflationKey();
+        super(virtualHost, attributes);
     }
 
     @Override
-    public Object getAttribute(final String name)
+    protected void onOpen()
     {
-        if(LVQ_KEY.equals(name))
-        {
-            if(this instanceof LastValueQueueImpl)
-            {
-                return getConflationKey();
-            }
-        }
-        return super.getAttribute(name);
+        super.onOpen();
+        _entries = new LastValueQueueList(this);
+    }
+
+    @Override
+    LastValueQueueList getEntries()
+    {
+        return _entries;
     }
 
     @Override
     public String getLvqKey()
     {
-        return getConflationKey();
+        return _lvqKey;
     }
 }

@@ -22,7 +22,9 @@ package org.apache.qpid.server.store;
 
 import java.util.UUID;
 
+import org.apache.qpid.server.model.ConfiguredObject;
+
 interface DependencyListener
 {
-    void dependencyResolved(String type, UUID id, Object o);
+    void dependencyResolved(String type, UUID id, ConfiguredObject o);
 }

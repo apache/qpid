@@ -19,8 +19,10 @@
 package org.apache.qpid.server.jmx.mbeans;
 
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -320,7 +322,7 @@ public class QueueMBeanTest extends QpidTestCase
         when(_mockQueue.getParent(VirtualHost.class)).thenReturn(mockVirtualHost);
 
         _queueMBean.setAlternateExchange("exchange2");
-        verify(_mockQueue).setAttribute(Queue.ALTERNATE_EXCHANGE, null, mockExchange2);
+        verify(_mockQueue).setAttributes(Collections.<String,Object>singletonMap(Queue.ALTERNATE_EXCHANGE, "exchange2"));
     }
 
     public void testSetAlternateExchangeWithUnknownExchangeName() throws Exception
@@ -331,7 +333,8 @@ public class QueueMBeanTest extends QpidTestCase
         VirtualHost mockVirtualHost = mock(VirtualHost.class);
         when(mockVirtualHost.getExchanges()).thenReturn(Collections.singletonList(mockExchange));
         when(_mockQueue.getParent(VirtualHost.class)).thenReturn(mockVirtualHost);
-
+        doThrow(new IllegalArgumentException()).when(_mockQueue).setAttributes(
+                eq(Collections.<String, Object>singletonMap(Queue.ALTERNATE_EXCHANGE, "notknown")));
         try
         {
             _queueMBean.setAlternateExchange("notknown");
@@ -346,7 +349,7 @@ public class QueueMBeanTest extends QpidTestCase
     public void testRemoveAlternateExchange() throws Exception
     {
         _queueMBean.setAlternateExchange("");
-        verify(_mockQueue).setAttribute(Queue.ALTERNATE_EXCHANGE, null, null);
+        verify(_mockQueue).setAttributes(Collections.singletonMap(Queue.ALTERNATE_EXCHANGE, null));
     }
 
     /**********  Operations **********/

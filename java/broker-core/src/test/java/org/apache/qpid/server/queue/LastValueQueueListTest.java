@@ -59,7 +59,8 @@ public class LastValueQueueListTest extends TestCase
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         _queue = new LastValueQueueImpl(virtualHost, queueAttributes);
-        _list = (LastValueQueueList) _queue.getEntries();
+        _queue.open();
+        _list = _queue.getEntries();
     }
 
     public void testListHasNoEntries()

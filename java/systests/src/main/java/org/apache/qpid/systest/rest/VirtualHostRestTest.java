@@ -38,10 +38,10 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.LastValueQueue;
-import org.apache.qpid.server.queue.LastValueQueueImpl;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.SortedQueue;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.util.FileUtils;
 
@@ -274,7 +274,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         Asserts.assertQueue(queueName , "lvq", lvqQueue);
         assertEquals("Unexpected value of queue attribute " + Queue.DURABLE, Boolean.TRUE, lvqQueue.get(Queue.DURABLE));
-        assertEquals("Unexpected lvq key attribute", LastValueQueueImpl.DEFAULT_LVQ_KEY, lvqQueue.get(LastValueQueue.LVQ_KEY));
+        assertEquals("Unexpected lvq key attribute", LastValueQueue.DEFAULT_LVQ_KEY, lvqQueue.get(LastValueQueue.LVQ_KEY));
     }
 
     public void testPutCreateSortedQueueWithoutKey() throws Exception
@@ -443,15 +443,15 @@ public class VirtualHostRestTest extends QpidRestTestCase
         String queueName = getTestQueueName();
 
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, true);
 
         //verify the starting state
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test");
         List<Map<String, Object>> queues = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_QUEUES_ATTRIBUTE);
         List<Map<String, Object>> exchanges = (List<Map<String, Object>>) hostDetails.get(VirtualHostRestTest.VIRTUALHOST_EXCHANGES_ATTRIBUTE);
 
-        assertNull("queue should not have already been present", getRestTestHelper().find(Queue.NAME, queueName , queues));
-        assertNull("queue should not have already been present", getRestTestHelper().find(Queue.NAME, queueName + "_DLQ" , queues));
+        assertNull("queue "+ queueName + " should not have already been present", getRestTestHelper().find(Queue.NAME, queueName , queues));
+        assertNull("queue "+ queueName + "_DLQ should not have already been present", getRestTestHelper().find(Queue.NAME, queueName + "_DLQ" , queues));
         assertNull("exchange should not have already been present", getRestTestHelper().find(Exchange.NAME, queueName + "_DLE" , exchanges));
 
         //create the queue
@@ -465,9 +465,9 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Map<String, Object> queue = getRestTestHelper().find(Queue.NAME, queueName , queues);
         Map<String, Object> dlqQueue = getRestTestHelper().find(Queue.NAME, queueName + "_DLQ" , queues);
         Map<String, Object> dlExchange = getRestTestHelper().find(Exchange.NAME, queueName + "_DLE" , exchanges);
-        assertNotNull("queue should not have been present", queue);
-        assertNotNull("queue should not have been present", dlqQueue);
-        assertNotNull("exchange should not have been present", dlExchange);
+        assertNotNull("queue should have been present", queue);
+        assertNotNull("queue should have been present", dlqQueue);
+        assertNotNull("exchange should have been present", dlExchange);
 
         //verify that the alternate exchange is set as expected on the new queue
         Map<String, Object> queueAttributes = new HashMap<String, Object>();

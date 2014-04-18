@@ -32,7 +32,7 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
 {
     private final Class<X> _clazz;
 
-    protected AbstractConfiguredObjectTypeFactory(final Class<X> clazz)
+    public AbstractConfiguredObjectTypeFactory(final Class<X> clazz)
     {
         _clazz = clazz;
     }

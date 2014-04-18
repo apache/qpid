@@ -25,6 +25,7 @@ import java.util.UUID;
 public interface UnresolvedDependency<T>
 {
     public UUID getId();
+    public String getName();
     public String getType();
 
     public void resolve(final T dependency);

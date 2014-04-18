@@ -86,15 +86,23 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        _testQueue = new SortedQueueImpl(virtualHost, attributes, new QueueEntryListFactory()
+        _testQueue = new SortedQueueImpl(virtualHost, attributes)
         {
+            SelfValidatingSortedQueueEntryList _entries;
+            @Override
+            protected void onOpen()
+            {
+                super.onOpen();
+                _entries = new SelfValidatingSortedQueueEntryList(this);
+            }
 
             @Override
-            public SortedQueueEntryList createQueueEntryList(final AMQQueue queue)
+            SelfValidatingSortedQueueEntryList getEntries()
             {
-                return new SelfValidatingSortedQueueEntryList((SortedQueueImpl) queue, "KEY");
+                return _entries;
             }
-        });
+        };
+        _testQueue.open();
         _sqel = (SelfValidatingSortedQueueEntryList) _testQueue.getEntries();
 
         super.setUp();
@@ -124,7 +132,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
     {
         if(newList)
         {
-            return new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+            return new SelfValidatingSortedQueueEntryList(_testQueue);
         }
         else
         {
@@ -195,7 +203,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     public void testNonUniqueSortKeys() throws Exception
     {
-        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue);
 
         // Build test list
         long messageId = 0L;
@@ -216,7 +224,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     public void testNullSortKeys() throws Exception
     {
-        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue);
 
         // Build test list
         long messageId = 0L;
@@ -237,7 +245,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     public void testAscendingSortKeys() throws Exception
     {
-        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue);
 
         // Build test list
         long messageId = 0L;
@@ -260,7 +268,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     public void testDescendingSortKeys() throws Exception
     {
-        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue);
 
         // Build test list
         long messageId = 0L;
@@ -283,7 +291,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     public void testInsertAfter() throws Exception
     {
-        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue);
 
         ServerMessage msg = generateTestMessage(1, "A");
         _sqel.add(msg);
@@ -303,7 +311,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     public void testInsertBefore() throws Exception
     {
-        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue);
 
         ServerMessage msg = generateTestMessage(1, "B");
         _sqel.add(msg);
@@ -323,7 +331,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     public void testInsertInbetween() throws Exception
     {
-        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue);
 
         ServerMessage msg = generateTestMessage(1, "A");
         _sqel.add(msg);
@@ -354,7 +362,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
 
     public void testInsertAtHead() throws Exception
     {
-        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue, "KEY");
+        _sqel = new SelfValidatingSortedQueueEntryList(_testQueue);
 
         ServerMessage msg = generateTestMessage(1, "B");
         _sqel.add(msg);

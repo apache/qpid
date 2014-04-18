@@ -26,6 +26,11 @@ public class QueueExistsException extends RuntimeException
 {
     private final AMQQueue _existing;
 
+    public QueueExistsException(AMQQueue existing)
+    {
+        this(existing.getName(), existing);
+    }
+
     public QueueExistsException(String name, AMQQueue existing)
     {
         super(name);

@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
 {
@@ -48,8 +48,8 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         StandardQueueImpl queue = new StandardQueueImpl(virtualHost, queueAttributes);
-
-        queueEntryList = (OrderedQueueEntryList) queue.getEntries();
+        queue.open();
+        queueEntryList = queue.getEntries();
 
         super.setUp();
     }

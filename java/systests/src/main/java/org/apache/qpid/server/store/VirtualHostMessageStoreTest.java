@@ -562,7 +562,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         else if (lastValueQueue)
         {
             assertEquals("Queue is no longer a LastValue Queue", LastValueQueueImpl.class, queue.getClass());
-            assertEquals("LastValue Queue Key has changed", LVQ_KEY, ((LastValueQueueImpl) queue).getConflationKey());
+            assertEquals("LastValue Queue Key has changed", LVQ_KEY, ((LastValueQueueImpl) queue).getLvqKey());
         }
         else
         {

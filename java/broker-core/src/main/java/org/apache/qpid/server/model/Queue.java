@@ -45,27 +45,35 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     String QUEUE_FLOW_RESUME_SIZE_BYTES = "queueFlowResumeSizeBytes";
     String QUEUE_FLOW_STOPPED = "queueFlowStopped";
 
-    String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
-
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     Exchange getAlternateExchange();
 
     @ManagedAttribute( automate = true, defaultValue = "NONE" )
     ExclusivityPolicy getExclusive();
 
-    @ManagedAttribute
+    @ManagedAttribute( derived = true )
     String getOwner();
 
-    @ManagedAttribute
-    boolean getNoLocal();
+    @ManagedAttribute( automate = true )
+    boolean isNoLocal();
 
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true )
     String getMessageGroupKey();
 
+    @ManagedContextDefault( name = "qpid.broker_default-shared-message-group")
+    String DEFAULT_SHARED_MESSAGE_GROUP = "qpid.no-group";
 
-    // TODO - this should either be a boolean or maybe an enum
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, defaultValue = "${qpid.broker_default-shared-message-group}")
+    String getMessageGroupDefaultGroup();
+
+    @ManagedContextDefault( name = "queue.maximumDistinctGroups")
+    int DEFAULT_MAXIMUM_DISTINCT_GROUPS = 255;
+
+    @ManagedAttribute( automate = true, defaultValue = "${queue.maximumDistinctGroups}")
+    int getMaximumDistinctGroups();
+
+    @ManagedAttribute( automate = true )
     boolean isMessageGroupSharedGroups();
 
     @ManagedContextDefault( name = "queue.maximumDeliveryAttempts")

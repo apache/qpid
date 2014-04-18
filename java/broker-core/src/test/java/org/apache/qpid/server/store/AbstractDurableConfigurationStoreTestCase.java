@@ -53,6 +53,7 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -286,7 +287,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     public void testCreateQueueAMQQueueFieldTable() throws Exception
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
 
@@ -335,7 +336,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         // create queue
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
 
@@ -361,7 +362,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         // create queue
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
         DurableConfigurationStoreHelper.createQueue(_configStore, queue);
@@ -387,7 +388,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         // create queue
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
         DurableConfigurationStoreHelper.createQueue(_configStore, queue);

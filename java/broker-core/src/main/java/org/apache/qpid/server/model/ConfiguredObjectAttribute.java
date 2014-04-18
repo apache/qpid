@@ -46,6 +46,6 @@ public final class ConfiguredObjectAttribute<C extends ConfiguredObject, T> exte
 
     public T convert(final Object value, C object)
     {
-        return _converter.convert(value, object);
+        return getConverter().convert(value, object);
     }
 }

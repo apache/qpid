@@ -30,9 +30,9 @@ import org.apache.qpid.server.queue.SortedQueueEntry.Colour;
  */
 public class SelfValidatingSortedQueueEntryList extends SortedQueueEntryList
 {
-    public SelfValidatingSortedQueueEntryList(SortedQueueImpl queue, String propertyName)
+    public SelfValidatingSortedQueueEntryList(SortedQueueImpl queue)
     {
-        super(queue, propertyName);
+        super(queue);
     }
 
     @Override

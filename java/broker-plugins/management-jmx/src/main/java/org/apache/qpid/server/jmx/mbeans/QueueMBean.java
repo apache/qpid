@@ -24,6 +24,7 @@ package org.apache.qpid.server.jmx.mbeans;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.management.JMException;
@@ -294,14 +295,19 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     {
         if (exchangeName == null || "".equals(exchangeName))
         {
-            _queue.setAttribute(Queue.ALTERNATE_EXCHANGE, getAlternateExchange(), null);
+            _queue.setAttributes(Collections.singletonMap(Queue.ALTERNATE_EXCHANGE, null));
         }
         else
         {
-            VirtualHost<?,?,?> virtualHost = _queue.getParent(VirtualHost.class);
-            Exchange exchange = MBeanUtils.findExchangeFromExchangeName(virtualHost, exchangeName);
+            try
+            {
 
-            _queue.setAttribute(Queue.ALTERNATE_EXCHANGE, getAlternateExchange(), exchange);
+                _queue.setAttributes(Collections.<String,Object>singletonMap(Queue.ALTERNATE_EXCHANGE, exchangeName));
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new OperationsException("No such exchange \""+exchangeName+"\"");
+            }
         }
     }
 

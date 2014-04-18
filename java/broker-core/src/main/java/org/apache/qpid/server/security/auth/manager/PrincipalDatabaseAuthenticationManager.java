@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.security.auth.login.AccountNotFoundException;
@@ -48,7 +49,6 @@ import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -531,7 +531,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     private static Map<String, Object> createPrincipalAttributes(PrincipalDatabaseAuthenticationManager manager, final Principal user)
     {
         final Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(ID, UUIDGenerator.generateUserUUID(manager.getName(), user.getName()));
+        attributes.put(ID, UUID.randomUUID());
         attributes.put(NAME, user.getName());
         return attributes;
     }
