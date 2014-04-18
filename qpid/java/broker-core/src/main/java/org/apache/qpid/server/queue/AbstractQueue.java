@@ -75,7 +75,6 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
@@ -247,7 +246,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         if (isDurable() && !(getLifetimePolicy()  == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
                              || getLifetimePolicy() == LifetimePolicy.DELETE_ON_SESSION_END))
         {
-            DurableConfigurationStoreHelper.createQueue(_virtualHost.getDurableConfigurationStore(), this);
+            _virtualHost.getDurableConfigurationStore().create(asObjectRecord());
         }
     }
 
@@ -2728,8 +2727,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         {
             if (isDurable())
             {
-                DurableConfigurationStoreHelper.updateQueue(this.getVirtualHost().getDurableConfigurationStore(),
-                                                            this);
+                this.getVirtualHost().getDurableConfigurationStore().update(false, asObjectRecord());
             }
         }
     }

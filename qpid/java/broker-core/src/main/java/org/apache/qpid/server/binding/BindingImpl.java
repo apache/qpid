@@ -39,7 +39,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -84,7 +83,7 @@ public class BindingImpl
         super.onCreate();
         if (isDurable())
         {
-            DurableConfigurationStoreHelper.createBinding(_queue.getVirtualHost().getDurableConfigurationStore(), this);
+            _queue.getVirtualHost().getDurableConfigurationStore().create(asObjectRecord());
         }
 
     }

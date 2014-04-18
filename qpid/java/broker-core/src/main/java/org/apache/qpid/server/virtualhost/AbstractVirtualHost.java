@@ -75,7 +75,6 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
@@ -594,7 +593,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                                       == LifetimePolicy.DELETE_ON_SESSION_END))
         {
             DurableConfigurationStore store = getDurableConfigurationStore();
-            DurableConfigurationStoreHelper.removeQueue(store, queue);
+            store.remove(queue.asObjectRecord());
         }
         return purged;
 }

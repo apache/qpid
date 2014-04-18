@@ -327,7 +327,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         //test that removing the queue means it is not recovered next time
         final AMQQueue<?> queue = getVirtualHost().getQueue(durableQueueName);
-        DurableConfigurationStoreHelper.removeQueue(getVirtualHost().getDurableConfigurationStore(),queue);
+        getVirtualHost().getDurableConfigurationStore().remove(queue.asObjectRecord());
 
         reloadVirtualHost();
 
@@ -378,7 +378,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         //test that removing the exchange means it is not recovered next time
         final ExchangeImpl<?> exchange = getVirtualHost().getExchange(directExchangeName);
-        DurableConfigurationStoreHelper.removeExchange(getVirtualHost().getDurableConfigurationStore(), exchange);
+        getVirtualHost().getDurableConfigurationStore().remove(exchange.asObjectRecord());
 
         reloadVirtualHost();
 
