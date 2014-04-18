@@ -252,31 +252,35 @@ class OpEncoder:
 class OpDecoder:
 
   def __init__(self):
-    self.op = None
+    self.current_op = {}
     self.ops = []
 
   def write(self, *segments):
     for seg in segments:
+      op = self.current_op.get(seg.track)
       if seg.first:
         if seg.type == segment_type.command:
-          self.op = self.decode_command(seg.payload)
+          op = self.decode_command(seg.payload)
         elif seg.type == segment_type.control:
-          self.op = self.decode_control(seg.payload)
+          op = self.decode_control(seg.payload)
         else:
           raise ValueError(seg)
-        self.op.channel = seg.channel
+        op.channel = seg.channel
       elif seg.type == segment_type.header:
-        if self.op.headers is None:
-          self.op.headers = []
-        self.op.headers.extend(self.decode_headers(seg.payload))
+        if op.headers is None:
+          op.headers = []
+        op.headers.extend(self.decode_headers(seg.payload))
       elif seg.type == segment_type.body:
-        if self.op.payload is None:
-          self.op.payload = seg.payload
+        if op.payload is None:
+          op.payload = seg.payload
         else:
-          self.op.payload += seg.payload
+          op.payload += seg.payload
       if seg.last:
-        self.ops.append(self.op)
-        self.op = None
+        self.ops.append(op)
+        if seg.track in self.current_op:
+          del self.current_op[seg.track]
+      else:
+        self.current_op[seg.track] = op
 
   def decode_command(self, encoded):
     sc = StringCodec(encoded)
