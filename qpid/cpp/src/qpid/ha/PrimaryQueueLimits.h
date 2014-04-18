@@ -22,9 +22,12 @@
  *
  */
 
+#include "ReplicationTest.h"
 #include <qpid/broker/Queue.h>
+#include <qpid/broker/QueueRegistry.h>
 #include <qpid/framing/amqp_types.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/bind.hpp>
 #include <string>
 
 namespace qpid {
@@ -45,8 +48,15 @@ class PrimaryQueueLimits
 {
   public:
     // FIXME aconway 2014-01-24: hardcoded maxQueues, use negotiated channel-max
-    PrimaryQueueLimits(const std::string& lp) :
-        logPrefix(lp), maxQueues(framing::CHANNEL_MAX-100), queues(0) {}
+    PrimaryQueueLimits(const std::string& lp,
+                       broker::QueueRegistry& qr,
+                       const ReplicationTest& rt
+    ) :
+        logPrefix(lp), maxQueues(framing::CHANNEL_MAX-100), queues(0)
+    {
+        // Get initial count of replicated queues
+        qr.eachQueue(boost::bind(&PrimaryQueueLimits::addQueueIfReplicated, this, _1, rt)); 
+    }
 
     /** Add a replicated queue
      *@exception ResourceLimitExceededException if this would exceed the limit.
@@ -57,15 +67,22 @@ class PrimaryQueueLimits
                      << " exceeds limit of " << maxQueues
                      << " replicated queues.");
             throw framing::ResourceLimitExceededException(
-                "Exceeded replicated queue limit.");
+                Msg() << "Exceeded replicated queue limit " << queues << " >= " << maxQueues);
         }
         else ++queues;
+    }
+
+    void addQueueIfReplicated(const boost::shared_ptr<broker::Queue>& q, const ReplicationTest& rt) {
+        if(rt.useLevel(*q)) addQueue(q);
     }
 
     /** Remove a replicated queue.
      * @pre Was previously added with addQueue
      */
-    void removeQueue(const boost::shared_ptr<broker::Queue>&) { --queues; }
+    void removeQueue(const boost::shared_ptr<broker::Queue>&) {
+        assert(queues != 0);
+        --queues;
+    }
 
     // TODO aconway 2014-01-24: Currently replication links always use the
     // hard-coded framing::CHANNEL_MAX. In future (e.g. when we support AMQP1.0
@@ -83,7 +100,7 @@ class PrimaryQueueLimits
     std::string logPrefix;
     uint64_t maxQueues;
     uint64_t queues;
-};
+}; 
 
 }} // namespace qpid::ha
 

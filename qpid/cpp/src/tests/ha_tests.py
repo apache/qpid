@@ -885,6 +885,19 @@ acl deny all all
         old_sess.exchange_declare(exchange='ex1', type='fanout')
         cluster[1].wait_backup("ex1")
 
+    def test_resource_limit_bug(self):
+        """QPID-5666 Regression test: Incorrect resource limit exception for queue creation."""
+        cluster = HaCluster(self, 3)
+        qs = ["q%s"%i for i in xrange(10)]
+        s = cluster[0].connect().session()
+        s.sender("q;{create:always}").close()
+        cluster.kill(0)
+        cluster[1].promote()
+        cluster[1].wait_status("active")
+        s = cluster[1].connect().session()
+        s.receiver("q;{delete:always}").close()
+        s.sender("qq;{create:always}").close()
+                
 def fairshare(msgs, limit, levels):
     """
     Generator to return prioritised messages in expected order for a given fairshare limit
