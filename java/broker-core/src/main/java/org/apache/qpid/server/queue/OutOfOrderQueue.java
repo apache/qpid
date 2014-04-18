@@ -27,10 +27,9 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 public abstract class OutOfOrderQueue<X extends OutOfOrderQueue<X>> extends AbstractQueue<X>
 {
 
-    protected OutOfOrderQueue(VirtualHostImpl virtualHost,
-                              Map<String, Object> attributes)
+    protected OutOfOrderQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
-        super(virtualHost, attributes);
+        super(attributes, virtualHost);
     }
 
     @Override

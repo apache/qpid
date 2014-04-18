@@ -94,10 +94,9 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
      */
     private Class<? extends SocketFactory> _sslSocketFactoryOverrideClass;
 
-    protected SimpleLDAPAuthenticationManagerImpl(final Broker broker,
-                                                  final Map<String, Object> attributes)
+    protected SimpleLDAPAuthenticationManagerImpl(final Map<String, Object> attributes, final Broker broker)
     {
-        super(broker, attributes);
+        super(attributes, broker);
     }
 
 

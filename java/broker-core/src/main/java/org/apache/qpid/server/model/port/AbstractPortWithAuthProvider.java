@@ -21,13 +21,14 @@
 package org.apache.qpid.server.model.port;
 
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 
 abstract public class AbstractPortWithAuthProvider<X extends AbstractPortWithAuthProvider<X>> extends AbstractPort<X>
@@ -44,13 +45,10 @@ abstract public class AbstractPortWithAuthProvider<X extends AbstractPortWithAut
     @ManagedAttributeField
     private boolean _wantClientAuth;
 
-    public AbstractPortWithAuthProvider(final UUID id,
-                                        final Broker<?> broker,
-                                        final Map<String, Object> attributes,
-                                        final Map<String, Object> defaults,
-                                        final TaskExecutor taskExecutor)
+    public AbstractPortWithAuthProvider(final Map<String, Object> attributes,
+                                        final Broker<?> broker)
     {
-        super(id, broker, attributes, taskExecutor);
+        super(attributes, broker);
     }
 
     public boolean getNeedClientAuth()
@@ -90,6 +88,37 @@ abstract public class AbstractPortWithAuthProvider<X extends AbstractPortWithAut
             throw new IllegalConfigurationException(
                     "Can't create port which requests SSL client certificates but doesn't use SSL transport.");
         }
+
+    }
+
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+        Port<?> updated = (Port<?>)proxyForValidation;
+
+        boolean needClientCertificate = (Boolean) updated.getAttribute(NEED_CLIENT_AUTH);
+        boolean wantClientCertificate = (Boolean) updated.getAttribute(WANT_CLIENT_AUTH);
+        boolean requiresCertificate = needClientCertificate || wantClientCertificate;
+
+        boolean usesSsl = updated.getTransports().contains(Transport.SSL);
+        if (usesSsl)
+        {
+            if ((updated.getTrustStores() == null || updated.getTrustStores().isEmpty() ) && requiresCertificate)
+            {
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but has no trust store configured.");
+            }
+        }
+        else
+        {
+            if (requiresCertificate)
+            {
+                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesn't use SSL transport.");
+            }
+        }
+
+
 
     }
 }

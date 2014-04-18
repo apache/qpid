@@ -68,12 +68,11 @@ public class FileBasedGroupProviderImpl
     @ManagedAttributeField
     private String _path;
 
-    public FileBasedGroupProviderImpl(UUID id,
-                                      Broker broker,
-                                      Map<String, Object> attributes)
+    public FileBasedGroupProviderImpl(Map<String, Object> attributes,
+                                      Broker broker)
     {
         super(parentsMap(broker),
-              combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
+              attributes, broker.getTaskExecutor());
 
 
         _broker = broker;

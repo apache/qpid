@@ -43,6 +43,6 @@ public class PriorityQueueFactory extends AbstractConfiguredObjectTypeFactory<Pr
             throw new IllegalArgumentException("Unexpected virtual host is set as a parent. Expected instance of " + VirtualHostImpl.class.getName());
         }
 
-        return new PriorityQueueImpl((VirtualHostImpl<?,?,?>)virtualHost,attributes);
+        return new PriorityQueueImpl(attributes, (VirtualHostImpl<?,?,?>)virtualHost);
     }
 }

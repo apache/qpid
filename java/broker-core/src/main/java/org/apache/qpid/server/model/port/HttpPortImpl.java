@@ -23,20 +23,16 @@ package org.apache.qpid.server.model.port;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Protocol;
 
 public class HttpPortImpl extends AbstractPortWithAuthProvider<HttpPortImpl> implements HttpPort<HttpPortImpl>
 {
-    public HttpPortImpl(final UUID id,
-                        final Broker<?> broker,
-                        final Map<String, Object> attributes,
-                        final TaskExecutor taskExecutor)
+    public HttpPortImpl(final Map<String, Object> attributes,
+                        final Broker<?> broker)
     {
-        super(id, broker, attributes, Collections.<String,Object>emptyMap(), taskExecutor);
+        super(attributes, broker);
     }
 
     @Override

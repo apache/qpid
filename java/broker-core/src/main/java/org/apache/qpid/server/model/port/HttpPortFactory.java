@@ -40,10 +40,7 @@ public class HttpPortFactory extends AbstractConfiguredObjectTypeFactory<HttpPor
     public HttpPortImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
         Broker broker = getParent(Broker.class, parents);
-        Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
-        Object idObj = attributesWithoutId.remove(Port.ID);
-        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new HttpPortImpl(id, broker, attributesWithoutId, broker.getTaskExecutor());
+        return new HttpPortImpl(attributes, broker);
     }
 
 }

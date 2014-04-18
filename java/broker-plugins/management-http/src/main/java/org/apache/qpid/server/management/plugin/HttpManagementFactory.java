@@ -18,13 +18,12 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class HttpManagementFactory extends AbstractConfiguredObjectTypeFactory<HttpManagement>
 {
@@ -38,9 +37,7 @@ public class HttpManagementFactory extends AbstractConfiguredObjectTypeFactory<H
     public HttpManagement createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
         Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
-        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
-        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new HttpManagement(id, getParent(Broker.class,parents), attributes);
+        return new HttpManagement(attributes, getParent(Broker.class,parents));
     }
 
 }

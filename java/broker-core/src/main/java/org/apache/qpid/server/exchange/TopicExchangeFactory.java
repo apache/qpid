@@ -42,7 +42,7 @@ public class TopicExchangeFactory extends AbstractConfiguredObjectTypeFactory<To
         {
             throw new IllegalArgumentException("Unexpected virtual host is set as a parent. Expected instance of " + VirtualHostImpl.class.getName());
         }
-        return new TopicExchange((VirtualHostImpl<?, ?, ?>)virtualHost , attributes);
+        return new TopicExchange(attributes, (VirtualHostImpl<?, ?, ?>)virtualHost);
     }
 
 }

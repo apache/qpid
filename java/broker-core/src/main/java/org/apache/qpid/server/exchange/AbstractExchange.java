@@ -48,6 +48,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -107,7 +108,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     private StateChangeListener<BindingImpl, State> _bindingListener;
 
-    public AbstractExchange(VirtualHostImpl vhost, Map<String, Object> attributes) throws UnknownExchangeException
+    public AbstractExchange(Map<String, Object> attributes, VirtualHostImpl vhost) throws UnknownExchangeException
     {
         super(parentsMap(vhost), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
@@ -691,13 +692,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             id = UUID.randomUUID();
         }
 
-        Map<String,Object> attributes = new HashMap<String, Object>();
-        attributes.put(org.apache.qpid.server.model.Binding.NAME,bindingKey);
-        if(arguments != null)
-        {
-            attributes.put(org.apache.qpid.server.model.Binding.ARGUMENTS, arguments);
-        }
-
         BindingImpl existingMapping;
         synchronized(this)
         {
@@ -706,7 +700,13 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
             if (existingMapping == null)
             {
-                BindingImpl b = new BindingImpl(id, attributes, queue, this);
+
+                Map<String,Object> attributes = new HashMap<String, Object>();
+                attributes.put(Binding.NAME,bindingKey);
+                attributes.put(Binding.ID, id);
+                attributes.put(Binding.ARGUMENTS, arguments);
+
+                BindingImpl b = new BindingImpl(attributes, queue, this);
                 b.create();
 
                 addBinding(b);

@@ -58,7 +58,7 @@ public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
         final Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(AuthenticationProvider.NAME, getTestName());
         attributesMap.put(AuthenticationProvider.ID, UUID.randomUUID());
-        _authManager = new ScramSHA1AuthenticationManager(_broker, attributesMap);
+        _authManager = new ScramSHA1AuthenticationManager(attributesMap, _broker);
     }
 
     @Override

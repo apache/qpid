@@ -38,10 +38,9 @@ public class ExternalAuthenticationManagerImpl extends AbstractAuthenticationMan
     @ManagedAttributeField
     private boolean _useFullDN;
 
-    protected ExternalAuthenticationManagerImpl(final Broker broker,
-                                                final Map<String, Object> attributes)
+    protected ExternalAuthenticationManagerImpl(final Map<String, Object> attributes, final Broker broker)
     {
-        super(broker, attributes);
+        super(attributes, broker);
     }
 
 

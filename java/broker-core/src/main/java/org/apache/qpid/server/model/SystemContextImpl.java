@@ -62,7 +62,7 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
                              final BrokerOptions brokerOptions)
     {
         super(parentsMap(),
-              combineIdWithAttributes(SYSTEM_ID, createAttributes(brokerOptions)),
+              createAttributes(brokerOptions),
               taskExecutor);
         _eventLogger = eventLogger;
         getTaskExecutor().start();
@@ -75,6 +75,7 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     public static Map<String, Object> createAttributes(final BrokerOptions brokerOptions)
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes.put(ID, SYSTEM_ID);
         attributes.put(NAME, "System");
         attributes.put("storePath", brokerOptions.getConfigurationStoreLocation());
         attributes.put("storeTye", brokerOptions.getConfigurationStoreType());

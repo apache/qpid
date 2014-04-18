@@ -42,7 +42,7 @@ public class FanoutExchangeFactory extends AbstractConfiguredObjectTypeFactory<F
         {
             throw new IllegalArgumentException("Unexpected virtual host is set as a parent. Expected instance of " + VirtualHostImpl.class.getName());
         }
-        return new FanoutExchange((VirtualHostImpl<?, ?, ?>)virtualHost , attributes);
+        return new FanoutExchange(attributes, (VirtualHostImpl<?, ?, ?>)virtualHost);
     }
 
 }

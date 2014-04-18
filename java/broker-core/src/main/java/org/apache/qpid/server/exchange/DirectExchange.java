@@ -138,10 +138,9 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
 
     public static final ExchangeType<DirectExchange> TYPE = new DirectExchangeType();
 
-    public DirectExchange(final VirtualHostImpl vhost,
-                          final Map<String, Object> attributes) throws UnknownExchangeException
+    public DirectExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost) throws UnknownExchangeException
     {
-        super(vhost, attributes);
+        super(attributes, vhost);
     }
 
     @Override

@@ -89,6 +89,7 @@ public class PreferencesProviderCreationTest extends QpidTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         UUID id = UUID.randomUUID();
+        attributes.put(PreferencesProvider.ID, id);
         attributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.PROVIDER_TYPE);
         attributes.put(PreferencesProvider.NAME, "test-provider");
         File file = TestFileUtils.createTempFile(this,
@@ -97,7 +98,7 @@ public class PreferencesProviderCreationTest extends QpidTestCase
         try
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
-            PreferencesProvider provider = new FileSystemPreferencesProviderImpl(id,attributes,_authenticationProvider);
+            PreferencesProvider provider = new FileSystemPreferencesProviderImpl(attributes,_authenticationProvider);
             provider.open();
             assertNotNull("Preferences provider was not recovered", provider);
             assertEquals("Unexpected name", "test-provider", provider.getName());

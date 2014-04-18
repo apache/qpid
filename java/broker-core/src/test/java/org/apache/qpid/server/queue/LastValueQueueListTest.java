@@ -58,7 +58,7 @@ public class LastValueQueueListTest extends TestCase
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        _queue = new LastValueQueueImpl(virtualHost, queueAttributes);
+        _queue = new LastValueQueueImpl(queueAttributes, virtualHost);
         _queue.open();
         _list = _queue.getEntries();
     }

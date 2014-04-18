@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -39,10 +37,7 @@ public class BrokerAdapterFactory  extends AbstractConfiguredObjectTypeFactory<B
     public BrokerAdapter createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
         SystemContext context = getParent(SystemContext.class, parents);
-        Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
-        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
-        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new BrokerAdapter(id, attributesWithoutId, context);
+        return new BrokerAdapter(attributes, context);
     }
 
 }

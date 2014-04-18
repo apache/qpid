@@ -33,7 +33,7 @@ public class PlainPasswordDatabaseAuthenticationManager extends PrincipalDatabas
     protected PlainPasswordDatabaseAuthenticationManager(final Broker broker,
                                                          final Map<String, Object> attributes)
     {
-        super(broker, attributes);
+        super(attributes, broker);
     }
 
     @Override

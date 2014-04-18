@@ -55,7 +55,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        _testQueue = new StandardQueueImpl(virtualHost, queueAttributes);
+        _testQueue = new StandardQueueImpl(queueAttributes, virtualHost);
         _testQueue.open();
         _sqel = _testQueue.getEntries();
         for(int i = 1; i <= 100; i++)
@@ -101,7 +101,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
             when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
             when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-            StandardQueueImpl queue = new StandardQueueImpl(virtualHost, queueAttributes);
+            StandardQueueImpl queue = new StandardQueueImpl(queueAttributes, virtualHost);
             queue.open();
             return queue.getEntries();
         }

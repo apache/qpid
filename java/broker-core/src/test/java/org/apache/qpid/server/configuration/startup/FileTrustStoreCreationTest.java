@@ -43,13 +43,13 @@ public class FileTrustStoreCreationTest extends QpidTestCase
 {
     public void testCreateWithAllAttributesProvided()
     {
-        Map<String, Object> attributes = getTrustStoreAttributes();
+        UUID id = UUID.randomUUID();
+        Map<String, Object> attributes = getTrustStoreAttributes(id);
         Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
 
-        UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
 
-        final FileTrustStore trustStore = new FileTrustStoreImpl(id, broker, attributes);
+        final FileTrustStore trustStore = new FileTrustStoreImpl(attributes, broker);
         trustStore.open();
         assertNotNull("Trust store configured object is not created", trustStore);
         assertEquals(id, trustStore.getId());
@@ -81,9 +81,9 @@ public class FileTrustStoreCreationTest extends QpidTestCase
 
     public void testCreateWithMissedRequiredAttributes()
     {
-        Map<String, Object> attributes = getTrustStoreAttributes();
-
         UUID id = UUID.randomUUID();
+        Map<String, Object> attributes = getTrustStoreAttributes(id);
+
         Broker broker = mock(Broker.class);
 
         String[] mandatoryProperties = {TrustStore.NAME, FileTrustStore.PATH, FileTrustStore.PASSWORD};
@@ -93,7 +93,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
             properties.remove(mandatoryProperties[i]);
             try
             {
-                TrustStore trustStore = new FileTrustStoreImpl(id, broker, properties);
+                TrustStore trustStore = new FileTrustStoreImpl(properties, broker);
                 trustStore.open();
                 fail("Cannot create key store without a " + mandatoryProperties[i]);
             }
@@ -104,10 +104,11 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         }
     }
 
-    private Map<String, Object> getTrustStoreAttributes()
+    private Map<String, Object> getTrustStoreAttributes(UUID id)
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, getName());
+        attributes.put(TrustStore.ID, id);
         attributes.put(FileTrustStore.PATH, TestSSLConstants.BROKER_TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD);
         attributes.put(FileTrustStore.TRUST_STORE_TYPE, "jks");

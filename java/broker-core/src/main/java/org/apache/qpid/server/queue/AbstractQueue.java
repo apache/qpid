@@ -228,8 +228,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @ManagedAttributeField
     private int _maximumDistinctGroups;
 
-    protected AbstractQueue(VirtualHostImpl virtualHost,
-                            Map<String, Object> attributes)
+    protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
         super(parentsMap(virtualHost),
               attributes, virtualHost.getTaskExecutor());
@@ -308,11 +307,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         super.onOpen();
 
         Map<String,Object> attributes = getActualAttributes();
-
-        _exclusive = MapValueConverter.getEnumAttribute(ExclusivityPolicy.class,
-                                                                Queue.EXCLUSIVE,
-                                                                attributes,
-                                                                ExclusivityPolicy.NONE);
 
         final LinkedHashMap<String, Object> arguments = new LinkedHashMap<String, Object>(attributes);
 

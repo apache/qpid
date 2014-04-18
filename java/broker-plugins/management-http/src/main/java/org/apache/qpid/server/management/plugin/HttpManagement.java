@@ -30,7 +30,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -70,7 +70,6 @@ import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServ
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
@@ -122,9 +121,9 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     @ManagedAttributeField
     private int _sessionTimeout;
 
-    public HttpManagement(UUID id, Broker broker, Map<String, Object> attributes)
+    public HttpManagement(Map<String, Object> attributes, Broker broker)
     {
-        super(id, attributes, broker);
+        super(attributes, broker);
     }
 
     @Override
@@ -389,7 +388,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         for (Connector connector : connectors)
         {
             getBroker().getEventLogger().message(ManagementConsoleMessages.LISTENING(stringifyConnectorScheme(connector),
-                                                                  connector.getPort()));
+                                                                                     connector.getPort()));
             if (connector instanceof SslSocketConnector)
             {
                 SslContextFactory sslContextFactory = ((SslSocketConnector)connector).getSslContextFactory();
@@ -460,28 +459,22 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     }
 
     @Override
-    protected void changeAttributes(Map<String, Object> attributes)
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
     {
-        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
-        validateAttributes(convertedAttributes);
+        super.validateChange(proxyForValidation, changedAttributes);
 
-        super.changeAttributes(convertedAttributes);
-    }
-
-    private void validateAttributes(Map<String, Object> convertedAttributes)
-    {
-        if(convertedAttributes.containsKey(HttpManagement.NAME))
+        HttpManagementConfiguration<?> updated = (HttpManagementConfiguration<?>)proxyForValidation;
+        if(changedAttributes.contains(HttpManagement.NAME))
         {
-            String newName = (String) convertedAttributes.get(HttpManagement.NAME);
-            if(!getName().equals(newName))
+            if(!getName().equals(updated.getName()))
             {
                 throw new IllegalConfigurationException("Changing the name of http management plugin is not allowed");
             }
         }
-        if (convertedAttributes.containsKey(TIME_OUT))
+        if (changedAttributes.contains(TIME_OUT))
         {
-            Number value = (Number) convertedAttributes.get(TIME_OUT);
-            if (value == null || value.longValue() < 0)
+            int value = updated.getSessionTimeout();
+            if (value < 0)
             {
                 throw new IllegalConfigurationException("Only positive integer value can be specified for the session time out attribute");
             }

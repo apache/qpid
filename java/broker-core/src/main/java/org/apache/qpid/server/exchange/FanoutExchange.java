@@ -68,10 +68,9 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
 
     public static final ExchangeType<FanoutExchange> TYPE = new FanoutExchangeType();
 
-    public FanoutExchange(final VirtualHostImpl vhost,
-                          final Map<String, Object> attributes) throws UnknownExchangeException
+    public FanoutExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost) throws UnknownExchangeException
     {
-        super(vhost, attributes);
+        super(attributes, vhost);
     }
 
     @Override

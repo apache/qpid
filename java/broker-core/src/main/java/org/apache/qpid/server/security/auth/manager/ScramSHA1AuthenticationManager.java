@@ -76,10 +76,9 @@ public class ScramSHA1AuthenticationManager
     private Map<String, ScramAuthUser> _users = new ConcurrentHashMap<String, ScramAuthUser>();
 
 
-    protected ScramSHA1AuthenticationManager(final Broker broker,
-                                             final Map<String, Object> attributes)
+    protected ScramSHA1AuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
-        super(broker, attributes);
+        super(attributes, broker);
     }
 
     @Override

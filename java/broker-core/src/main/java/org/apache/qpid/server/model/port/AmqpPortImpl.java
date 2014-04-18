@@ -22,12 +22,10 @@ package org.apache.qpid.server.model.port;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -36,7 +34,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
@@ -68,12 +65,9 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
     private final Broker<?> _broker;
     private AcceptingTransport _transport;
 
-    public AmqpPortImpl(UUID id,
-                        Broker<?> broker,
-                        Map<String, Object> attributes,
-                        TaskExecutor taskExecutor)
+    public AmqpPortImpl(Map<String, Object> attributes, Broker<?> broker)
     {
-        super(id, broker, attributes, Collections.<String,Object>emptyMap(), taskExecutor);
+        super(attributes, broker);
         _broker = broker;
     }
 

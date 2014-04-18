@@ -47,7 +47,7 @@ public class ACLFileAccessControlProviderFactory extends AbstractConfiguredObjec
     public ACLFileAccessControlProviderImpl createInstance(final Map<String, Object> attributes,
                                                        final ConfiguredObject<?>... parents)
     {
-        return new ACLFileAccessControlProviderImpl(getParent(Broker.class,parents), attributes);
+        return new ACLFileAccessControlProviderImpl(attributes, getParent(Broker.class,parents));
     }
 
 }

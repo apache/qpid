@@ -25,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -38,7 +37,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
@@ -64,14 +62,6 @@ public class FileSystemPreferencesProviderImpl
 {
     private static final Logger LOGGER = Logger.getLogger(FileSystemPreferencesProviderImpl.class);
 
-
-    @SuppressWarnings("serial")
-    private static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>()
-    {{
-            put(NAME, String.class);
-            put(PATH, String.class);
-    }});
-
     private final AuthenticationProvider<? extends AuthenticationProvider> _authenticationProvider;
     private AtomicReference<State> _state;
 
@@ -82,11 +72,11 @@ public class FileSystemPreferencesProviderImpl
 
     private boolean _open;
 
-    public FileSystemPreferencesProviderImpl(UUID id, Map<String, Object> attributes,
+    public FileSystemPreferencesProviderImpl(Map<String, Object> attributes,
                                              AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {
         super(parentsMap(authenticationProvider),
-              combineIdWithAttributes(id,MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)),
+              attributes,
               authenticationProvider.getParent(Broker.class).getTaskExecutor());
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);

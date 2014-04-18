@@ -39,7 +39,7 @@ public class TopicExchangeType implements ExchangeType<TopicExchange>
     public TopicExchange newInstance(final VirtualHostImpl virtualHost, final Map<String, Object> attributes)
             throws UnknownExchangeException
     {
-        return new TopicExchange(virtualHost, attributes);
+        return new TopicExchange(attributes, virtualHost);
     }
 
     public String getDefaultExchangeName()

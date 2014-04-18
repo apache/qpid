@@ -69,7 +69,7 @@ public class FanoutExchangeTest extends TestCase
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
-        _exchange = new FanoutExchange(_virtualHost, attributes);
+        _exchange = new FanoutExchange(attributes, _virtualHost);
         _exchange.open();
     }
 

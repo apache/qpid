@@ -1101,7 +1101,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
         public NonAsyncDeliverQueue(VirtualHostImpl vhost)
         {
-            super(vhost, attributes());
+            super(attributes(), vhost);
         }
 
         @Override

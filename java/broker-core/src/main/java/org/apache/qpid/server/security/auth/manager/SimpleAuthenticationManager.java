@@ -54,10 +54,9 @@ public class SimpleAuthenticationManager extends AbstractAuthenticationManager<S
 
     private final Map<String, String> _users = Collections.synchronizedMap(new HashMap<String, String>());
 
-    public SimpleAuthenticationManager(final Broker broker,
-                                       final Map<String, Object> attributes)
+    public SimpleAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
-        super(broker, attributes);
+        super(attributes, broker);
     }
 
 

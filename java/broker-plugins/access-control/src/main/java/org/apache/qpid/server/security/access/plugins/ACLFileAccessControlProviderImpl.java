@@ -56,8 +56,7 @@ public class ACLFileAccessControlProviderImpl
     @ManagedAttributeField
     private String _path;
 
-    public ACLFileAccessControlProviderImpl(Broker broker,
-                                            Map<String, Object> attributes)
+    public ACLFileAccessControlProviderImpl(Map<String, Object> attributes, Broker broker)
     {
         super(parentsMap(broker),
               attributes, broker.getTaskExecutor());

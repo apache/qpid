@@ -34,10 +34,9 @@ public class LastValueQueueImpl extends AbstractQueue<LastValueQueueImpl> implem
     private String _lvqKey;
 
 
-    public LastValueQueueImpl(VirtualHostImpl virtualHost,
-                                 Map<String, Object> attributes)
+    public LastValueQueueImpl(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
-        super(virtualHost, attributes);
+        super(attributes, virtualHost);
     }
 
     @Override
