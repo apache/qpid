@@ -124,7 +124,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     public void testCreateExchange() throws Exception
     {
         ExchangeImpl exchange = createTestExchange();
-        DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
+        _configStore.create(exchange.asObjectRecord());
 
         reopenStore();
         verify(_handler).handle(matchesRecord(_exchangeId, EXCHANGE,
@@ -156,9 +156,9 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     public void testRemoveExchange() throws Exception
     {
         ExchangeImpl exchange = createTestExchange();
-        DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
+        _configStore.create(exchange.asObjectRecord());
 
-        DurableConfigurationStoreHelper.removeExchange(_configStore, exchange);
+        _configStore.remove(exchange.asObjectRecord());
 
         reopenStore();
         verify(_handler, never()).handle(any(ConfiguredObjectRecord.class));
@@ -169,10 +169,10 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         ExchangeImpl<?> exchange = createTestExchange();
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
         BindingImpl binding = createBinding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
-                                                            exchange, _bindingArgs);
-        DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
-        DurableConfigurationStoreHelper.createBinding(_configStore, binding);
+                                            exchange, _bindingArgs);
+        _configStore.create(exchange.asObjectRecord());
+        _configStore.create(queue.asObjectRecord());
+        _configStore.create(binding.asObjectRecord());
 
         reopenStore();
 
@@ -257,14 +257,14 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     public void testUnbindQueue() throws Exception
     {
         ExchangeImpl<?> exchange = createTestExchange();
-        DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
+        _configStore.create(exchange.asObjectRecord());
 
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
         BindingImpl binding = createBinding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
-                                                            exchange, _bindingArgs);
-        DurableConfigurationStoreHelper.createBinding(_configStore, binding);
+                                            exchange, _bindingArgs);
+        _configStore.create(binding.asObjectRecord());
 
-        DurableConfigurationStoreHelper.removeBinding(_configStore, binding);
+        _configStore.remove(binding.asObjectRecord());
         reopenStore();
 
         verify(_handler, never()).handle(matchesRecord(ANY_UUID, BINDING,
@@ -274,7 +274,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     public void testCreateQueueAMQQueue() throws Exception
     {
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, null);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
+        _configStore.create(queue.asObjectRecord());
 
         reopenStore();
         Map<String, Object> queueAttributes = new HashMap<String, Object>();
@@ -291,7 +291,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
 
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
+        _configStore.create(queue.asObjectRecord());
 
         reopenStore();
 
@@ -311,7 +311,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         ExchangeImpl alternateExchange = createTestAlternateExchange();
 
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, alternateExchange, null);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
+        _configStore.create(queue.asObjectRecord());
 
         reopenStore();
 
@@ -340,12 +340,12 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
 
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
+        _configStore.create(queue.asObjectRecord());
 
         // update the queue to have exclusive=false
         queue = createTestQueue(getName(), getName() + "Owner", false, attributes);
 
-        DurableConfigurationStoreHelper.updateQueue(_configStore, queue);
+        _configStore.update(false, queue.asObjectRecord());
 
         reopenStore();
 
@@ -365,13 +365,13 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
+        _configStore.create(queue.asObjectRecord());
 
         // update the queue to have exclusive=false
         ExchangeImpl alternateExchange = createTestAlternateExchange();
         queue = createTestQueue(getName(), getName() + "Owner", false, alternateExchange, attributes);
 
-        DurableConfigurationStoreHelper.updateQueue(_configStore, queue);
+        _configStore.update(false, queue.asObjectRecord());
 
         reopenStore();
 
@@ -391,10 +391,10 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
-        DurableConfigurationStoreHelper.createQueue(_configStore, queue);
+        _configStore.create(queue.asObjectRecord());
 
         // remove queue
-        DurableConfigurationStoreHelper.removeQueue(_configStore,queue);
+        _configStore.remove(queue.asObjectRecord());
         reopenStore();
         verify(_handler, never()).handle(any(ConfiguredObjectRecord.class));
     }

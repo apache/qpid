@@ -59,7 +59,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -179,7 +178,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         super.onCreate();
         if(isDurable())
         {
-            DurableConfigurationStoreHelper.createExchange(getVirtualHost().getDurableConfigurationStore(), this);
+            getVirtualHost().getDurableConfigurationStore().create(asObjectRecord());
         }
 
     }
@@ -219,7 +218,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
         if (isDurable() && !isAutoDelete())
         {
-            DurableConfigurationStoreHelper.removeExchange(getVirtualHost().getDurableConfigurationStore(), this);
+            getVirtualHost().getDurableConfigurationStore().remove(asObjectRecord());
 
         }
 
@@ -247,7 +246,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
             if (isDurable() && !isAutoDelete())
             {
-                DurableConfigurationStoreHelper.removeExchange(getVirtualHost().getDurableConfigurationStore(), this);
+                getVirtualHost().getDurableConfigurationStore().remove(asObjectRecord());
 
             }
         }
@@ -652,7 +651,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
             if (b.isDurable())
             {
-                DurableConfigurationStoreHelper.removeBinding(_virtualHost.getDurableConfigurationStore(), b);
+                _virtualHost.getDurableConfigurationStore().remove(b.asObjectRecord());
             }
             b.delete();
         }
