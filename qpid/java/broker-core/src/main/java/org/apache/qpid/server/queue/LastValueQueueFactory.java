@@ -22,28 +22,27 @@ package org.apache.qpid.server.queue;
 
 import java.util.Map;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-public class StandardQueueImpl extends AbstractQueue<StandardQueueImpl> implements StandardQueue<StandardQueueImpl>
+public class LastValueQueueFactory extends AbstractConfiguredObjectTypeFactory<LastValueQueueImpl>
 {
-    private StandardQueueEntryList _entries;
-
-    public StandardQueueImpl(final VirtualHostImpl virtualHost,
-                             final Map<String, Object> arguments)
+    public LastValueQueueFactory()
     {
-        super(virtualHost, arguments);
+        super(LastValueQueueImpl.class);
     }
 
     @Override
-    protected void onOpen()
+    protected LastValueQueueImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
-        super.onOpen();
-        _entries = new StandardQueueEntryList(this);
-    }
+        VirtualHost<?,?,?> virtualHost = getParent(VirtualHost.class, parents);
+        if (!(virtualHost instanceof VirtualHostImpl))
+        {
+            throw new IllegalArgumentException("Unexpected virtual host is set as a parent. Expected instance of " + VirtualHostImpl.class.getName());
+        }
 
-    @Override
-    StandardQueueEntryList getEntries()
-    {
-        return _entries;
+        return new LastValueQueueImpl((VirtualHostImpl<?,?,?>)virtualHost,attributes);
     }
 }

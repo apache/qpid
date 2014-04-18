@@ -20,21 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.message.InstanceProperties;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.txn.LocalTransaction;
-import org.apache.qpid.server.txn.ServerTransaction;
-import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.util.StateChangeListener;
-
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,6 +27,21 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StateChangeListener;
 
 public abstract class QueueEntryImpl implements QueueEntry
 {
@@ -365,7 +365,7 @@ public abstract class QueueEntryImpl implements QueueEntry
     public int routeToAlternate(final Action<? super MessageInstance> action, ServerTransaction txn)
     {
         final AMQQueue currentQueue = getQueue();
-        ExchangeImpl alternateExchange = currentQueue.getAlternateExchange();
+        Exchange<?> alternateExchange = currentQueue.getAlternateExchange();
         boolean autocommit =  txn == null;
         int enqueues;
 

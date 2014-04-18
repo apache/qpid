@@ -249,9 +249,17 @@ public class StandardQueueTest extends AbstractQueueTestBase
     private static class DequeuedQueue extends AbstractQueue
     {
 
+        private QueueEntryList _entries = new DequeuedQueueEntryList(this);
+
         public DequeuedQueue(VirtualHostImpl virtualHost)
         {
-            super(virtualHost, attributes(), new DequeuedQueueEntryListFactory());
+            super(virtualHost, attributes());
+        }
+
+        @Override
+        QueueEntryList getEntries()
+        {
+            return _entries;
         }
 
         private static Map<String,Object> attributes()
@@ -263,19 +271,6 @@ public class StandardQueueTest extends AbstractQueueTestBase
             attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
             return attributes;
         }
-    }
-    private static class DequeuedQueueEntryListFactory implements QueueEntryListFactory
-    {
-        public DequeuedQueueEntryList createQueueEntryList(AMQQueue queue)
-        {
-            /**
-             * Override SimpleQueueEntryList to create a dequeued
-             * entries for messages with even id
-             */
-            return new DequeuedQueueEntryList((DequeuedQueue) queue);
-        }
-
-
     }
 
     private static class DequeuedQueueEntryList extends OrderedQueueEntryList

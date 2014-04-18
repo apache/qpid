@@ -45,13 +45,4 @@ public class StandardQueueEntryList extends OrderedQueueEntryList
         return new StandardQueueEntry(this, message);
     }
 
-    static class Factory implements QueueEntryListFactory
-    {
-
-        public StandardQueueEntryList createQueueEntryList(AMQQueue<?> queue)
-        {
-            return new StandardQueueEntryList((StandardQueueImpl) queue);
-        }
-    }
-
 }

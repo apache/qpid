@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.Principal;
@@ -27,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +44,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.consumer.ConsumerImpl;
@@ -54,6 +51,7 @@ import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
@@ -100,10 +98,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     public static final String SHARED_MSG_GROUP_ARG_VALUE = "1";
     private static final String QPID_NO_GROUP = "qpid.no-group";
-    private static final String DEFAULT_SHARED_MESSAGE_GROUP = System.getProperty(BrokerProperties.PROPERTY_DEFAULT_SHARED_MESSAGE_GROUP, QPID_NO_GROUP);
 
-    // TODO - should make this configurable at the vhost / broker level
-    private static final int DEFAULT_MAX_GROUPS = 255;
     private static final QueueNotificationListener NULL_NOTIFICATION_LISTENER = new QueueNotificationListener()
     {
         @Override
@@ -118,10 +113,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private final VirtualHostImpl _virtualHost;
     private final DeletedChildListener _deletedChildListener = new DeletedChildListener();
 
-    private ExchangeImpl _alternateExchange;
+    @ManagedAttributeField( beforeSet = "preSetAlternateExchange", afterSet = "postSetAlternateExchange")
+    private Exchange _alternateExchange;
 
-
-    private final QueueEntryList _entries;
 
     private final QueueConsumerList _consumerList = new QueueConsumerList();
 
@@ -203,6 +197,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     private LogSubject _logSubject;
 
+    @ManagedAttributeField
     private boolean _noLocal;
 
     private final AtomicBoolean _overfull = new AtomicBoolean(false);
@@ -224,19 +219,37 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private QueueNotificationListener  _notificationListener;
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
 
+    @ManagedAttributeField
+    private String _messageGroupKey;
+    @ManagedAttributeField
+    private boolean _messageGroupSharedGroups;
+    @ManagedAttributeField
+    private String _messageGroupDefaultGroup;
+    @ManagedAttributeField
+    private int _maximumDistinctGroups;
+
     protected AbstractQueue(VirtualHostImpl virtualHost,
-                            Map<String, Object> attributes,
-                            QueueEntryListFactory entryListFactory)
+                            Map<String, Object> attributes)
     {
         super(parentsMap(virtualHost),
               attributes, virtualHost.getTaskExecutor());
 
-        _entries = entryListFactory.createQueueEntryList(this);
         _virtualHost = virtualHost;
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
+    }
+
+    @Override
+    protected void onCreate()
+    {
+        super.onCreate();
 
 
+        if (isDurable() && !(getLifetimePolicy()  == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
+                             || getLifetimePolicy() == LifetimePolicy.DELETE_ON_SESSION_END))
+        {
+            DurableConfigurationStoreHelper.createQueue(_virtualHost.getDurableConfigurationStore(), this);
+        }
     }
 
     public void validate()
@@ -307,9 +320,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         arguments.put(Queue.LIFETIME_POLICY, getLifetimePolicy());
 
         _arguments = Collections.synchronizedMap(arguments);
-
-        _noLocal = MapValueConverter.getBooleanAttribute(Queue.NO_LOCAL, attributes, false);
-
 
         _logSubject = new QueueLogSubject(this);
 
@@ -423,29 +433,18 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         // Log the creation of this Queue.
         // The priorities display is toggled on if we set priorities > 0
         getEventLogger().message(_logSubject,
-                                 QueueMessages.CREATED(ownerString,
-                                                       _entries.getPriorities(),
-                                                       ownerString != null,
-                                                       getLifetimePolicy() != LifetimePolicy.PERMANENT,
-                                                       isDurable(),
-                                                       !isDurable(),
-                                                       _entries.getPriorities() > 0));
+                                 getCreatedLogMessage());
 
-        if(attributes != null && attributes.containsKey(Queue.MESSAGE_GROUP_KEY))
+        if(getMessageGroupKey() != null)
         {
-            if(attributes.get(Queue.MESSAGE_GROUP_SHARED_GROUPS) != null
-               && (Boolean)(attributes.get(Queue.MESSAGE_GROUP_SHARED_GROUPS)))
+            if(isMessageGroupSharedGroups())
             {
-                Object defaultGroup = attributes.get(Queue.MESSAGE_GROUP_DEFAULT_GROUP);
                 _messageGroupManager =
-                        new DefinedGroupMessageGroupManager(String.valueOf(attributes.get(Queue.MESSAGE_GROUP_KEY)),
-                                defaultGroup == null ? DEFAULT_SHARED_MESSAGE_GROUP : defaultGroup.toString(),
-                                this);
+                        new DefinedGroupMessageGroupManager(getMessageGroupKey(), getMessageGroupDefaultGroup(), this);
             }
             else
             {
-                _messageGroupManager = new AssignedConsumerMessageGroupManager(String.valueOf(attributes.get(
-                        Queue.MESSAGE_GROUP_KEY)), DEFAULT_MAX_GROUPS);
+                _messageGroupManager = new AssignedConsumerMessageGroupManager(getMessageGroupKey(), getMaximumDistinctGroups());
             }
         }
         else
@@ -454,6 +453,18 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
 
         updateAlertChecks();
+    }
+
+    protected LogMessage getCreatedLogMessage()
+    {
+        String ownerString = getOwner();
+        return QueueMessages.CREATED(ownerString,
+                                     0,
+                                     ownerString != null,
+                                     getLifetimePolicy() != LifetimePolicy.PERMANENT,
+                                     isDurable(),
+                                     !isDurable(),
+                                     false);
     }
 
     private void addLifetimeConstraint(final Deletable<? extends Deletable> lifetimeObject)
@@ -501,32 +512,35 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
     }
 
-    public void setNoLocal(boolean nolocal)
-    {
-        _noLocal = nolocal;
-    }
-
     public boolean isExclusive()
     {
         return _exclusive != ExclusivityPolicy.NONE;
     }
 
-    public ExchangeImpl getAlternateExchange()
+    public Exchange<?> getAlternateExchange()
     {
         return _alternateExchange;
     }
 
     public void setAlternateExchange(ExchangeImpl exchange)
     {
-        if(_alternateExchange != null)
-        {
-            _alternateExchange.removeReference(this);
-        }
-        if(exchange != null)
-        {
-            exchange.addReference(this);
-        }
         _alternateExchange = exchange;
+    }
+
+    private void postSetAlternateExchange()
+    {
+        if(_alternateExchange instanceof ExchangeImpl)
+        {
+            ((ExchangeImpl)_alternateExchange).addReference(this);
+        }
+    }
+
+    private void preSetAlternateExchange()
+    {
+        if(_alternateExchange instanceof ExchangeImpl)
+        {
+            ((ExchangeImpl)_alternateExchange).removeReference(this);
+        }
     }
 
 
@@ -712,7 +726,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
 
         consumer.setStateListener(this);
-        consumer.setQueueContext(new QueueContext(_entries.getHead()));
+        consumer.setQueueContext(new QueueContext(getEntries().getHead()));
 
         if (!isDeleted())
         {
@@ -908,7 +922,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
 
         final QueueConsumer<?> exclusiveSub = _exclusiveSubscriber;
-        final QueueEntry entry = _entries.add(message);
+        final QueueEntry entry = getEntries().add(message);
 
         if(action != null || (exclusiveSub == null  && _queueRunner.isIdle()))
         {
@@ -1271,7 +1285,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     protected QueueEntry getOldestQueueEntry()
     {
-        return _entries.next(_entries.getHead());
+        return getEntries().next(getEntries().getHead());
     }
 
     public boolean isDeleted()
@@ -1282,7 +1296,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     public List<QueueEntry> getMessagesOnTheQueue()
     {
         ArrayList<QueueEntry> entryList = new ArrayList<QueueEntry>();
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator queueListIterator = getEntries().iterator();
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
@@ -1344,10 +1358,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     /** Used to track bindings to exchanges so that on deletion they can easily be cancelled. */
-    protected QueueEntryList getEntries()
-    {
-        return _entries;
-    }
+    abstract QueueEntryList getEntries();
 
     protected QueueConsumerList getConsumerList()
     {
@@ -1410,7 +1421,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     public List<QueueEntry> getMessagesOnTheQueue(QueueEntryFilter filter)
     {
         ArrayList<QueueEntry> entryList = new ArrayList<QueueEntry>();
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator queueListIterator = getEntries().iterator();
         while (queueListIterator.advance() && !filter.filterComplete())
         {
             QueueEntry node = queueListIterator.getNode();
@@ -1425,7 +1436,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     public void visit(final QueueEntryVisitor visitor)
     {
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator queueListIterator = getEntries().iterator();
 
         while(queueListIterator.advance())
         {
@@ -1487,7 +1498,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         //Perform ACLs
         getVirtualHost().getSecurityManager().authorisePurge(this);
 
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator queueListIterator = getEntries().iterator();
         long count = 0;
 
         ServerTransaction txn = new LocalTransaction(getVirtualHost().getMessageStore());
@@ -1605,10 +1616,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
             txn.commit();
 
-            if(_alternateExchange != null)
-            {
-                _alternateExchange.removeReference(this);
-            }
+            preSetAlternateExchange();
 
 
             for (Action<? super AMQQueue> task : _deleteTaskList)
@@ -1834,7 +1842,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                 }
 
             }
-            atTail = (node == null) || (_entries.next(node) == null);
+            atTail = (node == null) || (getEntries().next(node) == null);
         }
         return atTail || !subActive;
     }
@@ -1865,7 +1873,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             QueueEntry lastSeen = context.getLastSeenEntry();
             QueueEntry releasedNode = context.getReleasedEntry();
 
-            QueueEntry node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : _entries.next(lastSeen);
+            QueueEntry node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : getEntries()
+                    .next(lastSeen);
 
             boolean expired = false;
             while (node != null && (!node.isAvailable() || (expired = node.expired()) || !sub.hasInterest(node) ||
@@ -1887,7 +1896,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
                 lastSeen = context.getLastSeenEntry();
                 releasedNode = context.getReleasedEntry();
-                node = (releasedNode != null && lastSeen.compareTo(releasedNode)>0) ? releasedNode : _entries.next(lastSeen);
+                node = (releasedNode != null && lastSeen.compareTo(releasedNode)>0) ? releasedNode : getEntries().next(
+                        lastSeen);
             }
             return node;
         }
@@ -2059,7 +2069,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     public void checkMessageStatus()
     {
-        QueueEntryIterator queueListIterator = _entries.iterator();
+        QueueEntryIterator queueListIterator = getEntries().iterator();
 
         while (queueListIterator.advance())
         {
@@ -2098,20 +2108,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         return _alertRepeatGap;
     }
 
-    public void setAlertRepeatGap(long alertRepeatGap)
-    {
-        _alertRepeatGap = alertRepeatGap;
-    }
-
     public long getAlertThresholdMessageAge()
     {
         return _alertThresholdMessageAge;
-    }
-
-    public void setAlertThresholdMessageAge(long alertThresholdMessageAge)
-    {
-        _alertThresholdMessageAge = alertThresholdMessageAge;
-        updateNotificationCheck(alertThresholdMessageAge, NotificationCheck.MESSAGE_AGE_ALERT);
     }
 
     public long getAlertThresholdQueueDepthMessages()
@@ -2139,24 +2138,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
     }
 
-    public void setAlertThresholdQueueDepthMessages(final long alertThresholdQueueDepthMessages)
-    {
-        _alertThresholdQueueDepthMessages = alertThresholdQueueDepthMessages;
-        updateNotificationCheck(alertThresholdQueueDepthMessages, NotificationCheck.MESSAGE_COUNT_ALERT);
-
-    }
-
     public long getAlertThresholdQueueDepthBytes()
     {
         return _alertThresholdQueueDepthBytes;
-    }
-
-    // Sets the queue depth, the max queue size
-    public void setAlertThresholdQueueDepthBytes(final long alertThresholdQueueDepthBytes)
-    {
-        _alertThresholdQueueDepthBytes = alertThresholdQueueDepthBytes;
-        updateNotificationCheck(alertThresholdQueueDepthBytes, NotificationCheck.QUEUE_DEPTH_ALERT);
-
     }
 
     public long getAlertThresholdMessageSize()
@@ -2164,32 +2148,14 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         return _alertThresholdMessageSize;
     }
 
-    public void setAlertThresholdMessageSize(final long alertThresholdMessageSize)
-    {
-        _alertThresholdMessageSize = alertThresholdMessageSize;
-        updateNotificationCheck(alertThresholdMessageSize, NotificationCheck.MESSAGE_SIZE_ALERT);
-    }
-
     public long getQueueFlowControlSizeBytes()
     {
         return _queueFlowControlSizeBytes;
     }
 
-    public void setQueueFlowControlSizeBytes(long queueFlowControlSizeBytes)
-    {
-        _queueFlowControlSizeBytes = queueFlowControlSizeBytes;
-    }
-
     public long getQueueFlowResumeSizeBytes()
     {
         return _queueFlowResumeSizeBytes;
-    }
-
-    public void setQueueFlowResumeSizeBytes(long queueFlowResumeSizeBytes)
-    {
-        _queueFlowResumeSizeBytes = queueFlowResumeSizeBytes;
-
-        checkCapacity();
     }
 
     public boolean isOverfull()
@@ -2258,7 +2224,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     public List<Long> getMessagesOnTheQueue(int num, int offset)
     {
         ArrayList<Long> ids = new ArrayList<Long>(num);
-        QueueEntryIterator it = _entries.iterator();
+        QueueEntryIterator it = getEntries().iterator();
         for (int i = 0; i < offset; i++)
         {
             it.advance();
@@ -2657,7 +2623,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     @Override
-    public boolean getNoLocal()
+    public boolean isNoLocal()
     {
         return _noLocal;
     }
@@ -2665,15 +2631,26 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @Override
     public String getMessageGroupKey()
     {
-        return (String) getAttribute(MESSAGE_GROUP_KEY);
+        return _messageGroupKey;
     }
 
     @Override
     public boolean isMessageGroupSharedGroups()
     {
-        return (Boolean) getAttribute(MESSAGE_GROUP_SHARED_GROUPS);
+        return _messageGroupSharedGroups;
     }
 
+    @Override
+    public String getMessageGroupDefaultGroup()
+    {
+        return _messageGroupDefaultGroup;
+    }
+
+    @Override
+    public int getMaximumDistinctGroups()
+    {
+        return _maximumDistinctGroups;
+    }
 
     @Override
     public boolean isQueueFlowStopped()
@@ -2728,14 +2705,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         try
         {
-            if(ALTERNATE_EXCHANGE.equals(name))
-            {
-                // In future we may want to accept a UUID as an alternative way to identifying the exchange
-                ExchangeImpl alternateExchange = (ExchangeImpl) desired;
-                setAlternateExchange(alternateExchange);
-                return true;
-            }
-            else if(EXCLUSIVE.equals(name))
+            if(EXCLUSIVE.equals(name))
             {
                 ExclusivityPolicy existingPolicy = getExclusive();
                 if(super.changeAttribute(name, expected, desired))
@@ -2776,54 +2746,41 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         _virtualHost.getSecurityManager().authoriseUpdate(this);
     }
 
-    @SuppressWarnings("serial")
-    static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
-        put(ALERT_REPEAT_GAP, Long.class);
-        put(ALERT_THRESHOLD_MESSAGE_AGE, Long.class);
-        put(ALERT_THRESHOLD_MESSAGE_SIZE, Long.class);
-        put(ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, Long.class);
-        put(ALERT_THRESHOLD_QUEUE_DEPTH_BYTES, Long.class);
-        put(QUEUE_FLOW_CONTROL_SIZE_BYTES, Long.class);
-        put(QUEUE_FLOW_RESUME_SIZE_BYTES, Long.class);
-        put(MAXIMUM_DELIVERY_ATTEMPTS, Integer.class);
-        put(DESCRIPTION, String.class);
-    }});
+    private static final String[] NON_NEGATIVE_NUMBERS = {
+        ALERT_REPEAT_GAP,
+        ALERT_THRESHOLD_MESSAGE_AGE,
+        ALERT_THRESHOLD_MESSAGE_SIZE,
+        ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
+        ALERT_THRESHOLD_QUEUE_DEPTH_BYTES,
+        QUEUE_FLOW_CONTROL_SIZE_BYTES,
+        QUEUE_FLOW_RESUME_SIZE_BYTES,
+        MAXIMUM_DELIVERY_ATTEMPTS
+    };
 
     @Override
-    protected void changeAttributes(final Map<String, Object> attributes)
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
     {
-        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
-        validateAttributes(convertedAttributes);
-
-        super.changeAttributes(convertedAttributes);
-    }
-
-    private void validateAttributes(Map<String, Object> convertedAttributes)
-    {
-        Long queueFlowControlSize = (Long) convertedAttributes.get(QUEUE_FLOW_CONTROL_SIZE_BYTES);
-        Long queueFlowControlResumeSize = (Long) convertedAttributes.get(QUEUE_FLOW_RESUME_SIZE_BYTES);
-        if (queueFlowControlSize != null || queueFlowControlResumeSize != null )
+        super.validateChange(proxyForValidation, changedAttributes);
+        Queue<?> queue = (Queue) proxyForValidation;
+        long queueFlowControlSize = queue.getQueueFlowControlSizeBytes();
+        long queueFlowControlResumeSize = queue.getQueueFlowResumeSizeBytes();
+        if (queueFlowControlResumeSize > queueFlowControlSize)
         {
-            if (queueFlowControlSize == null)
-            {
-                queueFlowControlSize = (Long)getAttribute(QUEUE_FLOW_CONTROL_SIZE_BYTES);
-            }
-            if (queueFlowControlResumeSize == null)
-            {
-                queueFlowControlResumeSize = (Long)getAttribute(QUEUE_FLOW_RESUME_SIZE_BYTES);
-            }
-            if (queueFlowControlResumeSize > queueFlowControlSize)
-            {
-                throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
-            }
+            throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
         }
-        for (Map.Entry<String, Object> entry: convertedAttributes.entrySet())
+
+
+        for (String attrName : NON_NEGATIVE_NUMBERS)
         {
-            Object value = entry.getValue();
-            if (value instanceof Number && ((Number)value).longValue() < 0)
+            if (changedAttributes.contains(attrName))
             {
-                throw new IllegalConfigurationException("Only positive integer value can be specified for the attribute "
-                                                        + entry.getKey());
+                Object value = queue.getAttribute(attrName);
+                if (!(value instanceof Number) || ((Number) value).longValue() < 0)
+                {
+                    throw new IllegalConfigurationException(
+                            "Only positive integer value can be specified for the attribute "
+                            + attrName);
+                }
             }
         }
     }

@@ -22,43 +22,55 @@ package org.apache.qpid.server.queue;
 
 import java.util.Map;
 
-import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.messages.QueueMessages;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class PriorityQueueImpl extends OutOfOrderQueue<PriorityQueueImpl> implements PriorityQueue<PriorityQueueImpl>
 {
 
-    public static final int DEFAULT_PRIORITY_LEVELS = 10;
+    private PriorityQueueList _entries;
+
+    @ManagedAttributeField
+    private int _priorities;
 
     public PriorityQueueImpl(VirtualHostImpl virtualHost,
-                                Map<String, Object> attributes)
+                             Map<String, Object> attributes)
     {
-        super(virtualHost, attributes, entryList(attributes));
+        super(virtualHost, attributes);
     }
 
-    private static PriorityQueueList.Factory entryList(final Map<String, Object> attributes)
+    @Override
+    protected void onOpen()
     {
-        final Integer priorities = MapValueConverter.getIntegerAttribute(PRIORITIES, attributes,
-                                                                         DEFAULT_PRIORITY_LEVELS);
-
-        return new PriorityQueueList.Factory(priorities);
+        super.onOpen();
+        _entries = PriorityQueueList.newInstance(this);
     }
 
     @Override
     public int getPriorities()
     {
-        return getEntries().getPriorities();
+        return _priorities;
     }
 
     @Override
-    public Object getAttribute(final String name)
+    PriorityQueueList getEntries()
     {
-
-        if(PRIORITIES.equals(name))
-        {
-            return getPriorities();
-        }
-
-        return super.getAttribute(name);
+        return _entries;
     }
+
+    protected LogMessage getCreatedLogMessage()
+    {
+        String ownerString = getOwner();
+        return QueueMessages.CREATED(ownerString,
+                                     getPriorities(),
+                                     ownerString != null,
+                                     getLifetimePolicy() != LifetimePolicy.PERMANENT,
+                                     isDurable(),
+                                     !isDurable(),
+                                     true);
+    }
+
 }

@@ -35,6 +35,11 @@ org.apache.qpid.server.model.adapter.BrokerAdapterFactory
 org.apache.qpid.server.model.adapter.StandardVirtualHostFactory
 org.apache.qpid.server.model.adapter.FileBasedGroupProviderFactory
 org.apache.qpid.server.model.adapter.FileSystemPreferencesProviderFactory
+org.apache.qpid.server.queue.LastValueQueueFactory
+org.apache.qpid.server.queue.PriorityQueueFactory
+org.apache.qpid.server.queue.QueueFactory
+org.apache.qpid.server.queue.SortedQueueFactory
+org.apache.qpid.server.queue.StandardQueueFactory
 org.apache.qpid.server.exchange.DirectExchangeFactory
 org.apache.qpid.server.exchange.FanoutExchangeFactory
 org.apache.qpid.server.exchange.HeadersExchangeFactory

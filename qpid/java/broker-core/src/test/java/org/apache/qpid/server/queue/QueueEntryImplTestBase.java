@@ -18,23 +18,23 @@
  */
 package org.apache.qpid.server.queue;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.MessageReference;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.message.MessageInstance.EntryState;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import junit.framework.TestCase;
+
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.MessageInstance.EntryState;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 /**
  * Tests for {@link QueueEntryImpl}
@@ -200,7 +200,8 @@ public abstract class QueueEntryImplTestBase extends TestCase
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
 
         StandardQueueImpl queue = new StandardQueueImpl(virtualHost, queueAttributes);
-        OrderedQueueEntryList queueEntryList = (OrderedQueueEntryList) queue.getEntries();
+        queue.open();
+        OrderedQueueEntryList queueEntryList = queue.getEntries();
 
         // create test entries
         for(int i = 0; i < numberOfEntries ; i++)

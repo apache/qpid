@@ -67,7 +67,6 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class DurableConfigurationRecovererTest extends QpidTestCase
@@ -84,6 +83,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     private DurableConfigurationStore _store;
     private ConfiguredObjectFactory _configuredObjectFactory;
     private ConfiguredObjectTypeFactory _exchangeFactory;
+    private ConfiguredObjectTypeFactory _queueFactory;
 
     @Override
     public void setUp() throws Exception
@@ -91,6 +91,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         super.setUp();
         _configuredObjectFactory = mock(ConfiguredObjectFactory.class);
         _exchangeFactory = mock(ConfiguredObjectTypeFactory.class);
+        _queueFactory = mock(ConfiguredObjectTypeFactory.class);
+
 
         AMQQueue<?> queue = mock(AMQQueue.class);
 
@@ -106,6 +108,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         when(_vhost.getQueue(eq(QUEUE_ID))).thenReturn(queue);
 
         when(_configuredObjectFactory.getConfiguredObjectTypeFactory(eq(Exchange.class), anyMap())).thenReturn(_exchangeFactory);
+        when(_configuredObjectFactory.getConfiguredObjectTypeFactory(eq(Queue.class), anyMap())).thenReturn(_queueFactory);
+
 
         final ArgumentCaptor<ConfiguredObjectRecord> recoveredExchange = ArgumentCaptor.forClass(ConfiguredObjectRecord.class);
         doAnswer(new Answer()
@@ -131,52 +135,38 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
 
 
-        final ArgumentCaptor<Map> attributesArg = ArgumentCaptor.forClass(Map.class);
 
-        when(_vhost.restoreQueue(attributesArg.capture())).then(
-                new Answer()
+        final ArgumentCaptor<ConfiguredObjectRecord> recoveredQueue = ArgumentCaptor.forClass(ConfiguredObjectRecord.class);
+        doAnswer(new Answer()
+        {
+
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                ConfiguredObjectRecord queueRecord = recoveredQueue.getValue();
+                AMQQueue queue = mock(AMQQueue.class);
+                UUID id = queueRecord.getId();
+                String name = (String) queueRecord.getAttributes().get("name");
+                when(queue.getId()).thenReturn(id);
+                when(queue.getName()).thenReturn(name);
+                when(_vhost.getQueue(eq(id))).thenReturn(queue);
+                when(_vhost.getQueue(eq(name))).thenReturn(queue);
+
+                UnresolvedConfiguredObject unresolved = mock(UnresolvedConfiguredObject.class);
+                when(unresolved.resolve()).thenReturn(queue);
+
+                Map args = queueRecord.getAttributes();
+                if (args.containsKey(Queue.ALTERNATE_EXCHANGE))
                 {
+                    final UUID exchangeId = UUID.fromString(args.get(Queue.ALTERNATE_EXCHANGE).toString());
+                    final ExchangeImpl exchange =
+                            _vhost.getExchange(exchangeId);
+                    when(queue.getAlternateExchange()).thenReturn(exchange);
+                }
 
-                    @Override
-                    public Object answer(final InvocationOnMock invocation) throws Throwable
-                    {
-                        final AMQQueue queue = mock(AMQQueue.class);
-
-                        final Map attributes = attributesArg.getValue();
-                        final String queueName = (String) attributes.get(Queue.NAME);
-                        final UUID queueId = MapValueConverter.getUUIDAttribute(Queue.ID, attributes);
-
-                        when(queue.getName()).thenReturn(queueName);
-                        when(queue.getId()).thenReturn(queueId);
-                        when(_vhost.getQueue(eq(queueName))).thenReturn(queue);
-                        when(_vhost.getQueue(eq(queueId))).thenReturn(queue);
-
-                        final ArgumentCaptor<ExchangeImpl> altExchangeArg = ArgumentCaptor.forClass(ExchangeImpl.class);
-                        doAnswer(
-                                new Answer()
-                                {
-                                    @Override
-                                    public Object answer(InvocationOnMock invocation) throws Throwable
-                                    {
-                                        final ExchangeImpl value = altExchangeArg.getValue();
-                                        when(queue.getAlternateExchange()).thenReturn(value);
-                                        return null;
-                                    }
-                                }
-                                ).when(queue).setAlternateExchange(altExchangeArg.capture());
-
-                        Map args = attributes;
-                        if (args.containsKey(Queue.ALTERNATE_EXCHANGE))
-                        {
-                            final UUID exchangeId = UUID.fromString(args.get(Queue.ALTERNATE_EXCHANGE).toString());
-                            final ExchangeImpl exchange =
-                                    (ExchangeImpl) _vhost.getExchange(exchangeId);
-                            queue.setAlternateExchange(exchange);
-                        }
-                        return queue;
-                    }
-                });
-
+                return unresolved;
+            }
+        }).when(_queueFactory).recover(recoveredQueue.capture(), any(ConfiguredObject.class));
 
 
         DurableConfiguredObjectRecoverer[] recoverers = {

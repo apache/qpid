@@ -22,44 +22,84 @@ package org.apache.qpid.server.store;
 
 import java.util.UUID;
 
-public abstract class AbstractDurableConfiguredObjectRecoverer<T> implements DurableConfiguredObjectRecoverer
+import org.apache.qpid.server.model.ConfiguredObject;
+
+public abstract class AbstractDurableConfiguredObjectRecoverer<T extends ConfiguredObject> implements DurableConfiguredObjectRecoverer
 {
     @Override
     public void load(final DurableConfigurationRecoverer durableConfigurationRecoverer,
                      final ConfiguredObjectRecord record)
     {
-        final UnresolvedObject obj = createUnresolvedObject(record);
+        final UnresolvedObject<T> obj = createUnresolvedObject(record);
         UnresolvedDependency[] dependencies = obj.getUnresolvedDependencies();
         for(final UnresolvedDependency dependency : dependencies)
         {
-            Object dep;
-            if((dep = durableConfigurationRecoverer.getResolvedObject(dependency.getType(), dependency.getId())) != null)
+            if(dependency.getId() != null)
             {
-                dependency.resolve(dep);
+                Object dep;
+                if ((dep = durableConfigurationRecoverer.getResolvedObject(dependency.getType(), dependency.getId()))
+                    != null)
+                {
+                    dependency.resolve(dep);
+                }
+                else
+                {
+                    durableConfigurationRecoverer.addResolutionListener(dependency.getType(), dependency.getId(),
+                                                                        null, new DependencyListener()
+                                                                        {
+
+                                                                            @Override
+                                                                            public void dependencyResolved(final String depType,
+                                                                                                           final UUID depId,
+                                                                                                           final ConfiguredObject o)
+                                                                            {
+                                                                                dependency.resolve(o);
+                                                                                if (obj.getUnresolvedDependencies().length
+                                                                                    == 0)
+                                                                                {
+                                                                                    durableConfigurationRecoverer.resolve(
+                                                                                            getType(),
+                                                                                            record.getId(),
+                                                                                            obj.resolve());
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                       );
+                }
             }
             else
             {
-                durableConfigurationRecoverer.addResolutionListener(dependency.getType(), dependency.getId(),
-                                                                      new DependencyListener()
-                                                                      {
+                Object dep;
 
-                                                                          @Override
-                                                                          public void dependencyResolved(final String depType,
-                                                                                                         final UUID depId,
-                                                                                                         final Object o)
-                                                                          {
-                                                                              dependency.resolve(o);
-                                                                              if (obj.getUnresolvedDependencies().length
-                                                                                  == 0)
-                                                                              {
-                                                                                  durableConfigurationRecoverer.resolve(
-                                                                                          getType(),
-                                                                                          record.getId(),
-                                                                                          obj.resolve());
-                                                                              }
-                                                                          }
-                                                                      }
-                                                                     );
+                if ((dep = durableConfigurationRecoverer.getResolvedObject(dependency.getType(), dependency.getName()))
+                    != null)
+                {
+                    dependency.resolve(dep);
+                }
+                else
+                {
+                    durableConfigurationRecoverer.addResolutionListener(dependency.getType(), dependency.getId(),
+                                                                        dependency.getName(), new DependencyListener()
+                                                                        {
+
+                                                                            @Override
+                                                                            public void dependencyResolved(final String depType,
+                                                                                                           final UUID depId,
+                                                                                                           final ConfiguredObject o)
+                                                                            {
+                                                                                dependency.resolve(o);
+                                                                                if (obj.getUnresolvedDependencies().length
+                                                                                    == 0)
+                                                                                {
+                                                                                    durableConfigurationRecoverer.resolve(
+                                                                                            getType(),
+                                                                                            record.getId(),
+                                                                                            obj.resolve());
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                       );
+                }
             }
         }
         if(obj.getUnresolvedDependencies().length == 0)

@@ -28,7 +28,7 @@ public interface SortedQueue<X extends SortedQueue<X>> extends AMQQueue<X>
 {
     String SORT_KEY = "sortKey";
 
-    @ManagedAttribute
+    @ManagedAttribute( automate = true, mandatory = true )
     String getSortKey();
 
 

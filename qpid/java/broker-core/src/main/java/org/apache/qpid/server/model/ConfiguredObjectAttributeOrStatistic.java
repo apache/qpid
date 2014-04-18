@@ -26,18 +26,18 @@ import java.lang.reflect.Method;
 abstract class ConfiguredObjectAttributeOrStatistic<C extends ConfiguredObject, T>
 {
 
-    protected final String _name;
-    protected final Class<T> _type;
-    protected final AttributeValueConverter<T> _converter;
-    protected final Method _getter;
+    private final String _name;
+    private final Class<T> _type;
+    private final AttributeValueConverter<T> _converter;
+    private final Method _getter;
 
     ConfiguredObjectAttributeOrStatistic(final Method getter)
     {
 
         _getter = getter;
         _type = (Class<T>) getTypeFromMethod(getter);
-        _name = getNameFromMethod(getter, _type);
-        _converter = AttributeValueConverter.getConverter(_type, getter.getGenericReturnType());
+        _name = getNameFromMethod(getter, getType());
+        _converter = AttributeValueConverter.getConverter(getType(), getter.getGenericReturnType());
 
     }
 
@@ -133,17 +133,17 @@ abstract class ConfiguredObjectAttributeOrStatistic<C extends ConfiguredObject, 
     {
         try
         {
-            return (T) _getter.invoke(configuredObject);
+            return (T) getGetter().invoke(configuredObject);
         }
         catch (IllegalAccessException e)
         {
-            Object o = configuredObject.getAttribute(_name);
-            return _converter.convert(o, configuredObject);
+            Object o = configuredObject.getAttribute(getName());
+            return getConverter().convert(o, configuredObject);
         }
         catch (InvocationTargetException e)
         {
-            Object o = configuredObject.getAttribute(_name);
-            return _converter.convert(o, configuredObject);
+            Object o = configuredObject.getAttribute(getName());
+            return getConverter().convert(o, configuredObject);
         }
 
     }
@@ -151,5 +151,10 @@ abstract class ConfiguredObjectAttributeOrStatistic<C extends ConfiguredObject, 
     public Method getGetter()
     {
         return _getter;
+    }
+
+    public AttributeValueConverter<T> getConverter()
+    {
+        return _converter;
     }
 }

@@ -28,10 +28,9 @@ public abstract class OutOfOrderQueue<X extends OutOfOrderQueue<X>> extends Abst
 {
 
     protected OutOfOrderQueue(VirtualHostImpl virtualHost,
-                              Map<String, Object> attributes,
-                              QueueEntryListFactory entryListFactory)
+                              Map<String, Object> attributes)
     {
-        super(virtualHost, attributes, entryListFactory);
+        super(virtualHost, attributes);
     }
 
     @Override

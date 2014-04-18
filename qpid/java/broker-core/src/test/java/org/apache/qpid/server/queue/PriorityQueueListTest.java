@@ -59,7 +59,8 @@ public class PriorityQueueListTest extends QpidTestCase
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
         PriorityQueueImpl queue = new PriorityQueueImpl(virtualHost, queueAttributes);
-        _list = (PriorityQueueList) queue.getEntries();
+        queue.open();
+        _list = queue.getEntries();
 
         for (int i = 0; i < PRIORITIES.length; i++)
         {

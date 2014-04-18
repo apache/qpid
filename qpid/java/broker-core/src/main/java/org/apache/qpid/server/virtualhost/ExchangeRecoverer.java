@@ -28,7 +28,6 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -46,8 +45,7 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
     {
         _vhost = vhost;
         Broker<?> broker = _vhost.getParent(Broker.class);
-        SystemContext<?> systemContext = broker.getParent(SystemContext.class);
-        _objectFactory = systemContext.getObjectFactory();
+        _objectFactory = broker.getObjectFactory();
     }
 
     @Override

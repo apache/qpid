@@ -33,6 +33,7 @@ import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
@@ -153,21 +154,21 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
 
         attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.NAME, queueName);
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, true);
 
         AMQQueue queue = _virtualHost.createQueue(attributes);
 
-        ExchangeImpl altExchange = queue.getAlternateExchange();
+        Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
         assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
-        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getTypeName());
+        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType());
 
         assertNotNull("The alternate exchange was not registered as expected", _virtualHost.getExchange(dlExchangeName));
         assertEquals("The registered exchange was not the expected exchange instance", altExchange, _virtualHost.getExchange(dlExchangeName));
 
         AMQQueue dlQueue = _virtualHost.getQueue(dlQueueName);
         assertNotNull("The DLQ was not registered as expected", dlQueue);
-        assertTrue("DLQ should have been bound to the alternate exchange", altExchange.isBound(dlQueue));
+        assertTrue("DLQ should have been bound to the alternate exchange", ((ExchangeImpl)altExchange).isBound(dlQueue));
         assertNull("DLQ should have no alternate exchange", dlQueue.getAlternateExchange());
         assertEquals("DLQ should have a zero maximum delivery count", 0, dlQueue.getMaximumDeliveryAttempts());
 
@@ -192,23 +193,23 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.NAME, queueName);
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, true);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 5);
 
         AMQQueue queue = _virtualHost.createQueue(attributes);
 
         assertEquals("Unexpected maximum delivery count", 5, queue.getMaximumDeliveryAttempts());
-        ExchangeImpl altExchange = queue.getAlternateExchange();
+        Exchange altExchange = queue.getAlternateExchange();
         assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
         assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
-        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getTypeName());
+        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType());
 
         assertNotNull("The alternate exchange was not registered as expected", _virtualHost.getExchange(dlExchangeName));
         assertEquals("The registered exchange was not the expected exchange instance", altExchange, _virtualHost.getExchange(dlExchangeName));
 
         AMQQueue dlQueue = _virtualHost.getQueue(dlQueueName);
         assertNotNull("The DLQ was not registered as expected", dlQueue);
-        assertTrue("DLQ should have been bound to the alternate exchange", altExchange.isBound(dlQueue));
+        assertTrue("DLQ should have been bound to the alternate exchange", ((ExchangeImpl)altExchange).isBound(dlQueue));
         assertNull("DLQ should have no alternate exchange", dlQueue.getAlternateExchange());
         assertEquals("DLQ should have a zero maximum delivery count", 0, dlQueue.getMaximumDeliveryAttempts());
 
@@ -234,7 +235,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
 
         attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.NAME, queueName);
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, false);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, false);
 
         AMQQueue queue = _virtualHost.createQueue(attributes);
 
@@ -266,7 +267,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         attributes.put(Queue.ID, UUID.randomUUID());
         attributes.put(Queue.NAME, queueName);
 
-        attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+        attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, true);
         attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
 
         //create an autodelete queue
@@ -338,7 +339,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         catch (Exception e)
         {
             assertTrue(e instanceof IllegalArgumentException);
-            assertEquals("Value for attribute name is not found", e.getMessage());
+            assertTrue(e.getMessage().startsWith("The name attribute is mandatory"));
         }
     }
 
@@ -359,7 +360,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
             attributes.put(Queue.ID, UUID.randomUUID());
             attributes.put(Queue.NAME, queueName);
 
-            attributes.put(Queue.CREATE_DLQ_ON_CREATION, true);
+            attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, true);
 
             _virtualHost.createQueue(attributes);
             fail("queue with DLQ name having more than 255 characters can not be created!");
@@ -389,7 +390,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
             attributes.put(Queue.ID, UUID.randomUUID());
             attributes.put(Queue.NAME, queueName);
 
-            attributes.put(Queue.CREATE_DLQ_ON_CREATION, (Object) true);
+            attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, (Object) true);
 
             _virtualHost.createQueue(attributes);
             fail("queue with DLE name having more than 255 characters can not be created!");

@@ -26,6 +26,11 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
 {
 
 
+    public static PriorityQueueList newInstance(PriorityQueueImpl queue)
+    {
+        return new PriorityQueueMasterList(queue, queue.getPriorities());
+    }
+
     public PriorityQueueList(final PriorityQueueImpl queue,
                              final HeadCreator headCreator)
     {
@@ -183,20 +188,6 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
         public void entryDeleted(final QueueEntry queueEntry)
         {
 
-        }
-    }
-    static class Factory implements QueueEntryListFactory
-    {
-        private final int _priorities;
-
-        Factory(int priorities)
-        {
-            _priorities = priorities;
-        }
-
-        public PriorityQueueList createQueueEntryList(AMQQueue<?> queue)
-        {
-            return new PriorityQueueMasterList((PriorityQueueImpl) queue, _priorities);
         }
     }
 

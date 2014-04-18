@@ -35,7 +35,6 @@ import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProvider;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProviderImpl;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -354,7 +353,6 @@ public class GroupProviderRestTest extends QpidRestTestCase
             assertNotNull("Attribute " + Group.NAME, groupName);
 
             assertNotNull("Attribute " + Group.ID, group.get(Group.ID));
-            assertEquals("Attribute " + Group.ID, UUIDGenerator.generateGroupUUID(name, groupName).toString(), group.get(Group.ID));
         }
     }
 

@@ -23,8 +23,8 @@ import java.util.Map;
 
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class SortedQueueImpl extends OutOfOrderQueue<SortedQueueImpl> implements SortedQueue<SortedQueueImpl>
@@ -33,30 +33,22 @@ public class SortedQueueImpl extends OutOfOrderQueue<SortedQueueImpl> implements
     //monitor to prevent lock order issues with consumer sendLocks
     //and consumer updates in the super classes
     private final Object _sortedQueueLock = new Object();
-    private final String _sortedPropertyName;
 
-    protected SortedQueueImpl(VirtualHostImpl virtualHost,
-                              Map<String, Object> attributes,
-                              QueueEntryListFactory factory)
-    {
-        super(virtualHost, attributes, factory);
-        _sortedPropertyName = MapValueConverter.getStringAttribute(SORT_KEY,attributes);
-    }
-
+    @ManagedAttributeField
+    private String _sortKey;
+    private SortedQueueEntryList _entries;
 
     public SortedQueueImpl(VirtualHostImpl virtualHost,
-                              Map<String, Object> attributes)
+                           Map<String, Object> attributes)
     {
-        this(virtualHost,
-             attributes,
-             new SortedQueueEntryListFactory(MapValueConverter.getStringAttribute(SORT_KEY, attributes)));
+        super(virtualHost, attributes);
     }
 
-
-
-    public String getSortedPropertyName()
+    @Override
+    protected void onOpen()
     {
-        return _sortedPropertyName;
+        super.onOpen();
+        _entries = new SortedQueueEntryList(this);
     }
 
     @Override
@@ -70,20 +62,14 @@ public class SortedQueueImpl extends OutOfOrderQueue<SortedQueueImpl> implements
     }
 
     @Override
-    public Object getAttribute(final String name)
+    SortedQueueEntryList getEntries()
     {
-
-        if(SORT_KEY.equals(name))
-        {
-            return getSortedPropertyName();
-        }
-
-        return super.getAttribute(name);
+        return _entries;
     }
 
     @Override
     public String getSortKey()
     {
-        return getSortedPropertyName();
+        return _sortKey;
     }
 }

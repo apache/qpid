@@ -70,13 +70,6 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.LastValueQueue;
-import org.apache.qpid.server.queue.LastValueQueueImpl;
-import org.apache.qpid.server.queue.PriorityQueue;
-import org.apache.qpid.server.queue.PriorityQueueImpl;
-import org.apache.qpid.server.queue.SortedQueue;
-import org.apache.qpid.server.queue.SortedQueueImpl;
-import org.apache.qpid.server.queue.StandardQueueImpl;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -101,6 +94,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 {
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
     public static final String DLQ_ROUTING_KEY = "dlq";
+    public static final String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
     private static final int MAX_LENGTH = 255;
 
     private static final Logger _logger = Logger.getLogger(AbstractVirtualHost.class);
@@ -195,7 +189,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         if(attributes.get(ID) == null)
         {
             attributes = new HashMap<String, Object>(attributes);
-            attributes.put(ID, UUIDGenerator.generateVhostUUID((String)attributes.get(NAME)));
+            attributes.put(ID, UUID.randomUUID());
         }
         return attributes;
     }
@@ -608,6 +602,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public AMQQueue<?> createQueue(Map<String, Object> attributes) throws QueueExistsException
     {
         checkVHostStateIsActive();
+
         AMQQueue<?> queue = addQueue(attributes);
         childAdded(queue);
         return queue;
@@ -615,50 +610,33 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private AMQQueue<?> addQueue(Map<String, Object> attributes) throws QueueExistsException
     {
-
-        // make a copy as we may augment (with an ID for example)
-        attributes = new LinkedHashMap<String, Object>(attributes);
-        if (attributes.containsKey(Queue.TYPE))
-        {
-            String typeAttribute = MapValueConverter.getStringAttribute(Queue.TYPE, attributes, null);
-            QueueType queueType = null;
-            try
-            {
-                queueType = QueueType.valueOf(typeAttribute.toUpperCase());
-            }
-            catch(Exception e)
-            {
-                throw new IllegalArgumentException("Unsupported queue type :" + typeAttribute);
-            }
-            if (queueType == QueueType.LVQ && attributes.get(LastValueQueue.LVQ_KEY) == null)
-            {
-                attributes.put(LastValueQueue.LVQ_KEY, LastValueQueueImpl.DEFAULT_LVQ_KEY);
-            }
-            else if (queueType == QueueType.PRIORITY && attributes.get(PriorityQueue.PRIORITIES) == null)
-            {
-                attributes.put(PriorityQueue.PRIORITIES, 10);
-            }
-            else if (queueType == QueueType.SORTED && attributes.get(SortedQueue.SORT_KEY) == null)
-            {
-                throw new IllegalArgumentException("Sort key is not specified for sorted queue");
-            }
-        }
-
-        if(!attributes.containsKey(Queue.ID))
-        {
-            UUID id = UUID.randomUUID();
-            attributes.put(Queue.ID, id);
-        }
-
-        boolean createDLQ = shouldCreateDLQ(attributes, getDefaultDeadLetterQueueEnabled());
-        if (createDLQ)
+        if (shouldCreateDLQ(attributes))
         {
             // TODO - this isn't really correct - what if the name has ${foo} in it?
-            validateDLNames(String.valueOf(attributes.get(Queue.NAME)));
+            String queueName = String.valueOf(attributes.get(Queue.NAME));
+            validateDLNames(queueName);
+            String altExchangeName = createDLQ(queueName);
+            attributes = new LinkedHashMap<String, Object>(attributes);
+            attributes.put(Queue.ALTERNATE_EXCHANGE, altExchangeName);
         }
+        return addQueueWithoutDLQ(attributes);
+    }
 
-        return createOrRestoreQueue(attributes, true);
+    private AMQQueue<?> addQueueWithoutDLQ(Map<String, Object> attributes) throws QueueExistsException
+    {
+        Broker<?> broker = getParent(Broker.class);
 
+        ConfiguredObjectTypeFactory<? extends Queue> factory =
+                broker.getObjectFactory().getConfiguredObjectTypeFactory(Queue.class, attributes);
+
+        try
+        {
+            return (AMQQueue) factory.create(attributes, this);
+        }
+        catch (DuplicateNameException e)
+        {
+            throw new QueueExistsException(getQueue(e.getName()));
+        }
 
     }
 
@@ -1525,94 +1503,13 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
 
-    // TODO - remove
-    public AMQQueue restoreQueue(Map<String, Object> attributes)
+    private String createDLQ(final String queueName)
     {
-        return createOrRestoreQueue(attributes, false);
-
-    }
-
-
-    private AMQQueue createOrRestoreQueue(Map<String, Object> attributes, boolean createInStore)
-    {
-        String queueName = MapValueConverter.getStringAttribute(Queue.NAME,attributes);
-        boolean createDLQ = createInStore && shouldCreateDLQ(attributes, getDefaultDeadLetterQueueEnabled());
-        if (createDLQ)
-        {
-            validateDLNames(queueName);
-        }
-
-        AMQQueue queue;
-
-        try
-        {
-
-
-            if (attributes.containsKey(SortedQueue.SORT_KEY))
-            {
-                queue = new SortedQueueImpl(this, attributes);
-            }
-            else if (attributes.containsKey(LastValueQueue.LVQ_KEY))
-            {
-                queue = new LastValueQueueImpl(this, attributes);
-            }
-            else if (attributes.containsKey(PriorityQueue.PRIORITIES))
-            {
-                queue = new PriorityQueueImpl(this, attributes);
-            }
-            else
-            {
-                queue = new StandardQueueImpl(this, attributes);
-            }
-            queue.open();
-        }
-        catch(DuplicateNameException e)
-        {
-
-            throw new QueueExistsException(e.getName(), getQueue(e.getName()));
-        }
-
-        if(createDLQ)
-        {
-            createDLQ(queue);
-        }
-        else if(attributes != null && attributes.get(Queue.ALTERNATE_EXCHANGE) instanceof String)
-        {
-
-            final String altExchangeAttr = (String) attributes.get(Queue.ALTERNATE_EXCHANGE);
-            ExchangeImpl altExchange;
-            try
-            {
-                altExchange = getExchange(UUID.fromString(altExchangeAttr));
-            }
-            catch(IllegalArgumentException e)
-            {
-                altExchange = getExchange(altExchangeAttr);
-            }
-            queue.setAlternateExchange(altExchange);
-        }
-
-        if (createInStore && queue.isDurable() && !(queue.getLifetimePolicy()
-                                                    == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
-                                                    || queue.getLifetimePolicy()
-                                                       == LifetimePolicy.DELETE_ON_SESSION_END))
-        {
-            DurableConfigurationStoreHelper.createQueue(getDurableConfigurationStore(), queue);
-        }
-
-        return queue;
-    }
-
-
-
-    private void createDLQ(final AMQQueue queue)
-    {
-        final String queueName = queue.getName();
         final String dlExchangeName = getDeadLetterExchangeName(queueName);
         final String dlQueueName = getDeadLetterQueueName(queueName);
 
         ExchangeImpl dlExchange = null;
-        final UUID dlExchangeId = UUIDGenerator.generateExchangeUUID(dlExchangeName, getName());
+        final UUID dlExchangeId = UUID.randomUUID();
 
         try
         {
@@ -1654,7 +1551,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             {
                 //set args to disable DLQ-ing/MDC from the DLQ itself, preventing loops etc
                 final Map<String, Object> args = new HashMap<String, Object>();
-                args.put(Queue.CREATE_DLQ_ON_CREATION, false);
+                args.put(CREATE_DLQ_ON_CREATION, false);
                 args.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 0);
 
                 try
@@ -1664,7 +1561,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                     args.put(Queue.ID, UUID.randomUUID());
                     args.put(Queue.NAME, dlQueueName);
                     args.put(Queue.DURABLE, true);
-                    dlQueue = createQueue(args);
+                    dlQueue = addQueueWithoutDLQ(args);
+                    childAdded(dlQueue);
                 }
                 catch (QueueExistsException e)
                 {
@@ -1681,7 +1579,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             //but we will make the key 'dlq' as it can be logged at creation.
             dlExchange.addBinding(AbstractVirtualHost.DLQ_ROUTING_KEY, dlQueue, null);
         }
-        queue.setAlternateExchange(dlExchange);
+        return dlExchangeName;
     }
 
     private static void validateDLNames(String name)
@@ -1701,8 +1599,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
     }
 
-    private static boolean shouldCreateDLQ(Map<String, Object> arguments, boolean virtualHostDefaultDeadLetterQueueEnabled)
+    private boolean shouldCreateDLQ(Map<String, Object> arguments)
     {
+
         boolean autoDelete = MapValueConverter.getEnumAttribute(LifetimePolicy.class,
                                                                 Queue.LIFETIME_POLICY,
                                                                 arguments,
@@ -1712,19 +1611,19 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         if (!(autoDelete || (arguments != null && arguments.containsKey(Queue.ALTERNATE_EXCHANGE))))
         {
             boolean dlqArgumentPresent = arguments != null
-                                         && arguments.containsKey(Queue.CREATE_DLQ_ON_CREATION);
+                                         && arguments.containsKey(CREATE_DLQ_ON_CREATION);
             if (dlqArgumentPresent)
             {
                 boolean dlqEnabled = true;
                 if (dlqArgumentPresent)
                 {
-                    Object argument = arguments.get(Queue.CREATE_DLQ_ON_CREATION);
+                    Object argument = arguments.get(CREATE_DLQ_ON_CREATION);
                     dlqEnabled = (argument instanceof Boolean && ((Boolean)argument).booleanValue())
                                  || (argument instanceof String && Boolean.parseBoolean(argument.toString()));
                 }
                 return dlqEnabled;
             }
-            return virtualHostDefaultDeadLetterQueueEnabled;
+            return isQueue_deadLetterQueueEnabled();
         }
         return false;
     }

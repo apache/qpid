@@ -46,7 +46,6 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -139,7 +138,7 @@ public class FileBasedGroupProviderImpl
         for (Principal group : groups)
         {
             Map<String,Object> attrMap = new HashMap<String, Object>();
-            UUID id = UUIDGenerator.generateGroupUUID(getName(),group.getName());
+            UUID id = UUID.randomUUID();
             attrMap.put(Group.ID, id);
             attrMap.put(Group.NAME, group.getName());
             GroupAdapter groupAdapter = new GroupAdapter(attrMap, getTaskExecutor());
@@ -228,7 +227,7 @@ public class FileBasedGroupProviderImpl
             _groupDatabase.createGroup(groupName);
 
             Map<String,Object> attrMap = new HashMap<String, Object>();
-            UUID id = UUIDGenerator.generateGroupUUID(getName(),groupName);
+            UUID id = UUID.randomUUID();
             attrMap.put(Group.ID, id);
             attrMap.put(Group.NAME, groupName);
             GroupAdapter groupAdapter = new GroupAdapter(attrMap, getTaskExecutor());
@@ -442,7 +441,7 @@ public class FileBasedGroupProviderImpl
             Collection<GroupMember> members = new ArrayList<GroupMember>();
             for (Principal principal : usersInGroup)
             {
-                UUID id = UUIDGenerator.generateGroupMemberUUID(FileBasedGroupProviderImpl.this.getName(), getName(), principal.getName());
+                UUID id = UUID.randomUUID();
                 Map<String,Object> attrMap = new HashMap<String, Object>();
                 attrMap.put(GroupMember.ID,id);
                 attrMap.put(GroupMember.NAME, principal.getName());
@@ -493,7 +492,7 @@ public class FileBasedGroupProviderImpl
                 getSecurityManager().authoriseGroupOperation(Operation.UPDATE, getName());
 
                 _groupDatabase.addUserToGroup(memberName, getName());
-                UUID id = UUIDGenerator.generateGroupMemberUUID(FileBasedGroupProviderImpl.this.getName(), getName(), memberName);
+                UUID id = UUID.randomUUID();
                 Map<String,Object> attrMap = new HashMap<String, Object>();
                 attrMap.put(GroupMember.ID,id);
                 attrMap.put(GroupMember.NAME, memberName);

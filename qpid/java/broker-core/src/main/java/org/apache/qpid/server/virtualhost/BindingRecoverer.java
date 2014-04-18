@@ -123,6 +123,12 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
             }
 
             @Override
+            public String getName()
+            {
+                return null;
+            }
+
+            @Override
             public String getType()
             {
                 return Queue.class.getSimpleName();
@@ -144,6 +150,12 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
             public UUID getId()
             {
                 return _exchangeId;
+            }
+
+            @Override
+            public String getName()
+            {
+                return null;
             }
 
             @Override

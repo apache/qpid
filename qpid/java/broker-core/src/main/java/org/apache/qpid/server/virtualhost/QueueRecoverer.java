@@ -21,7 +21,7 @@
 package org.apache.qpid.server.virtualhost;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,21 +29,28 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
 
 public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQQueue>
 {
     private static final Logger _logger = Logger.getLogger(QueueRecoverer.class);
-    private final VirtualHostImpl _virtualHost;
+    private final VirtualHostImpl<?,?,?> _virtualHost;
+    private final ConfiguredObjectFactory _objectFactory;
 
     public QueueRecoverer(final VirtualHostImpl virtualHost)
     {
         _virtualHost = virtualHost;
+        Broker<?> broker = _virtualHost.getParent(Broker.class);
+        _objectFactory = broker.getObjectFactory();
     }
 
     @Override
@@ -55,33 +62,42 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
     @Override
     public UnresolvedObject<AMQQueue> createUnresolvedObject(final ConfiguredObjectRecord record)
     {
-        return new UnresolvedQueue(record.getId(), record.getAttributes());
+        return new UnresolvedQueue(record);
     }
 
     private class UnresolvedQueue implements UnresolvedObject<AMQQueue>
     {
-        private final Map<String, Object> _attributes;
-        private final UUID _alternateExchangeId;
-        private final UUID _id;
+
+      //  private final UUID _alternateExchangeId;
+        private final ConfiguredObjectRecord _record;
         private AMQQueue _queue;
         private List<UnresolvedDependency> _dependencies = new ArrayList<UnresolvedDependency>();
         private ExchangeImpl _alternateExchange;
+        private UUID _alternateExchangeId;
+        private String _alternateExchangeName;
 
-        public UnresolvedQueue(final UUID id,
-                               final Map<String, Object> attributes)
+        public UnresolvedQueue(ConfiguredObjectRecord record)
         {
-            _attributes = attributes;
-            _alternateExchangeId = _attributes.get(Queue.ALTERNATE_EXCHANGE) == null ? null : UUID.fromString((String) _attributes
-                    .get(Queue.ALTERNATE_EXCHANGE));
-            _id = id;
-            if (_alternateExchangeId != null)
+            _record = record;
+            Object altExchObj = record.getAttributes().get(Queue.ALTERNATE_EXCHANGE);
+            if(altExchObj instanceof UUID)
             {
-                _alternateExchange = _virtualHost.getExchange(_alternateExchangeId);
-                if(_alternateExchange == null)
-                {
-                    _dependencies.add(new AlternateExchangeDependency());
-                }
+                _alternateExchangeId = (UUID) altExchObj;
+                _dependencies.add(new AlternateExchangeDependency());
             }
+            else if (altExchObj instanceof String)
+            {
+                try
+                {
+                    _alternateExchangeId = UUID.fromString((String)altExchObj);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    _alternateExchangeName = (String) altExchObj;
+                }
+                _dependencies.add(new AlternateExchangeDependency());
+            }
+
         }
 
         @Override
@@ -93,9 +109,9 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
         @Override
         public AMQQueue resolve()
         {
-            String queueName = (String) _attributes.get(Queue.NAME);
+            String queueName = (String) _record.getAttributes().get(Queue.NAME);
 
-            _queue = _virtualHost.getQueue(_id);
+            _queue = _virtualHost.getQueue(_record.getId());
             if(_queue == null)
             {
                 _queue = _virtualHost.getQueue(queueName);
@@ -103,11 +119,17 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
 
             if (_queue == null)
             {
-                Map<String, Object> attributes = new LinkedHashMap<String, Object>(_attributes);
-                attributes.put(Queue.ID, _id);
-                attributes.put(Queue.DURABLE, true);
-                _queue = _virtualHost.restoreQueue(attributes);
+                Map<String,Object> attributesWithId = new HashMap<String,Object>(_record.getAttributes());
+                attributesWithId.put(Queue.ID,_record.getId());
+                attributesWithId.put(Queue.DURABLE,true);
+
+                ConfiguredObjectTypeFactory<? extends Queue> configuredObjectTypeFactory =
+                        _objectFactory.getConfiguredObjectTypeFactory(Queue.class, attributesWithId);
+                UnresolvedConfiguredObject<? extends Queue> unresolvedConfiguredObject =
+                        configuredObjectTypeFactory.recover(_record, _virtualHost);
+                _queue = (AMQQueue<?>) unresolvedConfiguredObject.resolve();
             }
+            _queue.open();
             return _queue;
         }
 
@@ -117,6 +139,12 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
             public UUID getId()
             {
                 return _alternateExchangeId;
+            }
+
+            @Override
+            public String getName()
+            {
+                return _alternateExchangeName;
             }
 
             @Override

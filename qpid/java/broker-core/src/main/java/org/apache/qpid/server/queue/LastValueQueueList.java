@@ -54,20 +54,15 @@ public class LastValueQueueList extends OrderedQueueEntryList
     private final ConflationQueueEntry _deleteInProgress = new ConflationQueueEntry(this);
     private final ConflationQueueEntry _newerEntryAlreadyBeenAndGone = new ConflationQueueEntry(this);
 
-    public LastValueQueueList(LastValueQueueImpl queue, String conflationKey)
+    public LastValueQueueList(LastValueQueueImpl queue)
     {
         super(queue, HEAD_CREATOR);
-        _conflationKey = conflationKey;
+        _conflationKey = queue.getLvqKey();
     }
 
     private ConflationQueueEntry createHead()
     {
         return new ConflationQueueEntry(this);
-    }
-
-    public String getConflationKey()
-    {
-        return _conflationKey;
     }
 
     @Override
@@ -253,21 +248,5 @@ public class LastValueQueueList extends OrderedQueueEntryList
     Map<Object, AtomicReference<ConflationQueueEntry>> getLatestValuesMap()
     {
         return Collections.unmodifiableMap(_latestValuesMap);
-    }
-
-    static class Factory implements QueueEntryListFactory
-    {
-        private final String _conflationKey;
-
-        Factory(String conflationKey)
-        {
-            _conflationKey = conflationKey;
-        }
-
-        @Override
-        public LastValueQueueList createQueueEntryList(final AMQQueue<?> queue)
-        {
-            return new LastValueQueueList((LastValueQueueImpl)queue, _conflationKey);
-        }
     }
 }

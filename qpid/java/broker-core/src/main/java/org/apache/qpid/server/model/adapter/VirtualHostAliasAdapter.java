@@ -25,13 +25,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationMethod;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
 
@@ -52,7 +52,7 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
     private static Map<String, Object> createAttributes(final VirtualHost virtualHost, final Port port)
     {
         final Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(ID, UUIDGenerator.generateVhostAliasUUID(virtualHost.getName(), port.getName()));
+        attributes.put(ID, UUID.randomUUID());
         attributes.put(NAME, virtualHost.getName());
         return attributes;
     }

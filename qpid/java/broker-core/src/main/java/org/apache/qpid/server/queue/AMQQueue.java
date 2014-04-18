@@ -25,12 +25,10 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.protocol.CapacityChecker;
@@ -59,10 +57,6 @@ public interface AMQQueue<X extends AMQQueue<X>>
     long getTotalDequeuedMessages();
 
     long getTotalEnqueuedMessages();
-
-    LifetimePolicy getLifetimePolicy();
-
-    String getOwner();
 
     VirtualHostImpl getVirtualHost();
 
@@ -118,41 +112,6 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     void visit(QueueEntryVisitor visitor);
 
-
-    long getAlertThresholdMessageSize();
-
-    void setAlertThresholdMessageSize(long value);
-
-
-    long getAlertThresholdQueueDepthMessages();
-
-    void setAlertThresholdQueueDepthMessages(long value);
-
-
-    long getAlertThresholdQueueDepthBytes();
-
-    void setAlertThresholdQueueDepthBytes(long value);
-
-
-    long getAlertThresholdMessageAge();
-
-    void setAlertThresholdMessageAge(final long maximumMessageAge);
-
-
-    long getAlertRepeatGap();
-
-    void setAlertRepeatGap(long value);
-
-
-    long getQueueFlowControlSizeBytes();
-
-    void setQueueFlowControlSizeBytes(long capacity);
-
-
-    long getQueueFlowResumeSizeBytes();
-
-    void setQueueFlowResumeSizeBytes(long flowResumeCapacity);
-
     boolean isOverfull();
 
     long clearQueue();
@@ -167,10 +126,6 @@ public interface AMQQueue<X extends AMQQueue<X>>
     void deliverAsync();
 
     void stop();
-
-    ExchangeImpl getAlternateExchange();
-
-    void setAlternateExchange(ExchangeImpl exchange);
 
     Collection<String> getAvailableAttributes();
     Object getAttribute(String attrName);

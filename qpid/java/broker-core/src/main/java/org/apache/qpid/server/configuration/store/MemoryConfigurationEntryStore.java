@@ -784,7 +784,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         UUID id = null;
         if (idAsString == null)
         {
-            id = UUIDGenerator.generateRandomUUID();
+            id = UUID.randomUUID();
 
             _generatedObjectIdDuringLoad = true;
         }
