@@ -40,6 +40,7 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.DurableConfigurationStoreHelper;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -81,7 +82,11 @@ public class BindingImpl
 
     public BindingImpl(UUID id, Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
-        super(parentsMap(queue,exchange),enhanceWithDurable(combineIdWithAttributes(id, attributes), queue, exchange),queue.getVirtualHost().getTaskExecutor());
+        this(enhanceWithDurable(combineIdWithAttributes(id,attributes), queue, exchange), queue, exchange);
+    }
+    public BindingImpl(Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
+    {
+        super(parentsMap(queue,exchange),attributes,queue.getVirtualHost().getTaskExecutor());
         _bindingKey = (String)attributes.get(org.apache.qpid.server.model.Binding.NAME);
         _queue = queue;
         _exchange = exchange;
@@ -96,6 +101,17 @@ public class BindingImpl
                                                                       getArguments() != null
                                                                       && !getArguments().isEmpty()));
 
+
+    }
+
+    @Override
+    protected void onCreate()
+    {
+        super.onCreate();
+        if (isDurable())
+        {
+            DurableConfigurationStoreHelper.createBinding(_queue.getVirtualHost().getDurableConfigurationStore(), this);
+        }
 
     }
 

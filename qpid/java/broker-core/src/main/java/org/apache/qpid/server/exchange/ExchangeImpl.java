@@ -59,9 +59,6 @@ public interface ExchangeImpl<T extends ExchangeImpl<T>> extends Exchange<T>, Ex
                            AMQQueue queue,
                            Map<String, Object> arguments);
 
-    void restoreBinding(UUID id, String bindingKey, AMQQueue queue,
-                        Map<String, Object> argumentMap);
-
     void delete();
 
     /**
@@ -113,6 +110,8 @@ public interface ExchangeImpl<T extends ExchangeImpl<T>> extends Exchange<T>, Ex
     BindingImpl getBinding(String bindingName, AMQQueue queue);
 
     EventLogger getEventLogger();
+
+    void addBinding(BindingImpl binding);
 
 
     public interface BindingListener

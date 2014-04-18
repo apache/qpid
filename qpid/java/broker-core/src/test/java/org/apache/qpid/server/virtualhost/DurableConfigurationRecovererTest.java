@@ -84,6 +84,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     private ConfiguredObjectFactory _configuredObjectFactory;
     private ConfiguredObjectTypeFactory _exchangeFactory;
     private ConfiguredObjectTypeFactory _queueFactory;
+    private ConfiguredObjectTypeFactory _bindingFactory;
 
     @Override
     public void setUp() throws Exception
@@ -92,6 +93,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         _configuredObjectFactory = mock(ConfiguredObjectFactory.class);
         _exchangeFactory = mock(ConfiguredObjectTypeFactory.class);
         _queueFactory = mock(ConfiguredObjectTypeFactory.class);
+        _bindingFactory = mock(ConfiguredObjectTypeFactory.class);
+
 
 
         AMQQueue<?> queue = mock(AMQQueue.class);
@@ -109,6 +112,8 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
         when(_configuredObjectFactory.getConfiguredObjectTypeFactory(eq(Exchange.class), anyMap())).thenReturn(_exchangeFactory);
         when(_configuredObjectFactory.getConfiguredObjectTypeFactory(eq(Queue.class), anyMap())).thenReturn(_queueFactory);
+        when(_configuredObjectFactory.getConfiguredObjectTypeFactory(eq(Binding.class), anyMap())).thenReturn(_bindingFactory);
+
 
 
         final ArgumentCaptor<ConfiguredObjectRecord> recoveredExchange = ArgumentCaptor.forClass(ConfiguredObjectRecord.class);
@@ -167,6 +172,33 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                 return unresolved;
             }
         }).when(_queueFactory).recover(recoveredQueue.capture(), any(ConfiguredObject.class));
+
+
+        final ArgumentCaptor<ConfiguredObjectRecord> recoveredBinding = ArgumentCaptor.forClass(ConfiguredObjectRecord.class);
+        final ArgumentCaptor<ConfiguredObject> parent1 = ArgumentCaptor.forClass(ConfiguredObject.class);
+        final ArgumentCaptor<ConfiguredObject> parent2 = ArgumentCaptor.forClass(ConfiguredObject.class);
+
+        doAnswer(new Answer()
+        {
+
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                ConfiguredObjectRecord queueRecord = recoveredBinding.getValue();
+                Binding binding = mock(Binding.class);
+                UUID id = queueRecord.getId();
+                String name = (String) queueRecord.getAttributes().get("name");
+                when(binding.getId()).thenReturn(id);
+                when(binding.getName()).thenReturn(name);
+
+                UnresolvedConfiguredObject unresolved = mock(UnresolvedConfiguredObject.class);
+                when(unresolved.resolve()).thenReturn(binding);
+
+
+                return unresolved;
+            }
+        }).when(_bindingFactory).recover(recoveredBinding.capture(), parent1.capture(), parent2.capture());
+
 
 
         DurableConfiguredObjectRecoverer[] recoverers = {

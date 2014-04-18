@@ -63,6 +63,10 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
                 {
                     _defaultTypes.put(categoryName, annotation.defaultType());
                 }
+                else
+                {
+                    _defaultTypes.put(categoryName, categoryName);
+                }
 
             }
             if(categoryFactories.put(factory.getType(),factory) != null)

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.virtualhost;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,11 +30,16 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.store.UnresolvedDependency;
 import org.apache.qpid.server.store.UnresolvedObject;
 
@@ -41,11 +47,14 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
 {
     private static final Logger _logger = Logger.getLogger(BindingRecoverer.class);
 
-    private final VirtualHostImpl _virtualHost;
+    private final VirtualHostImpl<?,?,?> _virtualHost;
+    private final ConfiguredObjectFactory _objectFactory;
 
-    public BindingRecoverer(final VirtualHostImpl virtualHost)
+    public BindingRecoverer(final VirtualHostImpl<?,?,?> virtualHost)
     {
         _virtualHost = virtualHost;
+        Broker<?> broker = _virtualHost.getParent(Broker.class);
+        _objectFactory = broker.getObjectFactory();
     }
 
     @Override
@@ -67,6 +76,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
         private final UUID _queueId;
         private final UUID _exchangeId;
         private final UUID _bindingId;
+        private final ConfiguredObjectRecord _record;
 
         private List<UnresolvedDependency> _unresolvedDependencies =
                 new ArrayList<UnresolvedDependency>();
@@ -76,6 +86,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
 
         public UnresolvedBinding(final ConfiguredObjectRecord record)
         {
+            _record = record;
             _bindingId = record.getId();
             _exchangeId = record.getParents().get(Exchange.class.getSimpleName()).getId();
             _queueId = record.getParents().get(Queue.class.getSimpleName()).getId();
@@ -89,6 +100,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
             {
                 _unresolvedDependencies.add(new QueueDependency());
             }
+
 
             _bindingName = (String) record.getAttributes().get(org.apache.qpid.server.model.Binding.NAME);
             _bindingArgumentsMap = (Map<String, Object>) record.getAttributes().get(org.apache.qpid.server.model.Binding.ARGUMENTS);
@@ -108,7 +120,17 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
                 _logger.info("Restoring binding: (Exchange: " + _exchange.getName() + ", Queue: " + _queue.getName()
                              + ", Routing Key: " + _bindingName + ", Arguments: " + _bindingArgumentsMap + ")");
 
-                _exchange.restoreBinding(_bindingId, _bindingName, _queue, _bindingArgumentsMap);
+
+                Map<String,Object> attributesWithId = new HashMap<String,Object>(_record.getAttributes());
+                attributesWithId.put(org.apache.qpid.server.model.Exchange.ID,_record.getId());
+                attributesWithId.put(org.apache.qpid.server.model.Exchange.DURABLE,true);
+
+                ConfiguredObjectTypeFactory<? extends Binding> configuredObjectTypeFactory =
+                        _objectFactory.getConfiguredObjectTypeFactory(Binding.class, attributesWithId);
+                UnresolvedConfiguredObject<? extends Binding> unresolvedConfiguredObject =
+                        configuredObjectTypeFactory.recover(_record, _exchange, _queue);
+                Binding binding = (Binding<?>) unresolvedConfiguredObject.resolve();
+
             }
             return (_exchange).getBinding(_bindingName, _queue);
         }

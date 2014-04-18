@@ -626,12 +626,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                            true);
     }
 
-    @Override
-    public void restoreBinding(final UUID id, final String bindingKey, final AMQQueue queue,
-                               final Map<String, Object> argumentMap)
-    {
-        makeBinding(id, bindingKey,queue, argumentMap,true, false);
-    }
 
     private void removeBinding(final BindingImpl binding)
     {
@@ -713,18 +707,10 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             if (existingMapping == null)
             {
                 BindingImpl b = new BindingImpl(id, attributes, queue, this);
-                b.addStateChangeListener(_bindingListener);
-                b.open();
+                b.create();
 
-                if (b.isDurable() && !restore)
-                {
-                    DurableConfigurationStoreHelper.createBinding(_virtualHost.getDurableConfigurationStore(), b);
-                }
-                _bindingsMap.put(bindingIdentifier, b);
-                queue.addBinding(b);
-                childAdded(b);
+                addBinding(b);
 
-                doAddBinding(b);
 
                 return true;
             }
@@ -740,6 +726,20 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 return false;
             }
         }
+    }
+
+    @Override
+    public void addBinding(final BindingImpl b)
+    {
+        b.addStateChangeListener(_bindingListener);
+
+        BindingIdentifier identifier = new BindingIdentifier(b.getName(), b.getAMQQueue());
+
+        _bindingsMap.put(identifier, b);
+        b.getAMQQueue().addBinding(b);
+        childAdded(b);
+
+        doAddBinding(b);
     }
 
     protected abstract void onBindingUpdated(final BindingImpl binding,
