@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -83,10 +82,10 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
 
     private Broker<?> _broker;
 
-    public FileKeyStoreImpl(UUID id, Broker<?> broker, Map<String, Object> attributes)
+    public FileKeyStoreImpl(Map<String, Object> attributes, Broker<?> broker)
     {
         super(parentsMap(broker),
-              combineIdWithAttributes(id, attributes),
+              attributes,
               broker.getTaskExecutor());
 
         _broker = broker;

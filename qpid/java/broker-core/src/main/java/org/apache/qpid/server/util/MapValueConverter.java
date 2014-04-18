@@ -21,14 +21,9 @@
 package org.apache.qpid.server.util;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 public class MapValueConverter
 {
@@ -57,40 +52,6 @@ public class MapValueConverter
         return String.valueOf(value);
     }
 
-    public static String getStringAttribute(String name, Map<String, Object> attributes)
-    {
-        assertMandatoryAttribute(name, attributes);
-        return getStringAttribute(name, attributes, null);
-    }
-
-    public static void assertMandatoryAttribute(String name, Map<String, Object> attributes)
-    {
-        if (!attributes.containsKey(name))
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not found");
-        }
-    }
-
-    public static Map<String,Object> getMapAttribute(String name, Map<String,Object> attributes, Map<String,Object> defaultVal)
-    {
-        final Object value = attributes.get(name);
-        if(value == null)
-        {
-            return defaultVal;
-        }
-        else if(value instanceof Map)
-        {
-            @SuppressWarnings("unchecked")
-            Map<String,Object> retVal = (Map<String,Object>) value;
-            return retVal;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Map");
-        }
-    }
-
-
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <E extends Enum> E getEnumAttribute(Class<E> clazz, String name, Map<String,Object> attributes, E defaultVal)
     {
@@ -111,12 +72,6 @@ public class MapValueConverter
         {
             throw new IllegalArgumentException("Value for attribute " + name + " is not of required type " + clazz.getSimpleName());
         }
-    }
-
-    public static <E extends Enum<?>> E getEnumAttribute(Class<E> clazz, String name, Map<String,Object> attributes)
-    {
-        assertMandatoryAttribute(name, attributes);
-        return getEnumAttribute(clazz, name, attributes, null);
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -174,13 +129,6 @@ public class MapValueConverter
         }
     }
 
-
-    public static boolean getBooleanAttribute(String name, Map<String, Object> attributes)
-    {
-        assertMandatoryAttribute(name, attributes);
-        return getBooleanAttribute(name, attributes, null);
-    }
-
     public static Integer getIntegerAttribute(String name, Map<String,Object> attributes, Integer defaultValue)
     {
         Object obj = attributes.get(name);
@@ -212,25 +160,6 @@ public class MapValueConverter
         }
     }
 
-    public static Integer getIntegerAttribute(String name, Map<String,Object> attributes)
-    {
-        assertMandatoryAttribute(name, attributes);
-        return getIntegerAttribute(name, attributes, null);
-    }
-
-    public static Long getLongAttribute(String name, Map<String,Object> attributes)
-    {
-        assertMandatoryAttribute(name, attributes);
-        Object obj = attributes.get(name);
-        return toLong(name, obj, null);
-    }
-
-    public static Long getLongAttribute(String name, Map<String,Object> attributes, Long defaultValue)
-    {
-        Object obj = attributes.get(name);
-        return toLong(name, obj, defaultValue);
-    }
-
     public static Long toLong(String name, Object obj)
     {
         return toLong(name, obj, null);
@@ -255,31 +184,6 @@ public class MapValueConverter
             throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Long");
         }
     }
-
-    public static <T> Set<T> getSetAttribute(String name, Map<String,Object> attributes)
-    {
-        assertMandatoryAttribute(name, attributes);
-        return getSetAttribute(name, attributes, Collections.<T>emptySet());
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> Set<T> getSetAttribute(String name, Map<String,Object> attributes, Set<T> defaultValue)
-    {
-        Object obj = attributes.get(name);
-        if(obj == null)
-        {
-            return defaultValue;
-        }
-        else if(obj instanceof Set)
-        {
-            return (Set<T>) obj;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Value for attribute " + name + " is not of required type Set");
-        }
-    }
-
     public static <T extends Enum<T>> Set<T> getEnumSetAttribute(String name, Map<String, Object> attributes, Class<T> clazz)
     {
         Object obj = attributes.get(name);
@@ -290,107 +194,6 @@ public class MapValueConverter
         else
         {
             return toSet(obj, clazz, name);
-        }
-    }
-
-    public static Map<String, Object> convert(Map<String, Object> configurationAttributes, Map<String, Type> attributeTypes)
-    {
-        return convert(configurationAttributes, attributeTypes, true);
-    }
-
-    public static Map<String, Object> convert(Map<String, Object> configurationAttributes,
-                                              Map<String, Type> attributeTypes,
-                                              boolean exclusive)
-    {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        for (Map.Entry<String, Object> attribute : configurationAttributes.entrySet())
-        {
-            String attributeName = attribute.getKey();
-            Object rawValue = attribute.getValue();
-
-            if (attributeTypes.containsKey(attributeName))
-            {
-                Type typeObject = attributeTypes.get(attributeName);
-
-                Object value = null;
-                if (typeObject instanceof Class)
-                {
-                    Class<?> classObject = (Class<?>)typeObject;
-                    value =  convert(rawValue, classObject, attributeName);
-                }
-                else if (typeObject instanceof ParameterizedType)
-                {
-                    ParameterizedType parameterizedType= (ParameterizedType)typeObject;
-                    value = convertParameterizedType(rawValue, parameterizedType, attributeName);
-                }
-                else
-                {
-                    throw new IllegalArgumentException("Conversion into " + typeObject + " is not yet supported");
-                }
-                attributes.put(attributeName, value);
-            }
-            else if(!exclusive)
-            {
-                attributes.put(attributeName, rawValue);
-            }
-        }
-
-        return attributes;
-    }
-
-    private static Object convertParameterizedType(Object rawValue, ParameterizedType parameterizedType, String attributeName)
-    {
-        Type type = parameterizedType.getRawType();
-        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-        Object convertedValue;
-        if (type == Set.class)
-        {
-            if (actualTypeArguments.length != 1)
-            {
-                throw new IllegalArgumentException("Unexpected number of Set type arguments " + actualTypeArguments.length);
-            }
-            Class<?> classObject = (Class<?>)actualTypeArguments[0];
-            convertedValue = toSet(rawValue, classObject, attributeName);
-        }
-        else if (type == Map.class)
-        {
-            if (actualTypeArguments.length != 2)
-            {
-                throw new IllegalArgumentException("Unexpected number of Map type arguments " + actualTypeArguments.length);
-            }
-            Class<?> keyClassObject = (Class<?>)actualTypeArguments[0];
-            Class<?> valueClassObject = (Class<?>)actualTypeArguments[1];
-            convertedValue = toMap(rawValue, keyClassObject, valueClassObject, attributeName);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Conversion into " + parameterizedType + " is not yet supported");
-        }
-        return convertedValue;
-    }
-
-    private static <K,V> Map<K, V> toMap(Object rawValue, Class<K> keyClassObject, Class<V> valueClassObject, String attributeName)
-    {
-        if (rawValue == null)
-        {
-            return null;
-        }
-        if (rawValue instanceof Map)
-        {
-             Map<K, V> convertedMap =  new HashMap<K, V>();
-             Map<?, ?> rawMap = (Map<?,?>)rawValue;
-
-             for (Map.Entry<?, ?> entry : rawMap.entrySet())
-             {
-                 K convertedKey = convert(entry.getKey(), keyClassObject, attributeName + " (map key)");
-                 V convertedValue = convert(entry.getValue(), valueClassObject,  attributeName + " (map value)");
-                 convertedMap.put(convertedKey, convertedValue);
-             }
-             return convertedMap;
-        }
-        else
-        {
-            throw new IllegalArgumentException("rawValue is not of unexpected type Map, was : " + rawValue.getClass());
         }
     }
 
@@ -461,43 +264,6 @@ public class MapValueConverter
                     + "' into type " + classObject + " for attribute " + attributeName);
         }
         return (T) value;
-    }
-
-
-    public static UUID getUUIDAttribute(String name, Map<String, Object> attributes)
-    {
-        assertMandatoryAttribute(name, attributes);
-        return getUUIDAttribute(name, attributes, null);
-    }
-
-    public static UUID getUUIDAttribute(String name, Map<String,Object> attributes, UUID defaultVal)
-    {
-        final Object value = attributes.get(name);
-        return toUUID(value, defaultVal);
-    }
-
-    private static UUID toUUID(final Object value, final UUID defaultVal)
-    {
-        if(value == null)
-        {
-            return defaultVal;
-        }
-        else if(value instanceof UUID)
-        {
-            return (UUID)value;
-        }
-        else if(value instanceof String)
-        {
-            return UUID.fromString((String)value);
-        }
-        else if(value instanceof byte[])
-        {
-            return UUID.nameUUIDFromBytes((byte[])value);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Cannot convert " + value.getClass().getName() + " to UUID");
-        }
     }
 
 }

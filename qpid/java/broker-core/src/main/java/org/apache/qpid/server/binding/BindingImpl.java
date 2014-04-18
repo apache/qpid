@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -59,34 +58,9 @@ public class BindingImpl
     final CopyOnWriteArrayList<StateChangeListener<BindingImpl,State>> _stateChangeListeners =
             new CopyOnWriteArrayList<StateChangeListener<BindingImpl, State>>();
 
-
-    public BindingImpl(UUID id,
-                       final String bindingKey,
-                       final AMQQueue queue,
-                       final ExchangeImpl exchange,
-                       final Map<String, Object> arguments)
-    {
-        this(id, convertToAttributes(bindingKey, arguments), queue, exchange);
-    }
-
-    private static Map<String, Object> convertToAttributes(final String bindingKey, final Map<String, Object> arguments)
-    {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(org.apache.qpid.server.model.Binding.NAME,bindingKey);
-        if(arguments != null)
-        {
-            attributes.put(org.apache.qpid.server.model.Binding.ARGUMENTS, arguments);
-        }
-        return attributes;
-    }
-
-    public BindingImpl(UUID id, Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
-    {
-        this(enhanceWithDurable(combineIdWithAttributes(id,attributes), queue, exchange), queue, exchange);
-    }
     public BindingImpl(Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
-        super(parentsMap(queue,exchange),attributes,queue.getVirtualHost().getTaskExecutor());
+        super(parentsMap(queue,exchange),enhanceWithDurable(attributes,queue,exchange),queue.getVirtualHost().getTaskExecutor());
         _bindingKey = (String)attributes.get(org.apache.qpid.server.model.Binding.NAME);
         _queue = queue;
         _exchange = exchange;

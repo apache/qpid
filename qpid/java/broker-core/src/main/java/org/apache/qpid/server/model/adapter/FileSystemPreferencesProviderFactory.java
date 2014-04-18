@@ -44,6 +44,6 @@ public class FileSystemPreferencesProviderFactory extends AbstractConfiguredObje
         Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
         Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
         UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new FileSystemPreferencesProviderImpl(id, attributesWithoutId, getParent(AuthenticationProvider.class,parents));
+        return new FileSystemPreferencesProviderImpl(attributes, getParent(AuthenticationProvider.class,parents));
     }
 }

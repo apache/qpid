@@ -42,7 +42,7 @@ public class HeadersExchangeFactory extends AbstractConfiguredObjectTypeFactory<
         {
             throw new IllegalArgumentException("Unexpected virtual host is set as a parent. Expected instance of " + VirtualHostImpl.class.getName());
         }
-        return new HeadersExchange((VirtualHostImpl<?, ?, ?>)virtualHost , attributes);
+        return new HeadersExchange(attributes, (VirtualHostImpl<?, ?, ?>)virtualHost);
     }
 
 }

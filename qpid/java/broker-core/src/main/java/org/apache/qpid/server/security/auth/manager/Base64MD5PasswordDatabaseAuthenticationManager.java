@@ -36,7 +36,7 @@ public class Base64MD5PasswordDatabaseAuthenticationManager
     protected Base64MD5PasswordDatabaseAuthenticationManager(final Broker broker,
                                                              final Map<String, Object> attributes)
     {
-        super(broker, attributes);
+        super(attributes, broker);
     }
 
     @Override

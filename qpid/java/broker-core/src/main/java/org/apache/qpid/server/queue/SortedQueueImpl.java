@@ -38,10 +38,9 @@ public class SortedQueueImpl extends OutOfOrderQueue<SortedQueueImpl> implements
     private String _sortKey;
     private SortedQueueEntryList _entries;
 
-    public SortedQueueImpl(VirtualHostImpl virtualHost,
-                           Map<String, Object> attributes)
+    public SortedQueueImpl(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
-        super(virtualHost, attributes);
+        super(attributes, virtualHost);
     }
 
     @Override

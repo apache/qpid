@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
@@ -59,7 +58,6 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
@@ -70,22 +68,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private static final Pattern MODEL_VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+$");
 
-    @SuppressWarnings("serial")
-    public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
-
-        put(STATISTICS_REPORTING_RESET_ENABLED, Boolean.class);
-
-        put(CONNECTION_SESSION_COUNT_LIMIT, Integer.class);
-        put(CONNECTION_HEART_BEAT_DELAY, Integer.class);
-        put(CONNECTION_CLOSE_WHEN_NO_ROUTE, Boolean.class);
-        put(STATISTICS_REPORTING_PERIOD, Integer.class);
-
-        put(NAME, String.class);
-        put(DEFAULT_VIRTUAL_HOST, String.class);
-
-        put(MODEL_VERSION, String.class);
-        put(STORE_VERSION, String.class);
-    }});
 
     public static final String MANAGEMENT_MODE_AUTHENTICATION = "MANAGEMENT_MODE_AUTHENTICATION";
     private final ConfiguredObjectFactory _objectFactory;
@@ -132,12 +114,11 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private boolean _statisticsReportingResetEnabled;
 
 
-    public BrokerAdapter(UUID id,
-                         Map<String, Object> attributes,
+    public BrokerAdapter(Map<String, Object> attributes,
                          SystemContext parent)
     {
         super(parentsMap(parent),
-              combineIdWithAttributes(id, MapValueConverter.convert(attributes, ATTRIBUTE_TYPES)),
+              attributes,
               parent.getTaskExecutor());
 
         _objectFactory = parent.getObjectFactory();
@@ -153,7 +134,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
             authManagerAttrs.put(NAME,"MANAGEMENT_MODE_AUTHENTICATION");
             authManagerAttrs.put(ID, UUID.randomUUID());
-            SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(this, authManagerAttrs);
+            SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(authManagerAttrs, this);
             authManager.addUser(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
             _managementModeAuthenticationProvider = authManager;
         }
@@ -203,6 +184,32 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+        Broker updated = (Broker) proxyForValidation;
+        if (changedAttributes.contains(MODEL_VERSION) && !Model.MODEL_VERSION.equals(updated.getModelVersion()))
+        {
+            throw new IllegalConfigurationException("Cannot change the model version");
+        }
+
+        String defaultVirtualHost = updated.getDefaultVirtualHost();
+        if (defaultVirtualHost != null)
+        {
+            VirtualHost foundHost = findVirtualHostByName(defaultVirtualHost);
+            if (foundHost == null)
+            {
+                throw new IllegalConfigurationException("Virtual host with name " + defaultVirtualHost
+                                                        + " cannot be set as a default as it does not exist");
+            }
+        }
+
+        for (String attributeName : POSITIVE_NUMERIC_ATTRIBUTES)
+        {
+            Number value = (Number) updated.getAttribute(attributeName);
+            if (value != null && value.longValue() < 0)
+            {
+                throw new IllegalConfigurationException("Only positive integer value can be specified for the attribute "
+                                                        + attributeName);
+            }
         }
     }
 
@@ -1112,44 +1119,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     public TaskExecutor getTaskExecutor()
     {
         return super.getTaskExecutor();
-    }
-
-    @Override
-    protected void changeAttributes(Map<String, Object> attributes)
-    {
-        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
-        validateAttributes(convertedAttributes);
-
-        super.changeAttributes(convertedAttributes);
-    }
-
-    private void validateAttributes(Map<String, Object> convertedAttributes)
-    {
-        if (convertedAttributes.containsKey(MODEL_VERSION) && !Model.MODEL_VERSION.equals(convertedAttributes.get(MODEL_VERSION)))
-        {
-            throw new IllegalConfigurationException("Cannot change the model version");
-        }
-
-        String defaultVirtualHost = (String) convertedAttributes.get(DEFAULT_VIRTUAL_HOST);
-        if (defaultVirtualHost != null)
-        {
-            VirtualHost foundHost = findVirtualHostByName(defaultVirtualHost);
-            if (foundHost == null)
-            {
-                throw new IllegalConfigurationException("Virtual host with name " + defaultVirtualHost
-                        + " cannot be set as a default as it does not exist");
-            }
-        }
-
-        for (String attributeName : POSITIVE_NUMERIC_ATTRIBUTES)
-        {
-            Number value = (Number) convertedAttributes.get(attributeName);
-            if (value != null && value.longValue() < 0)
-            {
-                throw new IllegalConfigurationException("Only positive integer value can be specified for the attribute "
-                        + attributeName);
-            }
-        }
     }
 
     @Override

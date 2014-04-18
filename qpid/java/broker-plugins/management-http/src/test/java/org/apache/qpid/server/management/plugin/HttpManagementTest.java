@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementTest extends QpidTestCase
@@ -52,7 +53,8 @@ public class HttpManagementTest extends QpidTestCase
         attributes.put(HttpManagement.HTTPS_SASL_AUTHENTICATION_ENABLED, true);
         attributes.put(HttpManagement.NAME, getTestName());
         attributes.put(HttpManagement.TIME_OUT, 10000l);
-        _management = new HttpManagement(_id, _broker, attributes);
+        attributes.put(ConfiguredObject.ID, _id);
+        _management = new HttpManagement(attributes, _broker);
         _management.open();
     }
 

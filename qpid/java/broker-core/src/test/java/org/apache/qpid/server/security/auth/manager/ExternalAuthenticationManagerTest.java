@@ -48,13 +48,13 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         attrs.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrs.put(AuthenticationProvider.NAME, getTestName());
         attrs.put("useFullDN",false);
-        _manager = new ExternalAuthenticationManagerImpl(mock(Broker.class), attrs);
+        _manager = new ExternalAuthenticationManagerImpl(attrs, mock(Broker.class));
         _manager.open();
         HashMap<String, Object> attrsFullDN = new HashMap<String, Object>();
         attrsFullDN.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrsFullDN.put(AuthenticationProvider.NAME, getTestName()+"FullDN");
         attrsFullDN.put("useFullDN",true);
-        _managerUsingFullDN = new ExternalAuthenticationManagerImpl(mock(Broker.class), attrsFullDN);
+        _managerUsingFullDN = new ExternalAuthenticationManagerImpl(attrsFullDN, mock(Broker.class));
         _managerUsingFullDN.open();
     }
 

@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.security;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.Broker;
@@ -39,10 +37,7 @@ public class FileKeyStoreFactory extends AbstractConfiguredObjectTypeFactory<Fil
     @Override
     public FileKeyStoreImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
-        HashMap<String, Object> attributesWithoutId = new HashMap<String, Object>(attributes);
-        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
-        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new FileKeyStoreImpl(id, getParent(Broker.class, parents), attributesWithoutId);
+        return new FileKeyStoreImpl(attributes, getParent(Broker.class, parents));
     }
 
 }

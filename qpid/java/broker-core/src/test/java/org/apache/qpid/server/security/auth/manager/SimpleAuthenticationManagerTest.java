@@ -51,8 +51,8 @@ public class SimpleAuthenticationManagerTest extends QpidTestCase
         Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
         authManagerAttrs.put(AuthenticationProvider.NAME,"MANAGEMENT_MODE_AUTHENTICATION");
         authManagerAttrs.put(AuthenticationProvider.ID, UUID.randomUUID());
-        final SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(mock(Broker.class),
-                                                                                        authManagerAttrs);
+        final SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(authManagerAttrs, mock(Broker.class)
+        );
         authManager.addUser(TEST_USER, TEST_PASSWORD);
         _authenticationManager = authManager;
 

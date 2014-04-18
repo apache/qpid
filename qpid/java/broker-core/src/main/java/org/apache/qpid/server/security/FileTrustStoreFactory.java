@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.security;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.Broker;
@@ -35,22 +33,10 @@ public class FileTrustStoreFactory extends AbstractConfiguredObjectTypeFactory<F
         super(FileTrustStoreImpl.class);
     }
 
-    protected final Broker getBroker(ConfiguredObject<?>... parents)
-    {
-        if(parents.length != 1 && !(parents[0] instanceof Broker))
-        {
-            throw new IllegalArgumentException("Should have exactly one parent of type broker");
-        }
-        return (Broker) parents[0];
-    }
-
     @Override
     public FileTrustStoreImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
-        HashMap<String, Object> attributesWithoutId = new HashMap<String, Object>(attributes);
-        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
-        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new FileTrustStoreImpl(id, getParent(Broker.class, parents), attributesWithoutId);
+        return new FileTrustStoreImpl(attributes, getParent(Broker.class, parents));
     }
 
 }

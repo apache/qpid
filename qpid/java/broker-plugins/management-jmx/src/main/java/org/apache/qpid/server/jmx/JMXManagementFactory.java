@@ -18,9 +18,7 @@
  */
 package org.apache.qpid.server.jmx;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.Broker;
@@ -36,9 +34,6 @@ public class JMXManagementFactory extends AbstractConfiguredObjectTypeFactory<JM
     @Override
     public JMXManagementPluginImpl createInstance(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
     {
-        Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
-        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
-        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new JMXManagementPluginImpl(id, getParent(Broker.class,parents),attributes);
+        return new JMXManagementPluginImpl(attributes,getParent(Broker.class,parents));
     }
 }

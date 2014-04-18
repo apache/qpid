@@ -30,15 +30,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 
 abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractConfiguredObject<X> implements Port<X>
 {
@@ -83,19 +93,19 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     @ManagedAttributeField
     private Set<Protocol> _protocols;
 
-    public AbstractPort(UUID id,
-                        Broker<?> broker,
-                        Map<String, Object> attributes,
-                        TaskExecutor taskExecutor)
+    public AbstractPort(Map<String, Object> attributes,
+                        Broker<?> broker)
     {
         super(parentsMap(broker),
-              combineIdWithAttributes(id,attributes),
-              taskExecutor);
+              attributes,
+              broker.getTaskExecutor());
+
         _broker = broker;
 
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
     }
+
 
     @Override
     public void validate()
@@ -123,6 +133,52 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
+        Port<?> updated = (Port<?>)proxyForValidation;
+
+
+        if(!getName().equals(updated.getName()))
+        {
+            throw new IllegalConfigurationException("Changing the port name is not allowed");
+        }
+
+        if(changedAttributes.contains(PORT))
+        {
+            int newPort = updated.getPort();
+            if (getPort() != newPort)
+            {
+                for (Port p : _broker.getPorts())
+                {
+                    if (p.getPort() == newPort)
+                    {
+                        throw new IllegalConfigurationException("Port number "
+                                                                + newPort
+                                                                + " is already in use by port "
+                                                                + p.getName());
+                    }
+                }
+            }
+        }
+
+
+        Collection<Transport> transports = updated.getTransports();
+
+        Collection<Protocol> protocols = updated.getProtocols();
+
+
+        boolean usesSsl = transports != null && transports.contains(Transport.SSL);
+        if (usesSsl)
+        {
+            if (updated.getKeyStore() == null)
+            {
+                throw new IllegalConfigurationException("Can't create port which requires SSL but has no key store configured.");
+            }
+        }
+
+        if (protocols != null && protocols.contains(Protocol.RMI) && usesSsl)
+        {
+            throw new IllegalConfigurationException("Can't create RMI Registry port which requires SSL.");
+        }
+
     }
 
     @Override
@@ -315,125 +371,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         // no-op: expected to be overridden by subclass
     }
 
-
-    @Override
-    protected void changeAttributes(Map<String, Object> attributes)
-    {
-        Map<String, Object> converted = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
-
-        Map<String, Object> merged = generateEffectiveAttributes(converted);
-
-        String newName = (String) merged.get(NAME);
-        if(!getName().equals(newName))
-        {
-            throw new IllegalConfigurationException("Changing the port name is not allowed");
-        }
-
-        if(converted.containsKey(PORT))
-        {
-            Integer newPort = (Integer) merged.get(PORT);
-            if (getPort() != newPort)
-            {
-                for (Port p : _broker.getPorts())
-                {
-                    if (p.getPort() == newPort)
-                    {
-                        throw new IllegalConfigurationException("Port number "
-                                                                + newPort
-                                                                + " is already in use by port "
-                                                                + p.getName());
-                    }
-                }
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        Collection<Transport> transports = (Collection<Transport>)merged.get(TRANSPORTS);
-        @SuppressWarnings("unchecked")
-        Collection<Protocol> protocols = (Collection<Protocol>)merged.get(PROTOCOLS);
-        Boolean needClientCertificate = (Boolean)merged.get(NEED_CLIENT_AUTH);
-        Boolean wantClientCertificate = (Boolean)merged.get(WANT_CLIENT_AUTH);
-        boolean requiresCertificate = (needClientCertificate != null && needClientCertificate.booleanValue())
-                || (wantClientCertificate != null && wantClientCertificate.booleanValue());
-
-        String keyStoreName = (String) merged.get(KEY_STORE);
-        if(keyStoreName != null)
-        {
-            if (_broker.findKeyStoreByName(keyStoreName) == null)
-            {
-                throw new IllegalConfigurationException("Can't find key store with name '" + keyStoreName + "' for port " + getName());
-            }
-        }
-
-        Collection<String> trustStoreNames = (Collection<String>) merged.get(TRUST_STORES);
-        boolean hasTrustStore = trustStoreNames != null && !trustStoreNames.isEmpty();
-        if(hasTrustStore)
-        {
-            for (String trustStoreName : trustStoreNames)
-            {
-                if (_broker.findTrustStoreByName(trustStoreName) == null)
-                {
-                    throw new IllegalConfigurationException("Cannot find trust store with name '" + trustStoreName + "'");
-                }
-            }
-        }
-
-        boolean usesSsl = transports != null && transports.contains(Transport.SSL);
-        if (usesSsl)
-        {
-            if (keyStoreName == null)
-            {
-                throw new IllegalConfigurationException("Can't create port which requires SSL but has no key store configured.");
-            }
-
-            if (!hasTrustStore && requiresCertificate)
-            {
-                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but has no trust store configured.");
-            }
-        }
-        else
-        {
-            if (requiresCertificate)
-            {
-                throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesn't use SSL transport.");
-            }
-        }
-
-        if (protocols != null && protocols.contains(Protocol.RMI) && usesSsl)
-        {
-            throw new IllegalConfigurationException("Can't create RMI Registry port which requires SSL.");
-        }
-
-        String authenticationProviderName = (String)merged.get(AUTHENTICATION_PROVIDER);
-        if (authenticationProviderName != null)
-        {
-            Collection<AuthenticationProvider<?>> providers = _broker.getAuthenticationProviders();
-            AuthenticationProvider<?> provider = null;
-            for (AuthenticationProvider<?> p : providers)
-            {
-                if (p.getName().equals(authenticationProviderName))
-                {
-                    provider = p;
-                    break;
-                }
-            }
-
-            if (provider == null)
-            {
-                throw new IllegalConfigurationException("Cannot find authentication provider with name '"
-                        + authenticationProviderName + "'");
-            }
-        }
-        else
-        {
-            if (protocols != null && !protocols.contains(Protocol.RMI))
-            {
-                throw new IllegalConfigurationException("An authentication provider must be specified");
-            }
-        }
-
-        super.changeAttributes(attributes);
-    }
 
     @Override
     protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException

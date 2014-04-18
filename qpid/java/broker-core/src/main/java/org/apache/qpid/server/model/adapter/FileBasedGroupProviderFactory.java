@@ -39,10 +39,7 @@ public class FileBasedGroupProviderFactory extends AbstractConfiguredObjectTypeF
     public FileBasedGroupProviderImpl createInstance(final Map<String, Object> attributes,
                                                  final ConfiguredObject<?>... parents)
     {
-        Map<String,Object> attributesWithoutId = new HashMap<String, Object>(attributes);
-        Object idObj = attributesWithoutId.remove(ConfiguredObject.ID);
-        UUID id = idObj == null ? UUID.randomUUID() : idObj instanceof UUID ? (UUID) idObj : UUID.fromString(idObj.toString());
-        return new FileBasedGroupProviderImpl(id, getParent(Broker.class, parents), attributesWithoutId);
+        return new FileBasedGroupProviderImpl(attributes, getParent(Broker.class, parents));
     }
 
 }

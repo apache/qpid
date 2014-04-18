@@ -105,7 +105,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
         attrs.put(ConfiguredObject.ID, UUID.randomUUID());
         attrs.put(ConfiguredObject.NAME, getTestName());
         attrs.put("path", _passwordFileLocation);
-        _manager = new PrincipalDatabaseAuthenticationManager(mock(Broker.class), attrs)
+        _manager = new PrincipalDatabaseAuthenticationManager(attrs, mock(Broker.class))
         {
             @Override
             protected PrincipalDatabase createDatabase()

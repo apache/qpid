@@ -46,7 +46,7 @@ public class AnonymousAuthenticationManagerTest extends QpidTestCase
         Map<String,Object> attrs = new HashMap<String, Object>();
         attrs.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrs.put(AuthenticationProvider.NAME, getTestName());
-        _manager = new AnonymousAuthenticationManager(mock(Broker.class), attrs);
+        _manager = new AnonymousAuthenticationManager(attrs, mock(Broker.class));
 
     }
 

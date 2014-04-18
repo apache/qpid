@@ -39,7 +39,7 @@ public class FanoutExchangeType implements ExchangeType<FanoutExchange>
     public FanoutExchange newInstance(final VirtualHostImpl virtualHost, final Map<String, Object> attributes)
             throws UnknownExchangeException
     {
-        return new FanoutExchange(virtualHost, attributes);
+        return new FanoutExchange(attributes, virtualHost);
     }
 
     public String getDefaultExchangeName()

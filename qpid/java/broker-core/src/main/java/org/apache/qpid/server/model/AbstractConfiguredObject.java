@@ -153,13 +153,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @ManagedAttributeField
     private String _type;
 
-    protected static Map<String,Object> combineIdWithAttributes(UUID id, Map<String,Object> attributes)
-    {
-        Map<String,Object> combined = new HashMap<String, Object>(attributes);
-        combined.put(ID, id);
-        return combined;
-    }
-
     protected static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(ConfiguredObject<?>... parents)
     {
         final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap =

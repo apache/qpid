@@ -23,10 +23,8 @@ package org.apache.qpid.server.model.port;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Protocol;
@@ -35,12 +33,10 @@ import org.apache.qpid.server.model.Transport;
 @ManagedObject( category = false, type = "RMI")
 public class RmiPort extends AbstractPort<RmiPort>
 {
-    public RmiPort(final UUID id,
-                   final Broker<?> broker,
-                   final Map<String, Object> attributes,
-                   final TaskExecutor taskExecutor)
+    public RmiPort(final Map<String, Object> attributes,
+                   final Broker<?> broker)
     {
-        super(id, broker, attributes, taskExecutor);
+        super(attributes, broker);
     }
 
     @Override

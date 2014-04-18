@@ -43,6 +43,6 @@ public class StandardQueueFactory extends AbstractConfiguredObjectTypeFactory<St
             throw new IllegalArgumentException("Unexpected virtual host is set as a parent. Expected instance of " + VirtualHostImpl.class.getName());
         }
 
-        return new StandardQueueImpl((VirtualHostImpl<?,?,?>)virtualHost,attributes);
+        return new StandardQueueImpl(attributes, (VirtualHostImpl<?,?,?>)virtualHost);
     }
 }

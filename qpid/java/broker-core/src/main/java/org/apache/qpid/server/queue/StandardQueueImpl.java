@@ -28,10 +28,9 @@ public class StandardQueueImpl extends AbstractQueue<StandardQueueImpl> implemen
 {
     private StandardQueueEntryList _entries;
 
-    public StandardQueueImpl(final VirtualHostImpl virtualHost,
-                             final Map<String, Object> arguments)
+    public StandardQueueImpl(final Map<String, Object> arguments, final VirtualHostImpl virtualHost)
     {
-        super(virtualHost, arguments);
+        super(arguments, virtualHost);
     }
 
     @Override

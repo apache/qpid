@@ -60,7 +60,7 @@ public class ExternalAuthenticationManagerFactory extends AbstractAuthentication
     public ExternalAuthenticationManagerImpl createInstance(final Map<String, Object> attributes,
                                                         final ConfiguredObject<?>... parents)
     {
-        return new ExternalAuthenticationManagerImpl(getParent(Broker.class, parents), attributes);
+        return new ExternalAuthenticationManagerImpl(attributes, getParent(Broker.class, parents));
     }
 
 }

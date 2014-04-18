@@ -75,7 +75,7 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         UUID id = UUID.randomUUID();
-        attributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.class);
+        attributes.put(PreferencesProvider.TYPE, "FileSystemPreferences");
         attributes.put(PreferencesProvider.NAME, "test-provider");
         File file = TestFileUtils.createTempFile(this, ".prefs.json", "{\"test_user\":{\"pref1\": \"pref1Value\", \"pref2\": 1.0} }");
         try
@@ -99,7 +99,7 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         UUID id = UUID.randomUUID();
-        attributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.class);
+        attributes.put(PreferencesProvider.TYPE, "FileSystemPreferences");
         attributes.put(PreferencesProvider.NAME, "test-provider");
         File file = new File(TMP_FOLDER, UUID.randomUUID() + "prefs.json");
         assertFalse("Preferences store file should not exist", file.exists());
@@ -119,7 +119,7 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         UUID id = UUID.randomUUID();
-        attributes.put(PreferencesProvider.TYPE, FileSystemPreferencesProvider.class);
+        attributes.put(PreferencesProvider.TYPE, "FileSystemPreferences");
         attributes.put(PreferencesProvider.NAME, "test-provider");
         File file = new File(TMP_FOLDER, UUID.randomUUID() + "prefs.json");
         assertFalse("Preferences store file should not exist", file.exists());

@@ -26,7 +26,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 
 import javax.management.JMException;
 
@@ -51,7 +51,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class JMXManagementPluginImpl
@@ -80,9 +79,9 @@ public class JMXManagementPluginImpl
     @ManagedAttributeField
     private boolean _usePlatformMBeanServer;
 
-    public JMXManagementPluginImpl(UUID id, Broker broker, Map<String, Object> attributes)
+    public JMXManagementPluginImpl(Map<String, Object> attributes, Broker broker)
     {
-        super(id, attributes, broker);
+        super(attributes, broker);
     }
 
     @Override
@@ -313,19 +312,12 @@ public class JMXManagementPluginImpl
     }
 
     @Override
-    protected void changeAttributes(Map<String, Object> attributes)
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
     {
-        Map<String, Object> convertedAttributes = MapValueConverter.convert(attributes, ATTRIBUTE_TYPES);
-        validateAttributes(convertedAttributes);
-
-        super.changeAttributes(convertedAttributes);
-    }
-
-    private void validateAttributes(Map<String, Object> convertedAttributes)
-    {
-        if(convertedAttributes.containsKey(JMXManagementPluginImpl.NAME))
+        super.validateChange(proxyForValidation, changedAttributes);
+        if(changedAttributes.contains(NAME))
         {
-            String newName = (String) convertedAttributes.get(JMXManagementPluginImpl.NAME);
+            String newName = proxyForValidation.getName();
             if(!getName().equals(newName))
             {
                 throw new IllegalConfigurationException("Changing the name of jmx management plugin is not allowed");

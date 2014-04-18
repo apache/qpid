@@ -42,10 +42,9 @@ public class KerberosAuthenticationManager extends AbstractAuthenticationManager
     private static final String GSSAPI_MECHANISM = "GSSAPI";
     private final CallbackHandler _callbackHandler = new GssApiCallbackHandler();
 
-    protected KerberosAuthenticationManager(final Broker broker,
-                                            final Map<String, Object> attributes)
+    protected KerberosAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
-        super(broker, attributes);
+        super(attributes, broker);
     }
 
 

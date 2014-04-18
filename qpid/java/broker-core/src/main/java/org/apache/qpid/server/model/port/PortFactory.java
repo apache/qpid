@@ -140,15 +140,6 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
         return _configuredObjectFactory.getConfiguredObjectTypeFactory(Port.class.getSimpleName(), type);
     }
 
-    private Broker getBroker(final ConfiguredObject<?>[] parents)
-    {
-        if(parents.length != 1 || !(parents[0] instanceof Broker))
-        {
-            throw new IllegalConfigurationException("Port should have exactly one parent, of type Broker");
-        }
-        return (Broker<?>) parents[0];
-    }
-
     @Override
     public String getType()
     {

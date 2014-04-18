@@ -70,10 +70,9 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     @ManagedAttributeField
     private String _path;
 
-    protected PrincipalDatabaseAuthenticationManager(final Broker broker,
-                                                     final Map<String, Object> attributes)
+    protected PrincipalDatabaseAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
-        super(broker, attributes);
+        super(attributes, broker);
     }
 
     @Override

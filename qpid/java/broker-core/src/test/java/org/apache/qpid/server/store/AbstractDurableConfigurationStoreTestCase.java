@@ -168,8 +168,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         ExchangeImpl<?> exchange = createTestExchange();
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
-        BindingImpl binding = new BindingImpl(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
-                exchange, _bindingArgs);
+        BindingImpl binding = createBinding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
+                                                            exchange, _bindingArgs);
         DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
         DurableConfigurationStoreHelper.createQueue(_configStore, queue);
         DurableConfigurationStoreHelper.createBinding(_configStore, binding);
@@ -260,8 +260,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         DurableConfigurationStoreHelper.createExchange(_configStore, exchange);
 
         AMQQueue queue = createTestQueue(QUEUE_NAME, "queueOwner", false, null);
-        BindingImpl binding = new BindingImpl(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
-                exchange, _bindingArgs);
+        BindingImpl binding = createBinding(UUIDGenerator.generateRandomUUID(), ROUTING_KEY, queue,
+                                                            exchange, _bindingArgs);
         DurableConfigurationStoreHelper.createBinding(_configStore, binding);
 
         DurableConfigurationStoreHelper.removeBinding(_configStore, binding);
@@ -504,4 +504,21 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
             _configStore.closeConfigurationStore();
         }
     }
+
+    private static BindingImpl createBinding(UUID id,
+                                             final String bindingKey,
+                                             final AMQQueue queue,
+                                             final ExchangeImpl exchange,
+                                             final Map<String, Object> arguments)
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(Binding.NAME, bindingKey);
+        if(arguments != null)
+        {
+            attributes.put(Binding.ARGUMENTS, arguments);
+        }
+        attributes.put(Binding.ID, id);
+        return new BindingImpl(attributes, queue, exchange);
+    }
+
 }

@@ -39,7 +39,7 @@ public class HeadersExchangeType implements ExchangeType<HeadersExchange>
     public HeadersExchange newInstance(final VirtualHostImpl virtualHost, final Map<String, Object> attributes)
             throws UnknownExchangeException
     {
-        return new HeadersExchange(virtualHost, attributes);
+        return new HeadersExchange(attributes, virtualHost);
     }
 
     public String getDefaultExchangeName()

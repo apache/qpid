@@ -61,9 +61,9 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
 
     private final Map<BindingImpl, Map<String,Object>> _bindings = new HashMap<BindingImpl, Map<String,Object>>();
 
-    public TopicExchange(final VirtualHostImpl vhost, final Map attributes) throws UnknownExchangeException
+    public TopicExchange(final Map<String,Object> attributes, final VirtualHostImpl vhost) throws UnknownExchangeException
     {
-        super(vhost, attributes);
+        super(attributes, vhost);
     }
 
     @Override

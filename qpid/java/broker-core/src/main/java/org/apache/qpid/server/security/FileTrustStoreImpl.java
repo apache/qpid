@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -67,10 +66,10 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
 
     private Broker<?> _broker;
 
-    public FileTrustStoreImpl(UUID id, Broker<?> broker, Map<String, Object> attributes)
+    public FileTrustStoreImpl(Map<String, Object> attributes, Broker<?> broker)
     {
         super(parentsMap(broker),
-              combineIdWithAttributes(id, attributes),
+              attributes,
               broker.getTaskExecutor());
         _broker = broker;
     }

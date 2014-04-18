@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
@@ -38,10 +37,10 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
 {
     private Broker _broker;
 
-    protected AbstractPluginAdapter(UUID id, Map<String, Object> attributes, Broker broker)
+    protected AbstractPluginAdapter(Map<String, Object> attributes, Broker broker)
     {
         super(parentsMap(broker),
-              combineIdWithAttributes(id, attributes), broker.getTaskExecutor());
+              attributes, broker.getTaskExecutor());
         _broker = broker;
     }
 

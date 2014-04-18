@@ -36,10 +36,9 @@ public class PriorityQueueImpl extends OutOfOrderQueue<PriorityQueueImpl> implem
     @ManagedAttributeField
     private int _priorities;
 
-    public PriorityQueueImpl(VirtualHostImpl virtualHost,
-                             Map<String, Object> attributes)
+    public PriorityQueueImpl(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
-        super(virtualHost, attributes);
+        super(attributes, virtualHost);
     }
 
     @Override

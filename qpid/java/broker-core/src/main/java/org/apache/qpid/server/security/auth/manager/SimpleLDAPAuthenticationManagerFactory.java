@@ -74,7 +74,7 @@ public class SimpleLDAPAuthenticationManagerFactory extends AbstractAuthenticati
     public SimpleLDAPAuthenticationManagerImpl createInstance(final Map<String, Object> attributes,
                                                           final ConfiguredObject<?>... parents)
     {
-        return new SimpleLDAPAuthenticationManagerImpl(getParent(Broker.class, parents), attributes);
+        return new SimpleLDAPAuthenticationManagerImpl(attributes, getParent(Broker.class, parents));
     }
 
 }

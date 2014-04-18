@@ -39,7 +39,7 @@ public class DirectExchangeType implements ExchangeType<DirectExchange>
     public DirectExchange newInstance(final VirtualHostImpl virtualHost,
                                       final Map<String, Object> attributes) throws UnknownExchangeException
     {
-        return new DirectExchange(virtualHost, attributes);
+        return new DirectExchange(attributes, virtualHost);
     }
 
     public String getDefaultExchangeName()

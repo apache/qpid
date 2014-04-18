@@ -42,7 +42,7 @@ public class DirectExchangeFactory extends AbstractConfiguredObjectTypeFactory<D
         {
             throw new IllegalArgumentException("Unexpected virtual host is set as a parent. Expected instance of " + VirtualHostImpl.class.getName());
         }
-        return new DirectExchange((VirtualHostImpl<?, ?, ?>)virtualHost , attributes);
+        return new DirectExchange(attributes, (VirtualHostImpl<?, ?, ?>)virtualHost);
     }
 
 }

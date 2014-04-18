@@ -76,7 +76,7 @@ public class HeadersExchangeTest extends TestCase
         attributes.put(Exchange.NAME, "test");
         attributes.put(Exchange.DURABLE, false);
 
-        _exchange = new HeadersExchange(_virtualHost, attributes);
+        _exchange = new HeadersExchange(attributes, _virtualHost);
 
     }
 

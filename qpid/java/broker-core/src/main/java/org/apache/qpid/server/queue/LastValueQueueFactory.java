@@ -43,6 +43,6 @@ public class LastValueQueueFactory extends AbstractConfiguredObjectTypeFactory<L
             throw new IllegalArgumentException("Unexpected virtual host is set as a parent. Expected instance of " + VirtualHostImpl.class.getName());
         }
 
-        return new LastValueQueueImpl((VirtualHostImpl<?,?,?>)virtualHost,attributes);
+        return new LastValueQueueImpl(attributes, (VirtualHostImpl<?,?,?>)virtualHost);
     }
 }

@@ -83,10 +83,9 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
 
     public static final ExchangeType<HeadersExchange> TYPE = new HeadersExchangeType();
 
-    public HeadersExchange(final VirtualHostImpl vhost,
-                           final Map<String, Object> attributes) throws UnknownExchangeException
+    public HeadersExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost) throws UnknownExchangeException
     {
-        super(vhost, attributes);
+        super(attributes, vhost);
     }
 
     @Override

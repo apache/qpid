@@ -97,8 +97,9 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(FileSystemPreferencesProvider.PATH, nonExistingFile.getAbsolutePath());
+            attributes.put(ConfiguredObject.ID, UUID.randomUUID());
             attributes.put(ConfiguredObject.NAME, getTestName());
-            _preferencesProvider = new FileSystemPreferencesProviderImpl(UUID.randomUUID(), attributes, _authenticationProvider);
+            _preferencesProvider = new FileSystemPreferencesProviderImpl(attributes, _authenticationProvider);
             _preferencesProvider.open();
 
             assertEquals(State.INITIALISING, _preferencesProvider.getState());
@@ -118,9 +119,10 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         try
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(ConfiguredObject.ID, UUID.randomUUID());
             attributes.put(ConfiguredObject.NAME, getTestName());
             attributes.put(FileSystemPreferencesProvider.PATH, emptyPrefsFile.getAbsolutePath());
-            _preferencesProvider = new FileSystemPreferencesProviderImpl(UUID.randomUUID(), attributes, _authenticationProvider);
+            _preferencesProvider = new FileSystemPreferencesProviderImpl(attributes, _authenticationProvider);
             assertEquals(State.INITIALISING, _preferencesProvider.getState());
             _preferencesProvider.close();
         }
@@ -280,8 +282,9 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(FileSystemPreferencesProvider.PATH, _preferencesFile.getAbsolutePath());
+        attributes.put(ConfiguredObject.ID, UUID.randomUUID());
         attributes.put(ConfiguredObject.NAME, "test");
-        _preferencesProvider = new FileSystemPreferencesProviderImpl(UUID.randomUUID(), attributes, _authenticationProvider);
+        _preferencesProvider = new FileSystemPreferencesProviderImpl(attributes, _authenticationProvider);
         _preferencesProvider.open();
         return _preferencesProvider;
     }

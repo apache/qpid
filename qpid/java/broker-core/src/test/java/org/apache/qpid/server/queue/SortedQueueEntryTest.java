@@ -56,7 +56,7 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
-        SortedQueueImpl queue = new SortedQueueImpl(virtualHost, attributes)
+        SortedQueueImpl queue = new SortedQueueImpl(attributes, virtualHost)
         {
             SelfValidatingSortedQueueEntryList _entries;
             @Override
