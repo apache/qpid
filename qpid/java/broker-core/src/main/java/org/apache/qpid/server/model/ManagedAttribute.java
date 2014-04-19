@@ -30,6 +30,7 @@ public @interface ManagedAttribute
     boolean secure() default false;
     boolean derived() default false;
     boolean automate() default false;
+    boolean state() default false;
     boolean mandatory() default false;
     String defaultValue() default "";
 }
