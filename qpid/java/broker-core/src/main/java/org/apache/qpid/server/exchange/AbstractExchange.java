@@ -609,7 +609,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     @Override
     public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
     {
-        return makeBinding(null, bindingKey, queue, arguments, false, false);
+        return makeBinding(null, bindingKey, queue, arguments, false);
     }
 
     @Override
@@ -622,7 +622,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                            bindingKey,
                            queue,
                            arguments,
-                           false,
                            true);
     }
 
@@ -674,7 +673,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                 String bindingKey,
                                 AMQQueue queue,
                                 Map<String, Object> arguments,
-                                boolean restore,
                                 boolean force)
     {
         if (bindingKey == null)
@@ -706,9 +704,9 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 attributes.put(Binding.ARGUMENTS, arguments);
 
                 BindingImpl b = new BindingImpl(attributes, queue, this);
-                b.create();
 
                 addBinding(b);
+                b.create();
 
 
                 return true;
@@ -738,7 +736,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         b.getAMQQueue().addBinding(b);
         childAdded(b);
 
-        doAddBinding(b);
     }
 
     protected abstract void onBindingUpdated(final BindingImpl binding,

@@ -29,12 +29,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
@@ -46,12 +48,13 @@ public class BindingImpl
         extends AbstractConfiguredObject<BindingImpl>
         implements org.apache.qpid.server.model.Binding<BindingImpl>
 {
-    private final String _bindingKey;
+    private String _bindingKey;
     private final AMQQueue _queue;
     private final ExchangeImpl _exchange;
+    @ManagedAttributeField
     private Map<String, Object> _arguments;
     private final AtomicLong _matches = new AtomicLong();
-    private final BindingLogSubject _logSubject;
+    private BindingLogSubject _logSubject;
 
     final AtomicBoolean _deleted = new AtomicBoolean();
     final CopyOnWriteArrayList<StateChangeListener<BindingImpl,State>> _stateChangeListeners =
@@ -60,27 +63,41 @@ public class BindingImpl
     public BindingImpl(Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
         super(parentsMap(queue,exchange),enhanceWithDurable(attributes,queue,exchange),queue.getVirtualHost().getTaskExecutor());
-        _bindingKey = (String)attributes.get(org.apache.qpid.server.model.Binding.NAME);
+        _bindingKey = getName();
         _queue = queue;
         _exchange = exchange;
-        Map<String,Object> arguments = (Map<String, Object>) attributes.get(org.apache.qpid.server.model.Binding.ARGUMENTS);
-        _arguments = arguments == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(arguments);
 
 
-        //Perform ACLs
-        queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
-        _logSubject = new BindingLogSubject(_bindingKey,exchange,queue);
+    }
+
+    @Override
+    protected void onOpen()
+    {
+        super.onOpen();
+        _logSubject = new BindingLogSubject(_bindingKey,_exchange,_queue);
+
         getEventLogger().message(_logSubject, BindingMessages.CREATED(String.valueOf(getArguments()),
                                                                       getArguments() != null
                                                                       && !getArguments().isEmpty()));
-
-
+        if(_exchange instanceof AbstractExchange)
+        {
+            ((AbstractExchange)_exchange).doAddBinding(this);
+        }
     }
 
     @Override
     protected void onCreate()
     {
         super.onCreate();
+        try
+        {
+            _queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
+        }
+        catch(AccessControlException e)
+        {
+            deleted();
+            throw e;
+        }
         if (isDurable())
         {
             _queue.getVirtualHost().getDurableConfigurationStore().create(asObjectRecord());
