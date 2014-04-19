@@ -20,20 +20,19 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterSupport;
-import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.AMQMessageHeader;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.apache.qpid.server.filter.Filterable;
 
 /**
  * Defines binding and matching based on a set of headers.
@@ -62,8 +61,7 @@ class HeadersBinding
         _binding = binding;
         if(_binding !=null)
         {
-            Map<String, Object> arguments = _binding.getArguments();
-            _mappings = arguments == null ? Collections.<String,Object>emptyMap() : arguments;
+            _mappings = _binding.getArguments();
             initMappings();
         }
         else

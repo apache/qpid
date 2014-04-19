@@ -39,7 +39,7 @@ public interface Binding<X extends Binding<X>> extends ConfiguredObject<X>
     @ManagedAttribute( derived = true )
     Exchange<?> getExchange();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     Map<String,Object> getArguments();
 
     @ManagedStatistic

@@ -1351,10 +1351,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
                 if(annotation != null)
                 {
-                    if(!(annotation.automate() || annotation.derived() || annotation.state()))
-                    {
-                        throw new ServerScopedRuntimeException("ManagedAttributes must be either automated or derived. " + m.getName() + " on "  + clazz.getSimpleName() + " does not meet this criterion.");
-                    }
                     if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
                     {
                         throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
