@@ -122,7 +122,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the actual state of the object
      */
-    @ManagedAttribute( state = true )
+    @ManagedAttribute
     State getState();
 
 
