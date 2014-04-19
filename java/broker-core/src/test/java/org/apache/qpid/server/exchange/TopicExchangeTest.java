@@ -383,7 +383,9 @@ public class TopicExchangeTest extends QpidTestCase
             attributes.put(Binding.ARGUMENTS, arguments);
         }
         attributes.put(Binding.ID, id);
-        return new BindingImpl(attributes, queue, exchange);
+        BindingImpl binding = new BindingImpl(attributes, queue, exchange);
+        binding.open();
+        return binding;
     }
 
 

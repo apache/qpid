@@ -130,6 +130,7 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
                 UnresolvedConfiguredObject<? extends Binding> unresolvedConfiguredObject =
                         configuredObjectTypeFactory.recover(_record, _exchange, _queue);
                 Binding binding = (Binding<?>) unresolvedConfiguredObject.resolve();
+                binding.open();
 
             }
             return (_exchange).getBinding(_bindingName, _queue);
