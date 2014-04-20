@@ -48,10 +48,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
-import org.apache.qpid.server.configuration.updater.ChangeStateTask;
-import org.apache.qpid.server.configuration.updater.CreateChildTask;
-import org.apache.qpid.server.configuration.updater.SetAttributeTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -544,23 +540,25 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public final State setDesiredState(final State currentState, final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
-        if (_taskExecutor.isTaskExecutorThread())
-        {
-            authoriseSetDesiredState(currentState, desiredState);
-            if (setState(currentState, desiredState))
-            {
-                notifyStateChanged(currentState, desiredState);
-                return desiredState;
-            }
-            else
-            {
-                return getState();
-            }
-        }
-        else
-        {
-            return _taskExecutor.submitAndWait(new ChangeStateTask(this, currentState, desiredState));
-        }
+
+
+        return runTask(new TaskExecutor.Task<State>()
+                        {
+                            @Override
+                            public State execute()
+                            {
+                                authoriseSetDesiredState(currentState, desiredState);
+                                if (setState(currentState, desiredState))
+                                {
+                                    notifyStateChanged(currentState, desiredState);
+                                    return desiredState;
+                                }
+                                else
+                                {
+                                    return getState();
+                                }
+                            }
+                        });
     }
 
     /**
@@ -727,25 +725,25 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        if (_taskExecutor.isTaskExecutorThread())
+        return _taskExecutor.run(new TaskExecutor.Task<Object>()
         {
-            authoriseSetAttributes(createProxyForValidation(Collections.singletonMap(name, desired)),
-                                   Collections.singleton(name));
+            @Override
+            public Object execute()
+            {
+                authoriseSetAttributes(createProxyForValidation(Collections.singletonMap(name, desired)),
+                                       Collections.singleton(name));
 
-            if (changeAttribute(name, expected, desired))
-            {
-                attributeSet(name, expected, desired);
-                return desired;
+                if (changeAttribute(name, expected, desired))
+                {
+                    attributeSet(name, expected, desired);
+                    return desired;
+                }
+                else
+                {
+                    return getAttribute(name);
+                }
             }
-            else
-            {
-                return getAttribute(name);
-            }
-        }
-        else
-        {
-            return _taskExecutor.submitAndWait(new SetAttributeTask(this, name, expected, desired));
-        }
+        });
     }
 
     protected boolean changeAttribute(final String name, final Object expected, final Object desired)
@@ -864,22 +862,23 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     @SuppressWarnings("unchecked")
     @Override
-    public <C extends ConfiguredObject> C createChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> C createChild(final Class<C> childClass, final Map<String, Object> attributes,
+                                                      final ConfiguredObject... otherParents)
     {
-        if (_taskExecutor.isTaskExecutorThread())
-        {
-            authoriseCreateChild(childClass, attributes, otherParents);
-            C child = addChild(childClass, attributes, otherParents);
-            if (child != null)
+        return _taskExecutor.run(new TaskExecutor.Task<C>() {
+
+            @Override
+            public C execute()
             {
-                childAdded(child);
+                authoriseCreateChild(childClass, attributes, otherParents);
+                C child = addChild(childClass, attributes, otherParents);
+                if (child != null)
+                {
+                    childAdded(child);
+                }
+                return child;
             }
-            return child;
-        }
-        else
-        {
-            return (C)_taskExecutor.submitAndWait(new CreateChildTask(this, childClass, attributes, otherParents));
-        }
+        });
     }
 
     protected <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
@@ -973,18 +972,39 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _taskExecutor;
     }
 
+    protected final <C> C runTask(TaskExecutor.Task<C> task)
+    {
+        return _taskExecutor.run(task);
+    }
+
+    protected void runTask(TaskExecutor.VoidTask task)
+    {
+        _taskExecutor.run(task);
+    }
+
+    protected final <T, E extends Exception> T runTask(TaskExecutor.TaskWithException<T,E> task) throws E
+    {
+        return _taskExecutor.run(task);
+    }
+
+    protected final <E extends Exception> void runTask(TaskExecutor.VoidTaskWithException<E> task) throws E
+    {
+        _taskExecutor.run(task);
+    }
+
+
     @Override
     public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        if (getTaskExecutor().isTaskExecutorThread())
+        runTask(new TaskExecutor.VoidTask()
         {
-            authoriseSetAttributes(createProxyForValidation(attributes), attributes.keySet());
-            changeAttributes(attributes);
-        }
-        else
-        {
-            getTaskExecutor().submitAndWait(new ChangeAttributesTask(this, attributes));
-        }
+            @Override
+            public void execute()
+            {
+                authoriseSetAttributes(createProxyForValidation(attributes), attributes.keySet());
+                changeAttributes(attributes);
+            }
+        });
     }
 
     protected void authoriseSetAttributes(final ConfiguredObject<?> proxyForValidation,

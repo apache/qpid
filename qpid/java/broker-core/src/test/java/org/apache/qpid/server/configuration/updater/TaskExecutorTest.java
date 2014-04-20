@@ -135,10 +135,10 @@ public class TaskExecutorTest extends TestCase
     public void testSubmitAndWait() throws Exception
     {
         _executor.start();
-        Object result = _executor.submitAndWait(new TaskExecutor.Task<Object>()
+        Object result = _executor.run(new TaskExecutor.Task<Object>()
         {
             @Override
-            public String call()
+            public String execute()
             {
                 return "DONE";
             }
@@ -149,7 +149,7 @@ public class TaskExecutorTest extends TestCase
     public void testSubmitAndWaitInNotAuthorizedContext()
     {
         _executor.start();
-        Object subject = _executor.submitAndWait(new SubjectRetriever());
+        Object subject = _executor.run(new SubjectRetriever());
         assertNull("Subject must be null", subject);
     }
 
@@ -162,7 +162,7 @@ public class TaskExecutorTest extends TestCase
             @Override
             public Object run()
             {
-                return _executor.submitAndWait(new SubjectRetriever());
+                return _executor.run(new SubjectRetriever());
             }
         });
         assertEquals("Unexpected subject", subject, result);
@@ -176,7 +176,7 @@ public class TaskExecutorTest extends TestCase
             @Override
             public Object run()
             {
-                return _executor.submitAndWait(new SubjectRetriever());
+                return _executor.run(new SubjectRetriever());
             }
         });
         assertEquals("Unexpected subject", null, result);
@@ -188,11 +188,11 @@ public class TaskExecutorTest extends TestCase
         _executor.start();
         try
         {
-            _executor.submitAndWait(new TaskExecutor.Task<Object>()
+            _executor.run(new TaskExecutor.Task<Object>()
             {
 
                 @Override
-                public Void call()
+                public Void execute()
                 {
                     throw exception;
                 }
@@ -215,15 +215,15 @@ public class TaskExecutorTest extends TestCase
             @Override
             public Object run()
             {
-                _executor.submitAndWait(new TaskExecutor.Task<Object>()
-            {
-                @Override
-                public Void call()
+                _executor.run(new TaskExecutor.Task<Object>()
                 {
-                taskSubject.set(Subject.getSubject(AccessController.getContext()));
-                return null;
-                }
-            });
+                    @Override
+                    public Void execute()
+                    {
+                        taskSubject.set(Subject.getSubject(AccessController.getContext()));
+                        return null;
+                    }
+                });
                 return null;
             }
         });
@@ -234,7 +234,7 @@ public class TaskExecutorTest extends TestCase
     private class SubjectRetriever implements TaskExecutor.Task<Subject>
     {
         @Override
-        public Subject call()
+        public Subject execute()
         {
             return Subject.getSubject(AccessController.getContext());
         }
@@ -251,7 +251,7 @@ public class TaskExecutorTest extends TestCase
         }
 
         @Override
-        public Void call()
+        public Void execute()
         {
             if (_waitLatch != null)
             {

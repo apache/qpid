@@ -59,6 +59,7 @@ public class VirtualHostTest extends QpidTestCase
     private File _bdbStorePath;
     private VirtualHost<?,?,?> _host;
     private ConfigurationEntryStore _store;
+    private TaskExecutor _taskExecutor;
 
     @Override
     protected void setUp() throws Exception
@@ -67,9 +68,9 @@ public class VirtualHostTest extends QpidTestCase
 
         _store = mock(ConfigurationEntryStore.class);
         _broker = BrokerTestHelper.createBrokerMock();
-        TaskExecutor taslExecutor = mock(TaskExecutor.class);
-        when(taslExecutor.isTaskExecutorThread()).thenReturn(true);
-        when(_broker.getTaskExecutor()).thenReturn(taslExecutor);
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
+        when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
         _statisticsGatherer = mock(StatisticsGatherer.class);
 
@@ -89,6 +90,8 @@ public class VirtualHostTest extends QpidTestCase
         }
         finally
         {
+            _taskExecutor.stopImmediately();
+
             if (_bdbStorePath != null)
             {
                 FileUtils.delete(_bdbStorePath, true);

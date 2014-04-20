@@ -34,16 +34,13 @@ import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 import javax.security.auth.Subject;
-import java.security.PrivilegedAction;
+
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
@@ -140,11 +137,6 @@ public class AMQStateManager implements AMQMethodListener
 
         }
 
-    }
-
-    public VirtualHostRegistry getVirtualHostRegistry()
-    {
-        return _broker.getVirtualHostRegistry();
     }
 
     public AMQProtocolSession getProtocolSession()

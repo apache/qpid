@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.configuration.startup;
 
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,12 +39,12 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class VirtualHostCreationTest extends TestCase
 {
@@ -53,13 +54,14 @@ public class VirtualHostCreationTest extends TestCase
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        SystemContext systemContext = mock(SystemContext.class);
+
         Broker parent = mock(Broker.class);
         when(parent.getObjectFactory()).thenReturn(objectFactory);
         when(parent.getSecurityManager()).thenReturn(securityManager);
         when(parent.getCategoryClass()).thenReturn(Broker.class);
-        VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
-        when(virtualHostRegistry.getEventLogger()).thenReturn(mock(EventLogger.class));
-        when(parent.getVirtualHostRegistry()).thenReturn(virtualHostRegistry);
+        when(systemContext.getEventLogger()).thenReturn(mock(EventLogger.class));
+        when(parent.getParent(eq(SystemContext.class))).thenReturn(systemContext);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
@@ -90,11 +92,11 @@ public class VirtualHostCreationTest extends TestCase
     public void checkMandatoryAttributesAreValidated(String[] mandatoryAttributes, Map<String, Object> attributes)
     {
         SecurityManager securityManager = mock(SecurityManager.class);
+        SystemContext systemContext = mock(SystemContext.class);
         Broker parent = mock(Broker.class);
         when(parent.getSecurityManager()).thenReturn(securityManager);
-        VirtualHostRegistry virtualHostRegistry = mock(VirtualHostRegistry.class);
-        when(virtualHostRegistry.getEventLogger()).thenReturn(mock(EventLogger.class));
-        when(parent.getVirtualHostRegistry()).thenReturn(virtualHostRegistry);
+        when(parent.getParent(eq(SystemContext.class))).thenReturn(systemContext);
+        when(systemContext.getEventLogger()).thenReturn(mock(EventLogger.class));
 
         for (String name : mandatoryAttributes)
         {

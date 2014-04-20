@@ -49,6 +49,7 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.SessionModelListener;
@@ -133,7 +134,8 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         {
             host = _broker.getDefaultVirtualHost();
         }
-        _vhost = _broker.getVirtualHostRegistry().getVirtualHost(host);
+
+        _vhost = ((AmqpPort)_port).getVirtualHost(host);
 
         if(_vhost == null)
         {

@@ -29,6 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -255,26 +256,22 @@ public class BindingImpl
 
     public void setArguments(final Map<String, Object> arguments)
     {
-        if(getTaskExecutor().isTaskExecutorThread())
-        {
-            _arguments = arguments;
-            super.setAttribute(ARGUMENTS, getActualAttributes().get(ARGUMENTS), arguments);
-            if (isDurable())
-            {
-                VirtualHostImpl<?, ?, ?> vhost = (VirtualHostImpl<?, ?, ?>) _exchange.getParent(VirtualHost.class);
-                vhost.getDurableConfigurationStore().update(true, asObjectRecord());
-            }
-        }
-        else
-        {
-            getTaskExecutor().submitAndWait(new Runnable()
-            {
-                @Override
-                public void run()
+        runTask(new TaskExecutor.VoidTask()
                 {
-                    setArguments(arguments);
+                    @Override
+                    public void execute()
+                    {
+                        _arguments = arguments;
+                        BindingImpl.super.setAttribute(ARGUMENTS, getActualAttributes().get(ARGUMENTS), arguments);
+                        if (isDurable())
+                        {
+                            VirtualHostImpl<?, ?, ?> vhost =
+                                    (VirtualHostImpl<?, ?, ?>) _exchange.getParent(VirtualHost.class);
+                            vhost.getDurableConfigurationStore().update(true, asObjectRecord());
+                        }
+                    }
                 }
-            });
-        }
+               );
+
     }
 }
