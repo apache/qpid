@@ -30,7 +30,6 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 @ManagedObject( defaultType = "broker" )
 public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventLoggerProvider, StatisticsGatherer
@@ -177,11 +176,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     Collection<KeyStore<?>> getKeyStores();
 
     Collection<TrustStore<?>> getTrustStores();
-
-    /*
-     * TODO: Remove this method. Eventually the broker will become a registry.
-     */
-    VirtualHostRegistry getVirtualHostRegistry();
 
     TaskExecutor getTaskExecutor();
 

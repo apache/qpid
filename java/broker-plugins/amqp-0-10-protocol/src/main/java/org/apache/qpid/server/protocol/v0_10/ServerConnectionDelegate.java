@@ -44,6 +44,7 @@ import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -203,7 +204,8 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             vhostName = "";
         }
-        vhost = _broker.getVirtualHostRegistry().getVirtualHost(vhostName);
+
+        vhost = ((AmqpPort)sconn.getPort()).getVirtualHost(vhostName);
 
 
 

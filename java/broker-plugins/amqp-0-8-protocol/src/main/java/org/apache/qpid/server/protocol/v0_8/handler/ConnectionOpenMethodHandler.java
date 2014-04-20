@@ -30,6 +30,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionOpenBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -72,7 +73,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             virtualHostName = body.getVirtualHost() == null ? null : String.valueOf(body.getVirtualHost());
         }
 
-        VirtualHostImpl virtualHost = stateManager.getVirtualHostRegistry().getVirtualHost(virtualHostName);
+        VirtualHostImpl virtualHost = ((AmqpPort)stateManager.getProtocolSession().getPort()).getVirtualHost(virtualHostName);
 
         if (virtualHost == null)
         {

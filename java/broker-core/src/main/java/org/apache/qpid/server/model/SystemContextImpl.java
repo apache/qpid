@@ -84,121 +84,138 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     }
 
     @Override
-    public void resolveObjects(ConfiguredObjectRecord... records)
+    public void resolveObjects(final ConfiguredObjectRecord... records)
     {
-
-        ConfiguredObjectFactory factory = getObjectFactory();
-
-        Map<UUID, ConfiguredObject<?>> resolvedObjects = new HashMap<UUID, ConfiguredObject<?>>();
-        resolvedObjects.put(getId(), this);
-
-        Collection<ConfiguredObjectRecord> recordsWithUnresolvedParents = new ArrayList<ConfiguredObjectRecord>(Arrays.asList(records));
-        Collection<UnresolvedConfiguredObject<? extends ConfiguredObject>> recordsWithUnresolvedDependencies =
-                new ArrayList<UnresolvedConfiguredObject<? extends ConfiguredObject>>();
-
-        boolean updatesMade;
-
-        do
+        runTask(new TaskExecutor.VoidTask()
         {
-            updatesMade = false;
-            Iterator<ConfiguredObjectRecord> iter = recordsWithUnresolvedParents.iterator();
-            while (iter.hasNext())
+            @Override
+            public void execute()
             {
-                ConfiguredObjectRecord record = iter.next();
-                Collection<ConfiguredObject<?>> parents = new ArrayList<ConfiguredObject<?>>();
-                boolean foundParents = true;
-                for (ConfiguredObjectRecord parent : record.getParents().values())
+
+
+                ConfiguredObjectFactory factory = getObjectFactory();
+
+                Map<UUID, ConfiguredObject<?>> resolvedObjects = new HashMap<UUID, ConfiguredObject<?>>();
+                resolvedObjects.put(getId(), SystemContextImpl.this);
+
+                Collection<ConfiguredObjectRecord> recordsWithUnresolvedParents =
+                        new ArrayList<ConfiguredObjectRecord>(Arrays.asList(records));
+                Collection<UnresolvedConfiguredObject<? extends ConfiguredObject>> recordsWithUnresolvedDependencies =
+                        new ArrayList<UnresolvedConfiguredObject<? extends ConfiguredObject>>();
+
+                boolean updatesMade;
+
+                do
                 {
-                    if (!resolvedObjects.containsKey(parent.getId()))
+                    updatesMade = false;
+                    Iterator<ConfiguredObjectRecord> iter = recordsWithUnresolvedParents.iterator();
+                    while (iter.hasNext())
                     {
-                        foundParents = false;
-                        break;
-                    }
-                    else
-                    {
-                        parents.add(resolvedObjects.get(parent.getId()));
-                    }
-                }
-                if (foundParents)
-                {
-                    iter.remove();
-                    UnresolvedConfiguredObject<? extends ConfiguredObject> recovered =
-                            factory.recover(record, parents.toArray(new ConfiguredObject<?>[parents.size()]));
-                    Collection<ConfiguredObjectDependency<?>> dependencies =
-                            recovered.getUnresolvedDependencies();
-                    if (dependencies.isEmpty())
-                    {
-                        updatesMade = true;
-                        ConfiguredObject<?> resolved = recovered.resolve();
-                        resolvedObjects.put(resolved.getId(), resolved);
-                    }
-                    else
-                    {
-                        recordsWithUnresolvedDependencies.add(recovered);
-                    }
-                }
-
-            }
-
-            Iterator<UnresolvedConfiguredObject<? extends ConfiguredObject>> unresolvedIter =
-                    recordsWithUnresolvedDependencies.iterator();
-
-            while(unresolvedIter.hasNext())
-            {
-                UnresolvedConfiguredObject<? extends ConfiguredObject> unresolvedObject = unresolvedIter.next();
-                Collection<ConfiguredObjectDependency<?>> dependencies =
-                        new ArrayList<ConfiguredObjectDependency<?>>(unresolvedObject.getUnresolvedDependencies());
-
-                for(ConfiguredObjectDependency dependency : dependencies)
-                {
-                    if(dependency instanceof ConfiguredObjectIdDependency)
-                    {
-                        UUID id = ((ConfiguredObjectIdDependency)dependency).getId();
-                        if(resolvedObjects.containsKey(id))
+                        ConfiguredObjectRecord record = iter.next();
+                        Collection<ConfiguredObject<?>> parents = new ArrayList<ConfiguredObject<?>>();
+                        boolean foundParents = true;
+                        for (ConfiguredObjectRecord parent : record.getParents().values())
                         {
-                            dependency.resolve(resolvedObjects.get(id));
-                        }
-                    }
-                    else if(dependency instanceof ConfiguredObjectNameDependency)
-                    {
-                        ConfiguredObject<?> dependentObject = null;
-                        for(ConfiguredObject<?> parent : unresolvedObject.getParents())
-                        {
-                            dependentObject = parent.findConfiguredObject(dependency.getCategoryClass(), ((ConfiguredObjectNameDependency)dependency).getName());
-                            if(dependentObject != null)
+                            if (!resolvedObjects.containsKey(parent.getId()))
                             {
+                                foundParents = false;
                                 break;
                             }
+                            else
+                            {
+                                parents.add(resolvedObjects.get(parent.getId()));
+                            }
                         }
-                        if(dependentObject != null)
+                        if (foundParents)
                         {
-                            dependency.resolve(dependentObject);
+                            iter.remove();
+                            UnresolvedConfiguredObject<? extends ConfiguredObject> recovered =
+                                    factory.recover(record, parents.toArray(new ConfiguredObject<?>[parents.size()]));
+                            Collection<ConfiguredObjectDependency<?>> dependencies =
+                                    recovered.getUnresolvedDependencies();
+                            if (dependencies.isEmpty())
+                            {
+                                updatesMade = true;
+                                ConfiguredObject<?> resolved = recovered.resolve();
+                                resolvedObjects.put(resolved.getId(), resolved);
+                            }
+                            else
+                            {
+                                recordsWithUnresolvedDependencies.add(recovered);
+                            }
+                        }
+
+                    }
+
+                    Iterator<UnresolvedConfiguredObject<? extends ConfiguredObject>> unresolvedIter =
+                            recordsWithUnresolvedDependencies.iterator();
+
+                    while (unresolvedIter.hasNext())
+                    {
+                        UnresolvedConfiguredObject<? extends ConfiguredObject> unresolvedObject = unresolvedIter.next();
+                        Collection<ConfiguredObjectDependency<?>> dependencies =
+                                new ArrayList<ConfiguredObjectDependency<?>>(unresolvedObject.getUnresolvedDependencies());
+
+                        for (ConfiguredObjectDependency dependency : dependencies)
+                        {
+                            if (dependency instanceof ConfiguredObjectIdDependency)
+                            {
+                                UUID id = ((ConfiguredObjectIdDependency) dependency).getId();
+                                if (resolvedObjects.containsKey(id))
+                                {
+                                    dependency.resolve(resolvedObjects.get(id));
+                                }
+                            }
+                            else if (dependency instanceof ConfiguredObjectNameDependency)
+                            {
+                                ConfiguredObject<?> dependentObject = null;
+                                for (ConfiguredObject<?> parent : unresolvedObject.getParents())
+                                {
+                                    dependentObject = parent.findConfiguredObject(dependency.getCategoryClass(),
+                                                                                  ((ConfiguredObjectNameDependency) dependency)
+                                                                                          .getName()
+                                                                                 );
+                                    if (dependentObject != null)
+                                    {
+                                        break;
+                                    }
+                                }
+                                if (dependentObject != null)
+                                {
+                                    dependency.resolve(dependentObject);
+                                }
+                            }
+                            else
+                            {
+                                throw new ServerScopedRuntimeException("Unknown dependency type "
+                                                                       + dependency.getClass()
+                                        .getSimpleName());
+                            }
+                        }
+                        if (unresolvedObject.getUnresolvedDependencies().isEmpty())
+                        {
+                            updatesMade = true;
+                            unresolvedIter.remove();
+                            ConfiguredObject<?> resolved = unresolvedObject.resolve();
+                            resolvedObjects.put(resolved.getId(), resolved);
                         }
                     }
-                    else
-                    {
-                        throw new ServerScopedRuntimeException("Unknown dependency type " + dependency.getClass().getSimpleName());
-                    }
-                }
-                if(unresolvedObject.getUnresolvedDependencies().isEmpty())
+
+                } while (updatesMade && !(recordsWithUnresolvedDependencies.isEmpty()
+                                          && recordsWithUnresolvedParents.isEmpty()));
+
+                if (!recordsWithUnresolvedDependencies.isEmpty())
                 {
-                    updatesMade = true;
-                    unresolvedIter.remove();
-                    ConfiguredObject<?> resolved = unresolvedObject.resolve();
-                    resolvedObjects.put(resolved.getId(), resolved);
+                    throw new IllegalArgumentException("Cannot resolve some objects: "
+                                                       + recordsWithUnresolvedDependencies);
+                }
+                if (!recordsWithUnresolvedParents.isEmpty())
+                {
+                    throw new IllegalArgumentException("Cannot resolve object because their parents cannot be found"
+                                                       + recordsWithUnresolvedParents);
                 }
             }
-
-        } while(updatesMade && !(recordsWithUnresolvedDependencies.isEmpty() && recordsWithUnresolvedParents.isEmpty()));
-
-        if(!recordsWithUnresolvedDependencies.isEmpty())
-        {
-            throw new IllegalArgumentException("Cannot resolve some objects: " + recordsWithUnresolvedDependencies);
-        }
-        if(!recordsWithUnresolvedParents.isEmpty())
-        {
-            throw new IllegalArgumentException("Cannot resolve object because their parents cannot be found" + recordsWithUnresolvedParents);
-        }
+        });
     }
 
     @Override

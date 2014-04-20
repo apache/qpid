@@ -49,10 +49,26 @@ public class TaskExecutor
     private final AtomicReference<State> _state;
     private volatile ExecutorService _executor;
 
-    public static interface Task<X> extends Callable<X>
+    public static interface Task<X>
     {
-        X call();
+        X execute();
     }
+
+    public static interface VoidTask
+    {
+        void execute();
+    }
+
+    public static interface TaskWithException<X,E extends Exception>
+    {
+        X execute() throws E;
+    }
+
+    public static interface VoidTaskWithException<E extends Exception>
+    {
+        void execute() throws E;
+    }
+
 
     public TaskExecutor()
     {
@@ -142,20 +158,109 @@ public class TaskExecutor
         return future;
     }
 
-    public void submitAndWait(final Runnable task) throws CancellationException
+    public void run(final VoidTask task) throws CancellationException
     {
-        submitAndWait(new Task<Void>()
+        run(new Task<Void>()
         {
             @Override
-            public Void call()
+            public Void execute()
             {
-                task.run();
+                task.execute();
                 return null;
             }
         });
     }
 
-    public <T> T submitAndWait(Task<T> task) throws CancellationException
+    private static class ExceptionTaskWrapper<T, E extends Exception> implements Task<T>
+    {
+        private final TaskWithException<T,E> _underlying;
+        private E _exception;
+
+        private ExceptionTaskWrapper(final TaskWithException<T, E> underlying)
+        {
+            _underlying = underlying;
+        }
+
+
+        @Override
+        public T execute()
+        {
+            try
+            {
+                return _underlying.execute();
+            }
+            catch (Exception e)
+            {
+                _exception = (E) e;
+                return null;
+            }
+        }
+
+        E getException()
+        {
+            return _exception;
+        }
+    }
+
+
+    private static class ExceptionVoidTaskWrapper<E extends Exception> implements Task<Void>
+    {
+        private final VoidTaskWithException<E> _underlying;
+        private E _exception;
+
+        private ExceptionVoidTaskWrapper(final VoidTaskWithException<E> underlying)
+        {
+            _underlying = underlying;
+        }
+
+
+        @Override
+        public Void execute()
+        {
+            try
+            {
+                _underlying.execute();
+
+            }
+            catch (Exception e)
+            {
+                _exception = (E) e;
+            }
+            return null;
+        }
+
+        E getException()
+        {
+            return _exception;
+        }
+    }
+
+    public <T, E extends Exception> T run(TaskWithException<T,E> task) throws CancellationException, E
+    {
+        ExceptionTaskWrapper<T,E> wrapper = new ExceptionTaskWrapper<T, E>(task);
+        T result = run(wrapper);
+        if(wrapper.getException() != null)
+        {
+            throw wrapper.getException();
+        }
+        else
+        {
+            return result;
+        }
+    }
+
+
+    public <E extends Exception> void run(VoidTaskWithException<E> task) throws CancellationException, E
+    {
+        ExceptionVoidTaskWrapper<E> wrapper = new ExceptionVoidTaskWrapper<E>(task);
+        run(wrapper);
+        if(wrapper.getException() != null)
+        {
+            throw wrapper.getException();
+        }
+    }
+
+    public <T> T run(Task<T> task) throws CancellationException
     {
         try
         {
@@ -207,7 +312,7 @@ public class TaskExecutor
         {
             LOGGER.debug("Performing task " + userTask);
         }
-        T result = userTask.call();
+        T result = userTask.execute();
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Task " + userTask + " is performed successfully with result:" + result);
@@ -215,7 +320,7 @@ public class TaskExecutor
         return result;
     }
 
-    private class CallableWrapper<T> implements Task<T>
+    private class CallableWrapper<T> implements Callable<T>
     {
         private Task<T> _userTask;
         private Subject _contextSubject;

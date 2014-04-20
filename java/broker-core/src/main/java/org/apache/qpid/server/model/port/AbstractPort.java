@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -420,7 +421,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
             //ManagementMode needs this relaxed to allow its overriding management ports to be inserted.
 
             //Enforce only a single port of each management protocol, as the plugins will only use one.
-            Collection<Port<?>> existingPorts = broker.getPorts();
+            Collection<Port<?>> existingPorts = new HashSet<Port<?>>(broker.getPorts());
             existingPorts.remove(this);
 
             for (Port<?> existingPort : existingPorts)

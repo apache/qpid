@@ -24,9 +24,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -59,7 +57,6 @@ import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.util.SystemUtils;
 
 public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, ConfigurationChangeListener, StatisticsGatherer, StatisticsGatherer.Source
@@ -77,18 +74,10 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
 
     private EventLogger _eventLogger;
-    private final VirtualHostRegistry _virtualHostRegistry;
+    //private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
 
-    private final Map<String, VirtualHost<?,?,?>> _vhostAdapters = new HashMap<String, VirtualHost<?,?,?>>();
-    private final Map<UUID, Port<?>> _portAdapters = new HashMap<UUID, Port<?>>();
     private final Map<Port, Integer> _stillInUsePortNumbers = new HashMap<Port, Integer>();
-    private final Map<UUID, AuthenticationProvider<?>> _authenticationProviders = new HashMap<UUID, AuthenticationProvider<?>>();
-    private final Map<String, GroupProvider<?>> _groupProviders = new HashMap<String, GroupProvider<?>>();
-    private final Map<UUID, ConfiguredObject<?>> _plugins = new HashMap<UUID, ConfiguredObject<?>>();
-    private final Map<String, KeyStore<?>> _keyStores = new HashMap<String, KeyStore<?>>();
-    private final Map<String, TrustStore<?>> _trustStores = new HashMap<String, TrustStore<?>>();
-    private final Map<UUID, AccessControlProvider<?>> _accessControlProviders = new HashMap<UUID, AccessControlProvider<?>>();
 
     private final SecurityManager _securityManager;
 
@@ -122,7 +111,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
               parent.getTaskExecutor());
 
         _objectFactory = parent.getObjectFactory();
-        _virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());
+        //_virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());
 
         _logRecorder = parent.getLogRecorder();
         _eventLogger = parent.getEventLogger();
@@ -220,7 +209,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         {
             _managementModeAuthenticationProvider.open();
         }
-        _virtualHostRegistry.setDefaultVirtualHostName(getDefaultVirtualHost());
 
         for(KeyStore<?> keyStore : getChildren(KeyStore.class))
         {
@@ -375,26 +363,20 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     public Collection<VirtualHost<?,?,?>> getVirtualHosts()
     {
-        synchronized(_vhostAdapters)
-        {
-            return new ArrayList<VirtualHost<?,?,?>>(_vhostAdapters.values());
-        }
+        Collection children = getChildren(VirtualHost.class);
+        return children;
     }
 
     public Collection<Port<?>> getPorts()
     {
-        synchronized (_portAdapters)
-        {
-            return new ArrayList<Port<?>>(_portAdapters.values());
-        }
+        Collection children = getChildren(Port.class);
+        return children;
     }
 
     public Collection<AuthenticationProvider<?>> getAuthenticationProviders()
     {
-        synchronized (_authenticationProviders)
-        {
-            return new ArrayList<AuthenticationProvider<?>>(_authenticationProviders.values());
-        }
+        Collection children = getChildren(AuthenticationProvider.class);
+        return children;
     }
 
     public AuthenticationProvider<?> findAuthenticationProviderByName(String authenticationProviderName)
@@ -403,40 +385,24 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         {
             return _managementModeAuthenticationProvider;
         }
-        Collection<AuthenticationProvider<?>> providers = getAuthenticationProviders();
-        for (AuthenticationProvider<?> authenticationProvider : providers)
-        {
-            if (authenticationProvider.getName().equals(authenticationProviderName))
-            {
-                return authenticationProvider;
-            }
-        }
-        return null;
+        return getChildByName(AuthenticationProvider.class, authenticationProviderName);
     }
 
     public KeyStore<?> findKeyStoreByName(String keyStoreName)
     {
-        synchronized(_keyStores)
-        {
-            return _keyStores.get(keyStoreName);
-        }
+        return getChildByName(KeyStore.class, keyStoreName);
     }
 
     public TrustStore<?> findTrustStoreByName(String trustStoreName)
     {
-        synchronized(_trustStores)
-        {
-            return _trustStores.get(trustStoreName);
-        }
+        return getChildByName(TrustStore.class, trustStoreName);
     }
 
     @Override
     public Collection<GroupProvider<?>> getGroupProviders()
     {
-        synchronized (_groupProviders)
-        {
-            return new ArrayList<GroupProvider<?>>(_groupProviders.values());
-        }
+        Collection children = getChildren(GroupProvider.class);
+        return children;
     }
 
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
@@ -462,10 +428,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private boolean deleteVirtualHost(final VirtualHost vhost) throws AccessControlException, IllegalStateException
     {
-        synchronized (_vhostAdapters)
-        {
-            _vhostAdapters.remove(vhost.getName());
-        }
         vhost.removeChangeListener(this);
         return true;
     }
@@ -475,18 +437,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     {
         return null;  //TODO
     }
-
-    public long getTimeToLive()
-    {
-        return 0;
-    }
-
-    public long setTimeToLive(final long expected, final long desired)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
 
     @Override
     public long getBytesIn()
@@ -514,40 +464,48 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> C addChild(final Class<C> childClass, final Map<String, Object> attributes, final ConfiguredObject... otherParents)
     {
-        if(childClass == VirtualHost.class)
+        return runTask( new TaskExecutor.Task<C>()
         {
-            return (C) createVirtualHost(attributes);
-        }
-        else if(childClass == Port.class)
-        {
-            return (C) createPort(attributes);
-        }
-        else if(childClass == AccessControlProvider.class)
-        {
-            return (C) createAccessControlProvider(attributes);
-        }
-        else if(childClass == AuthenticationProvider.class)
-        {
-            return (C) createAuthenticationProvider(attributes);
-        }
-        else if(childClass == KeyStore.class)
-        {
-            return (C) createKeyStore(attributes);
-        }
-        else if(childClass == TrustStore.class)
-        {
-            return (C) createTrustStore(attributes);
-        }
-        else if(childClass == GroupProvider.class)
-        {
-            return (C) createGroupProvider(attributes);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
-        }
+            @Override
+            public C execute()
+            {
+                if (childClass == VirtualHost.class)
+                {
+                    return (C) createVirtualHost(attributes);
+                }
+                else if (childClass == Port.class)
+                {
+                    return (C) createPort(attributes);
+                }
+                else if (childClass == AccessControlProvider.class)
+                {
+                    return (C) createAccessControlProvider(attributes);
+                }
+                else if (childClass == AuthenticationProvider.class)
+                {
+                    return (C) createAuthenticationProvider(attributes);
+                }
+                else if (childClass == KeyStore.class)
+                {
+                    return (C) createKeyStore(attributes);
+                }
+                else if (childClass == TrustStore.class)
+                {
+                    return (C) createTrustStore(attributes);
+                }
+                else if (childClass == GroupProvider.class)
+                {
+                    return (C) createGroupProvider(attributes);
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
+                }
+            }
+        });
+
     }
 
     /**
@@ -569,101 +527,77 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return port;
     }
 
-    private void addPort(Port<?> port)
+    private void addPort(final Port<?> port)
     {
-        synchronized (_portAdapters)
+        assert getTaskExecutor().isTaskExecutorThread();
+
+        int portNumber = port.getPort();
+        String portName = port.getName();
+
+        for (Port<?> p : getChildren(Port.class))
         {
-            int portNumber = port.getPort();
-            String portName = port.getName();
-            UUID portId = port.getId();
-
-            for(Port<?> p : _portAdapters.values())
+            if(p != port)
             {
-                if(portNumber == p.getPort())
+                if (portNumber == p.getPort())
                 {
-                    throw new IllegalConfigurationException("Can't add port " + portName + " because port number " + portNumber + " is already configured for port " + p.getName());
-                }
-
-                if(portName.equals(p.getName()))
-                {
-                    throw new IllegalConfigurationException("Can't add Port because one with name " + portName + " already exists");
-                }
-
-                if(portId.equals(p.getId()))
-                {
-                    throw new IllegalConfigurationException("Can't add Port because one with id " + portId + " already exists");
+                    throw new IllegalConfigurationException("Can't add port "
+                                                            + portName
+                                                            + " because port number "
+                                                            + portNumber
+                                                            + " is already configured for port "
+                                                            + p.getName());
                 }
             }
-
-            _portAdapters.put(port.getId(), port);
         }
+
         port.addChangeListener(this);
+
     }
 
-    private AccessControlProvider<?> createAccessControlProvider(Map<String, Object> attributes)
+    private AccessControlProvider<?> createAccessControlProvider(final Map<String, Object> attributes)
     {
-        AccessControlProvider<?> accessControlProvider;
-        synchronized (_accessControlProviders)
-        {
-            accessControlProvider = (AccessControlProvider<?>) createChild(AccessControlProvider.class, attributes);
-            addAccessControlProvider(accessControlProvider);
-        }
+        assert getTaskExecutor().isTaskExecutorThread();
 
-        boolean quiesce = isManagementMode() ;
+        AccessControlProvider<?> accessControlProvider = (AccessControlProvider<?>) createChild(AccessControlProvider.class, attributes);
+        addAccessControlProvider(accessControlProvider);
+
+        boolean quiesce = isManagementMode();
         accessControlProvider.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
 
         return accessControlProvider;
+
     }
 
-    /**
-     * @throws IllegalConfigurationException if an AuthenticationProvider with the same name already exists
-     */
-    private void addAccessControlProvider(AccessControlProvider<?> accessControlProvider)
+    private void addAccessControlProvider(final AccessControlProvider<?> accessControlProvider)
     {
-        String name = accessControlProvider.getName();
-        synchronized (_accessControlProviders)
-        {
-            if (_accessControlProviders.containsKey(accessControlProvider.getId()))
-            {
-                throw new IllegalConfigurationException("Can't add AccessControlProvider because one with id " + accessControlProvider.getId() + " already exists");
-            }
-            for (AccessControlProvider<?> provider : _accessControlProviders.values())
-            {
-                if (provider.getName().equals(name))
-                {
-                    throw new IllegalConfigurationException("Can't add AccessControlProvider because one with name " + name + " already exists");
-                }
-            }
-            _accessControlProviders.put(accessControlProvider.getId(), accessControlProvider);
-        }
+        assert getTaskExecutor().isTaskExecutorThread();
 
         accessControlProvider.addChangeListener(this);
         accessControlProvider.addChangeListener(_securityManager);
+
     }
 
     private boolean deleteAccessControlProvider(AccessControlProvider<?> accessControlProvider)
     {
-        AccessControlProvider removedAccessControlProvider;
-        synchronized (_accessControlProviders)
-        {
-            removedAccessControlProvider = _accessControlProviders.remove(accessControlProvider.getId());
-        }
+        accessControlProvider.removeChangeListener(this);
+        accessControlProvider.removeChangeListener(_securityManager);
 
-        if(removedAccessControlProvider != null)
-        {
-            removedAccessControlProvider.removeChangeListener(this);
-            removedAccessControlProvider.removeChangeListener(_securityManager);
-        }
-
-        return removedAccessControlProvider != null;
+        return true;
     }
 
-    private AuthenticationProvider createAuthenticationProvider(Map<String, Object> attributes)
+    private AuthenticationProvider createAuthenticationProvider(final Map<String, Object> attributes)
     {
-        AuthenticationProvider<?> authenticationProvider = createChild(AuthenticationProvider.class, attributes);
-        addAuthenticationProvider(authenticationProvider);
-        authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
-        return authenticationProvider;
+        return runTask(new TaskExecutor.Task<AuthenticationProvider>()
+        {
+            @Override
+            public AuthenticationProvider execute()
+            {
+                AuthenticationProvider<?> authenticationProvider = createChild(AuthenticationProvider.class, attributes);
+                addAuthenticationProvider(authenticationProvider);
+                authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+                return authenticationProvider;
+            }
+        });
     }
 
     private <X extends ConfiguredObject> X createChild(Class<X> clazz, Map<String, Object> attributes)
@@ -685,61 +619,35 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
      */
     private void addAuthenticationProvider(AuthenticationProvider<?> authenticationProvider)
     {
-        String name = authenticationProvider.getName();
-        synchronized (_authenticationProviders)
-        {
-            if (_authenticationProviders.containsKey(authenticationProvider.getId()))
-            {
-                throw new IllegalConfigurationException("Cannot add AuthenticationProvider because one with id " + authenticationProvider.getId() + " already exists");
-            }
-            for (AuthenticationProvider provider : _authenticationProviders.values())
-            {
-                if (provider.getName().equals(name))
-                {
-                    throw new IllegalConfigurationException("Cannot add AuthenticationProvider because one with name " + name + " already exists");
-                }
-            }
-            _authenticationProviders.put(authenticationProvider.getId(), authenticationProvider);
-        }
+        assert getTaskExecutor().isTaskExecutorThread();
+
         authenticationProvider.addChangeListener(this);
     }
 
-    private GroupProvider<?> createGroupProvider(Map<String, Object> attributes)
+    private GroupProvider<?> createGroupProvider(final Map<String, Object> attributes)
     {
-        GroupProvider<?> groupProvider = createChild(GroupProvider.class, attributes);
-        addGroupProvider(groupProvider);
-        groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
-        return groupProvider;
+        return runTask(new TaskExecutor.Task<GroupProvider<?>>()
+        {
+            @Override
+            public GroupProvider<?> execute()
+            {
+                GroupProvider<?> groupProvider = createChild(GroupProvider.class, attributes);
+                addGroupProvider(groupProvider);
+                groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+                return groupProvider;
+            }
+        });
     }
 
     private void addGroupProvider(GroupProvider<?> groupProvider)
     {
-        synchronized (_groupProviders)
-        {
-            String name = groupProvider.getName();
-            if(_groupProviders.containsKey(name))
-            {
-                throw new IllegalConfigurationException("Cannot add GroupProvider because one with name " + name + " already exists");
-            }
-            _groupProviders.put(name, groupProvider);
-        }
         groupProvider.addChangeListener(this);
     }
 
     private boolean deleteGroupProvider(GroupProvider groupProvider)
     {
-        GroupProvider removedGroupProvider = null;
-        synchronized (_groupProviders)
-        {
-            removedGroupProvider = _groupProviders.remove(groupProvider.getName());
-        }
-
-        if(removedGroupProvider != null)
-        {
-            removedGroupProvider.removeChangeListener(this);
-        }
-
-        return removedGroupProvider != null;
+        groupProvider.removeChangeListener(this);
+        return true;
     }
 
     private KeyStore createKeyStore(Map<String, Object> attributes)
@@ -760,58 +668,25 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private void addKeyStore(KeyStore keyStore)
     {
-        synchronized (_keyStores)
-        {
-            if(_keyStores.containsKey(keyStore.getName()))
-            {
-                throw new IllegalConfigurationException("Can't add KeyStore because one with name " + keyStore.getName() + " already exists");
-            }
-            _keyStores.put(keyStore.getName(), keyStore);
-        }
         keyStore.addChangeListener(this);
     }
 
-    private boolean deleteKeyStore(KeyStore object)
+    private boolean deleteKeyStore(KeyStore keyStore)
     {
-        synchronized(_keyStores)
-        {
-            String name = object.getName();
-            KeyStore removedKeyStore = _keyStores.remove(name);
-            if(removedKeyStore != null)
-            {
-                removedKeyStore.removeChangeListener(this);
-            }
-
-            return removedKeyStore != null;
-        }
+        keyStore.removeChangeListener(this);
+        return true;
     }
 
     private void addTrustStore(TrustStore trustStore)
     {
-        synchronized (_trustStores)
-        {
-            if(_trustStores.containsKey(trustStore.getName()))
-            {
-                throw new IllegalConfigurationException("Can't add TrustStore because one with name " + trustStore.getName() + " already exists");
-            }
-            _trustStores.put(trustStore.getName(), trustStore);
-        }
         trustStore.addChangeListener(this);
     }
 
-    private boolean deleteTrustStore(TrustStore object)
+    private boolean deleteTrustStore(TrustStore trustStore)
     {
-        synchronized(_trustStores)
-        {
-            String name = object.getName();
-            TrustStore removedTrustStore = _trustStores.remove(name);
-            if(removedTrustStore != null)
-            {
-                removedTrustStore.removeChangeListener(this);
-            }
+        trustStore.removeChangeListener(this);
+        return true;
 
-            return removedTrustStore != null;
-        }
     }
 
     @Override
@@ -824,56 +699,36 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return super.getAttribute(name);
     }
 
-    private boolean deletePort(State oldState, Port portAdapter)
+    private boolean deletePort(State oldState, Port port)
     {
-        Port<?> removedPort;
-        synchronized (_portAdapters)
+        port.removeChangeListener(this);
+
+        // TODO - this seems suspicious, wouldn't it make more sense to not allow deletion from active
+        // (must be stopped first) or something?
+
+        if(oldState == State.ACTIVE)
         {
-            removedPort = _portAdapters.remove(portAdapter.getId());
+            //Record the originally used port numbers of previously-active ports being deleted, to ensure
+            //when creating new ports we don't try to re-bind a port number that we are currently still using
+            recordPreviouslyUsedPortNumberIfNecessary(port, port.getPort());
         }
 
-        if (removedPort != null)
-        {
-            removedPort.removeChangeListener(this);
 
-            if(oldState == State.ACTIVE)
-            {
-                //Record the originally used port numbers of previously-active ports being deleted, to ensure
-                //when creating new ports we don't try to re-bind a port number that we are currently still using
-                recordPreviouslyUsedPortNumberIfNecessary(removedPort, removedPort.getPort());
-            }
-        }
-
-        return removedPort != null;
+        return port != null;
     }
 
     private boolean deleteAuthenticationProvider(AuthenticationProvider<?> authenticationProvider)
     {
-        AuthenticationProvider removedAuthenticationProvider;
-        synchronized (_authenticationProviders)
+        if(authenticationProvider != null)
         {
-            removedAuthenticationProvider = _authenticationProviders.remove(authenticationProvider.getId());
+            authenticationProvider.removeChangeListener(this);
         }
-
-        if(removedAuthenticationProvider != null)
-        {
-            removedAuthenticationProvider.removeChangeListener(this);
-        }
-
-        return removedAuthenticationProvider != null;
+        return true;
     }
 
     private void addVirtualHost(VirtualHost<?,?,?> virtualHost)
     {
-        synchronized (_vhostAdapters)
-        {
-            String name = virtualHost.getName();
-            if (_vhostAdapters.containsKey(name))
-            {
-                throw new IllegalConfigurationException("Virtual host with name " + name + " is already specified!");
-            }
-            _vhostAdapters.put(name, virtualHost);
-        }
+
         virtualHost.addChangeListener(this);
     }
 
@@ -883,16 +738,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         if (desiredState == State.ACTIVE)
         {
             initialiseStatisticsReporting();
-            changeState(_groupProviders, currentState, State.ACTIVE, false);
-            changeState(_authenticationProviders, currentState, State.ACTIVE, false);
-            changeState(_accessControlProviders, currentState, State.ACTIVE, false);
-
-
-            changeState(_vhostAdapters, currentState, State.ACTIVE, false);
-
-            changeState(_portAdapters, currentState,State.ACTIVE, false);
-            changeState(_plugins, currentState,State.ACTIVE, false);
-
+            changeChildState(currentState, State.ACTIVE, false);
             if (isManagementMode())
             {
                 _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
@@ -908,49 +754,53 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                 _reportingTimer.cancel();
             }
 
-            changeState(_plugins, currentState,State.STOPPED, true);
-            changeState(_portAdapters, currentState, State.STOPPED, true);
-            changeState(_vhostAdapters,currentState, State.STOPPED, true);
-            changeState(_authenticationProviders, currentState, State.STOPPED, true);
-            changeState(_groupProviders, currentState, State.STOPPED, true);
-            _virtualHostRegistry.close();
+            changeChildState(currentState, State.STOPPED, true);
             return true;
         }
         return false;
     }
 
-    private void changeState(Map<?, ? extends ConfiguredObject> configuredObjectMap, State currentState, State desiredState, boolean swallowException)
+    private void changeChildState(final State currentState,
+                                  final State desiredState,
+                                  final boolean swallowException)
     {
-        synchronized(configuredObjectMap)
+        runTask(new TaskExecutor.VoidTask()
         {
-            Collection<? extends ConfiguredObject> adapters = configuredObjectMap.values();
-            for (ConfiguredObject configuredObject : adapters)
+            @Override
+            public void execute()
             {
-                if (State.ACTIVE.equals(desiredState) && State.QUIESCED.equals(configuredObject.getState()))
+                for (Class<? extends ConfiguredObject> clazz : Model.getInstance().getChildTypes(getCategoryClass()))
                 {
-                    if (LOGGER.isDebugEnabled())
+                    for (ConfiguredObject configuredObject : getChildren(clazz))
                     {
-                        LOGGER.debug(configuredObject + " cannot be activated as it is " +State.QUIESCED);
-                    }
-                    continue;
-                }
-                try
-                {
-                    configuredObject.setDesiredState(currentState, desiredState);
-                }
-                catch(RuntimeException e)
-                {
-                    if (swallowException)
-                    {
-                        LOGGER.error("Failed to stop " + configuredObject, e);
-                    }
-                    else
-                    {
-                        throw e;
+                        if (State.ACTIVE.equals(desiredState) && State.QUIESCED.equals(configuredObject.getState()))
+                        {
+                            if (LOGGER.isDebugEnabled())
+                            {
+                                LOGGER.debug(configuredObject + " cannot be activated as it is " + State.QUIESCED);
+                            }
+                            continue;
+                        }
+                        try
+                        {
+                            configuredObject.setDesiredState(currentState, desiredState);
+                        }
+                        catch (RuntimeException e)
+                        {
+                            if (swallowException)
+                            {
+                                LOGGER.error("Failed to stop " + configuredObject, e);
+                            }
+                            else
+                            {
+                                throw e;
+                            }
+                        }
                     }
                 }
             }
-        }
+        });
+
     }
 
     @Override
@@ -1023,24 +873,14 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private void addPlugin(ConfiguredObject<?> plugin)
     {
-        synchronized(_plugins)
-        {
-            if (_plugins.containsKey(plugin.getId()))
-            {
-                throw new IllegalConfigurationException("Plugin with id '" + plugin.getId() + "' is already registered!");
-            }
-            _plugins.put(plugin.getId(), plugin);
-        }
         plugin.addChangeListener(this);
     }
 
 
     private Collection<ConfiguredObject<?>> getPlugins()
     {
-        synchronized(_plugins)
-        {
-            return Collections.unmodifiableCollection(_plugins.values());
-        }
+        Collection children = getChildren(Plugin.class);
+        return children;
     }
 
     @Override
@@ -1058,7 +898,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public VirtualHost findVirtualHostByName(String name)
     {
-        return _vhostAdapters.get(name);
+        return getChildByName(VirtualHost.class, name);
     }
 
     @Override
@@ -1094,31 +934,15 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public Collection<KeyStore<?>> getKeyStores()
     {
-        synchronized(_keyStores)
-        {
-            return Collections.unmodifiableCollection(_keyStores.values());
-        }
+        Collection children = getChildren(KeyStore.class);
+        return children;
     }
 
     @Override
     public Collection<TrustStore<?>> getTrustStores()
     {
-        synchronized(_trustStores)
-        {
-            return Collections.unmodifiableCollection(_trustStores.values());
-        }
-    }
-
-    @Override
-    public VirtualHostRegistry getVirtualHostRegistry()
-    {
-        return _virtualHostRegistry;
-    }
-
-    @Override
-    public TaskExecutor getTaskExecutor()
-    {
-        return super.getTaskExecutor();
+        Collection children = getChildren(TrustStore.class);
+        return children;
     }
 
     @Override
@@ -1149,10 +973,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public Collection<AccessControlProvider<?>> getAccessControlProviders()
     {
-        synchronized (_accessControlProviders)
-        {
-            return new ArrayList<AccessControlProvider<?>>(_accessControlProviders.values());
-        }
+        Collection children = getChildren(AccessControlProvider.class);
+        return children;
     }
 
     private void recordPreviouslyUsedPortNumberIfNecessary(Port port, Integer portNumber)
@@ -1232,9 +1054,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         _messagesReceived.reset();
         _dataReceived.reset();
 
-        for (VirtualHostImpl vhost : _virtualHostRegistry.getVirtualHosts())
+        for (VirtualHost vhost : getVirtualHosts())
         {
-            vhost.resetStatistics();
+            if(vhost instanceof VirtualHostImpl)
+            {
+                ((VirtualHostImpl) vhost).resetStatistics();
+            }
         }
     }
 
@@ -1285,27 +1110,37 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                 _eventLogger.message(BrokerMessages.STATS_MSGS(RECEIVED,
                                                                _messagesReceived.getPeak(),
                                                                _messagesReceived.getTotal()));
-                Collection<VirtualHostImpl> hosts = _virtualHostRegistry.getVirtualHosts();
+                Collection<VirtualHost<?,?,?>> hosts = getVirtualHosts();
 
-                if (hosts.size() > 1)
-                {
-                    for (VirtualHostImpl vhost : hosts)
+                    for (VirtualHost vhost : hosts)
                     {
-                        String name = vhost.getName();
-                        StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
-                        StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
-                        StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
-                        StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
-                        EventLogger logger = vhost.getEventLogger();
-                        logger.message(VirtualHostMessages.STATS_DATA(name,
-                                                                      DELIVERED,
-                                                                      dataDelivered.getPeak() / 1024.0,
-                                                                      dataDelivered.getTotal()));
-                        logger.message(VirtualHostMessages.STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
-                        logger.message(VirtualHostMessages.STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
-                        logger.message(VirtualHostMessages.STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
+                        if(vhost instanceof VirtualHostImpl)
+                        {
+                            VirtualHostImpl vhostImpl = (VirtualHostImpl) vhost;
+                            String name = vhost.getName();
+                            StatisticsCounter dataDelivered = vhostImpl.getDataDeliveryStatistics();
+                            StatisticsCounter messagesDelivered = vhostImpl.getMessageDeliveryStatistics();
+                            StatisticsCounter dataReceived = vhostImpl.getDataReceiptStatistics();
+                            StatisticsCounter messagesReceived = vhostImpl.getMessageReceiptStatistics();
+                            EventLogger logger = vhostImpl.getEventLogger();
+                            logger.message(VirtualHostMessages.STATS_DATA(name,
+                                                                          DELIVERED,
+                                                                          dataDelivered.getPeak() / 1024.0,
+                                                                          dataDelivered.getTotal()));
+                            logger.message(VirtualHostMessages.STATS_MSGS(name,
+                                                                          DELIVERED,
+                                                                          messagesDelivered.getPeak(),
+                                                                          messagesDelivered.getTotal()));
+                            logger.message(VirtualHostMessages.STATS_DATA(name,
+                                                                          RECEIVED,
+                                                                          dataReceived.getPeak() / 1024.0,
+                                                                          dataReceived.getTotal()));
+                            logger.message(VirtualHostMessages.STATS_MSGS(name,
+                                                                          RECEIVED,
+                                                                          messagesReceived.getPeak(),
+                                                                          messagesReceived.getTotal()));
+                        }
                     }
-                }
 
                 if (_reset)
                 {

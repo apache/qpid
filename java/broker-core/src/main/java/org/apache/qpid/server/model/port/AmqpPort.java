@@ -24,6 +24,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 @ManagedObject( category = false, type = "AMQP")
 public interface AmqpPort<X extends AmqpPort<X>> extends Port<X>
@@ -53,4 +54,6 @@ public interface AmqpPort<X extends AmqpPort<X>> extends Port<X>
 
     @ManagedAttribute( automate = true, mandatory = true )
     AuthenticationProvider getAuthenticationProvider();
+
+    VirtualHostImpl getVirtualHost(String name);
 }

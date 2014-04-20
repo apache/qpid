@@ -38,7 +38,6 @@ import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.TopicExchange;
-import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.Binding;
@@ -61,7 +60,6 @@ import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -180,7 +178,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         try
         {
-            _virtualHost = (AbstractVirtualHost<?>) BrokerTestHelper.createVirtualHost(new VirtualHostRegistry(new EventLogger()), _attributes);
+            _virtualHost = (AbstractVirtualHost<?>) BrokerTestHelper.createVirtualHost(_attributes);
         }
         catch (Exception e)
         {

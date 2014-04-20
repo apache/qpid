@@ -49,6 +49,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
     private Broker _broker;
     private String _user1, _user2;
     private File _preferencesFile;
+    private TaskExecutor _taskExecutor;
 
     protected void setUp() throws Exception
     {
@@ -60,9 +61,10 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         _preferencesFile = TestFileUtils.createTempFile(this, ".prefs.json", TEST_PREFERENCES);
 
         _broker = BrokerTestHelper.createBrokerMock();
-        TaskExecutor taskExecutor = mock(TaskExecutor.class);
-        when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
-        when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
+        when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
+
         when(_authenticationProvider.getParent(Broker.class)).thenReturn(_broker);
     }
 
@@ -76,6 +78,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
             }
             BrokerTestHelper.tearDown();
             _preferencesFile.delete();
+            _taskExecutor.stopImmediately();
         }
         finally
         {

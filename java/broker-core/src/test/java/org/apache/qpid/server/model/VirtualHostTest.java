@@ -43,6 +43,7 @@ public class VirtualHostTest extends QpidTestCase
     private Broker _broker;
     private StatisticsGatherer _statisticsGatherer;
     private RecovererProvider _recovererProvider;
+    private TaskExecutor _taskExecutor;
 
     @Override
     protected void setUp() throws Exception
@@ -50,12 +51,20 @@ public class VirtualHostTest extends QpidTestCase
         super.setUp();
 
         _broker = BrokerTestHelper.createBrokerMock();
-        TaskExecutor taskExecutor = mock(TaskExecutor.class);
-        when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
-        when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
+        when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
         _recovererProvider = mock(RecovererProvider.class);
         _statisticsGatherer = mock(StatisticsGatherer.class);
+    }
+
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        _taskExecutor.stopImmediately();
+        super.tearDown();
     }
 
     public void testInitialisingState()

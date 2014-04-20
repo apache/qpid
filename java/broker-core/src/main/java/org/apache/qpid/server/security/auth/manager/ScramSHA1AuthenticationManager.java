@@ -45,7 +45,6 @@ import javax.xml.bind.DatatypeConverter;
 
 import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.RecovererProvider;
-import org.apache.qpid.server.configuration.updater.ChangeAttributesTask;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
@@ -255,42 +254,34 @@ public class ScramSHA1AuthenticationManager
     @Override
     public boolean createUser(final String username, final String password, final Map<String, String> attributes)
     {
-        if (getTaskExecutor().isTaskExecutorThread())
+        return runTask(new TaskExecutor.Task<Boolean>()
         {
-            getSecurityManager().authoriseUserOperation(Operation.CREATE, username);
-            if(_users.containsKey(username))
+            @Override
+            public Boolean execute()
             {
-                throw new IllegalArgumentException("User '"+username+"' already exists");
-            }
-            try
-            {
-                Map<String,Object> userAttrs = new HashMap<String, Object>();
-                userAttrs.put(User.ID, UUID.randomUUID());
-                userAttrs.put(User.NAME, username);
-                userAttrs.put(User.PASSWORD, createStoredPassword(password));
-                userAttrs.put(User.TYPE, SCRAM_USER_TYPE);
-                ScramAuthUser user = new ScramAuthUser(userAttrs, this);
-                user.create();
-
-                return true;
-            }
-            catch (SaslException e)
-            {
-                throw new IllegalArgumentException(e);
-            }
-        }
-        else
-        {
-            return getTaskExecutor().submitAndWait(new TaskExecutor.Task<Boolean>()
-            {
-                @Override
-                public Boolean call()
+                getSecurityManager().authoriseUserOperation(Operation.CREATE, username);
+                if (_users.containsKey(username))
                 {
-                    return createUser(username, password, attributes);
+                    throw new IllegalArgumentException("User '" + username + "' already exists");
                 }
-            });
-        }
+                try
+                {
+                    Map<String, Object> userAttrs = new HashMap<String, Object>();
+                    userAttrs.put(User.ID, UUID.randomUUID());
+                    userAttrs.put(User.NAME, username);
+                    userAttrs.put(User.PASSWORD, createStoredPassword(password));
+                    userAttrs.put(User.TYPE, SCRAM_USER_TYPE);
+                    ScramAuthUser user = new ScramAuthUser(userAttrs, ScramSHA1AuthenticationManager.this);
+                    user.create();
 
+                    return true;
+                }
+                catch (SaslException e)
+                {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+        });
     }
 
     private SecurityManager getSecurityManager()
@@ -301,115 +292,64 @@ public class ScramSHA1AuthenticationManager
     @Override
     public void deleteUser(final String user) throws AccountNotFoundException
     {
-        if (getTaskExecutor().isTaskExecutorThread())
+        runTask(new TaskExecutor.VoidTaskWithException<AccountNotFoundException>()
         {
-
-            final ScramAuthUser authUser = getUser(user);
-            if(authUser != null)
+            @Override
+            public void execute() throws AccountNotFoundException
             {
-                authUser.setState(State.ACTIVE, State.DELETED);
-            }
-            else
-            {
-                throw new AccountNotFoundException("No such user: '" + user + "'");
-            }
-        }
-        else
-        {
-            AccountNotFoundException e =
-                    getTaskExecutor().submitAndWait(new TaskExecutor.Task<AccountNotFoundException>() {
-
-                @Override
-                public AccountNotFoundException call()
+                final ScramAuthUser authUser = getUser(user);
+                if(authUser != null)
                 {
-                    try
-                    {
-                        deleteUser(user);
-                        return null;
-                    }
-                    catch (AccountNotFoundException e)
-                    {
-                        return e;
-                    }
-
+                    authUser.setState(State.ACTIVE, State.DELETED);
                 }
-            });
-
-            if(e != null)
-            {
-                throw e;
+                else
+                {
+                    throw new AccountNotFoundException("No such user: '" + user + "'");
+                }
             }
-        }
+        });
     }
 
     @Override
     public void setPassword(final String username, final String password) throws AccountNotFoundException
     {
-        if (getTaskExecutor().isTaskExecutorThread())
+        runTask(new TaskExecutor.VoidTaskWithException<AccountNotFoundException>()
         {
-            final ScramAuthUser authUser = getUser(username);
-            if(authUser != null)
+            @Override
+            public void execute() throws AccountNotFoundException
             {
-                authUser.setPassword(password);
-            }
-            else
-            {
-                throw new AccountNotFoundException("No such user: '" + username + "'");
-            }
-        }
-        else
-        {
-            AccountNotFoundException e =
-                    getTaskExecutor().submitAndWait(new TaskExecutor.Task<AccountNotFoundException>()
-                    {
 
-                        @Override
-                        public AccountNotFoundException call()
-                        {
-                            try
-                            {
-                                setPassword(username, password);
-                                return null;
-                            }
-                            catch (AccountNotFoundException e)
-                            {
-                                return e;
-                            }
-
-                        }
-                    });
-
-            if (e != null)
-            {
-                throw e;
+                final ScramAuthUser authUser = getUser(username);
+                if (authUser != null)
+                {
+                    authUser.setPassword(password);
+                }
+                else
+                {
+                    throw new AccountNotFoundException("No such user: '" + username + "'");
+                }
             }
-        }
+        });
 
     }
 
     @Override
     public Map<String, Map<String, String>> getUsers()
     {
-        if (getTaskExecutor().isTaskExecutorThread())
+        return runTask(new TaskExecutor.Task<Map<String, Map<String, String>>>()
         {
-            Map<String, Map<String,String>> users = new HashMap<String, Map<String, String>>();
-            for(String user : _users.keySet())
+            @Override
+            public Map<String, Map<String, String>> execute()
             {
-                users.put(user, Collections.<String,String>emptyMap());
-            }
-            return users;
-        }
-        else
-        {
-            return getTaskExecutor().submitAndWait(new TaskExecutor.Task<Map<String, Map<String, String>>>()
-            {
-                @Override
-                public Map<String, Map<String, String>> call()
+
+                Map<String, Map<String, String>> users = new HashMap<String, Map<String, String>>();
+                for (String user : _users.keySet())
                 {
-                    return getUsers();
+                    users.put(user, Collections.<String, String>emptyMap());
                 }
-            });
-        }
+                return users;
+            }
+        });
     }
 
     @Override
@@ -491,27 +431,31 @@ public class ScramSHA1AuthenticationManager
         public void setAttributes(final Map<String, Object> attributes)
                 throws IllegalStateException, AccessControlException, IllegalArgumentException
         {
-            if (getTaskExecutor().isTaskExecutorThread())
+            runTask(new TaskExecutor.VoidTask()
             {
-                Map<String,Object> modifiedAttributes = new HashMap<String, Object>(attributes);
-                final String newPassword = (String) attributes.get(User.PASSWORD);
-                if(attributes.containsKey(User.PASSWORD) && !newPassword.equals(getActualAttributes().get(User.PASSWORD)))
+
+                @Override
+                public void execute()
                 {
-                    try
+                    Map<String, Object> modifiedAttributes = new HashMap<String, Object>(attributes);
+                    final String newPassword = (String) attributes.get(User.PASSWORD);
+                    if (attributes.containsKey(User.PASSWORD)
+                        && !newPassword.equals(getActualAttributes().get(User.PASSWORD)))
                     {
-                        modifiedAttributes.put(User.PASSWORD, _authenticationManager.createStoredPassword(newPassword));
+                        try
+                        {
+                            modifiedAttributes.put(User.PASSWORD,
+                                                   _authenticationManager.createStoredPassword(newPassword));
+                        }
+                        catch (SaslException e)
+                        {
+                            throw new IllegalArgumentException(e);
+                        }
                     }
-                    catch (SaslException e)
-                    {
-                        throw new IllegalArgumentException(e);
-                    }
+                    ScramSHA1AuthenticationManager.ScramAuthUser.super.setAttributes(modifiedAttributes);
                 }
-                super.setAttributes(modifiedAttributes);
-            }
-            else
-            {
-                getTaskExecutor().submitAndWait(new ChangeAttributesTask(this, attributes));
-            }
+            });
+
 
         }
 

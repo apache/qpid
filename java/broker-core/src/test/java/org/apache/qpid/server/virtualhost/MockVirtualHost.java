@@ -66,12 +66,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     }
 
-    @Override
-    public VirtualHostRegistry getVirtualHostRegistry()
-    {
-        return null;
-    }
-
     public AuthenticationManager getAuthenticationManager()
     {
         return null;

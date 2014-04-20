@@ -62,7 +62,6 @@ import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class BrokerTestHelper
 {
@@ -80,17 +79,22 @@ public class BrokerTestHelper
     {
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
         SubjectCreator subjectCreator = mock(SubjectCreator.class);
+
         when(subjectCreator.getMechanisms()).thenReturn("");
         Broker broker = mock(Broker.class);
         when(broker.getConnection_sessionCountLimit()).thenReturn(1);
         when(broker.getConnection_closeWhenNoRoute()).thenReturn(false);
         when(broker.getId()).thenReturn(UUID.randomUUID());
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
-        when(broker.getVirtualHostRegistry()).thenReturn(new VirtualHostRegistry(new EventLogger()));
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(mock(Broker.class), false));
         when(broker.getObjectFactory()).thenReturn(objectFactory);
         when(broker.getEventLogger()).thenReturn(new EventLogger());
         when(broker.getCategoryClass()).thenReturn(Broker.class);
+
+        SystemContext systemContext = mock(SystemContext.class);
+        when(systemContext.getEventLogger()).thenReturn(new EventLogger());
+        when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
+
         return broker;
     }
 
@@ -102,7 +106,7 @@ public class BrokerTestHelper
     {
     }
 
-    public static VirtualHostImpl createVirtualHost(VirtualHostRegistry virtualHostRegistry, Map<String,Object> attributes)
+    public static VirtualHostImpl createVirtualHost(Map<String, Object> attributes)
             throws Exception
     {
 
@@ -115,7 +119,6 @@ public class BrokerTestHelper
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
         Broker broker = mock(Broker.class);
         when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
-        when(broker.getVirtualHostRegistry()).thenReturn(virtualHostRegistry);
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         SecurityManager securityManager = new SecurityManager(broker, false);
         when(broker.getSecurityManager()).thenReturn(securityManager);
@@ -133,11 +136,6 @@ public class BrokerTestHelper
 
     public static VirtualHostImpl createVirtualHost(String name) throws Exception
     {
-        return createVirtualHost(name, new VirtualHostRegistry(new EventLogger()));
-    }
-
-    public static VirtualHostImpl createVirtualHost(String name, VirtualHostRegistry virtualHostRegistry) throws Exception
-    {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.VirtualHost.TYPE, StandardVirtualHost.TYPE);
 
@@ -147,7 +145,7 @@ public class BrokerTestHelper
         attributes.put(org.apache.qpid.server.model.VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
         attributes.put(org.apache.qpid.server.model.VirtualHost.NAME, name);
 
-        return createVirtualHost(virtualHostRegistry, attributes);
+        return createVirtualHost(attributes);
     }
 
     public static AMQSessionModel createSession(int channelId, AMQConnectionModel connection)

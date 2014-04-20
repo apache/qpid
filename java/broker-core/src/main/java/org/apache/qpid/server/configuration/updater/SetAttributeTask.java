@@ -60,7 +60,7 @@ public final class SetAttributeTask implements TaskExecutor.Task<Object>
     }
 
     @Override
-    public Object call()
+    public Object execute()
     {
         return _object.setAttribute(_attributeName, _expectedValue, _desiredValue);
     }

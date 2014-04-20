@@ -35,7 +35,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -51,26 +50,16 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         super.setUp();
         BrokerTestHelper.setUp();
         _broker = BrokerTestHelper.createBrokerMock();
-        VirtualHostRegistry virtualHostRegistry = _broker.getVirtualHostRegistry();
         when(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)).thenReturn("default");
         when(_broker.getDefaultVirtualHost()).thenReturn("default");
 
-        // AMQP 1-0 connection needs default vhost to be present
-        _virtualHost = BrokerTestHelper.createVirtualHost("default", virtualHostRegistry);
     }
 
     @Override
     protected void tearDown() throws Exception
     {
-        try
-        {
-            _virtualHost.close();
-        }
-        finally
-        {
             BrokerTestHelper.tearDown();
             super.tearDown();
-        }
     }
 
     private static final byte[] AMQP_0_8_HEADER =

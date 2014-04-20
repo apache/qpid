@@ -172,7 +172,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         _broker = broker;
         _dtxRegistry = new DtxRegistry();
 
-        _eventLogger = _broker.getVirtualHostRegistry().getEventLogger();
+        _eventLogger = _broker.getParent(SystemContext.class).getEventLogger();
 
         _eventLogger.message(VirtualHostMessages.CREATED(getName()));
 
@@ -243,8 +243,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
         getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
-
-        _broker.getVirtualHostRegistry().registerVirtualHost(this);
 
 
         synchronized(_aliases)
@@ -869,11 +867,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return null;
     }
 
-    public VirtualHostRegistry getVirtualHostRegistry()
-    {
-        return _broker.getVirtualHostRegistry();
-    }
-
     public void registerMessageDelivered(long messageSize)
     {
         _messagesDelivered.registerEvent(1L);
@@ -1448,15 +1441,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
         else if (desiredState == State.STOPPED)
         {
-            try
-            {
-                close();
-            }
-            finally
-            {
-                _broker.getVirtualHostRegistry().unregisterVirtualHost(this);
-            }
-
+            close();
             return true;
         }
         else if (desiredState == State.DELETED)
