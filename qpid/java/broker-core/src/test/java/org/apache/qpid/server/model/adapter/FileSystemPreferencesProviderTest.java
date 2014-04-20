@@ -35,6 +35,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -66,6 +67,10 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
         when(_authenticationProvider.getParent(Broker.class)).thenReturn(_broker);
+        ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
+        when(_authenticationProvider.getModel()).thenReturn(objectFactory.getModel());
+        when(_authenticationProvider.getObjectFactory()).thenReturn(objectFactory);
+        when(_authenticationProvider.getCategoryClass()).thenReturn(AuthenticationProvider.class);
     }
 
     protected void tearDown() throws Exception

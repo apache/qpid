@@ -34,8 +34,8 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 
 public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandler
 {
@@ -108,12 +108,12 @@ public class DurableConfigurationRecoverer implements ConfigurationRecoveryHandl
         applyUpgrade();
 
         _eventLogger.message(_logSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
-        return Model.MODEL_VERSION;
+        return BrokerModel.MODEL_VERSION;
     }
 
     private String getConfigVersionFromRecords()
     {
-        String configVersion = Model.MODEL_VERSION;
+        String configVersion = BrokerModel.MODEL_VERSION;
         for (ConfiguredObjectRecord record : _records)
         {
             if ("VirtualHost".equals(record.getType()))

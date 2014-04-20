@@ -93,9 +93,10 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         final String childAttributeValue = "childvalue";
 
         Model model = createTestModel();
-        _converter.setModel(model);
 
         TestChild mockChild = mock(TestChild.class);
+        when(mockChild.getModel()).thenReturn(model);
+        when(_configuredObject.getModel()).thenReturn(model);
         configureMockToReturnOneAttribute(mockChild, childAttributeName, childAttributeValue);
         when(_configuredObject.getChildren(TestChild.class)).thenReturn(Arrays.asList(mockChild));
 

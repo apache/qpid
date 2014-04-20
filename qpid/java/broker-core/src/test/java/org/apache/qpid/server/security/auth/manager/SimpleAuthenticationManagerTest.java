@@ -30,14 +30,12 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.sasl.SaslUtil;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import static org.mockito.Mockito.mock;
 
 public class SimpleAuthenticationManagerTest extends QpidTestCase
 {
@@ -51,8 +49,8 @@ public class SimpleAuthenticationManagerTest extends QpidTestCase
         Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
         authManagerAttrs.put(AuthenticationProvider.NAME,"MANAGEMENT_MODE_AUTHENTICATION");
         authManagerAttrs.put(AuthenticationProvider.ID, UUID.randomUUID());
-        final SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(authManagerAttrs, mock(Broker.class)
-        );
+        final SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(authManagerAttrs,
+                                                                                        BrokerTestHelper.createBrokerMock());
         authManager.addUser(TEST_USER, TEST_PASSWORD);
         _authenticationManager = authManager;
 

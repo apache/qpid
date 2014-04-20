@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 @ManagedObject( creatable = false, category = false )
@@ -254,4 +255,10 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     void open();
 
     void validate();
+
+    TaskExecutor getTaskExecutor();
+
+    ConfiguredObjectFactory getObjectFactory();
+
+    Model getModel();
 }

@@ -41,6 +41,8 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -54,6 +56,7 @@ public class FanoutExchangeTest extends TestCase
     private FanoutExchange _exchange;
     private VirtualHostImpl _virtualHost;
     private TaskExecutor _taskExecutor;
+    private ConfiguredObjectFactoryImpl _objectFactory;
 
     public void setUp() throws UnknownExchangeException
     {
@@ -69,6 +72,8 @@ public class FanoutExchangeTest extends TestCase
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
+        _objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(_virtualHost.getObjectFactory()).thenReturn(_objectFactory);
         _exchange = new FanoutExchange(attributes, _virtualHost);
         _exchange.open();
     }
@@ -120,6 +125,7 @@ public class FanoutExchangeTest extends TestCase
     private AMQQueue bindQueue()
     {
         AMQQueue queue = mockQueue();
+
         _exchange.addBinding("matters", queue, null);
         return queue;
     }
@@ -129,6 +135,8 @@ public class FanoutExchangeTest extends TestCase
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getVirtualHost()).thenReturn(_virtualHost);
         when(queue.getCategoryClass()).thenReturn(Queue.class);
+        when(queue.getObjectFactory()).thenReturn(_objectFactory);
+        when(queue.getModel()).thenReturn(_objectFactory.getModel());
         return queue;
     }
 

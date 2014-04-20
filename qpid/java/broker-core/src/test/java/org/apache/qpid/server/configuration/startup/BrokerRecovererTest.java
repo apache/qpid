@@ -41,11 +41,11 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
@@ -74,7 +74,7 @@ public class BrokerRecovererTest extends TestCase
     {
         super.setUp();
 
-        _configuredObjectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        _configuredObjectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         _taskExecutor = new TaskExecutor();
         _taskExecutor.start();
         _systemContext = new SystemContextImpl(_taskExecutor,
@@ -83,7 +83,7 @@ public class BrokerRecovererTest extends TestCase
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getType()).thenReturn(Broker.class.getSimpleName());
         Map<String, Object> attributesMap = new HashMap<String, Object>();
-        attributesMap.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
+        attributesMap.put(Broker.MODEL_VERSION, BrokerModel.MODEL_VERSION);
         attributesMap.put(Broker.NAME, getName());
 
         when(_brokerEntry.getAttributes()).thenReturn(attributesMap);
@@ -113,7 +113,7 @@ public class BrokerRecovererTest extends TestCase
         attributes.put(Broker.CONNECTION_HEART_BEAT_DELAY, 2000);
         attributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);
         attributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
-        attributes.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
+        attributes.put(Broker.MODEL_VERSION, BrokerModel.MODEL_VERSION);
 
         Map<String, Object> entryAttributes = new HashMap<String, Object>();
         for (Map.Entry<String, Object> attribute : attributes.entrySet())
@@ -301,7 +301,7 @@ public class BrokerRecovererTest extends TestCase
             catch (IllegalConfigurationException e)
             {
                 assertEquals("The model version '" + incompatibleVersion
-                        + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'", e.getMessage());
+                        + "' in configuration is incompatible with the broker model version '" + BrokerModel.MODEL_VERSION + "'", e.getMessage());
             }
         }
     }
@@ -310,7 +310,7 @@ public class BrokerRecovererTest extends TestCase
     public void testModelVersionValidationForIncompatibleMinorVersion() throws Exception
     {
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
-        String incompatibleVersion = Model.MODEL_MAJOR_VERSION + "." + Integer.MAX_VALUE;
+        String incompatibleVersion = BrokerModel.MODEL_MAJOR_VERSION + "." + Integer.MAX_VALUE;
         brokerAttributes.put(Broker.MODEL_VERSION, incompatibleVersion);
         brokerAttributes.put(Broker.NAME, getName());
 
@@ -328,7 +328,7 @@ public class BrokerRecovererTest extends TestCase
         catch (IllegalConfigurationException e)
         {
             assertEquals("The model version '" + incompatibleVersion
-                    + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'", e.getMessage());
+                    + "' in configuration is incompatible with the broker model version '" + BrokerModel.MODEL_VERSION + "'", e.getMessage());
         }
     }
 

@@ -35,7 +35,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -125,10 +124,8 @@ public class BindingRecoverer extends AbstractDurableConfiguredObjectRecoverer<B
                 attributesWithId.put(org.apache.qpid.server.model.Exchange.ID,_record.getId());
                 attributesWithId.put(org.apache.qpid.server.model.Exchange.DURABLE,true);
 
-                ConfiguredObjectTypeFactory<? extends Binding> configuredObjectTypeFactory =
-                        _objectFactory.getConfiguredObjectTypeFactory(Binding.class, attributesWithId);
                 UnresolvedConfiguredObject<? extends Binding> unresolvedConfiguredObject =
-                        configuredObjectTypeFactory.recover(_record, _exchange, _queue);
+                        _objectFactory.recover(_record, _exchange, _queue);
                 Binding binding = (Binding<?>) unresolvedConfiguredObject.resolve();
                 binding.open();
 

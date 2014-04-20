@@ -33,6 +33,9 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -86,6 +89,9 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
+        ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(virtualHost.getObjectFactory()).thenReturn(factory);
+        when(virtualHost.getModel()).thenReturn(factory.getModel());
         _testQueue = new SortedQueueImpl(attributes, virtualHost)
         {
             SelfValidatingSortedQueueEntryList _entries;

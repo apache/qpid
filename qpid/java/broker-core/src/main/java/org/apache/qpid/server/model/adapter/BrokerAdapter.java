@@ -48,7 +48,6 @@ import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
 import org.apache.qpid.server.model.port.AmqpPort;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -67,7 +66,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
 
     public static final String MANAGEMENT_MODE_AUTHENTICATION = "MANAGEMENT_MODE_AUTHENTICATION";
-    private final ConfiguredObjectFactory _objectFactory;
 
     private String[] POSITIVE_NUMERIC_ATTRIBUTES = { CONNECTION_SESSION_COUNT_LIMIT,
             CONNECTION_HEART_BEAT_DELAY, STATISTICS_REPORTING_PERIOD };
@@ -110,7 +108,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
               attributes,
               parent.getTaskExecutor());
 
-        _objectFactory = parent.getObjectFactory();
         //_virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());
 
         _logRecorder = parent.getLogRecorder();
@@ -152,11 +149,11 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         int majorModelVersion = Integer.parseInt(majorVersionPart);
         int minorModelVersion = Integer.parseInt(modelVersion.substring(versionSeparatorPosition + 1));
 
-        if (majorModelVersion != Model.MODEL_MAJOR_VERSION || minorModelVersion > Model.MODEL_MINOR_VERSION)
+        if (majorModelVersion != BrokerModel.MODEL_MAJOR_VERSION || minorModelVersion > BrokerModel.MODEL_MINOR_VERSION)
         {
             deleted();
             throw new IllegalConfigurationException("The model version '" + modelVersion
-                                                    + "' in configuration is incompatible with the broker model version '" + Model.MODEL_VERSION + "'");
+                                                    + "' in configuration is incompatible with the broker model version '" + BrokerModel.MODEL_VERSION + "'");
         }
 
         if(!isDurable())
@@ -175,7 +172,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
         Broker updated = (Broker) proxyForValidation;
-        if (changedAttributes.contains(MODEL_VERSION) && !Model.MODEL_VERSION.equals(updated.getModelVersion()))
+        if (changedAttributes.contains(MODEL_VERSION) && !BrokerModel.MODEL_VERSION.equals(updated.getModelVersion()))
         {
             throw new IllegalConfigurationException("Cannot change the model version");
         }
@@ -304,19 +301,19 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public Collection<String> getSupportedVirtualHostTypes()
     {
-        return _objectFactory.getSupportedTypes(VirtualHost.class);
+        return getObjectFactory().getSupportedTypes(VirtualHost.class);
     }
 
     @Override
     public Collection<String> getSupportedAuthenticationProviders()
     {
-        return _objectFactory.getSupportedTypes(AuthenticationProvider.class);
+        return getObjectFactory().getSupportedTypes(AuthenticationProvider.class);
     }
 
     @Override
     public Collection<String> getSupportedPreferencesProviderTypes()
     {
-        return _objectFactory.getSupportedTypes(PreferencesProvider.class);
+        return getObjectFactory().getSupportedTypes(PreferencesProvider.class);
     }
 
     @Override
@@ -358,7 +355,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public String getModelVersion()
     {
-        return Model.MODEL_VERSION;
+        return BrokerModel.MODEL_VERSION;
     }
 
     public Collection<VirtualHost<?,?,?>> getVirtualHosts()
@@ -408,9 +405,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private VirtualHost createVirtualHost(final Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
-        ConfiguredObjectTypeFactory virtualHostFactory =
-                _objectFactory.getConfiguredObjectTypeFactory(VirtualHost.class, attributes);
-        final VirtualHost virtualHost = (VirtualHost) virtualHostFactory.create(attributes,this);
+
+        final VirtualHost virtualHost = getObjectFactory().create(VirtualHost.class,attributes,this);
 
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
@@ -602,14 +598,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private <X extends ConfiguredObject> X createChild(Class<X> clazz, Map<String, Object> attributes)
     {
-        ConfiguredObjectTypeFactory factory =
-                _objectFactory.getConfiguredObjectTypeFactory(clazz, attributes);
         if(!attributes.containsKey(ConfiguredObject.ID))
         {
             attributes = new HashMap<String, Object>(attributes);
             attributes.put(ConfiguredObject.ID, UUID.randomUUID());
         }
-        final X instance = (X) factory.create(attributes, this);
+        final X instance = (X) getObjectFactory().create(clazz,attributes, this);
 
         return instance;
     }
@@ -769,7 +763,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             @Override
             public void execute()
             {
-                for (Class<? extends ConfiguredObject> clazz : Model.getInstance().getChildTypes(getCategoryClass()))
+                for (Class<? extends ConfiguredObject> clazz : getModel().getChildTypes(getCategoryClass()))
                 {
                     for (ConfiguredObject configuredObject : getChildren(clazz))
                     {
@@ -995,12 +989,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     public EventLogger getEventLogger()
     {
         return _eventLogger;
-    }
-
-    @Override
-    public ConfiguredObjectFactory getObjectFactory()
-    {
-        return _objectFactory;
     }
 
     @Override

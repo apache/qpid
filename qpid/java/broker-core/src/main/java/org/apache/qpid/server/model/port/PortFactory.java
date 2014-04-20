@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.model.port;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Protocol.ProtocolType;
@@ -49,18 +44,10 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
     public static final boolean DEFAULT_AMQP_TCP_NO_DELAY = true;
     public static final String DEFAULT_AMQP_BINDING = "*";
     public static final Transport DEFAULT_TRANSPORT = Transport.TCP;
-    private ConfiguredObjectFactory _configuredObjectFactory;
 
 
     public PortFactory()
     {
-    }
-
-    public Port createPort(UUID id, Broker broker, Map<String, Object> attributes)
-    {
-        attributes = new HashMap<String, Object>(attributes);
-        attributes.put(Port.ID, id);
-        return create(attributes,broker);
     }
 
     private ProtocolType getProtocolType(Map<String, Object> portAttributes)
@@ -105,19 +92,23 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
     }
 
     @Override
-    public X create(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
+    public X create(final ConfiguredObjectFactory factory,
+                    final Map<String, Object> attributes,
+                    final ConfiguredObject<?>... parents)
     {
-        return getPortFactory(attributes).create(attributes,parents);
+        return getPortFactory(factory, attributes).create(factory, attributes,parents);
     }
 
     @Override
-    public UnresolvedConfiguredObject<X> recover(final ConfiguredObjectRecord record,
+    public UnresolvedConfiguredObject<X> recover(final ConfiguredObjectFactory factory,
+                                                 final ConfiguredObjectRecord record,
                                                  final ConfiguredObject<?>... parents)
     {
-        return getPortFactory(record.getAttributes()).recover(record, parents);
+        return getPortFactory(factory, record.getAttributes()).recover(factory, record, parents);
     }
 
-    public ConfiguredObjectTypeFactory<X> getPortFactory(Map<String,Object> attributes)
+    public ConfiguredObjectTypeFactory<X> getPortFactory(final ConfiguredObjectFactory factory,
+                                                         Map<String, Object> attributes)
     {
         String type;
 
@@ -130,14 +121,7 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
             type = getProtocolType(attributes).name();
         }
 
-        synchronized (this)
-        {
-            if(_configuredObjectFactory == null)
-            {
-                _configuredObjectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
-            }
-        }
-        return _configuredObjectFactory.getConfiguredObjectTypeFactory(Port.class.getSimpleName(), type);
+        return factory.getConfiguredObjectTypeFactory(Port.class.getSimpleName(), type);
     }
 
     @Override

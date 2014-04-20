@@ -26,12 +26,16 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonProcessingException;
@@ -44,11 +48,16 @@ import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.SerializerProvider;
 import org.codehaus.jackson.map.module.SimpleModule;
 
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+
 public class JsonFileConfigStore implements DurableConfigurationStore
 {
-    private static final Model MODEL = Model.getInstance();
 
-    private static final Map<String,Class<? extends ConfiguredObject>> CLASS_NAME_MAPPING = generateClassNameMap(VirtualHost.class);
+    private Map<String,Class<? extends ConfiguredObject>> _classNameMapping;
     public static final String TYPE = "JSON";
 
     private final Map<UUID, ConfiguredObjectRecord> _objectsById = new HashMap<UUID, ConfiguredObjectRecord>();
@@ -83,6 +92,8 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         _module = module;
     }
 
+    private ConfiguredObject<?> _parent;
+
     public JsonFileConfigStore()
     {
         _objectMapper.registerModule(_module);
@@ -92,7 +103,9 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     @Override
     public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
+        _parent = parent;
         _name = parent.getName();
+        _classNameMapping = generateClassNameMap(_parent.getModel(), VirtualHost.class);
         setup(storeSettings);
         load();
     }
@@ -250,7 +263,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     protected void loadFromMap(final Map data)
     {
         Collection<Class<? extends ConfiguredObject>> childClasses =
-                MODEL.getChildTypes(VirtualHost.class);
+                _parent.getModel().getChildTypes(VirtualHost.class);
         data.remove("modelVersion");
         Object configVersion;
         if((configVersion = data.remove("configVersion")) instanceof Integer)
@@ -284,7 +297,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                            final UUID parentId)
     {
         Collection<Class<? extends ConfiguredObject>> childClasses =
-                MODEL.getChildTypes(clazz);
+                _parent.getModel().getChildTypes(clazz);
         String idStr = (String) data.remove("id");
         final UUID id = UUID.fromString(idStr);
         final String type = clazz.getSimpleName();
@@ -313,7 +326,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         if(parentId != null)
         {
             parentMap.put(parentClass.getSimpleName(),parentId);
-            for(Class<? extends ConfiguredObject> otherParent : MODEL.getParentTypes(clazz))
+            for(Class<? extends ConfiguredObject> otherParent : _parent.getModel().getParentTypes(clazz))
             {
                 if(otherParent != parentClass)
                 {
@@ -353,7 +366,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             throw new StoreException("Object with id " + record.getId() + " already exists");
         }
-        else if(!CLASS_NAME_MAPPING.containsKey(record.getType()))
+        else if(!_classNameMapping.containsKey(record.getType()))
         {
             throw new StoreException("Cannot create object of unknown type " + record.getType());
         }
@@ -375,10 +388,10 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     private void save()
     {
         Collection<Class<? extends ConfiguredObject>> childClasses =
-                MODEL.getChildTypes(VirtualHost.class);
+                _parent.getModel().getChildTypes(VirtualHost.class);
 
         Map<String, Object> virtualHostMap = new LinkedHashMap<String, Object>();
-        virtualHostMap.put("modelVersion", Model.MODEL_VERSION);
+        virtualHostMap.put("modelVersion", BrokerModel.MODEL_VERSION);
         virtualHostMap.put("configVersion", _configVersion);
 
         for(Class<? extends ConfiguredObject> childClass : childClasses)
@@ -423,7 +436,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         map.put("id", id);
         map.putAll(record.getAttributes());
 
-        Collection<Class<? extends ConfiguredObject>> parentTypes = MODEL.getParentTypes(type);
+        Collection<Class<? extends ConfiguredObject>> parentTypes = _parent.getModel().getParentTypes(type);
         if(parentTypes.size() > 1)
         {
             Iterator<Class<? extends ConfiguredObject>> iter = parentTypes.iterator();
@@ -439,12 +452,12 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
 
         Collection<Class<? extends ConfiguredObject>> childClasses =
-                new ArrayList<Class<? extends ConfiguredObject>>(MODEL.getChildTypes(type));
+                new ArrayList<Class<? extends ConfiguredObject>>(_parent.getModel().getChildTypes(type));
 
         for(Class<? extends ConfiguredObject> childClass : childClasses)
         {
             // only add if this is the "first" parent
-            if(MODEL.getParentTypes(childClass).iterator().next() == type)
+            if(_parent.getModel().getParentTypes(childClass).iterator().next() == type)
             {
                 String attrName = childClass.getSimpleName().toLowerCase() + "s";
                 List<UUID> childIds = _idsByType.get(childClass.getSimpleName());
@@ -514,7 +527,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 throw new StoreException("Cannot update record with id " + id
                                         + " of type " + type + " as it does not exist");
             }
-            else if(!CLASS_NAME_MAPPING.containsKey(type))
+            else if(!_classNameMapping.containsKey(type))
             {
                 throw new StoreException("Cannot update record of unknown type " + type);
             }
@@ -565,16 +578,17 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
 
-    private static Map<String,Class<? extends ConfiguredObject>> generateClassNameMap(final Class<? extends ConfiguredObject> clazz)
+    private static Map<String,Class<? extends ConfiguredObject>> generateClassNameMap(final Model model,
+                                                                                      final Class<? extends ConfiguredObject> clazz)
     {
         Map<String,Class<? extends ConfiguredObject>>map = new HashMap<String, Class<? extends ConfiguredObject>>();
         map.put(clazz.getSimpleName().toString(), clazz);
-        Collection<Class<? extends ConfiguredObject>> childClasses = MODEL.getChildTypes(clazz);
+        Collection<Class<? extends ConfiguredObject>> childClasses = model.getChildTypes(clazz);
         if(childClasses != null)
         {
             for(Class<? extends ConfiguredObject> childClass : childClasses)
             {
-                map.putAll(generateClassNameMap(childClass));
+                map.putAll(generateClassNameMap(model, childClass));
             }
         }
         return map;

@@ -28,7 +28,6 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
@@ -81,10 +80,8 @@ public class ExchangeRecoverer extends AbstractDurableConfiguredObjectRecoverer<
                     attributesWithId.put(org.apache.qpid.server.model.Exchange.ID,record.getId());
                     attributesWithId.put(org.apache.qpid.server.model.Exchange.DURABLE,true);
 
-                    ConfiguredObjectTypeFactory<? extends Exchange> configuredObjectTypeFactory =
-                            _objectFactory.getConfiguredObjectTypeFactory(Exchange.class, attributesWithId);
                     UnresolvedConfiguredObject<? extends Exchange> unresolvedConfiguredObject =
-                            configuredObjectTypeFactory.recover(record, _vhost);
+                            _objectFactory.recover(record, _vhost);
                     _exchange = (ExchangeImpl<?>) unresolvedConfiguredObject.resolve();
 
                 }

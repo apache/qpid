@@ -63,7 +63,7 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     {
         super(parentsMap(),
               createAttributes(brokerOptions),
-              taskExecutor);
+              taskExecutor, configuredObjectFactory);
         _eventLogger = eventLogger;
         getTaskExecutor().start();
         _objectFactory = configuredObjectFactory;
@@ -228,12 +228,6 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     public State getState()
     {
         return State.ACTIVE;
-    }
-
-    @Override
-    public ConfiguredObjectFactory getObjectFactory()
-    {
-        return _objectFactory;
     }
 
     @Override

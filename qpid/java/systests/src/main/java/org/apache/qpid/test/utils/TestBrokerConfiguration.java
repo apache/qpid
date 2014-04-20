@@ -36,10 +36,10 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.SystemContextImpl;
@@ -76,12 +76,15 @@ public class TestBrokerConfiguration
 
     public TestBrokerConfiguration(String storeType, String intialStoreLocation, final TaskExecutor taskExecutor)
     {
-        _store = new MemoryConfigurationEntryStore(new SystemContextImpl(taskExecutor, new ConfiguredObjectFactoryImpl(
-                Model.getInstance()),
-                                                                     mock(EventLogger.class), mock(LogRecorder.class),
-                                                                     mock(BrokerOptions.class)),
-                                                   intialStoreLocation,
-                                                   null, Collections.<String,String>emptyMap());
+        _store = new MemoryConfigurationEntryStore(
+                new SystemContextImpl(taskExecutor,
+                                      new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()),
+                                      mock(EventLogger.class),
+                                      mock(LogRecorder.class),
+                                      mock(BrokerOptions.class)),
+                intialStoreLocation,
+                null,
+                Collections.<String,String>emptyMap());
     }
 
     public boolean setBrokerAttribute(String name, Object value)

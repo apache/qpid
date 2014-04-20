@@ -20,23 +20,25 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.User;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.test.utils.QpidTestCase;
- import org.apache.qpid.server.security.SecurityManager;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import javax.security.auth.login.AccountNotFoundException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.security.auth.login.AccountNotFoundException;
+
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.User;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
 {
@@ -51,7 +53,7 @@ public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
         super.setUp();
         _executor = new TaskExecutor();
         _executor.start();
-        _broker = mock(Broker.class);
+        _broker = BrokerTestHelper.createBrokerMock();
         _securityManager = mock(SecurityManager.class);
         when(_broker.getTaskExecutor()).thenReturn(_executor);
         when(_broker.getSecurityManager()).thenReturn(_securityManager);

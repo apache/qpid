@@ -39,13 +39,13 @@ import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
@@ -105,7 +105,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
         attrs.put(ConfiguredObject.ID, UUID.randomUUID());
         attrs.put(ConfiguredObject.NAME, getTestName());
         attrs.put("path", _passwordFileLocation);
-        _manager = new PrincipalDatabaseAuthenticationManager(attrs, mock(Broker.class))
+        _manager = new PrincipalDatabaseAuthenticationManager(attrs, BrokerTestHelper.createBrokerMock())
         {
             @Override
             protected PrincipalDatabase createDatabase()

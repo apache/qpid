@@ -32,6 +32,10 @@ public interface ConfiguredObjectFactory
     <X extends ConfiguredObject<X>> UnresolvedConfiguredObject<X> recover(ConfiguredObjectRecord record,
                                                                           ConfiguredObject<?>... parents);
 
+    <X extends ConfiguredObject<X>> X create(Class<X> clazz, Map<String, Object> attributes, ConfiguredObject<?>... parents);
+
+
+
     <X extends ConfiguredObject<X>> ConfiguredObjectTypeFactory<X> getConfiguredObjectTypeFactory(Class<X> categoryClass,
                                                                                                   Map<String, Object> attributes);
 

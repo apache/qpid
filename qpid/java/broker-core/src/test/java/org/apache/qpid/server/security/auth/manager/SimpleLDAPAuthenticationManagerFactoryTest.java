@@ -35,12 +35,13 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 {
     private SimpleLDAPAuthenticationManagerFactory _factory = new SimpleLDAPAuthenticationManagerFactory();
     private Map<String, Object> _configuration = new HashMap<String, Object>();
-    private Broker _broker = mock(Broker.class);
+    private Broker _broker = BrokerTestHelper.createBrokerMock();
     private SystemContext _systemContext = mock(SystemContext.class);
 
     private TrustStore _trustStore = mock(TrustStore.class);
@@ -51,9 +52,6 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 
         when(_trustStore.getName()).thenReturn("mytruststore");
         when(_trustStore.getId()).thenReturn(UUID.randomUUID());
-        when(_broker.getCategoryClass()).thenReturn(Broker.class);
-        when(_broker.getParent(eq(SystemContext.class))).thenReturn(_systemContext);
-        when(_systemContext.getChildren(eq(Broker.class))).thenReturn(Collections.singleton(_broker));
 
         _configuration.put(AuthenticationProvider.ID, UUID.randomUUID());
         _configuration.put(AuthenticationProvider.NAME, getName());
@@ -65,7 +63,7 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
         _configuration.put("providerUrl", "ldap://example.com:389/");
         _configuration.put("searchContext", "dc=example");
 
-        AuthenticationManager manager = _factory.create(_configuration, _broker);
+        AuthenticationManager manager = _factory.create(null, _configuration, _broker);
         assertNotNull(manager);
 
     }
@@ -76,7 +74,7 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
         _configuration.put("providerUrl", "ldaps://example.com:636/");
         _configuration.put("searchContext", "dc=example");
 
-        AuthenticationManager manager = _factory.create(_configuration, _broker);
+        AuthenticationManager manager = _factory.create(null, _configuration, _broker);
         assertNotNull(manager);
 
     }
@@ -91,7 +89,7 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
         _configuration.put("searchContext", "dc=example");
         _configuration.put("trustStore", "mytruststore");
 
-        AuthenticationManager manager = _factory.create(_configuration, _broker);
+        AuthenticationManager manager = _factory.create(null, _configuration, _broker);
         assertNotNull(manager);
     }
 
@@ -106,7 +104,7 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 
         try
         {
-            _factory.create(_configuration, _broker);
+            _factory.create(null, _configuration, _broker);
             fail("Exception not thrown");
         }
         catch(IllegalArgumentException e)

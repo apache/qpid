@@ -32,7 +32,6 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.AbstractDurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -123,10 +122,8 @@ public class QueueRecoverer extends AbstractDurableConfiguredObjectRecoverer<AMQ
                 attributesWithId.put(Queue.ID,_record.getId());
                 attributesWithId.put(Queue.DURABLE,true);
 
-                ConfiguredObjectTypeFactory<? extends Queue> configuredObjectTypeFactory =
-                        _objectFactory.getConfiguredObjectTypeFactory(Queue.class, attributesWithId);
                 UnresolvedConfiguredObject<? extends Queue> unresolvedConfiguredObject =
-                        configuredObjectTypeFactory.recover(_record, _virtualHost);
+                        _objectFactory.recover(_record, _virtualHost);
                 _queue = (AMQQueue<?>) unresolvedConfiguredObject.resolve();
             }
             _queue.open();

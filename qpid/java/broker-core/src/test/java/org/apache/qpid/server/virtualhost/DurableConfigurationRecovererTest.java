@@ -49,10 +49,10 @@ import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -113,7 +113,39 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
         when(_configuredObjectFactory.getConfiguredObjectTypeFactory(eq(Exchange.class), anyMap())).thenReturn(_exchangeFactory);
         when(_configuredObjectFactory.getConfiguredObjectTypeFactory(eq(Queue.class), anyMap())).thenReturn(_queueFactory);
         when(_configuredObjectFactory.getConfiguredObjectTypeFactory(eq(Binding.class), anyMap())).thenReturn(_bindingFactory);
+        final ArgumentCaptor<ConfiguredObjectRecord> recordArgumentCaptor = ArgumentCaptor.forClass(ConfiguredObjectRecord.class);
+        when(_configuredObjectFactory.recover(recordArgumentCaptor.capture(), any(ConfiguredObject.class))).thenAnswer(new Answer<Object>()
+        {
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                ConfiguredObjectRecord record = recordArgumentCaptor.getValue();
+                if(record.getType().equals("Queue"))
+                {
+                    return _queueFactory.recover(mock(ConfiguredObjectFactory.class), record, _vhost);
+                }
+                else if(record.getType().equals("Exchange"))
+                {
+                    return _exchangeFactory.recover(mock(ConfiguredObjectFactory.class), record, _vhost);
+                }
+                return null;
+            }
+        });
 
+        final ArgumentCaptor<ConfiguredObjectRecord> bindingRecordArgumentCaptor = ArgumentCaptor.forClass(ConfiguredObjectRecord.class);
+        when(_configuredObjectFactory.recover(bindingRecordArgumentCaptor.capture(), any(ConfiguredObject.class), any(ConfiguredObject.class))).thenAnswer(new Answer<Object>()
+        {
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                ConfiguredObjectRecord record = bindingRecordArgumentCaptor.getValue();
+                if(record.getType().equals("Binding"))
+                {
+                    return _bindingFactory.recover(mock(ConfiguredObjectFactory.class), record, mock(ConfiguredObject.class),mock(ConfiguredObject.class));
+                }
+                return null;
+            }
+        });
 
 
         final ArgumentCaptor<ConfiguredObjectRecord> recoveredExchange = ArgumentCaptor.forClass(ConfiguredObjectRecord.class);
@@ -136,7 +168,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
                 when(unresolved.resolve()).thenReturn(exchange);
                 return unresolved;
             }
-        }).when(_exchangeFactory).recover(recoveredExchange.capture(), any(ConfiguredObject.class));
+        }).when(_exchangeFactory).recover(any(ConfiguredObjectFactory.class), recoveredExchange.capture(), any(ConfiguredObject.class));
 
 
 
@@ -171,7 +203,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
                 return unresolved;
             }
-        }).when(_queueFactory).recover(recoveredQueue.capture(), any(ConfiguredObject.class));
+        }).when(_queueFactory).recover(any(ConfiguredObjectFactory.class), recoveredQueue.capture(), any(ConfiguredObject.class));
 
 
         final ArgumentCaptor<ConfiguredObjectRecord> recoveredBinding = ArgumentCaptor.forClass(ConfiguredObjectRecord.class);
@@ -184,10 +216,10 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
             @Override
             public Object answer(final InvocationOnMock invocation) throws Throwable
             {
-                ConfiguredObjectRecord queueRecord = recoveredBinding.getValue();
+                ConfiguredObjectRecord bindingRecord = recoveredBinding.getValue();
                 Binding binding = mock(Binding.class);
-                UUID id = queueRecord.getId();
-                String name = (String) queueRecord.getAttributes().get("name");
+                UUID id = bindingRecord.getId();
+                String name = (String) bindingRecord.getAttributes().get("name");
                 when(binding.getId()).thenReturn(id);
                 when(binding.getName()).thenReturn(name);
 
@@ -197,7 +229,7 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
 
                 return unresolved;
             }
-        }).when(_bindingFactory).recover(recoveredBinding.capture(), parent1.capture(), parent2.capture());
+        }).when(_bindingFactory).recover(any(ConfiguredObjectFactory.class), recoveredBinding.capture(), parent1.capture(), parent2.capture());
 
 
 
@@ -224,13 +256,13 @@ public class DurableConfigurationRecovererTest extends QpidTestCase
     {
         _durableConfigurationRecoverer.beginConfigurationRecovery(_store);
         assertEquals("Did not upgrade to the expected version",
-                     Model.MODEL_VERSION,
+                     BrokerModel.MODEL_VERSION,
                      _durableConfigurationRecoverer.completeConfigurationRecovery());
     }
 
     public void testUpgradeNewerStoreFails() throws Exception
     {
-        String bumpedModelVersion = Model.MODEL_MAJOR_VERSION + "." + (Model.MODEL_MINOR_VERSION + 1);
+        String bumpedModelVersion = BrokerModel.MODEL_MAJOR_VERSION + "." + (BrokerModel.MODEL_MINOR_VERSION + 1);
         try
         {
 

@@ -26,8 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.StoreException;
@@ -68,7 +68,7 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 
         Cursor objectsCursor = null;
 
-        String stringifiedConfigVersion = Model.MODEL_VERSION;
+        String stringifiedConfigVersion = BrokerModel.MODEL_VERSION;
         int configVersion = getConfigVersion(configVersionDb);
         if (configVersion > -1)
         {

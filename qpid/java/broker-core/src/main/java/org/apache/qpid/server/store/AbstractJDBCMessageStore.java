@@ -47,8 +47,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
@@ -465,7 +465,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         {
             UUID virtualHostId = UUIDGenerator.generateVhostUUID(parent.getName());
 
-            String stringifiedConfigVersion = Model.MODEL_VERSION;
+            String stringifiedConfigVersion = BrokerModel.MODEL_VERSION;
             boolean tableExists = tableExists(CONFIGURATION_VERSION_TABLE_NAME, connection);
             if(tableExists)
             {

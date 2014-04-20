@@ -21,6 +21,7 @@
 package org.apache.qpid.server.configuration.startup;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.security.PrivilegedAction;
 import java.util.HashMap;
@@ -32,6 +33,8 @@ import javax.security.auth.Subject;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.FileTrustStoreImpl;
@@ -47,7 +50,11 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         Map<String, Object> attributes = getTrustStoreAttributes(id);
         Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
 
+        ConfiguredObjectFactoryImpl factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+
         Broker broker = mock(Broker.class);
+        when(broker.getObjectFactory()).thenReturn(factory);
+        when(broker.getModel()).thenReturn(factory.getModel());
 
         final FileTrustStore trustStore = new FileTrustStoreImpl(attributes, broker);
         trustStore.open();
@@ -84,7 +91,10 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         UUID id = UUID.randomUUID();
         Map<String, Object> attributes = getTrustStoreAttributes(id);
 
+        ConfiguredObjectFactoryImpl factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         Broker broker = mock(Broker.class);
+        when(broker.getObjectFactory()).thenReturn(factory);
+        when(broker.getModel()).thenReturn(factory.getModel());
 
         String[] mandatoryProperties = {TrustStore.NAME, FileTrustStore.PATH, FileTrustStore.PASSWORD};
         for (int i = 0; i < mandatoryProperties.length; i++)

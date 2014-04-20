@@ -19,7 +19,6 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
-import static org.mockito.Mockito.mock;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,9 +29,9 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ExternalAuthenticationManagerTest extends QpidTestCase
@@ -48,13 +47,13 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         attrs.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrs.put(AuthenticationProvider.NAME, getTestName());
         attrs.put("useFullDN",false);
-        _manager = new ExternalAuthenticationManagerImpl(attrs, mock(Broker.class));
+        _manager = new ExternalAuthenticationManagerImpl(attrs, BrokerTestHelper.createBrokerMock());
         _manager.open();
         HashMap<String, Object> attrsFullDN = new HashMap<String, Object>();
         attrsFullDN.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrsFullDN.put(AuthenticationProvider.NAME, getTestName()+"FullDN");
         attrsFullDN.put("useFullDN",true);
-        _managerUsingFullDN = new ExternalAuthenticationManagerImpl(attrsFullDN, mock(Broker.class));
+        _managerUsingFullDN = new ExternalAuthenticationManagerImpl(attrsFullDN, BrokerTestHelper.createBrokerMock());
         _managerUsingFullDN.open();
     }
 

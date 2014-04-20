@@ -26,14 +26,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 
 public class ConfiguredObjectToMapConverter
 {
     /** Name of the key used for the statistics map */
     public static final String STATISTICS_MAP_KEY = "statistics";
-
-    private Model _model = Model.getInstance();
 
     public Map<String, Object> convertObjectToMap(final ConfiguredObject<?> confObject,
                                                   Class<? extends  ConfiguredObject> clazz,
@@ -51,13 +48,6 @@ public class ConfiguredObjectToMapConverter
         return object;
     }
 
-    /**
-     * Used for unit test only.
-     */
-    void setModel(Model model)
-    {
-        _model = model;
-    }
 
     private void incorporateAttributesIntoMap(
             final ConfiguredObject<?> confObject, Map<String, Object> object)
@@ -110,7 +100,7 @@ public class ConfiguredObjectToMapConverter
             Class<? extends ConfiguredObject> clazz, int depth,
             Map<String, Object> object)
     {
-        for(Class<? extends ConfiguredObject> childClass : _model.getChildTypes(clazz))
+        for(Class<? extends ConfiguredObject> childClass : confObject.getModel().getChildTypes(clazz))
         {
             Collection<? extends ConfiguredObject> children = confObject.getChildren(childClass);
             if(children != null)

@@ -97,7 +97,20 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
             throw new ServerScopedRuntimeException("No factory defined for ConfiguredObject of category " + category + " and type " + type);
         }
 
-        return factory.recover(record, parents);
+        return factory.recover(this, record, parents);
+    }
+
+    @Override
+    public <X extends ConfiguredObject<X>> X create(Class<X> clazz,
+                                                    final Map<String, Object> attributes,
+                                                    final ConfiguredObject<?>... parents)
+    {
+        ConfiguredObjectTypeFactory<X> factory = getConfiguredObjectTypeFactory(clazz, attributes);
+        if(factory == null)
+        {
+            throw new ServerScopedRuntimeException("No factory defined for ConfiguredObject of category " + clazz.getSimpleName() + " and attributes " + attributes);
+        }
+        return factory.create(this, attributes, parents);
     }
 
     @Override

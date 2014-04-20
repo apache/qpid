@@ -21,6 +21,7 @@
 package org.apache.qpid.server.plugin;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 
@@ -30,7 +31,9 @@ public interface ConfiguredObjectTypeFactory<X extends ConfiguredObject<X>> exte
 {
     Class<? super X> getCategoryClass();
 
-    X create(Map<String, Object> attributes, ConfiguredObject<?>... parents);
+    X create(final ConfiguredObjectFactory factory, Map<String, Object> attributes, ConfiguredObject<?>... parents);
 
-    UnresolvedConfiguredObject<X> recover(ConfiguredObjectRecord record, ConfiguredObject<?>... parents);
+    UnresolvedConfiguredObject<X> recover(final ConfiguredObjectFactory factory,
+                                          ConfiguredObjectRecord record,
+                                          ConfiguredObject<?>... parents);
 }

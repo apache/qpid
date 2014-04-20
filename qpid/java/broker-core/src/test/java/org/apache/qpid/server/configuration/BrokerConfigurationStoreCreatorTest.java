@@ -40,8 +40,8 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -73,7 +73,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         _taskExecutor = new TaskExecutor();
         _taskExecutor.start();
         _systemContext = new SystemContextImpl(_taskExecutor,
-                                                  new ConfiguredObjectFactoryImpl(Model.getInstance()),
+                                                  new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()),
                                                   mock(EventLogger.class),
                                                   mock(LogRecorder.class),
                                                   brokerOptions);
@@ -130,7 +130,7 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         UUID testBrokerId = UUID.randomUUID();
         brokerObjectMap.put(Broker.ID, testBrokerId);
         brokerObjectMap.put(Broker.NAME, testBrokerName);
-        brokerObjectMap.put(Broker.MODEL_VERSION, Model.MODEL_VERSION);
+        brokerObjectMap.put(Broker.MODEL_VERSION, BrokerModel.MODEL_VERSION);
         brokerObjectMap.put(Broker.STORE_VERSION, 1);
 
         StringWriter sw = new StringWriter();

@@ -40,16 +40,16 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -77,7 +77,7 @@ public class BrokerTestHelper
 
     public static Broker createBrokerMock()
     {
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         SubjectCreator subjectCreator = mock(SubjectCreator.class);
 
         when(subjectCreator.getMechanisms()).thenReturn("");
@@ -88,10 +88,14 @@ public class BrokerTestHelper
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(mock(Broker.class), false));
         when(broker.getObjectFactory()).thenReturn(objectFactory);
+        when(broker.getModel()).thenReturn(objectFactory.getModel());
         when(broker.getEventLogger()).thenReturn(new EventLogger());
         when(broker.getCategoryClass()).thenReturn(Broker.class);
 
         SystemContext systemContext = mock(SystemContext.class);
+        when(systemContext.getObjectFactory()).thenReturn(objectFactory);
+        when(systemContext.getModel()).thenReturn(objectFactory.getModel());
+        when(systemContext.getCategoryClass()).thenReturn(SystemContext.class);
         when(systemContext.getEventLogger()).thenReturn(new EventLogger());
         when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
 
@@ -112,11 +116,11 @@ public class BrokerTestHelper
 
         //VirtualHostFactory factory = new PluggableFactoryLoader<VirtualHostFactory>(VirtualHostFactory.class).get(hostType);
         SystemContext systemContext = new SystemContextImpl(TASK_EXECUTOR,
-                                                            new ConfiguredObjectFactoryImpl(Model.getInstance()),
+                                                            new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()),
                                                             mock(EventLogger.class),
                                                             mock(LogRecorder.class),
                                                             new BrokerOptions());
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         Broker broker = mock(Broker.class);
         when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
@@ -124,10 +128,9 @@ public class BrokerTestHelper
         when(broker.getSecurityManager()).thenReturn(securityManager);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         when(broker.getObjectFactory()).thenReturn(objectFactory);
-        ConfiguredObjectTypeFactory factory = objectFactory.getConfiguredObjectTypeFactory(org.apache.qpid.server.model.VirtualHost.class,
-                                                                      attributes);
+        when(broker.getModel()).thenReturn(objectFactory.getModel());
 
-        AbstractVirtualHost host = (AbstractVirtualHost) factory.create(attributes, broker);
+        AbstractVirtualHost host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class,attributes, broker);
 
         host.setDesiredState(host.getState(), State.ACTIVE);
 
@@ -187,21 +190,21 @@ public class BrokerTestHelper
         when(virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(virtualHost.getEventLogger()).thenReturn(eventLogger);
         when(virtualHost.getDurableConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        final ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(virtualHost.getObjectFactory()).thenReturn(objectFactory);
+        when(virtualHost.getModel()).thenReturn(objectFactory.getModel());
         final Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.Exchange.ID, UUIDGenerator.generateExchangeUUID("amp.direct", virtualHost.getName()));
         attributes.put(org.apache.qpid.server.model.Exchange.NAME, "amq.direct");
         attributes.put(org.apache.qpid.server.model.Exchange.TYPE, "direct");
         attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, durable);
-        final ConfiguredObjectTypeFactory<? extends Exchange> exchangeFactory =
-                objectFactory.getConfiguredObjectTypeFactory(Exchange.class, attributes);
         return Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<ExchangeImpl>()
         {
             @Override
             public ExchangeImpl run()
             {
 
-                return (ExchangeImpl) exchangeFactory.create(attributes, virtualHost);
+                return (ExchangeImpl) objectFactory.create(Exchange.class, attributes, virtualHost);
             }
         });
 

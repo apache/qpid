@@ -21,6 +21,7 @@
 package org.apache.qpid.server.configuration.startup;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.security.PrivilegedAction;
 import java.util.HashMap;
@@ -34,12 +35,11 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.test.utils.TestSSLConstants;
@@ -52,7 +52,7 @@ public class FileKeyStoreCreationTest extends TestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _factory = new ConfiguredObjectFactoryImpl(Model.getInstance());
+        _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
     }
 
     public void testCreateWithAllAttributesProvided()
@@ -61,6 +61,8 @@ public class FileKeyStoreCreationTest extends TestCase
         Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
 
         Broker broker = mock(Broker.class);
+        when(broker.getObjectFactory()).thenReturn(_factory);
+        when(broker.getModel()).thenReturn(_factory.getModel());
 
         final FileKeyStore keyStore =
                 createKeyStore(attributes, broker);
@@ -96,17 +98,16 @@ public class FileKeyStoreCreationTest extends TestCase
 
     protected FileKeyStore createKeyStore(final Map<String, Object> attributes, final Broker broker)
     {
-        ConfiguredObjectTypeFactory configuredObjectTypeFactory =
-                _factory.getConfiguredObjectTypeFactory(KeyStore.class, attributes);
-        return (FileKeyStore) configuredObjectTypeFactory.create(attributes, broker);
+        return (FileKeyStore) _factory.create(KeyStore.class,attributes, broker);
     }
 
     public void testCreateWithMissedRequiredAttributes()
     {
         Map<String, Object> attributes = getKeyStoreAttributes();
 
-        UUID id = UUID.randomUUID();
         Broker broker = mock(Broker.class);
+        when(broker.getObjectFactory()).thenReturn(_factory);
+        when(broker.getModel()).thenReturn(_factory.getModel());
 
         String[] mandatoryProperties = {KeyStore.NAME, FileKeyStore.PATH, FileKeyStore.PASSWORD};
         for (int i = 0; i < mandatoryProperties.length; i++)

@@ -31,8 +31,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
@@ -96,7 +96,7 @@ public class DefaultUpgraderProvider implements UpgraderProvider
                 currentUpgrader = addUpgrader(currentUpgrader, new Version3Upgrader());
             case 4:
                 currentUpgrader = addUpgrader(currentUpgrader, new Version4Upgrader());
-            case (Model.MODEL_MAJOR_VERSION * 10) + Model.MODEL_MINOR_VERSION:
+            case (BrokerModel.MODEL_MAJOR_VERSION * 10) + BrokerModel.MODEL_MINOR_VERSION:
                 currentUpgrader = addUpgrader(currentUpgrader, new NullUpgrader(recoverer));
                 break;
 

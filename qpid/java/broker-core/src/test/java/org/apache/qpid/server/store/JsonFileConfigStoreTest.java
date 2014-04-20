@@ -20,31 +20,34 @@
  */
 package org.apache.qpid.server.store;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
+
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
-import org.mockito.ArgumentMatcher;
-import org.mockito.InOrder;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
 
 public class JsonFileConfigStoreTest extends QpidTestCase
 {
@@ -65,6 +68,9 @@ public class JsonFileConfigStoreTest extends QpidTestCase
 
         _virtualHost = mock(ConfiguredObject.class);
         when(_virtualHost.getName()).thenReturn(getName());
+        ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(_virtualHost.getObjectFactory()).thenReturn(factory);
+        when(_virtualHost.getModel()).thenReturn(factory.getModel());
         _storeLocation = TestFileUtils.createTestDirectory("json", true);
         _configurationStoreSettings = new HashMap<String, Object>();
         _configurationStoreSettings.put(JsonFileConfigStore.STORE_TYPE, JsonFileConfigStore.TYPE);
