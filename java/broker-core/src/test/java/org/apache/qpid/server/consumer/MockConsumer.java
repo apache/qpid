@@ -41,6 +41,9 @@ import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Session;
@@ -239,6 +242,9 @@ public class MockConsumer implements ConsumerTarget
         {
             _modelObject = mock(Session.class);
             when(_modelObject.getCategoryClass()).thenReturn(Session.class);
+            ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+            when(_modelObject.getObjectFactory()).thenReturn(factory);
+            when(_modelObject.getModel()).thenReturn(factory.getModel());
         }
 
         @Override

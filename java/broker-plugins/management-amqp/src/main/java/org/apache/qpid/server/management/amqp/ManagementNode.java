@@ -54,7 +54,6 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
@@ -201,7 +200,7 @@ class ManagementNode implements MessageSource, MessageDestination
             if(entityType.creatable())
             {
                 boolean isCreatableChild = false;
-                for(Class<? extends ConfiguredObject> parentConfig : Model.getInstance().getParentTypes(clazz))
+                for(Class<? extends ConfiguredObject> parentConfig : _managedObject.getModel().getParentTypes(clazz))
                 {
                     isCreatableChild = parentConfig.isAssignableFrom(_managedObject.getClass());
                     if(isCreatableChild)
@@ -243,7 +242,7 @@ class ManagementNode implements MessageSource, MessageDestination
 
             if(ConfiguredObject.class.isAssignableFrom(clazz))
             {
-                Collection<Class<? extends ConfiguredObject>> childTypes = Model.getInstance().getChildTypes(clazz);
+                Collection<Class<? extends ConfiguredObject>> childTypes = _managedObject.getModel().getChildTypes(clazz);
                 for(Class<? extends ConfiguredObject> childClass : childTypes)
                 {
                     populateTypeMetaData(childClass, true);
@@ -1214,7 +1213,7 @@ class ManagementNode implements MessageSource, MessageDestination
                 final Class managementClass = getManagementClass(_managedObject.getClass());
                 _entities.get(_entityTypes.get(managementClass.getName())).put(_managedObject.getName(), _managedObject);
 
-                Collection<Class<? extends ConfiguredObject>> childClasses = Model.getInstance().getChildTypes(managementClass);
+                Collection<Class<? extends ConfiguredObject>> childClasses = object.getModel().getChildTypes(managementClass);
                 for(Class<? extends ConfiguredObject> childClass : childClasses)
                 {
                     if(getManagementClass(childClass) != null)

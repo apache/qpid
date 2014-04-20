@@ -28,11 +28,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 
 public class StructureServlet extends AbstractServlet
 {
@@ -70,7 +70,7 @@ public class StructureServlet extends AbstractServlet
         structure.put("id", object.getId());
         structure.put("name", object.getName());
 
-        for(Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(clazz))
+        for(Class<? extends ConfiguredObject> childClass : object.getModel().getChildTypes(clazz))
         {
             Collection<? extends ConfiguredObject> children = object.getChildren(childClass);
             if(children != null)

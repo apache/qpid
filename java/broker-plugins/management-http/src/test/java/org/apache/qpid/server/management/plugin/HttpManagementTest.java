@@ -31,7 +31,10 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementTest extends QpidTestCase
@@ -46,6 +49,12 @@ public class HttpManagementTest extends QpidTestCase
         super.setUp();
         _id = UUID.randomUUID();
         _broker = mock(Broker.class);
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+
+        when(_broker.getObjectFactory()).thenReturn(objectFactory);
+        when(_broker.getModel()).thenReturn(objectFactory.getModel());
+        when(_broker.getCategoryClass()).thenReturn(Broker.class);
+
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, false);
         attributes.put(HttpManagement.HTTPS_BASIC_AUTHENTICATION_ENABLED, true);

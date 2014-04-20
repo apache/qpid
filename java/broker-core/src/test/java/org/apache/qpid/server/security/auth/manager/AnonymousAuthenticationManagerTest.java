@@ -21,19 +21,18 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
-import static org.mockito.Mockito.mock;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class AnonymousAuthenticationManagerTest extends QpidTestCase
 {
@@ -46,7 +45,7 @@ public class AnonymousAuthenticationManagerTest extends QpidTestCase
         Map<String,Object> attrs = new HashMap<String, Object>();
         attrs.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrs.put(AuthenticationProvider.NAME, getTestName());
-        _manager = new AnonymousAuthenticationManager(attrs, mock(Broker.class));
+        _manager = new AnonymousAuthenticationManager(attrs, BrokerTestHelper.createBrokerMock());
 
     }
 

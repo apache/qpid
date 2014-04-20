@@ -43,7 +43,6 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
 
 public class RestServlet extends AbstractServlet
@@ -152,7 +151,7 @@ public class RestServlet extends AbstractServlet
 
         for(int i = 0; i < _hierarchy.length; i++)
         {
-            if(i == 0 || Model.getInstance().getChildTypes(_hierarchy[i - 1]).contains(_hierarchy[i]))
+            if(i == 0 || getBroker().getModel().getChildTypes(_hierarchy[i - 1]).contains(_hierarchy[i]))
             {
 
                 for(ConfiguredObject<?> parent : parents)
@@ -276,7 +275,7 @@ public class RestServlet extends AbstractServlet
                                                                 ConfiguredObject child)
     {
         Collection<ConfiguredObject> ancestors = new HashSet<ConfiguredObject>();
-        Collection<Class<? extends ConfiguredObject>> parentTypes = Model.getInstance().getParentTypes(childType);
+        Collection<Class<? extends ConfiguredObject>> parentTypes = child.getModel().getParentTypes(childType);
 
         for(Class<? extends ConfiguredObject> parentClazz : parentTypes)
         {
@@ -406,7 +405,7 @@ public class RestServlet extends AbstractServlet
                 {
                     for(int j = i-1; j >=0; j--)
                     {
-                        if(Model.getInstance().getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
+                        if(getBroker().getModel().getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
                         {
                             for(ConfiguredObject<?> parent : objects[j])
                             {
@@ -426,7 +425,7 @@ public class RestServlet extends AbstractServlet
             }
             List<ConfiguredObject> parents = new ArrayList<ConfiguredObject>();
             Class<? extends ConfiguredObject> objClass = getConfiguredClass();
-            Collection<Class<? extends ConfiguredObject>> parentClasses = Model.getInstance().getParentTypes(objClass);
+            Collection<Class<? extends ConfiguredObject>> parentClasses = getBroker().getModel().getParentTypes(objClass);
             for(int i = _hierarchy.length-2; i >=0 ; i--)
             {
                 if(parentClasses.contains(_hierarchy[i]))
@@ -488,7 +487,7 @@ public class RestServlet extends AbstractServlet
             return true;
         }
 
-        Collection<Class<? extends ConfiguredObject>> parentClasses = Model.getInstance().getParentTypes(objClass);
+        Collection<Class<? extends ConfiguredObject>> parentClasses = obj.getModel().getParentTypes(objClass);
 
         for (ConfiguredObject parent : otherParents)
         {

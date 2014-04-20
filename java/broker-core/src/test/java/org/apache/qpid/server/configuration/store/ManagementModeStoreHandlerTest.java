@@ -44,8 +44,8 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -78,7 +78,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _taskExecutor = new TaskExecutor();
         _taskExecutor.start();
 
-        _systemContext = new SystemContextImpl(_taskExecutor, new ConfiguredObjectFactoryImpl(Model.getInstance()), mock(
+        _systemContext = new SystemContextImpl(_taskExecutor, new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()), mock(
                 EventLogger.class), mock(LogRecorder.class), new BrokerOptions());
 
 

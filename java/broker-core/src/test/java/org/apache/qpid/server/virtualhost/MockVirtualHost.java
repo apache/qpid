@@ -32,6 +32,7 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectAttribute;
@@ -39,6 +40,7 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.protocol.LinkRegistry;
@@ -436,6 +438,12 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     public ConfiguredObjectFactory getObjectFactory()
     {
         return null;
+    }
+
+    @Override
+    public Model getModel()
+    {
+        return BrokerModel.getInstance();
     }
 
     public LinkRegistry getLinkRegistry(String remoteContainerId)

@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProviderImpl;
@@ -69,7 +70,10 @@ public class PreferencesProviderCreationTest extends QpidTestCase
         BrokerTestHelper.setUp();
         _authenticationProvider = mock(AuthenticationProvider.class);
         _broker = BrokerTestHelper.createBrokerMock();
+        ConfiguredObjectFactory factory = _broker.getObjectFactory();
         when(_authenticationProvider.getParent(Broker.class)).thenReturn(_broker);
+        when(_authenticationProvider.getObjectFactory()).thenReturn(factory);
+        when(_authenticationProvider.getModel()).thenReturn(factory.getModel());
     }
 
     public void tearDown() throws Exception

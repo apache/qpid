@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
-
 import java.util.Collection;
 import java.util.Collections;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 
 public class ResolvedObject<C extends ConfiguredObject<C>> implements UnresolvedConfiguredObject<C>
 {
@@ -41,7 +40,7 @@ public class ResolvedObject<C extends ConfiguredObject<C>> implements Unresolved
     public ConfiguredObject<?>[] getParents()
     {
         final Collection<Class<? extends ConfiguredObject>> parentTypes =
-                Model.getInstance().getParentTypes(_resolved.getCategoryClass());
+                _resolved.getModel().getParentTypes(_resolved.getCategoryClass());
         ConfiguredObject<?>[] parents = new ConfiguredObject[parentTypes.size()];
         int i = 0;
         for(Class<? extends ConfiguredObject> parentType : parentTypes)

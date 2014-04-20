@@ -24,8 +24,6 @@ import java.util.Map;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
@@ -34,8 +32,6 @@ import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 
 public class QueueFactory<X extends Queue<X>>  implements ConfiguredObjectTypeFactory<X>
 {
-    private ConfiguredObjectFactory _configuredObjectFactory;
-
     @Override
     public Class<? super X> getCategoryClass()
     {
@@ -43,19 +39,23 @@ public class QueueFactory<X extends Queue<X>>  implements ConfiguredObjectTypeFa
     }
 
     @Override
-    public X create(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
+    public X create(final ConfiguredObjectFactory factory,
+                    final Map<String, Object> attributes,
+                    final ConfiguredObject<?>... parents)
     {
-        return getQueueFactory(attributes).create(attributes, parents);
+        return getQueueFactory(factory, attributes).create(factory, attributes, parents);
     }
 
     @Override
-    public UnresolvedConfiguredObject<X> recover(final ConfiguredObjectRecord record,
+    public UnresolvedConfiguredObject<X> recover(final ConfiguredObjectFactory factory,
+                                                 final ConfiguredObjectRecord record,
                                                  final ConfiguredObject<?>... parents)
     {
-        return getQueueFactory(record.getAttributes()).recover(record, parents);
+        return getQueueFactory(factory, record.getAttributes()).recover(factory, record, parents);
     }
 
-    private ConfiguredObjectTypeFactory<X> getQueueFactory(Map<String, Object> attributes)
+    private ConfiguredObjectTypeFactory<X> getQueueFactory(final ConfiguredObjectFactory factory,
+                                                           Map<String, Object> attributes)
     {
 
         String type;
@@ -84,14 +84,7 @@ public class QueueFactory<X extends Queue<X>>  implements ConfiguredObjectTypeFa
             }
         }
 
-        synchronized (this)
-        {
-            if(_configuredObjectFactory == null)
-            {
-                _configuredObjectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
-            }
-        }
-        return _configuredObjectFactory.getConfiguredObjectTypeFactory(Queue.class.getSimpleName(), type);
+        return factory.getConfiguredObjectTypeFactory(Queue.class.getSimpleName(), type);
     }
 
     @Override

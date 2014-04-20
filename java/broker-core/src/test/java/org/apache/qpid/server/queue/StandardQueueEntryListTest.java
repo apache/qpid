@@ -31,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -43,6 +45,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
 
     private static final String SCAVENGE_PROP = "qpid.queue.scavenge_count";
     private String oldScavengeValue = null;
+    private ConfiguredObjectFactoryImpl _factory;
 
     @Override
     protected void setUp()
@@ -55,6 +58,9 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
         final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
+        _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(virtualHost.getObjectFactory()).thenReturn(_factory);
+        when(virtualHost.getModel()).thenReturn(_factory.getModel());
         _testQueue = new StandardQueueImpl(queueAttributes, virtualHost);
         _testQueue.open();
         _sqel = _testQueue.getEntries();
@@ -101,6 +107,9 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
             when(virtualHost.getSecurityManager()).thenReturn(mock(SecurityManager.class));
             when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
+            when(virtualHost.getObjectFactory()).thenReturn(_factory);
+            when(virtualHost.getModel()).thenReturn(_factory.getModel());
+
             StandardQueueImpl queue = new StandardQueueImpl(queueAttributes, virtualHost);
             queue.open();
             return queue.getEntries();

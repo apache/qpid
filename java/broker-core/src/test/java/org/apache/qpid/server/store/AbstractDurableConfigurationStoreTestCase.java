@@ -43,7 +43,9 @@ import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -82,6 +84,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private UUID _exchangeId;
     private DurableConfigurationStore _configStore;
     protected Map<String, Object> _configurationStoreSettings;
+    private ConfiguredObjectFactoryImpl _factory;
 
     public void setUp() throws Exception
     {
@@ -90,7 +93,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _configurationStoreSettings = new HashMap<String, Object>();
         _queueId = UUIDGenerator.generateRandomUUID();
         _exchangeId = UUIDGenerator.generateRandomUUID();
-
+        _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         _storeName = getName();
         _storePath = TMP_FOLDER + File.separator + _storeName;
         _configurationStoreSettings.put(MessageStore.STORE_PATH, _storePath);
@@ -452,6 +455,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
         when(queue.getActualAttributes()).thenReturn(attributes);
 
+        when(queue.getObjectFactory()).thenReturn(_factory);
+        when(queue.getModel()).thenReturn(_factory.getModel());
         ConfiguredObjectRecord objectRecord = mock(ConfiguredObjectRecord.class);
         when(objectRecord.getId()).thenReturn(_queueId);
         when(objectRecord.getType()).thenReturn(Queue.class.getSimpleName());
@@ -473,6 +478,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchange.getId()).thenReturn(_exchangeId);
         when(exchange.getCategoryClass()).thenReturn(Exchange.class);
         when(exchange.isDurable()).thenReturn(true);
+        when(exchange.getObjectFactory()).thenReturn(_factory);
+        when(exchange.getModel()).thenReturn(_factory.getModel());
 
         ConfiguredObjectRecord exchangeRecord = mock(ConfiguredObjectRecord.class);
         when(exchangeRecord.getId()).thenReturn(_exchangeId);
@@ -491,6 +498,9 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
         ConfiguredObject<?> parent = mock(ConfiguredObject.class);
         when(parent.getName()).thenReturn("testName");
+
+        when(parent.getObjectFactory()).thenReturn(_factory);
+        when(parent.getModel()).thenReturn(_factory.getModel());
         _configStore.openConfigurationStore(parent, _configurationStoreSettings);
         _configStore.visitConfiguredObjectRecords(_handler);
     }

@@ -35,10 +35,10 @@ import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
@@ -53,11 +53,14 @@ public class VirtualHostCreationTest extends TestCase
     {
         SecurityManager securityManager = mock(SecurityManager.class);
         ConfigurationEntry entry = mock(ConfigurationEntry.class);
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(Model.getInstance());
         SystemContext systemContext = mock(SystemContext.class);
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(systemContext.getObjectFactory()).thenReturn(objectFactory);
+        when(systemContext.getModel()).thenReturn(objectFactory.getModel());
 
         Broker parent = mock(Broker.class);
         when(parent.getObjectFactory()).thenReturn(objectFactory);
+        when(parent.getModel()).thenReturn(objectFactory.getModel());
         when(parent.getSecurityManager()).thenReturn(securityManager);
         when(parent.getCategoryClass()).thenReturn(Broker.class);
         when(systemContext.getEventLogger()).thenReturn(mock(EventLogger.class));
@@ -93,10 +96,16 @@ public class VirtualHostCreationTest extends TestCase
     {
         SecurityManager securityManager = mock(SecurityManager.class);
         SystemContext systemContext = mock(SystemContext.class);
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(systemContext.getObjectFactory()).thenReturn(objectFactory);
+        when(systemContext.getModel()).thenReturn(objectFactory.getModel());
+
         Broker parent = mock(Broker.class);
         when(parent.getSecurityManager()).thenReturn(securityManager);
         when(parent.getParent(eq(SystemContext.class))).thenReturn(systemContext);
         when(systemContext.getEventLogger()).thenReturn(mock(EventLogger.class));
+        when(parent.getObjectFactory()).thenReturn(objectFactory);
+        when(parent.getModel()).thenReturn(objectFactory.getModel());
 
         for (String name : mandatoryAttributes)
         {
@@ -117,11 +126,7 @@ public class VirtualHostCreationTest extends TestCase
             {
                 // pass
             }
-            catch(NullPointerException e)
-            {
-                System.err.println(name);
-                e.printStackTrace();
-            }
+
         }
     }
 }

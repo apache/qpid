@@ -26,7 +26,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementFactoryTest extends QpidTestCase
@@ -46,6 +49,9 @@ public class HttpManagementFactoryTest extends QpidTestCase
         _attributes.put(HttpManagement.TIME_OUT, SESSION_TIMEOUT);
         _attributes.put(ConfiguredObject.ID, _id);
         when(_broker.getCategoryClass()).thenReturn(Broker.class);
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(_broker.getObjectFactory()).thenReturn(objectFactory);
+        when(_broker.getModel()).thenReturn(objectFactory.getModel());
 
         HttpManagement management = _pluginFactory.createInstance(_attributes, _broker);
         management.open();

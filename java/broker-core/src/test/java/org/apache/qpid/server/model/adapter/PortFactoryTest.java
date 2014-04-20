@@ -38,6 +38,9 @@ import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -63,7 +66,7 @@ public class PortFactoryTest extends QpidTestCase
     private TrustStore _trustStore = mock(TrustStore.class);
     private String _authProviderName = "authProvider";
     private AuthenticationProvider _authProvider = mock(AuthenticationProvider.class);
-    private PortFactory _portFactory;
+    private ConfiguredObjectFactoryImpl _factory;
 
 
     @Override
@@ -73,9 +76,24 @@ public class PortFactoryTest extends QpidTestCase
         when(_broker.getChildren(eq(AuthenticationProvider.class))).thenReturn(Collections.singleton(_authProvider));
         when(_broker.getCategoryClass()).thenReturn(Broker.class);
 
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(_broker.getObjectFactory()).thenReturn(objectFactory);
+        when(_broker.getModel()).thenReturn(objectFactory.getModel());
+        when(_authProvider.getModel()).thenReturn(objectFactory.getModel());
+        when(_authProvider.getObjectFactory()).thenReturn(objectFactory);
+        when(_authProvider.getCategoryClass()).thenReturn(AuthenticationProvider.class);
+
+
+        when(_keyStore.getModel()).thenReturn(objectFactory.getModel());
+        when(_keyStore.getObjectFactory()).thenReturn(objectFactory);
+        when(_trustStore.getModel()).thenReturn(objectFactory.getModel());
+        when(_trustStore.getObjectFactory()).thenReturn(objectFactory);
+
+
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);
-        _portFactory = new PortFactory();
+        _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        _attributes.put(Port.ID, _portId);
         _attributes.put(Port.NAME, getName());
         _attributes.put(Port.PORT, _portNumber);
         _attributes.put(Port.TRANSPORTS, _tcpStringSet);
@@ -93,7 +111,7 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.NAME, getName());
 
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
-        Port<?> port = _portFactory.createPort(_portId, _broker, attributes);
+        Port<?> port = _factory.create(Port.class, attributes, _broker);
 
         Collection<Protocol> protocols = port.getAvailableProtocols();
 
@@ -111,7 +129,8 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.PORT, 1);
         attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
-        Port<?> port = _portFactory.createPort(_portId, _broker, attributes);
+        Port<?> port = _factory.create(Port.class, attributes, _broker);
+
 
         Collection<Protocol> protocols = port.getAvailableProtocols();
 
@@ -130,7 +149,7 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.PORT, 1);
         attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
-        Port<?> port = _portFactory.createPort(_portId, _broker, attributes);
+        Port<?> port = _factory.create(Port.class, attributes, _broker);
 
         Collection<Protocol> protocols = port.getAvailableProtocols();
 
@@ -144,7 +163,7 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.PORT, 1);
         attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
-        Port port = _portFactory.createPort(_portId, _broker, attributes);
+        Port<?> port = _factory.create(Port.class, attributes, _broker);
 
         assertNotNull(port);
         assertTrue(port instanceof AmqpPort);
@@ -283,7 +302,7 @@ public class PortFactoryTest extends QpidTestCase
             _attributes.put(Port.TRUST_STORES, Arrays.asList(trustStoreNames));
         }
 
-        Port port = _portFactory.createPort(_portId, _broker, _attributes);
+        Port<?> port = _factory.create(Port.class, _attributes, _broker);
 
         assertNotNull(port);
         assertTrue(port instanceof AmqpPort);
@@ -316,8 +335,9 @@ public class PortFactoryTest extends QpidTestCase
         _attributes.put(Port.PORT, _portNumber);
         _attributes.put(Port.TRANSPORTS, _tcpStringSet);
         _attributes.put(Port.NAME, getName());
+        _attributes.put(Port.ID, _portId);
 
-        Port port = _portFactory.createPort(_portId, _broker, _attributes);
+        Port<?> port = _factory.create(Port.class, _attributes, _broker);
 
         assertNotNull(port);
         assertFalse("Port should not be an AMQP-specific subclass", port instanceof AmqpPort);
@@ -341,8 +361,9 @@ public class PortFactoryTest extends QpidTestCase
         _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         _attributes.put(Port.PORT, _portNumber);
         _attributes.put(Port.NAME, getName());
+        _attributes.put(Port.ID, _portId);
 
-        Port port = _portFactory.createPort(_portId, _broker, _attributes);
+        Port<?> port = _factory.create(Port.class, _attributes, _broker);
 
         assertNotNull(port);
         assertFalse("Port not be an AMQP-specific port subclass", port instanceof AmqpPort);
@@ -364,7 +385,7 @@ public class PortFactoryTest extends QpidTestCase
 
         try
         {
-            _portFactory.createPort(_portId, _broker, _attributes);
+            Port<?> port = _factory.create(Port.class, _attributes, _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException e)
@@ -387,7 +408,7 @@ public class PortFactoryTest extends QpidTestCase
 
         try
         {
-            _portFactory.createPort(_portId, _broker, attributes);
+            Port<?> port = _factory.create(Port.class, attributes, _broker);
             fail("RMI port creation should fail as another one already exist");
         }
         catch(IllegalConfigurationException e)
@@ -411,7 +432,7 @@ public class PortFactoryTest extends QpidTestCase
 
         try
         {
-            _portFactory.createPort(_portId, _broker, attributes);
+            Port<?> port = _factory.create(Port.class, attributes, _broker);
             fail("RMI port creation should fail due to requesting SSL");
         }
         catch(IllegalConfigurationException e)

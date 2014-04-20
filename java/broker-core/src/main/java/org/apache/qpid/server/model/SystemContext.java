@@ -21,7 +21,6 @@
 package org.apache.qpid.server.model;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -30,8 +29,6 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 public interface SystemContext<X extends SystemContext<X>> extends ConfiguredObject<X>
 {
     void resolveObjects(ConfiguredObjectRecord... records);
-
-    ConfiguredObjectFactory getObjectFactory();
 
     EventLogger getEventLogger();
 
@@ -46,8 +43,6 @@ public interface SystemContext<X extends SystemContext<X>> extends ConfiguredObj
     void close();
 
     Broker getBroker();
-
-    TaskExecutor getTaskExecutor();
 
     LogRecorder getLogRecorder();
 }

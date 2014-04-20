@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.configuration.store;
 
-import static org.mockito.Mockito.mock;
-
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,25 +34,15 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.model.SystemContextImpl;
 
 public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTestCase
 {
-    private SystemContext _systemContext;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
-        _systemContext = new SystemContextImpl(getTaskExecutor(), new ConfiguredObjectFactoryImpl(Model.getInstance()),
-                                           mock(EventLogger.class), mock(LogRecorder.class),
-                                           new BrokerOptions());
 
     }
 
@@ -66,7 +54,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         broker.putAll(brokerAttributes);
         ObjectMapper mapper = new ObjectMapper();
 
-        return new MemoryConfigurationEntryStore(mapper.writeValueAsString(broker), Collections.<String,String>emptyMap());
+        return new MemoryConfigurationEntryStore(getSystemContext(),mapper.writeValueAsString(broker), Collections.<String,String>emptyMap());
     }
 
     @Override
@@ -84,7 +72,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
     {
         try
         {
-            new MemoryConfigurationEntryStore(null, null, null, Collections.<String,String>emptyMap());
+            new MemoryConfigurationEntryStore(getSystemContext(), null, null, Collections.<String,String>emptyMap());
             fail("Cannot create a memory store without either initial store or path to an initial store file");
         }
         catch(IllegalConfigurationException e)
@@ -95,7 +83,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
 
     public void testCreateWithNullJson()
     {
-        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(null, Collections.<String,String>emptyMap());
+        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(getSystemContext(),null, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
@@ -107,7 +95,7 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.NAME, getTestName());
         MemoryConfigurationEntryStore  initialStoreFile = createStore(brokerId, brokerAttributes);
-        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(_systemContext, null, initialStoreFile, Collections.<String,String>emptyMap());
+        MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(getSystemContext(), null, initialStoreFile, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);
@@ -128,11 +116,11 @@ public class MemoryConfigurationEntryStoreTest extends ConfigurationEntryStoreTe
             setTestSystemProperty("QPID_HOME", TMP_FOLDER);
             setTestSystemProperty("QPID_WORK", TMP_FOLDER + File.separator + "work");
         }
-        MemoryConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(_systemContext,BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, null, new BrokerOptions().getConfigProperties());
+        MemoryConfigurationEntryStore initialStore = new MemoryConfigurationEntryStore(getSystemContext(),BrokerOptions.DEFAULT_INITIAL_CONFIG_LOCATION, null, new BrokerOptions().getConfigProperties());
         ConfigurationEntry initialStoreRoot = initialStore.getRootEntry();
         assertNotNull("Initial store root entry is not found", initialStoreRoot);
 
-         MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(_systemContext, null, initialStore, Collections.<String,String>emptyMap());
+         MemoryConfigurationEntryStore store = new MemoryConfigurationEntryStore(getSystemContext(), null, initialStore, Collections.<String,String>emptyMap());
 
         ConfigurationEntry root = store.getRootEntry();
         assertNotNull("Root entry is not found", root);

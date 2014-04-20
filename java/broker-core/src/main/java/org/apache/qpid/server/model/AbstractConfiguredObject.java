@@ -115,6 +115,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private final Class<? extends ConfiguredObject> _category;
     private final Class<? extends ConfiguredObject> _bestFitInterface;
+    private final ConfiguredObjectFactory _objectFactory;
 
     @ManagedAttributeField
     private long _createdTime;
@@ -161,12 +162,33 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return parentsMap;
     }
 
+    protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
+                                       Map<String, Object> attributes)
+    {
+        this(parents, attributes, parents.values().iterator().next().getTaskExecutor());
+    }
+
 
     protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor)
     {
+        this(parents, attributes, taskExecutor, parents.values().iterator().next().getObjectFactory());
+    }
+
+    protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
+                                       Map<String, Object> attributes,
+                                       TaskExecutor taskExecutor,
+                                       ConfiguredObjectFactory objectFactory)
+    {
         _taskExecutor = taskExecutor;
+        _objectFactory = objectFactory;
+
+        _category = Model.getCategory(getClass());
+
+        _attributeTypes = getAttributeTypes(getClass());
+        _automatedFields = getAutomatedFields(getClass());
+
         Object idObj = attributes.get(ID);
 
         UUID uuid;
@@ -181,17 +203,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             uuid = AttributeValueConverter.UUID_CONVERTER.convert(idObj, this);
         }
         _id = uuid;
-
         _name = AttributeValueConverter.STRING_CONVERTER.convert(attributes.get(NAME),this);
         if(_name == null)
         {
             throw new IllegalArgumentException("The name attribute is mandatory for " + getClass().getSimpleName() + " creation.");
         }
 
-        _attributeTypes = getAttributeTypes(getClass());
-        _automatedFields = getAutomatedFields(getClass());
-
-        _category = Model.getCategory(getClass());
         _type = Model.getType(getClass());
         _bestFitInterface = calculateBestFitInterface();
 
@@ -204,7 +221,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
         }
 
-        for (Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(getCategoryClass()))
+        for (Class<? extends ConfiguredObject> childClass : getModel().getChildTypes(getCategoryClass()))
         {
             _children.put(childClass, new CopyOnWriteArrayList<ConfiguredObject<?>>());
             _childrenById.put(childClass, new ConcurrentHashMap<UUID, ConfiguredObject<?>>());
@@ -457,7 +474,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private void applyToChildren(Action<ConfiguredObject<?>> action)
     {
-        for (Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(getCategoryClass()))
+        for (Class<? extends ConfiguredObject> childClass : getModel().getChildTypes(getCategoryClass()))
         {
             Collection<? extends ConfiguredObject> children = getChildren(childClass);
             if (children != null)
@@ -520,6 +537,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _durable;
     }
 
+    @Override
+    public final ConfiguredObjectFactory getObjectFactory()
+    {
+        return _objectFactory;
+    }
+
+    @Override
+    public final Model getModel()
+    {
+        return _objectFactory.getModel();
+    }
 
     public Class<? extends ConfiguredObject> getCategoryClass()
     {
@@ -840,7 +868,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             public Map<String, ConfiguredObjectRecord> getParents()
             {
                 Map<String, ConfiguredObjectRecord> parents = new LinkedHashMap<String, ConfiguredObjectRecord>();
-                for(Class<? extends ConfiguredObject> parentClass : Model.getInstance().getParentTypes(getCategoryClass()))
+                for(Class<? extends ConfiguredObject> parentClass : getModel().getParentTypes(getCategoryClass()))
                 {
                     ConfiguredObject parent = getParent(parentClass);
                     if(parent != null)
@@ -899,7 +927,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         if(_childrenByName.get(categoryClass).containsKey(name))
         {
             Collection<Class<? extends ConfiguredObject>> parentTypes =
-                    new ArrayList<Class<? extends ConfiguredObject>>(Model.getInstance().getParentTypes(categoryClass));
+                    new ArrayList<Class<? extends ConfiguredObject>>(child.getModel().getParentTypes(categoryClass));
             parentTypes.remove(getCategoryClass());
             boolean duplicate = true;
 
@@ -967,7 +995,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return Collections.unmodifiableList((List<? extends C>) _children.get(clazz));
     }
 
-    public TaskExecutor getTaskExecutor()
+    @Override
+    public final TaskExecutor getTaskExecutor()
     {
         return _taskExecutor;
     }
@@ -1192,7 +1221,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                                  final Map<String, String> inheritedContext)
     {
         Collection<Class<? extends ConfiguredObject>> parents =
-                Model.getInstance().getParentTypes(object.getCategoryClass());
+                object.getModel().getParentTypes(object.getCategoryClass());
         if(parents != null && !parents.isEmpty())
         {
             ConfiguredObject parent = object.getParent(parents.iterator().next());
@@ -1574,7 +1603,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                                                                      final Class<X> clazz)
     {
         Class<? extends ConfiguredObject> category = Model.getCategory(object.getClass());
-        Class<? extends ConfiguredObject> ancestorClass = getAncestorClassWithGivenDescendant(category, clazz);
+        Class<? extends ConfiguredObject> ancestorClass = getAncestorClassWithGivenDescendant(object.getModel(),category, clazz);
         if(ancestorClass != null)
         {
             ConfiguredObject ancestor = getAncestor(ancestorClass, category, object);
@@ -1591,7 +1620,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                                                                    final Class<X> clazz)
     {
         Set<X> descendants = new HashSet<X>();
-        for(Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(ancestorClass))
+        for(Class<? extends ConfiguredObject> childClass : ancestor.getModel().getChildTypes(ancestorClass))
         {
             Collection<? extends ConfiguredObject> children = ancestor.getChildren(childClass);
             if(childClass == clazz)
@@ -1626,7 +1655,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         else
         {
-            for(Class<? extends ConfiguredObject> parentClass : Model.getInstance().getParentTypes(category))
+            for(Class<? extends ConfiguredObject> parentClass : object.getModel().getParentTypes(category))
             {
                 ConfiguredObject parent = object.getParent(parentClass);
                 if(parent == null)
@@ -1644,17 +1673,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     private static Class<? extends ConfiguredObject> getAncestorClassWithGivenDescendant(
-            final Class<? extends ConfiguredObject> category,
+            final Model model, final Class<? extends ConfiguredObject> category,
             final Class<? extends ConfiguredObject> descendantClass)
     {
-        Model model = Model.getInstance();
         Collection<Class<? extends ConfiguredObject>> candidateClasses =
                 Collections.<Class<? extends ConfiguredObject>>singleton(category);
         while(!candidateClasses.isEmpty())
         {
             for(Class<? extends ConfiguredObject> candidate : candidateClasses)
             {
-                if(hasDescendant(candidate, descendantClass))
+                if(hasDescendant(model, candidate, descendantClass))
                 {
                     return candidate;
                 }
@@ -1669,11 +1697,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return null;
     }
 
-    private static boolean hasDescendant(final Class<? extends ConfiguredObject> candidate,
+    private static boolean hasDescendant(final Model model, final Class<? extends ConfiguredObject> candidate,
                                          final Class<? extends ConfiguredObject> descendantClass)
     {
         int oldSize = 0;
-        Model model = Model.getInstance();
 
         Set<Class<? extends ConfiguredObject>> allDescendants = new HashSet<Class<? extends ConfiguredObject>>(model.getChildTypes(
                 candidate));

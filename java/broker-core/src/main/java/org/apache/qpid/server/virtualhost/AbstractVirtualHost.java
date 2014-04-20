@@ -63,7 +63,6 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
 import org.apache.qpid.server.model.adapter.VirtualHostAliasAdapter;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -621,14 +620,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private AMQQueue<?> addQueueWithoutDLQ(Map<String, Object> attributes) throws QueueExistsException
     {
-        Broker<?> broker = getParent(Broker.class);
 
-        ConfiguredObjectTypeFactory<? extends Queue> factory =
-                broker.getObjectFactory().getConfiguredObjectTypeFactory(Queue.class, attributes);
 
         try
         {
-            return (AMQQueue) factory.create(attributes, this);
+            return (AMQQueue) getObjectFactory().create(Queue.class, attributes, this);
         }
         catch (DuplicateNameException e)
         {
@@ -783,14 +779,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType
     {
-        Broker<?> broker = getParent(Broker.class);
 
-        ConfiguredObjectTypeFactory<? extends Exchange> factory =
-                broker.getObjectFactory().getConfiguredObjectTypeFactory(Exchange.class, attributes);
 
         try
         {
-            return (ExchangeImpl) factory.create(attributes, this);
+            return (ExchangeImpl) getObjectFactory().create(Exchange.class, attributes, this);
         }
         catch (DuplicateNameException e)
         {
@@ -809,12 +802,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public SecurityManager getSecurityManager()
     {
         return _broker.getSecurityManager();
-    }
-
-    @Override
-    public ConfiguredObjectFactory getObjectFactory()
-    {
-        return _broker.getObjectFactory();
     }
 
     public void close()

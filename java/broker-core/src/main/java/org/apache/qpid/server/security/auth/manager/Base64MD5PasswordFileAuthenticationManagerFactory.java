@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.auth.manager;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ResolvedObject;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
@@ -70,7 +71,8 @@ public class Base64MD5PasswordFileAuthenticationManagerFactory extends AbstractA
     }
 
     @Override
-    public UnresolvedConfiguredObject<Base64MD5PasswordDatabaseAuthenticationManager> recover(final ConfiguredObjectRecord record,
+    public UnresolvedConfiguredObject<Base64MD5PasswordDatabaseAuthenticationManager> recover(final ConfiguredObjectFactory factory,
+                                                                                              final ConfiguredObjectRecord record,
                                                                                               final ConfiguredObject<?>... parents)
     {
 

@@ -44,6 +44,8 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
@@ -57,6 +59,7 @@ public class HeadersExchangeTest extends TestCase
     private HeadersExchange _exchange;
     private VirtualHostImpl _virtualHost;
     private TaskExecutor _taskExecutor;
+    private ConfiguredObjectFactoryImpl _factory;
 
     @Override
     public void setUp() throws Exception
@@ -71,6 +74,9 @@ public class HeadersExchangeTest extends TestCase
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         when(_virtualHost.getCategoryClass()).thenReturn(VirtualHost.class);
         when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
+        _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        when(_virtualHost.getObjectFactory()).thenReturn(_factory);
+        when(_virtualHost.getModel()).thenReturn(_factory.getModel());
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Exchange.ID, UUID.randomUUID());
         attributes.put(Exchange.NAME, "test");
@@ -143,6 +149,8 @@ public class HeadersExchangeTest extends TestCase
         when(q.toString()).thenReturn(name);
         when(q.getVirtualHost()).thenReturn(_virtualHost);
         when(q.getCategoryClass()).thenReturn(Queue.class);
+        when(q.getObjectFactory()).thenReturn(_factory);
+        when(q.getModel()).thenReturn(_factory.getModel());
         return q;
     }
 

@@ -33,6 +33,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -51,6 +52,11 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
         _authenticationProvider = mock(AuthenticationProvider.class);
         _broker = BrokerTestHelper.createBrokerMock();
         when(_authenticationProvider.getParent(Broker.class)).thenReturn(_broker);
+        ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
+        when(_authenticationProvider.getModel()).thenReturn(objectFactory.getModel());
+        when(_authenticationProvider.getObjectFactory()).thenReturn(objectFactory);
+        when(_authenticationProvider.getCategoryClass()).thenReturn(AuthenticationProvider.class);
+
         _factory = new FileSystemPreferencesProviderFactory();
     }
 
@@ -82,7 +88,7 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
             attributes.put(ConfiguredObject.ID, id);
-            PreferencesProvider provider = _factory.create(attributes, _authenticationProvider);
+            PreferencesProvider provider = _factory.create(null, attributes, _authenticationProvider);
             assertNotNull("Preferences provider was not instantiated", provider);
             assertEquals("Unexpected name", "test-provider", provider.getName());
             assertEquals("Unexpected id", id, provider.getId());
@@ -107,7 +113,7 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
             attributes.put(ConfiguredObject.ID, id);
-            _factory.create(attributes, _authenticationProvider);
+            _factory.create(null, attributes, _authenticationProvider);
         }
         catch (IllegalConfigurationException e)
         {
@@ -127,7 +133,7 @@ public class FileSystemPreferencesProviderFactoryTest extends QpidTestCase
         {
             attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
             attributes.put(ConfiguredObject.ID, id);
-            PreferencesProvider provider = _factory.create(attributes, _authenticationProvider);
+            PreferencesProvider provider = _factory.create(null, attributes, _authenticationProvider);
             assertNotNull("Preferences provider was not recovered", provider);
             assertEquals("Unexpected name", "test-provider", provider.getName());
             assertEquals("Unexpected id", id, provider.getId());

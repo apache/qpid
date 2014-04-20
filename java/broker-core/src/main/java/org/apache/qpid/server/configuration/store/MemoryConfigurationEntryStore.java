@@ -55,7 +55,6 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -85,8 +84,9 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 
     private ConfiguredObject<?> _parent;
 
-    protected MemoryConfigurationEntryStore(Map<String, String> configProperties)
+    protected MemoryConfigurationEntryStore(ConfiguredObject parentObject, Map<String, String> configProperties)
     {
+        _parent = parentObject;
         _objectMapper = new ObjectMapper();
         _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
@@ -94,9 +94,9 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         _brokerChildrenRelationshipMap = buildRelationshipClassMap();
     }
 
-    MemoryConfigurationEntryStore(String json, Map<String, String> configProperties)
+    MemoryConfigurationEntryStore(ConfiguredObject parentObject, String json, Map<String, String> configProperties)
     {
-        this(configProperties);
+        this(parentObject, configProperties);
         if (json == null || "".equals(json))
         {
             createRootEntry();
@@ -109,12 +109,11 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
 
     public MemoryConfigurationEntryStore(ConfiguredObject parentObject, String initialStoreLocation, ConfigurationEntryStore initialStore, Map<String, String> configProperties)
     {
-        this(configProperties);
+        this(parentObject, configProperties);
         if (initialStore == null && (initialStoreLocation == null || "".equals(initialStoreLocation) ))
         {
             throw new IllegalConfigurationException("Cannot instantiate the memory broker store as neither initial store nor initial store location is provided");
         }
-        _parent = parentObject;
         if (initialStore != null)
         {
             if (initialStore instanceof MemoryConfigurationEntryStore)
@@ -633,7 +632,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     {
         Map<String, Class<? extends ConfiguredObject>> relationships = new HashMap<String, Class<? extends ConfiguredObject>>();
 
-        Collection<Class<? extends ConfiguredObject>> children = Model.getInstance().getChildTypes(Broker.class);
+        Collection<Class<? extends ConfiguredObject>> children = _parent.getModel().getChildTypes(Broker.class);
         for (Class<? extends ConfiguredObject> childClass : children)
         {
             String name = childClass.getSimpleName().toLowerCase();
@@ -823,7 +822,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
         // for the parent configured object class
         if (parentConfiguredObjectClass != null)
         {
-            Collection<Class<? extends ConfiguredObject>> childTypes = Model.getInstance().getChildTypes(parentConfiguredObjectClass);
+            Collection<Class<? extends ConfiguredObject>> childTypes = _parent.getModel().getChildTypes(parentConfiguredObjectClass);
             for (Class<? extends ConfiguredObject> childType : childTypes)
             {
                 String relationship = childType.getSimpleName().toLowerCase();

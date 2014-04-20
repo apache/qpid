@@ -19,13 +19,17 @@
 package org.apache.qpid.server.jmx;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class JMXManagementFactoryTest extends QpidTestCase
@@ -40,6 +44,11 @@ public class JMXManagementFactoryTest extends QpidTestCase
         _attributes.put(ConfiguredObject.ID,UUID.randomUUID());
         _attributes.put(ConfiguredObject.TYPE, JMXManagementPlugin.PLUGIN_TYPE);
         _attributes.put(ConfiguredObject.NAME, getName());
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+
+        when(_broker.getObjectFactory()).thenReturn(objectFactory);
+        when(_broker.getModel()).thenReturn(objectFactory.getModel());
+        when(_broker.getCategoryClass()).thenReturn(Broker.class);
 
         JMXManagementPlugin jmxManagement = _jmxManagementFactory.createInstance( _attributes, _broker);
         jmxManagement.open();

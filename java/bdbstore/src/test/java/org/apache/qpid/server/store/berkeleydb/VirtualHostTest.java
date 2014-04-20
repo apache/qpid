@@ -36,13 +36,12 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
@@ -149,12 +148,10 @@ public class VirtualHostTest extends QpidTestCase
 
     private VirtualHost<?,?,?> createHost(Map<String, Object> attributes)
     {
-        ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(Model.getInstance());
-        ConfiguredObjectTypeFactory vhostFactory =
-                factory.getConfiguredObjectTypeFactory(VirtualHost.class, attributes);
+        ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         attributes = new HashMap<String, Object>(attributes);
         attributes.put(ConfiguredObject.ID, UUID.randomUUID());
-        return (VirtualHost<?,?,?>) vhostFactory.create(attributes,_broker);
+        return (VirtualHost<?,?,?>) factory.create(VirtualHost.class, attributes,_broker);
     }
 
 }

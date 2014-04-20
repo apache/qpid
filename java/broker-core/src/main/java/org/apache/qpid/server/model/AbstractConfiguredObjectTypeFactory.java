@@ -50,7 +50,9 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
     }
 
     @Override
-    public X create(final Map<String, Object> attributes, final ConfiguredObject<?>... parents)
+    public X create(final ConfiguredObjectFactory factory,
+                    final Map<String, Object> attributes,
+                    final ConfiguredObject<?>... parents)
     {
         X instance = createInstance(attributes, parents);
         instance.create();
@@ -61,7 +63,8 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
 
     public final <C extends ConfiguredObject<C>> C getParent(Class<C> parentClass, ConfiguredObject<?>... parents)
     {
-        if(!Model.getInstance().getParentTypes((Class<? extends ConfiguredObject>) getCategoryClass()).contains(
+
+        if(!parents[0].getModel().getParentTypes((Class<? extends ConfiguredObject>) getCategoryClass()).contains(
                 parentClass))
         {
             throw new IllegalArgumentException(parentClass.getSimpleName() + " is not a parent of " + _clazz.getSimpleName());
@@ -78,7 +81,8 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
     }
 
     @Override
-    public UnresolvedConfiguredObject<X> recover(final ConfiguredObjectRecord record,
+    public UnresolvedConfiguredObject<X> recover(final ConfiguredObjectFactory factory,
+                                                 final ConfiguredObjectRecord record,
                                                  final ConfiguredObject<?>... parents)
     {
         return new GenericUnresolvedConfiguredObject( record, parents );

@@ -19,8 +19,6 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import static org.mockito.Mockito.mock;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,8 +28,8 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
+import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
 {
@@ -39,7 +37,7 @@ public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
     PlainPasswordFileAuthenticationManagerFactory _factory = new PlainPasswordFileAuthenticationManagerFactory();
     private Map<String, Object> _configuration = new HashMap<String, Object>();
     private File _emptyPasswordFile;
-    private Broker _broker = mock(Broker.class);
+    private Broker _broker = BrokerTestHelper.createBrokerMock();
 
     @Override
     protected void setUp() throws Exception
@@ -56,7 +54,7 @@ public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
         _configuration.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
         _configuration.put("path", _emptyPasswordFile.getAbsolutePath());
 
-        AuthenticationManager manager = _factory.create(_configuration, _broker);
+        AuthenticationManager manager = _factory.create(null, _configuration, _broker);
         assertNotNull(manager);
         assertTrue(manager instanceof PrincipalDatabaseAuthenticationManager);
         assertTrue(((PrincipalDatabaseAuthenticationManager)manager).getPrincipalDatabase() instanceof PlainPasswordFilePrincipalDatabase);
@@ -71,7 +69,7 @@ public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
         _configuration.put("path", _emptyPasswordFile.getAbsolutePath());
 
 
-        AuthenticationManager manager = _factory.create(_configuration, _broker);
+        AuthenticationManager manager = _factory.create(null, _configuration, _broker);
 
         assertNotNull(manager);
         assertTrue(manager instanceof PrincipalDatabaseAuthenticationManager);
@@ -84,7 +82,7 @@ public class PlainPasswordFileAuthenticationManagerFactoryTest extends  TestCase
 
         try
         {
-            AuthenticationManager manager = _factory.create(_configuration, _broker);
+            AuthenticationManager manager = _factory.create(null, _configuration, _broker);
             fail("No authentication manager should be created");
         }
         catch (IllegalArgumentException e)

@@ -20,22 +20,30 @@
  */
 package org.apache.qpid.server.configuration.store;
 
+import static org.mockito.Mockito.mock;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
@@ -60,13 +68,19 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     private Map<String, Object> _authenticationProviderAttributes;
 
     private TaskExecutor _taskExecutor;
+    private SystemContextImpl _systemContext;
 
     public void setUp() throws Exception
     {
         super.setUp();
 
+
         _taskExecutor = new TaskExecutor();
         _taskExecutor.start();
+
+        _systemContext = new SystemContextImpl(_taskExecutor, new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()),
+                                               mock(EventLogger.class), mock(LogRecorder.class),
+                                               new BrokerOptions());
 
         _brokerId = UUID.randomUUID();
         _brokerAttributes = new HashMap<String, Object>();
@@ -89,6 +103,11 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _store = createStore(_brokerId, _brokerAttributes);
         addConfiguration(_virtualHostId, VirtualHost.class.getSimpleName(), _virtualHostAttributes);
         addConfiguration(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(), _authenticationProviderAttributes);
+    }
+
+    SystemContextImpl getSystemContext()
+    {
+        return _systemContext;
     }
 
     @Override

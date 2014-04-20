@@ -34,8 +34,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
@@ -627,7 +627,7 @@ public class BrokerStoreUpgrader
         {
             String version = getCurrentVersion();
 
-            while(!Model.MODEL_VERSION.equals(version))
+            while(!BrokerModel.MODEL_VERSION.equals(version))
             {
                 LOGGER.debug("Adding broker store upgrader from model version: " + version);
                 final UpgraderPhaseFactory upgraderPhaseFactory = _upgraders.get(version);
@@ -761,7 +761,7 @@ public class BrokerStoreUpgrader
             {
                 visited.add(object);
                 action.performAction(object);
-                for(Class<? extends ConfiguredObject> childClass : Model.getInstance().getChildTypes(object.getCategoryClass()))
+                for(Class<? extends ConfiguredObject> childClass : object.getModel().getChildTypes(object.getCategoryClass()))
                 {
                     Collection<? extends ConfiguredObject> children = object.getChildren(childClass);
                     if(children != null)
@@ -789,7 +789,7 @@ public class BrokerStoreUpgrader
                     return version;
                 }
             }
-            return Model.MODEL_VERSION;
+            return BrokerModel.MODEL_VERSION;
         }
 
         public Broker getBroker()

@@ -44,7 +44,7 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
 
     public JsonConfigurationEntryStore(ConfiguredObject<?> parentObject, DurableConfigurationStore initialStore, boolean overwrite, Map<String, String> configProperties)
     {
-        super(configProperties);
+        super(parentObject, configProperties);
         _parentObject = parentObject;
         String storeLocation = (String) parentObject.getAttribute("storePath");
         _storeFile = new File(storeLocation);
