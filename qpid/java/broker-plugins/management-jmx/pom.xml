@@ -46,6 +46,7 @@
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
+      <version>${log4j-version}</version>
     </dependency>
 
     <!-- test dependencies -->
@@ -59,6 +60,7 @@
     <dependency>
       <groupId>commons-beanutils</groupId>
       <artifactId>commons-beanutils-core</artifactId>
+      <version>${commons-beanutils-version}</version>
       <scope>test</scope>
     </dependency>
 

@@ -40,6 +40,7 @@
     <dependency>
       <groupId>com.jolbox</groupId>
       <artifactId>bonecp</artifactId>
+      <version>${bonecp-version}</version>
       <exclusions>
         <exclusion>
           <!-- exclude and specify a fixed version below -->
@@ -52,6 +53,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+      <version>${guava-version}</version>
       <scope>runtime</scope>
     </dependency>
 
