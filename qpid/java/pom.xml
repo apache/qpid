@@ -168,7 +168,7 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <tasks>
+              <target>
                 <echo>Qpid Test Profile Properties</echo>
                 <echo>[profile] ${profile}</echo>
                 <echo>[profile.broker.language] ${profile.broker.language}</echo>
@@ -181,7 +181,7 @@
                 <echo>[profile.broker.virtualhosts-config] ${profile.broker.virtualhosts-config}</echo>
                 <echo>[profile.broker.persistent] ${profile.broker.persistent}</echo>
                 <echo>[profile.messagestore.class.name] ${profile.messagestore.class.name}</echo>
-            </tasks>
+              </target>
             </configuration>
           </execution>
           <execution>
