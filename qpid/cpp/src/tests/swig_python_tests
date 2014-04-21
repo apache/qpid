@@ -47,6 +47,7 @@ stop_broker() {
 }
 
 test -f $PYTHONSWIGMODULE || skip "no swigged python client"
+test -d $QPID_TESTS || skip "test code not found"
 
 start_broker
 echo "Running swigged python tests using broker on port $QPID_PORT"

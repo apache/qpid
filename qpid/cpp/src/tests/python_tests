@@ -26,4 +26,9 @@ QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
 FAILING=${FAILING:-/dev/null}
 
+if [ ! -d $QPID_TESTS ]; then
+    echo "SKIPPED python tests: test code not found"
+    exit 0
+fi
+
 python $QPID_PYTHON_TEST -m qpid_tests.broker_0_10 -m qpid.tests -b localhost:$QPID_PORT -I $FAILING $PYTHON_TESTS || exit 1
