@@ -1,3 +1,4 @@
+
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Licensed to the Apache Software Foundation (ASF) under one or more
@@ -133,6 +134,23 @@
     </dependency>
   </dependencies>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit-version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-all</artifactId>
+        <version>${mockito-version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <build>
     <plugins>
       <plugin>
@@ -171,7 +189,7 @@
              </goals>
              <configuration>
                <target>
-                 <mkdir dir="${qpid.home.qbtc.output}"/>
+                 <mkdir dir="${qpid.home.qbtc.output}" />
                </target>
              </configuration>
           </execution>
@@ -292,6 +310,21 @@
 
     </plugins>
   </build>
+
+  <repositories>
+    <!-- For the BDB JE dependency of the optional bdbstore plugin modules-->
+    <repository>
+      <id>oracle.releases</id>
+      <url>http://download.oracle.com/maven</url>
+      <layout>default</layout>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
   <reporting>
     <plugins>
@@ -602,7 +635,7 @@
         <profile.broker.stopped>Exception constructed</profile.broker.stopped>
         <profile.broker.ready>Listening on TCP</profile.broker.ready>
         <profile.broker.command>${cpp-broker-dir}/qpidd -p @PORT --data-dir ${qpid.work}/@PORT -t --auth no --no-module-dir</profile.broker.command>
-        <profile.broker.command.windows></profile.broker.command.windows>
+        <profile.broker.command.windows />
         <profile.test.excludes>Excludes CPPExcludes ${profile}.excludes ${profile.specific.excludes} cpp.excludes</profile.test.excludes>
         <profile.specific.excludes>CPPPrefetchExcludes CPPTransientExcludes</profile.specific.excludes>
         <profile.broker.version>v0_10</profile.broker.version>
@@ -627,6 +660,30 @@
                     </requireProperty>
                   </rules>
                   <fail>true</fail>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Profile to update the Apache parent pom profile of the same name to prevent source assembly at java build level.-->
+    <profile>
+      <id>apache-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>source-release-assembly</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+                <configuration>
+                  <skipAssembly>true</skipAssembly>
                 </configuration>
               </execution>
             </executions>

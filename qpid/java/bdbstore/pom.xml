@@ -45,11 +45,13 @@
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
+      <version>${log4j-version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.sleepycat</groupId>
       <artifactId>je</artifactId>
+      <version>${bdb-version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -79,6 +81,7 @@
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jms_1.1_spec</artifactId>
+      <version>${geronimo-jms-1-1-version}</version>
       <scope>test</scope>
     </dependency>
 
