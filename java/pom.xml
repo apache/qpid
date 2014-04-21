@@ -167,7 +167,7 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <tasks>
+              <target>
                 <echo>Qpid Test Profile Properties</echo>
                 <echo>[profile] ${profile}</echo>
                 <echo>[profile.broker.language] ${profile.broker.language}</echo>
@@ -179,7 +179,7 @@
                 <echo>[profile.qpid.broker_default_amqp_protocol_excludes] ${profile.qpid.broker_default_amqp_protocol_excludes}</echo>
                 <echo>[profile.broker.persistent] ${profile.broker.persistent}</echo>
                 <echo>[profile.messagestore.type] ${profile.messagestore.type}</echo>
-            </tasks>
+              </target>
             </configuration>
           </execution>
           <execution>
