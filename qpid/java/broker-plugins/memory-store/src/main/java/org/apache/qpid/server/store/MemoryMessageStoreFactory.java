@@ -22,9 +22,10 @@ package org.apache.qpid.server.store;
 
 import java.util.Map;
 
+import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 
-public class MemoryMessageStoreFactory implements MessageStoreFactory
+public class MemoryMessageStoreFactory implements MessageStoreFactory, DurableConfigurationStoreFactory
 {
 
     @Override
@@ -41,6 +42,17 @@ public class MemoryMessageStoreFactory implements MessageStoreFactory
 
     @Override
     public void validateAttributes(Map<String, Object> attributes)
+    {
+    }
+
+    @Override
+    public DurableConfigurationStore createDurableConfigurationStore()
+    {
+        return new MemoryMessageStore();
+    }
+
+    @Override
+    public void validateConfigurationStoreSettings(Map<String, Object> attributes)
     {
     }
 }

@@ -33,7 +33,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
-
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
@@ -135,15 +134,10 @@ public class MessageServlet extends AbstractServlet
         String vhostName = pathInfoElements[0];
         String queueName = pathInfoElements[1];
 
-        VirtualHost<?,?,?> vhost = null;
-
-        for(VirtualHost<?,?,?> vh : getBroker().getVirtualHosts())
+        VirtualHost<?,?,?> vhost = getBroker().findVirtualHostByName(vhostName);
+        if (vhost == null)
         {
-            if(vh.getName().equals(vhostName))
-            {
-                vhost = vh;
-                break;
-            }
+            throw new IllegalArgumentException("Could not find virtual host with name '" + vhostName + "'");
         }
 
         return getQueueFromVirtualHost(queueName, vhost);

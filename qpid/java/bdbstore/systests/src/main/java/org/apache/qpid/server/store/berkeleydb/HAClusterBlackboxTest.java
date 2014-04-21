@@ -146,7 +146,6 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
             assertEquals("Failover occurred unexpectedly", 1L, _failoverLatch.getCount());
         }
 
-
         @Override
         public void failoverComplete()
         {

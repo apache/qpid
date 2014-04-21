@@ -32,9 +32,9 @@ import java.util.UUID;
 import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -82,13 +82,13 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         verify(_store).update(eq(false),any(ConfiguredObjectRecord.class));
     }
 
-    public void testChildAddedForVirtualHost()
+    public void testChildAddedForVirtualHostNode()
     {
         notifyBrokerStarted();
 
-        VirtualHost object = mock(VirtualHost.class);
-        Queue queue = mock(Queue.class);
-        _listener.childAdded(object, queue);
+        VirtualHostNode<?> object = mock(VirtualHostNode.class);
+        VirtualHost<?,?,?> virtualHost = mock(VirtualHost.class);
+        _listener.childAdded(object, virtualHost);
         verifyNoMoreInteractions(_store);
     }
 

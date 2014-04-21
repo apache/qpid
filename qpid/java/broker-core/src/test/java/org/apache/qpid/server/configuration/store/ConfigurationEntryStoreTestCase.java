@@ -47,6 +47,7 @@ import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
 import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.server.security.FileTrustStore;
@@ -60,11 +61,11 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
     private MemoryConfigurationEntryStore _store;
 
     private UUID _brokerId;
-    private UUID _virtualHostId;
+    private UUID _virtualHostNodeId;
     protected UUID _authenticationProviderId;
 
     private Map<String, Object> _brokerAttributes;
-    private Map<String, Object> _virtualHostAttributes;
+    private Map<String, Object> _virtualHostNodeAttributes;
     private Map<String, Object> _authenticationProviderAttributes;
 
     private TaskExecutor _taskExecutor;
@@ -90,10 +91,10 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _brokerAttributes.put(Broker.STATISTICS_REPORTING_PERIOD, 4000);
         _brokerAttributes.put(Broker.STATISTICS_REPORTING_RESET_ENABLED, true);
 
-        _virtualHostId = UUID.randomUUID();
-        _virtualHostAttributes = new HashMap<String, Object>();
-        _virtualHostAttributes.put(VirtualHost.NAME, "test");
-        _virtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
+        _virtualHostNodeId = UUID.randomUUID();
+        _virtualHostNodeAttributes = new HashMap<String, Object>();
+        _virtualHostNodeAttributes.put(VirtualHost.NAME, "test");
+        _virtualHostNodeAttributes.put(VirtualHost.TYPE, "JSON");
 
         _authenticationProviderId = UUID.randomUUID();
         _authenticationProviderAttributes = new HashMap<String, Object>();
@@ -101,7 +102,7 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         _authenticationProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.class.getSimpleName());
 
         _store = createStore(_brokerId, _brokerAttributes);
-        addConfiguration(_virtualHostId, VirtualHost.class.getSimpleName(), _virtualHostAttributes);
+        addConfiguration(_virtualHostNodeId, VirtualHostNode.class.getSimpleName(), _virtualHostNodeAttributes);
         addConfiguration(_authenticationProviderId, AuthenticationProvider.class.getSimpleName(), _authenticationProviderAttributes);
     }
 
@@ -282,18 +283,18 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
 
     public void testSaveExistingVirtualHost()
     {
-        ConfigurationEntry hostEntry = _store.getEntry(_virtualHostId);
+        ConfigurationEntry hostEntry = _store.getEntry(_virtualHostNodeId);
         assertNotNull("Host configuration is not found", hostEntry);
 
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, "test");
         virtualHostAttributes.put(VirtualHost.TYPE, "STANDARD");
 
-        ConfigurationEntry updatedEntry = new ConfigurationEntryImpl(_virtualHostId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
+        ConfigurationEntry updatedEntry = new ConfigurationEntryImpl(_virtualHostNodeId, VirtualHost.class.getSimpleName(), virtualHostAttributes,
                 hostEntry.getChildrenIds(), _store);
         _store.save(updatedEntry);
 
-        ConfigurationEntry newHostEntry = _store.getEntry(_virtualHostId);
+        ConfigurationEntry newHostEntry = _store.getEntry(_virtualHostNodeId);
         assertEquals("Unexpected virtual host configuration", updatedEntry, newHostEntry);
         assertEquals("Unexpected type", VirtualHost.class.getSimpleName(), newHostEntry.getType());
         assertEquals("Unexpected virtual host attributes", updatedEntry.getAttributes(), newHostEntry.getAttributes());

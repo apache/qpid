@@ -36,7 +36,6 @@ import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -107,8 +106,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         super(parentsMap(parent),
               attributes,
               parent.getTaskExecutor());
-
-        //_virtualHostRegistry = new VirtualHostRegistry(parent.getEventLogger());
 
         _logRecorder = parent.getLogRecorder();
         _eventLogger = parent.getEventLogger();
@@ -235,9 +232,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         {
             addAccessControlProvider(accessControlProvider);
         }
-        for(VirtualHost<?,?,?> virtualHost : getChildren(VirtualHost.class))
+        for(VirtualHostNode<?> virtualHostNode : getChildren(VirtualHostNode.class))
         {
-            addVirtualHost(virtualHost);
+            addVirtualHostNode(virtualHostNode);
         }
 
 
@@ -358,9 +355,10 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return BrokerModel.MODEL_VERSION;
     }
 
-    public Collection<VirtualHost<?,?,?>> getVirtualHosts()
+    @Override
+    public Collection<VirtualHostNode<?>> getVirtualHostNodes()
     {
-        Collection children = getChildren(VirtualHost.class);
+        Collection children = getChildren(VirtualHostNode.class);
         return children;
     }
 
@@ -402,11 +400,11 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return children;
     }
 
-    private VirtualHost createVirtualHost(final Map<String, Object> attributes)
+    private VirtualHostNode<?> createVirtualHostNode(Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
 
-        final VirtualHost virtualHost = getObjectFactory().create(VirtualHost.class,attributes,this);
+        final VirtualHostNode virtualHostNode = getObjectFactory().create(VirtualHostNode.class,attributes, this);
 
         // permission has already been granted to create the virtual host
         // disable further access check on other operations, e.g. create exchange
@@ -415,19 +413,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                                 @Override
                                 public Object run()
                                 {
-                                    virtualHost.setDesiredState(State.INITIALISING, State.ACTIVE);
+                                    virtualHostNode.setDesiredState(State.INITIALISING, State.ACTIVE);
                                     return null;
                                 }
                             });
-        return virtualHost;
+        return virtualHostNode;
     }
-
-    private boolean deleteVirtualHost(final VirtualHost vhost) throws AccessControlException, IllegalStateException
-    {
-        vhost.removeChangeListener(this);
-        return true;
-    }
-
 
     public State getState()
     {
@@ -467,9 +458,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             @Override
             public C execute()
             {
-                if (childClass == VirtualHost.class)
+                if (childClass == VirtualHostNode.class)
                 {
-                    return (C) createVirtualHost(attributes);
+                    return (C) createVirtualHostNode(attributes);
                 }
                 else if (childClass == Port.class)
                 {
@@ -720,10 +711,16 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return true;
     }
 
-    private void addVirtualHost(VirtualHost<?,?,?> virtualHost)
+    private void addVirtualHostNode(VirtualHostNode<?> virtualHostNode)
     {
+        virtualHostNode.addChangeListener(this);
+    }
 
-        virtualHost.addChangeListener(this);
+
+    private boolean deleteVirtualHostNode(final VirtualHostNode virtualHostNode) throws AccessControlException, IllegalStateException
+    {
+        virtualHostNode.removeChangeListener(this);
+        return true;
     }
 
     @Override
@@ -815,9 +812,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             {
                 childDeleted = deletePort(oldState, (Port)object);
             }
-            else if(object instanceof VirtualHost)
+            else if(object instanceof VirtualHostNode)
             {
-                childDeleted = deleteVirtualHost((VirtualHost)object);
+                childDeleted = deleteVirtualHostNode((VirtualHostNode)object);
             }
             else if(object instanceof GroupProvider)
             {
@@ -890,9 +887,17 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
-    public VirtualHost findVirtualHostByName(String name)
+    public VirtualHost<?,?,?> findVirtualHostByName(String name)
     {
-        return getChildByName(VirtualHost.class, name);
+        for (VirtualHostNode<?> virtualHostNode : getChildren(VirtualHostNode.class))
+        {
+            VirtualHost<?, ?, ?> virtualHost = virtualHostNode.getVirtualHost();
+            if (virtualHost != null && virtualHost.getName().equals(name))
+            {
+                return virtualHost;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -1042,11 +1047,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         _messagesReceived.reset();
         _dataReceived.reset();
 
-        for (VirtualHost vhost : getVirtualHosts())
+        for (VirtualHostNode<?> virtualHostNode : getChildren(VirtualHostNode.class))
         {
-            if(vhost instanceof VirtualHostImpl)
+            VirtualHost<?, ?, ?> virtualHost = virtualHostNode.getVirtualHost();
+            if (virtualHost instanceof VirtualHostImpl)
             {
-                ((VirtualHostImpl) vhost).resetStatistics();
+                ((VirtualHostImpl) virtualHost).resetStatistics();
             }
         }
     }
@@ -1098,37 +1104,38 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                 _eventLogger.message(BrokerMessages.STATS_MSGS(RECEIVED,
                                                                _messagesReceived.getPeak(),
                                                                _messagesReceived.getTotal()));
-                Collection<VirtualHost<?,?,?>> hosts = getVirtualHosts();
 
-                    for (VirtualHost vhost : hosts)
+                for (VirtualHostNode<?> virtualHostNode : getChildren(VirtualHostNode.class))
+                {
+                    VirtualHost<?, ?, ?> virtualHost = virtualHostNode.getVirtualHost();
+                    if (virtualHost instanceof VirtualHostImpl)
                     {
-                        if(vhost instanceof VirtualHostImpl)
-                        {
-                            VirtualHostImpl vhostImpl = (VirtualHostImpl) vhost;
-                            String name = vhost.getName();
-                            StatisticsCounter dataDelivered = vhostImpl.getDataDeliveryStatistics();
-                            StatisticsCounter messagesDelivered = vhostImpl.getMessageDeliveryStatistics();
-                            StatisticsCounter dataReceived = vhostImpl.getDataReceiptStatistics();
-                            StatisticsCounter messagesReceived = vhostImpl.getMessageReceiptStatistics();
-                            EventLogger logger = vhostImpl.getEventLogger();
-                            logger.message(VirtualHostMessages.STATS_DATA(name,
-                                                                          DELIVERED,
-                                                                          dataDelivered.getPeak() / 1024.0,
-                                                                          dataDelivered.getTotal()));
-                            logger.message(VirtualHostMessages.STATS_MSGS(name,
-                                                                          DELIVERED,
-                                                                          messagesDelivered.getPeak(),
-                                                                          messagesDelivered.getTotal()));
-                            logger.message(VirtualHostMessages.STATS_DATA(name,
-                                                                          RECEIVED,
-                                                                          dataReceived.getPeak() / 1024.0,
-                                                                          dataReceived.getTotal()));
-                            logger.message(VirtualHostMessages.STATS_MSGS(name,
-                                                                          RECEIVED,
-                                                                          messagesReceived.getPeak(),
-                                                                          messagesReceived.getTotal()));
-                        }
+                        VirtualHostImpl vhostImpl = (VirtualHostImpl) virtualHost;
+                        String name = virtualHost.getName();
+                        StatisticsCounter dataDelivered = vhostImpl.getDataDeliveryStatistics();
+                        StatisticsCounter messagesDelivered = vhostImpl.getMessageDeliveryStatistics();
+                        StatisticsCounter dataReceived = vhostImpl.getDataReceiptStatistics();
+                        StatisticsCounter messagesReceived = vhostImpl.getMessageReceiptStatistics();
+                        EventLogger logger = vhostImpl.getEventLogger();
+                        logger.message(VirtualHostMessages.STATS_DATA(name,
+                                                                      DELIVERED,
+                                                                      dataDelivered.getPeak() / 1024.0,
+                                                                      dataDelivered.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_MSGS(name,
+                                                                      DELIVERED,
+                                                                      messagesDelivered.getPeak(),
+                                                                      messagesDelivered.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_DATA(name,
+                                                                      RECEIVED,
+                                                                      dataReceived.getPeak() / 1024.0,
+                                                                      dataReceived.getTotal()));
+                        logger.message(VirtualHostMessages.STATS_MSGS(name,
+                                                                      RECEIVED,
+                                                                      messagesReceived.getPeak(),
+                                                                      messagesReceived.getTotal()));
+
                     }
+                }
 
                 if (_reset)
                 {

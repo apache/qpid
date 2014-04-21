@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -51,7 +50,6 @@ import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.DefaultDestination;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
@@ -60,9 +58,27 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.IntegrityViolationException;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
 import org.apache.qpid.server.model.adapter.VirtualHostAliasAdapter;
+import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -74,7 +90,6 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.DurableConfiguredObjectRecoverer;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
@@ -131,12 +146,10 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private final AtomicBoolean _deleted = new AtomicBoolean();
+    private final VirtualHostNode<?> _virtualHostNode;
 
     @ManagedAttributeField
     private Map<String, Object> _messageStoreSettings;
-
-    @ManagedAttributeField
-    private Map<String, Object> _configurationStoreSettings;
 
     @ManagedAttributeField
     private boolean _queue_deadLetterQueueEnabled;
@@ -163,12 +176,13 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private String _securityAcl;
     private MessageDestination _defaultDestination;
 
-
-    public AbstractVirtualHost(final Map<String, Object> attributes, Broker<?> broker)
+    public AbstractVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
-        super(parentsMap(broker),
-              enhanceWithId(attributes), broker.getTaskExecutor());
-        _broker = broker;
+        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(VirtualHostNode.class, virtualHostNode),
+              enhanceWithId(attributes), ((Broker<?>)virtualHostNode.getParent(Broker.class)).getTaskExecutor());
+        _broker = virtualHostNode.getParent(Broker.class);
+        _virtualHostNode = virtualHostNode;
+
         _dtxRegistry = new DtxRegistry();
 
         _eventLogger = _broker.getParent(SystemContext.class).getEventLogger();
@@ -209,6 +223,41 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
+
+        DurableConfigurationStore durableConfigurationStore = _virtualHostNode.getConfigurationStore();
+
+        boolean nodeIsMessageStoreProvider = _virtualHostNode.isMessageStoreProvider();
+        if (nodeIsMessageStoreProvider)
+        {
+            if (!(durableConfigurationStore instanceof MessageStore))
+            {
+                throw new IllegalConfigurationException("Virtual host node " + _virtualHostNode.getName()
+                        + " is configured as a provider of message store but the MessageStore interface is not implemented on a configuration store of type "
+                        + durableConfigurationStore.getClass().getName());
+            }
+        }
+        else
+        {
+            Map<String, Object> messageStoreSettings = getMessageStoreSettings();
+            if (messageStoreSettings == null)
+            {
+                throw new IllegalConfigurationException("Message store settings are missed for VirtualHost " + getName()
+                        + ". You can either configure the message store setting on the host or "
+                        + (durableConfigurationStore instanceof MessageStore ?
+                                " configure VirtualHostNode " + _virtualHostNode.getName() + " as a provider of message store" :
+                                " change the node type to one having configuration store implementing the MessageStore inteface") );
+            }
+            String storeType = (String) messageStoreSettings.get(MessageStore.STORE_TYPE);
+            if (storeType == null)
+            {
+                throw new IllegalConfigurationException("Message store  type  setting is not set");
+            }
+            MessageStoreFactory  factory = MessageStoreFactory.FACTORY_LOADER.get(storeType);
+            if (factory == null)
+            {
+                throw new IllegalConfigurationException("Message store  factory is not found for type " + storeType + " for VirtualHost " + getName());
+            }
+        }
     }
 
     @Override
@@ -224,18 +273,17 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     protected void onOpen()
     {
         super.onOpen();
-        _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());
 
         registerSystemNodes();
 
         initialiseStatistics();
 
-        Subject.doAs(getSecurityManager().getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
+        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
         {
             @Override
             public Object run()
             {
-                initialiseStorage(AbstractVirtualHost.this);
+                initialiseStorage();
                 return null;
             }
         });
@@ -280,7 +328,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
     }
 
-    abstract protected void initialiseStorage(org.apache.qpid.server.model.VirtualHost<?,?,?> virtualHost);
+    abstract protected void initialiseStorage();
 
     protected boolean isStoreEmpty()
     {
@@ -547,7 +595,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _houseKeepingTasks.getActiveCount();
     }
 
-
     public long getCreateTime()
     {
         return _createTime;
@@ -620,8 +667,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private AMQQueue<?> addQueueWithoutDLQ(Map<String, Object> attributes) throws QueueExistsException
     {
-
-
         try
         {
             return (AMQQueue) getObjectFactory().create(Queue.class, attributes, this);
@@ -779,8 +824,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             throws ExchangeExistsException, ReservedExchangeNameException,
                    UnknownExchangeException, AMQUnknownExchangeType
     {
-
-
         try
         {
             return (ExchangeImpl) getObjectFactory().create(Exchange.class, attributes, this);
@@ -815,6 +858,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         _state = VirtualHostState.STOPPED;
 
         _eventLogger.message(VirtualHostMessages.CLOSED(getName()));
+
+        // TODO: The state work will replace this with closure of the virtualhost, rather than deleting it.
+        deleted();
     }
 
     private void closeStorage()
@@ -830,28 +876,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 _logger.error("Failed to close message store", e);
             }
         }
-        if (getDurableConfigurationStore() != null)
-        {
-            try
-            {
-                getDurableConfigurationStore().closeConfigurationStore();
-                MessageStoreLogSubject configurationStoreSubject = getConfigurationStoreLogSubject();
-                if (configurationStoreSubject != null)
-                {
-                    getEventLogger().message(configurationStoreSubject, ConfigStoreMessages.CLOSE());
-                }
-            }
-            catch (StoreException e)
-            {
-                _logger.error("Failed to close configuration store", e);
-            }
-        }
-        getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CLOSED());
-    }
 
-    protected MessageStoreLogSubject getConfigurationStoreLogSubject()
-    {
-        return null;
+        if (!_virtualHostNode.isMessageStoreProvider())
+        {
+            getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CLOSED());
+        }
     }
 
     public void registerMessageDelivered(long messageSize)
@@ -923,11 +952,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public DtxRegistry getDtxRegistry()
     {
         return _dtxRegistry;
-    }
-
-    public String toString()
-    {
-        return getName();
     }
 
     public VirtualHostState getVirtualHostState()
@@ -1029,44 +1053,12 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         _state = state;
     }
 
-    protected void attainActivation()
-    {
-        VirtualHostState finalState = VirtualHostState.ERRORED;
-
-        try
-        {
-            initialiseHouseKeeping(getHousekeepingCheckPeriod());
-            finalState = VirtualHostState.ACTIVE;
-        }
-        finally
-        {
-            _state = finalState;
-            reportIfError(_state);
-        }
-    }
-
     protected void reportIfError(VirtualHostState state)
     {
         if (state == VirtualHostState.ERRORED)
         {
             _eventLogger.message(VirtualHostMessages.ERRORED(getName()));
         }
-    }
-
-    protected Map<String, DurableConfiguredObjectRecoverer> getDurableConfigurationRecoverers()
-    {
-        DurableConfiguredObjectRecoverer[] recoverers = {
-          new QueueRecoverer(this),
-          new ExchangeRecoverer(this),
-          new BindingRecoverer(this)
-        };
-
-        final Map<String, DurableConfiguredObjectRecoverer> recovererMap= new HashMap<String, DurableConfiguredObjectRecoverer>();
-        for(DurableConfiguredObjectRecoverer recoverer : recoverers)
-        {
-            recovererMap.put(recoverer.getType(), recoverer);
-        }
-        return recovererMap;
     }
 
     private static class IsStoreEmptyHandler implements ConfiguredObjectRecordHandler
@@ -1349,18 +1341,10 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _storeTransactionOpenTimeoutWarn;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> getMessageStoreSettings()
     {
         return _messageStoreSettings;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public Map<String, Object> getConfigurationStoreSettings()
-    {
-        return _configurationStoreSettings;
     }
 
     @Override
@@ -1424,6 +1408,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         if (desiredState == State.ACTIVE)
         {
+            activate();
             return true;
         }
         else if (desiredState == State.STOPPED)
@@ -1472,7 +1457,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         return Collections.unmodifiableCollection(_aliases);
     }
-
 
     private String createDLQ(final String queueName)
     {
@@ -1609,5 +1593,63 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return name + System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, VirtualHostImpl.DEFAULT_DLE_NAME_SUFFIX);
     }
 
+    @Override
+    public String getModelVersion()
+    {
+        return BrokerModel.MODEL_VERSION;
+    }
+
+    @Override
+    public DurableConfigurationStore getDurableConfigurationStore()
+    {
+        return _virtualHostNode.getConfigurationStore();
+    }
+
+    @Override
+    protected void onCreate()
+    {
+        super.onCreate();
+        getDurableConfigurationStore().create(asObjectRecord());
+    }
+
+    protected void activate()
+    {
+        _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());
+
+        boolean nodeIsMessageStoreProvider = _virtualHostNode.isMessageStoreProvider();
+
+        MessageStore messageStore = getMessageStore();
+        Map<String, Object> messageStoreSettings = getMessageStoreSettings();
+        if (messageStoreSettings == null)
+        {
+            messageStoreSettings = Collections.emptyMap();
+        }
+        messageStore.openMessageStore(this, messageStoreSettings);
+
+        if (!nodeIsMessageStoreProvider)
+        {
+            getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CREATED());
+            getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.STORE_LOCATION(messageStore.getStoreLocation()));
+        }
+
+        if (isStoreEmpty())
+        {
+            createDefaultExchanges();
+        }
+
+        new MessageStoreRecoverer(this, getMessageStoreLogSubject()).recover();
+
+        VirtualHostState finalState = VirtualHostState.ERRORED;
+        try
+        {
+            initialiseHouseKeeping(getHousekeepingCheckPeriod());
+            finalState = VirtualHostState.ACTIVE;
+        }
+        finally
+        {
+            _state = finalState;
+            reportIfError(_state);
+        }
+    }
 
 }

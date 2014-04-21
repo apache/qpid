@@ -31,7 +31,6 @@ import java.util.UUID;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.configuration.ConfigurationEntry;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Broker;
@@ -41,41 +40,58 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 
 public class VirtualHostCreationTest extends TestCase
 {
+    private VirtualHostNode<?> _virtualHostNode;
 
-    public void testCreateVirtualHostFromStoreConfigAttributes()
+    @Override
+    public void setUp() throws Exception
     {
+        super.setUp();
+
+        EventLogger eventLogger = mock(EventLogger.class);
         SecurityManager securityManager = mock(SecurityManager.class);
-        ConfigurationEntry entry = mock(ConfigurationEntry.class);
+
         SystemContext systemContext = mock(SystemContext.class);
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         when(systemContext.getObjectFactory()).thenReturn(objectFactory);
         when(systemContext.getModel()).thenReturn(objectFactory.getModel());
+        when(systemContext.getEventLogger()).thenReturn(eventLogger);
 
-        Broker parent = mock(Broker.class);
-        when(parent.getObjectFactory()).thenReturn(objectFactory);
-        when(parent.getModel()).thenReturn(objectFactory.getModel());
-        when(parent.getSecurityManager()).thenReturn(securityManager);
-        when(parent.getCategoryClass()).thenReturn(Broker.class);
-        when(systemContext.getEventLogger()).thenReturn(mock(EventLogger.class));
-        when(parent.getParent(eq(SystemContext.class))).thenReturn(systemContext);
+        Broker broker = mock(Broker.class);
+        when(broker.getObjectFactory()).thenReturn(objectFactory);
+        when(broker.getModel()).thenReturn(objectFactory.getModel());
+        when(broker.getSecurityManager()).thenReturn(securityManager);
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
+        when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
 
+        _virtualHostNode = mock(VirtualHostNode.class);
+        when(_virtualHostNode.getParent(Broker.class)).thenReturn(broker);
+        when(_virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
+        when(_virtualHostNode.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
+        when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
+    }
+
+    public void testCreateVirtualHostFromStoreConfigAttributes()
+    {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
         attributes.put(VirtualHost.ID, UUID.randomUUID());
 
         attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
-        when(entry.getAttributes()).thenReturn(attributes);
 
-        VirtualHost host = new StandardVirtualHost(attributes,parent);
+        VirtualHost<?,?,?> host = new StandardVirtualHost(attributes, _virtualHostNode);
         host.open();
+
         assertNotNull("Null is returned", host);
         assertEquals("Unexpected name", getName(), host.getName());
     }
@@ -94,19 +110,6 @@ public class VirtualHostCreationTest extends TestCase
 
     public void checkMandatoryAttributesAreValidated(String[] mandatoryAttributes, Map<String, Object> attributes)
     {
-        SecurityManager securityManager = mock(SecurityManager.class);
-        SystemContext systemContext = mock(SystemContext.class);
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
-        when(systemContext.getObjectFactory()).thenReturn(objectFactory);
-        when(systemContext.getModel()).thenReturn(objectFactory.getModel());
-
-        Broker parent = mock(Broker.class);
-        when(parent.getSecurityManager()).thenReturn(securityManager);
-        when(parent.getParent(eq(SystemContext.class))).thenReturn(systemContext);
-        when(systemContext.getEventLogger()).thenReturn(mock(EventLogger.class));
-        when(parent.getObjectFactory()).thenReturn(objectFactory);
-        when(parent.getModel()).thenReturn(objectFactory.getModel());
-
         for (String name : mandatoryAttributes)
         {
             Map<String, Object> copy = new HashMap<String, Object>(attributes);
@@ -114,7 +117,7 @@ public class VirtualHostCreationTest extends TestCase
             copy.put(ConfiguredObject.ID, UUID.randomUUID());
             try
             {
-                VirtualHost host = new StandardVirtualHost(copy,parent);
+                AbstractVirtualHost<StandardVirtualHost> host = new StandardVirtualHost(copy,_virtualHostNode);
                 host.open();
                 fail("Cannot create a virtual host without a mandatory attribute " + name);
             }
@@ -126,7 +129,6 @@ public class VirtualHostCreationTest extends TestCase
             {
                 // pass
             }
-
         }
     }
 }

@@ -169,8 +169,8 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     public void testSecondaryDesignatedAsPrimaryAfterOrginalPrimaryStopped() throws Exception
     {
         startCluster(true);
-        _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfPrimary());
         final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
+        _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfPrimary());
 
         assertFalse("Expected node to NOT be set as designated primary", storeBean.getDesignatedPrimary());
         storeBean.setDesignatedPrimary(true);

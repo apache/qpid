@@ -28,9 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.stats.StatisticsGatherer;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -39,11 +38,9 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class VirtualHostTest extends QpidTestCase
 {
-
     private Broker _broker;
-    private StatisticsGatherer _statisticsGatherer;
-    private RecovererProvider _recovererProvider;
     private TaskExecutor _taskExecutor;
+    private VirtualHostNode<?> _virtualHostNode;
 
     @Override
     protected void setUp() throws Exception
@@ -55,8 +52,12 @@ public class VirtualHostTest extends QpidTestCase
         _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
-        _recovererProvider = mock(RecovererProvider.class);
-        _statisticsGatherer = mock(StatisticsGatherer.class);
+        _virtualHostNode = mock(VirtualHostNode.class);
+        when(_virtualHostNode.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
+        when(_virtualHostNode.getParent(Broker.class)).thenReturn(_broker);
+        ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
+        when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
+        when(_virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
     }
 
 
@@ -69,26 +70,26 @@ public class VirtualHostTest extends QpidTestCase
 
     public void testInitialisingState()
     {
-        VirtualHost host = createHost();
+        VirtualHost<?,?,?> host = createHost();
 
         assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
     }
 
     public void testActiveState()
     {
-        VirtualHost host = createHost();
+        VirtualHost<?,?,?> host = createHost();
+
 
         host.setDesiredState(State.INITIALISING, State.ACTIVE);
-        host.open();
         assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
     }
 
     public void testStoppedState()
     {
-        VirtualHost host = createHost();
+        VirtualHost<?,?,?> host = createHost();
 
         assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
-        host.open();
+
         host.setDesiredState(State.INITIALISING, State.ACTIVE);
         assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
 
@@ -98,7 +99,7 @@ public class VirtualHostTest extends QpidTestCase
 
     public void testDeletedState()
     {
-        VirtualHost host = createHost();
+        VirtualHost<?,?,?> host = createHost();
 
         assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
 
@@ -108,8 +109,8 @@ public class VirtualHostTest extends QpidTestCase
 
     public void testCreateQueueChildHavingMessageGroupingAttributes()
     {
-        VirtualHost host = createHost();
-        host.open();
+        VirtualHost<?,?,?> host = createHost();
+
         host.setDesiredState(State.INITIALISING, State.ACTIVE);
 
         String queueName = getTestName();
@@ -120,7 +121,7 @@ public class VirtualHostTest extends QpidTestCase
 
         host.createChild(Queue.class, arguments);
 
-        Queue queue = (Queue) ConfiguredObjectFinder.findConfiguredObjectByName(host.getQueues(), queueName);
+        Queue<?> queue = (Queue<?>) ConfiguredObjectFinder.findConfiguredObjectByName(host.getQueues(), queueName);
         Object messageGroupKey = queue.getAttribute(Queue.MESSAGE_GROUP_KEY);
         assertEquals("Unexpected message group key attribute", "mykey", messageGroupKey);
 
@@ -129,22 +130,24 @@ public class VirtualHostTest extends QpidTestCase
 
     }
 
-    private VirtualHost createHost()
+    private VirtualHost<?,?,?> createHost()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
         attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
         attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
 
-        VirtualHost host = createHost(attributes);
+        VirtualHost<?,?,?> host = createHost(attributes);
         return host;
     }
 
-    private VirtualHost createHost(Map<String, Object> attributes)
+    private VirtualHost<?,?,?> createHost(Map<String, Object> attributes)
     {
         attributes = new HashMap<String, Object>(attributes);
         attributes.put(VirtualHost.ID, UUID.randomUUID());
-        return new StandardVirtualHost(attributes, _broker);
+        StandardVirtualHost host= new StandardVirtualHost(attributes, _virtualHostNode);
+        host.create();
+        return host;
     }
 
 }

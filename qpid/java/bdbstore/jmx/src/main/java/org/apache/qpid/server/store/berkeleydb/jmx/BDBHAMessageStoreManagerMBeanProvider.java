@@ -26,11 +26,14 @@ import javax.management.StandardMBean;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.jmx.MBeanProvider;
 import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
 /**
  * This provide will create a {@link BDBHAMessageStoreManagerMBean} if the child is a virtual
@@ -49,15 +52,15 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
     @Override
     public boolean isChildManageableByMBean(ConfiguredObject child)
     {
-        return (child instanceof VirtualHost && BDBHAVirtualHost.TYPE.equals(child.getType()));
+        return child instanceof BDBHAVirtualHostNode;
     }
 
     @Override
-    public StandardMBean createMBean(ConfiguredObject child, StandardMBean parent) throws JMException
+    public ManagedObject createMBean(ConfiguredObject child, ManagedObjectRegistry registry) throws JMException
     {
-        VirtualHost virtualHostChild = (VirtualHost) child;
+        BDBHAVirtualHostNode<?> virtualHostNode = (BDBHAVirtualHostNode<?>) child;
 
-        BDBMessageStore messageStore = (BDBMessageStore) virtualHostChild.getMessageStore();
+        BDBMessageStore messageStore = (BDBMessageStore) virtualHostNode.getConfigurationStore();
 
         if (LOGGER.isDebugEnabled())
         {
@@ -65,7 +68,7 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
         }
 
         ReplicatedEnvironmentFacade replicatedEnvironmentFacade = (ReplicatedEnvironmentFacade)messageStore.getEnvironmentFacade();
-        return new BDBHAMessageStoreManagerMBean(virtualHostChild.getName(), replicatedEnvironmentFacade, (ManagedObject) parent);
+        return new BDBHAMessageStoreManagerMBean(virtualHostNode.getGroupName(), replicatedEnvironmentFacade, registry);
     }
 
     @Override

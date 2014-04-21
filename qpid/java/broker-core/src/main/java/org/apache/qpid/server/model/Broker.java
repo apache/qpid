@@ -136,7 +136,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
 
     //children
-    Collection < VirtualHost<?,?,?> > getVirtualHosts();
+    Collection<VirtualHostNode<?>> getVirtualHostNodes();
 
     Collection<Port<?>> getPorts();
 

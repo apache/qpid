@@ -20,31 +20,14 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-import com.sleepycat.je.Durability;
-import com.sleepycat.je.Durability.ReplicaAckPolicy;
-import com.sleepycat.je.Durability.SyncPolicy;
-import org.apache.qpid.server.store.MessageStore;
+import java.util.Map;
+
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
-
-import java.util.Map;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeImpl;
 
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
-    public static final String DURABILITY = "haDurability";
-    public static final String GROUP_NAME = "haGroupName";
-    public static final String HELPER_ADDRESS = "haHelperAddress";
-    public static final String NODE_ADDRESS = "haNodeAddress";
-    public static final String NODE_NAME = "haNodeName";
-    public static final String REPLICATION_CONFIG = "haReplicationConfig";
-    public static final String COALESCING_SYNC = "haCoalescingSync";
-    public static final String DESIGNATED_PRIMARY = "haDesignatedPrimary";
-
-    private static final int DEFAULT_NODE_PRIORITY = 1;
-    private static final Durability DEFAULT_DURABILITY = new Durability(SyncPolicy.NO_SYNC, SyncPolicy.NO_SYNC,
-            ReplicaAckPolicy.SIMPLE_MAJORITY);
-    private static final boolean DEFAULT_COALESCING_SYNC = true;
-
     @Override
     public EnvironmentFacade createEnvironmentFacade(final Map<String, Object> messageStoreSettings, EnvironmentFacadeTask... initialisationTasks)
     {
@@ -53,77 +36,76 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             @Override
             public boolean isDesignatedPrimary()
             {
-                return convertBoolean(messageStoreSettings.get(DESIGNATED_PRIMARY), false);
+                return (Boolean)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.DESIGNATED_PRIMARY);
             }
 
             @Override
             public boolean isCoalescingSync()
             {
-                return convertBoolean(messageStoreSettings.get(COALESCING_SYNC), DEFAULT_COALESCING_SYNC);
+                return (Boolean)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.COALESCING_SYNC);
             }
 
             @Override
             public String getStorePath()
             {
-                return (String) messageStoreSettings.get(MessageStore.STORE_PATH);
+                return (String) messageStoreSettings.get(BDBHAVirtualHostNodeImpl.STORE_PATH);
             }
 
             @SuppressWarnings("unchecked")
             @Override
             public Map<String, String> getParameters()
             {
-                return (Map<String, String>) messageStoreSettings.get(EnvironmentFacadeFactory.ENVIRONMENT_CONFIGURATION);
+                return (Map<String, String>) messageStoreSettings.get(BDBHAVirtualHostNodeImpl.ENVIRONMENT_CONFIGURATION);
             }
 
             @SuppressWarnings("unchecked")
             @Override
             public Map<String, String> getReplicationParameters()
             {
-                return (Map<String, String>) messageStoreSettings.get(REPLICATION_CONFIG);
+                return (Map<String, String>) messageStoreSettings.get(BDBHAVirtualHostNodeImpl.REPLICATED_ENVIRONMENT_CONFIGURATION);
             }
 
             @Override
             public int getQuorumOverride()
             {
-                return 0;
+                return (Integer)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.QUORUM_OVERRIDE);
             }
 
             @Override
             public int getPriority()
             {
-                return DEFAULT_NODE_PRIORITY;
+                return (Integer)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.PRIORITY);
             }
 
             @Override
             public String getName()
             {
-                return (String)messageStoreSettings.get(NODE_NAME);
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.NAME);
             }
 
             @Override
             public String getHostPort()
             {
-                return (String)messageStoreSettings.get(NODE_ADDRESS);
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.ADDRESS);
             }
 
             @Override
             public String getHelperHostPort()
             {
-                return (String)messageStoreSettings.get(HELPER_ADDRESS);
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.HELPER_ADDRESS);
             }
 
             @Override
             public String getGroupName()
             {
-                return (String)messageStoreSettings.get(GROUP_NAME);
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.GROUP_NAME);
             }
 
             @Override
             public String getDurability()
             {
-                String durability = (String)messageStoreSettings.get(DURABILITY);
-                return durability == null ? DEFAULT_DURABILITY.toString() : durability;
-            }
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.DURABILITY);
+             }
         };
         return new ReplicatedEnvironmentFacade(configuration, initialisationTasks);
 
@@ -133,26 +115,6 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
     public String getType()
     {
         return ReplicatedEnvironmentFacade.TYPE;
-    }
-
-    private boolean convertBoolean(final Object value, boolean defaultValue)
-    {
-        if(value instanceof Boolean)
-        {
-            return (Boolean) value;
-        }
-        else if(value instanceof String)
-        {
-            return Boolean.valueOf((String) value);
-        }
-        else if(value == null)
-        {
-            return defaultValue;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Boolean");
-        }
     }
 
 }

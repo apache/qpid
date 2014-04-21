@@ -18,15 +18,28 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.configuration.startup;
 
-import java.util.Map;
-import java.util.UUID;
-
-public interface DurableConfiguredObjectRecoverer
+public abstract class UpgraderPhaseFactory
 {
-    public void load(final DurableConfigurationRecoverer durableConfigurationRecoverer,
-                     final ConfiguredObjectRecord record);
+    private final String _toVersion;
+    private final String _fromVersion;
 
-    public String getType();
+    protected UpgraderPhaseFactory(String fromVersion, String toVersion)
+    {
+        _toVersion = toVersion;
+        _fromVersion = fromVersion;
+    }
+
+    public String getToVersion()
+    {
+        return _toVersion;
+    }
+
+    public String getFromVersion()
+    {
+        return _fromVersion;
+    }
+
+    public abstract StoreUpgraderPhase newInstance();
 }

@@ -1,4 +1,4 @@
-package org.apache.qpid.server.configuration.startup;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,7 @@ package org.apache.qpid.server.configuration.startup;/*
  * under the License.
  *
  */
-
+package org.apache.qpid.server.configuration.startup;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.model.Broker;
@@ -41,82 +40,58 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.DurableConfigurationStoreUpgrader;
-import org.apache.qpid.server.store.NonNullUpgrader;
+import org.apache.qpid.server.store.NullUpgrader;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.util.Action;
 
 public class BrokerStoreUpgrader
 {
-    private static Logger LOGGER = Logger.getLogger(BrokerStoreUpgrader.class);
-
-    private static Map<String, UpgraderPhaseFactory> _upgraders = new HashMap<String, UpgraderPhaseFactory>();
     private final SystemContext _systemContext;
+    private Map<String, UpgraderPhaseFactory> _upgraders = new HashMap<String, UpgraderPhaseFactory>();
 
-    public BrokerStoreUpgrader(SystemContext systemContext)
-    {
-        _systemContext = systemContext;
-    }
-
-    private static abstract class UpgraderPhaseFactory
-    {
-        private final String _toVersion;
-
-        protected UpgraderPhaseFactory(String fromVersion, String toVersion)
-        {
-            _upgraders.put(fromVersion, this);
-            _toVersion = toVersion;
-        }
-
-        public String getToVersion()
-        {
-            return _toVersion;
-        }
-
-        public abstract BrokerStoreUpgraderPhase newInstance();
-    }
-
-    private static abstract class BrokerStoreUpgraderPhase extends NonNullUpgrader
-    {
-        private final String _toVersion;
-
-        protected BrokerStoreUpgraderPhase(String toVersion)
-        {
-            _toVersion = toVersion;
-        }
-
-
-        protected ConfiguredObjectRecord upgradeBrokerRecord(ConfiguredObjectRecord record)
-        {
-            Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
-            updatedAttributes.put(Broker.MODEL_VERSION, _toVersion);
-            record = createModifiedRecord(record, updatedAttributes);
-            getUpdateMap().put(record.getId(), record);
-            return record;
-        }
-    }
 
     // Note: don't use externally defined constants in upgraders in case they change, the values here MUST stay the same
     // no matter what changes are made to the code in the future
 
-    private final static UpgraderPhaseFactory UPGRADE_1_0 = new UpgraderPhaseFactory("1.0", "1.1")
+    public BrokerStoreUpgrader(SystemContext systemContext)
     {
-        @Override
-        public BrokerStoreUpgraderPhase newInstance()
+        _systemContext = systemContext;
+
+        register(new Upgrader_1_0_to_1_1());
+        register(new Upgrader_1_1_to_1_2());
+        register(new Upgrader_1_2_to_1_3());
+        register(new Upgrader_1_3_to_1_4());
+    }
+
+    private void register(UpgraderPhaseFactory factory)
+    {
+        _upgraders.put(factory.getFromVersion(), factory);
+    }
+
+    private final class Upgrader_1_0_to_1_1 extends UpgraderPhaseFactory
+    {
+        private Upgrader_1_0_to_1_1()
         {
-            return new BrokerStoreUpgraderPhase(getToVersion())
+            super("1.0", "1.1");
+        }
+
+        @Override
+        public StoreUpgraderPhase newInstance()
+        {
+            return new StoreUpgraderPhase(Broker.MODEL_VERSION, getToVersion())
             {
                 @Override
                 public void configuredObject(ConfiguredObjectRecord record)
                 {
                     if (record.getType().equals("Broker"))
                     {
-                        record = upgradeBrokerRecord(record);
+                        record = upgradeRootRecord(record);
                     }
                     else if (record.getType().equals("VirtualHost") && record.getAttributes().containsKey("storeType"))
                     {
                         Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
                         updatedAttributes.put("type", "STANDARD");
-                        record = createModifiedRecord(record, updatedAttributes);
+                        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
                         getUpdateMap().put(record.getId(), record);
                     }
 
@@ -131,24 +106,19 @@ public class BrokerStoreUpgrader
                 }
             };
         }
-
-
-    };
-
-
-    protected static ConfiguredObjectRecordImpl createModifiedRecord(final ConfiguredObjectRecord record,
-                                                                     final Map<String, Object> updatedAttributes)
-    {
-
-        return new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
     }
 
-    private final static UpgraderPhaseFactory UPGRADE_1_1 = new UpgraderPhaseFactory("1.1", "1.2")
+    private static final class Upgrader_1_1_to_1_2 extends UpgraderPhaseFactory
     {
-        @Override
-        public BrokerStoreUpgraderPhase newInstance()
+        private Upgrader_1_1_to_1_2()
         {
-            return new BrokerStoreUpgraderPhase(getToVersion())
+            super("1.1", "1.2");
+        }
+
+        @Override
+        public StoreUpgraderPhase newInstance()
+        {
+            return new StoreUpgraderPhase(Broker.MODEL_VERSION, getToVersion())
             {
 
                 @Override
@@ -156,7 +126,7 @@ public class BrokerStoreUpgrader
                 {
                     if (record.getType().equals("Broker"))
                     {
-                        record = upgradeBrokerRecord(record);
+                        record = upgradeRootRecord(record);
                     }
 
                     getNextUpgrader().configuredObject(record);
@@ -170,15 +140,19 @@ public class BrokerStoreUpgrader
                 }
             };
         }
-    };
+    }
 
-
-    private final static UpgraderPhaseFactory UPGRADE_1_2 = new UpgraderPhaseFactory("1.2", "1.3")
+    private static final class Upgrader_1_2_to_1_3 extends UpgraderPhaseFactory
     {
-        @Override
-        public BrokerStoreUpgraderPhase newInstance()
+        private Upgrader_1_2_to_1_3()
         {
-            return new BrokerStoreUpgraderPhase(getToVersion())
+            super("1.2", "1.3");
+        }
+
+        @Override
+        public StoreUpgraderPhase newInstance()
+        {
+            return new StoreUpgraderPhase(Broker.MODEL_VERSION, getToVersion())
             {
 
                 @Override
@@ -188,7 +162,7 @@ public class BrokerStoreUpgrader
                     {
                         Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
                         updatedAttributes.put("trustStoreType", updatedAttributes.remove("type"));
-                        record = createModifiedRecord(record, updatedAttributes);
+                        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
                         getUpdateMap().put(record.getId(), record);
 
                     }
@@ -196,13 +170,13 @@ public class BrokerStoreUpgrader
                     {
                         Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
                         updatedAttributes.put("keyStoreType", updatedAttributes.remove("type"));
-                        record = createModifiedRecord(record, updatedAttributes);
+                        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
                         getUpdateMap().put(record.getId(), record);
 
                     }
                     else if (record.getType().equals("Broker"))
                     {
-                        record = upgradeBrokerRecord(record);
+                        record = upgradeRootRecord(record);
                     }
 
                     getNextUpgrader().configuredObject(record);
@@ -216,17 +190,22 @@ public class BrokerStoreUpgrader
                 }
             };
         }
-    };
+    }
 
-
-    private final static UpgraderPhaseFactory UPGRADE_1_3 = new UpgraderPhaseFactory("1.3", "1.4")
+    private static final class Upgrader_1_3_to_1_4 extends UpgraderPhaseFactory
     {
-        @Override
-        public BrokerStoreUpgraderPhase newInstance()
+        private Upgrader_1_3_to_1_4()
         {
-            return new BrokerStoreUpgraderPhase(getToVersion())
+            super("1.3", "1.4");
+        }
+
+        @Override
+        public StoreUpgraderPhase newInstance()
+        {
+            return new StoreUpgraderPhase(Broker.MODEL_VERSION, getToVersion())
             {
 
+                @SuppressWarnings("serial")
                 private Map<String, VirtualHostEntryUpgrader> _vhostUpgraderMap = new HashMap<String, VirtualHostEntryUpgrader>()
                 {{
                     put("BDB_HA", new BdbHaVirtualHostUpgrader());
@@ -257,13 +236,13 @@ public class BrokerStoreUpgrader
                     {
                         Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
                         updatedAttributes.put("type", updatedAttributes.remove("pluginType"));
-                        record = createModifiedRecord(record, updatedAttributes);
+                        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
                         getUpdateMap().put(record.getId(), record);
 
                     }
                     else if (record.getType().equals("Broker"))
                     {
-                        record = upgradeBrokerRecord(record);
+                        record = upgradeRootRecord(record);
                     }
 
                     getNextUpgrader().configuredObject(record);
@@ -277,9 +256,7 @@ public class BrokerStoreUpgrader
                 }
             };
         }
-
-
-    };
+    }
 
     private static interface VirtualHostEntryUpgrader
     {
@@ -288,6 +265,7 @@ public class BrokerStoreUpgrader
 
     private static class StandardVirtualHostUpgrader implements VirtualHostEntryUpgrader
     {
+        @SuppressWarnings("serial")
         Map<String, AttributesTransformer> _messageStoreAttributeTransformers = new HashMap<String, AttributesTransformer>()
         {{
                 put("DERBY", new AttributesTransformer().
@@ -317,6 +295,7 @@ public class BrokerStoreUpgrader
                         addAttributeTransformer("storeType", mutateAttributeValue("JDBC")));
             }};
 
+        @SuppressWarnings("serial")
         Map<String, AttributesTransformer> _configurationStoreAttributeTransformers = new HashMap<String, AttributesTransformer>()
         {{
                 put("DERBY", new AttributesTransformer().
@@ -581,12 +560,9 @@ public class BrokerStoreUpgrader
         }
     }
 
-
-
-
-    public Broker upgrade(DurableConfigurationStore store)
+    public Broker<?> upgrade(DurableConfigurationStore store)
     {
-        final BrokerStoreRecoveryHandler recoveryHandler = new BrokerStoreRecoveryHandler(_systemContext, store);
+        final BrokerStoreRecoveryHandler recoveryHandler = new BrokerStoreRecoveryHandler(_systemContext, store, _upgraders);
         store.openConfigurationStore(_systemContext, Collections.<String,Object>emptyMap());
         store.visitConfiguredObjectRecords(recoveryHandler);
 
@@ -602,11 +578,13 @@ public class BrokerStoreUpgrader
         private DurableConfigurationStore _store;
         private final Map<UUID, ConfiguredObjectRecord> _records = new HashMap<UUID, ConfiguredObjectRecord>();
         private final SystemContext _systemContext;
+        private Map<String, UpgraderPhaseFactory> _upgraders;
 
-        private BrokerStoreRecoveryHandler(final SystemContext systemContext, DurableConfigurationStore store)
+        private BrokerStoreRecoveryHandler(final SystemContext systemContext, DurableConfigurationStore store, Map<String, UpgraderPhaseFactory> upgraders)
         {
             _systemContext = systemContext;
             _store = store;
+            _upgraders = upgraders;
         }
 
 
@@ -631,7 +609,7 @@ public class BrokerStoreUpgrader
             {
                 LOGGER.debug("Adding broker store upgrader from model version: " + version);
                 final UpgraderPhaseFactory upgraderPhaseFactory = _upgraders.get(version);
-                BrokerStoreUpgraderPhase upgrader = upgraderPhaseFactory.newInstance();
+                StoreUpgraderPhase upgrader = upgraderPhaseFactory.newInstance();
                 if(_upgrader == null)
                 {
                     _upgrader = upgrader;
@@ -645,69 +623,11 @@ public class BrokerStoreUpgrader
 
             if(_upgrader == null)
             {
-                _upgrader = new DurableConfigurationStoreUpgrader()
-                {
-
-                    @Override
-                    public void configuredObject(final ConfiguredObjectRecord record)
-                    {
-                    }
-
-                    @Override
-                    public void complete()
-                    {
-                    }
-
-                    @Override
-                    public void setNextUpgrader(final DurableConfigurationStoreUpgrader upgrader)
-                    {
-                    }
-
-                    @Override
-                    public Map<UUID, ConfiguredObjectRecord> getUpdatedRecords()
-                    {
-                        return Collections.emptyMap();
-                    }
-
-                    @Override
-                    public Map<UUID, ConfiguredObjectRecord> getDeletedRecords()
-                    {
-                        return Collections.emptyMap();
-                    }
-                };
+                _upgrader = new NullUpgrader();
             }
             else
             {
-                _upgrader.setNextUpgrader(new DurableConfigurationStoreUpgrader()
-                {
-                    @Override
-                    public void configuredObject(final ConfiguredObjectRecord record)
-                    {
-                    }
-
-                    @Override
-                    public void complete()
-                    {
-
-                    }
-
-                    @Override
-                    public void setNextUpgrader(final DurableConfigurationStoreUpgrader upgrader)
-                    {
-                    }
-
-                    @Override
-                    public Map<UUID, ConfiguredObjectRecord> getUpdatedRecords()
-                    {
-                        return Collections.emptyMap();
-                    }
-
-                    @Override
-                    public Map<UUID, ConfiguredObjectRecord> getDeletedRecords()
-                    {
-                        return Collections.emptyMap();
-                    }
-                });
+                _upgrader.setNextUpgrader(new NullUpgrader());
             }
 
             for(ConfiguredObjectRecord record : _records.values())

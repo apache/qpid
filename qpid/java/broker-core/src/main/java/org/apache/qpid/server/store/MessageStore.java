@@ -67,6 +67,7 @@ public interface MessageStore
 
     String getStoreLocation();
 
+    // TODO change to have separate delete methods for configuration and message store.
     void onDelete();
 
     void visitMessages(MessageHandler handler) throws StoreException;

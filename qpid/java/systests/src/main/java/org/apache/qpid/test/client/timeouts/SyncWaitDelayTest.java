@@ -31,14 +31,12 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SlowMessageStore;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.test.utils.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This tests that when the commit takes a long time(due to POST_COMMIT_DELAY) that the commit does not timeout
@@ -66,8 +64,7 @@ public class SyncWaitDelayTest extends QpidBrokerTestCase
         messageStoreSettings.put(MessageStore.STORE_TYPE, SlowMessageStore.TYPE);
         messageStoreSettings.put(SlowMessageStore.DELAYS, slowMessageStoreDelays);
 
-        TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+        TestUtils.createStoreWithVirtualHostEntry(messageStoreSettings, getBrokerConfiguration(), getTestProfileVirtualHostNodeType());
 
         super.setUp();
 

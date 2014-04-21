@@ -40,6 +40,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.test.client.UnroutableMessageTestExceptionListener;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -49,7 +50,7 @@ public class BrokerRestTest extends QpidRestTestCase
 {
     private static final String BROKER_AUTHENTICATIONPROVIDERS_ATTRIBUTE = "authenticationproviders";
     private static final String BROKER_PORTS_ATTRIBUTE = "ports";
-    private static final String BROKER_VIRTUALHOSTS_ATTRIBUTE = "virtualhosts";
+    private static final String BROKER_VIRTUALHOST_NODES_ATTRIBUTE = "virtualhostnodes";
     private static final String BROKER_STATISTICS_ATTRIBUTE = "statistics";
 
     public void testGet() throws Exception
@@ -63,12 +64,14 @@ public class BrokerRestTest extends QpidRestTestCase
         Asserts.assertAttributesPresent(statistics, new String[]{ "bytesIn", "messagesOut", "bytesOut", "messagesIn" });
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> virtualhosts = (List<Map<String, Object>>) brokerDetails.get(BROKER_VIRTUALHOSTS_ATTRIBUTE);
-        assertEquals("Unexpected number of virtual hosts", 3, virtualhosts.size());
+        List<Map<String, Object>> nodes = (List<Map<String, Object>>) brokerDetails.get(BROKER_VIRTUALHOST_NODES_ATTRIBUTE);
+        assertEquals("Unexpected number of virtual hosts", 3, nodes.size());
 
-        Asserts.assertVirtualHost(TEST3_VIRTUALHOST, getRestTestHelper().find(VirtualHost.NAME, TEST3_VIRTUALHOST, virtualhosts));
-        Asserts.assertVirtualHost(TEST2_VIRTUALHOST, getRestTestHelper().find(VirtualHost.NAME, TEST2_VIRTUALHOST, virtualhosts));
-        Asserts.assertVirtualHost(TEST1_VIRTUALHOST, getRestTestHelper().find(VirtualHost.NAME, TEST1_VIRTUALHOST, virtualhosts));
+        for (String nodeName: EXPECTED_VIRTUALHOSTS)
+        {
+            Map<String, Object> nodeAttributes = getRestTestHelper().find(VirtualHostNode.NAME, nodeName, nodes);
+            assertNotNull("Node attributes are not found for node with name " + nodeName, nodeAttributes);
+        }
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) brokerDetails.get(BROKER_PORTS_ATTRIBUTE);
@@ -227,7 +230,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
         assertNotNull("Unexpected value of attribute " + Broker.ID, brokerDetails.get(Broker.ID));
         assertNotNull("Unexpected value of attribute statistics", brokerDetails.get(BROKER_STATISTICS_ATTRIBUTE));
-        assertNotNull("Unexpected value of attribute virtualhosts", brokerDetails.get(BROKER_VIRTUALHOSTS_ATTRIBUTE));
+        assertNotNull("Unexpected value of attribute virtual host nodes", brokerDetails.get(BROKER_VIRTUALHOST_NODES_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute ports", brokerDetails.get(BROKER_PORTS_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute authenticationproviders", brokerDetails.get(BROKER_AUTHENTICATIONPROVIDERS_ATTRIBUTE));
 

@@ -526,13 +526,15 @@ String dataAsString = new String(data);
             Map<String, Object> queueData = new HashMap<String, Object>();
             queueData.put(Queue.NAME, queueName);
             queueData.put(Queue.DURABLE, Boolean.FALSE);
-            submitRequest("/rest/queue/test/" + queueName, "PUT", queueData);
+            int responseCode = submitRequest("/rest/queue/test/test/" + queueName, "PUT", queueData);
+            Assert.assertEquals("Unexpected response code creating queue" + queueName, 201, responseCode);
 
             Map<String, Object> bindingData = new HashMap<String, Object>();
             bindingData.put(Binding.NAME, queueName);
             bindingData.put(Binding.QUEUE, queueName);
             bindingData.put(Binding.EXCHANGE, "amq.direct");
-            submitRequest("/rest/binding/test/amq.direct/" + queueName + "/" + queueName, "PUT", queueData);
+            responseCode = submitRequest("/rest/binding/test/test/amq.direct/" + queueName + "/" + queueName, "PUT", queueData);
+            Assert.assertEquals("Unexpected response code binding queue " + queueName, 201, responseCode);
         }
     }
 }

@@ -21,13 +21,16 @@
 package org.apache.qpid.server.plugin;
 
 import java.util.Map;
+
 import org.apache.qpid.server.store.DurableConfigurationStore;
 
 public interface DurableConfigurationStoreFactory extends Pluggable
 {
+    PluggableFactoryLoader<DurableConfigurationStoreFactory> FACTORY_LOADER = new PluggableFactoryLoader<DurableConfigurationStoreFactory>(DurableConfigurationStoreFactory.class);
+
     String getType();
 
     DurableConfigurationStore createDurableConfigurationStore();
 
-    void validateAttributes(Map<String, Object> attributes);
+    void validateConfigurationStoreSettings(Map<String, Object> attributes);
 }

@@ -18,9 +18,26 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.virtualhostnode;
 
-public interface UpgraderProvider
+import java.util.Map;
+
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+
+public class TestVirtualHostNodeFactory extends AbstractConfiguredObjectTypeFactory<TestVirtualHostNode>
 {
-    DurableConfigurationStoreUpgrader getUpgrader(String configVersion, DurableConfigurationRecoverer recoverer);
+    public TestVirtualHostNodeFactory()
+    {
+        super(TestVirtualHostNode.class);
+    }
+
+    @Override
+    public TestVirtualHostNode createInstance(Map<String, Object> attributes, ConfiguredObject<?>... parents)
+    {
+        Broker<?> broker = getParent(Broker.class, parents);
+        return new TestVirtualHostNode(broker, attributes, broker.getTaskExecutor());
+    }
+
 }

@@ -36,6 +36,16 @@ public class QueueRestACLTest extends QpidRestTestCase
 {
     private static final String ALLOWED_USER = "user1";
     private static final String DENIED_USER = "user2";
+    private String _queueUrl;
+    private String _queueName;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        super.setUp();
+        _queueName = getTestName();
+        _queueUrl = "/rest/queue/test/test/" + _queueName;
+    }
 
     @Override
     protected void customizeConfiguration() throws IOException
@@ -60,80 +70,72 @@ public class QueueRestACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String queueName = getTestName();
-
-        int responseCode = createQueue(queueName);
+        int responseCode = createQueue();
         assertEquals("Queue creation should be allowed", 201, responseCode);
 
-        assertQueueExists(queueName);
+        assertQueueExists();
     }
 
     public void testCreateQueueDenied() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        String queueName = getTestName();
-
-        int responseCode = createQueue(queueName);
+        int responseCode = createQueue();
         assertEquals("Queue creation should be denied", 403, responseCode);
 
-        assertQueueDoesNotExist(queueName);
+        assertQueueDoesNotExist();
     }
 
     public void testDeleteQueueAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String queueName = getTestName();
-
-        int responseCode = createQueue(queueName);
+        int responseCode = createQueue();
         assertEquals("Queue creation should be allowed", 201, responseCode);
 
-        assertQueueExists(queueName);
+        assertQueueExists();
 
-        responseCode = getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest(_queueUrl, "DELETE", null);
         assertEquals("Queue deletion should be allowed", 200, responseCode);
 
-        assertQueueDoesNotExist(TEST2_VIRTUALHOST);
+        assertQueueDoesNotExist();
     }
 
     public void testDeleteQueueDenied() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String queueName = getTestName();
-
-        int responseCode = createQueue(queueName);
+        int responseCode = createQueue();
         assertEquals("Queue creation should be allowed", 201, responseCode);
 
-        assertQueueExists(queueName);
+        assertQueueExists();
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        responseCode = getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest(_queueUrl, "DELETE", null);
         assertEquals("Queue deletion should be denied", 403, responseCode);
 
-        assertQueueExists(queueName);
+        assertQueueExists();
     }
+
+
 
     public void testSetQueueAttributesAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String queueName = getTestName();
+        int responseCode = createQueue();
 
-        int responseCode = createQueue(queueName);
-
-        assertQueueExists(queueName);
+        assertQueueExists();
 
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.NAME, _queueName);
         attributes.put(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 100000);
         attributes.put(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 80000);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest(_queueUrl, "PUT", attributes);
         assertEquals("Setting of queue attribites should be allowed", 200, responseCode);
 
-        Map<String, Object> queueData = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueData = getRestTestHelper().getJsonAsSingletonList(_queueUrl);
         assertEquals("Unexpected " + Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 100000, queueData.get(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES) );
         assertEquals("Unexpected " + Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 80000, queueData.get(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES) );
     }
@@ -142,47 +144,45 @@ public class QueueRestACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String queueName = getTestName();
-
-        int responseCode = createQueue(queueName);
-        assertQueueExists(queueName);
+        int responseCode = createQueue();
+        assertQueueExists();
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.NAME, _queueName);
         attributes.put(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 100000);
         attributes.put(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 80000);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest(_queueUrl, "PUT", attributes);
         assertEquals("Setting of queue attribites should be allowed", 403, responseCode);
 
-        Map<String, Object> queueData = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueData = getRestTestHelper().getJsonAsSingletonList(_queueUrl);
         assertEquals("Unexpected " + Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 0, queueData.get(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES) );
         assertEquals("Unexpected " + Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 0, queueData.get(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES) );
     }
 
-    private int createQueue(String queueName) throws Exception
+    private int createQueue() throws Exception
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.NAME, _queueName);
 
-        return getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
+        return getRestTestHelper().submitRequest(_queueUrl, "PUT", attributes);
     }
 
-    private void assertQueueDoesNotExist(String queueName) throws Exception
+    private void assertQueueDoesNotExist() throws Exception
     {
-        assertQueueExistence(queueName, false);
+        assertQueueExistence(false);
     }
 
-    private void assertQueueExists(String queueName) throws Exception
+    private void assertQueueExists() throws Exception
     {
-        assertQueueExistence(queueName, true);
+        assertQueueExistence(true);
     }
 
-    private void assertQueueExistence(String queueName, boolean exists) throws Exception
+    private void assertQueueExistence(boolean exists) throws Exception
     {
-        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/queue/test/" + queueName);
+        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList(_queueUrl);
         assertEquals("Unexpected result", exists, !queues.isEmpty());
     }
 }

@@ -32,42 +32,80 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.PriorityQueueImpl;
 import org.apache.qpid.server.queue.StandardQueueImpl;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class VirtualHostQueueCreationTest extends QpidTestCase
 {
-    private VirtualHostImpl _virtualHost;
-    private Broker _broker;
+    private VirtualHostImpl<?,?,?> _virtualHost;
+    private VirtualHostNode<?> _virtualHostNode;
+    private TaskExecutor _taskExecutor;
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _broker = BrokerTestHelper.createBrokerMock();
-        TaskExecutor taskExecutor = mock(TaskExecutor.class);
-        when(taskExecutor.isTaskExecutorThread()).thenReturn(true);
-        when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
+        EventLogger eventLogger = mock(EventLogger.class);
+        SecurityManager securityManager = mock(SecurityManager.class);
+        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+
+        _taskExecutor = new TaskExecutor();
+        _taskExecutor.start();
+
+        SystemContext<?> context = mock(SystemContext.class);
+        when(context.getEventLogger()).thenReturn(eventLogger);
+
+        Broker broker = mock(Broker.class);
+        when(broker.getObjectFactory()).thenReturn(objectFactory);
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
+        when(broker.getParent(SystemContext.class)).thenReturn(context);
+        when(broker.getSecurityManager()).thenReturn(securityManager);
+        when(broker.getModel()).thenReturn(objectFactory.getModel());
+        when(broker.getTaskExecutor()).thenReturn(_taskExecutor);
+
+        _virtualHostNode = mock(VirtualHostNode.class);
+        when(_virtualHostNode.getParent(Broker.class)).thenReturn(broker);
+        when(_virtualHostNode.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
+        when(_virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
+        when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
 
         _virtualHost = createHost();
-        _virtualHost.open();
-
-
-
     }
-    private VirtualHostImpl createHost()
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            _taskExecutor.stopImmediately();
+        }
+        finally
+        {
+            super.tearDown();
+        }
+    }
+    private VirtualHostImpl<?,?,?> createHost()
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
@@ -77,13 +115,10 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
 
         attributes = new HashMap<String, Object>(attributes);
         attributes.put(VirtualHost.ID, UUID.randomUUID());
-        return new StandardVirtualHost(attributes, _broker);
-    }
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        super.tearDown();
+        StandardVirtualHost host = new StandardVirtualHost(attributes, _virtualHostNode);
+        host.create();
+        host.setDesiredState(host.getState(), State.ACTIVE);
+        return host;
     }
 
     private void verifyRegisteredQueueCount(int count)

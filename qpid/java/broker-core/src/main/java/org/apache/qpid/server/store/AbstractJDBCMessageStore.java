@@ -2495,5 +2495,12 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         {
             return Collections.unmodifiableMap(_parents);
         }
+
+        @Override
+        public String toString()
+        {
+            return "ConfiguredObjectRecordImpl [_id=" + _id + ", _type=" + _type + ", _attributes=" + _attributes + ", _parents="
+                    + _parents + "]";
+        }
     }
 }

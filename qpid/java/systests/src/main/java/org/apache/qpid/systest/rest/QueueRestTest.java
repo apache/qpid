@@ -104,7 +104,7 @@ public class QueueRestTest extends QpidRestTestCase
     public void testGetByName() throws Exception
     {
         String queueName = getTestQueueName();
-        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/test/" + queueName);
         Asserts.assertQueue(queueName, "standard", queueDetails);
         assertStatistics(queueDetails);
 
@@ -130,9 +130,11 @@ public class QueueRestTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.NAME, queueName);
 
-        int responseCode =  getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
+        String queueUrl = "/rest/queue/test/test/" + queueName;
+        int responseCode =  getRestTestHelper().submitRequest(queueUrl, "PUT", attributes);
+        assertEquals("Queue was not created", 201, responseCode);
 
-        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList(queueUrl);
         Asserts.assertQueue(queueName, "standard", queueDetails);
 
         attributes = new HashMap<String, Object>();
@@ -146,10 +148,10 @@ public class QueueRestTest extends QpidRestTestCase
         attributes.put(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 50000);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/queue/test/" + queueName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest(queueUrl, "PUT", attributes);
         assertEquals("Setting of queue attributes should be allowed", 200, responseCode);
 
-        Map<String, Object> queueData = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueData = getRestTestHelper().getJsonAsSingletonList(queueUrl);
         assertEquals("Unexpected " + Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES, 100000, queueData.get(Queue.QUEUE_FLOW_CONTROL_SIZE_BYTES) );
         assertEquals("Unexpected " + Queue.QUEUE_FLOW_RESUME_SIZE_BYTES, 80000, queueData.get(Queue.QUEUE_FLOW_RESUME_SIZE_BYTES) );
         assertEquals("Unexpected " + Queue.ALERT_REPEAT_GAP, 10000, queueData.get(Queue.ALERT_REPEAT_GAP) );
@@ -170,7 +172,7 @@ public class QueueRestTest extends QpidRestTestCase
             createBinding(bindingName, exchanges[i], queueName);
         }
 
-        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/" + queueName);
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/test/" + queueName);
         Asserts.assertQueue(queueName, "standard", queueDetails);
 
         @SuppressWarnings("unchecked")
@@ -192,7 +194,7 @@ public class QueueRestTest extends QpidRestTestCase
     private void createBinding(String bindingName, String exchangeName, String queueName) throws IOException
     {
         HttpURLConnection connection = getRestTestHelper().openManagementConnection(
-                "/rest/binding/test/" + URLDecoder.decode(exchangeName, "UTF-8") + "/" + queueName + "/" + bindingName,
+                "/rest/binding/test/test/" + URLDecoder.decode(exchangeName, "UTF-8") + "/" + queueName + "/" + bindingName,
                 "PUT");
 
         Map<String, Object> bindingData = new HashMap<String, Object>();

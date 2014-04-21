@@ -64,9 +64,11 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory, DurableConf
 
             }
         }
+    }
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> configurationStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.CONFIGURATION_STORE_SETTINGS);
+    @Override
+    public void validateConfigurationStoreSettings(Map<String, Object> configurationStoreSettings)
+    {
         if(configurationStoreSettings != null && getType().equals(configurationStoreSettings.get(DurableConfigurationStore.STORE_TYPE)))
         {
             Object connectionURL = configurationStoreSettings.get(JDBCMessageStore.CONNECTION_URL);

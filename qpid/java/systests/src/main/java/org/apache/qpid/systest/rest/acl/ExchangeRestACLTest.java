@@ -41,6 +41,8 @@ public class ExchangeRestACLTest extends QpidRestTestCase
     private static final String ALLOWED_USER = "user1";
     private static final String DENIED_USER = "user2";
     private String _queueName;
+    private String _exchangeName;
+    private String _exchangeUrl;
 
     @Override
     protected void customizeConfiguration() throws IOException
@@ -75,85 +77,78 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         Map<String, Object> queueData = new HashMap<String, Object>();
         queueData.put(Queue.NAME, _queueName);
         queueData.put(Queue.DURABLE, Boolean.TRUE);
-        int status = getRestTestHelper().submitRequest("/rest/queue/test/" + _queueName, "PUT", queueData);
+        int status = getRestTestHelper().submitRequest("/rest/queue/test/test/" + _queueName, "PUT", queueData);
         assertEquals("Unexpected status", 201, status);
 
+        _exchangeName = getTestName();
+        _exchangeUrl = "/rest/exchange/test/test/" + _exchangeName;
     }
 
     public void testCreateExchangeAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String exchangeName = getTestName();
-
-        int responseCode = createExchange(exchangeName);
+        int responseCode = createExchange();
         assertEquals("Exchange creation should be allowed", 201, responseCode);
 
-        assertExchangeExists(exchangeName);
+        assertExchangeExists();
     }
 
     public void testCreateExchangeDenied() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        String exchangeName = getTestName();
-
-        int responseCode = createExchange(exchangeName);
+        int responseCode = createExchange();
         assertEquals("Exchange creation should be denied", 403, responseCode);
 
-        assertExchangeDoesNotExist(exchangeName);
+        assertExchangeDoesNotExist();
     }
 
     public void testDeleteExchangeAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String exchangeName = getTestName();
-
-        int responseCode = createExchange(exchangeName);
+        int responseCode = createExchange();
         assertEquals("Exchange creation should be allowed", 201, responseCode);
 
-        assertExchangeExists(exchangeName);
+        assertExchangeExists();
 
-        responseCode = getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "DELETE", null);
+
+        responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "DELETE", null);
         assertEquals("Exchange deletion should be allowed", 200, responseCode);
 
-        assertExchangeDoesNotExist(TEST2_VIRTUALHOST);
+        assertExchangeDoesNotExist();
     }
 
     public void testDeleteExchangeDenied() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String exchangeName = getTestName();
-
-        int responseCode = createExchange(exchangeName);
+        int responseCode = createExchange();
         assertEquals("Exchange creation should be allowed", 201, responseCode);
 
-        assertExchangeExists(exchangeName);
+        assertExchangeExists();
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        responseCode = getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "DELETE", null);
         assertEquals("Exchange deletion should be denied", 403, responseCode);
 
-        assertExchangeExists(exchangeName);
+        assertExchangeExists();
     }
 
     public void testSetExchangeAttributesAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String exchangeName = getTestName();
+        int responseCode = createExchange();
 
-        int responseCode = createExchange(exchangeName);
-
-        assertExchangeExists(exchangeName);
+        assertExchangeExists();
 
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Exchange.NAME, exchangeName);
+        attributes.put(Exchange.NAME, _exchangeName);
         attributes.put(Exchange.ALTERNATE_EXCHANGE, "my-alternate-exchange");
 
-        responseCode = getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "PUT", attributes);
         assertEquals("Setting of exchange attribites should be allowed but it is currently unsupported", 409, responseCode);
     }
 
@@ -161,18 +156,16 @@ public class ExchangeRestACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String exchangeName = getTestName();
-
-        int responseCode = createExchange(exchangeName);
-        assertExchangeExists(exchangeName);
+        int responseCode = createExchange();
+        assertExchangeExists();
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Exchange.NAME, exchangeName);
+        attributes.put(Exchange.NAME, _exchangeName);
         attributes.put(Exchange.ALTERNATE_EXCHANGE, "my-alternate-exchange");
 
-        responseCode = getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "PUT", attributes);
         assertEquals("Setting of exchange attribites should be allowed", 403, responseCode);
     }
 
@@ -198,27 +191,27 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         assertBindingDoesNotExist(bindingName);
     }
 
-    private int createExchange(String exchangeName) throws Exception
+    private int createExchange() throws Exception
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Exchange.NAME, exchangeName);
+        attributes.put(Exchange.NAME, _exchangeName);
         attributes.put(Exchange.TYPE, "direct");
-        return getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "PUT", attributes);
+        return getRestTestHelper().submitRequest(_exchangeUrl, "PUT", attributes);
     }
 
-    private void assertExchangeDoesNotExist(String exchangeName) throws Exception
+    private void assertExchangeDoesNotExist() throws Exception
     {
-        assertExchangeExistence(exchangeName, false);
+        assertExchangeExistence(false);
     }
 
-    private void assertExchangeExists(String exchangeName) throws Exception
+    private void assertExchangeExists() throws Exception
     {
-        assertExchangeExistence(exchangeName, true);
+        assertExchangeExistence(true);
     }
 
-    private void assertExchangeExistence(String exchangeName, boolean exists) throws Exception
+    private void assertExchangeExistence(boolean exists) throws Exception
     {
-        List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("/rest/exchange/test/" + exchangeName);
+        List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList(_exchangeUrl);
         assertEquals("Unexpected result", exists, !exchanges.isEmpty());
     }
 
@@ -229,7 +222,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         attributes.put(Binding.QUEUE, _queueName);
         attributes.put(Binding.EXCHANGE, "amq.direct");
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/binding/test/amq.direct/" + _queueName + "/" + bindingName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("/rest/binding/test/test/amq.direct/" + _queueName + "/" + bindingName, "PUT", attributes);
         return responseCode;
     }
 
@@ -245,7 +238,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
 
     private void assertBindingExistence(String bindingName, boolean exists) throws Exception
     {
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct/" + _queueName + "/" + bindingName);
+        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/test/amq.direct/" + _queueName + "/" + bindingName);
         assertEquals("Unexpected result", exists, !bindings.isEmpty());
     }
 }

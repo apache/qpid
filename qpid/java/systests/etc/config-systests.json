@@ -22,7 +22,7 @@
   "name": "Broker",
   "defaultVirtualHost" : "test",
   "storeVersion": 1,
-  "modelVersion": "1.4",
+  "modelVersion": "2.0",
   "authenticationproviders" : [ {
     "name" : "plain",
     "type" : "PlainPasswordFile",
@@ -57,12 +57,10 @@
     "port" : "${test.cport}",
     "protocols" : [ "JMX_RMI" ]
   }],
-  "virtualhosts" : [ {
+  "virtualhostnodes" : [ {
     "name" : "test",
-    "type" : "STANDARD",
-    "messageStoreSettings": {
-        "storeType": "${messagestore.type}",
-        "storePath" : "${QPID_WORK}/test/${test.port}"
-     }
+    "type" : "${messagestore.type}",
+    "messageStoreProvider": true,
+    "storePath" : "${QPID_WORK}/test/${test.port}"
   } ]
 }

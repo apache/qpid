@@ -49,7 +49,6 @@ import javax.naming.NamingException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQConnectionURL;
@@ -66,6 +65,8 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
@@ -246,12 +247,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             configuration.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getManagementPort(actualPort) + JMXPORT_CONNECTORSERVER_OFFSET);
 
             String workDir = System.getProperty("QPID_WORK") + File.separator + TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST + File.separator + actualPort;
-            Map<String, Object> virtualHostSettings = configuration.getObjectAttributes(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> storeSettings = (Map<String, Object>)virtualHostSettings.get(VirtualHost.MESSAGE_STORE_SETTINGS);
-            storeSettings.put(MessageStore.STORE_PATH, workDir);
-            configuration.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, storeSettings);
+            configuration.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, DurableConfigurationStore.STORE_PATH, workDir);
         }
 
         return configuration;
@@ -844,13 +840,13 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
-     * Creates a new virtual host within the test virtualhost file.
+     * Creates a new virtual host node in broker configuration for given broker port
      * @param brokerPort broker port
-     * @param virtualHostName virtual host name
+     * @param virtualHostNodeName virtual host node name
      */
-    protected void createTestVirtualHost(int brokerPort, String virtualHostName)
+    protected void createTestVirtualHostNode(int brokerPort, String virtualHostNodeName)
     {
-        String storeType = getTestProfileMessageStoreType();
+        String storeType = getTestProfileVirtualHostNodeType();
         String storeDir = null;
 
         if (System.getProperty("profile", "").startsWith("java-dby-mem"))
@@ -859,19 +855,20 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
         else if (!MemoryMessageStore.TYPE.equals(storeType))
         {
-            storeDir = "${QPID_WORK}" + File.separator + virtualHostName + File.separator + brokerPort;
+            storeDir = "${QPID_WORK}" + File.separator + virtualHostNodeName + File.separator + brokerPort;
         }
 
         // add new virtual host configuration to the broker store
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.NAME, virtualHostName);
-        attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
-        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-        messageStoreSettings.put(MessageStore.STORE_TYPE, storeType);
-        messageStoreSettings.put(MessageStore.STORE_PATH, storeDir);
-        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings );
+        attributes.put(VirtualHostNode.NAME, virtualHostNodeName);
+        attributes.put(VirtualHostNode.TYPE, storeType);
+        attributes.put(VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, true);
+        if (storeDir != null)
+        {
+            attributes.put(DurableConfigurationStore.STORE_PATH, storeDir);
+        }
         int port = getPort(brokerPort);
-        getBrokerConfiguration(port).addObjectConfiguration(VirtualHost.class, attributes);
+        getBrokerConfiguration(port).addObjectConfiguration(VirtualHostNode.class, attributes);
     }
 
     /**

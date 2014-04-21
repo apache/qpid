@@ -40,12 +40,9 @@ public class JsonFileConfigStoreFactory implements DurableConfigurationStoreFact
     }
 
     @Override
-    public void validateAttributes(Map<String, Object> attributes)
+    public void validateConfigurationStoreSettings(Map<String, Object> attributes)
     {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> configurationStoreSettings = (Map<String, Object>) attributes.get(VirtualHost.CONFIGURATION_STORE_SETTINGS);
-
-        Object storePath = configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
+        Object storePath = attributes.get(DurableConfigurationStore.STORE_PATH);
         if(!(storePath instanceof String))
         {
             throw new IllegalArgumentException("Setting '"+ DurableConfigurationStore.STORE_PATH
@@ -53,4 +50,5 @@ public class JsonFileConfigStoreFactory implements DurableConfigurationStoreFact
 
         }
     }
+
 }

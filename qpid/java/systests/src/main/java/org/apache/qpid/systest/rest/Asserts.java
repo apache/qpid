@@ -65,7 +65,7 @@ public class Asserts
                                 ConfiguredObject.CONTEXT,
                                 VirtualHost.SUPPORTED_QUEUE_TYPES,
                                 VirtualHost.TYPE,
-                                VirtualHost.CONFIGURATION_STORE_SETTINGS,
+                                VirtualHost.MESSAGE_STORE_SETTINGS,
                                 VirtualHost.SECURITY_ACL);
 
         assertEquals("Unexpected value of attribute " + VirtualHost.NAME,
