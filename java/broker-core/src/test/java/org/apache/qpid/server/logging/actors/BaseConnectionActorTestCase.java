@@ -25,7 +25,7 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-public class BaseConnectionActorTestCase extends BaseActorTestCase
+public abstract class BaseConnectionActorTestCase extends BaseActorTestCase
 {
     private AMQConnectionModel _session;
     private VirtualHostImpl _virtualHost;

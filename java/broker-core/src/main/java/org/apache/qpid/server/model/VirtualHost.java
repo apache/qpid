@@ -44,8 +44,8 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String SECURITY_ACL                         = "securityAcl";
     String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
-    String CONFIGURATION_STORE_SETTINGS         = "configurationStoreSettings";
     String MESSAGE_STORE_SETTINGS               = "messageStoreSettings";
+    String MODEL_VERSION                        = "modelVersion";
 
     // TODO - this isn't really an attribute
     @ManagedAttribute( derived = true )
@@ -111,8 +111,8 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     @ManagedAttribute( automate = true )
     Map<String, Object> getMessageStoreSettings();
 
-    @ManagedAttribute( automate = true )
-    Map<String, Object> getConfigurationStoreSettings();
+    @ManagedAttribute( derived = true )
+    String getModelVersion();
 
     @ManagedStatistic
     long getQueueCount();
@@ -134,7 +134,6 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
 
     @ManagedStatistic
     long getMessagesOut();
-
 
     //children
     Collection<VirtualHostAlias> getAliases();

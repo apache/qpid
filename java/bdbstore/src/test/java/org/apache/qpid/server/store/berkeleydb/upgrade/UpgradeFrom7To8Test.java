@@ -160,6 +160,7 @@ public class UpgradeFrom7To8Test extends AbstractUpgradeTestCase
     {
         Map<String, Object> expectedVirtualHostEntry = new HashMap<String, Object>();
         expectedVirtualHostEntry.put("modelVersion", modelVersion);
+        expectedVirtualHostEntry.put(VirtualHost.NAME, getVirtualHost().getName());
 
         UUID expectedUUID = UUIDGenerator.generateVhostUUID(getVirtualHost().getName());
         return Collections.singletonMap(expectedUUID, expectedVirtualHostEntry);

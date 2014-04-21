@@ -38,6 +38,7 @@ import javax.management.openmbean.TabularType;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
 /**
@@ -75,9 +76,9 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     private final ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
     private final String _objectName;
 
-    protected BDBHAMessageStoreManagerMBean(String virtualHostName, ReplicatedEnvironmentFacade replicatedEnvironmentFacade, ManagedObject parent) throws JMException
+    protected BDBHAMessageStoreManagerMBean(String virtualHostName, ReplicatedEnvironmentFacade replicatedEnvironmentFacade, ManagedObjectRegistry registry) throws JMException
     {
-        super(ManagedBDBHAMessageStore.class, ManagedBDBHAMessageStore.TYPE, ((AMQManagedObject)parent).getRegistry());
+        super(ManagedBDBHAMessageStore.class, ManagedBDBHAMessageStore.TYPE, registry);
         LOGGER.debug("Creating BDBHAMessageStoreManagerMBean for " + virtualHostName);
         _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
         _objectName = ObjectName.quote(virtualHostName);

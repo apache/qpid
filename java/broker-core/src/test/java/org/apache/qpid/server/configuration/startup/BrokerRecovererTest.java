@@ -23,8 +23,6 @@ package org.apache.qpid.server.configuration.startup;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,11 +47,8 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 
 public class BrokerRecovererTest extends TestCase
@@ -61,8 +56,6 @@ public class BrokerRecovererTest extends TestCase
     private ConfiguredObjectRecord _brokerEntry = mock(ConfiguredObjectRecord.class);
 
     private UUID _brokerId = UUID.randomUUID();
-    private Map<String, Collection<ConfiguredObjectRecord>> _brokerEntryChildren = new HashMap<String, Collection<ConfiguredObjectRecord>>();
-    private ConfiguredObjectRecord _authenticationProviderEntry1;
     private AuthenticationProvider _authenticationProvider1;
     private UUID _authenticationProvider1Id = UUID.randomUUID();
     private SystemContext _systemContext;
@@ -93,8 +86,6 @@ public class BrokerRecovererTest extends TestCase
         _authenticationProvider1 = mock(AuthenticationProvider.class);
         when(_authenticationProvider1.getName()).thenReturn("authenticationProvider1");
         when(_authenticationProvider1.getId()).thenReturn(_authenticationProvider1Id);
-        _authenticationProviderEntry1 = mock(ConfiguredObjectRecord.class);
-        _brokerEntryChildren.put(AuthenticationProvider.class.getSimpleName(), Arrays.asList(_authenticationProviderEntry1));
     }
 
     @Override
@@ -138,37 +129,6 @@ public class BrokerRecovererTest extends TestCase
             Object attributeValue = broker.getAttribute(attribute.getKey());
             assertEquals("Unexpected value of attribute '" + attribute.getKey() + "'", attribute.getValue(), attributeValue);
         }
-    }
-
-    public void testCreateBrokerWithVirtualHost()
-    {
-        final ConfiguredObjectRecord virtualHostEntry = mock(ConfiguredObjectRecord.class);
-
-        String typeName = VirtualHost.class.getSimpleName();
-        when(virtualHostEntry.getType()).thenReturn(typeName);
-        _brokerEntryChildren.put(typeName, Arrays.asList(virtualHostEntry));
-
-        UUID vhostId = UUID.randomUUID();
-        _systemContext.resolveObjects(_brokerEntry, createVhostRecord(vhostId));
-        Broker<?> broker = _systemContext.getBroker();
-
-        assertNotNull(broker);
-        broker.open();
-        assertEquals(_brokerId, broker.getId());
-        assertEquals(1, broker.getVirtualHosts().size());
-        assertEquals(vhostId, broker.getVirtualHosts().iterator().next().getId());
-
-    }
-
-    public ConfiguredObjectRecord createVhostRecord(UUID id)
-    {
-        final Map<String, Object> vhostAttributes = new HashMap<String, Object>();
-        vhostAttributes.put(VirtualHost.NAME, "vhost");
-        vhostAttributes.put(VirtualHost.TYPE, "STANDARD");
-        vhostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE,
-                                                                                               TestMemoryMessageStore.TYPE));
-        return new ConfiguredObjectRecordImpl(id, VirtualHost.class.getSimpleName(), vhostAttributes, Collections
-                .singletonMap(Broker.class.getSimpleName(), _brokerEntry));
     }
 
     public ConfiguredObjectRecord createAuthProviderRecord(UUID id, String name)

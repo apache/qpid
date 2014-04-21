@@ -24,7 +24,7 @@ import java.util.Map;
 
 public interface EnvironmentFacadeFactory
 {
-    public static final String ENVIRONMENT_CONFIGURATION = "bdbEnvironmentConfig";
+    public static final String ENVIRONMENT_CONFIGURATION = "environmentConfiguration";
 
     EnvironmentFacade createEnvironmentFacade(Map<String, Object> storeSettings, EnvironmentFacadeTask... initialisationTasks);
 

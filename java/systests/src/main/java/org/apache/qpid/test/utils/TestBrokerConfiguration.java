@@ -50,6 +50,7 @@ import org.apache.qpid.server.security.access.FileAccessControlProviderConstants
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.util.Strings;
 
 public class TestBrokerConfiguration
 {
@@ -85,6 +86,34 @@ public class TestBrokerConfiguration
                 intialStoreLocation,
                 null,
                 Collections.<String,String>emptyMap());
+        _store.visitConfiguredObjectRecords(new ConfiguredObjectRecordHandler()
+        {
+            @Override
+            public boolean handle(ConfiguredObjectRecord record)
+            {
+                Map<String, Object> attributes = record.getAttributes();
+                String rawType = (String)attributes.get("type");
+                if (rawType != null)
+                {
+                    String interpolatedType = Strings.expand(rawType, false, Strings.ENV_VARS_RESOLVER, Strings.JAVA_SYS_PROPS_RESOLVER);
+                    if (!interpolatedType.equals(rawType))
+                    {
+                        setObjectAttribute(record, "type", interpolatedType);
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public void end()
+            {
+            }
+
+            @Override
+            public void begin()
+            {
+            }
+        });
     }
 
     public boolean setBrokerAttribute(String name, Object value)

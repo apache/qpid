@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
@@ -128,6 +130,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
     private volatile Committer _committer;
 
+    private boolean _isMessageStoreProvider;
+
+    private String _storeLocation;
 
     public BDBMessageStore()
     {
@@ -153,7 +158,8 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             if (_environmentFacade == null)
             {
                 EnvironmentFacadeTask[] initialisationTasks = null;
-                if (MapValueConverter.getBooleanAttribute(IS_MESSAGE_STORE_TOO, storeSettings, false))
+                _isMessageStoreProvider = MapValueConverter.getBooleanAttribute(VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, storeSettings, false);
+                if (_isMessageStoreProvider)
                 {
                     String[] databaseNames = new String[CONFIGURATION_STORE_DATABASE_NAMES.length + MESSAGE_STORE_DATABASE_NAMES.length];
                     System.arraycopy(CONFIGURATION_STORE_DATABASE_NAMES, 0, databaseNames, 0, CONFIGURATION_STORE_DATABASE_NAMES.length);
@@ -165,6 +171,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                     initialisationTasks = new EnvironmentFacadeTask[]{new UpgradeTask(parent), new OpenDatabasesTask(CONFIGURATION_STORE_DATABASE_NAMES)};
                 }
                 _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(storeSettings, initialisationTasks);
+                _storeLocation = _environmentFacade.getStoreLocation();
             }
             else
             {
@@ -274,6 +281,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             {
                 _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(messageStoreSettings,
                         new UpgradeTask(parent), new OpenDatabasesTask(MESSAGE_STORE_DATABASE_NAMES), new DiskSpaceTask(), new MaxMessageIdTask());
+                _storeLocation = _environmentFacade.getStoreLocation();
             }
 
             _committer = _environmentFacade.createCommitter(parent.getName());
@@ -292,11 +300,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public String getStoreLocation()
     {
-        if (_environmentFacade == null)
-        {
-            return null;
-        }
-        return _environmentFacade.getStoreLocation();
+        return _storeLocation;
     }
 
     public EnvironmentFacade getEnvironmentFacade()
@@ -355,6 +359,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             try
             {
                 _environmentFacade.close();
+                _environmentFacade = null;
             }
             catch(DatabaseException e)
             {
@@ -1514,21 +1519,22 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     @Override
     public void onDelete()
     {
-        String storeLocation = getStoreLocation();
-
-        if (storeLocation != null)
+        if (!_configurationStoreOpen.get() && !_messageStoreOpen.get())
         {
-            if (LOGGER.isDebugEnabled())
+            if (_storeLocation != null)
             {
-                LOGGER.debug("Deleting store " + storeLocation);
-            }
-
-            File location = new File(storeLocation);
-            if (location.exists())
-            {
-                if (!FileUtils.delete(location, true))
+                if (LOGGER.isDebugEnabled())
                 {
-                    LOGGER.error("Cannot delete " + storeLocation);
+                    LOGGER.debug("Deleting store " + _storeLocation);
+                }
+
+                File location = new File(_storeLocation);
+                if (location.exists())
+                {
+                    if (!FileUtils.delete(location, true))
+                    {
+                        LOGGER.error("Cannot delete " + _storeLocation);
+                    }
                 }
             }
         }
@@ -1711,6 +1717,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         checkMessageStoreOpen();
 
         Cursor cursor = null;
+        List<QueueEntryKey> entries = new ArrayList<QueueEntryKey>();
         try
         {
             cursor = getDeliveryDb().openCursor(null, null);
@@ -1718,15 +1725,10 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
 
             DatabaseEntry value = new DatabaseEntry();
-            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            while (cursor.getNext(key, value, LockMode.DEFAULT) == OperationStatus.SUCCESS)
             {
                 QueueEntryKey entry = keyBinding.entryToObject(key);
-                UUID queueId = entry.getQueueId();
-                long messageId = entry.getMessageId();
-                if (!handler.handle(queueId, messageId))
-                {
-                    break;
-                }
+                entries.add(entry);
             }
         }
         catch (DatabaseException e)
@@ -1737,6 +1739,17 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         {
             closeCursorSafely(cursor);
         }
+
+        for(QueueEntryKey entry : entries)
+        {
+            UUID queueId = entry.getQueueId();
+            long messageId = entry.getMessageId();
+            if (!handler.handle(queueId, messageId))
+            {
+                break;
+            }
+        }
+
     }
 
     @Override

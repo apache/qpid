@@ -77,17 +77,11 @@ public class MessageContentServlet extends AbstractServlet
         String vhostName = pathInfoElements[0];
         String queueName = pathInfoElements[1];
 
-        VirtualHost<?,?,?> vhost = null;
-
-        for(VirtualHost vh : getBroker().getVirtualHosts())
+        VirtualHost<?,?,?> vhost = getBroker().findVirtualHostByName(vhostName);
+        if (vhost == null)
         {
-            if(vh.getName().equals(vhostName))
-            {
-                vhost = vh;
-                break;
-            }
+            throw new IllegalArgumentException("Could not find virtual host with name '" + vhostName + "'");
         }
-
         return getQueueFromVirtualHost(queueName, vhost);
     }
 

@@ -98,7 +98,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
             {
                 host = NON_FAILOVER_VIRTUAL_HOST;
             }
-            createTestVirtualHost(port, host);
+            createTestVirtualHostNode(port, host);
 
             startBroker(port);
             revertSystemProperties();

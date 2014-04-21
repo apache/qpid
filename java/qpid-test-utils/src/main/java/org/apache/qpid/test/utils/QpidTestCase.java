@@ -157,6 +157,10 @@ public class QpidTestCase extends TestCase
         return storeType != null ? storeType : "TestableMemory";
     }
 
+    public String getTestProfileVirtualHostNodeType()
+    {
+        return getTestProfileMessageStoreType();
+    }
 
     public static final int MIN_PORT_NUMBER = 1;
     public static final int MAX_PORT_NUMBER = 49151;

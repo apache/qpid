@@ -29,6 +29,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -54,12 +55,12 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         getRestTestHelper().setUsernameAndPassword("webadmin", "webadmin");
 
         //remove the normal 'test' vhost, we will configure the vhosts below
-        getBrokerConfiguration(0).removeObjectConfiguration(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+        getBrokerConfiguration(0).removeObjectConfiguration(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
 
         // Set up virtualhost config with queues and bindings to the amq.direct
         for (String virtualhost : EXPECTED_VIRTUALHOSTS)
         {
-            createTestVirtualHost(0, virtualhost);
+            createTestVirtualHostNode(0, virtualhost);
         }
 
         customizeConfiguration();

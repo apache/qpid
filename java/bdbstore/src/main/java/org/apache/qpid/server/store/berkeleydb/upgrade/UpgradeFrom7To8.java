@@ -78,7 +78,7 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put("modelVersion", stringifiedConfigVersion);
-
+        virtualHostAttributes.put("name", parent.getName());
         String virtualHostName = parent.getName();
         UUID virtualHostId = UUIDGenerator.generateVhostUUID(virtualHostName);
         ConfiguredObjectRecord virtualHostRecord = new org.apache.qpid.server.store.ConfiguredObjectRecordImpl(virtualHostId, "VirtualHost", virtualHostAttributes);

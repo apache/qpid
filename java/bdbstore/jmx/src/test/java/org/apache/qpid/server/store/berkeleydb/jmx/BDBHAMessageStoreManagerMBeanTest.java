@@ -54,7 +54,6 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     private ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
     private BDBHAMessageStoreManagerMBean _mBean;
-    private AMQManagedObject _mBeanParent;
 
     @Override
     protected void setUp() throws Exception
@@ -62,9 +61,8 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
         super.setUp();
 
         _replicatedEnvironmentFacade = mock(ReplicatedEnvironmentFacade.class);
-        _mBeanParent = mock(AMQManagedObject.class);
-        when(_mBeanParent.getRegistry()).thenReturn(mock(ManagedObjectRegistry.class));
-        _mBean = new BDBHAMessageStoreManagerMBean(TEST_STORE_NAME, _replicatedEnvironmentFacade, _mBeanParent);
+        ManagedObjectRegistry registry = mock(ManagedObjectRegistry.class);
+        _mBean = new BDBHAMessageStoreManagerMBean(TEST_STORE_NAME, _replicatedEnvironmentFacade, registry);
     }
 
     @Override

@@ -38,9 +38,10 @@ public final class BrokerModel extends Model
      * 1.1 Addition of mandatory virtual host type / different types of virtual host
      * 1.3 Truststore/Keystore type => trustStoreType / type => keyStoreType
      * 1.4 Separate messageStoreSettings from virtualhost
+     * 2.0 Introduce VirtualHostNode as a child of a Broker instead of VirtualHost
      */
-    public static final int MODEL_MAJOR_VERSION = 1;
-    public static final int MODEL_MINOR_VERSION = 4;
+    public static final int MODEL_MAJOR_VERSION = 2;
+    public static final int MODEL_MINOR_VERSION = 0;
     public static final String MODEL_VERSION = MODEL_MAJOR_VERSION + "." + MODEL_MINOR_VERSION;
     private static final Model MODEL_INSTANCE = new BrokerModel();
     private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>> _parents =
@@ -60,7 +61,7 @@ public final class BrokerModel extends Model
 
         addRelationship(SystemContext.class, Broker.class);
 
-        addRelationship(Broker.class, VirtualHost.class);
+        addRelationship(Broker.class, VirtualHostNode.class);
         addRelationship(Broker.class, Port.class);
         addRelationship(Broker.class, AccessControlProvider.class);
         addRelationship(Broker.class, AuthenticationProvider.class);
@@ -68,6 +69,8 @@ public final class BrokerModel extends Model
         addRelationship(Broker.class, TrustStore.class);
         addRelationship(Broker.class, KeyStore.class);
         addRelationship(Broker.class, Plugin.class);
+
+        addRelationship(VirtualHostNode.class, VirtualHost.class);
 
         addRelationship(VirtualHost.class, Exchange.class);
         addRelationship(VirtualHost.class, Queue.class);

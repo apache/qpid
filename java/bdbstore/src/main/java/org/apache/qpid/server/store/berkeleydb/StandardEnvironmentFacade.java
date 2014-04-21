@@ -232,5 +232,4 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     {
         return _storePath;
     }
-
 }

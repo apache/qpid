@@ -227,6 +227,10 @@ public final class Strings
 
     private static final String expand(String input, Resolver resolver, Stack<String> stack, boolean failOnUnresolved)
     {
+        if (input == null)
+        {
+            throw new IllegalArgumentException("Expansion input cannot be null");
+        }
         Matcher m = VAR.matcher(input);
         StringBuffer result = new StringBuffer();
         while (m.find())

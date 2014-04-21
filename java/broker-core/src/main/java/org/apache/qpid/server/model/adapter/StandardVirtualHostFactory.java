@@ -23,8 +23,8 @@ package org.apache.qpid.server.model.adapter;
 import java.util.Map;
 
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 
 public class StandardVirtualHostFactory extends AbstractConfiguredObjectTypeFactory<StandardVirtualHost>
@@ -39,8 +39,8 @@ public class StandardVirtualHostFactory extends AbstractConfiguredObjectTypeFact
     public StandardVirtualHost createInstance(final Map<String, Object> attributes,
                                                  final ConfiguredObject<?>... parents)
     {
-        final Broker broker = getParent(Broker.class, parents);
-        return new StandardVirtualHost(attributes, broker);
+        final VirtualHostNode<?> virtualHostNode = getParent(VirtualHostNode.class, parents);
+        return new StandardVirtualHost(attributes, virtualHostNode);
     }
 
 

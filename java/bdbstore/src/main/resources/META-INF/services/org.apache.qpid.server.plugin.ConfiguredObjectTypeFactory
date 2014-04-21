@@ -17,3 +17,5 @@
 # under the License.
 #
 org.apache.qpid.server.store.berkeleydb.BDBHAVirtualHostFactory
+org.apache.qpid.server.virtualhostnode.berkeleydb.BDBVirtualHostNodeFactory
+org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeFactory

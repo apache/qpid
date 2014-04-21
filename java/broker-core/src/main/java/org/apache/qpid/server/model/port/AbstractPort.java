@@ -47,6 +47,7 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ParameterizedTypeImpl;
@@ -238,13 +239,17 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     public Collection<VirtualHostAlias> getVirtualHostBindings()
     {
         List<VirtualHostAlias> aliases = new ArrayList<VirtualHostAlias>();
-        for(VirtualHost<?,?,?> vh : _broker.getVirtualHosts())
+        for(VirtualHostNode<?> vhn : _broker.getVirtualHostNodes())
         {
-            for(VirtualHostAlias<?> alias : vh.getAliases())
+            VirtualHost<?, ?, ?> vh = vhn.getVirtualHost();
+            if (vh != null)
             {
-                if(alias.getPort().equals(this))
+                for(VirtualHostAlias<?> alias : vh.getAliases())
                 {
-                    aliases.add(alias);
+                    if(alias.getPort().equals(this))
+                    {
+                        aliases.add(alias);
+                    }
                 }
             }
         }

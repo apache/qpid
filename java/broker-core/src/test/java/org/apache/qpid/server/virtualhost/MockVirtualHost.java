@@ -287,12 +287,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
-    public Map<String, Object> getConfigurationStoreSettings()
-    {
-        return null;
-    }
-
-    @Override
     public long getQueueCount()
     {
         return 0;
@@ -658,4 +652,11 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     {
         return false;
     }
+
+    @Override
+    public String getModelVersion()
+    {
+        return null;
+    }
+
 }

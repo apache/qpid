@@ -99,7 +99,8 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
         {
             name = _broker.getDefaultVirtualHost();
         }
-        return (VirtualHostImpl) _broker.getChildByName(VirtualHost.class, name);
+
+        return (VirtualHostImpl) _broker.findVirtualHostByName(name);
     }
 
     protected Set<Protocol> getDefaultProtocols()

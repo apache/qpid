@@ -45,6 +45,5 @@ org.apache.qpid.server.exchange.FanoutExchangeFactory
 org.apache.qpid.server.exchange.HeadersExchangeFactory
 org.apache.qpid.server.exchange.TopicExchangeFactory
 org.apache.qpid.server.binding.BindingFactory
-
-
+org.apache.qpid.server.virtualhostnode.JsonVirtualHostNodeFactory
 

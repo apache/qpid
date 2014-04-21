@@ -26,17 +26,10 @@ import java.util.UUID;
 
 public final class NullUpgrader implements DurableConfigurationStoreUpgrader
 {
-    private DurableConfigurationRecoverer _durableConfigurationRecoverer;
-
-    public NullUpgrader(final DurableConfigurationRecoverer durableConfigurationRecoverer)
-    {
-        _durableConfigurationRecoverer = durableConfigurationRecoverer;
-    }
 
     @Override
     public void configuredObject(final ConfiguredObjectRecord record)
     {
-        _durableConfigurationRecoverer.onConfiguredObject(record);
     }
 
     @Override

@@ -45,10 +45,10 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     public void setUp() throws Exception
     {
         //remove the normal 'test' vhost, we will configure the vhosts below
-        getBrokerConfiguration(0).removeObjectConfiguration(org.apache.qpid.server.model.VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
+        getBrokerConfiguration(0).removeObjectConfiguration(org.apache.qpid.server.model.VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
 
-        createTestVirtualHost(0, TEST_VHOST);
-        createTestVirtualHost(0, TEST2_VHOST);
+        createTestVirtualHostNode(0, TEST_VHOST);
+        createTestVirtualHostNode(0, TEST2_VHOST);
 
         getBrokerConfiguration().addJmxManagementConfiguration();
 

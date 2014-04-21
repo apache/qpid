@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -39,9 +40,9 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.test.utils.TestUtils;
+import org.apache.qpid.util.FileUtils;
 
 public class StoreOverfullTest extends QpidBrokerTestCase
 {
@@ -59,9 +60,12 @@ public class StoreOverfullTest extends QpidBrokerTestCase
     private MessageConsumer _consumer;
     private Queue _queue;
 
+    private String _storePath;
+
     private static final int OVERFULL_SIZE = 400000;
     private static final int UNDERFULL_SIZE = 350000;
 
+    @Override
     public void setUp() throws Exception
     {
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
@@ -69,8 +73,7 @@ public class StoreOverfullTest extends QpidBrokerTestCase
         messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
         messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
 
-        TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
+        _storePath = TestUtils.createStoreWithVirtualHostEntry(messageStoreSettings, getBrokerConfiguration(), getTestProfileVirtualHostNodeType());
 
         super.setUp();
 
@@ -93,7 +96,17 @@ public class StoreOverfullTest extends QpidBrokerTestCase
         }
         finally
         {
-            super.tearDown();
+            try
+            {
+                super.tearDown();
+            }
+            finally
+            {
+                if (_storePath != null)
+                {
+                    FileUtils.delete(new File(_storePath), true);
+                }
+            }
         }
     }
 

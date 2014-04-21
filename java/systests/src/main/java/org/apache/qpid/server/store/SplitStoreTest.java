@@ -31,9 +31,11 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.test.utils.TestUtils;
 import org.apache.qpid.util.FileUtils;
 
 public class SplitStoreTest extends QpidBrokerTestCase
@@ -52,6 +54,19 @@ public class SplitStoreTest extends QpidBrokerTestCase
     }
 
     @Override
+    protected void tearDown() throws Exception
+    {
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            TestFileUtils.delete(new File(_messageStorePath), true);
+        }
+    }
+
+    @Override
     public void startBroker() throws Exception
     {
         // Overridden to prevent QBTC starting the Broker.
@@ -59,38 +74,32 @@ public class SplitStoreTest extends QpidBrokerTestCase
 
     public void testJsonConfigurationStoreWithPersistentMessageStore() throws Exception
     {
-        Map<String, Object> configurationStoreSettings = new HashMap<String, Object>();
-        configurationStoreSettings.put(DurableConfigurationStore.STORE_TYPE, JsonFileConfigStore.TYPE);
-        configurationStoreSettings.put(DurableConfigurationStore.STORE_PATH, _configStorePath);
 
-        doTest(configurationStoreSettings);
+        doTest(JsonFileConfigStore.TYPE, _configStorePath);
     }
 
     public void testSeparateConfigurationAndMessageStoresOfTheSameType() throws Exception
     {
-        Map<String, Object> configurationStoreSettings = new HashMap<String, Object>();
-        configurationStoreSettings.put(DurableConfigurationStore.STORE_TYPE, getTestProfileMessageStoreType());
-        configurationStoreSettings.put(DurableConfigurationStore.STORE_PATH, _configStorePath);
-
-        doTest(configurationStoreSettings);
+        doTest(getTestProfileVirtualHostNodeType(), _configStorePath);
     }
 
-    private void configureAndStartBroker(Map<String, Object> configurationStoreSettings) throws Exception
+    private void configureAndStartBroker(String nodeType, String storePath) throws Exception
     {
+        TestBrokerConfiguration config = getBrokerConfiguration();
+        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.TYPE, nodeType);
+        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, DurableConfigurationStore.STORE_PATH, storePath);
+        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, false);
+
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
         messageStoreSettings.put(MessageStore.STORE_TYPE, getTestProfileMessageStoreType());
         messageStoreSettings.put(MessageStore.STORE_PATH, _messageStorePath);
-
-        TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
-        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.CONFIGURATION_STORE_SETTINGS, configurationStoreSettings);
-
+        TestUtils.createStoreWithVirtualHostEntry(messageStoreSettings, config, nodeType);
         super.startBroker();
     }
 
-    private void doTest(Map<String, Object> configurationStoreSettings) throws Exception
+    private void doTest(String nodeType, String path) throws Exception
     {
-        configureAndStartBroker(configurationStoreSettings);
+        configureAndStartBroker(nodeType, path);
 
         Connection connection = getConnection();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);

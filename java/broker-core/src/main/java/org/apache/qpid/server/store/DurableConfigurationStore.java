@@ -30,8 +30,6 @@ public interface DurableConfigurationStore
 {
     String STORE_TYPE                    = "storeType";
     String STORE_PATH                    = "storePath";
-    String IS_MESSAGE_STORE_TOO          = "isMessageStoreToo";
-
 
     public static interface Source
     {

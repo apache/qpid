@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.VirtualHostNode;
 
 public class BDBHAVirtualHostFactory extends AbstractConfiguredObjectTypeFactory<BDBHAVirtualHost>
 {
@@ -40,9 +38,8 @@ public class BDBHAVirtualHostFactory extends AbstractConfiguredObjectTypeFactory
     public BDBHAVirtualHost createInstance(final Map<String, Object> attributes,
                                                  final ConfiguredObject<?>... parents)
     {
-        final Broker broker = getParent(Broker.class, parents);
-        return new BDBHAVirtualHost(attributes, broker);
+        final VirtualHostNode<?> virtualHostNode = getParent(VirtualHostNode.class, parents);
+        return new BDBHAVirtualHost(attributes, virtualHostNode);
     }
-
 
 }

@@ -21,7 +21,6 @@
 package org.apache.qpid.server.util;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,6 +49,7 @@ import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -75,29 +75,31 @@ public class BrokerTestHelper
         TASK_EXECUTOR.start();
     }
 
-    public static Broker createBrokerMock()
+    public static Broker<?> createBrokerMock()
     {
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
-        SubjectCreator subjectCreator = mock(SubjectCreator.class);
+        EventLogger eventLogger = new EventLogger();
 
+        SystemContext systemContext = mock(SystemContext.class);
+        when(systemContext.getEventLogger()).thenReturn(eventLogger);
+        when(systemContext.getObjectFactory()).thenReturn(objectFactory);
+        when(systemContext.getModel()).thenReturn(objectFactory.getModel());
+        when(systemContext.getCategoryClass()).thenReturn(SystemContext.class);
+
+        SubjectCreator subjectCreator = mock(SubjectCreator.class);
         when(subjectCreator.getMechanisms()).thenReturn("");
+
         Broker broker = mock(Broker.class);
         when(broker.getConnection_sessionCountLimit()).thenReturn(1);
         when(broker.getConnection_closeWhenNoRoute()).thenReturn(false);
         when(broker.getId()).thenReturn(UUID.randomUUID());
         when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
-        when(broker.getSecurityManager()).thenReturn(new SecurityManager(mock(Broker.class), false));
+        when(broker.getSecurityManager()).thenReturn(new SecurityManager(broker, false));
         when(broker.getObjectFactory()).thenReturn(objectFactory);
         when(broker.getModel()).thenReturn(objectFactory.getModel());
-        when(broker.getEventLogger()).thenReturn(new EventLogger());
+        when(broker.getEventLogger()).thenReturn(eventLogger);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
-
-        SystemContext systemContext = mock(SystemContext.class);
-        when(systemContext.getObjectFactory()).thenReturn(objectFactory);
-        when(systemContext.getModel()).thenReturn(objectFactory.getModel());
-        when(systemContext.getCategoryClass()).thenReturn(SystemContext.class);
-        when(systemContext.getEventLogger()).thenReturn(new EventLogger());
-        when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
+        when(broker.getParent(SystemContext.class)).thenReturn(systemContext);
 
         return broker;
     }
@@ -110,34 +112,33 @@ public class BrokerTestHelper
     {
     }
 
-    public static VirtualHostImpl createVirtualHost(Map<String, Object> attributes)
+    public static VirtualHostImpl<?,?,?> createVirtualHost(Map<String, Object> attributes)
             throws Exception
     {
 
         //VirtualHostFactory factory = new PluggableFactoryLoader<VirtualHostFactory>(VirtualHostFactory.class).get(hostType);
+        Broker<?> broker = createBrokerMock();
+        ConfiguredObjectFactory objectFactory = broker.getObjectFactory();
         SystemContext systemContext = new SystemContextImpl(TASK_EXECUTOR,
-                                                            new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()),
+                                                            objectFactory,
                                                             mock(EventLogger.class),
                                                             mock(LogRecorder.class),
                                                             new BrokerOptions());
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
-        Broker broker = mock(Broker.class);
-        when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
-        SecurityManager securityManager = new SecurityManager(broker, false);
-        when(broker.getSecurityManager()).thenReturn(securityManager);
-        when(broker.getCategoryClass()).thenReturn(Broker.class);
-        when(broker.getObjectFactory()).thenReturn(objectFactory);
-        when(broker.getModel()).thenReturn(objectFactory.getModel());
 
-        AbstractVirtualHost host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class,attributes, broker);
-
+        VirtualHostNode<?> virtualHostNode = mock(VirtualHostNode.class);
+        DurableConfigurationStore dcs = mock(DurableConfigurationStore.class);
+        when(virtualHostNode.getConfigurationStore()).thenReturn(dcs);
+        when(virtualHostNode.getParent(Broker.class)).thenReturn(broker);
+        when(virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
+        when(virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
+        AbstractVirtualHost host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class, attributes, virtualHostNode );
         host.setDesiredState(host.getState(), State.ACTIVE);
 
         return host;
     }
 
-    public static VirtualHostImpl createVirtualHost(String name) throws Exception
+    public static VirtualHostImpl<?,?,?> createVirtualHost(String name) throws Exception
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.VirtualHost.TYPE, StandardVirtualHost.TYPE);
@@ -151,41 +152,40 @@ public class BrokerTestHelper
         return createVirtualHost(attributes);
     }
 
-    public static AMQSessionModel createSession(int channelId, AMQConnectionModel connection)
+    public static AMQSessionModel<?,?> createSession(int channelId, AMQConnectionModel<?,?> connection)
     {
+        @SuppressWarnings("rawtypes")
         AMQSessionModel session = mock(AMQSessionModel.class);
         when(session.getConnectionModel()).thenReturn(connection);
         when(session.getChannelId()).thenReturn(channelId);
         return session;
     }
 
-    public static AMQSessionModel createSession(int channelId) throws Exception
+    public static AMQSessionModel<?,?> createSession(int channelId) throws Exception
     {
-        AMQConnectionModel session = createConnection();
+        AMQConnectionModel<?,?> session = createConnection();
         return createSession(channelId, session);
     }
 
-    public static AMQSessionModel createSession() throws Exception
+    public static AMQSessionModel<?,?> createSession() throws Exception
     {
         return createSession(1);
     }
 
-    public static AMQConnectionModel createConnection() throws Exception
+    public static AMQConnectionModel<?,?> createConnection() throws Exception
     {
         return createConnection("test");
     }
 
-    public static AMQConnectionModel createConnection(String hostName) throws Exception
+    public static AMQConnectionModel<?,?> createConnection(String hostName) throws Exception
     {
-        VirtualHostImpl virtualHost = createVirtualHost(hostName);
-        AMQConnectionModel connection = mock(AMQConnectionModel.class);
-        return connection;
+        return mock(AMQConnectionModel.class);
     }
 
-    public static ExchangeImpl createExchange(String hostName, final boolean durable, final EventLogger eventLogger) throws Exception
+    public static ExchangeImpl<?> createExchange(String hostName, final boolean durable, final EventLogger eventLogger) throws Exception
     {
         SecurityManager securityManager = new SecurityManager(mock(Broker.class), false);
-        final VirtualHostImpl virtualHost = mock(VirtualHostImpl.class);
+        final VirtualHostImpl<?,?,?> virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getName()).thenReturn(hostName);
         when(virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(virtualHost.getEventLogger()).thenReturn(eventLogger);
@@ -210,13 +210,13 @@ public class BrokerTestHelper
 
     }
 
-    public static AMQQueue createQueue(String queueName, VirtualHostImpl virtualHost)
+    public static AMQQueue<?> createQueue(String queueName, VirtualHostImpl<?,?,?> virtualHost)
             throws QueueExistsException
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.ID, UUIDGenerator.generateRandomUUID());
         attributes.put(Queue.NAME, queueName);
-        AMQQueue queue = virtualHost.createQueue(attributes);
+        AMQQueue<?> queue = virtualHost.createQueue(attributes);
         return queue;
     }
 

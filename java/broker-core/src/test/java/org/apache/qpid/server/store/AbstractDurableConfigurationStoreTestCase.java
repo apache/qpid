@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -37,7 +38,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -51,6 +51,7 @@ import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
@@ -86,6 +87,10 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     protected Map<String, Object> _configurationStoreSettings;
     private ConfiguredObjectFactoryImpl _factory;
 
+    private ConfiguredObject<?> _parent;
+
+    private ConfiguredObjectRecord _rootRecord;
+
     public void setUp() throws Exception
     {
         super.setUp();
@@ -108,7 +113,16 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         String argValue = "some selector expression";
         _bindingArgs.put(argKey, argValue);
 
-        reopenStore();
+
+        _parent = mock(ConfiguredObject.class);
+        when(_parent.getName()).thenReturn("testName");
+        when(_parent.getObjectFactory()).thenReturn(_factory);
+        when(_parent.getModel()).thenReturn(_factory.getModel());
+
+        _configStore = createConfigStore();
+        _configStore.openConfigurationStore(_parent, _configurationStoreSettings);
+        _rootRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), VirtualHost.class.getSimpleName(), Collections.<String, Object>emptyMap());
+        _configStore.create(_rootRecord);
     }
 
     public void tearDown() throws Exception
@@ -130,6 +144,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _configStore.create(exchange.asObjectRecord());
 
         reopenStore();
+        _configStore.visitConfiguredObjectRecords(_handler);
+
         verify(_handler).handle(matchesRecord(_exchangeId, EXCHANGE,
                 map( org.apache.qpid.server.model.Exchange.NAME, getName(),
                         org.apache.qpid.server.model.Exchange.TYPE, getName()+"Type",
@@ -178,6 +194,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _configStore.create(binding.asObjectRecord());
 
         reopenStore();
+        _configStore.visitConfiguredObjectRecords(_handler);
 
         Map<String,Object> map = new HashMap<String, Object>();
         map.put(Binding.NAME, ROUTING_KEY);
@@ -280,6 +297,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _configStore.create(queue.asObjectRecord());
 
         reopenStore();
+        _configStore.visitConfiguredObjectRecords(_handler);
+
         Map<String, Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
@@ -297,7 +316,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _configStore.create(queue.asObjectRecord());
 
         reopenStore();
-
+        _configStore.visitConfiguredObjectRecords(_handler);
 
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
 
@@ -317,6 +336,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _configStore.create(queue.asObjectRecord());
 
         reopenStore();
+        _configStore.visitConfiguredObjectRecords(_handler);
 
         Map<String, Object> queueAttributes = new HashMap<String, Object>();
         queueAttributes.put(Queue.NAME, getName());
@@ -351,6 +371,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _configStore.update(false, queue.asObjectRecord());
 
         reopenStore();
+        _configStore.visitConfiguredObjectRecords(_handler);
 
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
 
@@ -377,6 +398,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _configStore.update(false, queue.asObjectRecord());
 
         reopenStore();
+        _configStore.visitConfiguredObjectRecords(_handler);
 
         Map<String,Object> queueAttributes = new HashMap<String, Object>();
 
@@ -461,6 +483,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(objectRecord.getId()).thenReturn(_queueId);
         when(objectRecord.getType()).thenReturn(Queue.class.getSimpleName());
         when(objectRecord.getAttributes()).thenReturn(attributes);
+        when(objectRecord.getParents()).thenReturn(Collections.singletonMap(_rootRecord.getType(), _rootRecord));
         when(queue.asObjectRecord()).thenReturn(objectRecord);
         return queue;
     }
@@ -485,6 +508,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchangeRecord.getId()).thenReturn(_exchangeId);
         when(exchangeRecord.getType()).thenReturn(Exchange.class.getSimpleName());
         when(exchangeRecord.getAttributes()).thenReturn(actualAttributes);
+        when(exchangeRecord.getParents()).thenReturn(Collections.singletonMap(_rootRecord.getType(), _rootRecord));
         when(exchange.asObjectRecord()).thenReturn(exchangeRecord);
         when(exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
         when(exchange.getEventLogger()).thenReturn(new EventLogger());
@@ -495,14 +519,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         closeConfigStore();
         _configStore = createConfigStore();
-
-        ConfiguredObject<?> parent = mock(ConfiguredObject.class);
-        when(parent.getName()).thenReturn("testName");
-
-        when(parent.getObjectFactory()).thenReturn(_factory);
-        when(parent.getModel()).thenReturn(_factory.getModel());
-        _configStore.openConfigurationStore(parent, _configurationStoreSettings);
-        _configStore.visitConfiguredObjectRecords(_handler);
+        _configStore.openConfigurationStore(_parent, _configurationStoreSettings);
     }
 
     protected abstract DurableConfigurationStore createConfigStore() throws Exception;

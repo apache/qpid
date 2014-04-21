@@ -61,7 +61,7 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
 
     protected abstract X createInstance(Map<String, Object> attributes, ConfiguredObject<?>... parents);
 
-    public final <C extends ConfiguredObject<C>> C getParent(Class<C> parentClass, ConfiguredObject<?>... parents)
+    public final <C extends ConfiguredObject<?>> C getParent(Class<C> parentClass, ConfiguredObject<?>... parents)
     {
 
         if(!parents[0].getModel().getParentTypes((Class<? extends ConfiguredObject>) getCategoryClass()).contains(

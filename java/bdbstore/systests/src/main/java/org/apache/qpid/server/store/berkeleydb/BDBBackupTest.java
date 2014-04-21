@@ -31,9 +31,8 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBVirtualHostNode;
 import org.apache.qpid.test.utils.Piper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -63,9 +62,9 @@ public class BDBBackupTest extends QpidBrokerTestCase
         super.setUp();
         _backupToDir = new File(SYSTEM_TMP_DIR + File.separator + getTestName());
         _backupToDir.mkdirs();
-        Map<String, Object> virtualHostAttributes = getBrokerConfiguration().getObjectAttributes(VirtualHost.class,TEST_VHOST);
-        Map<String, Object> messageStoreSettings = (Map<String, Object>) virtualHostAttributes.get(VirtualHost.MESSAGE_STORE_SETTINGS);
-        _backupFromDir = new File(Strings.expand((String) messageStoreSettings.get(MessageStore.STORE_PATH)));
+
+        Map<String, Object> virtualHostNodeAttributes = getBrokerConfiguration().getObjectAttributes(VirtualHostNode.class, TEST_VHOST);
+        _backupFromDir = new File(Strings.expand((String) virtualHostNodeAttributes.get(BDBVirtualHostNode.STORE_PATH)));
         boolean fromDirExistsAndIsDir = _backupFromDir.isDirectory();
         assertTrue("backupFromDir " + _backupFromDir + " should already exist", fromDirExistsAndIsDir);
     }

@@ -320,23 +320,25 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), "/", EnumSet.of(DispatcherType.REQUEST));
 
         addRestServlet(root, "broker");
-        addRestServlet(root, "virtualhost", VirtualHost.class);
+        addRestServlet(root, "virtualhostnode", VirtualHostNode.class);
         addRestServlet(root, "authenticationprovider", AuthenticationProvider.class);
         addRestServlet(root, "accesscontrolprovider", AccessControlProvider.class);
         addRestServlet(root, "user", AuthenticationProvider.class, User.class);
         addRestServlet(root, "groupprovider", GroupProvider.class);
         addRestServlet(root, "group", GroupProvider.class, Group.class);
         addRestServlet(root, "groupmember", GroupProvider.class, Group.class, GroupMember.class);
-        addRestServlet(root, "exchange", VirtualHost.class, Exchange.class);
-        addRestServlet(root, "queue", VirtualHost.class, Queue.class);
-        addRestServlet(root, "connection", VirtualHost.class, Connection.class);
-        addRestServlet(root, "binding", VirtualHost.class, Exchange.class, Queue.class, Binding.class);
         addRestServlet(root, "port", Port.class);
-        addRestServlet(root, "session", VirtualHost.class, Connection.class, Session.class);
         addRestServlet(root, "keystore", KeyStore.class);
         addRestServlet(root, "truststore", TrustStore.class);
         addRestServlet(root, "plugin", Plugin.class);
         addRestServlet(root, "preferencesprovider", AuthenticationProvider.class, PreferencesProvider.class);
+
+        addRestServlet(root, "virtualhost", VirtualHostNode.class, VirtualHost.class);
+        addRestServlet(root, "exchange", VirtualHostNode.class, VirtualHost.class, Exchange.class);
+        addRestServlet(root, "queue", VirtualHostNode.class, VirtualHost.class, Queue.class);
+        addRestServlet(root, "connection", VirtualHostNode.class, VirtualHost.class, Connection.class);
+        addRestServlet(root, "binding", VirtualHostNode.class, VirtualHost.class, Exchange.class, Queue.class, Binding.class);
+        addRestServlet(root, "session", VirtualHostNode.class, VirtualHost.class, Connection.class, Session.class);
 
         root.addServlet(new ServletHolder(new UserPreferencesServlet()), "/rest/userpreferences/*");
         root.addServlet(new ServletHolder(new LoggedOnUserPreferencesServlet()), "/rest/preferences");

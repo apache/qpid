@@ -44,8 +44,8 @@ public class StructureRestTest extends QpidRestTestCase
         assertNode(structure, "Broker");
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> virtualhosts = (List<Map<String, Object>>) structure.get("virtualhosts");
-        assertEquals("Unexpected number of virtual hosts", 3, virtualhosts.size());
+        List<Map<String, Object>> virtualhostnodes = (List<Map<String, Object>>) structure.get("virtualhostnodes");
+        assertEquals("Unexpected number of virtual hosts", 3, virtualhostnodes.size());
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) structure.get("ports");
@@ -55,16 +55,20 @@ public class StructureRestTest extends QpidRestTestCase
         List<Map<String, Object>> providers = (List<Map<String, Object>>) structure.get("authenticationproviders");
         assertEquals("Unexpected number of authentication providers", 2, providers.size());
 
-        for (String hostName : EXPECTED_VIRTUALHOSTS)
+        for (String nodeName : EXPECTED_VIRTUALHOSTS)
         {
-            Map<String, Object> host = getRestTestHelper().find("name", hostName, virtualhosts);
-            assertNotNull("Host " + hostName + " is not found ", host);
-            assertNode(host, hostName);
+            Map<String, Object> node = getRestTestHelper().find("name", nodeName, virtualhostnodes);
+            assertNotNull("Node " + nodeName + " is not found ", node);
+            assertNode(node, nodeName);
         }
 
         String hostName = "test";
-        Map<String, Object> host = getRestTestHelper().find("name", hostName, virtualhosts);
+        Map<String, Object> node = getRestTestHelper().find("name", hostName, virtualhostnodes);
 
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> virtualhosts = (List<Map<String, Object>>) node.get("virtualhosts");
+
+        Map<String, Object> host = getRestTestHelper().find("name", hostName, virtualhosts);
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> queues = (List<Map<String, Object>>) host.get("queues");
         assertNotNull("Host " + hostName + " queues are not found ", queues);

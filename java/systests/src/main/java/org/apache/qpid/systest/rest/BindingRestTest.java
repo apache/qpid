@@ -48,25 +48,9 @@ public class BindingRestTest extends QpidRestTestCase
         }
     }
 
-    public void testGetVirtualHostBindings() throws Exception
-    {
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test");
-        assertNotNull("Bindings cannot be null", bindings);
-        assertEquals("Unexpected number of bindings", RestTestHelper.EXPECTED_QUEUES.length, bindings.size());
-        for (String queueName : RestTestHelper.EXPECTED_QUEUES)
-        {
-            Map<String, Object> searchAttributes = new HashMap<String, Object>();
-            searchAttributes.put(Binding.NAME, queueName);
-            searchAttributes.put(Binding.EXCHANGE, "amq.direct");
-
-            Map<String, Object> binding = getRestTestHelper().find(searchAttributes, bindings);
-            Asserts.assertBinding(queueName, "amq.direct", binding);
-        }
-    }
-
     public void testGetVirtualHostExchangeBindings() throws Exception
     {
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct");
+        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/test/amq.direct");
         assertNotNull("Bindings cannot be null", bindings);
         assertEquals("Unexpected number of bindings", RestTestHelper.EXPECTED_QUEUES.length, bindings.size());
         for (String queueName : RestTestHelper.EXPECTED_QUEUES)
@@ -78,7 +62,7 @@ public class BindingRestTest extends QpidRestTestCase
 
     public void testGetVirtualHostExchangeQueueBindings() throws Exception
     {
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct/queue");
+        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/test/amq.direct/queue");
         assertNotNull("Bindings cannot be null", bindings);
         assertEquals("Unexpected number of bindings", 1, bindings.size());
         Asserts.assertBinding("queue", "amq.direct", bindings.get(0));
@@ -87,25 +71,24 @@ public class BindingRestTest extends QpidRestTestCase
 
     public void testDeleteBinding() throws Exception
     {
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct/queue/queue");
+        String bindingUrl = "/rest/binding/test/test/amq.direct/queue/queue";
+        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList(bindingUrl);
         assertEquals("Unexpected number of bindings", 1, bindings.size());
         Asserts.assertBinding("queue", "amq.direct", bindings.get(0));
 
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/binding/test/amq.direct/queue/queue", "DELETE");
-        connection.connect();
-        assertEquals("Unexpected response code", 200, connection.getResponseCode());
+        int responseCode = getRestTestHelper().submitRequest(bindingUrl, "DELETE", null);
+        assertEquals("Unexpected response code", 200, responseCode);
 
-        bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct/queue/queue");
+        bindings = getRestTestHelper().getJsonAsList(bindingUrl);
         assertEquals("Binding should be deleted", 0, bindings.size());
     }
 
     public void testDeleteBindingById() throws Exception
     {
-        Map<String, Object> binding = getRestTestHelper().getJsonAsSingletonList("/rest/binding/test/amq.direct/queue");
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/binding/test/amq.direct?id=" + binding.get(Binding.ID), "DELETE");
-        connection.connect();
-        assertEquals("Unexpected response code", 200, connection.getResponseCode());
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/amq.direct/queue");
+        Map<String, Object> binding = getRestTestHelper().getJsonAsSingletonList("/rest/binding/test/test/amq.direct/queue");
+        int responseCode = getRestTestHelper().submitRequest("/rest/binding/test/test/amq.direct?id=" + binding.get(Binding.ID), "DELETE", null);
+        assertEquals("Unexpected response code", 200, responseCode);
+        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/test/amq.direct/queue");
         assertEquals("Binding should be deleted", 0, bindings.size());
     }
 
@@ -117,14 +100,12 @@ public class BindingRestTest extends QpidRestTestCase
         bindingData.put(Binding.QUEUE, "queue");
         bindingData.put(Binding.EXCHANGE, "amq.direct");
 
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/binding/test/amq.direct/queue/" + bindingName, "PUT");
-        connection.connect();
-        getRestTestHelper().writeJsonRequest(connection, bindingData);
-        int responseCode = connection.getResponseCode();
-        connection.disconnect();
-        assertEquals("Unexpected response code", 201, responseCode);
-        Map<String, Object> binding = getRestTestHelper().getJsonAsSingletonList("/rest/binding/test/amq.direct/queue/" + bindingName);
+        String bindingUrl = "/rest/binding/test/test/amq.direct/queue/" + bindingName;
 
+        int responseCode = getRestTestHelper().submitRequest(bindingUrl, "PUT", bindingData);
+        assertEquals("Unexpected response code", 201, responseCode);
+
+        Map<String, Object> binding = getRestTestHelper().getJsonAsSingletonList(bindingUrl);
         Asserts.assertBinding(bindingName, "queue", "amq.direct", binding);
     }
 
@@ -136,16 +117,16 @@ public class BindingRestTest extends QpidRestTestCase
         attributes.put(Binding.QUEUE, "queue");
         attributes.put(Binding.EXCHANGE, "amq.direct");
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/binding/test/amq.direct/queue/" + bindingName, "PUT", attributes);
+        String bindingUrl = "/rest/binding/test/test/amq.direct/queue/" + bindingName;
+        int responseCode = getRestTestHelper().submitRequest(bindingUrl, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
 
-        Map<String, Object> binding = getRestTestHelper().getJsonAsSingletonList("/rest/binding/test/amq.direct/queue/" + bindingName);
-
+        Map<String, Object> binding = getRestTestHelper().getJsonAsSingletonList(bindingUrl);
         Asserts.assertBinding(bindingName, "queue", "amq.direct", binding);
 
-        attributes.put(Binding.ARGUMENTS, null);
+        attributes.put(Binding.ARGUMENTS, "blah");
 
-        responseCode = getRestTestHelper().submitRequest("/rest/binding/test/amq.direct/queue/" + bindingName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest(bindingUrl, "PUT", attributes);
         assertEquals("Update should be unsupported", 409, responseCode);
     }
 }

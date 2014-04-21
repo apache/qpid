@@ -64,7 +64,7 @@ public class ExchangeRestTest extends QpidRestTestCase
     {
         for (String exchangeName : EXPECTED_EXCHANGES)
         {
-            Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList("/rest/exchange/test/"
+            Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList("/rest/exchange/test/test/"
                     + URLDecoder.decode(exchangeName, "UTF-8"));
             assertExchange(exchangeName, exchange);
         }
@@ -73,20 +73,22 @@ public class ExchangeRestTest extends QpidRestTestCase
     public void testSetExchangeAttributesUnsupported() throws Exception
     {
         String exchangeName = getTestName();
+        String exchangeUrl = "/rest/exchange/test/test/" + exchangeName;
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Exchange.NAME, exchangeName);
         attributes.put(Exchange.TYPE, "direct");
-        int responseCode =getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest(exchangeUrl, "PUT", attributes);
+        assertEquals("Exchange should be created", 201, responseCode);
 
-        Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList("/rest/exchange/test/" + exchangeName);
+        Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList(exchangeUrl);
         assertNotNull("Exchange not found", exchange);
 
         attributes = new HashMap<String, Object>();
         attributes.put(Exchange.NAME, exchangeName);
-        attributes.put(Exchange.ALTERNATE_EXCHANGE, "my-alternate-exchange");
+        attributes.put(Exchange.ALTERNATE_EXCHANGE, "amq.direct");
 
-        responseCode = getRestTestHelper().submitRequest("/rest/exchange/test/" + exchangeName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest(exchangeUrl, "PUT", attributes);
         assertEquals("Exchange update should be unsupported", 409, responseCode);
     }
 

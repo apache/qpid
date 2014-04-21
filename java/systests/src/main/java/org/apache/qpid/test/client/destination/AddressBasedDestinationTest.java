@@ -48,7 +48,6 @@ import javax.naming.InitialContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
@@ -57,9 +56,7 @@ import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.messaging.Address;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.transport.ExecutionErrorCode;
 
 public class AddressBasedDestinationTest extends QpidBrokerTestCase
@@ -70,10 +67,6 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     @Override
     public void setUp() throws Exception
     {
-        TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(VirtualHost.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHost.CONTEXT,
-                                  Collections.singletonMap("queue.maximumDeliveryAttempts","0"));
-
         super.setUp();
         _connection = getConnection() ;
         _connection.start();

@@ -48,7 +48,6 @@ import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.SerializerProvider;
 import org.codehaus.jackson.map.module.SimpleModule;
 
-import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.VirtualHost;
@@ -57,19 +56,19 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 public class JsonFileConfigStore implements DurableConfigurationStore
 {
 
-    private Map<String,Class<? extends ConfiguredObject>> _classNameMapping;
     public static final String TYPE = "JSON";
 
     private final Map<UUID, ConfiguredObjectRecord> _objectsById = new HashMap<UUID, ConfiguredObjectRecord>();
     private final Map<String, List<UUID>> _idsByType = new HashMap<String, List<UUID>>();
     private final ObjectMapper _objectMapper = new ObjectMapper();
+    private final Class<? extends ConfiguredObject> _rootClass;
 
+    private Map<String,Class<? extends ConfiguredObject>> _classNameMapping;
     private String _directoryName;
     private String _name;
     private FileLock _fileLock;
     private String _configFileName;
     private String _backupFileName;
-    private int _configVersion;
 
     private static final Module _module;
     static
@@ -96,8 +95,14 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
     public JsonFileConfigStore()
     {
+        this(VirtualHost.class);
+    }
+
+    public JsonFileConfigStore(Class<? extends ConfiguredObject> rootClass)
+    {
         _objectMapper.registerModule(_module);
         _objectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+        _rootClass = rootClass;
     }
 
     @Override
@@ -105,7 +110,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     {
         _parent = parent;
         _name = parent.getName();
-        _classNameMapping = generateClassNameMap(_parent.getModel(), VirtualHost.class);
+        _classNameMapping = generateClassNameMap(_parent.getModel(), _rootClass);
         setup(storeSettings);
         load();
     }
@@ -260,48 +265,26 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
     }
 
-    protected void loadFromMap(final Map data)
+    protected void loadFromMap(final Map<String,Object> data)
     {
-        Collection<Class<? extends ConfiguredObject>> childClasses =
-                _parent.getModel().getChildTypes(VirtualHost.class);
-        data.remove("modelVersion");
-        Object configVersion;
-        if((configVersion = data.remove("configVersion")) instanceof Integer)
+        if (!data.isEmpty())
         {
-            _configVersion = (Integer) configVersion;
-        }
-        for(Class<? extends ConfiguredObject> childClass : childClasses)
-        {
-            final String type = childClass.getSimpleName();
-            String attrName = type.toLowerCase() + "s";
-            Object children = data.remove(attrName);
-            if(children != null)
-            {
-                if(children instanceof Collection)
-                {
-                    for(Object child : (Collection)children)
-                    {
-                        if(child instanceof Map)
-                        {
-                            loadChild(childClass, (Map)child, VirtualHost.class, null);
-                        }
-                    }
-                }
-            }
+            loadChild(_rootClass, data, null, null);
         }
     }
+
 
     private void loadChild(final Class<? extends ConfiguredObject> clazz,
                            final Map<String,Object> data,
                            final Class<? extends ConfiguredObject> parentClass,
                            final UUID parentId)
     {
-        Collection<Class<? extends ConfiguredObject>> childClasses =
-                _parent.getModel().getChildTypes(clazz);
         String idStr = (String) data.remove("id");
         final UUID id = UUID.fromString(idStr);
         final String type = clazz.getSimpleName();
+        Map<String,UUID> parentMap = new HashMap<String, UUID>();
 
+        Collection<Class<? extends ConfiguredObject>> childClasses = _parent.getModel().getChildTypes(clazz);
         for(Class<? extends ConfiguredObject> childClass : childClasses)
         {
             final String childType = childClass.getSimpleName();
@@ -322,7 +305,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             }
 
         }
-        Map<String,UUID> parentMap = new HashMap<String, UUID>();
         if(parentId != null)
         {
             parentMap.put(parentClass.getSimpleName(),parentId);
@@ -356,7 +338,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             _idsByType.put(type, idsForType);
         }
         idsForType.add(id);
-
     }
 
     @Override
@@ -380,42 +361,38 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 idsForType = new ArrayList<UUID>();
                 _idsByType.put(record.getType(), idsForType);
             }
+
+            if (_rootClass.getSimpleName().equals(record.getType()) && idsForType.size() > 0)
+            {
+                throw new IllegalStateException("Only a single root entry of type " + _rootClass.getSimpleName() + " can exist in the store.");
+            }
+
             idsForType.add(record.getId());
+
             save();
         }
     }
 
+    private UUID getRootId()
+    {
+        List<UUID> ids = _idsByType.get(_rootClass.getSimpleName());
+        if (ids == null)
+        {
+            throw new IllegalStateException("Root entry of type " + _rootClass.getSimpleName() + " does not exist in the store.");
+        }
+        return ids.get(0);
+    }
+
     private void save()
     {
-        Collection<Class<? extends ConfiguredObject>> childClasses =
-                _parent.getModel().getChildTypes(VirtualHost.class);
-
-        Map<String, Object> virtualHostMap = new LinkedHashMap<String, Object>();
-        virtualHostMap.put("modelVersion", BrokerModel.MODEL_VERSION);
-        virtualHostMap.put("configVersion", _configVersion);
-
-        for(Class<? extends ConfiguredObject> childClass : childClasses)
-        {
-            final String type = childClass.getSimpleName();
-            String attrName = type.toLowerCase() + "s";
-            List<UUID> childIds = _idsByType.get(type);
-            if(childIds != null && !childIds.isEmpty())
-            {
-                List<Map<String,Object>> entities = new ArrayList<Map<String, Object>>();
-                for(UUID id : childIds)
-                {
-                    entities.add(build(childClass,id));
-                }
-                virtualHostMap.put(attrName, entities);
-            }
-        }
+        UUID rootId = getRootId();
+        Map<String, Object> data = build(_rootClass, rootId);
 
         try
         {
-
             File tmpFile = File.createTempFile("cfg","tmp", new File(_directoryName));
             tmpFile.deleteOnExit();
-            _objectMapper.writeValue(tmpFile,virtualHostMap);
+            _objectMapper.writeValue(tmpFile,data);
             renameFile(_configFileName,_backupFileName);
             renameFile(tmpFile.getName(),_configFileName);
             tmpFile.delete();
@@ -489,6 +466,11 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     @Override
     public synchronized UUID[] remove(final ConfiguredObjectRecord... objects) throws StoreException
     {
+        if (objects.length == 0)
+        {
+            return new UUID[0];
+        }
+
         List<UUID> removedIds = new ArrayList<UUID>();
         for(ConfiguredObjectRecord requestedRecord : objects)
         {
@@ -508,6 +490,11 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     public void update(final boolean createIfNecessary, final ConfiguredObjectRecord... records)
             throws StoreException
     {
+        if (records.length == 0)
+        {
+            return;
+        }
+
         for(ConfiguredObjectRecord record : records)
         {
             final UUID id = record.getId();
@@ -647,6 +634,15 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             }
             return parents;
         }
+
+        @Override
+        public String toString()
+        {
+            return "ConfiguredObjectRecordImpl [_id=" + _id + ", _type=" + _type + ", _attributes=" + _attributes + ", _parents="
+                    + _parents + "]";
+        }
+
     }
+
 
 }

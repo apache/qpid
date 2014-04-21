@@ -51,11 +51,11 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
 
     public static final String TYPE = "JDBC";
     public static final String CONNECTION_URL = "connectionURL";
-    public static final String CONNECTION_POOL = "connectionPool";
-    public static final String JDBC_BIG_INT_TYPE = "jdbcBigIntType";
-    public static final String JDBC_BYTES_FOR_BLOB = "jdbcBytesForBlob";
-    public static final String JDBC_VARBINARY_TYPE = "jdbcVarbinaryType";
-    public static final String JDBC_BLOB_TYPE = "jdbcBlobType";
+    public static final String CONNECTION_POOL_TYPE = "connectionPoolType";
+    public static final String JDBC_BIG_INT_TYPE = "bigIntType";
+    public static final String JDBC_BYTES_FOR_BLOB = "bytesForBlob";
+    public static final String JDBC_VARBINARY_TYPE = "varbinaryType";
+    public static final String JDBC_BLOB_TYPE = "blobType";
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
@@ -290,7 +290,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         throws ClassNotFoundException, SQLException
     {
         _connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
-        Object poolAttribute = storeSettings.get(CONNECTION_POOL);
+        Object poolAttribute = storeSettings.get(CONNECTION_POOL_TYPE);
 
         JDBCDetails details = null;
 
