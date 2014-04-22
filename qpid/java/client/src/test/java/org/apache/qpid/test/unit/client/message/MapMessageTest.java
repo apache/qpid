@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.message.JMSMapMessage;
@@ -132,7 +132,7 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.setDouble("value", Double.MAX_VALUE);
-            Assert.assertEquals(Double.MAX_VALUE, mm.getDouble("value"));
+            Assert.assertEquals(Double.MAX_VALUE, mm.getDouble("value"), 0d);
             Assert.assertEquals("" + Double.MAX_VALUE, mm.getString("value"));
         }
         catch (JMSException e)
@@ -147,8 +147,8 @@ public class MapMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.setFloat("value", Float.MAX_VALUE);
-            Assert.assertEquals(Float.MAX_VALUE, mm.getFloat("value"));
-            Assert.assertEquals((double) Float.MAX_VALUE, mm.getDouble("value"));
+            Assert.assertEquals(Float.MAX_VALUE, mm.getFloat("value"), 0f);
+            Assert.assertEquals(Double.valueOf(Float.MAX_VALUE), mm.getDouble("value"), 0d);
             Assert.assertEquals("" + Float.MAX_VALUE, mm.getString("value"));
         }
         catch (JMSException e)

@@ -35,7 +35,7 @@ geronimo-kernel=lib/required/geronimo-kernel-2.2.1.jar
 geronimo-openejb=lib/required/geronimo-ejb_3.0_spec-1.0.1.jar
 geronimo-servlet=lib/required/geronimo-servlet_3.0_spec-1.0.jar
 
-junit=lib/required/junit-3.8.1.jar
+junit=lib/required/junit-4.11.jar
 mockito-all=lib/required/mockito-all-1.9.0.jar
 
 gson-all=lib/required/gson-2.0.jar

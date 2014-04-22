@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQPInvalidClassException;
@@ -107,7 +107,7 @@ public class FieldTableTest extends TestCase
         // Tests lookups we shouldn't get anything back for other gets
         // we should get right value back for this type ....
         Assert.assertEquals(null, table1.getBoolean("value"));
-        Assert.assertEquals(Byte.MAX_VALUE, (byte) table1.getByte("value"));
+        Assert.assertEquals(Byte.valueOf(Byte.MAX_VALUE), table1.getByte("value"));
         Assert.assertEquals(null, table1.getShort("value"));
         Assert.assertEquals(null, table1.getCharacter("value"));
         Assert.assertEquals(null, table1.getDouble("value"));
@@ -141,7 +141,7 @@ public class FieldTableTest extends TestCase
         // we should get right value back for this type ....
         Assert.assertEquals(null, table1.getBoolean("value"));
         Assert.assertEquals(null, table1.getByte("value"));
-        Assert.assertEquals(Short.MAX_VALUE, (short) table1.getShort("value"));
+        Assert.assertEquals(Short.valueOf(Short.MAX_VALUE), table1.getShort("value"));
         Assert.assertEquals(null, table1.getCharacter("value"));
         Assert.assertEquals(null, table1.getDouble("value"));
         Assert.assertEquals(null, table1.getFloat("value"));
@@ -175,7 +175,7 @@ public class FieldTableTest extends TestCase
         Assert.assertEquals(null, table1.getBoolean("value"));
         Assert.assertEquals(null, table1.getByte("value"));
         Assert.assertEquals(null, table1.getShort("value"));
-        Assert.assertEquals('c', (char) table1.getCharacter("value"));
+        Assert.assertEquals(Character.valueOf('c'), table1.getCharacter("value"));
         Assert.assertEquals(null, table1.getDouble("value"));
         Assert.assertEquals(null, table1.getFloat("value"));
         Assert.assertEquals(null, table1.getInteger("value"));
@@ -210,7 +210,7 @@ public class FieldTableTest extends TestCase
         Assert.assertEquals(null, table1.getByte("value"));
         Assert.assertEquals(null, table1.getShort("value"));
         Assert.assertEquals(null, table1.getCharacter("value"));
-        Assert.assertEquals(Double.MAX_VALUE, (double) table1.getDouble("value"));
+        Assert.assertEquals(Double.valueOf(Double.MAX_VALUE), table1.getDouble("value"));
         Assert.assertEquals(null, table1.getFloat("value"));
         Assert.assertEquals(null, table1.getInteger("value"));
         Assert.assertEquals(null, table1.getLong("value"));
@@ -246,7 +246,7 @@ public class FieldTableTest extends TestCase
         Assert.assertEquals(null, table1.getShort("value"));
         Assert.assertEquals(null, table1.getCharacter("value"));
         Assert.assertEquals(null, table1.getDouble("value"));
-        Assert.assertEquals(Float.MAX_VALUE, (float) table1.getFloat("value"));
+        Assert.assertEquals(Float.valueOf(Float.MAX_VALUE), table1.getFloat("value"));
         Assert.assertEquals(null, table1.getInteger("value"));
         Assert.assertEquals(null, table1.getLong("value"));
         Assert.assertEquals(null, table1.getBytes("value"));
@@ -283,7 +283,7 @@ public class FieldTableTest extends TestCase
         Assert.assertEquals(null, table1.getCharacter("value"));
         Assert.assertEquals(null, table1.getDouble("value"));
         Assert.assertEquals(null, table1.getFloat("value"));
-        Assert.assertEquals(Integer.MAX_VALUE, (int) table1.getInteger("value"));
+        Assert.assertEquals(Integer.valueOf(Integer.MAX_VALUE), table1.getInteger("value"));
         Assert.assertEquals(null, table1.getLong("value"));
         Assert.assertEquals(null, table1.getBytes("value"));
 
@@ -320,7 +320,7 @@ public class FieldTableTest extends TestCase
         Assert.assertEquals(null, table1.getDouble("value"));
         Assert.assertEquals(null, table1.getFloat("value"));
         Assert.assertEquals(null, table1.getInteger("value"));
-        Assert.assertEquals(Long.MAX_VALUE, (long) table1.getLong("value"));
+        Assert.assertEquals(Long.valueOf(Long.MAX_VALUE), table1.getLong("value"));
         Assert.assertEquals(null, table1.getBytes("value"));
 
         // ... and a the string value of it.
@@ -476,17 +476,17 @@ public class FieldTableTest extends TestCase
 
             FieldTable extractedTable = extractedOuterTable.getFieldTable("innerTable");
 
-            Assert.assertEquals((Boolean) true, extractedTable.getBoolean("bool"));
-            Assert.assertEquals((Byte) Byte.MAX_VALUE, extractedTable.getByte("byte"));
+            Assert.assertEquals(Boolean.TRUE, extractedTable.getBoolean("bool"));
+            Assert.assertEquals(Byte.valueOf(Byte.MAX_VALUE), extractedTable.getByte("byte"));
             assertBytesEqual(testBytes, extractedTable.getBytes("bytes"));
-            Assert.assertEquals((Character) 'c', extractedTable.getCharacter("char"));
-            Assert.assertEquals(Double.MAX_VALUE, extractedTable.getDouble("double"));
-            Assert.assertEquals(Float.MAX_VALUE, extractedTable.getFloat("float"));
-            Assert.assertEquals((Integer) Integer.MAX_VALUE, extractedTable.getInteger("int"));
-            Assert.assertEquals((Long) Long.MAX_VALUE, extractedTable.getLong("long"));
-            Assert.assertEquals((Short) Short.MAX_VALUE, extractedTable.getShort("short"));
+            Assert.assertEquals(Character.valueOf('c'), extractedTable.getCharacter("char"));
+            Assert.assertEquals(Double.valueOf(Double.MAX_VALUE), extractedTable.getDouble("double"));
+            Assert.assertEquals(Float.valueOf(Float.MAX_VALUE), extractedTable.getFloat("float"));
+            Assert.assertEquals(Integer.valueOf(Integer.MAX_VALUE), extractedTable.getInteger("int"));
+            Assert.assertEquals(Long.valueOf(Long.MAX_VALUE), extractedTable.getLong("long"));
+            Assert.assertEquals(Short.valueOf(Short.MAX_VALUE), extractedTable.getShort("short"));
             Assert.assertEquals("hello", extractedTable.getString("string"));
-            Assert.assertEquals(null, extractedTable.getString("null-string"));
+            Assert.assertNull(extractedTable.getString("null-string"));
         }
         catch (AMQFrameDecodingException e)
         {
@@ -543,17 +543,17 @@ public class FieldTableTest extends TestCase
                     AMQPInvalidClassException.INVALID_OBJECT_MSG + Exception.class, aice.getMessage());
         }
 
-        Assert.assertEquals((Boolean) true, table.getBoolean("bool"));
-        Assert.assertEquals((Byte) Byte.MAX_VALUE, table.getByte("byte"));
+        Assert.assertEquals(Boolean.TRUE, table.getBoolean("bool"));
+        Assert.assertEquals(Byte.valueOf(Byte.MAX_VALUE), table.getByte("byte"));
         assertBytesEqual(bytes, table.getBytes("bytes"));
-        Assert.assertEquals((Character) 'c', table.getCharacter("char"));
-        Assert.assertEquals(Double.MAX_VALUE, table.getDouble("double"));
-        Assert.assertEquals(Float.MAX_VALUE, table.getFloat("float"));
-        Assert.assertEquals((Integer) Integer.MAX_VALUE, table.getInteger("int"));
-        Assert.assertEquals((Long) Long.MAX_VALUE, table.getLong("long"));
-        Assert.assertEquals((Short) Short.MAX_VALUE, table.getShort("short"));
+        Assert.assertEquals(Character.valueOf('c'), table.getCharacter("char"));
+        Assert.assertEquals(Double.valueOf(Double.MAX_VALUE), table.getDouble("double"));
+        Assert.assertEquals(Float.valueOf(Float.MAX_VALUE), table.getFloat("float"));
+        Assert.assertEquals(Integer.valueOf(Integer.MAX_VALUE), table.getInteger("int"));
+        Assert.assertEquals(Long.valueOf(Long.MAX_VALUE), table.getLong("long"));
+        Assert.assertEquals(Short.valueOf(Short.MAX_VALUE), table.getShort("short"));
         Assert.assertEquals("Hello", table.getString("string"));
-        Assert.assertEquals(null, table.getString("null-string"));
+        Assert.assertNull(table.getString("null-string"));
 
         Assert.assertEquals(true, table.getObject("object-bool"));
         Assert.assertEquals(Byte.MAX_VALUE, table.getObject("object-byte"));
@@ -601,13 +601,13 @@ public class FieldTableTest extends TestCase
         Assert.assertEquals((Byte) Byte.MAX_VALUE, table2.getByte("byte"));
         assertBytesEqual(bytes, table2.getBytes("bytes"));
         Assert.assertEquals((Character) 'c', table2.getCharacter("char"));
-        Assert.assertEquals(Double.MAX_VALUE, table2.getDouble("double"));
-        Assert.assertEquals(Float.MAX_VALUE, table2.getFloat("float"));
-        Assert.assertEquals((Integer) Integer.MAX_VALUE, table2.getInteger("int"));
-        Assert.assertEquals((Long) Long.MAX_VALUE, table2.getLong("long"));
-        Assert.assertEquals((Short) Short.MAX_VALUE, table2.getShort("short"));
+        Assert.assertEquals(Double.valueOf(Double.MAX_VALUE), table2.getDouble("double"));
+        Assert.assertEquals(Float.valueOf(Float.MAX_VALUE), table2.getFloat("float"));
+        Assert.assertEquals(Integer.valueOf(Integer.MAX_VALUE), table2.getInteger("int"));
+        Assert.assertEquals(Long.valueOf(Long.MAX_VALUE), table2.getLong("long"));
+        Assert.assertEquals(Short.valueOf(Short.MAX_VALUE), table2.getShort("short"));
         Assert.assertEquals("hello", table2.getString("string"));
-        Assert.assertEquals(null, table2.getString("null-string"));
+        Assert.assertNull(table2.getString("null-string"));
     }
 
     public void testEncodingSize()

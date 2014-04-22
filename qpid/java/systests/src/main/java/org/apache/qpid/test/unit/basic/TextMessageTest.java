@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

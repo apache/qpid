@@ -49,7 +49,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.servlet.http.HttpServletResponse;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;

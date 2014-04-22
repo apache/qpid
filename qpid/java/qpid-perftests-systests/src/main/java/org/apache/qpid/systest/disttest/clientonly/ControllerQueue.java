@@ -30,7 +30,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.naming.Context;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.apache.qpid.disttest.DistributedTestConstants;
 import org.apache.qpid.disttest.jms.JmsMessageAdaptor;
