@@ -47,10 +47,6 @@
   </distributionManagement>
 
   <properties>
-    <!-- javac source/target properties -->
-    <java.source>1.6</java.source>
-    <java.target>1.6</java.target>
-
     <!-- Override parent property until QPID-5702 applied -->
     <junit-version>3.8.1</junit-version>
 
