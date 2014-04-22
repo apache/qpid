@@ -43,8 +43,6 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
-import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
@@ -64,8 +62,7 @@ import org.apache.qpid.server.security.auth.sasl.scram.ScramSHA1SaslServer;
 @ManagedObject( category = false, type = "SCRAM-SHA-1" )
 public class ScramSHA1AuthenticationManager
         extends AbstractAuthenticationManager<ScramSHA1AuthenticationManager>
-    implements PasswordCredentialManagingAuthenticationProvider<ScramSHA1AuthenticationManager>,
-               RecovererProvider
+    implements PasswordCredentialManagingAuthenticationProvider<ScramSHA1AuthenticationManager>
 {
     public static final String SCRAM_USER_TYPE = "scram";
     private static final Charset ASCII = Charset.forName("ASCII");
@@ -356,12 +353,6 @@ public class ScramSHA1AuthenticationManager
     public void reload() throws IOException
     {
 
-    }
-
-    @Override
-    public ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(final String type)
-    {
-        return null;
     }
 
     @ManagedObject( category = false, type = "scram")
