@@ -51,6 +51,10 @@
     <java.source>1.6</java.source>
     <java.target>1.6</java.target>
 
+    <!-- dependency version props -->
+    <commons-configuration-version>1.8</commons-configuration-version>
+    <commons-digester-version>1.8.1</commons-digester-version>
+    <commons-logging-version>1.1.1</commons-logging-version>
     <!-- Override parent property until QPID-5702 applied -->
     <junit-version>3.8.1</junit-version>
 
