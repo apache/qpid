@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
@@ -62,7 +63,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
         if (storeSettings != null && storeSettings.get(REAL_STORE) != null)
         {
             final String realStore = (String) storeSettings.get(REAL_STORE);
-            _realDurableConfigurationStore = new DurableConfigurationStoreCreator().createMessageStore(realStore);
+            _realDurableConfigurationStore = DurableConfigurationStoreFactory.FACTORY_LOADER.get(realStore).createDurableConfigurationStore();
             _realDurableConfigurationStore.openConfigurationStore(parent, storeSettings);
         }
     }
