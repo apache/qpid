@@ -23,13 +23,10 @@ package org.apache.qpid.server.model;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 @ManagedObject (creatable = false)
 public interface SystemContext<X extends SystemContext<X>> extends ConfiguredObject<X>
 {
-    void resolveObjects(ConfiguredObjectRecord... records);
-
     EventLogger getEventLogger();
 
     BrokerOptions getBrokerOptions();

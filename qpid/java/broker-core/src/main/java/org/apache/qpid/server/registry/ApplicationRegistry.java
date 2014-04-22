@@ -21,11 +21,9 @@
 package org.apache.qpid.server.registry;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.startup.BrokerStoreUpgrader;
 import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
@@ -35,6 +33,7 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.store.BrokerStoreUpgraderAndRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.util.SystemUtils;
 
@@ -77,8 +76,8 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         logStartupMessages(startupLogger);
 
-        BrokerStoreUpgrader upgrader = new BrokerStoreUpgrader(_systemContext);
-        _broker = upgrader.upgrade(_store);
+        BrokerStoreUpgraderAndRecoverer upgrader = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        _broker = upgrader.perform(_store);
 
         _broker.setEventLogger(startupLogger);
         _broker.open();

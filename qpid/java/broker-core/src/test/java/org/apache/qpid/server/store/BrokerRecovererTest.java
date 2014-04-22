@@ -18,11 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration.startup;
+package org.apache.qpid.server.store;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,9 +32,7 @@ import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.ConfiguredObjectRecoverer;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.RecovererProvider;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
@@ -49,6 +48,7 @@ import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
+import org.apache.qpid.server.store.GenericRecoverer;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 
 public class BrokerRecovererTest extends TestCase
@@ -56,9 +56,9 @@ public class BrokerRecovererTest extends TestCase
     private ConfiguredObjectRecord _brokerEntry = mock(ConfiguredObjectRecord.class);
 
     private UUID _brokerId = UUID.randomUUID();
-    private AuthenticationProvider _authenticationProvider1;
+    private AuthenticationProvider<?> _authenticationProvider1;
     private UUID _authenticationProvider1Id = UUID.randomUUID();
-    private SystemContext _systemContext;
+    private SystemContext<?> _systemContext;
     private ConfiguredObjectFactory _configuredObjectFactory;
     private TaskExecutor _taskExecutor;
 
@@ -91,8 +91,14 @@ public class BrokerRecovererTest extends TestCase
     @Override
     protected void tearDown() throws Exception
     {
-        super.tearDown();
-        _taskExecutor.stop();
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            _taskExecutor.stop();
+        }
     }
 
     public void testCreateBrokerAttributes()
@@ -115,8 +121,8 @@ public class BrokerRecovererTest extends TestCase
 
         when(_brokerEntry.getAttributes()).thenReturn(entryAttributes);
 
-        _systemContext.resolveObjects(_brokerEntry);
-        Broker broker = _systemContext.getBroker();
+        resolveObjects(_brokerEntry);
+        Broker<?> broker = _systemContext.getBroker();
 
         assertNotNull(broker);
 
@@ -171,7 +177,7 @@ public class BrokerRecovererTest extends TestCase
         UUID authProviderId = UUID.randomUUID();
         UUID portId = UUID.randomUUID();
 
-        _systemContext.resolveObjects(_brokerEntry, createAuthProviderRecord(authProviderId, "authProvider"), createPortRecord(
+        resolveObjects(_brokerEntry, createAuthProviderRecord(authProviderId, "authProvider"), createPortRecord(
                 portId,
                 5672,
                 "authProvider"));
@@ -188,7 +194,7 @@ public class BrokerRecovererTest extends TestCase
     {
         UUID authProviderId = UUID.randomUUID();
 
-        _systemContext.resolveObjects(_brokerEntry, createAuthProviderRecord(authProviderId, "authProvider"));
+        resolveObjects(_brokerEntry, createAuthProviderRecord(authProviderId, "authProvider"));
         Broker<?> broker = _systemContext.getBroker();
 
 
@@ -206,7 +212,7 @@ public class BrokerRecovererTest extends TestCase
         UUID authProvider2Id = UUID.randomUUID();
         UUID port2Id = UUID.randomUUID();
 
-        _systemContext.resolveObjects(_brokerEntry,
+        resolveObjects(_brokerEntry,
                                       createAuthProviderRecord(authProviderId, "authProvider"),
                                       createPortRecord(portId, 5672, "authProvider"),
                                       createAuthProviderRecord(authProvider2Id, "authProvider2"),
@@ -228,7 +234,7 @@ public class BrokerRecovererTest extends TestCase
 
         UUID authProviderId = UUID.randomUUID();
 
-        _systemContext.resolveObjects(_brokerEntry, createGroupProviderRecord(authProviderId, "groupProvider"));
+        resolveObjects(_brokerEntry, createGroupProviderRecord(authProviderId, "groupProvider"));
         Broker<?> broker = _systemContext.getBroker();
 
 
@@ -253,7 +259,7 @@ public class BrokerRecovererTest extends TestCase
 
             try
             {
-                _systemContext.resolveObjects(_brokerEntry);
+                resolveObjects(_brokerEntry);
                 Broker<?> broker = _systemContext.getBroker();
                 broker.open();
                 fail("The broker creation should fail due to unsupported model version");
@@ -323,33 +329,10 @@ public class BrokerRecovererTest extends TestCase
         return String.valueOf(attributeValue);
     }
 
-    private  RecovererProvider createRecoveryProvider(final ConfiguredObjectRecord[] entries, final ConfiguredObject[] objectsToRecoverer)
+    private void resolveObjects(ConfiguredObjectRecord... records)
     {
-        RecovererProvider recovererProvider = new RecovererProvider()
-        {
-            @Override
-            public ConfiguredObjectRecoverer<? extends ConfiguredObject> getRecoverer(String type)
-            {
-                @SuppressWarnings({ "unchecked", "rawtypes" })
-                final ConfiguredObjectRecoverer<?  extends ConfiguredObject> recoverer = new ConfiguredObjectRecoverer()
-                {
-                    public ConfiguredObject create(RecovererProvider recovererProvider, ConfiguredObjectRecord entry, ConfiguredObject... parents)
-                    {
-                        for (int i = 0; i < entries.length; i++)
-                        {
-                            ConfiguredObjectRecord e = entries[i];
-                            if (entry == e)
-                            {
-                                return objectsToRecoverer[i];
-                            }
-                        }
-                        return null;
-                    }
-                };
-
-                return recoverer;
-            }
-        };
-        return recovererProvider;
+        GenericRecoverer recoverer = new GenericRecoverer(_systemContext, Broker.class.getSimpleName());
+        recoverer.recover(Arrays.asList(records));
     }
+
 }

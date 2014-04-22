@@ -18,22 +18,31 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration.startup;
+package org.apache.qpid.server.store;
 
-public abstract class UpgraderPhaseFactory
+import java.util.HashMap;
+import java.util.Map;
+
+public abstract class StoreUpgraderPhase extends NonNullUpgrader
 {
-    private final String _toVersion;
     private final String _fromVersion;
+    private final String _toVersion;
+    private final String _versionAttributeName;
 
-    protected UpgraderPhaseFactory(String fromVersion, String toVersion)
+    public StoreUpgraderPhase(String versionAttributeName, String fromVersion, String toVersion)
     {
         _toVersion = toVersion;
         _fromVersion = fromVersion;
+        _versionAttributeName = versionAttributeName;
     }
 
-    public String getToVersion()
+    protected ConfiguredObjectRecord upgradeRootRecord(ConfiguredObjectRecord record)
     {
-        return _toVersion;
+        Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
+        updatedAttributes.put(_versionAttributeName, _toVersion);
+        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
+        getUpdateMap().put(record.getId(), record);
+        return record;
     }
 
     public String getFromVersion()
@@ -41,5 +50,9 @@ public abstract class UpgraderPhaseFactory
         return _fromVersion;
     }
 
-    public abstract StoreUpgraderPhase newInstance();
+    public String getToVersion()
+    {
+        return _toVersion;
+    }
+
 }
