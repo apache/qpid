@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.message.JMSMapMessage;
@@ -111,7 +111,7 @@ public class TextMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.setDoubleProperty("value", Double.MAX_VALUE);
-            Assert.assertEquals(Double.MAX_VALUE, mm.getDoubleProperty("value"));
+            Assert.assertEquals(Double.MAX_VALUE, mm.getDoubleProperty("value"), 0d);
             Assert.assertEquals("" + Double.MAX_VALUE, mm.getStringProperty("value"));
         }
         catch (JMSException e)
@@ -126,8 +126,8 @@ public class TextMessageTest extends TestCase
         {
             JMSMapMessage mm = TestMessageHelper.newJMSMapMessage();
             mm.setFloatProperty("value", Float.MAX_VALUE);
-            Assert.assertEquals(Float.MAX_VALUE, mm.getFloatProperty("value"));
-            Assert.assertEquals((double) Float.MAX_VALUE, mm.getDoubleProperty("value"));
+            Assert.assertEquals(Float.MAX_VALUE, mm.getFloatProperty("value"), 0f);
+            Assert.assertEquals(Double.valueOf(Float.MAX_VALUE), mm.getDoubleProperty("value"), 0d);
             Assert.assertEquals("" + Float.MAX_VALUE, mm.getStringProperty("value"));
         }
         catch (JMSException e)

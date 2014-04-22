@@ -39,7 +39,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
@@ -274,13 +274,13 @@ public class PropertyValueTest extends QpidBrokerTestCase implements MessageList
             // Check Properties
 
             Assert.assertEquals("Check Boolean properties are correctly transported", true, m.getBooleanProperty("Bool"));
-            Assert.assertEquals("Check Byte properties are correctly transported", (byte) Byte.MAX_VALUE,
+            Assert.assertEquals("Check Byte properties are correctly transported", Byte.MAX_VALUE,
                 m.getByteProperty("Byte"));
-            Assert.assertEquals("Check Double properties are correctly transported", (double) Double.MAX_VALUE,
-                m.getDoubleProperty("Double"));
-            Assert.assertEquals("Check Float properties are correctly transported", (float) Float.MAX_VALUE,
-                m.getFloatProperty("Float"));
-            Assert.assertEquals("Check Int properties are correctly transported", (int) Integer.MAX_VALUE,
+            Assert.assertEquals("Check Double properties are correctly transported", Double.MAX_VALUE,
+                m.getDoubleProperty("Double"), 0d);
+            Assert.assertEquals("Check Float properties are correctly transported", Float.MAX_VALUE,
+                m.getFloatProperty("Float"), 0f);
+            Assert.assertEquals("Check Int properties are correctly transported", Integer.MAX_VALUE,
                 m.getIntProperty("Int"));
             Assert.assertEquals("Check CorrelationID properties are correctly transported", "Correlation",
                 m.getJMSCorrelationID());

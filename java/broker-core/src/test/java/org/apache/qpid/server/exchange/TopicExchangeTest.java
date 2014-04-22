@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.message.InstanceProperties;

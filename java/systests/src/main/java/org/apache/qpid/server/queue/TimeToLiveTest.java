@@ -21,7 +21,7 @@
 
 package org.apache.qpid.server.queue;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQConnection;

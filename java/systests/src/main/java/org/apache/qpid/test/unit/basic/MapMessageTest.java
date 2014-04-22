@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -549,7 +549,7 @@ public class MapMessageTest extends QpidBrokerTestCase implements MessageListene
             // normal execution
         }
 
-        Assert.assertEquals(Double.MAX_VALUE, m.getDouble("double"));
+        Assert.assertEquals(Double.MAX_VALUE, m.getDouble("double"), 0d);
 
         // Try bad reads
         try
@@ -630,9 +630,9 @@ public class MapMessageTest extends QpidBrokerTestCase implements MessageListene
             // normal execution
         }
 
-        Assert.assertEquals(Float.MAX_VALUE, m.getFloat("float"));
+        Assert.assertEquals(Float.MAX_VALUE, m.getFloat("float"), 0f);
 
-        Assert.assertEquals(_smallfloat, (float) m.getDouble("smallfloat"));
+        Assert.assertEquals(_smallfloat, m.getDouble("smallfloat"), 0f);
 
         // Try bad reads
         try

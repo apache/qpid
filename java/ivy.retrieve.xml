@@ -52,7 +52,7 @@
     <dependency org="org.codehaus.jackson" name="jackson-core-asl" rev="1.9.0" transitive="false"/>
     <dependency org="org.codehaus.jackson" name="jackson-mapper-asl" rev="1.9.0" transitive="false"/>
     <dependency org="net.java.dev.javacc" name="javacc" rev="5.0" transitive="false"/>
-    <dependency org="junit" name="junit" rev="3.8.1" transitive="false"/>
+    <dependency org="junit" name="junit" rev="4.11" transitive="false"/>
     <dependency org="org.python" name="jython-standalone" rev="2.5.2" transitive="false"/>
     <dependency org="log4j" name="log4j" rev="1.2.16" transitive="false"/>
     <dependency org="org.apache.maven" name="maven-ant-tasks" rev="2.1.1" transitive="false"/>

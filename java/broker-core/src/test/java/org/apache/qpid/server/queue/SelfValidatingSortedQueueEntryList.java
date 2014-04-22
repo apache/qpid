@@ -19,7 +19,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.SortedQueueEntry.Colour;
