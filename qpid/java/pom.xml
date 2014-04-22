@@ -47,7 +47,8 @@
   </distributionManagement>
 
   <properties>
-    <!-- javac source/target properties -->
+    <!-- override parent to use Java 6 -->
+    <minimum-java-version>1.6.0</minimum-java-version>
     <java.source>1.6</java.source>
     <java.target>1.6</java.target>
 
