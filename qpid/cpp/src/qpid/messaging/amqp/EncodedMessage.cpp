@@ -229,7 +229,8 @@ void EncodedMessage::getBody(std::string& raw, qpid::types::Variant& c) const
                 c = builder.getList();
                 raw.assign(body.data, body.size);
             } else if (bodyType == qpid::amqp::typecodes::MAP_NAME) {
-                qpid::amqp::DataBuilder builder(new qpid::types::Variant::Map());
+                qpid::types::Variant v = qpid::types::Variant::Map();
+                qpid::amqp::DataBuilder builder(v);
                 qpid::amqp::Decoder decoder(body.data, body.size);
                 decoder.read(builder);
                 c = builder.getValue().asMap();
