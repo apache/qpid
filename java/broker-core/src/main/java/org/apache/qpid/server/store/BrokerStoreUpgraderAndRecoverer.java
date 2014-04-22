@@ -18,42 +18,30 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration.startup;
+package org.apache.qpid.server.store;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.DurableConfigurationStoreUpgrader;
-import org.apache.qpid.server.store.NullUpgrader;
-import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.util.Action;
 
-public class BrokerStoreUpgrader
+public class BrokerStoreUpgraderAndRecoverer
 {
-    private final SystemContext _systemContext;
-    private Map<String, UpgraderPhaseFactory> _upgraders = new HashMap<String, UpgraderPhaseFactory>();
-
+    private final SystemContext<?> _systemContext;
+    private final Map<String, StoreUpgraderPhase> _upgraders = new HashMap<String, StoreUpgraderPhase>();
 
     // Note: don't use externally defined constants in upgraders in case they change, the values here MUST stay the same
     // no matter what changes are made to the code in the future
-
-    public BrokerStoreUpgrader(SystemContext systemContext)
+    public BrokerStoreUpgraderAndRecoverer(SystemContext<?> systemContext)
     {
         _systemContext = systemContext;
 
@@ -63,199 +51,171 @@ public class BrokerStoreUpgrader
         register(new Upgrader_1_3_to_1_4());
     }
 
-    private void register(UpgraderPhaseFactory factory)
+    private void register(StoreUpgraderPhase upgrader)
     {
-        _upgraders.put(factory.getFromVersion(), factory);
+        _upgraders.put(upgrader.getFromVersion(), upgrader);
     }
 
-    private final class Upgrader_1_0_to_1_1 extends UpgraderPhaseFactory
+    private static final class Upgrader_1_0_to_1_1 extends StoreUpgraderPhase
     {
         private Upgrader_1_0_to_1_1()
         {
-            super("1.0", "1.1");
+            super("modelVersion", "1.0", "1.1");
         }
 
         @Override
-        public StoreUpgraderPhase newInstance()
+        public void configuredObject(ConfiguredObjectRecord record)
         {
-            return new StoreUpgraderPhase(Broker.MODEL_VERSION, getToVersion())
+            if (record.getType().equals("Broker"))
             {
-                @Override
-                public void configuredObject(ConfiguredObjectRecord record)
-                {
-                    if (record.getType().equals("Broker"))
-                    {
-                        record = upgradeRootRecord(record);
-                    }
-                    else if (record.getType().equals("VirtualHost") && record.getAttributes().containsKey("storeType"))
-                    {
-                        Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
-                        updatedAttributes.put("type", "STANDARD");
-                        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
-                        getUpdateMap().put(record.getId(), record);
-                    }
+                record = upgradeRootRecord(record);
+            }
+            else if (record.getType().equals("VirtualHost") && record.getAttributes().containsKey("storeType"))
+            {
+                Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
+                updatedAttributes.put("type", "STANDARD");
+                record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
+                getUpdateMap().put(record.getId(), record);
+            }
 
-                    getNextUpgrader().configuredObject(record);
-                }
-
-
-                @Override
-                public void complete()
-                {
-                    getNextUpgrader().complete();
-                }
-            };
+            getNextUpgrader().configuredObject(record);
         }
+
+        @Override
+        public void complete()
+        {
+            getNextUpgrader().complete();
+        }
+
     }
 
-    private static final class Upgrader_1_1_to_1_2 extends UpgraderPhaseFactory
+    private static final class Upgrader_1_1_to_1_2 extends StoreUpgraderPhase
     {
         private Upgrader_1_1_to_1_2()
         {
-            super("1.1", "1.2");
+            super("modelVersion", "1.1", "1.2");
         }
 
         @Override
-        public StoreUpgraderPhase newInstance()
+        public void configuredObject(ConfiguredObjectRecord record)
         {
-            return new StoreUpgraderPhase(Broker.MODEL_VERSION, getToVersion())
+            if (record.getType().equals("Broker"))
             {
+                record = upgradeRootRecord(record);
+            }
 
-                @Override
-                public void configuredObject(ConfiguredObjectRecord record)
-                {
-                    if (record.getType().equals("Broker"))
-                    {
-                        record = upgradeRootRecord(record);
-                    }
+            getNextUpgrader().configuredObject(record);
 
-                    getNextUpgrader().configuredObject(record);
-
-                }
-
-                @Override
-                public void complete()
-                {
-                    getNextUpgrader().complete();
-                }
-            };
         }
+
+        @Override
+        public void complete()
+        {
+            getNextUpgrader().complete();
+        }
+
     }
 
-    private static final class Upgrader_1_2_to_1_3 extends UpgraderPhaseFactory
+    private static final class Upgrader_1_2_to_1_3 extends StoreUpgraderPhase
     {
         private Upgrader_1_2_to_1_3()
         {
-            super("1.2", "1.3");
+            super("modelVersion", "1.2", "1.3");
         }
 
         @Override
-        public StoreUpgraderPhase newInstance()
+        public void configuredObject(ConfiguredObjectRecord record)
         {
-            return new StoreUpgraderPhase(Broker.MODEL_VERSION, getToVersion())
+            if (record.getType().equals("TrustStore") && record.getAttributes().containsKey("type"))
             {
+                Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
+                updatedAttributes.put("trustStoreType", updatedAttributes.remove("type"));
+                record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
+                getUpdateMap().put(record.getId(), record);
 
-                @Override
-                public void configuredObject(ConfiguredObjectRecord record)
-                {
-                    if (record.getType().equals("TrustStore") && record.getAttributes().containsKey("type"))
-                    {
-                        Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
-                        updatedAttributes.put("trustStoreType", updatedAttributes.remove("type"));
-                        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
-                        getUpdateMap().put(record.getId(), record);
+            }
+            else if (record.getType().equals("KeyStore") && record.getAttributes().containsKey("type"))
+            {
+                Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
+                updatedAttributes.put("keyStoreType", updatedAttributes.remove("type"));
+                record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
+                getUpdateMap().put(record.getId(), record);
 
-                    }
-                    else if (record.getType().equals("KeyStore") && record.getAttributes().containsKey("type"))
-                    {
-                        Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
-                        updatedAttributes.put("keyStoreType", updatedAttributes.remove("type"));
-                        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
-                        getUpdateMap().put(record.getId(), record);
+            }
+            else if (record.getType().equals("Broker"))
+            {
+                record = upgradeRootRecord(record);
+            }
 
-                    }
-                    else if (record.getType().equals("Broker"))
-                    {
-                        record = upgradeRootRecord(record);
-                    }
+            getNextUpgrader().configuredObject(record);
 
-                    getNextUpgrader().configuredObject(record);
-
-                }
-
-                @Override
-                public void complete()
-                {
-                    getNextUpgrader().complete();
-                }
-            };
         }
+
+        @Override
+        public void complete()
+        {
+            getNextUpgrader().complete();
+        }
+
     }
 
-    private static final class Upgrader_1_3_to_1_4 extends UpgraderPhaseFactory
+    private static final class Upgrader_1_3_to_1_4 extends StoreUpgraderPhase
     {
         private Upgrader_1_3_to_1_4()
         {
-            super("1.3", "1.4");
+            super("modelVersion", "1.3", "1.4");
+        }
+
+        @SuppressWarnings("serial")
+        private Map<String, VirtualHostEntryUpgrader> _vhostUpgraderMap = new HashMap<String, VirtualHostEntryUpgrader>()
+        {{
+            put("BDB_HA", new BdbHaVirtualHostUpgrader());
+            put("STANDARD", new StandardVirtualHostUpgrader());
+        }};
+
+        @Override
+        public void configuredObject(ConfiguredObjectRecord record)
+        {
+            if (record.getType().equals("VirtualHost"))
+            {
+                Map<String, Object> attributes = record.getAttributes();
+                if (attributes.containsKey("configPath"))
+                {
+                    throw new IllegalConfigurationException("Auto-upgrade of virtual host " + attributes.get("name") + " having XML configuration is not supported. Virtual host configuration file is " + attributes.get("configPath"));
+                }
+
+                String type = (String) attributes.get("type");
+                VirtualHostEntryUpgrader vhostUpgrader = _vhostUpgraderMap.get(type);
+                if (vhostUpgrader == null)
+                {
+                    throw new IllegalConfigurationException("Don't know how to perform an upgrade from version for virtualhost type " + type);
+                }
+                record = vhostUpgrader.upgrade(record);
+                getUpdateMap().put(record.getId(), record);
+            }
+            else if (record.getType().equals("Plugin") && record.getAttributes().containsKey("pluginType"))
+            {
+                Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
+                updatedAttributes.put("type", updatedAttributes.remove("pluginType"));
+                record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
+                getUpdateMap().put(record.getId(), record);
+
+            }
+            else if (record.getType().equals("Broker"))
+            {
+                record = upgradeRootRecord(record);
+            }
+
+            getNextUpgrader().configuredObject(record);
+
         }
 
         @Override
-        public StoreUpgraderPhase newInstance()
+        public void complete()
         {
-            return new StoreUpgraderPhase(Broker.MODEL_VERSION, getToVersion())
-            {
-
-                @SuppressWarnings("serial")
-                private Map<String, VirtualHostEntryUpgrader> _vhostUpgraderMap = new HashMap<String, VirtualHostEntryUpgrader>()
-                {{
-                    put("BDB_HA", new BdbHaVirtualHostUpgrader());
-                    put("STANDARD", new StandardVirtualHostUpgrader());
-                }};
-
-                @Override
-                public void configuredObject(ConfiguredObjectRecord record)
-                {
-                    if (record.getType().equals("VirtualHost"))
-                    {
-                        Map<String, Object> attributes = record.getAttributes();
-                        if (attributes.containsKey("configPath"))
-                        {
-                            throw new IllegalConfigurationException("Auto-upgrade of virtual host " + attributes.get("name") + " having XML configuration is not supported. Virtual host configuration file is " + attributes.get("configPath"));
-                        }
-
-                        String type = (String) attributes.get("type");
-                        VirtualHostEntryUpgrader vhostUpgrader = _vhostUpgraderMap.get(type);
-                        if (vhostUpgrader == null)
-                        {
-                            throw new IllegalConfigurationException("Don't know how to perform an upgrade from version for virtualhost type " + type);
-                        }
-                        record = vhostUpgrader.upgrade(record);
-                        getUpdateMap().put(record.getId(), record);
-                    }
-                    else if (record.getType().equals("Plugin") && record.getAttributes().containsKey("pluginType"))
-                    {
-                        Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
-                        updatedAttributes.put("type", updatedAttributes.remove("pluginType"));
-                        record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
-                        getUpdateMap().put(record.getId(), record);
-
-                    }
-                    else if (record.getType().equals("Broker"))
-                    {
-                        record = upgradeRootRecord(record);
-                    }
-
-                    getNextUpgrader().configuredObject(record);
-
-                }
-
-                @Override
-                public void complete()
-                {
-                    getNextUpgrader().complete();
-                }
-            };
+            getNextUpgrader().complete();
         }
+
     }
 
     private static interface VirtualHostEntryUpgrader
@@ -560,163 +520,52 @@ public class BrokerStoreUpgrader
         }
     }
 
-    public Broker<?> upgrade(DurableConfigurationStore store)
+    public Broker<?> perform(final DurableConfigurationStore store)
     {
-        final BrokerStoreRecoveryHandler recoveryHandler = new BrokerStoreRecoveryHandler(_systemContext, store, _upgraders);
-        store.openConfigurationStore(_systemContext, Collections.<String,Object>emptyMap());
-        store.visitConfiguredObjectRecords(recoveryHandler);
+        final String brokerCategory = Broker.class.getSimpleName();
+        final GenericStoreUpgrader upgrader = new GenericStoreUpgrader(brokerCategory, Broker.MODEL_VERSION, store, _upgraders);
+        upgrader.upgrade();
 
-        return recoveryHandler.getBroker();
+        new GenericRecoverer(_systemContext, brokerCategory).recover(upgrader.getRecords());
+
+        final StoreConfigurationChangeListener configChangeListener = new StoreConfigurationChangeListener(store);
+        applyRecursively(_systemContext.getBroker(), new Action<ConfiguredObject<?>>()
+        {
+            @Override
+            public void performAction(final ConfiguredObject<?> object)
+            {
+                 object.addChangeListener(configChangeListener);
+            }
+        });
+
+        return _systemContext.getBroker();
     }
 
-
-    private static class BrokerStoreRecoveryHandler implements ConfiguredObjectRecordHandler
+    private void applyRecursively(final ConfiguredObject<?> object, final Action<ConfiguredObject<?>> action)
     {
-        private static Logger LOGGER = Logger.getLogger(BrokerStoreRecoveryHandler.class);
+        applyRecursively(object, action, new HashSet<ConfiguredObject<?>>());
+    }
 
-        private DurableConfigurationStoreUpgrader _upgrader;
-        private DurableConfigurationStore _store;
-        private final Map<UUID, ConfiguredObjectRecord> _records = new HashMap<UUID, ConfiguredObjectRecord>();
-        private final SystemContext _systemContext;
-        private Map<String, UpgraderPhaseFactory> _upgraders;
-
-        private BrokerStoreRecoveryHandler(final SystemContext systemContext, DurableConfigurationStore store, Map<String, UpgraderPhaseFactory> upgraders)
+    private void applyRecursively(final ConfiguredObject<?> object,
+                                  final Action<ConfiguredObject<?>> action,
+                                  final HashSet<ConfiguredObject<?>> visited)
+    {
+        if(!visited.contains(object))
         {
-            _systemContext = systemContext;
-            _store = store;
-            _upgraders = upgraders;
-        }
-
-
-        @Override
-        public void begin()
-        {
-        }
-
-        @Override
-        public boolean handle(final ConfiguredObjectRecord object)
-        {
-            _records.put(object.getId(), object);
-            return true;
-        }
-
-        @Override
-        public void end()
-        {
-            String version = getCurrentVersion();
-
-            while(!BrokerModel.MODEL_VERSION.equals(version))
+            visited.add(object);
+            action.performAction(object);
+            for(Class<? extends ConfiguredObject> childClass : object.getModel().getChildTypes(object.getCategoryClass()))
             {
-                LOGGER.debug("Adding broker store upgrader from model version: " + version);
-                final UpgraderPhaseFactory upgraderPhaseFactory = _upgraders.get(version);
-                StoreUpgraderPhase upgrader = upgraderPhaseFactory.newInstance();
-                if(_upgrader == null)
+                Collection<? extends ConfiguredObject> children = object.getChildren(childClass);
+                if(children != null)
                 {
-                    _upgrader = upgrader;
-                }
-                else
-                {
-                    _upgrader.setNextUpgrader(upgrader);
-                }
-                version = upgraderPhaseFactory.getToVersion();
-            }
-
-            if(_upgrader == null)
-            {
-                _upgrader = new NullUpgrader();
-            }
-            else
-            {
-                _upgrader.setNextUpgrader(new NullUpgrader());
-            }
-
-            for(ConfiguredObjectRecord record : _records.values())
-            {
-                _upgrader.configuredObject(record);
-            }
-
-            Map<UUID, ConfiguredObjectRecord> deletedRecords = _upgrader.getDeletedRecords();
-            Map<UUID, ConfiguredObjectRecord> updatedRecords = _upgrader.getUpdatedRecords();
-
-            LOGGER.debug("Broker store upgrade: " + deletedRecords.size() + " records deleted");
-            LOGGER.debug("Broker store upgrade: " + updatedRecords.size() + " records updated");
-            LOGGER.debug("Broker store upgrade: " + _records.size() + " total records");
-
-            _store.update(true, updatedRecords.values().toArray(new ConfiguredObjectRecord[updatedRecords.size()]));
-            _store.remove(deletedRecords.values().toArray(new ConfiguredObjectRecord[deletedRecords.size()]));
-
-
-
-
-            _records.keySet().removeAll(deletedRecords.keySet());
-            _records.putAll(updatedRecords);
-
-            _systemContext.resolveObjects(_records.values().toArray(new ConfiguredObjectRecord[_records.size()]));
-
-            final StoreConfigurationChangeListener configChangeListener = new StoreConfigurationChangeListener(_store);
-            applyRecursively(_systemContext.getBroker(),
-                             new Action<ConfiguredObject<?>>()
-                             {
-                                 @Override
-                                 public void performAction(final ConfiguredObject<?> object)
-                                 {
-                                     object.addChangeListener(configChangeListener);
-                                 }
-
-
-                             });
-
-        }
-
-        private void applyRecursively(final ConfiguredObject<?> object, final Action<ConfiguredObject<?>> action)
-        {
-            applyRecursively(object, action, new HashSet<ConfiguredObject<?>>());
-        }
-
-        private void applyRecursively(final ConfiguredObject<?> object,
-                                      final Action<ConfiguredObject<?>> action,
-                                      final HashSet<ConfiguredObject<?>> visited)
-        {
-            if(!visited.contains(object))
-            {
-                visited.add(object);
-                action.performAction(object);
-                for(Class<? extends ConfiguredObject> childClass : object.getModel().getChildTypes(object.getCategoryClass()))
-                {
-                    Collection<? extends ConfiguredObject> children = object.getChildren(childClass);
-                    if(children != null)
+                    for(ConfiguredObject<?> child : children)
                     {
-                        for(ConfiguredObject<?> child : children)
-                        {
-                            applyRecursively(child, action, visited);
-                        }
+                        applyRecursively(child, action, visited);
                     }
                 }
             }
         }
-
-        private String getCurrentVersion()
-        {
-            for(ConfiguredObjectRecord record : _records.values())
-            {
-                if(record.getType().equals("Broker"))
-                {
-                    String version = (String) record.getAttributes().get(Broker.MODEL_VERSION);
-                    if(version == null)
-                    {
-                        version = "1.0";
-                    }
-                    return version;
-                }
-            }
-            return BrokerModel.MODEL_VERSION;
-        }
-
-        public Broker getBroker()
-        {
-            return _systemContext.getBroker();
-        }
     }
-
 
 }
