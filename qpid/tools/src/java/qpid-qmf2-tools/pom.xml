@@ -45,23 +45,22 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <!-- version specified in parent pluginManagement -->
-      <!-- scope specified in parent pluginManagement -->
+      <version>${slf4j-version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <!-- version specified in parent pluginManagement -->
-      <!-- scope specified in parent pluginManagement -->
+      <version>${slf4j-version}</version>
+      <scope>runtime</scope>
     </dependency>
 
 
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <!-- version specified in parent pluginManagement -->
-      <!-- scope specified in parent pluginManagement -->
+      <version>${log4j-version}</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 
@@ -70,6 +69,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
+        <!--version specified in qpid-parent pluginManagement -->
         <configuration>
           <descriptors>
             <descriptor>src/main/assembly/qpid-qmf-tools-bin.xml</descriptor>
