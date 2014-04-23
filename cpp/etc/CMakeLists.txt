@@ -19,11 +19,12 @@
 
 if (UNIX)
 
-  # Use automake variable names as these files are also configured by automake.
   # Use absolute paths as these are substituted into init scripts.
   set_absolute_install_path (bindir ${QPID_INSTALL_BINDIR})
   set_absolute_install_path (sysconfdir ${SYSCONF_INSTALL_DIR})
   set_absolute_install_path (sbindir ${QPID_INSTALL_SBINDIR})
+  set_absolute_install_path (initdir ${QPID_INSTALL_INITDDIR})
+  set_absolute_install_path (confdir ${QPID_INSTALL_CONFDIR})
 
   configure_file(qpidd.in
     ${CMAKE_CURRENT_BINARY_DIR}/qpidd
