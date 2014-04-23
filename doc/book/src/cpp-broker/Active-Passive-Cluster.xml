@@ -782,9 +782,12 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
   <section id="ha-security">
     <title>Security and Access Control.</title>
     <para>
-      You can secure your cluster using the authentication and authorization
-      features described in <xref linkend="chap-Messaging_User_Guide-Security"/>.
-      HA brokers use the credentials set by the following options:
+      This section outlines the HA specific aspects of security configuration.
+      Please see <xref linkend="chap-Messaging_User_Guide-Security"/> for
+      more details on enabling authentication and setting up Access Control Lists.
+    </para>
+    <para>
+      When authentication is enabled, HA brokers use the credentials set by the following options:
     </para>
     <table frame="all" id="ha-security-options">
       <title>HA Security Options</title>
@@ -801,7 +804,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	<tbody>
 	  <row>
 	    <entry><para><literal>ha-username</literal> <replaceable>USER</replaceable></para></entry>
-	    <entry><para>User name for HA brokers.</para></entry>
+	    <entry><para>User name for HA brokers. Note this must <emphasis>not</emphasis> include the <literal>@QPID</literal> suffix.</para></entry>
 	  </row>
 	  <row>
 	    <entry><para><literal>ha-password</literal> <replaceable>PASS</replaceable></para></entry>
@@ -820,8 +823,9 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       primary state, for example creating queues and exchanges.
     </para>
     <para>
-      When using an Access Control List the following ACL rule is required
-      when <literal>ha-username</literal>=<replaceable>USER</replaceable>
+      When authorization is enabled you must have an Access Control List with the
+      following rule to allow HA replication to function. Suppose
+      <literal>ha-username</literal>=<replaceable>USER</replaceable>
     </para>
     <programlisting>
       acl allow <replaceable>USER</replaceable>@QPID all all
