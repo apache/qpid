@@ -1551,15 +1551,13 @@ class TransactionTests(HaBrokerTest):
         for t in threads: t.join()
         for s in sessions: s.connection.close()
 
-    def test_broker_tx_tests(self):
+    def test_other_tx_tests(self):
         cluster = HaCluster(self, 3)
-        print "Running python broker tx tests"
-        p = subprocess.Popen(["qpid-python-test",
-                              "-m", "qpid_tests.broker_0_10",
-                              "-b", "localhost:%s"%(cluster[0].port()),
-                              "*.tx.*"])
-        assert not p.wait()
-        print "Finished python broker tx tests"
+        self.popen(["qpid-txtest", "-p%s"%cluster[0].port()]).assert_exit_ok()
+        self.popen(["qpid-python-test",
+                    "-m", "qpid_tests.broker_0_10",
+                    "-b", "localhost:%s"%(cluster[0].port()),
+                    "*.tx.*"]).assert_exit_ok()
 
 if __name__ == "__main__":
     outdir = "ha_tests.tmp"

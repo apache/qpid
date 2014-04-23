@@ -218,6 +218,9 @@ class Popen(subprocess.Popen):
         self._cleanup()
         return ret
 
+    def assert_exit_ok(self):
+        if self.wait() != 0: self.unexpected("Exit code %d" % self.returncode)
+
     def terminate(self):
         try: subprocess.Popen.terminate(self)
         except AttributeError:          # No terminate method
