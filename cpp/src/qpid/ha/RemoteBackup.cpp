@@ -84,21 +84,6 @@ RemoteBackup::GuardPtr RemoteBackup::guard(const QueuePtr& q) {
     return guard;
 }
 
-namespace {
-typedef std::set<boost::shared_ptr<broker::Queue> > QS;
-struct QueueSetPrinter {
-    const QS& qs;
-    std::string prefix;
-    QueueSetPrinter(const std::string& p, const QS& q) : qs(q), prefix(p) {}
-};
-std::ostream& operator<<(std::ostream& o, const QueueSetPrinter& qp) {
-    if (!qp.qs.empty()) o << qp.prefix;
-    for (QS::const_iterator i = qp.qs.begin(); i != qp.qs.end(); ++i)
-        o << (*i)->getName() << " ";
-    return o;
-}
-}
-
 void RemoteBackup::ready(const QueuePtr& q) {
     catchupQueues.erase(q);
     if (catchupQueues.size()) {
