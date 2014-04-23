@@ -565,7 +565,7 @@ namespace Messaging {
     }
 
 
-    void Message::GetContentObject(System::Object ^ managedObject)
+    System::Object ^ Message::GetContentObject()
     {
         msclr::lock lk(privateLock);
         ThrowIfDisposed();
@@ -576,7 +576,7 @@ namespace Messaging {
         {
             ::qpid::types::Variant nativeObject = nativeObjPtr->getContentObject();
 
-            managedObject = TypeTranslator::NativeToManagedObject(nativeObject);
+            return TypeTranslator::NativeToManagedObject(nativeObject);
         }
         catch (const ::qpid::types::Exception & error)
         {

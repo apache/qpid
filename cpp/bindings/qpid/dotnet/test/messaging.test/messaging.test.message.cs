@@ -240,8 +240,8 @@ namespace Org.Apache.Qpid.Messaging.UnitTest
             StringAssert.IsMatch("System.Boolean", rxContent["mybool"].GetType().ToString());
             bool rxbool = (bool)rxContent["mybool"];
 
-            StringAssert.IsMatch("System.SByte", rxContent["mybyte"].GetType().ToString());
-            sbyte rxbyte = (sbyte)rxContent["mybyte"];
+            StringAssert.IsMatch("System.Byte", rxContent["mybyte"].GetType().ToString());
+            byte rxbyte = (byte)rxContent["mybyte"];
 
             StringAssert.IsMatch("System.UInt16", rxContent["myUInt16"].GetType().ToString());
             UInt16 rxUInt16 = (UInt16)rxContent["myUInt16"];
@@ -252,7 +252,7 @@ namespace Org.Apache.Qpid.Messaging.UnitTest
             StringAssert.IsMatch("System.UInt64", rxContent["myUInt64"].GetType().ToString());
             UInt64 rxUInt64 = (UInt64)rxContent["myUInt64"];
 
-            StringAssert.IsMatch("System.Int32", rxContent["mychar"].GetType().ToString());
+            StringAssert.IsMatch("System.SByte", rxContent["mychar"].GetType().ToString());
             char rxchar = System.Convert.ToChar(rxContent["mychar"]);
 
             StringAssert.IsMatch("System.Int16", rxContent["myInt16"].GetType().ToString());
@@ -288,7 +288,93 @@ namespace Org.Apache.Qpid.Messaging.UnitTest
             Assert.AreEqual(11, rxInt64);
             Assert.AreEqual((Single)12.12, rxSingle);
             Assert.AreEqual((Double)13.13, rxDouble);
-            StringAssert.IsMatch("00010203-0405-0607-0809-0a0b0c0d0e0f", rxGuid.ToString());
+            StringAssert.IsMatch("03020100-0504-0706-0809-0a0b0c0d0e0f", rxGuid.ToString());
+        }
+
+        [Test]
+        public void MessageContentAsObject()
+        {
+            // Only processes primitive data types
+
+            // Create the message
+            Message message = new Message();
+            Object gotThis = new Object();
+
+
+            // add one of each supported amqp data type
+            bool mybool = true;
+            message.SetContentObject(mybool);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.Boolean", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(mybool));
+
+            byte mybyte = 4;
+            message.SetContentObject(mybyte);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.Byte", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(mybyte));
+
+            UInt16 myUInt16 = 5;
+            message.SetContentObject(myUInt16);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.UInt16", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(myUInt16));
+
+            UInt32 myUInt32 = 6;
+            message.SetContentObject(myUInt32);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.UInt32", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(myUInt32));
+
+            UInt64 myUInt64 = 7;
+            message.SetContentObject(myUInt64);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.UInt64", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(myUInt64));
+
+            char mychar = 'h';
+            message.SetContentObject(mychar);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.SByte", gotThis.GetType().ToString());
+            char result;
+            result = Convert.ToChar(gotThis);
+            Assert.IsTrue(result.Equals(mychar));
+
+            Int16 myInt16 = 9;
+            message.SetContentObject(myInt16);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.Int16", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(myInt16));
+
+            Int32 myInt32 = 10;
+            message.SetContentObject(myInt32);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.Int32", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(myInt32));
+
+            Int64 myInt64 = 11;
+            message.SetContentObject(myInt64);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.Int64", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(myInt64));
+
+            Single mySingle = (Single)12.12;
+            message.SetContentObject(mySingle);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.Single", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(mySingle));
+
+            Double myDouble = 13.13;
+            message.SetContentObject(myDouble);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.Double", gotThis.GetType().ToString());
+            Assert.IsTrue(gotThis.Equals(myDouble));
+
+            Guid myGuid = new Guid("000102030405060708090a0b0c0d0e0f");
+            message.SetContentObject(myGuid);
+            gotThis = message.GetContentObject();
+            StringAssert.IsMatch("System.Guid", gotThis.GetType().ToString());
+            StringAssert.IsMatch("03020100-0504-0706-0809-0a0b0c0d0e0f", gotThis.ToString());
         }
     }
 }

@@ -455,7 +455,7 @@ namespace Messaging {
         void GetContent(cli::array<System::Byte> ^ arr);
 
         // get content as object
-        void GetContentObject(System::Object ^ object);
+        System::Object ^ GetContentObject();
 
         //
         // ContentSize
