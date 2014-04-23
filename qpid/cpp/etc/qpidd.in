@@ -39,6 +39,11 @@ prog=qpidd
 lockfile=/var/lock/subsys/$prog
 pidfile=/var/run/qpidd.pid
 
+# The following variables can be overridden in @sysconfdir@/sysconfig/$prog
+QPID_BIN=@sbindir@/$prog
+QPID_CONFIG=@confdir@/qpidd.conf
+QPID_DATA_DIR=/var/lib/qpidd
+
 # Source configuration
 if [ -f @sysconfdir@/sysconfig/$prog ] ; then
 	. @sysconfdir@/sysconfig/$prog
@@ -63,9 +68,8 @@ if [ $RETVAL = 4 ]; then
 fi
 
 start() {
-        [[ $QPID_DATA_DIR ]] || QPID_DATA_DIR=/var/lib/qpidd
         echo -n $"Starting Qpid AMQP daemon: "
-	daemon --pidfile $pidfile --check $prog --user qpidd @sbindir@/$prog --data-dir $QPID_DATA_DIR --daemon $QPIDD_OPTIONS
+	daemon --pidfile $pidfile --check $prog --user qpidd $QPID_BIN --config $QPID_CONFIG --data-dir $QPID_DATA_DIR --daemon $QPIDD_OPTIONS
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && touch $lockfile
@@ -73,7 +77,7 @@ start() {
 	    touch $pidfile
 	    chown qpidd.qpidd $pidfile
             [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
-	    runuser - -s /bin/sh qpidd -c "@sbindir@/$prog --check > $pidfile"
+	    runuser - -s /bin/sh qpidd -c "$QPID_BIN --check > $pidfile"
 	fi
 	return $RETVAL
 }

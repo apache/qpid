@@ -23,6 +23,7 @@ import optparse, sys, time, os, re
 from qpid.messaging import Connection
 from qpid.messaging import Message as QpidMessage
 from qpidtoollibs.broker import BrokerAgent
+from qpidtoollibs.config import parse_qpidd_conf
 try:
     from uuid import uuid4
 except ImportError:
@@ -48,17 +49,24 @@ class Command:
         usage="%s [options] %s\n\n%s"%(name, " ".join(arg_names), help)
         self.help = help
         self.op=optparse.OptionParser(usage)
-        self.op.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+        self.op.add_option("-b", "--broker", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
+        self.op.add_option("--sasl-mechanism", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
         self.op.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
         self.op.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
-        self.op.add_option("-b", "--broker", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
+        self.op.add_option("--config", metavar="<path/to/qpidd.conf>", help="Connect to the local qpidd by reading its configuration file.")
 
     def connect(self, opts):
         conn_options = {}
-        if opts.sasl_mechanism:
-            conn_options['sasl_mechanisms'] = opts.sasl_mechanism
-        if opts.ssl_certificate:
-            conn_options['ssl_certfile'] = opts.ssl_certificate
+        if opts.config:         # Use broker config file.
+            config = parse_qpidd_conf(opts.config)
+            def joinif(separator, items): return separator.join(filter(None, items))
+            userpass = joinif("/", [config.get("ha-username"), config.get("ha-password")])
+            hostport = joinif(":", ["localhost", config.get("port")])
+            opts.broker = joinif("@", [userpass, hostport])
+            opts.sasl_mechanism = config.get("ha-mechanism")
+
+        if opts.sasl_mechanism: conn_options['sasl_mechanisms'] = opts.sasl_mechanism
+        if opts.ssl_certificate: conn_options['ssl_certfile'] = opts.ssl_certificate
         if opts.ssl_key:
             if not opts.ssl_certificate:
                 self.op.error("missing '--ssl-certificate' (required by '--ssl-key')")
@@ -109,8 +117,11 @@ class StatusCmd(Command):
         brokers = filter(None, re.sub(r'(^amqps?:)|(tcp:)', "", ha_broker.brokersUrl).split(","))
         if opts.all and brokers:
             opts.all=False
+            if "@" in opts.broker: userpass = opts.broker.split("@")[0]
+            else: userpass = None
             for b in brokers:
-                opts.broker = b
+                if userpass and not "@" in b: opts.broker = userpass+"@"+b
+                else: opts.broker = b
                 try:
                     connection, qmf_broker, ha_broker = self.connect(opts)
                     print b, ha_broker.status
