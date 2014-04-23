@@ -179,6 +179,7 @@ struct Transfer : public Client, public Runnable
                 } else {
                     session.txCommit();
                 }
+                session.sync();
             }
         } catch(const std::exception& e) {
             std::cout << "Transfer interrupted: " << e.what() << std::endl;
