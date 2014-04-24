@@ -108,7 +108,7 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
         }
     }
 
-    protected Broker getBroker()
+    protected Broker<?> getBroker()
     {
         return _broker;
     }
