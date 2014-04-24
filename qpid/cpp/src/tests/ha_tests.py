@@ -1543,6 +1543,11 @@ class TransactionTests(HaBrokerTest):
         for s in sessions: s.connection.close()
 
     def test_broker_tx_tests(self):
+        try:
+            import qpid_tests.broker_0_10
+        except ImportError:
+            raise Skipped("Tests not found")
+
         cluster = HaCluster(self, 3)
         print "Running python broker tx tests"
         p = subprocess.Popen(["qpid-python-test",
