@@ -112,8 +112,6 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     void visit(QueueEntryVisitor visitor);
 
-    boolean isOverfull();
-
     long clearQueue();
 
     /**

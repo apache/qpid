@@ -546,30 +546,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @Override
     public Object getAttribute(String name)
     {
-        if(ALTERNATE_EXCHANGE.equals(name))
-        {
-            return getAlternateExchange();
-        }
-        else if(OWNER.equals(name))
-        {
-            return getOwner();
-        }
-        else if(MESSAGE_GROUP_SHARED_GROUPS.equals(name))
-        {
-            //We only return the boolean value if message groups are actually in use
-            return _arguments.get(MESSAGE_GROUP_KEY) == null ? null : _arguments.get(MESSAGE_GROUP_SHARED_GROUPS);
-        }
-        else if(QUEUE_FLOW_STOPPED.equals(name))
-        {
-            return isOverfull();
-        }
-        else if(STATE.equals(name))
+        if(STATE.equals(name))
         {
             return State.ACTIVE; // TODO
-        }
-        else if (DESCRIPTION.equals(name))
-        {
-            return getDescription();
         }
 
         return super.getAttribute(name);
@@ -2151,11 +2130,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         return _queueFlowResumeSizeBytes;
     }
 
-    public boolean isOverfull()
-    {
-        return _overfull.get();
-    }
-
     public Set<NotificationCheck> getNotificationChecks()
     {
         return _notificationChecks;
@@ -2648,7 +2622,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @Override
     public boolean isQueueFlowStopped()
     {
-        return false;
+        return _overfull.get();
     }
 
     @Override
