@@ -24,8 +24,6 @@ import org.apache.qpid.server.security.AccessControl;
 @ManagedObject
 public interface AccessControlProvider<X extends AccessControlProvider<X>> extends ConfiguredObject<X>
 {
-    public static final String TYPE = "type";
-
     //retrieve the underlying AccessControl object
     AccessControl getAccessControl();
 }

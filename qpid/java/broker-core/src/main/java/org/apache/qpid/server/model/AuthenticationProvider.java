@@ -32,9 +32,6 @@ import org.apache.qpid.server.security.auth.AuthenticationResult;
 @ManagedObject( creatable = false )
 public interface AuthenticationProvider<X extends AuthenticationProvider<X>> extends ConfiguredObject<X>
 {
-
-    public static final String DESCRIPTION = "description";
-
     //children
     Collection<VirtualHostAlias> getVirtualHostPortBindings();
 
