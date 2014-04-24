@@ -121,7 +121,7 @@ public class VirtualHostTest extends QpidTestCase
 
         host.createChild(Queue.class, arguments);
 
-        Queue<?> queue = (Queue<?>) ConfiguredObjectFinder.findConfiguredObjectByName(host.getQueues(), queueName);
+        Queue<?> queue = host.getChildByName(Queue.class, queueName);
         Object messageGroupKey = queue.getAttribute(Queue.MESSAGE_GROUP_KEY);
         assertEquals("Unexpected message group key attribute", "mykey", messageGroupKey);
 

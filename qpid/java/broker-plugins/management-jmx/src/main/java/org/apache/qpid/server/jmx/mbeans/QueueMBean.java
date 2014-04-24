@@ -170,23 +170,23 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Integer getActiveConsumerCount()
     {
-        return (int) _queue.getConsumerCountWithCredit();
+        return  _queue.getConsumerCountWithCredit();
     }
 
     public Integer getConsumerCount()
     {
-        return (int) _queue.getConsumerCount();
+        return  _queue.getConsumerCount();
     }
 
     public String getOwner()
     {
-        return (String) _queue.getAttribute(Queue.OWNER);
+        return _queue.getOwner();
     }
 
     @Override
     public String getQueueType()
     {
-        return (String) _queue.getAttribute(Queue.TYPE);
+        return _queue.getType();
     }
 
     public boolean isDurable()
@@ -241,7 +241,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public Long getCapacity()
     {
-        return (Long) _queue.getQueueFlowControlSizeBytes();
+        return _queue.getQueueFlowControlSizeBytes();
     }
 
     public void setCapacity(Long value)
@@ -261,12 +261,12 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public boolean isFlowOverfull()
     {
-        return (Boolean)_queue.getAttribute(Queue.QUEUE_FLOW_STOPPED);
+        return _queue.isQueueFlowStopped();
     }
 
     public boolean isExclusive()
     {
-        final Object attribute = _queue.getAttribute(Queue.EXCLUSIVE);
+        final ExclusivityPolicy attribute = _queue.getExclusive();
         return attribute != null && attribute != ExclusivityPolicy.NONE;
     }
 
@@ -274,7 +274,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     {
         if(exclusive)
         {
-            Object currentValue = _queue.getAttribute(Queue.EXCLUSIVE);
+            ExclusivityPolicy currentValue = _queue.getExclusive();
             if(currentValue == null || currentValue == ExclusivityPolicy.NONE)
             {
                 _queue.setAttribute(Queue.EXCLUSIVE, currentValue, ExclusivityPolicy.CONTAINER);
@@ -282,7 +282,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
         else
         {
-            Object currentValue = _queue.getAttribute(Queue.EXCLUSIVE);
+            ExclusivityPolicy currentValue = _queue.getExclusive();
             if(currentValue != null && currentValue != ExclusivityPolicy.NONE)
             {
                 _queue.setAttribute(Queue.EXCLUSIVE, currentValue, ExclusivityPolicy.NONE);
@@ -313,7 +313,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
 
     public String getAlternateExchange()
     {
-        Exchange alternateExchange = (Exchange) _queue.getAttribute(Queue.ALTERNATE_EXCHANGE);
+        Exchange alternateExchange =  _queue.getAlternateExchange();
         return alternateExchange == null ? null : alternateExchange.getName();
     }
 
@@ -497,8 +497,12 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        VirtualHost vhost = _queue.getParent(VirtualHost.class);
-        final Queue destinationQueue = MBeanUtils.findQueueFromQueueName(vhost, toQueue);
+        VirtualHost<?,?,?> vhost = _queue.getParent(VirtualHost.class);
+        final Queue<?> destinationQueue = vhost.getChildByName(Queue.class, toQueue);
+        if (destinationQueue == null)
+        {
+            throw new OperationsException("No such queue \""+ toQueue +"\"");
+        }
 
         vhost.executeTransaction(new VirtualHost.TransactionalOperation()
         {
@@ -566,9 +570,12 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        VirtualHost vhost = _queue.getParent(VirtualHost.class);
-        final Queue destinationQueue = MBeanUtils.findQueueFromQueueName(vhost, toQueue);
-
+        VirtualHost<?,?,?> vhost = _queue.getParent(VirtualHost.class);
+        final Queue<?> queue = vhost.getChildByName(Queue.class, toQueue);
+        if (queue == null)
+        {
+            throw new OperationsException("No such queue \""+ toQueue +"\"");
+        }
         vhost.executeTransaction(new VirtualHost.TransactionalOperation()
         {
             public void withinTransaction(final VirtualHost.Transaction txn)
@@ -586,7 +593,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
                             if ((messageId >= fromMessageId)
                                 && (messageId <= toMessageId))
                             {
-                                txn.copy(entry, destinationQueue);
+                                txn.copy(entry, queue);
                             }
 
                         }
@@ -673,7 +680,7 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     @Override
     public String getDescription()
     {
-        return (String) _queue.getAttribute(Queue.DESCRIPTION);
+        return _queue.getDescription();
     }
 
     @Override
@@ -685,13 +692,12 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     @Override
     public String getMessageGroupKey()
     {
-        return (String) _queue.getAttribute(Queue.MESSAGE_GROUP_KEY);
+        return  _queue.getMessageGroupKey();
     }
 
     @Override
     public boolean isMessageGroupSharedGroups()
     {
-        Boolean value = (Boolean) _queue.getAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS);
-        return value == null ? false : value.booleanValue();
+        return _queue.isMessageGroupSharedGroups();
     }
 }

@@ -181,10 +181,17 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
     public void unregisterExchange(String exchangeName)
             throws IOException, JMException, MBeanException
     {
-        Exchange theExchange = MBeanUtils.findExchangeFromExchangeName(_virtualHostMBean.getVirtualHost(), exchangeName);
+        VirtualHost<?,?,?> virtualHost = _virtualHostMBean.getVirtualHost();
+        Exchange<?> exchange = virtualHost.getChildByName(Exchange.class, exchangeName);
+
+        if (exchange == null)
+        {
+            throw new OperationsException("No such exchange \""+ exchangeName +"\"");
+        }
+
         try
         {
-            theExchange.delete();
+            exchange.delete();
         }
         catch(RequiredExchangeException e)
         {
@@ -254,8 +261,13 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
             @MBeanOperationParameter(name = ManagedQueue.TYPE, description = "Queue Name") String queueName)
             throws IOException, JMException, MBeanException
     {
-        Queue theQueue = MBeanUtils.findQueueFromQueueName(_virtualHostMBean.getVirtualHost(), queueName);
-        theQueue.delete();
+        VirtualHost<?,?,?> virtualHost = _virtualHostMBean.getVirtualHost();
+        Queue<?> queue = virtualHost.getChildByName(Queue.class, queueName);
+        if (queue == null)
+        {
+            throw new OperationsException("No such queue \""+ queueName +"\"");
+        }
+        queue.delete();
     }
 
     @Override
