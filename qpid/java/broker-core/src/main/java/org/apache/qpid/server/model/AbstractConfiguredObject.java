@@ -212,13 +212,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         _type = Model.getType(getClass());
         _bestFitInterface = calculateBestFitInterface();
 
-        if(attributes.get(TYPE) != null)
+        if(attributes.get(TYPE) != null && !_type.equals(attributes.get(TYPE)))
         {
-            if(!_type.equals(attributes.get(TYPE)))
-            {
-                throw new IllegalConfigurationException("Provided type is " + attributes.get(TYPE)
-                                                        + " but calculated type is " + _type);
-            }
+            throw new IllegalConfigurationException("Provided type is " + attributes.get(TYPE)
+                                                    + " but calculated type is " + _type);
         }
 
         for (Class<? extends ConfiguredObject> childClass : getModel().getChildTypes(getCategoryClass()))
@@ -244,18 +241,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         Object durableObj = attributes.get(DURABLE);
         _durable = AttributeValueConverter.BOOLEAN_CONVERTER.convert(durableObj == null ? _attributeTypes.get(DURABLE).getAnnotation().defaultValue() : durableObj, this);
 
-        Collection<String> names = getAttributeNames();
-        if(names!=null)
+        for (String name : getAttributeNames())
         {
-            for (String name : names)
+            if (attributes.containsKey(name))
             {
-                if (attributes.containsKey(name))
+                final Object value = attributes.get(name);
+                if (value != null)
                 {
-                    final Object value = attributes.get(name);
-                    if(value != null)
-                    {
-                        _attributes.put(name, value);
-                    }
+                    _attributes.put(name, value);
                 }
             }
         }
@@ -800,10 +793,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public <T extends ConfiguredObject> T getParent(final Class<T> clazz)
     {
-        synchronized (_parents)
-        {
-            return (T) _parents.get(clazz);
-        }
+        return (T) _parents.get(clazz);
     }
 
     private <T extends ConfiguredObject> void addParent(Class<T> clazz, T parent)
@@ -924,33 +914,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             throw new DuplicateIdException(child);
         }
-        if(_childrenByName.get(categoryClass).containsKey(name))
+        if(getModel().getParentTypes(categoryClass).size() == 1)
         {
-            Collection<Class<? extends ConfiguredObject>> parentTypes =
-                    new ArrayList<Class<? extends ConfiguredObject>>(child.getModel().getParentTypes(categoryClass));
-            parentTypes.remove(getCategoryClass());
-            boolean duplicate = true;
-
-            C existing = (C) _childrenByName.get(categoryClass).get(name);
-            for(Class<? extends ConfiguredObject> parentType : parentTypes)
-            {
-                ConfiguredObject existingParent = existing.getParent(parentType);
-                ConfiguredObject childParent = child.getParent(parentType);
-                duplicate =  existingParent == childParent;
-                if(!duplicate)
-                {
-                    break;
-                }
-            }
-
-            if(duplicate)
+            if (_childrenByName.get(categoryClass).containsKey(name))
             {
                 throw new DuplicateNameException(child);
             }
+            _childrenByName.get(categoryClass).put(name, child);
         }
         _children.get(categoryClass).add(child);
         _childrenById.get(categoryClass).put(childId,child);
-        _childrenByName.get(categoryClass).put(name, child);
 
     }
 
@@ -986,7 +959,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public final <C extends ConfiguredObject> C getChildByName(final Class<C> clazz, final String name)
     {
-        return (C) _childrenByName.get(Model.getCategory(clazz)).get(name);
+        Class<? extends ConfiguredObject> categoryClass = Model.getCategory(clazz);
+        if(getModel().getParentTypes(categoryClass).size() != 1)
+        {
+            throw new UnsupportedOperationException("Cannot use getChildByName for objects of category "
+                                                    + categoryClass.getSimpleName() + " as it has more than one parent");
+        }
+        return (C) _childrenByName.get(categoryClass).get(name);
     }
 
     @Override
@@ -1072,8 +1051,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private ConfiguredObject<?> createProxyForValidation(final Map<String, Object> attributes)
     {
-        return (ConfiguredObject<?>) Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{_bestFitInterface},
-                                      new AttributeGettingHandler(attributes));
+        return (ConfiguredObject<?>) Proxy.newProxyInstance(getClass().getClassLoader(),
+                                                            new Class<?>[]{_bestFitInterface},
+                                                            new AttributeGettingHandler(attributes));
     }
 
     protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException

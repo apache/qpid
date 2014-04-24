@@ -45,7 +45,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -193,11 +192,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     @Override
     public String getDescription()
-    {
-        return null;
-    }
-
-    public QueueRegistry getQueueRegistry()
     {
         return null;
     }

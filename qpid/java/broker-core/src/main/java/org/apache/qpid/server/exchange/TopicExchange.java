@@ -73,7 +73,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
     }
 
     @Override
-    protected void onBindingUpdated(final BindingImpl binding, final Map<String, Object> oldArguments)
+    protected synchronized void onBindingUpdated(final BindingImpl binding, final Map<String, Object> oldArguments)
     {
         final String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getAMQQueue();
@@ -82,7 +82,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
         assert queue != null;
         assert bindingKey != null;
 
-        _logger.debug("Registering queue " + queue.getName() + " with routing key " + bindingKey);
+        _logger.debug("Updating binding of queue " + queue.getName() + " with routing key " + bindingKey);
 
 
         String routingKey = TopicNormalizer.normalize(bindingKey);
@@ -253,7 +253,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
 
     }
 
-    private boolean deregisterQueue(final BindingImpl binding)
+    private synchronized boolean deregisterQueue(final BindingImpl binding)
     {
         if(_bindings.containsKey(binding))
         {
