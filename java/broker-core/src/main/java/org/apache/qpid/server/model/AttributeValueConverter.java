@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
@@ -191,6 +194,19 @@ abstract class AttributeValueConverter<T>
             {
                 return convert(Arrays.asList((Object[]) value),object);
             }
+            else if(value instanceof String)
+            {
+                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                ObjectMapper objectMapper = new ObjectMapper();
+                try
+                {
+                    return objectMapper.readValue(interpolated, List.class);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("Cannot convert String " + value + " to a List");
+                }
+            }
             else if(value == null)
             {
                 return null;
@@ -214,6 +230,19 @@ abstract class AttributeValueConverter<T>
             else if(value instanceof Object[])
             {
                 return convert(new HashSet(Arrays.asList((Object[])value)),object);
+            }
+            else if(value instanceof String)
+            {
+                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                ObjectMapper objectMapper = new ObjectMapper();
+                try
+                {
+                    return objectMapper.readValue(interpolated, Set.class);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("Cannot convert String " + value + " to a List");
+                }
             }
             else if(value == null)
             {
@@ -239,6 +268,19 @@ abstract class AttributeValueConverter<T>
             {
                 return convert(Arrays.asList((Object[]) value), object);
             }
+            else if(value instanceof String)
+            {
+                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                ObjectMapper objectMapper = new ObjectMapper();
+                try
+                {
+                    return objectMapper.readValue(interpolated, List.class);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("Cannot convert String " + value + " to a Collection");
+                }
+            }
             else if(value == null)
             {
                 return null;
@@ -249,6 +291,7 @@ abstract class AttributeValueConverter<T>
             }
         }
     };
+
     static final AttributeValueConverter<Map> MAP_CONVERTER = new AttributeValueConverter<Map>()
     {
         @Override
@@ -270,6 +313,19 @@ abstract class AttributeValueConverter<T>
             else if(value == null)
             {
                 return null;
+            }
+            else if(value instanceof String)
+            {
+                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                ObjectMapper objectMapper = new ObjectMapper();
+                try
+                {
+                    return objectMapper.readValue(interpolated, Map.class);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException("Cannot convert String " + value + " to a Map");
+                }
             }
             else
             {
@@ -411,6 +467,19 @@ abstract class AttributeValueConverter<T>
             }
             else
             {
+                if(value instanceof String)
+                {
+                    String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    try
+                    {
+                        return convert(objectMapper.readValue(interpolated, List.class), object);
+                    }
+                    catch (IOException e)
+                    {
+                        // fall through to the non-JSON single object case
+                    }
+                }
                 return Collections.unmodifiableList(Collections.singletonList(_memberConverter.convert(value, object)));
             }
         }
@@ -470,6 +539,19 @@ abstract class AttributeValueConverter<T>
             }
             else
             {
+                if(value instanceof String)
+                {
+                    String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    try
+                    {
+                        return convert(objectMapper.readValue(interpolated, Set.class), object);
+                    }
+                    catch (IOException e)
+                    {
+                        // fall through to the non-JSON single object case
+                    }
+                }
                 return Collections.unmodifiableSet(Collections.singleton(_memberConverter.convert(value, object)));
             }
         }
@@ -529,6 +611,19 @@ abstract class AttributeValueConverter<T>
             }
             else
             {
+                if(value instanceof String)
+                {
+                    String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    try
+                    {
+                        return convert(objectMapper.readValue(interpolated, List.class), object);
+                    }
+                    catch (IOException e)
+                    {
+                        // fall through to the non-JSON single object case
+                    }
+                }
                 return Collections.unmodifiableCollection(Collections.singletonList(_memberConverter.convert(value, object)));
             }
         }
@@ -623,6 +718,5 @@ abstract class AttributeValueConverter<T>
                 throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a " + _klazz.getName());
             }
         }
-
     }
 }
