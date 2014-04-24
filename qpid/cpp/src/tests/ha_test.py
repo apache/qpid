@@ -177,8 +177,6 @@ acl allow all all
             raise Exception("Error in qpid_ha -b %s %s: %s"%(url, args,e))
 
     def promote(self): self.ready(); self.qpid_ha(["promote"])
-    def set_public_url(self, url): self.qpid_ha(["set", "--public-url", url])
-    def set_brokers_url(self, url): self.qpid_ha(["set", "--brokers-url", url]);
     def replicate(self, from_broker, queue): self.qpid_ha(["replicate", from_broker, queue])
     @property
     def agent(self):
@@ -343,18 +341,12 @@ class HaCluster(object):
         if i == len(self._ports): # Adding new broker after cluster init
             self._ports.append(HaPort(self.test))
             self._set_url()
-            self._update_urls()
         b = self._ha_broker(i, self.next_name())
         self._brokers.append(b)
         return b
 
     def _set_url(self):
         self.url = ",".join("127.0.0.1:%s"%(p.port) for p in self._ports)
-
-    def _update_urls(self):
-        for b in self:
-            b.set_brokers_url(self.url)
-            b.set_public_url(self.url)
 
     def connect(self, i, **kwargs):
         """Connect with reconnect_urls"""

@@ -44,9 +44,6 @@ class ExitStatus(Exception):
 class Command:
     commands = {}
 
-    def add(self, optname, metavar, type, help):
-        self.op.add_option(optname, metavar=metavar, type=type, help=help)
-
     def __init__(self, name, help, arg_names=[], connect_agent=True):
         """@param connect_agent true if we should establish a QMF agent connection"""
         Command.commands[name] = self
@@ -56,13 +53,15 @@ class Command:
         usage="%s [options] %s\n\n%s"%(name, " ".join(arg_names), help)
         self.help = help
         self.op=optparse.OptionParser(usage)
+        common = optparse.OptionGroup(self.op, "Broker connection options")
         def help_default(what): return " (Default %s)"%DEFAULTS[what]
-        self.op.add_option("-b", "--broker", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]"+help_default("broker"))
-        self.op.add_option("--timeout", type="float", metavar="<seconds>", help="Give up if the broker does not respond within the timeout. 0 means wait forever"+help_default("timeout"))
-        self.op.add_option("--sasl-mechanism", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override")
-        self.op.add_option("--ssl-certificate", metavar="<cert>", help="Client SSL certificate (PEM Format)")
-        self.op.add_option("--ssl-key", metavar="<key>", help="Client SSL private key (PEM Format)")
-        self.op.add_option("--config", metavar="<path/to/qpidd.conf>", help="Connect to the local qpidd by reading its configuration file.")
+        common.add_option("-b", "--broker", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]"+help_default("broker"))
+        common.add_option("--timeout", type="float", metavar="<seconds>", help="Give up if the broker does not respond within the timeout. 0 means wait forever"+help_default("timeout"))
+        common.add_option("--sasl-mechanism", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override")
+        common.add_option("--ssl-certificate", metavar="<cert>", help="Client SSL certificate (PEM Format)")
+        common.add_option("--ssl-key", metavar="<key>", help="Client SSL private key (PEM Format)")
+        common.add_option("--config", metavar="<path/to/qpidd.conf>", help="Read default connection configuration from the qpidd.conf broker configuration file. Defaults are overridden by command-line options.)")
+        self.op.add_option_group(common)
 
     def connect(self, opts):
         conn_options = {}
@@ -118,7 +117,7 @@ PingCmd()
 
 class PromoteCmd(Command):
     def __init__(self):
-        Command.__init__(self, "promote","Promote broker from backup to primary")
+        Command.__init__(self, "promote","Promote a backup broker to primary. Note this command will not detect if another broker is already primary, and creating a second primary will make the cluster inconsistent. It is up to the caller (normally the cluster resource manager) to ensure there is only one primary.")
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         qmf_broker._method("promote", {}, HA_BROKER)
 PromoteCmd()
@@ -164,18 +163,6 @@ class ReplicateCmd(Command):
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         qmf_broker._method("replicate", {"broker":args[1], "queue":args[2]}, HA_BROKER)
 ReplicateCmd()
-
-class SetCmd(Command):
-    def __init__(self):
-        Command.__init__(self, "set", "Set HA configuration settings")
-        self.add("--brokers-url", "<url>", "string", "URL with address of each broker in the cluster. Used by brokers to connect to each other.")
-        self.add("--public-url", "<url>", "string", "URL advertised to clients to connect to the cluster. May be a list or a VIP.")
-
-    def do_execute(self, qmf_broker, ha_broker, opts, args):
-        if (opts.brokers_url): qmf_broker._method("setBrokersUrl", {"url":opts.brokers_url}, HA_BROKER)
-        if (opts.public_url): qmf_broker._method("setPublicUrl", {"url":opts.public_url}, HA_BROKER)
-
-SetCmd()
 
 class QueryCmd(Command):
     def __init__(self):
