@@ -20,14 +20,11 @@
  */
 package org.apache.qpid.server.management.plugin;
 
-import java.lang.reflect.Type;
 import java.net.SocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -69,7 +66,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServlet;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
-import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
+import org.apache.qpid.server.model.port.HttpPort;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
@@ -89,18 +86,6 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     public static final String PLUGIN_TYPE = "MANAGEMENT-HTTP";
 
     private static final String OPERATIONAL_LOGGING_NAME = "Web";
-
-
-    @SuppressWarnings("serial")
-    private static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
-        put(HTTP_BASIC_AUTHENTICATION_ENABLED, Boolean.class);
-        put(HTTPS_BASIC_AUTHENTICATION_ENABLED, Boolean.class);
-        put(HTTP_SASL_AUTHENTICATION_ENABLED, Boolean.class);
-        put(HTTPS_SASL_AUTHENTICATION_ENABLED, Boolean.class);
-        put(NAME, String.class);
-        put(TIME_OUT, Integer.class);
-        put(TYPE, String.class);
-    }});
 
     private static final String JSESSIONID_COOKIE_PREFIX = "JSESSIONID_";
 
@@ -146,7 +131,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     {
         getBroker().getEventLogger().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
-        Collection<Port> httpPorts = getHttpPorts(getBroker().getPorts());
+        Collection<Port<?>> httpPorts = getHttpPorts(getBroker().getPorts());
         _server = createServer(httpPorts);
         try
         {
@@ -184,8 +169,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         return _sessionTimeout;
     }
 
-    @SuppressWarnings("unchecked")
-    private Server createServer(Collection<Port> ports)
+    private Server createServer(Collection<Port<?>> ports)
     {
         if (_logger.isInfoEnabled())
         {
@@ -194,114 +178,48 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
         Server server = new Server();
         int lastPort = -1;
-        for (Port port : ports)
+        for (Port<?> port : ports)
         {
-            if (State.QUIESCED.equals(port.getState()))
+            if(port instanceof HttpPort)
             {
-                continue;
-            }
 
-            Connector connector = null;
-
-            Collection<Transport> transports = port.getTransports();
-            if (!transports.contains(Transport.SSL))
-            {
-                connector = new SelectChannelConnector();
-            }
-            else if (transports.contains(Transport.SSL))
-            {
-                KeyStore keyStore = port.getKeyStore();
-                Collection<TrustStore> trustStores = port.getTrustStores();
-                if (keyStore == null)
+                if (State.QUIESCED.equals(port.getState()))
                 {
-                    throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
-                }
-                SslContextFactory factory = new SslContextFactory();
-                final boolean needClientAuth = port instanceof AbstractPortWithAuthProvider
-                                               && ((AbstractPortWithAuthProvider)port).getNeedClientAuth();
-                final boolean wantClientAuth = port instanceof AbstractPortWithAuthProvider
-                                               && ((AbstractPortWithAuthProvider)port).getWantClientAuth();
-                boolean needClientCert = needClientAuth || wantClientAuth;
-                if (needClientCert && trustStores.isEmpty())
-                {
-                    throw new IllegalConfigurationException("Client certificate authentication is enabled on AMQP port '"
-                                                            + this.getName() + "' but no trust store defined");
+                    continue;
                 }
 
-                try
+                Connector connector = null;
+
+                Collection<Transport> transports = port.getTransports();
+                if (!transports.contains(Transport.SSL))
                 {
-                    SSLContext sslContext = SSLContext.getInstance("TLS");
-                    KeyManager[] keyManagers = keyStore.getKeyManagers();
-
-                    TrustManager[] trustManagers;
-                    if(trustStores == null || trustStores.isEmpty())
-                    {
-                        trustManagers = null;
-                    }
-                    else if(trustStores.size() == 1)
-                    {
-                        trustManagers = trustStores.iterator().next().getTrustManagers();
-                    }
-                    else
-                    {
-                        Collection<TrustManager> trustManagerList = new ArrayList<TrustManager>();
-                        final QpidMultipleTrustManager mulTrustManager = new QpidMultipleTrustManager();
-
-                        for(TrustStore ts : trustStores)
-                        {
-                            TrustManager[] managers = ts.getTrustManagers();
-                            if(managers != null)
-                            {
-                                for(TrustManager manager : managers)
-                                {
-                                    if(manager instanceof X509TrustManager)
-                                    {
-                                        mulTrustManager.addTrustManager((X509TrustManager)manager);
-                                    }
-                                    else
-                                    {
-                                        trustManagerList.add(manager);
-                                    }
-                                }
-                            }
-                        }
-                        if(!mulTrustManager.isEmpty())
-                        {
-                            trustManagerList.add(mulTrustManager);
-                        }
-                        trustManagers = trustManagerList.toArray(new TrustManager[trustManagerList.size()]);
-                    }
-                    sslContext.init(keyManagers, trustManagers, null);
-
-                    factory.setSslContext(sslContext);
-                    if(needClientAuth)
-                    {
-                        factory.setNeedClientAuth(true);
-                    }
-                    else if(wantClientAuth)
-                    {
-                        factory.setWantClientAuth(true);
-                    }
+                    connector = new SelectChannelConnector();
                 }
-                catch (GeneralSecurityException e)
+                else if (transports.contains(Transport.SSL))
                 {
-                    throw new ServerScopedRuntimeException("Cannot configure port " + port.getName() + " for transport " + Transport.SSL, e);
+                    connector = createSslConnector((HttpPort<?>) port);
                 }
-                connector = new SslSocketConnector(factory);
-
+                else
+                {
+                    throw new IllegalArgumentException("Unexpected transport on port "
+                                                       + port.getName()
+                                                       + ":"
+                                                       + transports);
+                }
+                lastPort = port.getPort();
+                String bindingAddress = port.getBindingAddress();
+                if (bindingAddress != null && !bindingAddress.trim().equals("") && !bindingAddress.trim().equals("*"))
+                {
+                    connector.setHost(bindingAddress.trim());
+                }
+                connector.setPort(port.getPort());
+                server.addConnector(connector);
             }
             else
             {
-                throw new IllegalArgumentException("Unexpected transport on port " + port.getName() + ":" + transports);
+                throw new IllegalArgumentException("Http management can only be added to an Http port");
             }
-            lastPort = port.getPort();
-            String bindingAddress = port.getBindingAddress();
-            if(bindingAddress != null && !bindingAddress.trim().equals("") && !bindingAddress.trim().equals("*"))
-            {
-                connector.setHost(bindingAddress.trim());
-            }
-            connector.setPort(port.getPort());
-            server.addConnector(connector);
+
         }
 
         ServletContextHandler root = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -379,6 +297,88 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         return server;
     }
 
+    private Connector createSslConnector(final HttpPort<?> port)
+    {
+        final Connector connector;
+        KeyStore keyStore = port.getKeyStore();
+        Collection<TrustStore> trustStores = port.getTrustStores();
+        if (keyStore == null)
+        {
+            throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
+        }
+        SslContextFactory factory = new SslContextFactory();
+
+        boolean needClientCert = port.getNeedClientAuth() || port.getWantClientAuth();
+
+        if (needClientCert && trustStores.isEmpty())
+        {
+            throw new IllegalConfigurationException("Client certificate authentication is enabled on AMQP port '"
+                                                    + this.getName() + "' but no trust store defined");
+        }
+
+        try
+        {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            KeyManager[] keyManagers = keyStore.getKeyManagers();
+
+            TrustManager[] trustManagers;
+            if(trustStores == null || trustStores.isEmpty())
+            {
+                trustManagers = null;
+            }
+            else if(trustStores.size() == 1)
+            {
+                trustManagers = trustStores.iterator().next().getTrustManagers();
+            }
+            else
+            {
+                Collection<TrustManager> trustManagerList = new ArrayList<>();
+                final QpidMultipleTrustManager mulTrustManager = new QpidMultipleTrustManager();
+
+                for(TrustStore ts : trustStores)
+                {
+                    TrustManager[] managers = ts.getTrustManagers();
+                    if(managers != null)
+                    {
+                        for(TrustManager manager : managers)
+                        {
+                            if(manager instanceof X509TrustManager)
+                            {
+                                mulTrustManager.addTrustManager((X509TrustManager)manager);
+                            }
+                            else
+                            {
+                                trustManagerList.add(manager);
+                            }
+                        }
+                    }
+                }
+                if(!mulTrustManager.isEmpty())
+                {
+                    trustManagerList.add(mulTrustManager);
+                }
+                trustManagers = trustManagerList.toArray(new TrustManager[trustManagerList.size()]);
+            }
+            sslContext.init(keyManagers, trustManagers, null);
+
+            factory.setSslContext(sslContext);
+            if(port.getNeedClientAuth())
+            {
+                factory.setNeedClientAuth(true);
+            }
+            else if(port.getWantClientAuth())
+            {
+                factory.setWantClientAuth(true);
+            }
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new ServerScopedRuntimeException("Cannot configure port " + port.getName() + " for transport " + Transport.SSL, e);
+        }
+        connector = new SslSocketConnector(factory);
+        return connector;
+    }
+
     private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
         root.addServlet(new ServletHolder(name, new RestServlet(hierarchy)), "/rest/" + name + "/*");
@@ -417,10 +417,10 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         return connector instanceof SslSocketConnector ? "HTTPS" : "HTTP";
     }
 
-    private Collection<Port> getHttpPorts(Collection<Port> ports)
+    private Collection<Port<?>> getHttpPorts(Collection<Port<?>> ports)
     {
-        Collection<Port> httpPorts = new HashSet<Port>();
-        for (Port port : ports)
+        Collection<Port<?>> httpPorts = new HashSet<>();
+        for (Port<?> port : ports)
         {
             if (port.getAvailableProtocols().contains(Protocol.HTTP))
             {
