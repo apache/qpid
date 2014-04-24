@@ -1222,55 +1222,6 @@ class RecoveryTests(HaBrokerTest):
         s.sender("q;{create:always}").send("x")
         self.assertEqual("x", s.receiver("q").fetch(0).content)
 
-class ConfigurationTests(HaBrokerTest):
-    """Tests for configuration settings."""
-
-    def test_client_broker_url(self):
-        """Check that setting of broker and public URLs obeys correct defaulting
-        and precedence"""
-
-        def check(broker, brokers, public):
-            qmf = broker.qmf()
-            self.assertEqual(brokers, qmf.brokersUrl)
-            self.assertEqual(public, qmf.publicUrl)
-
-        def start(brokers, public, known=None):
-            args=[]
-            if brokers: args.append("--ha-brokers-url="+brokers)
-            if public: args.append("--ha-public-url="+public)
-            if known: args.append("--known-hosts-url="+known)
-            return HaBroker(self, args=args)
-
-        # Both set explictily, no defaulting
-        b = start("foo:123", "bar:456")
-        check(b, "amqp:tcp:foo:123", "amqp:tcp:bar:456")
-        b.set_brokers_url("foo:999")
-        check(b, "amqp:tcp:foo:999", "amqp:tcp:bar:456")
-        b.set_public_url("bar:999")
-        check(b, "amqp:tcp:foo:999", "amqp:tcp:bar:999")
-
-        # Allow "none" to mean "not set"
-        b = start("none", "none")
-        check(b, "", "")
-
-    def test_failover_exchange(self):
-        """Verify that the failover exchange correctly reports cluster membership"""
-
-        def strip_url(url): return re.sub('amqp:|tcp:', '', url)
-
-        def assert_url(m, url):
-            urls = m.properties['amq.failover']
-            self.assertEqual(1, len(urls))
-            self.assertEqual(strip_url(urls[0]), url)
-
-        cluster = HaCluster(self, 1, args=["--ha-public-url=foo:1234"])
-        r = cluster[0].connect().session().receiver("amq.failover")
-        assert_url(r.fetch(1), "foo:1234")
-        cluster[0].set_public_url("bar:1234")
-        assert_url(r.fetch(1), "bar:1234")
-        cluster[0].set_brokers_url(cluster.url+",xxx:1234")
-        self.assertRaises(qm.Empty, r.fetch, 0) # Not updated for brokers URL
-
 class StoreTests(HaBrokerTest):
     """Test for HA with persistence."""
 
