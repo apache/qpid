@@ -131,12 +131,14 @@ class HaBroker(Broker):
                  "--link-maintenance-interval=0.1",
                  # Heartbeat and negotiate time are needed so that a broker wont
                  # stall on an address that doesn't currently have a broker running.
-                 "--link-heartbeat-interval=%s"%(HaBroker.heartbeat),
                  "--max-negotiate-time=1000",
                  "--ha-cluster=%s"%ha_cluster]
         # Add default --log-enable arguments unless args already has --log arguments.
         if not [l for l in args if l.startswith("--log")]:
             args += ["--log-enable=info+", "--log-enable=debug+:ha::"]
+        if not [h for h in args if h.startswith("--link-heartbeat-interval")]:
+            args += ["--link-heartbeat-interval=%s"%(HaBroker.heartbeat)]
+
         if ha_replicate is not None:
             args += [ "--ha-replicate=%s"%ha_replicate ]
         if brokers_url: args += [ "--ha-brokers-url", brokers_url ]
