@@ -33,11 +33,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 
 class TCPTransportProvier implements TransportProvider
 {
     private final String _transport;
+    
+    // Defines read socket timeout in milliseconds.  A value of 0 means that the socket
+    // read will block forever.  Default value is set to 10000, which is 10 seconds.
+    private int _readTimeout = Integer.getInteger("qpid.connection_read_timeout", 10000);
+        
+    // Defines the max idle read timeout in milliseconds before the connection is closed down in 
+    // the event of a SocketTimeoutException.  A value of -1L will disable idle read timeout checking.
+    // Default value is set to -1L, which means disable idle read checks.
+    private long _readIdleTimeout = Long.getLong("qpid.connection_read_idle_timeout", -1L);
 
     public TCPTransportProvier(final String transport)
     {
@@ -66,10 +76,10 @@ class TCPTransportProvier implements TransportProvider
             {
                 s = new Socket(address, port);
             }
+            // set socket read timeout
+            s.setSoTimeout(_readTimeout);
 
             conn.setRemoteAddress(s.getRemoteSocketAddress());
-
-
 
             ConnectionHandler.FrameOutput<FrameBody> out = new ConnectionHandler.FrameOutput<FrameBody>(conn);
 
@@ -175,15 +185,34 @@ class TCPTransportProvier implements TransportProvider
         {
             int read;
             boolean done = false;
-            while(!handler.isDone() && (read = inputStream.read(buf)) != -1)
+            long lastReadTime = System.currentTimeMillis();
+            while(!handler.isDone())
             {
-                ByteBuffer bbuf = ByteBuffer.wrap(buf, 0, read);
-                while(bbuf.hasRemaining() && !handler.isDone())
+                try
                 {
-                    handler.parse(bbuf);
+                    read = inputStream.read(buf);
+                    if(read == -1)
+                    {
+                      break;
+                    }
+                    lastReadTime = System.currentTimeMillis();
+                     
+                    ByteBuffer bbuf = ByteBuffer.wrap(buf, 0, read);
+                    while(bbuf.hasRemaining() && !handler.isDone())
+                    {
+                        handler.parse(bbuf);
+                    }
+                    
                 }
-
-
+                catch(SocketTimeoutException e)
+                {
+                	// Note that a SocketTimeoutException could only occur if _readTimeout > 0.
+                	// Only perform idle read timeout checking if _readIdleTimeout is greater than -1
+                	if(_readIdleTimeout > -1 && (System.currentTimeMillis() - lastReadTime >= _readIdleTimeout)){
+                		// break out of while loop and close down connection
+                		break;
+                	}
+                }
             }
             if(!handler.isDone())
             {
