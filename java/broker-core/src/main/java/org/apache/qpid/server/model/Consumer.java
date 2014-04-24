@@ -28,7 +28,6 @@ public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
     public String NO_LOCAL = "noLocal";
     public String SELECTOR = "selector";
     public String SETTLEMENT_MODE = "settlementMode";
-    public String STATE = "state";
 
     @ManagedAttribute( automate = true )
     String getDistributionMode();

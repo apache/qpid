@@ -25,8 +25,6 @@ import java.util.Collection;
 @ManagedObject
 public interface Session<X extends Session<X>> extends ConfiguredObject<X>
 {
-    String STATE = "state";
-
     String CHANNEL_ID = "channelId";
     // PRODUCER_FLOW_BLOCKED is exposed as an interim step.  We will expose attribute(s) that exposing
     // available credit of both producer and consumer sides.

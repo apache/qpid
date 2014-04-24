@@ -28,7 +28,6 @@ import org.apache.qpid.server.message.MessageDestination;
 @ManagedObject
 public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>, MessageDestination
 {
-    String STATE                                = "state";
     String ALTERNATE_EXCHANGE                   = "alternateExchange";
 
     // Attributes
