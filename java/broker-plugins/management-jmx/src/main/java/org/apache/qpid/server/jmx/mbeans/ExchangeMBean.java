@@ -21,17 +21,13 @@
 
 package org.apache.qpid.server.jmx.mbeans;
 
-import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.exchange.HeadersExchange;
-import org.apache.qpid.server.jmx.AMQManagedObject;
-import org.apache.qpid.server.jmx.ManagedObject;
-import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
@@ -47,13 +43,16 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.server.jmx.AMQManagedObject;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
 {
@@ -294,16 +293,24 @@ public class ExchangeMBean extends AMQManagedObject implements ManagedExchange
             }
         }
 
-        VirtualHost virtualHost = _exchange.getParent(VirtualHost.class);
-        Queue queue = MBeanUtils.findQueueFromQueueName(virtualHost, queueName);
+        VirtualHost<?,?,?> virtualHost = _exchange.getParent(VirtualHost.class);
+        Queue<?> queue = virtualHost.getChildByName(Queue.class, queueName);
+        if (queue == null)
+        {
+            throw new OperationsException("No such queue \""+ queueName +"\"");
+        }
         _exchange.createBinding(binding, queue, arguments, Collections.EMPTY_MAP);
     }
 
     public void removeBinding(String queueName, String bindingKey)
             throws IOException, JMException
     {
-        VirtualHost virtualHost = _exchange.getParent(VirtualHost.class);
-        Queue queue = MBeanUtils.findQueueFromQueueName(virtualHost, queueName);;
+        VirtualHost<?,?,?> virtualHost = _exchange.getParent(VirtualHost.class);
+        Queue<?> queue = virtualHost.getChildByName(Queue.class, queueName);
+        if (queue == null)
+        {
+            throw new OperationsException("No such queue \""+ queueName +"\"");
+        }
 
         boolean deleted = false;
         for(Binding binding : _exchange.getBindings())

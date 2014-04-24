@@ -122,18 +122,22 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testGetQueueDescription() throws Exception
     {
-        when(_mockQueue.getAttribute(Queue.DESCRIPTION)).thenReturn(QUEUE_DESCRIPTION);
+        when(_mockQueue.getDescription()).thenReturn(QUEUE_DESCRIPTION);
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, "description", QUEUE_DESCRIPTION);
     }
 
     public void testSetQueueDescription() throws Exception
     {
-        testSetAttribute("description", Queue.DESCRIPTION, "descriptionold", "descriptionnew");
+        when(_mockQueue.getDescription()).thenReturn("descriptionold");
+
+        MBeanTestUtils.setMBeanAttribute(_queueMBean, "description", "descriptionnew");
+
+        verify(_mockQueue).setAttribute(Queue.DESCRIPTION, "descriptionold", "descriptionnew");
     }
 
     public void testQueueType() throws Exception
     {
-        when(_mockQueue.getAttribute(Queue.TYPE)).thenReturn(QUEUE_TYPE);
+        when(_mockQueue.getType()).thenReturn(QUEUE_TYPE);
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, "queueType", QUEUE_TYPE);
     }
 
@@ -145,7 +149,7 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testOwner() throws Exception
     {
-        when(_mockQueue.getAttribute(Queue.OWNER)).thenReturn("testOwner");
+        when(_mockQueue.getOwner()).thenReturn("testOwner");
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, "owner", "testOwner");
     }
 
@@ -269,19 +273,19 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testIsExclusive() throws Exception
     {
-        when(_mockQueue.getAttribute(Queue.EXCLUSIVE)).thenReturn(ExclusivityPolicy.CONTAINER);
+        when(_mockQueue.getExclusive()).thenReturn(ExclusivityPolicy.CONTAINER);
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, "exclusive", true);
     }
 
     public void testIsNotExclusive() throws Exception
     {
-        when(_mockQueue.getAttribute(Queue.EXCLUSIVE)).thenReturn(ExclusivityPolicy.NONE);
+        when(_mockQueue.getExclusive()).thenReturn(ExclusivityPolicy.NONE);
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, "exclusive", false);
     }
 
     public void testSetExclusive() throws Exception
     {
-        when(_mockQueue.getAttribute(Queue.EXCLUSIVE)).thenReturn(ExclusivityPolicy.NONE);
+        when(_mockQueue.getExclusive()).thenReturn(ExclusivityPolicy.NONE);
 
         MBeanTestUtils.setMBeanAttribute(_queueMBean, "exclusive", Boolean.TRUE);
 
@@ -294,14 +298,14 @@ public class QueueMBeanTest extends QpidTestCase
         Exchange mockAlternateExchange = mock(Exchange.class);
         when(mockAlternateExchange.getName()).thenReturn(QUEUE_ALTERNATE_EXCHANGE);
 
-        when(_mockQueue.getAttribute(Queue.ALTERNATE_EXCHANGE)).thenReturn(mockAlternateExchange);
+        when(_mockQueue.getAlternateExchange()).thenReturn(mockAlternateExchange);
 
         assertEquals(QUEUE_ALTERNATE_EXCHANGE, _queueMBean.getAlternateExchange());
     }
 
     public void testGetAlternateExchangeWhenQueueHasNone()
     {
-        when(_mockQueue.getAttribute(Queue.ALTERNATE_EXCHANGE)).thenReturn(null);
+        when(_mockQueue.getAlternateExchange()).thenReturn(null);
 
         assertNull(_queueMBean.getAlternateExchange());
     }
@@ -408,15 +412,6 @@ public class QueueMBeanTest extends QpidTestCase
         MBeanTestUtils.assertMBeanAttribute(_queueMBean, jmxAttributeName, expectedValue);
     }
 
-    private void testSetAttribute(String jmxAttributeName, String underlyingAttributeName, Object originalAttributeValue, Object newAttributeValue) throws Exception
-    {
-        when(_mockQueue.getAttribute(underlyingAttributeName)).thenReturn(originalAttributeValue);
-
-        MBeanTestUtils.setMBeanAttribute(_queueMBean, jmxAttributeName, newAttributeValue);
-
-        verify(_mockQueue).setAttribute(underlyingAttributeName, originalAttributeValue, newAttributeValue);
-    }
-
     public void testViewMessageContent() throws Exception
     {
         viewMessageContentTestImpl(16L, 1000, 1000);
@@ -481,13 +476,13 @@ public class QueueMBeanTest extends QpidTestCase
 
     public void testGetMessageGroupKey()
     {
-        when(_mockQueue.getAttribute(Queue.MESSAGE_GROUP_KEY)).thenReturn(getTestName());
+        when(_mockQueue.getMessageGroupKey()).thenReturn(getTestName());
         assertEquals("Unexpected message group key", getTestName(), _queueMBean.getMessageGroupKey());
     }
 
     public void testIsSharedMessageGroup()
     {
-        when(_mockQueue.getAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS)).thenReturn(true);
+        when(_mockQueue.isMessageGroupSharedGroups()).thenReturn(true);
         assertEquals("Unexpected message group sharing", true, _queueMBean.isMessageGroupSharedGroups());
     }
 }

@@ -19,6 +19,7 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -49,6 +50,8 @@ public class VirtualHostManagerMBeanTest extends TestCase
     private static final String TEST_EXCHANGE_TYPE = "EXCHANGE_TYPE";
 
     private static final Map<String, Object> EMPTY_ARGUMENT_MAP = Collections.emptyMap();
+    public static final String QUEUE_1_NAME = "queue1";
+    public static final String EXCHANGE_1_NAME = "exchange1";
 
     private VirtualHost _mockVirtualHost;
     private ManagedObjectRegistry _mockManagedObjectRegistry;
@@ -116,18 +119,20 @@ public class VirtualHostManagerMBeanTest extends TestCase
     public void testDeleteQueue() throws Exception
     {
         Queue mockQueue = mock(Queue.class);
-        when(mockQueue.getName()).thenReturn("queue1");
+        when(mockQueue.getName()).thenReturn(QUEUE_1_NAME);
         when(_mockVirtualHost.getQueues()).thenReturn(Collections.singletonList(mockQueue));
+        when(_mockVirtualHost.getChildByName(eq(Queue.class), eq(QUEUE_1_NAME))).thenReturn(mockQueue);
 
-        _virtualHostManagerMBean.deleteQueue("queue1");
+        _virtualHostManagerMBean.deleteQueue(QUEUE_1_NAME);
         verify(mockQueue).delete();
     }
 
     public void testDeleteQueueWhenQueueDoesNotExist() throws Exception
     {
         Queue mockQueue = mock(Queue.class);
-        when(mockQueue.getName()).thenReturn("queue1");
+        when(mockQueue.getName()).thenReturn(QUEUE_1_NAME);
         when(_mockVirtualHost.getQueues()).thenReturn(Collections.singletonList(mockQueue));
+        when(_mockVirtualHost.getChildByName(eq(Queue.class), eq(QUEUE_1_NAME))).thenReturn(mockQueue);
 
         try
         {
@@ -166,18 +171,21 @@ public class VirtualHostManagerMBeanTest extends TestCase
     public void testUnregisterExchange() throws Exception
     {
         Exchange mockExchange = mock(Exchange.class);
-        when(mockExchange.getName()).thenReturn("exchange1");
+        when(mockExchange.getName()).thenReturn(EXCHANGE_1_NAME);
         when(_mockVirtualHost.getExchanges()).thenReturn(Collections.singletonList(mockExchange));
+        when(_mockVirtualHost.getChildByName(eq(Exchange.class), eq(EXCHANGE_1_NAME))).thenReturn(mockExchange);
 
-        _virtualHostManagerMBean.unregisterExchange("exchange1");
+
+        _virtualHostManagerMBean.unregisterExchange(EXCHANGE_1_NAME);
         verify(mockExchange).delete();
     }
 
     public void testUnregisterExchangeWhenExchangeDoesNotExist() throws Exception
     {
         Exchange mockExchange = mock(Exchange.class);
-        when(mockExchange.getName()).thenReturn("exchange1");
+        when(mockExchange.getName()).thenReturn(EXCHANGE_1_NAME);
         when(_mockVirtualHost.getExchanges()).thenReturn(Collections.singletonList(mockExchange));
+        when(_mockVirtualHost.getChildByName(eq(Exchange.class), eq(EXCHANGE_1_NAME))).thenReturn(mockExchange);
 
         try
         {

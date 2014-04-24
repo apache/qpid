@@ -21,6 +21,7 @@ package org.apache.qpid.server.jmx.mbeans;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -75,6 +76,9 @@ public class ExchangeMBeanTest extends TestCase
 
         VirtualHost mockVirtualHost = mock(VirtualHost.class);
         when(mockVirtualHost.getQueues()).thenReturn(Arrays.asList(new Queue[] {_mockQueue1, _mockQueue2}));
+        when(mockVirtualHost.getChildByName(eq(Queue.class), eq(QUEUE1_NAME))).thenReturn(_mockQueue1);
+        when(mockVirtualHost.getChildByName(eq(Queue.class), eq(QUEUE2_NAME))).thenReturn(_mockQueue2);
+
         when(_mockExchange.getParent(VirtualHost.class)).thenReturn(mockVirtualHost);
 
         _exchangeMBean = new ExchangeMBean(_mockExchange, _mockVirtualHostMBean);
