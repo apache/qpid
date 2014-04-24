@@ -45,7 +45,7 @@
                 return qpid::types::Variant((int64_t) SvIV(value));
              }
             else if (SvNOK(value)) {
-                return qpid::types::Variant((float)SvNV(value));
+                return qpid::types::Variant((double)SvNV(value));
             }
             else if (SvPOK(value)) {
                 STRLEN len;
