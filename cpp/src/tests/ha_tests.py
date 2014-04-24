@@ -1213,6 +1213,14 @@ class RecoveryTests(HaBrokerTest):
         cluster.bounce(0, promote_next=False)
         cluster[0].promote()
 
+    def test_stalled_backup(self):
+        """Make sure that a stalled backup broker does not stall the primary"""
+        # FIXME aconway 2014-04-15: merge with test_join_ready_cluster?
+        cluster = HaCluster(self, 3, args=["--link-heartbeat-interval=1"])
+        os.kill(cluster[1].pid, signal.SIGSTOP)
+        s = cluster[0].connect().session()
+        s.sender("q;{create:always}").send("x")
+        self.assertEqual("x", s.receiver("q").fetch(0).content)
 
 class ConfigurationTests(HaBrokerTest):
     """Tests for configuration settings."""

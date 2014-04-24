@@ -335,9 +335,9 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	    <entry>
 	      <para>
-		Interval for the broker to check link health and re-connect links if need
-		be. If you want brokers to fail over quickly you can set this to a
-		fraction of a second, for example: 0.1.
+		Interval for backup brokers to check the link to the primary re-connect if need be.
+		Default 2 seconds. Can be set lower for faster failover, e.g. 0.1 seconds.
+		Setting it too low will result in excessive link-checking activity on the brokers.
 	      </para>
 	    </entry>
 	  </row>
@@ -348,8 +348,12 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	    <entry>
 	      <para>
-		Heartbeat interval for replication links. The link will be assumed broken
-		if there is no heartbeat for twice the interval.
+		Heartbeat interval for replication links and timeout for broker status checks.
+		It may take up to this interval for rgmanager to detect a hung or partitioned broker.
+		The primary may take up to twice this interval to detect a hung or partitioned backup.
+		Clients sending messages may be held up during this time.
+		Default 120 seconds: you will probably want to set this to a lower value e.g. 10.
+		If set too low, a slow broker may be considered as failed and killed.
 	      </para>
 	    </entry>
 	  </row>
@@ -430,8 +434,13 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <clusternode name="node2.example.com" nodeid="2"/>
     <clusternode name="node3.example.com" nodeid="3"/>
   </clusternodes>
+
   <!-- Resouce Manager configuration. -->
-  <rm>
+
+   status_poll_interval is the interval in seconds that the resource manager checks the status
+   of managed services. This affects how quickly the manager will detect failed services.
+   -->
+  <rm status_poll_interval="1">
     <!--
 	There is a failoverdomain for each node containing just that node.
 	This lets us stipulate that the qpidd service should always run on each node.
@@ -455,8 +464,12 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       <!-- This script promotes the qpidd broker on this node to primary. -->
       <script file="/etc/init.d/qpidd-primary" name="qpidd-primary"/>
 
-      <!-- This is a virtual IP address for client traffic. -->
-      <ip address="20.0.20.200" monitor_link="1"/>
+      <!--
+          This is a virtual IP address for client traffic.
+	  monitor_link="yes" means monitor the health of the NIC used for the VIP.
+	  sleeptime="0" means don't delay when failing over the VIP to a new address.
+      -->
+      <ip address="20.0.20.200" monitor_link="yes" sleeptime="0"/>
     </resources>
 
     <!-- There is a qpidd service on each node, it should be restarted if it fails. -->
