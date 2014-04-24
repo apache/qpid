@@ -96,7 +96,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private static final Logger _logger = Logger.getLogger(AbstractQueue.class);
 
     public static final String SHARED_MSG_GROUP_ARG_VALUE = "1";
-    private static final String QPID_NO_GROUP = "qpid.no-group";
 
     private static final QueueNotificationListener NULL_NOTIFICATION_LISTENER = new QueueNotificationListener()
     {
@@ -203,9 +202,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private final CopyOnWriteArrayList<BindingImpl> _bindings = new CopyOnWriteArrayList<BindingImpl>();
     private Map<String, Object> _arguments;
 
-    //TODO : persist creation time
-    private long _createTime = System.currentTimeMillis();
-
     /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
     @ManagedAttributeField
     private int _maximumDeliveryAttempts;
@@ -248,57 +244,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         {
             _virtualHost.getDurableConfigurationStore().create(asObjectRecord());
         }
-    }
-
-    public void validate()
-    {
-        super.validate();
-        if (_virtualHost == null)
-        {
-            throw new IllegalArgumentException("Virtual Host must not be null");
-        }
-
-        if (getName() == null)
-        {
-            throw new IllegalArgumentException("Queue name must not be null");
-        }
-
-        addChangeListener(new ConfigurationChangeListener()
-        {
-            @Override
-            public void stateChanged(final ConfiguredObject object, final State oldState, final State newState)
-            {
-
-            }
-
-            @Override
-            public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
-            {
-
-            }
-
-            @Override
-            public void childRemoved(final ConfiguredObject object, final ConfiguredObject child)
-            {
-
-            }
-
-            @Override
-            public void attributeSet(final ConfiguredObject object,
-                                     final String attributeName,
-                                     final Object oldAttributeValue,
-                                     final Object newAttributeValue)
-            {
-                onAttributeChange(attributeName, oldAttributeValue, newAttributeValue);
-            }
-        });
-    }
-
-    private void onAttributeChange(final String attributeName,
-                                   final Object oldAttributeValue,
-                                   final Object newAttributeValue)
-    {
-
     }
 
     protected void onOpen()
@@ -420,8 +365,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         {
             throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
         }
-
-        final String ownerString = getOwner();
 
         // Log the creation of this Queue.
         // The priorities display is toggled on if we set priorities > 0
@@ -1451,11 +1394,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                                             }
                                         });
 
-    }
-
-    public long getCreateTime()
-    {
-        return _createTime;
     }
 
     // ------ Management functions
