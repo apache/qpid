@@ -263,12 +263,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
-    public String getSecurityAcl()
-    {
-        return null;
-    }
-
-    @Override
     public int getHousekeepingThreadCount()
     {
         return 0;

@@ -155,8 +155,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @ManagedAttributeField
     private int _housekeepingThreadCount;
 
-    @ManagedAttributeField
-    private String _securityAcl;
     private MessageDestination _defaultDestination;
 
     public AbstractVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
@@ -1366,12 +1364,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public long getMessagesOut()
     {
         return getMessageDeliveryStatistics().getTotal();
-    }
-
-    @Override
-    public String getSecurityAcl()
-    {
-        return _securityAcl;
     }
 
     @Override
