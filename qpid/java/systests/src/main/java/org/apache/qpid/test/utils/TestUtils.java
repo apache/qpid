@@ -23,6 +23,7 @@ package org.apache.qpid.test.utils;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -40,6 +41,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.JsonFileConfigStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.Strings;
 
 public class TestUtils
@@ -94,6 +96,12 @@ public class TestUtils
         Map<String,Object> nodeAttributes = config.getObjectAttributes(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
         String storePath = (String)nodeAttributes.get(DurableConfigurationStore.STORE_PATH);
         String path = Strings.expand(storePath, false, Strings.JAVA_SYS_PROPS_RESOLVER, Strings.ENV_VARS_RESOLVER);
+
+        File pathFile = new File(path);
+        if (pathFile.exists())
+        {
+            FileUtils.delete(pathFile, true);
+        }
 
         Map<String, Object> attributes =  new HashMap<String, Object>(nodeAttributes);
         attributes.put(DurableConfigurationStore.STORE_PATH, path);
