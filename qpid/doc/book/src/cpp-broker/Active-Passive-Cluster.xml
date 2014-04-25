@@ -403,13 +403,36 @@ ssl_addr = "ssl:" host [":" port]'
   </section>
 
   <section id="ha-rm-config">
-    <title>Configuring <command>rgmanager</command> as resource manager</title>
+    <title>Configuring with <command>rgmanager</command> as resource manager</title>
     <para>
       This section assumes that you are already familiar with setting up and configuring
       clustered services using <command>cman</command> and
       <command>rgmanager</command>. It will show you how to configure an active-passive,
       hot-standby <command>qpidd</command> HA cluster with <command>rgmanager</command>.
     </para>
+    <note>
+      <para>
+	Once all components are installed it is important to take the following step:
+	<programlisting>
+	  chkconfig rgmanager on
+	  chkconfig cman on
+	  chkconfig qpidd <emphasis>off</emphasis>
+	</programlisting>
+      </para>
+      <para>
+	The qpidd service must be <emphasis>off</emphasis> in
+	<literal>chkconfig</literal> because <literal>rgmanager</literal> will
+	start and stop <literal>qpidd</literal>.  If the normal system init
+	process also attempts to start and stop qpidd it can cause rgmanager to
+	lose track of qpidd processes. The symptom when this happens is that
+	<literal>clustat</literal> shows a <literal>qpidd</literal> service to
+	be stopped when in fact there is a <literal>qpidd</literal> process
+	running. The <literal>qpidd</literal> log will show errors like this:
+	<programlisting>
+	  critical Unexpected error: Daemon startup failed: Cannot lock /var/lib/qpidd/lock: Resource temporarily unavailable
+	</programlisting>
+      </para>
+    </note>
     <para>
       You must provide a <literal>cluster.conf</literal> file to configure
       <command>cman</command> and <command>rgmanager</command>.  Here is
