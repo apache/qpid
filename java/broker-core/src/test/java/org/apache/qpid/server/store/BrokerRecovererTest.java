@@ -33,6 +33,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
@@ -40,16 +41,10 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
-import org.apache.qpid.server.store.GenericRecoverer;
-import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 
 public class BrokerRecovererTest extends TestCase
 {
@@ -59,7 +54,6 @@ public class BrokerRecovererTest extends TestCase
     private AuthenticationProvider<?> _authenticationProvider1;
     private UUID _authenticationProvider1Id = UUID.randomUUID();
     private SystemContext<?> _systemContext;
-    private ConfiguredObjectFactory _configuredObjectFactory;
     private TaskExecutor _taskExecutor;
 
     @Override
@@ -67,11 +61,10 @@ public class BrokerRecovererTest extends TestCase
     {
         super.setUp();
 
-        _configuredObjectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
-        _taskExecutor = new TaskExecutor();
+        _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         _systemContext = new SystemContextImpl(_taskExecutor,
-                                           _configuredObjectFactory, mock(EventLogger.class), mock(LogRecorder.class), mock(BrokerOptions.class));
+                                               mock(EventLogger.class), mock(LogRecorder.class), mock(BrokerOptions.class));
 
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getType()).thenReturn(Broker.class.getSimpleName());
@@ -285,7 +278,7 @@ public class BrokerRecovererTest extends TestCase
         try
         {
             UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
-                    _configuredObjectFactory.recover(_brokerEntry, _systemContext);
+                    _systemContext.getObjectFactory().recover(_brokerEntry, _systemContext);
 
             Broker<?> broker = (Broker<?>) recover.resolve();
             broker.open();
@@ -312,7 +305,7 @@ public class BrokerRecovererTest extends TestCase
             try
             {
                 UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
-                        _configuredObjectFactory.recover(_brokerEntry, _systemContext);
+                        _systemContext.getObjectFactory().recover(_brokerEntry, _systemContext);
                 Broker<?> broker = (Broker<?>) recover.resolve();
                 broker.open();
                 fail("The broker creation should fail due to unsupported model version");

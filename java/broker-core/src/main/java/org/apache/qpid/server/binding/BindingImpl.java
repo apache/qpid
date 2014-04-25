@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -256,7 +256,7 @@ public class BindingImpl
 
     public void setArguments(final Map<String, Object> arguments)
     {
-        runTask(new TaskExecutor.VoidTask()
+        runTask(new VoidTask()
                 {
                     @Override
                     public void execute()

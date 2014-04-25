@@ -32,12 +32,11 @@ import java.util.UUID;
 
 import javax.security.auth.Subject;
 
-import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
@@ -46,7 +45,6 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -69,7 +67,7 @@ public class BrokerTestHelper
     protected static final String BROKER_STORE_CLASS_NAME_KEY = "brokerstore.class.name";
     protected static final String JSON_BROKER_STORE_CLASS_NAME = JsonConfigurationEntryStore.class.getName();
 
-    private static final TaskExecutor TASK_EXECUTOR = new TaskExecutor();
+    private static final TaskExecutor TASK_EXECUTOR = new CurrentThreadTaskExecutor();
     static
     {
         TASK_EXECUTOR.start();
@@ -116,14 +114,8 @@ public class BrokerTestHelper
             throws Exception
     {
 
-        //VirtualHostFactory factory = new PluggableFactoryLoader<VirtualHostFactory>(VirtualHostFactory.class).get(hostType);
         Broker<?> broker = createBrokerMock();
         ConfiguredObjectFactory objectFactory = broker.getObjectFactory();
-        SystemContext systemContext = new SystemContextImpl(TASK_EXECUTOR,
-                                                            objectFactory,
-                                                            mock(EventLogger.class),
-                                                            mock(LogRecorder.class),
-                                                            new BrokerOptions());
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
 
         VirtualHostNode<?> virtualHostNode = mock(VirtualHostNode.class);

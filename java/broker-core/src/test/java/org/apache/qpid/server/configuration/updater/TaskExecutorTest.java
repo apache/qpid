@@ -40,12 +40,12 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class TaskExecutorTest extends TestCase
 {
-    private TaskExecutor _executor;
+    private TaskExecutorImpl _executor;
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        _executor = new TaskExecutor();
+        _executor = new TaskExecutorImpl();
     }
 
     protected void tearDown() throws Exception
@@ -135,7 +135,7 @@ public class TaskExecutorTest extends TestCase
     public void testSubmitAndWait() throws Exception
     {
         _executor.start();
-        Object result = _executor.run(new TaskExecutor.Task<Object>()
+        Object result = _executor.run(new Task<Object>()
         {
             @Override
             public String execute()
@@ -188,7 +188,7 @@ public class TaskExecutorTest extends TestCase
         _executor.start();
         try
         {
-            _executor.run(new TaskExecutor.Task<Object>()
+            _executor.run(new Task<Object>()
             {
 
                 @Override
@@ -215,7 +215,7 @@ public class TaskExecutorTest extends TestCase
             @Override
             public Object run()
             {
-                _executor.run(new TaskExecutor.Task<Object>()
+                _executor.run(new Task<Object>()
                 {
                     @Override
                     public Void execute()
@@ -231,7 +231,7 @@ public class TaskExecutorTest extends TestCase
         assertEquals("Unexpected security manager subject", subject, taskSubject.get());
     }
 
-    private class SubjectRetriever implements TaskExecutor.Task<Subject>
+    private class SubjectRetriever implements Task<Subject>
     {
         @Override
         public Subject execute()
@@ -240,7 +240,7 @@ public class TaskExecutorTest extends TestCase
         }
     }
 
-    private class NeverEndingCallable implements TaskExecutor.Task<Void>
+    private class NeverEndingCallable implements Task<Void>
     {
         private CountDownLatch _waitLatch;
 

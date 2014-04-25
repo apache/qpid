@@ -36,12 +36,12 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -70,13 +70,12 @@ public class BrokerConfigurationStoreCreatorTest extends QpidTestCase
         _userStoreLocation = new File(TMP_FOLDER, "_store_" + System.currentTimeMillis() + "_" + getTestName());
         final BrokerOptions brokerOptions = mock(BrokerOptions.class);
         when(brokerOptions.getConfigurationStoreLocation()).thenReturn(_userStoreLocation.getAbsolutePath());
-        _taskExecutor = new TaskExecutor();
+        _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         _systemContext = new SystemContextImpl(_taskExecutor,
-                                                  new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()),
-                                                  mock(EventLogger.class),
-                                                  mock(LogRecorder.class),
-                                                  brokerOptions);
+                                               mock(EventLogger.class),
+                                               mock(LogRecorder.class),
+                                               brokerOptions);
     }
 
     public void tearDown() throws Exception

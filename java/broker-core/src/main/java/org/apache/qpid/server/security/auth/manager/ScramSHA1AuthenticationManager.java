@@ -43,7 +43,9 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.configuration.updater.Task;
+import org.apache.qpid.server.configuration.updater.VoidTask;
+import org.apache.qpid.server.configuration.updater.VoidTaskWithException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -251,7 +253,7 @@ public class ScramSHA1AuthenticationManager
     @Override
     public boolean createUser(final String username, final String password, final Map<String, String> attributes)
     {
-        return runTask(new TaskExecutor.Task<Boolean>()
+        return runTask(new Task<Boolean>()
         {
             @Override
             public Boolean execute()
@@ -289,7 +291,7 @@ public class ScramSHA1AuthenticationManager
     @Override
     public void deleteUser(final String user) throws AccountNotFoundException
     {
-        runTask(new TaskExecutor.VoidTaskWithException<AccountNotFoundException>()
+        runTask(new VoidTaskWithException<AccountNotFoundException>()
         {
             @Override
             public void execute() throws AccountNotFoundException
@@ -310,7 +312,7 @@ public class ScramSHA1AuthenticationManager
     @Override
     public void setPassword(final String username, final String password) throws AccountNotFoundException
     {
-        runTask(new TaskExecutor.VoidTaskWithException<AccountNotFoundException>()
+        runTask(new VoidTaskWithException<AccountNotFoundException>()
         {
             @Override
             public void execute() throws AccountNotFoundException
@@ -333,7 +335,7 @@ public class ScramSHA1AuthenticationManager
     @Override
     public Map<String, Map<String, String>> getUsers()
     {
-        return runTask(new TaskExecutor.Task<Map<String, Map<String, String>>>()
+        return runTask(new Task<Map<String, Map<String, String>>>()
         {
             @Override
             public Map<String, Map<String, String>> execute()
@@ -422,7 +424,7 @@ public class ScramSHA1AuthenticationManager
         public void setAttributes(final Map<String, Object> attributes)
                 throws IllegalStateException, AccessControlException, IllegalArgumentException
         {
-            runTask(new TaskExecutor.VoidTask()
+            runTask(new VoidTask()
             {
 
                 @Override

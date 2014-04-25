@@ -54,6 +54,7 @@ public final class BrokerModel extends Model
             new HashSet<Class<? extends ConfiguredObject>>();
 
     private Class<? extends ConfiguredObject> _rootCategory;
+    private final ConfiguredObjectFactory _objectFactory;
 
     private BrokerModel()
     {
@@ -97,6 +98,8 @@ public final class BrokerModel extends Model
 
         addRelationship(Session.class, Consumer.class);
         addRelationship(Session.class, Publisher.class);
+
+        _objectFactory = new ConfiguredObjectFactoryImpl(this);
     }
 
     public static Model getInstance()
@@ -127,6 +130,12 @@ public final class BrokerModel extends Model
     public int getMinorVersion()
     {
         return MODEL_MINOR_VERSION;
+    }
+
+    @Override
+    public ConfiguredObjectFactory getObjectFactory()
+    {
+        return _objectFactory;
     }
 
     public Collection<Class<? extends ConfiguredObject>> getChildTypes(Class<? extends ConfiguredObject> parent)

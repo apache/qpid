@@ -20,26 +20,7 @@
  */
 package org.apache.qpid.server.configuration.updater;
 
-import java.util.concurrent.CancellationException;
-
-import org.apache.qpid.server.model.State;
-
-public interface TaskExecutor
+public interface Task<X>
 {
-    State getState();
-
-    void start();
-
-    void stopImmediately();
-
-    void stop();
-
-    void run(VoidTask task) throws CancellationException;
-
-    <T, E extends Exception> T run(TaskWithException<T, E> task) throws CancellationException, E;
-
-    <E extends Exception> void run(VoidTaskWithException<E> task) throws CancellationException, E;
-
-    <T> T run(Task<T> task) throws CancellationException;
-
+    X execute();
 }
