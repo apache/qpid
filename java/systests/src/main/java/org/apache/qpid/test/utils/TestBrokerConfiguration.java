@@ -36,9 +36,7 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.PreferencesProvider;
@@ -75,15 +73,14 @@ public class TestBrokerConfiguration
     private MemoryConfigurationEntryStore _store;
     private boolean _saved;
 
-    public TestBrokerConfiguration(String storeType, String intialStoreLocation, final TaskExecutor taskExecutor)
+    public TestBrokerConfiguration(String storeType, String initialStoreLocation, final TaskExecutor taskExecutor)
     {
         _store = new MemoryConfigurationEntryStore(
                 new SystemContextImpl(taskExecutor,
-                                      new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()),
                                       mock(EventLogger.class),
                                       mock(LogRecorder.class),
                                       mock(BrokerOptions.class)),
-                intialStoreLocation,
+                initialStoreLocation,
                 null,
                 Collections.<String,String>emptyMap());
         _store.visitConfiguredObjectRecords(new ConfiguredObjectRecordHandler()

@@ -62,14 +62,12 @@ import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.SystemUtils;
@@ -232,7 +230,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         int actualPort = getPort(port);
         if(_taskExecutor == null)
         {
-            _taskExecutor = new TaskExecutor();
+            _taskExecutor = new TaskExecutorImpl();
             _taskExecutor.start();
         }
         TestBrokerConfiguration  configuration = new TestBrokerConfiguration(System.getProperty(_brokerStoreType), _configFile.getAbsolutePath(), _taskExecutor);
@@ -345,7 +343,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _taskExecutor = new TaskExecutor();
+        _taskExecutor = new TaskExecutorImpl();
         _taskExecutor.start();
         if (!_configFile.exists())
         {

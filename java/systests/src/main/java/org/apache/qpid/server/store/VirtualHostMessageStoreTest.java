@@ -38,6 +38,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.TopicExchange;
@@ -120,7 +121,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         cleanup(new File(_storePath));
 
         Broker<?> broker = BrokerTestHelper.createBrokerMock();
-        _taskExecutor = new TaskExecutor();
+        _taskExecutor = new TaskExecutorImpl();
         _taskExecutor.start();
         when(broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
