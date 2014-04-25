@@ -42,7 +42,6 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
     String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
     String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
-    String SECURITY_ACL                         = "securityAcl";
     String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
     String MESSAGE_STORE_SETTINGS               = "messageStoreSettings";
     String MODEL_VERSION                        = "modelVersion";
@@ -90,9 +89,6 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
 
     @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionOpenTimeoutWarn}")
     long getStoreTransactionOpenTimeoutWarn();
-
-    @ManagedAttribute( automate = true )
-    String getSecurityAcl();
 
     @ManagedContextDefault( name = "virtualhost.housekeepingThreadCount")
     public static final RuntimeDefault<Integer> DEFAULT_HOUSEKEEPING_THREAD_COUNT =
