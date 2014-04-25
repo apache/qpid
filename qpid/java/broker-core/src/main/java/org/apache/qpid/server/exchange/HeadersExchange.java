@@ -38,7 +38,6 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 /**
@@ -83,7 +82,7 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
 
     public static final ExchangeType<HeadersExchange> TYPE = new HeadersExchangeType();
 
-    public HeadersExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost) throws UnknownExchangeException
+    public HeadersExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost)
     {
         super(attributes, vhost);
     }

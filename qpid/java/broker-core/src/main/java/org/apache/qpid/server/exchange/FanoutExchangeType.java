@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class FanoutExchangeType implements ExchangeType<FanoutExchange>
@@ -37,7 +36,6 @@ public class FanoutExchangeType implements ExchangeType<FanoutExchange>
 
     @Override
     public FanoutExchange newInstance(final VirtualHostImpl virtualHost, final Map<String, Object> attributes)
-            throws UnknownExchangeException
     {
         return new FanoutExchange(attributes, virtualHost);
     }

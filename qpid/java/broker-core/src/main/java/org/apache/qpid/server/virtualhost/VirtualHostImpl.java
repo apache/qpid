@@ -67,7 +67,7 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
 
     E createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
-                   UnknownExchangeException, AMQUnknownExchangeType;
+                   AMQUnknownExchangeType;
 
     void removeExchange(E exchange, boolean force) throws ExchangeIsAlternateException,
                                                                  RequiredExchangeException;

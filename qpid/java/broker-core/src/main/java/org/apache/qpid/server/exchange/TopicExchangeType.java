@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class TopicExchangeType implements ExchangeType<TopicExchange>
@@ -37,7 +36,6 @@ public class TopicExchangeType implements ExchangeType<TopicExchange>
 
     @Override
     public TopicExchange newInstance(final VirtualHostImpl virtualHost, final Map<String, Object> attributes)
-            throws UnknownExchangeException
     {
         return new TopicExchange(attributes, virtualHost);
     }

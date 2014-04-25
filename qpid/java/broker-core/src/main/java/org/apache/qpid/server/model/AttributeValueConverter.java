@@ -690,7 +690,7 @@ abstract class AttributeValueConverter<T>
                         return candidate;
                     }
                 }
-                throw new IllegalArgumentException("Cannot find a " + _klazz.getName() + " with id " + value);
+                throw new UnknownConfiguredObjectException(_klazz, (UUID)value);
             }
             else if(value instanceof String)
             {
@@ -710,7 +710,7 @@ abstract class AttributeValueConverter<T>
                 }
                 catch (IllegalArgumentException e)
                 {
-                    throw new IllegalArgumentException("Cannot find a " + _klazz.getSimpleName() + " with name '" + valueStr + "'");
+                    throw new UnknownConfiguredObjectException(_klazz, valueStr);
                 }
             }
             else
