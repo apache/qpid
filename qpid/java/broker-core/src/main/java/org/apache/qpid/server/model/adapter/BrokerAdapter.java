@@ -39,7 +39,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.configuration.updater.Task;
+import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
@@ -453,7 +454,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public <C extends ConfiguredObject> C addChild(final Class<C> childClass, final Map<String, Object> attributes, final ConfiguredObject... otherParents)
     {
-        return runTask( new TaskExecutor.Task<C>()
+        return runTask( new Task<C>()
         {
             @Override
             public C execute()
@@ -516,8 +517,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private void addPort(final Port<?> port)
     {
-        assert getTaskExecutor().isTaskExecutorThread();
-
         int portNumber = port.getPort();
         String portName = port.getName();
 
@@ -543,8 +542,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private AccessControlProvider<?> createAccessControlProvider(final Map<String, Object> attributes)
     {
-        assert getTaskExecutor().isTaskExecutorThread();
-
         AccessControlProvider<?> accessControlProvider = (AccessControlProvider<?>) createChild(AccessControlProvider.class, attributes);
         addAccessControlProvider(accessControlProvider);
 
@@ -557,8 +554,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private void addAccessControlProvider(final AccessControlProvider<?> accessControlProvider)
     {
-        assert getTaskExecutor().isTaskExecutorThread();
-
         accessControlProvider.addChangeListener(this);
         accessControlProvider.addChangeListener(_securityManager);
 
@@ -574,7 +569,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private AuthenticationProvider createAuthenticationProvider(final Map<String, Object> attributes)
     {
-        return runTask(new TaskExecutor.Task<AuthenticationProvider>()
+        return runTask(new Task<AuthenticationProvider>()
         {
             @Override
             public AuthenticationProvider execute()
@@ -604,14 +599,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
      */
     private void addAuthenticationProvider(AuthenticationProvider<?> authenticationProvider)
     {
-        assert getTaskExecutor().isTaskExecutorThread();
-
         authenticationProvider.addChangeListener(this);
     }
 
     private GroupProvider<?> createGroupProvider(final Map<String, Object> attributes)
     {
-        return runTask(new TaskExecutor.Task<GroupProvider<?>>()
+        return runTask(new Task<GroupProvider<?>>()
         {
             @Override
             public GroupProvider<?> execute()
@@ -755,7 +748,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                                   final State desiredState,
                                   final boolean swallowException)
     {
-        runTask(new TaskExecutor.VoidTask()
+        runTask(new VoidTask()
         {
             @Override
             public void execute()

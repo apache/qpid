@@ -36,13 +36,13 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -55,7 +55,6 @@ public class FanoutExchangeTest extends TestCase
     private FanoutExchange _exchange;
     private VirtualHostImpl _virtualHost;
     private TaskExecutor _taskExecutor;
-    private ConfiguredObjectFactoryImpl _objectFactory;
 
     public void setUp()
     {
@@ -64,15 +63,14 @@ public class FanoutExchangeTest extends TestCase
         attributes.put(Exchange.NAME, "test");
         attributes.put(Exchange.DURABLE, false);
 
-        _taskExecutor = new TaskExecutor();
+        _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         _virtualHost = mock(VirtualHostImpl.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
-        _objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
-        when(_virtualHost.getObjectFactory()).thenReturn(_objectFactory);
+        when(_virtualHost.getModel()).thenReturn(BrokerModel.getInstance());
         _exchange = new FanoutExchange(attributes, _virtualHost);
         _exchange.open();
     }
@@ -134,8 +132,6 @@ public class FanoutExchangeTest extends TestCase
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getVirtualHost()).thenReturn(_virtualHost);
         when(queue.getCategoryClass()).thenReturn(Queue.class);
-        when(queue.getObjectFactory()).thenReturn(_objectFactory);
-        when(queue.getModel()).thenReturn(_objectFactory.getModel());
         return queue;
     }
 

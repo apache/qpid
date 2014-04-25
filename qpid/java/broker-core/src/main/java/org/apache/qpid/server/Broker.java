@@ -35,17 +35,16 @@ import javax.security.auth.Subject;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+
 import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
 import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.SystemContextImpl;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -61,7 +60,7 @@ public class Broker
     private volatile IApplicationRegistry _applicationRegistry;
     private EventLogger _eventLogger;
     private boolean _configuringOwnLogging = false;
-    private final TaskExecutor _taskExecutor = new TaskExecutor();
+    private final TaskExecutor _taskExecutor = new TaskExecutorImpl();
 
     protected static class InitException extends RuntimeException
     {
@@ -140,8 +139,7 @@ public class Broker
         LogRecorder logRecorder = new LogRecorder();
 
         _taskExecutor.start();
-        ConfiguredObjectFactory configuredObjectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
-        SystemContext systemContext = new SystemContextImpl(_taskExecutor, configuredObjectFactory, _eventLogger, logRecorder, options);
+        SystemContext systemContext = new SystemContextImpl(_taskExecutor, _eventLogger, logRecorder, options);
 
         BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
         DurableConfigurationStore store = storeCreator.createStore(systemContext, storeType, options.getInitialConfigurationLocation(),

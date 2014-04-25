@@ -36,7 +36,6 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -46,7 +45,6 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 public class HeadersBindingTest extends TestCase
 {
 
-    private ConfiguredObjectFactoryImpl _objectFactory;
 
     private class MockHeader implements AMQMessageHeader
     {
@@ -150,17 +148,17 @@ public class HeadersBindingTest extends TestCase
     {
         _count++;
         _queue = mock(AMQQueue.class);
-        _objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+
         VirtualHostImpl vhost = mock(VirtualHostImpl.class);
         when(_queue.getVirtualHost()).thenReturn(vhost);
-        when(_queue.getObjectFactory()).thenReturn(_objectFactory);
+        when(_queue.getModel()).thenReturn(BrokerModel.getInstance());
         when(vhost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         final EventLogger eventLogger = new EventLogger();
         when(vhost.getEventLogger()).thenReturn(eventLogger);
         _exchange = mock(ExchangeImpl.class);
         when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
         when(_exchange.getEventLogger()).thenReturn(eventLogger);
-        when(_exchange.getObjectFactory()).thenReturn(_objectFactory);
+        when(_exchange.getModel()).thenReturn(BrokerModel.getInstance());
     }
 
     protected String getQueueName()

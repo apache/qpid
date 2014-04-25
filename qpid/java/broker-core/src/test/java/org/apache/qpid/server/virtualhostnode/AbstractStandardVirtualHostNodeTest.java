@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -69,7 +70,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         SystemContext<?> systemContext = _broker.getParent(SystemContext.class);
         when(systemContext.getObjectFactory()).thenReturn(new ConfiguredObjectFactoryImpl(mock(Model.class)));
 
-        _taskExecutor = new TaskExecutor();
+        _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
     }

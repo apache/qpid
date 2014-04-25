@@ -48,7 +48,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.Task;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskWithException;
+import org.apache.qpid.server.configuration.updater.VoidTask;
+import org.apache.qpid.server.configuration.updater.VoidTaskWithException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -115,7 +119,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private final Class<? extends ConfiguredObject> _category;
     private final Class<? extends ConfiguredObject> _bestFitInterface;
-    private final ConfiguredObjectFactory _objectFactory;
+    private final Model _model;
 
     @ManagedAttributeField
     private long _createdTime;
@@ -173,16 +177,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor)
     {
-        this(parents, attributes, taskExecutor, parents.values().iterator().next().getObjectFactory());
+        this(parents, attributes, taskExecutor, parents.values().iterator().next().getModel());
     }
 
     protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
                                        Map<String, Object> attributes,
                                        TaskExecutor taskExecutor,
-                                       ConfiguredObjectFactory objectFactory)
+                                       Model model)
     {
         _taskExecutor = taskExecutor;
-        _objectFactory = objectFactory;
+        _model = model;
 
         _category = Model.getCategory(getClass());
 
@@ -533,13 +537,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public final ConfiguredObjectFactory getObjectFactory()
     {
-        return _objectFactory;
+        return _model.getObjectFactory();
     }
 
     @Override
     public final Model getModel()
     {
-        return _objectFactory.getModel();
+        return _model;
     }
 
     public Class<? extends ConfiguredObject> getCategoryClass()
@@ -563,7 +567,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
 
 
-        return runTask(new TaskExecutor.Task<State>()
+        return runTask(new Task<State>()
                         {
                             @Override
                             public State execute()
@@ -746,7 +750,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        return _taskExecutor.run(new TaskExecutor.Task<Object>()
+        return _taskExecutor.run(new Task<Object>()
         {
             @Override
             public Object execute()
@@ -883,7 +887,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public <C extends ConfiguredObject> C createChild(final Class<C> childClass, final Map<String, Object> attributes,
                                                       final ConfiguredObject... otherParents)
     {
-        return _taskExecutor.run(new TaskExecutor.Task<C>() {
+        return _taskExecutor.run(new Task<C>() {
 
             @Override
             public C execute()
@@ -980,22 +984,22 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _taskExecutor;
     }
 
-    protected final <C> C runTask(TaskExecutor.Task<C> task)
+    protected final <C> C runTask(Task<C> task)
     {
         return _taskExecutor.run(task);
     }
 
-    protected void runTask(TaskExecutor.VoidTask task)
+    protected void runTask(VoidTask task)
     {
         _taskExecutor.run(task);
     }
 
-    protected final <T, E extends Exception> T runTask(TaskExecutor.TaskWithException<T,E> task) throws E
+    protected final <T, E extends Exception> T runTask(TaskWithException<T,E> task) throws E
     {
         return _taskExecutor.run(task);
     }
 
-    protected final <E extends Exception> void runTask(TaskExecutor.VoidTaskWithException<E> task) throws E
+    protected final <E extends Exception> void runTask(VoidTaskWithException<E> task) throws E
     {
         _taskExecutor.run(task);
     }
@@ -1004,7 +1008,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        runTask(new TaskExecutor.VoidTask()
+        runTask(new VoidTask()
         {
             @Override
             public void execute()
@@ -1189,7 +1193,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     static String interpolate(ConfiguredObject<?> object, String value)
     {
         Map<String,String> inheritedContext = new HashMap<String, String>();
-        generateInheritedContext(object, inheritedContext);
+        generateInheritedContext(object.getModel(), object, inheritedContext);
         return Strings.expand(value, false,
                               new Strings.MapResolver(inheritedContext),
                               Strings.JAVA_SYS_PROPS_RESOLVER,
@@ -1197,17 +1201,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                               new Strings.MapResolver(_defaultContext));
     }
 
-    static void generateInheritedContext(final ConfiguredObject<?> object,
-                                                 final Map<String, String> inheritedContext)
+    static void generateInheritedContext(final Model model, final ConfiguredObject<?> object,
+                                         final Map<String, String> inheritedContext)
     {
         Collection<Class<? extends ConfiguredObject>> parents =
-                object.getModel().getParentTypes(object.getCategoryClass());
+                model.getParentTypes(object.getCategoryClass());
         if(parents != null && !parents.isEmpty())
         {
             ConfiguredObject parent = object.getParent(parents.iterator().next());
             if(parent != null)
             {
-                generateInheritedContext(parent, inheritedContext);
+                generateInheritedContext(model, parent, inheritedContext);
             }
         }
         if(object.getContext() != null)

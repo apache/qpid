@@ -30,7 +30,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+
+import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -50,7 +51,7 @@ public class GenericRecoverer
 
     public void recover(final List<ConfiguredObjectRecord> records)
     {
-        _parentOfRoot.getTaskExecutor().run(new TaskExecutor.VoidTask()
+        _parentOfRoot.getTaskExecutor().run(new VoidTask()
         {
             @Override
             public void execute()

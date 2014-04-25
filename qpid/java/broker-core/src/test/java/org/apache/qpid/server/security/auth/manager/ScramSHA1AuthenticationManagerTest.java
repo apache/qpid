@@ -30,6 +30,7 @@ import java.util.UUID;
 
 import javax.security.auth.login.AccountNotFoundException;
 
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -51,7 +52,7 @@ public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _executor = new TaskExecutor();
+        _executor = new CurrentThreadTaskExecutor();
         _executor.start();
         _broker = BrokerTestHelper.createBrokerMock();
         _securityManager = mock(SecurityManager.class);

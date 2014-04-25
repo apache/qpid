@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,17 +31,10 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.store.ConfiguredObjectDependency;
-import org.apache.qpid.server.store.ConfiguredObjectIdDependency;
-import org.apache.qpid.server.store.ConfiguredObjectNameDependency;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.UnresolvedConfiguredObject;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImpl> implements SystemContext<SystemContextImpl>
 {
     private static final UUID SYSTEM_ID = new UUID(0l, 0l);
-    private final ConfiguredObjectFactory _objectFactory;
     private final EventLogger _eventLogger;
     private final LogRecorder _logRecorder;
     private final BrokerOptions _brokerOptions;
@@ -56,17 +46,15 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     private String _storeType;
 
     public SystemContextImpl(final TaskExecutor taskExecutor,
-                             final ConfiguredObjectFactory configuredObjectFactory,
                              final EventLogger eventLogger,
                              final LogRecorder logRecorder,
                              final BrokerOptions brokerOptions)
     {
         super(parentsMap(),
               createAttributes(brokerOptions),
-              taskExecutor, configuredObjectFactory);
+              taskExecutor, BrokerModel.getInstance());
         _eventLogger = eventLogger;
         getTaskExecutor().start();
-        _objectFactory = configuredObjectFactory;
         _logRecorder = logRecorder;
         _brokerOptions = brokerOptions;
         open();

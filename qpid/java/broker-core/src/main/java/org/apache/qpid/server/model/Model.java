@@ -120,4 +120,6 @@ public abstract class Model
     public abstract int getMajorVersion();
     public abstract int getMinorVersion();
 
+    public abstract ConfiguredObjectFactory getObjectFactory();
+
 }

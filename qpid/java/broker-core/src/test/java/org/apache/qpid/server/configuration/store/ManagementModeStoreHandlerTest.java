@@ -40,12 +40,11 @@ import org.mockito.stubbing.Answer;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -75,11 +74,11 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _rootId = UUID.randomUUID();
         _portEntryId = UUID.randomUUID();
         _store = mock(DurableConfigurationStore.class);
-        _taskExecutor = new TaskExecutor();
+        _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
 
-        _systemContext = new SystemContextImpl(_taskExecutor, new ConfiguredObjectFactoryImpl(BrokerModel.getInstance()), mock(
-                EventLogger.class), mock(LogRecorder.class), new BrokerOptions());
+        _systemContext = new SystemContextImpl(_taskExecutor, mock(EventLogger.class),
+                                               mock(LogRecorder.class), new BrokerOptions());
 
 
         ConfiguredObjectRecord systemContextRecord = _systemContext.asObjectRecord();
