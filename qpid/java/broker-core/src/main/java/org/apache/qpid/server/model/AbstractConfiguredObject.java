@@ -714,12 +714,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     @Override
-    public <T> T getAttribute(final ConfiguredObjectAttribute<? super X, T> attr)
-    {
-        return (T) getAttribute(attr.getName());
-    }
-
-    @Override
     public final Map<String, Object> getActualAttributes()
     {
         synchronized (_attributes)
@@ -1068,52 +1062,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     protected <C extends ConfiguredObject> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents) throws AccessControlException
     {
         // allowed by default
-    }
-
-    /**
-     * Returns a map of effective attribute values that would result
-     * if applying the supplied changes. Does not apply the changes.
-     */
-    protected Map<String, Object> generateEffectiveAttributes(Map<String,Object> changedValues)
-    {
-        //Build a new set of effective attributes that would be
-        //the result of applying the attribute changes, so we
-        //can validate the configuration that would result
-
-        Map<String, Object> existingActualValues = getActualAttributes();
-
-        //create a new merged map, starting with the defaults
-        Map<String, Object> merged =  new HashMap<String, Object>();
-
-        for(String name : getAttributeNames())
-        {
-            if(changedValues.containsKey(name))
-            {
-                Object changedValue = changedValues.get(name);
-                if(changedValue != null)
-                {
-                    //use the new non-null value for the merged values
-                    merged.put(name, changedValue);
-                }
-                else
-                {
-                    //we just use the default (if there was one) since the changed
-                    //value is null and effectively clears any existing actual value
-                }
-            }
-            else if(existingActualValues.get(name) != null)
-            {
-                //Use existing non-null actual value for the merge
-                merged.put(name, existingActualValues.get(name));
-            }
-            else
-            {
-                //There was neither a change or an existing non-null actual
-                //value, so just use the default value (if there was one).
-            }
-        }
-
-        return merged;
     }
 
     @Override

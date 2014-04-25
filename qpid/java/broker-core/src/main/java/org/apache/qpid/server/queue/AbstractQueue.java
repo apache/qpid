@@ -225,8 +225,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
-        super(parentsMap(virtualHost),
-              attributes, virtualHost.getTaskExecutor());
+        super(parentsMap(virtualHost), attributes);
 
         _virtualHost = virtualHost;
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();

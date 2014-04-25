@@ -90,7 +90,8 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         when(_virtualHostNode.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
         when(_virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
-
+        when(_virtualHostNode.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(((VirtualHostNode)_virtualHostNode).getCategoryClass()).thenReturn(VirtualHostNode.class);
         _virtualHost = createHost();
     }
 

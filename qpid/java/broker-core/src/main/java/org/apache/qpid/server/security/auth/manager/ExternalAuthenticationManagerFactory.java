@@ -24,12 +24,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.util.ResourceBundleLoader;
 
-public class ExternalAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<ExternalAuthenticationManagerImpl>
+public class ExternalAuthenticationManagerFactory extends AbstractConfiguredObjectTypeFactory<ExternalAuthenticationManagerImpl>
+        implements AuthenticationManagerFactory<ExternalAuthenticationManagerImpl>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.ExternalAuthenticationProviderAttributeDescriptions";
     public static final String PROVIDER_TYPE = "External";

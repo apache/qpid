@@ -76,9 +76,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     public AbstractPort(Map<String, Object> attributes,
                         Broker<?> broker)
     {
-        super(parentsMap(broker),
-              attributes,
-              broker.getTaskExecutor());
+        super(parentsMap(broker), attributes);
 
         _broker = broker;
 

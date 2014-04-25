@@ -116,8 +116,7 @@ class QueueConsumerImpl
                       EnumSet<Option> optionSet)
     {
         super(parentsMap(queue, target.getSessionModel().getModelObject()),
-              createAttributeMap(consumerName, filters, optionSet),
-              queue.getVirtualHost().getTaskExecutor());
+              createAttributeMap(consumerName, filters, optionSet));
         _messageClass = messageClass;
         _sessionReference = target.getSessionModel().getConnectionReference();
         _consumerNumber = CONSUMER_NUMBER_GENERATOR.getAndIncrement();

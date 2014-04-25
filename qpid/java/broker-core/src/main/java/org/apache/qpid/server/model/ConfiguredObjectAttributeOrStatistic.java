@@ -23,6 +23,8 @@ package org.apache.qpid.server.model;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
+
 abstract class ConfiguredObjectAttributeOrStatistic<C extends ConfiguredObject, T>
 {
 
@@ -137,13 +139,29 @@ abstract class ConfiguredObjectAttributeOrStatistic<C extends ConfiguredObject, 
         }
         catch (IllegalAccessException e)
         {
-            Object o = configuredObject.getAttribute(getName());
-            return getConverter().convert(o, configuredObject);
+            // This should never happen as it would imply a getter which is not public
+            throw new ServerScopedRuntimeException("Unable to get value for '"+getName()
+                                                   +"' from configured object of category "
+                                                   + configuredObject.getCategoryClass().getSimpleName(), e);
         }
         catch (InvocationTargetException e)
         {
-            Object o = configuredObject.getAttribute(getName());
-            return getConverter().convert(o, configuredObject);
+            Throwable targetException = e.getTargetException();
+            if(targetException instanceof RuntimeException)
+            {
+                throw (RuntimeException)targetException;
+            }
+            else if(targetException instanceof Error)
+            {
+                throw (Error)targetException;
+            }
+            else
+            {
+                // This should never happen as it would imply a getter which is declaring a checked exception
+                throw new ServerScopedRuntimeException("Unable to get value for '"+getName()
+                                                       +"' from configured object of category "
+                                                       + configuredObject.getCategoryClass().getSimpleName(), e);
+            }
         }
 
     }

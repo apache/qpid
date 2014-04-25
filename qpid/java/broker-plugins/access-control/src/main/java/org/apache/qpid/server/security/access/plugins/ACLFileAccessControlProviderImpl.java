@@ -58,8 +58,7 @@ public class ACLFileAccessControlProviderImpl
 
     public ACLFileAccessControlProviderImpl(Map<String, Object> attributes, Broker broker)
     {
-        super(parentsMap(broker),
-              attributes, broker.getTaskExecutor());
+        super(parentsMap(broker), attributes);
 
 
         _broker = broker;

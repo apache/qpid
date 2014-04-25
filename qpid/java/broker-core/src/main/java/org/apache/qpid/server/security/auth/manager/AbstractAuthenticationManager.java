@@ -59,8 +59,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
 
     protected AbstractAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
-        super(parentsMap(broker),
-              attributes, broker.getTaskExecutor());
+        super(parentsMap(broker), attributes);
         _broker = broker;
     }
 
@@ -134,11 +133,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     public void recoverUser(final User user)
     {
         throw new IllegalConfigurationException("Cannot associate  " + user + " with authentication provider " + this);
-    }
-
-    public void instantiatePreferencesProvider(final PreferencesProvider preferencesProvider)
-    {
-        _preferencesProvider = preferencesProvider;
     }
 
     @Override

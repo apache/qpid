@@ -104,8 +104,4 @@ public interface StatisticsGatherer
      */
     void resetStatistics();
 
-    interface Source
-    {
-        StatisticsGatherer getStatisticsGatherer();
-    }
 }

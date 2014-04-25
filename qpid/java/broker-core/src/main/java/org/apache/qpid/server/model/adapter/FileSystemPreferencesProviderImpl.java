@@ -75,9 +75,7 @@ public class FileSystemPreferencesProviderImpl
     public FileSystemPreferencesProviderImpl(Map<String, Object> attributes,
                                              AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {
-        super(parentsMap(authenticationProvider),
-              attributes,
-              authenticationProvider.getParent(Broker.class).getTaskExecutor());
+        super(parentsMap(authenticationProvider), attributes);
         State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
         _state = new AtomicReference<State>(state);
         _authenticationProvider = authenticationProvider;
@@ -261,6 +259,7 @@ public class FileSystemPreferencesProviderImpl
         _state.compareAndSet(State.ERRORED, State.ACTIVE);
     }
 
+    /* Note this method is used: it is referenced by the annotation on _path to be called after _path is set */
     private void openNewStore()
     {
         if(_open)
@@ -326,7 +325,7 @@ public class FileSystemPreferencesProviderImpl
 
     }
 
-    public void createStoreIfNotExist()
+    private void createStoreIfNotExist()
     {
         _store.createIfNotExist();
     }

@@ -59,6 +59,9 @@ public class VirtualHostTest extends QpidTestCase
         ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(_virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
+        when(_virtualHostNode.getTaskExecutor()).thenReturn(_taskExecutor);
+
+        when(((VirtualHostNode)_virtualHostNode).getCategoryClass()).thenReturn(VirtualHostNode.class);
     }
 
 

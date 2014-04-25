@@ -35,7 +35,6 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectAttribute;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
@@ -448,12 +447,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     }
 
-
-    public long getCreateTime()
-    {
-        return 0;
-    }
-
     public UUID getId()
     {
         return null;
@@ -478,12 +471,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     @Override
     public Object getAttribute(final String name)
-    {
-        return null;
-    }
-
-    @Override
-    public <T> T getAttribute(final ConfiguredObjectAttribute<? super MockVirtualHost, T> attr)
     {
         return null;
     }

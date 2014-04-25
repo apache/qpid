@@ -58,7 +58,7 @@ import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.util.SystemUtils;
 
-public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, ConfigurationChangeListener, StatisticsGatherer, StatisticsGatherer.Source
+public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, ConfigurationChangeListener, StatisticsGatherer
 {
     private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
 
@@ -104,9 +104,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     public BrokerAdapter(Map<String, Object> attributes,
                          SystemContext parent)
     {
-        super(parentsMap(parent),
-              attributes,
-              parent.getTaskExecutor());
+        super(parentsMap(parent), attributes);
 
         _logRecorder = parent.getLogRecorder();
         _eventLogger = parent.getEventLogger();
@@ -993,12 +991,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     public void setEventLogger(final EventLogger eventLogger)
     {
         _eventLogger = eventLogger;
-    }
-
-    @Override
-    public StatisticsGatherer getStatisticsGatherer()
-    {
-        return this;
     }
 
     public void registerMessageDelivered(long messageSize)

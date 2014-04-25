@@ -116,14 +116,16 @@ public class BrokerTestHelper
 
         Broker<?> broker = createBrokerMock();
         ConfiguredObjectFactory objectFactory = broker.getObjectFactory();
-        when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
 
-        VirtualHostNode<?> virtualHostNode = mock(VirtualHostNode.class);
+        VirtualHostNode virtualHostNode = mock(VirtualHostNode.class);
+        when(virtualHostNode.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
+
         DurableConfigurationStore dcs = mock(DurableConfigurationStore.class);
         when(virtualHostNode.getConfigurationStore()).thenReturn(dcs);
         when(virtualHostNode.getParent(Broker.class)).thenReturn(broker);
         when(virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
+        when(virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
         AbstractVirtualHost host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class, attributes, virtualHostNode );
         host.setDesiredState(host.getState(), State.ACTIVE);
 

@@ -24,7 +24,6 @@ import java.io.File;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -73,8 +73,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
     @SuppressWarnings("rawtypes")
     public AbstractStandardVirtualHostNode(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor)
     {
-        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, parent),
-              attributes, taskExecutor);
+        super(parentsMap(parent), attributes, taskExecutor);
         _broker = parent;
         SystemContext systemContext = _broker.getParent(SystemContext.class);
         _eventLogger = systemContext.getEventLogger();

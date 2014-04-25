@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
@@ -47,10 +46,9 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
 
     public SessionAdapter(final ConnectionAdapter connectionAdapter,
-                          final AMQSessionModel session,
-                          TaskExecutor taskExecutor)
+                          final AMQSessionModel session)
     {
-        super(parentsMap(connectionAdapter), createAttributes(session), taskExecutor);
+        super(parentsMap(connectionAdapter), createAttributes(session));
         _session = session;
         _session.addConsumerListener(new ConsumerListener()
         {
