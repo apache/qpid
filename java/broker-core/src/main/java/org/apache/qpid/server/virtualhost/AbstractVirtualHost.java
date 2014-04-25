@@ -159,8 +159,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     public AbstractVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
-        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(VirtualHostNode.class, virtualHostNode),
-              enhanceWithId(attributes), ((Broker<?>)virtualHostNode.getParent(Broker.class)).getTaskExecutor());
+        super(parentsMap(virtualHostNode), attributes);
         _broker = virtualHostNode.getParent(Broker.class);
         _virtualHostNode = virtualHostNode;
 
@@ -175,16 +174,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _defaultDestination = new DefaultDestination(this);
 
-    }
-
-    private static Map<String, Object> enhanceWithId(Map<String, Object> attributes)
-    {
-        if(attributes.get(ID) == null)
-        {
-            attributes = new HashMap<String, Object>(attributes);
-            attributes.put(ID, UUID.randomUUID());
-        }
-        return attributes;
     }
 
     public void validate()
@@ -978,7 +967,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             if(!_connectionAdapters.containsKey(connection))
             {
-                adapter = new ConnectionAdapter(connection, getTaskExecutor());
+                adapter = new ConnectionAdapter(connection);
                 _connectionAdapters.put(connection, adapter);
 
             }

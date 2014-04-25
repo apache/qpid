@@ -20,22 +20,26 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.ResolvedObject;
-import org.apache.qpid.server.store.UnresolvedConfiguredObject;
-import org.apache.qpid.server.util.ResourceBundleLoader;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PlainPasswordFileAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<PlainPasswordDatabaseAuthenticationManager>
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ResolvedObject;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
+import org.apache.qpid.server.util.ResourceBundleLoader;
+
+public class PlainPasswordFileAuthenticationManagerFactory
+        extends AbstractConfiguredObjectTypeFactory<PlainPasswordDatabaseAuthenticationManager>
+        implements AuthenticationManagerFactory<PlainPasswordDatabaseAuthenticationManager>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.PasswordFileAuthenticationProviderAttributeDescriptions";
     public static final String ATTRIBUTE_PATH = "path";

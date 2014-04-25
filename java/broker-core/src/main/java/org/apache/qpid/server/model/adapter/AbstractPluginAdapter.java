@@ -39,8 +39,7 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
 
     protected AbstractPluginAdapter(Map<String, Object> attributes, Broker broker)
     {
-        super(parentsMap(broker),
-              attributes, broker.getTaskExecutor());
+        super(parentsMap(broker), attributes);
         _broker = broker;
     }
 

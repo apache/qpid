@@ -24,11 +24,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 
-public class ScramSHA1AuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<ScramSHA1AuthenticationManager>
+public class ScramSHA1AuthenticationManagerFactory
+        extends AbstractConfiguredObjectTypeFactory<ScramSHA1AuthenticationManager>
+        implements AuthenticationManagerFactory<ScramSHA1AuthenticationManager>
 {
 
     public static final String PROVIDER_TYPE = "SCRAM-SHA-1";

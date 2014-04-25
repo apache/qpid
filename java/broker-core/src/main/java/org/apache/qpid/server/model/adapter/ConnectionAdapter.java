@@ -22,11 +22,21 @@ package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Session;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.SessionModelListener;
@@ -39,9 +49,9 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
             new HashMap<AMQSessionModel, SessionAdapter>();
 
-    public ConnectionAdapter(final AMQConnectionModel conn, TaskExecutor taskExecutor)
+    public ConnectionAdapter(final AMQConnectionModel conn)
     {
-        super(parentsMap(conn.getVirtualHost()),createAttributes(conn), taskExecutor);
+        super(parentsMap(conn.getVirtualHost()),createAttributes(conn));
         _connection = conn;
         open();
         conn.addSessionListener(this);
@@ -246,7 +256,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         {
             if(!_sessionAdapters.containsKey(session))
             {
-                SessionAdapter adapter = new SessionAdapter(this, session, getTaskExecutor());
+                SessionAdapter adapter = new SessionAdapter(this, session);
                 _sessionAdapters.put(session, adapter);
                 childAdded(adapter);
             }

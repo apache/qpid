@@ -63,7 +63,7 @@ public class BindingImpl
 
     public BindingImpl(Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
-        super(parentsMap(queue,exchange),enhanceWithDurable(attributes,queue,exchange),queue.getVirtualHost().getTaskExecutor());
+        super(parentsMap(queue,exchange),enhanceWithDurable(attributes,queue,exchange));
         _bindingKey = getName();
         _queue = queue;
         _exchange = exchange;

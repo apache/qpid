@@ -367,8 +367,7 @@ public class ScramSHA1AuthenticationManager
 
         protected ScramAuthUser(final Map<String, Object> attributes, ScramSHA1AuthenticationManager parent)
         {
-            super(parentsMap(parent),
-                  attributes, parent.getTaskExecutor());
+            super(parentsMap(parent), attributes);
             _authenticationManager = parent;
             if(!ASCII.newEncoder().canEncode(getName()))
             {

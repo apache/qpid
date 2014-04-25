@@ -108,7 +108,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     public AbstractExchange(Map<String, Object> attributes, VirtualHostImpl vhost)
     {
-        super(parentsMap(vhost), attributes, vhost.getTaskExecutor());
+        super(parentsMap(vhost), attributes);
         _virtualHost = vhost;
         // check ACL
         try

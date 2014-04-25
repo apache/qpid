@@ -191,8 +191,6 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      */
     Object getAttribute(String name);
 
-    <T> T getAttribute(ConfiguredObjectAttribute<? super X, T> attr);
-
     /**
      * Return the map containing only explicitly set attributes
      *

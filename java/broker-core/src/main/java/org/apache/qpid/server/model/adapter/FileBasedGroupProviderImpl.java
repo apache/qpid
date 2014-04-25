@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -71,8 +70,7 @@ public class FileBasedGroupProviderImpl
     public FileBasedGroupProviderImpl(Map<String, Object> attributes,
                                       Broker broker)
     {
-        super(parentsMap(broker),
-              attributes, broker.getTaskExecutor());
+        super(parentsMap(broker), attributes);
 
 
         _broker = broker;
@@ -140,7 +138,7 @@ public class FileBasedGroupProviderImpl
             UUID id = UUID.randomUUID();
             attrMap.put(Group.ID, id);
             attrMap.put(Group.NAME, group.getName());
-            GroupAdapter groupAdapter = new GroupAdapter(attrMap, getTaskExecutor());
+            GroupAdapter groupAdapter = new GroupAdapter(attrMap);
             principals.add(groupAdapter);
         }
 
@@ -229,7 +227,7 @@ public class FileBasedGroupProviderImpl
             UUID id = UUID.randomUUID();
             attrMap.put(Group.ID, id);
             attrMap.put(Group.NAME, groupName);
-            GroupAdapter groupAdapter = new GroupAdapter(attrMap, getTaskExecutor());
+            GroupAdapter groupAdapter = new GroupAdapter(attrMap);
             groupAdapter.create();
             return (C) groupAdapter;
 
@@ -409,9 +407,9 @@ public class FileBasedGroupProviderImpl
     private class GroupAdapter extends AbstractConfiguredObject<GroupAdapter> implements Group<GroupAdapter>
     {
 
-        public GroupAdapter(Map<String,Object> attributes, TaskExecutor taskExecutor)
+        public GroupAdapter(Map<String, Object> attributes)
         {
-            super(parentsMap(FileBasedGroupProviderImpl.this), attributes, taskExecutor);
+            super(parentsMap(FileBasedGroupProviderImpl.this), attributes);
         }
 
 
@@ -444,7 +442,7 @@ public class FileBasedGroupProviderImpl
                 Map<String,Object> attrMap = new HashMap<String, Object>();
                 attrMap.put(GroupMember.ID,id);
                 attrMap.put(GroupMember.NAME, principal.getName());
-                GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap, getTaskExecutor());
+                GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap);
                 groupMemberAdapter.open();
                 members.add(groupMemberAdapter);
             }
@@ -495,7 +493,7 @@ public class FileBasedGroupProviderImpl
                 Map<String,Object> attrMap = new HashMap<String, Object>();
                 attrMap.put(GroupMember.ID,id);
                 attrMap.put(GroupMember.NAME, memberName);
-                GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap, getTaskExecutor());
+                GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap);
                 groupMemberAdapter.create();
                 return (C) groupMemberAdapter;
 
@@ -539,10 +537,10 @@ public class FileBasedGroupProviderImpl
                 GroupMember<GroupMemberAdapter>
         {
 
-            public GroupMemberAdapter(Map<String,Object> attrMap, TaskExecutor taskExecutor)
+            public GroupMemberAdapter(Map<String, Object> attrMap)
             {
                 // TODO - need to relate to the User object
-                super(parentsMap(GroupAdapter.this),attrMap, taskExecutor);
+                super(parentsMap(GroupAdapter.this),attrMap);
             }
 
 

@@ -50,7 +50,7 @@ import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 
 public class VirtualHostCreationTest extends TestCase
 {
-    private VirtualHostNode<?> _virtualHostNode;
+    private VirtualHostNode _virtualHostNode;
 
     @Override
     public void setUp() throws Exception
@@ -78,6 +78,7 @@ public class VirtualHostCreationTest extends TestCase
         when(_virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(_virtualHostNode.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
+        when(_virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
     }
 
     public void testCreateVirtualHostFromStoreConfigAttributes()

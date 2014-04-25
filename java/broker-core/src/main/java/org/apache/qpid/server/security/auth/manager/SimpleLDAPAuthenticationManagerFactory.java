@@ -24,12 +24,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
 import org.apache.qpid.server.util.ResourceBundleLoader;
 
-public class SimpleLDAPAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<SimpleLDAPAuthenticationManagerImpl>
+public class SimpleLDAPAuthenticationManagerFactory
+        extends AbstractConfiguredObjectTypeFactory<SimpleLDAPAuthenticationManagerImpl>
+        implements AuthenticationManagerFactory<SimpleLDAPAuthenticationManagerImpl>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationProviderAttributeDescriptions";
 

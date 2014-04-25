@@ -19,15 +19,19 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfiguredObject;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class KerberosAuthenticationManagerFactory extends AbstractAuthenticationManagerFactory<KerberosAuthenticationManager>
+import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+
+public class KerberosAuthenticationManagerFactory
+        extends AbstractConfiguredObjectTypeFactory<KerberosAuthenticationManager>
+        implements AuthenticationManagerFactory<KerberosAuthenticationManager>
 {
     public static final String PROVIDER_TYPE = "Kerberos";
 
