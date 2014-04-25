@@ -20,46 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.AMQChannelClosedException;
-import org.apache.qpid.AMQDisconnectedException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInvalidArgumentException;
-import org.apache.qpid.AMQInvalidRoutingKeyException;
-import org.apache.qpid.client.AMQDestination.DestSyntax;
-import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.failover.FailoverNoopSupport;
-import org.apache.qpid.client.failover.FailoverProtectedOperation;
-import org.apache.qpid.client.failover.FailoverRetrySupport;
-import org.apache.qpid.client.message.AMQMessageDelegateFactory;
-import org.apache.qpid.client.message.AMQPEncodedMapMessage;
-import org.apache.qpid.client.message.AMQPEncodedListMessage;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.CloseConsumerMessage;
-import org.apache.qpid.client.message.JMSBytesMessage;
-import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.client.message.JMSObjectMessage;
-import org.apache.qpid.client.message.JMSStreamMessage;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.util.FlowControllingBlockingQueue;
-import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.jms.Session;
-import org.apache.qpid.jms.ListMessage;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.thread.Threading;
-import org.apache.qpid.transport.SessionException;
-import org.apache.qpid.transport.TransportException;
-
-import javax.jms.*;
-import javax.jms.IllegalStateException;
-
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
@@ -78,6 +38,46 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import javax.jms.*;
+import javax.jms.IllegalStateException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQChannelClosedException;
+import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInvalidArgumentException;
+import org.apache.qpid.AMQInvalidRoutingKeyException;
+import org.apache.qpid.client.AMQDestination.DestSyntax;
+import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.failover.FailoverNoopSupport;
+import org.apache.qpid.client.failover.FailoverProtectedOperation;
+import org.apache.qpid.client.failover.FailoverRetrySupport;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.message.AMQPEncodedListMessage;
+import org.apache.qpid.client.message.AMQPEncodedMapMessage;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.CloseConsumerMessage;
+import org.apache.qpid.client.message.JMSBytesMessage;
+import org.apache.qpid.client.message.JMSMapMessage;
+import org.apache.qpid.client.message.JMSObjectMessage;
+import org.apache.qpid.client.message.JMSStreamMessage;
+import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.util.FlowControllingBlockingQueue;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.jms.ListMessage;
+import org.apache.qpid.jms.Session;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.thread.Threading;
+import org.apache.qpid.transport.SessionException;
+import org.apache.qpid.transport.TransportException;
 
 /**
  * <p/><table id="crc"><caption>CRC Card</caption>
@@ -3491,15 +3491,18 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     JMSException toJMSException(String message, AMQException e)
     {
         JMSException ex;
-        if (e.getErrorCode() == AMQConstant.ACCESS_REFUSED)
+
+        AMQConstant errorCode = e.getErrorCode();
+        if (errorCode == AMQConstant.ACCESS_REFUSED)
         {
-            ex = new JMSSecurityException(message);
+            ex = new JMSSecurityException(message, String.valueOf(errorCode.getCode()));
         }
         else
         {
-            ex = new JMSException(message);
+            ex = new JMSException(message, errorCode == null ? null : String.valueOf(errorCode.getCode()));
         }
         ex.initCause(e);
+
         ex.setLinkedException(e);
         return ex;
     }

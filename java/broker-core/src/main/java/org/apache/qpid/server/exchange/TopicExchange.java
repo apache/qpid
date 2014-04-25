@@ -27,7 +27,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
@@ -43,7 +45,6 @@ import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 @ManagedObject( category = false, type = "topic" )
@@ -61,7 +62,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
 
     private final Map<BindingImpl, Map<String,Object>> _bindings = new HashMap<BindingImpl, Map<String,Object>>();
 
-    public TopicExchange(final Map<String,Object> attributes, final VirtualHostImpl vhost) throws UnknownExchangeException
+    public TopicExchange(final Map<String,Object> attributes, final VirtualHostImpl vhost)
     {
         super(attributes, vhost);
     }

@@ -48,6 +48,7 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
@@ -72,7 +73,6 @@ import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.*;
 
@@ -750,10 +750,10 @@ public class ServerSessionDelegate extends SessionDelegate
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to declare exchange: "
                                                 + exchangeName + " which begins with reserved name or prefix.");
                 }
-                catch(UnknownExchangeException e)
+                catch(UnknownConfiguredObjectException e)
                 {
                     exception(session, method, ExecutionErrorCode.NOT_FOUND,
-                                                                "Unknown alternate exchange " + e.getExchangeName());
+                                                                "Unknown alternate exchange " + e.getName());
                 }
                 catch(AMQUnknownExchangeType e)
                 {

@@ -58,24 +58,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.IntegrityViolationException;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.ManagedAttributeField;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.VirtualHostAlias;
-import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
 import org.apache.qpid.server.model.adapter.VirtualHostAliasAdapter;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
@@ -797,10 +780,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             throw new UnsupportedOperationException("'" + name + "' is a reserved exchange name");
         }
-        catch(UnknownExchangeException e)
-        {
-            throw new IllegalArgumentException("Alternate Exchange with name '" + e.getExchangeName() + "' does not exist");
-        }
         catch(AMQUnknownExchangeType e)
         {
             throw new IllegalArgumentException(e);
@@ -811,7 +790,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public ExchangeImpl createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
-                   UnknownExchangeException, AMQUnknownExchangeType
+                   AMQUnknownExchangeType
     {
         checkVHostStateIsActive();
         ExchangeImpl child = addExchange(attributes);
@@ -822,7 +801,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private ExchangeImpl addExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
-                   UnknownExchangeException, AMQUnknownExchangeType
+                   AMQUnknownExchangeType
     {
         try
         {
@@ -1484,15 +1463,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             // We're ok if the exchange already exists
             dlExchange = e.getExistingExchange();
         }
-        catch (ReservedExchangeNameException e)
-        {
-            throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
-        }
-        catch (AMQUnknownExchangeType e)
-        {
-            throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
-        }
-        catch (UnknownExchangeException e)
+        catch (ReservedExchangeNameException | AMQUnknownExchangeType | UnknownConfiguredObjectException e)
         {
             throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
         }

@@ -48,7 +48,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class FanoutExchangeTest extends TestCase
@@ -58,7 +57,7 @@ public class FanoutExchangeTest extends TestCase
     private TaskExecutor _taskExecutor;
     private ConfiguredObjectFactoryImpl _objectFactory;
 
-    public void setUp() throws UnknownExchangeException
+    public void setUp()
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Exchange.ID, UUID.randomUUID());

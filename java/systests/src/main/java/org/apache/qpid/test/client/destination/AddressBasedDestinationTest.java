@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.test.client.destination;
 
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -48,6 +47,7 @@ import javax.naming.InitialContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
@@ -1224,6 +1224,23 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         prod.close();
         assertNotNull("The consumer on the queue bound to the alt-exchange should receive the message",cons.receive(1000));
         cons.close();
+    }
+
+    public void testUnknownAltExchange() throws Exception
+    {
+        Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        String altQueueAddr = "ADDR:my-alt-queue;{create: always, delete: receiver,node:{x-bindings:[{exchange:'doesnotexist'}] }}";
+        try
+        {
+            session.createConsumer(session.createQueue(altQueueAddr));
+            fail("Attempt to create a queue with an unknown alternate exchange should fail");
+        }
+        catch(JMSException e)
+        {
+            assertEquals("Failure code is not as expected", "404", e.getErrorCode());
+        }
+
+
     }
 
     public void testQueueBrowserWithSelectorAutoAcknowledgement() throws Exception

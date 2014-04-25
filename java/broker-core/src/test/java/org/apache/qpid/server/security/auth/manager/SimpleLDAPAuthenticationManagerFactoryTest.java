@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
@@ -107,9 +108,10 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
             _factory.create(null, _configuration, _broker);
             fail("Exception not thrown");
         }
-        catch(IllegalArgumentException e)
+        catch(UnknownConfiguredObjectException e)
         {
-            assertEquals("Cannot find a TrustStore with name 'notfound'", e.getMessage());
+            assertEquals(e.getCategory(), TrustStore.class);
+            assertEquals(e.getName(), "notfound");
         }
     }
 

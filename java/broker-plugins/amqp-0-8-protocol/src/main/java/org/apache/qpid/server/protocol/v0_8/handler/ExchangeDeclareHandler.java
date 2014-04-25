@@ -20,31 +20,31 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ExchangeDeclareHandler implements StateAwareMethodListener<ExchangeDeclareBody>
 {
@@ -155,7 +155,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
                 }
-                catch (UnknownExchangeException e)
+                catch (UnknownConfiguredObjectException e)
                 {
                     // note - since 0-8/9/9-1 can't set the alt. exchange this exception should never occur
                     throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown alternate exchange",e);

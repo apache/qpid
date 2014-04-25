@@ -66,7 +66,6 @@ import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
-import org.apache.qpid.server.virtualhost.UnknownExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public abstract class AbstractExchange<T extends AbstractExchange<T>>
@@ -107,7 +106,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
     private StateChangeListener<BindingImpl, State> _bindingListener;
 
-    public AbstractExchange(Map<String, Object> attributes, VirtualHostImpl vhost) throws UnknownExchangeException
+    public AbstractExchange(Map<String, Object> attributes, VirtualHostImpl vhost)
     {
         super(parentsMap(vhost), attributes, vhost.getTaskExecutor());
         _virtualHost = vhost;
