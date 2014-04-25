@@ -41,6 +41,15 @@ class ExitStatus(Exception):
     """Raised if a command want's a non-0 exit status from the script"""
     def __init__(self, status): self.status = status
 
+def find_qpidd_conf():
+    """Return the path to the local qpid.conf file or None if it is not found"""
+    p = os.path
+    prefix, bin = p.split(p.dirname(__file__))
+    if bin == "bin":            # Installed in a standard place.
+        conf = p.join(prefix, "etc", "qpid", "qpidd.conf")
+        if p.isfile(conf): return conf
+    return None
+
 class Command:
     commands = {}
 
@@ -65,7 +74,10 @@ class Command:
 
     def connect(self, opts):
         conn_options = {}
-        if not opts.broker: opts.broker = DEFAULTS["broker"]
+        if not opts.broker:
+            opts.broker = DEFAULTS["broker"]
+            # If we are connecting locally, use local qpidd.conf by default
+            if not opts.config: opts.config = find_qpidd_conf()
         url = URL(opts.broker)
         if opts.config:         # Use broker config file for defaults
             config = parse_qpidd_conf(opts.config)
