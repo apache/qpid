@@ -132,6 +132,7 @@ public class FanoutExchangeTest extends TestCase
         AMQQueue queue = mock(AMQQueue.class);
         when(queue.getVirtualHost()).thenReturn(_virtualHost);
         when(queue.getCategoryClass()).thenReturn(Queue.class);
+        when(queue.getModel()).thenReturn(BrokerModel.getInstance());
         return queue;
     }
 
