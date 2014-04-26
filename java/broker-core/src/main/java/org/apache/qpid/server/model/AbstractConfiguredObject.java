@@ -27,12 +27,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -40,6 +40,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -62,7 +64,6 @@ import org.apache.qpid.util.Strings;
 
 public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> implements ConfiguredObject<X>
 {
-    private static final String ID = "id";
 
     private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _allAttributes =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?, ?>>>());
@@ -75,6 +76,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private static final Map<Class<? extends ConfiguredObject>, Map<String, AutomatedField>> _allAutomatedFields =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, AutomatedField>>());
+
     private static final Map<Class, Object> SECURE_VALUES;
 
     public static final String SECURED_STRING_VALUE = "********";
@@ -386,6 +388,21 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(_open.compareAndSet(false,true))
         {
+            final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
+            if(currentUser != null)
+            {
+                String currentUserName = currentUser.getName();
+                _attributes.put(LAST_UPDATED_BY, currentUserName);
+                _attributes.put(CREATED_BY, currentUserName);
+                _lastUpdatedBy = currentUserName;
+                _createdBy = currentUserName;
+            }
+            final long currentTime = System.currentTimeMillis();
+            _attributes.put(LAST_UPDATED_TIME, currentTime);
+            _attributes.put(CREATED_TIME, currentTime);
+            _lastUpdatedTime = currentTime;
+            _createdTime = currentTime;
+
             doResolution(true);
             doValidation(true);
             doCreation(true);
@@ -1082,21 +1099,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _createdBy;
     }
 
-    protected String getCurrentUserName()
-    {
-        Subject currentSubject = Subject.getSubject(AccessController.getContext());
-        Set<AuthenticatedPrincipal> principals =
-                currentSubject == null ? null : currentSubject.getPrincipals(AuthenticatedPrincipal.class);
-        if(principals == null || principals.isEmpty())
-        {
-            return null;
-        }
-        else
-        {
-            return principals.iterator().next().getName();
-        }
-    }
-
     @Override
     public final long getCreatedTime()
     {
@@ -1136,6 +1138,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return null;
     }
 
+    @Override
+    public final <T> T getContextValue(Class<T> clazz, String propertyName)
+    {
+        AttributeValueConverter<T> converter = AttributeValueConverter.getConverter(clazz, clazz);
+        return converter.convert("${"+propertyName+"}", this);
+    }
+
     //=========================================================================================
 
     static String interpolate(ConfiguredObject<?> object, String value)
@@ -1168,64 +1177,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-
-    private static void addToAttributesSet(final Class<? extends ConfiguredObject> clazz, final ConfiguredObjectAttribute<?, ?> attribute)
-    {
-        synchronized (_allAttributes)
-        {
-            Collection<ConfiguredObjectAttribute<?,?>> classAttributes = _allAttributes.get(clazz);
-            if(classAttributes == null)
-            {
-                classAttributes = new ArrayList<ConfiguredObjectAttribute<?, ?>>();
-                for(Map.Entry<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> entry : _allAttributes.entrySet())
-                {
-                    if(entry.getKey().isAssignableFrom(clazz))
-                    {
-                        classAttributes.addAll(entry.getValue());
-                    }
-                }
-                _allAttributes.put(clazz, classAttributes);
-
-            }
-            for(Map.Entry<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> entry : _allAttributes.entrySet())
-            {
-                if(clazz.isAssignableFrom(entry.getKey()))
-                {
-                    entry.getValue().add(attribute);
-                }
-            }
-
-        }
-    }
-    private static void addToStatisticsSet(final Class<? extends ConfiguredObject> clazz, final ConfiguredObjectStatistic<?, ?> statistic)
-    {
-        synchronized (_allStatistics)
-        {
-            Collection<ConfiguredObjectStatistic<?,?>> classAttributes = _allStatistics.get(clazz);
-            if(classAttributes == null)
-            {
-                classAttributes = new ArrayList<ConfiguredObjectStatistic<?, ?>>();
-                for(Map.Entry<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?,?>>> entry : _allStatistics.entrySet())
-                {
-                    if(entry.getKey().isAssignableFrom(clazz))
-                    {
-                        classAttributes.addAll(entry.getValue());
-                    }
-                }
-                _allStatistics.put(clazz, classAttributes);
-
-            }
-            for(Map.Entry<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?,?>>> entry : _allStatistics.entrySet())
-            {
-                if(clazz.isAssignableFrom(entry.getKey()))
-                {
-                    entry.getValue().add(statistic);
-                }
-            }
-
-        }
-    }
-
     private static class AutomatedField
     {
         private final Field _field;
@@ -1255,6 +1206,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    private static final Comparator<ConfiguredObjectAttributeOrStatistic<?,?>> NAME_COMPARATOR = new Comparator<ConfiguredObjectAttributeOrStatistic<?, ?>>()
+    {
+        @Override
+        public int compare(final ConfiguredObjectAttributeOrStatistic<?, ?> left,
+                           final ConfiguredObjectAttributeOrStatistic<?, ?> right)
+        {
+            return left.getName().compareTo(right.getName());
+        }
+    };
+
     private static <X extends ConfiguredObject> void processAttributes(final Class<X> clazz)
     {
         synchronized (_allAttributes)
@@ -1278,11 +1239,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 processAttributes((Class<? extends ConfiguredObject>) superclass);
             }
 
-            final ArrayList<ConfiguredObjectAttribute<?, ?>> attributeList = new ArrayList<ConfiguredObjectAttribute<?, ?>>();
-            final ArrayList<ConfiguredObjectStatistic<?, ?>> statisticList = new ArrayList<ConfiguredObjectStatistic<?, ?>>();
+            final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet = new TreeSet<>(NAME_COMPARATOR);
+            final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet = new TreeSet<>(NAME_COMPARATOR);
 
-            _allAttributes.put(clazz, attributeList);
-            _allStatistics.put(clazz, statisticList);
+            _allAttributes.put(clazz, attributeSet);
+            _allStatistics.put(clazz, statisticSet);
 
             for(Class<?> parent : clazz.getInterfaces())
             {
@@ -1291,17 +1252,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(parent);
                     for(ConfiguredObjectAttribute<?,?> attr : attrs)
                     {
-                        if(!attributeList.contains(attr))
+                        if(!attributeSet.contains(attr))
                         {
-                            attributeList.add(attr);
+                            attributeSet.add(attr);
                         }
                     }
                     Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(parent);
                     for(ConfiguredObjectStatistic<?,?> stat : stats)
                     {
-                        if(!statisticList.contains(stat))
+                        if(!statisticSet.contains(stat))
                         {
-                            statisticList.add(stat);
+                            statisticSet.add(stat);
                         }
                     }
                 }
@@ -1312,16 +1273,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(superclass);
                 for(ConfiguredObjectAttribute<?,?> attr : attrs)
                 {
-                    if(!attributeList.contains(attr))
+                    if(!attributeSet.contains(attr))
                     {
-                        attributeList.add(attr);
+                        attributeSet.add(attr);
                     }
                 }
                 for(ConfiguredObjectStatistic<?,?> stat : stats)
                 {
-                    if(!statisticList.contains(stat))
+                    if(!statisticSet.contains(stat))
                     {
-                        statisticList.add(stat);
+                        statisticSet.add(stat);
                     }
                 }
             }
@@ -1340,7 +1301,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     {
                         throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
                     }
-                    addToAttributesSet(clazz, new ConfiguredObjectAttribute(clazz, m, annotation));
+
+                    ConfiguredObjectAttribute attribute = new ConfiguredObjectAttribute(clazz, m, annotation);
+                    if(attributeSet.contains(attribute))
+                    {
+                        attributeSet.remove(attribute);
+                    }
+                    attributeSet.add(attribute);
                 }
                 else
                 {
@@ -1351,7 +1318,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                         {
                             throw new ServerScopedRuntimeException("Can only define ManagedStatistics on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
                         }
-                        addToStatisticsSet(clazz, new ConfiguredObjectStatistic(clazz,m));
+                        ConfiguredObjectStatistic statistic = new ConfiguredObjectStatistic(clazz, m);
+                        if(statisticSet.contains(statistic))
+                        {
+                            statisticSet.remove(statistic);
+                        }
+                        statisticSet.add(statistic);
                     }
                 }
             }
