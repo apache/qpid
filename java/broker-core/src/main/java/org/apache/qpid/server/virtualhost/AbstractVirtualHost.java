@@ -72,6 +72,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
@@ -1401,10 +1402,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                     }
                     catch (Exception e)
                     {
-                        _logger.warn("Exception occurred on store deletion", e);
+                        _logger.warn("Exception occurred on message store deletion", e);
                     }
                 }
                 setAttribute(VirtualHost.STATE, getState(), State.DELETED);
+                getDurableConfigurationStore().remove(asObjectRecord());
                 deleted();
             }
 
@@ -1561,7 +1563,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     protected void onCreate()
     {
         super.onCreate();
-        getDurableConfigurationStore().create(asObjectRecord());
+        ConfiguredObjectRecord record = asObjectRecord();
+        getDurableConfigurationStore().create(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes()));
     }
 
     protected void activate()

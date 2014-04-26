@@ -21,29 +21,20 @@
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
 import java.security.PrivilegedAction;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
@@ -55,12 +46,13 @@ import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.virtualhost.VirtualHostState;
+import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 
 @ManagedObject( category = false, type = "BDB_HA" )
-public class BDBHAVirtualHostNodeImpl extends AbstractConfiguredObject<BDBHAVirtualHostNodeImpl> implements BDBHAVirtualHostNode<BDBHAVirtualHostNodeImpl>
+public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtualHostNodeImpl> implements BDBHAVirtualHostNode<BDBHAVirtualHostNodeImpl>
 {
     private static final Logger LOGGER = Logger.getLogger(BDBHAVirtualHostNodeImpl.class);
 
@@ -97,27 +89,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractConfiguredObject<BDBHAVirt
     @ManagedAttributeField
     private Map<String, String> _replicatedEnvironmentConfiguration;
 
-    //TODO: remove this field
-    @ManagedAttributeField
-    private boolean _messageStoreProvider;
-
-    private final AtomicReference<State> _state = new AtomicReference<State>(State.INITIALISING);
-    private final Broker<?> _broker;
-    private final ConfiguredObjectFactory _objectFactory;
-    private final EventLogger _eventLogger;
-
-    private MessageStoreLogSubject _configurationStoreLogSubject;
-    private BDBMessageStore _durableConfigurationStore;
-
-    @SuppressWarnings("rawtypes")
-    protected BDBHAVirtualHostNodeImpl(Broker<?> broker, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    public BDBHAVirtualHostNodeImpl(Broker<?> broker, Map<String, Object> attributes, TaskExecutor taskExecutor)
     {
-        super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, broker), attributes, taskExecutor);
-        _broker = broker;
-        _objectFactory = _broker.getParent(SystemContext.class).getObjectFactory();
-        SystemContext systemContext = _broker.getParent(SystemContext.class);
-        _eventLogger = systemContext.getEventLogger();
-
+        super(broker, attributes, taskExecutor);
     }
 
     @Override
@@ -136,44 +110,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractConfiguredObject<BDBHAVirt
     public boolean isMessageStoreProvider()
     {
         return true;
-    }
-
-    @Override
-    public VirtualHost<?,?,?> getVirtualHost()
-    {
-        @SuppressWarnings("rawtypes")
-        Collection<VirtualHost> children = getChildren(VirtualHost.class);
-        if (children.size() == 0)
-        {
-            return null;
-        }
-        else if (children.size() == 1)
-        {
-            return children.iterator().next();
-        }
-        else
-        {
-            throw new IllegalStateException(this + " has an unexpected number of virtualhost children, size " + children.size());
-        }
-    }
-
-
-    @Override
-    public DurableConfigurationStore getConfigurationStore()
-    {
-        return _durableConfigurationStore;
-    }
-
-    @Override
-    public State getState()
-    {
-        return _state.get();
-    }
-
-    @Override
-    public LifetimePolicy getLifetimePolicy()
-    {
-        return LifetimePolicy.PERMANENT;
     }
 
     @Override
@@ -231,76 +167,10 @@ public class BDBHAVirtualHostNodeImpl extends AbstractConfiguredObject<BDBHAVirt
     }
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
-    {
-        State  state = getState();
-
-        if (desiredState == State.DELETED)
-        {
-            if (state == State.ACTIVE)
-            {
-                setDesiredState(state, State.STOPPED);
-            }
-            if (state == State.INITIALISING || state == State.STOPPED || state == State.ERRORED)
-            {
-                if( _state.compareAndSet(state, State.DELETED))
-                {
-                    delete();
-                    return true;
-                }
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot delete virtual host node in " + state + " state");
-            }
-        }
-        else if (desiredState == State.ACTIVE)
-        {
-            if ((state == State.INITIALISING || state == State.STOPPED) && _state.compareAndSet(state, State.ACTIVE))
-            {
-                try
-                {
-                    activate();
-                }
-                catch(RuntimeException e)
-                {
-                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
-                    if (_broker.isManagementMode())
-                    {
-                        LOGGER.warn("Failed to make " + this + " active.", e);
-                    }
-                    else
-                    {
-                        throw e;
-                    }
-                }
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot activate virtual host node in " + state + " state");
-            }
-        }
-        else if (desiredState == State.STOPPED)
-        {
-            if (_state.compareAndSet(state, State.STOPPED))
-            {
-                stop();
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot stop virtual host node in " + state + " state");
-            }
-        }
-        return false;
-    }
-
-    @Override
     public String toString()
     {
-        return "BDBHAVirtualHostNodeImpl [name=" + getName() + ", storePath=" + _storePath + ", groupName=" + _groupName + ", address=" + _address
-                + ", state=" + _state.get() + "]";
+        return "BDBHAVirtualHostNodeImpl [id=" + getId() + ", name=" + getName() + ", storePath=" + _storePath + ", groupName=" + _groupName + ", address=" + _address
+                + ", state=" + getState() + "]";
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -310,7 +180,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractConfiguredObject<BDBHAVirt
     {
         if(childClass == VirtualHost.class)
         {
-            if ("MASTER".equals(((ReplicatedEnvironmentFacade)_durableConfigurationStore.getEnvironmentFacade()).getNodeState()))
+            if ("MASTER".equals(((ReplicatedEnvironmentFacade)getConfigurationStore().getEnvironmentFacade()).getNodeState()))
             {
                 BDBHAVirtualHostFactory virtualHostFactory = new BDBHAVirtualHostFactory();
                 return (C) virtualHostFactory.create(getObjectFactory(), attributes,this);
@@ -325,69 +195,35 @@ public class BDBHAVirtualHostNodeImpl extends AbstractConfiguredObject<BDBHAVirt
         return super.addChild(childClass, attributes, otherParents);
     }
 
-    private void activate()
+    @Override
+    public BDBMessageStore getConfigurationStore()
+    {
+        return (BDBMessageStore) super.getConfigurationStore();
+    }
+
+    protected DurableConfigurationStore createConfigurationStore()
+    {
+        return new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
+    }
+
+    @Override
+    protected void activate()
     {
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Activating virtualhost node " + this);
         }
 
-        _durableConfigurationStore = new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
-        _configurationStoreLogSubject = new MessageStoreLogSubject(getName(), BDBMessageStore.class.getSimpleName());
-
         Map<String, Object> attributes = buildAttributesForStore();
 
-        _durableConfigurationStore.openConfigurationStore(this, attributes);
+        getConfigurationStore().openConfigurationStore(this, attributes);
 
-        _eventLogger.message(_configurationStoreLogSubject, ConfigStoreMessages.CREATED());
-        _eventLogger.message(_configurationStoreLogSubject, ConfigStoreMessages.STORE_LOCATION(getStorePath()));
+        getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CREATED());
+        getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.STORE_LOCATION(getStorePath()));
 
 
-        ReplicatedEnvironmentFacade environmentFacade = (ReplicatedEnvironmentFacade) _durableConfigurationStore.getEnvironmentFacade();
+        ReplicatedEnvironmentFacade environmentFacade = (ReplicatedEnvironmentFacade) getConfigurationStore().getEnvironmentFacade();
         environmentFacade.setStateChangeListener(new BDBHAMessageStoreStateChangeListener());
-    }
-
-    private void stop()
-    {
-        destroyVirtualHostIfExist();
-        _durableConfigurationStore.closeConfigurationStore();
-        _eventLogger.message(_configurationStoreLogSubject, ConfigStoreMessages.CLOSE());
-    }
-
-    private void delete()
-    {
-        VirtualHost<?, ?, ?> virtualHost = getVirtualHost();
-        if (virtualHost != null)
-        {
-            virtualHost.setDesiredState(virtualHost.getState(), State.DELETED);
-        }
-
-        //TODO: this needs to be called from parent
-        deleted();
-
-        _durableConfigurationStore.onDelete();
-
-    }
-
-    private Map<String, Object> buildAttributesForStore()
-    {
-        final Map<String, Object> attributes = new HashMap<String, Object>();
-        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
-        {
-            @Override
-            public Object run()
-            {
-                for (String attributeName : getAttributeNames())
-                {
-                    Object value = getAttribute(attributeName);
-                    attributes.put(attributeName, value);
-                }
-                return null;
-            }
-        });
-
-        attributes.put(IS_MESSAGE_STORE_PROVIDER, true);
-        return attributes;
     }
 
     private void onMaster()
@@ -395,12 +231,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractConfiguredObject<BDBHAVirt
         try
         {
             destroyVirtualHostIfExist();
-            _durableConfigurationStore.getEnvironmentFacade().getEnvironment().flushLog(true);
+            getConfigurationStore().getEnvironmentFacade().getEnvironment().flushLog(true);
 
-            _eventLogger.message(_configurationStoreLogSubject, ConfigStoreMessages.RECOVERY_START());
-            VirtualHostStoreUpgraderAndRecoverer upgraderAndRecoverer = new VirtualHostStoreUpgraderAndRecoverer(this, _objectFactory);
-            upgraderAndRecoverer.perform(_durableConfigurationStore);
-            _eventLogger.message(_configurationStoreLogSubject, ConfigStoreMessages.RECOVERY_COMPLETE());
+            getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.RECOVERY_START());
+            VirtualHostStoreUpgraderAndRecoverer upgraderAndRecoverer = new VirtualHostStoreUpgraderAndRecoverer(this);
+            upgraderAndRecoverer.perform(getConfigurationStore());
+            getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.RECOVERY_COMPLETE());
 
             VirtualHost<?,?,?>  host = getVirtualHost();
 
