@@ -55,10 +55,10 @@ if (!QPID) {
 
             var iterationNumber = 0;
 
-            for (variableName in values)
+            for (var variableName in values)
             {
                 var variableValues = values[variableName]
-                for (i in variableValues)
+                for (var i in variableValues)
                 {
                     var variableValue = variableValues[i]
                     var templateTestString = JSON.stringify(template)
