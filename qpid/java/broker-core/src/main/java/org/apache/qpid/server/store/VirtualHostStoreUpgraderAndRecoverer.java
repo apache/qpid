@@ -30,7 +30,6 @@ import java.util.UUID;
 
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.model.Binding;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
@@ -54,7 +53,7 @@ public class VirtualHostStoreUpgraderAndRecoverer
 
     private final Map<String, UUID> _defaultExchangeIds;
 
-    public VirtualHostStoreUpgraderAndRecoverer(VirtualHostNode<?> virtualHostNode, ConfiguredObjectFactory objectFactory)
+    public VirtualHostStoreUpgraderAndRecoverer(VirtualHostNode<?> virtualHostNode)
     {
         _virtualHostNode = virtualHostNode;
         register(new Upgrader_0_0_to_0_1());
