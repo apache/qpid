@@ -119,6 +119,12 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
+    public <T> T getContextValue(final Class<T> clazz, final String propertyName)
+    {
+        return null;
+    }
+
+    @Override
     public String getLastUpdatedBy()
     {
         return null;

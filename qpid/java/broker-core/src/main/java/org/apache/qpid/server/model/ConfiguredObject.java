@@ -75,6 +75,8 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     @ManagedAttribute(automate = true)
     Map<String, String> getContext();
 
+    <T> T getContextValue(Class<T> clazz, String propertyName);
+
     @ManagedAttribute( derived = true )
     String getLastUpdatedBy();
 

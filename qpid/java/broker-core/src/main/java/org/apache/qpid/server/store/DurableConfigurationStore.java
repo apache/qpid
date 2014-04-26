@@ -31,11 +31,6 @@ public interface DurableConfigurationStore
     String STORE_TYPE                    = "storeType";
     String STORE_PATH                    = "storePath";
 
-    public static interface Source
-    {
-        DurableConfigurationStore getDurableConfigurationStore();
-    }
-
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
