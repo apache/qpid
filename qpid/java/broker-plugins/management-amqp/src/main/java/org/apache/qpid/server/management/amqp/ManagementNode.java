@@ -200,7 +200,8 @@ class ManagementNode implements MessageSource, MessageDestination
             if(entityType.creatable())
             {
                 boolean isCreatableChild = false;
-                for(Class<? extends ConfiguredObject> parentConfig : _managedObject.getModel().getParentTypes(clazz))
+                Collection<Class<? extends ConfiguredObject>> parentTypes = _managedObject.getModel().getParentTypes(clazz);
+                for(Class<? extends ConfiguredObject> parentConfig : parentTypes)
                 {
                     isCreatableChild = parentConfig.isAssignableFrom(_managedObject.getClass());
                     if(isCreatableChild)
