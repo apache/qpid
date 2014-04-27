@@ -72,6 +72,18 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     BOOST_CHECK(msg.isPersistent());
 }
 
+QPID_AUTO_TEST_CASE(testMessageProperties)
+{
+  string data("abcdefghijklmn");
+
+  qpid::types::Variant::Map properties;
+  properties["abc"] = "xyz";
+  Message msg = MessageUtils::createMessage(properties, data);
+
+  // Regression test that looking up a property doesn't return a prefix
+  BOOST_CHECK_EQUAL(msg.getProperty("abcdef").getType(), qpid::types::VAR_VOID);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

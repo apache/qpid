@@ -295,7 +295,8 @@ class PropertyRetriever : public MapHandler
 
     bool matches(const CharSequence& key)
     {
-        return ::strncmp(key.data, name.data(), std::min(key.size, name.size())) == 0;
+        return name.size()==key.size &&
+            ::strncmp(key.data, name.data(), key.size) == 0;
     }
 
     template <typename T> void handle(const CharSequence& key, T value)
