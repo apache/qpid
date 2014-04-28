@@ -115,6 +115,20 @@ boost::shared_ptr<Topic> TopicRegistry::createTopic(Broker& broker, const std::s
     return topic;
 }
 
+boost::shared_ptr<Topic> TopicRegistry::declare(Broker& broker, const std::string& name, boost::shared_ptr<Exchange> exchange, const qpid::types::Variant::Map& properties)
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    Topics::const_iterator i = topics.find(name);
+    if (i == topics.end()) {
+        boost::shared_ptr<Topic> topic(new Topic(broker, name, exchange, properties));
+        topics.insert(Topics::value_type(name, topic));
+        topic->getExchange()->setDeletionListener(name, boost::bind(&TopicRegistry::remove, this, name));
+        return topic;
+    } else {
+        return i->second;
+    }
+}
+
 bool TopicRegistry::createObject(Broker& broker, const std::string& type, const std::string& name, const qpid::types::Variant::Map& props,
                                  const std::string& /*userId*/, const std::string& /*connectionId*/)
 {

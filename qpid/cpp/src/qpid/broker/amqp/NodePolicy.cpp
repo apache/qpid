@@ -195,7 +195,7 @@ std::pair<boost::shared_ptr<Queue>, boost::shared_ptr<Topic> > TopicPolicy::crea
     qpid::amqp_0_10::translate(exchangeSettings, args);
     boost::shared_ptr<Exchange> exchange = connection.getBroker().createExchange(name, exchangeType, isDurable(), autodelete, alternateExchange,
                                                                                  args, connection.getUserId(), connection.getId()).first;
-    result.second = connection.getTopics().createTopic(connection.getBroker(), name, exchange, topicSettings);
+    result.second = connection.getTopics().declare(connection.getBroker(), name, exchange, topicSettings);
     return result;
 }
 
