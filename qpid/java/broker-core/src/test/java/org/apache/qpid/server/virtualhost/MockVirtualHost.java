@@ -404,18 +404,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
         return null;
     }
 
-    @Override
-    public ExchangeImpl<?> createExchange(final String name,
-                                          final State initialState,
-                                          final boolean durable,
-                                          final LifetimePolicy lifetime,
-                                          final String type,
-                                          final Map<String, Object> attributes)
-            throws AccessControlException, IllegalArgumentException
-    {
-        return null;
-    }
-
     public SecurityManager getSecurityManager()
     {
         return null;

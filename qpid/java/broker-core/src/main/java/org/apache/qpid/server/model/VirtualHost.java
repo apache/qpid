@@ -137,8 +137,7 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     Collection<Q> getQueues();
     Collection<E> getExchanges();
 
-    E createExchange(String name, State initialState, boolean durable,
-                            LifetimePolicy lifetime, String type, Map<String, Object> attributes)
+    E createExchange(Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException;
 
     Q createQueue(Map<String, Object> attributes)

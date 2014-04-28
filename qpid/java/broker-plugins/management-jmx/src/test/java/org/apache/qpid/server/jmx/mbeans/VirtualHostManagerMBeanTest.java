@@ -19,6 +19,7 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -32,12 +33,12 @@ import javax.management.OperationsException;
 
 import junit.framework.TestCase;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 
@@ -150,7 +151,8 @@ public class VirtualHostManagerMBeanTest extends TestCase
     public void testCreateNewDurableExchange() throws Exception
     {
         _virtualHostManagerMBean.createNewExchange(TEST_EXCHANGE_NAME, TEST_EXCHANGE_TYPE, true);
-        verify(_mockVirtualHost).createExchange(TEST_EXCHANGE_NAME, State.ACTIVE, true, LifetimePolicy.PERMANENT, TEST_EXCHANGE_TYPE, EMPTY_ARGUMENT_MAP);
+
+        verify(_mockVirtualHost).createExchange(matchesMap(TEST_EXCHANGE_NAME, true, LifetimePolicy.PERMANENT, TEST_EXCHANGE_TYPE));
     }
 
     public void testCreateNewExchangeWithUnknownExchangeType() throws Exception
@@ -165,7 +167,10 @@ public class VirtualHostManagerMBeanTest extends TestCase
         {
             // PASS
         }
-        verify(_mockVirtualHost, never()).createExchange(TEST_EXCHANGE_NAME, State.ACTIVE, true, LifetimePolicy.PERMANENT, exchangeType, EMPTY_ARGUMENT_MAP);
+        verify(_mockVirtualHost, never()).createExchange(matchesMap(TEST_EXCHANGE_NAME,
+                                                                    true,
+                                                                    LifetimePolicy.PERMANENT,
+                                                                    exchangeType));
     }
 
     public void testUnregisterExchange() throws Exception
@@ -200,4 +205,45 @@ public class VirtualHostManagerMBeanTest extends TestCase
 
         verify(mockExchange, never()).delete();
     }
+
+    private static Map<String,Object> matchesMap(final String name,
+                                                 final boolean durable,
+                                                 final LifetimePolicy lifetimePolicy,
+                                                 final String exchangeType)
+    {
+        return argThat(new MapMatcher(name, durable, lifetimePolicy, exchangeType));
+    }
+
+    private static class MapMatcher extends ArgumentMatcher<Map<String,Object>>
+    {
+
+        private final String _name;
+        private final boolean _durable;
+        private final LifetimePolicy _lifetimePolicy;
+        private final String _exchangeType;
+
+        public MapMatcher(final String name,
+                          final boolean durable,
+                          final LifetimePolicy lifetimePolicy,
+                          final String exchangeType)
+        {
+            _name = name;
+            _durable = durable;
+            _lifetimePolicy = lifetimePolicy;
+            _exchangeType = exchangeType;
+
+        }
+
+        @Override
+        public boolean matches(final Object o)
+        {
+            Map<String,Object> map = (Map<String,Object>)o;
+
+            return _name.equals(map.get(Exchange.NAME))
+                   && _durable == (Boolean) map.get(Exchange.DURABLE)
+                   && _lifetimePolicy == map.get(Exchange.LIFETIME_POLICY)
+                   && _exchangeType.equals(map.get(Exchange.TYPE));
+        }
+    }
+
 }
