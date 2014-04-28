@@ -44,49 +44,42 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
     public ConfiguredObjectFactoryImpl(Model model)
     {
         _model = model;
-        try
+        QpidServiceLoader<ConfiguredObjectTypeFactory> serviceLoader =
+                new QpidServiceLoader<ConfiguredObjectTypeFactory>();
+        Iterable<ConfiguredObjectTypeFactory> allFactories =
+                serviceLoader.instancesOf(ConfiguredObjectTypeFactory.class);
+        for (ConfiguredObjectTypeFactory factory : allFactories)
         {
-            QpidServiceLoader<ConfiguredObjectTypeFactory> serviceLoader =
-                    new QpidServiceLoader<ConfiguredObjectTypeFactory>();
-            Iterable<ConfiguredObjectTypeFactory> allFactories =
-                    serviceLoader.instancesOf(ConfiguredObjectTypeFactory.class);
-            for (ConfiguredObjectTypeFactory factory : allFactories)
+            final Class<? extends ConfiguredObject> categoryClass = factory.getCategoryClass();
+            final String categoryName = categoryClass.getSimpleName();
+
+            Map<String, ConfiguredObjectTypeFactory> categoryFactories = _allFactories.get(categoryName);
+            if (categoryFactories == null)
             {
-                final Class<? extends ConfiguredObject> categoryClass = factory.getCategoryClass();
-                final String categoryName = categoryClass.getSimpleName();
+                categoryFactories = new HashMap<String, ConfiguredObjectTypeFactory>();
+                _allFactories.put(categoryName, categoryFactories);
+                _supportedTypes.put(categoryName, new ArrayList<String>());
+                ManagedObject annotation = categoryClass.getAnnotation(ManagedObject.class);
+                if (annotation != null && !"".equals(annotation.defaultType()))
+                {
+                    _defaultTypes.put(categoryName, annotation.defaultType());
+                }
+                else
+                {
+                    _defaultTypes.put(categoryName, categoryName);
+                }
 
-                Map<String, ConfiguredObjectTypeFactory> categoryFactories = _allFactories.get(categoryName);
-                if (categoryFactories == null)
-                {
-                    categoryFactories = new HashMap<String, ConfiguredObjectTypeFactory>();
-                    _allFactories.put(categoryName, categoryFactories);
-                    _supportedTypes.put(categoryName, new ArrayList<String>());
-                    ManagedObject annotation = categoryClass.getAnnotation(ManagedObject.class);
-                    if (annotation != null && !"".equals(annotation.defaultType()))
-                    {
-                        _defaultTypes.put(categoryName, annotation.defaultType());
-                    }
-                    else
-                    {
-                        _defaultTypes.put(categoryName, categoryName);
-                    }
-
-                }
-                if (categoryFactories.put(factory.getType(), factory) != null)
-                {
-                    throw new ServerScopedRuntimeException(
-                            "Misconfiguration - there is more than one factory defined for class " + categoryName
-                            + " with type " + factory.getType());
-                }
-                if (factory.getType() != null)
-                {
-                    _supportedTypes.get(categoryName).add(factory.getType());
-                }
             }
-        }
-        catch (RuntimeException | Error e)
-        {
-            e.printStackTrace();
+            if (categoryFactories.put(factory.getType(), factory) != null)
+            {
+                throw new ServerScopedRuntimeException(
+                        "Misconfiguration - there is more than one factory defined for class " + categoryName
+                        + " with type " + factory.getType());
+            }
+            if (factory.getType() != null)
+            {
+                _supportedTypes.get(categoryName).add(factory.getType());
+            }
         }
     }
 
@@ -103,7 +96,7 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
 
         if(factory == null)
         {
-            throw new ServerScopedRuntimeException("No factory defined for ConfiguredObject of category " + category + " and type " + type);
+            throw new NoFactoryForTypeException(category, type);
         }
 
         return factory.recover(this, record, parents);
@@ -115,10 +108,7 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
                                                     final ConfiguredObject<?>... parents)
     {
         ConfiguredObjectTypeFactory<X> factory = getConfiguredObjectTypeFactory(clazz, attributes);
-        if(factory == null)
-        {
-            throw new ServerScopedRuntimeException("No factory defined for ConfiguredObject of category " + clazz.getSimpleName() + " and attributes " + attributes);
-        }
+
         return factory.create(this, attributes, parents);
     }
 
@@ -130,7 +120,7 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
         Map<String, ConfiguredObjectTypeFactory> categoryFactories = _allFactories.get(category);
         if(categoryFactories == null)
         {
-            throw new ServerScopedRuntimeException("No factory defined for ConfiguredObject of category " + category);
+            throw new NoFactoryForCategoryException(category);
         }
         String type = (String) attributes.get(ConfiguredObject.TYPE);
 
@@ -139,6 +129,10 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
         if(type != null)
         {
             factory = getConfiguredObjectTypeFactory(category, type);
+            if(factory == null)
+            {
+                throw new NoFactoryForTypeException(category, type);
+            }
         }
         else
         {
@@ -147,6 +141,10 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
             {
                 ManagedObject annotation = categoryClass.getAnnotation(ManagedObject.class);
                 factory = getConfiguredObjectTypeFactory(category, annotation.defaultType());
+                if(factory == null)
+                {
+                    throw new NoFactoryForTypeException(category, annotation.defaultType());
+                }
             }
         }
         return factory;
@@ -159,12 +157,16 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
         Map<String, ConfiguredObjectTypeFactory> categoryFactories = _allFactories.get(category);
         if(categoryFactories == null)
         {
-            throw new ServerScopedRuntimeException("No factory defined for ConfiguredObject of category " + category);
+            throw new NoFactoryForCategoryException(category);
         }
         ConfiguredObjectTypeFactory factory = categoryFactories.get(type);
         if(factory == null)
         {
             factory = categoryFactories.get(_defaultTypes.get(category));
+            if(factory == null)
+            {
+                throw new NoFactoryForTypeException(category, _defaultTypes.get(category));
+            }
         }
         return factory;
     }

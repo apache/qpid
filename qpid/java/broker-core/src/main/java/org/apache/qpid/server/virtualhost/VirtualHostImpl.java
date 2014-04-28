@@ -27,12 +27,12 @@ import java.util.concurrent.ScheduledFuture;
 
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.connection.IConnectionRegistry;
-import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.model.NoFactoryForTypeException;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -66,7 +66,7 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
 
     E createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
-                   AMQUnknownExchangeType;
+                   NoFactoryForTypeException;
 
     void removeExchange(E exchange, boolean force) throws ExchangeIsAlternateException,
                                                                  RequiredExchangeException;

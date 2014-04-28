@@ -33,7 +33,6 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.exchange.HeadersExchange;
@@ -47,6 +46,7 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.NoFactoryForTypeException;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.plugin.ExchangeType;
@@ -755,7 +755,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     exception(session, method, ExecutionErrorCode.NOT_FOUND,
                                                                 "Unknown alternate exchange " + e.getName());
                 }
-                catch(AMQUnknownExchangeType e)
+                catch(NoFactoryForTypeException e)
                 {
                     exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
                 }

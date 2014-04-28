@@ -18,24 +18,28 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.model;
 
-package org.apache.qpid.server.exchange;
-
-/**
- * AMQUnknownExchangeType represents coding error where unknown exchange type requested from exchange factory.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents unknown exchange type request.
- * <tr><td>
- *
- * @todo Represent coding error, where unknown exchange type is requested by passing a string parameter. Use a type safe
- *       enum for the exchange type, or replace with IllegalArgumentException. Should be runtime.
- */
-public class AMQUnknownExchangeType extends RuntimeException
+public class NoFactoryForTypeException extends RuntimeException
 {
-    public AMQUnknownExchangeType(String message, Throwable cause)
+    private final String _category;
+    private final String _type;
+
+    public NoFactoryForTypeException(final String category,
+                                     final String type)
     {
-        super(message, cause);
+        super("Unknown configured object type '"+type+"' of category '" + category +"'");
+        _category = category;
+        _type = type;
+    }
+
+    public String getCategory()
+    {
+        return _category;
+    }
+
+    public String getType()
+    {
+        return _type;
     }
 }

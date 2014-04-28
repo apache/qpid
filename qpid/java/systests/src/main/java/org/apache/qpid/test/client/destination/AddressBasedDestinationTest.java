@@ -56,6 +56,7 @@ import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.messaging.Address;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.ExecutionErrorCode;
 
@@ -270,7 +271,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
 
     public void testCreateExchange() throws Exception
     {
-        createExchangeImpl(false, false);
+        createExchangeImpl(false, false, false);
     }
 
     /**
@@ -279,7 +280,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
      */
     public void testCreateExchangeWithArgs() throws Exception
     {
-        createExchangeImpl(true, false);
+        createExchangeImpl(true, false, false);
     }
 
     /**
@@ -289,11 +290,12 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
      */
     public void testCreateExchangeWithNonsenseArgs() throws Exception
     {
-        createExchangeImpl(true, true);
+        createExchangeImpl(true, true, false);
     }
 
     private void createExchangeImpl(final boolean withExchangeArgs,
-            final boolean useNonsenseArguments) throws Exception
+                                    final boolean useNonsenseArguments,
+                                    final boolean useNonsenseExchangeType) throws Exception
     {
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
 
@@ -305,7 +307,9 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                              "type: topic, " +
                              "x-declare: " +
                              "{ " +
-                                 "type:direct, " +
+                                 "type:" +
+                                 (useNonsenseExchangeType ? "nonsense" : "direct") +
+                                 ", " +
                                  "auto-delete: true" +
                                  createExchangeArgsString(withExchangeArgs, useNonsenseArguments) +
                              "}" +
@@ -318,7 +322,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         try
         {
             cons = jmsSession.createConsumer(dest);
-            if(useNonsenseArguments)
+            if(useNonsenseArguments || useNonsenseExchangeType)
             {
                 fail("Expected execution exception during exchange declare did not occur");
             }
@@ -329,6 +333,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
             {
                 //expected because we used an argument which the broker doesn't have functionality
                 //for. We can't do the rest of the test as a result of the exception, just stop.
+                return;
+            }
+            else if(useNonsenseExchangeType && (e.getErrorCode().equals(String.valueOf(AMQConstant.NOT_FOUND.getCode()))))
+            {
                 return;
             }
             else
@@ -1239,8 +1247,11 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         {
             assertEquals("Failure code is not as expected", "404", e.getErrorCode());
         }
+    }
 
-
+    public void testUnknownExchangeType() throws Exception
+    {
+        createExchangeImpl(false, false, true);
     }
 
     public void testQueueBrowserWithSelectorAutoAcknowledgement() throws Exception
