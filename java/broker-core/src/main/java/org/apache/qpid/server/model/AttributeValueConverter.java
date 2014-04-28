@@ -423,27 +423,6 @@ abstract class AttributeValueConverter<T>
             _memberConverter = getConverter(getRawType(genericType), genericType);
         }
 
-        private static Class getRawType(Type t)
-        {
-            if(t instanceof Class)
-            {
-                return (Class)t;
-            }
-            else if(t instanceof ParameterizedType)
-            {
-                return (Class)((ParameterizedType)t).getRawType();
-            }
-            else if(t instanceof TypeVariable)
-            {
-                Type[] bounds = ((TypeVariable)t).getBounds();
-                if(bounds.length == 1)
-                {
-                    return getRawType(bounds[0]);
-                }
-            }
-            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
-        }
-
         @Override
         public List convert(final Object value, final ConfiguredObject object)
         {
@@ -493,27 +472,6 @@ abstract class AttributeValueConverter<T>
         public GenericSetConverter(final Type genericType)
         {
             _memberConverter = getConverter(getRawType(genericType), genericType);
-        }
-
-        private static Class getRawType(Type t)
-        {
-            if(t instanceof Class)
-            {
-                return (Class)t;
-            }
-            else if(t instanceof ParameterizedType)
-            {
-                return (Class)((ParameterizedType)t).getRawType();
-            }
-            else if(t instanceof TypeVariable)
-            {
-                Type[] bounds = ((TypeVariable)t).getBounds();
-                if(bounds.length == 1)
-                {
-                    return getRawType(bounds[0]);
-                }
-            }
-            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
         }
 
         @Override
@@ -567,26 +525,6 @@ abstract class AttributeValueConverter<T>
             _memberConverter = getConverter(getRawType(genericType), genericType);
         }
 
-        private static Class getRawType(Type t)
-        {
-            if(t instanceof Class)
-            {
-                return (Class)t;
-            }
-            else if(t instanceof ParameterizedType)
-            {
-                return (Class)((ParameterizedType)t).getRawType();
-            }
-            else if(t instanceof TypeVariable)
-            {
-                Type[] bounds = ((TypeVariable)t).getBounds();
-                if(bounds.length == 1)
-                {
-                    return getRawType(bounds[0]);
-                }
-            }
-            throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
-        }
 
         @Override
         public Collection convert(final Object value, final ConfiguredObject object)
@@ -719,4 +657,26 @@ abstract class AttributeValueConverter<T>
             }
         }
     }
+
+    private static Class getRawType(Type t)
+    {
+        if(t instanceof Class)
+        {
+            return (Class)t;
+        }
+        else if(t instanceof ParameterizedType)
+        {
+            return (Class)((ParameterizedType)t).getRawType();
+        }
+        else if(t instanceof TypeVariable)
+        {
+            Type[] bounds = ((TypeVariable)t).getBounds();
+            if(bounds.length == 1)
+            {
+                return getRawType(bounds[0]);
+            }
+        }
+        throw new ServerScopedRuntimeException("Unable to process type when constructing configuration model: " + t);
+    }
+
 }
