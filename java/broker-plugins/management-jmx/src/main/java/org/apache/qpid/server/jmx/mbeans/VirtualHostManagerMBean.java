@@ -42,10 +42,10 @@ import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
-import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.NoFactoryForTypeException;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
@@ -187,7 +187,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         {
             throw new UnsupportedOperationException("'" + name + "' is a reserved exchange name");
         }
-        catch(AMQUnknownExchangeType e)
+        catch(NoFactoryForTypeException e)
         {
             JMException jme = new JMException(e.getMessage());
             throw new MBeanException(jme, "Error in creating exchange " + name);

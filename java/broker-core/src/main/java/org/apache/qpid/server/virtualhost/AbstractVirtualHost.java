@@ -41,12 +41,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
-import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.exchange.DefaultDestination;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -671,7 +671,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public ExchangeImpl createExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
-                   AMQUnknownExchangeType
+                   NoFactoryForTypeException
     {
         checkVHostStateIsActive();
         ExchangeImpl child = addExchange(attributes);
@@ -682,7 +682,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private ExchangeImpl addExchange(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
-                   AMQUnknownExchangeType
+                   NoFactoryForTypeException
     {
         try
         {
@@ -1329,7 +1329,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             // We're ok if the exchange already exists
             dlExchange = e.getExistingExchange();
         }
-        catch (ReservedExchangeNameException | AMQUnknownExchangeType | UnknownConfiguredObjectException e)
+        catch (ReservedExchangeNameException | NoFactoryForTypeException | UnknownConfiguredObjectException e)
         {
             throw new ConnectionScopedRuntimeException("Attempt to create an alternate exchange for a queue failed",e);
         }
