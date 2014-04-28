@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.model;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -48,6 +50,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
+
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.Version;
+import org.codehaus.jackson.map.JsonSerializer;
+import org.codehaus.jackson.map.Module;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializerProvider;
+import org.codehaus.jackson.map.module.SimpleModule;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.Task;
@@ -155,6 +166,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     @ManagedAttributeField
     private String _type;
+
+    private final OwnAttributeResolver _attributeResolver = new OwnAttributeResolver(this);
 
     protected static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(ConfiguredObject<?>... parents)
     {
@@ -1144,6 +1157,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return converter.convert("${"+propertyName+"}", this);
     }
 
+    private OwnAttributeResolver getOwnAttributeResolver()
+    {
+        return _attributeResolver;
+    }
+
     //=========================================================================================
 
     static String interpolate(ConfiguredObject<?> object, String value)
@@ -1151,10 +1169,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         Map<String,String> inheritedContext = new HashMap<String, String>();
         generateInheritedContext(object.getModel(), object, inheritedContext);
         return Strings.expand(value, false,
+                              getOwnAttributeResolver(object),
                               new Strings.MapResolver(inheritedContext),
                               Strings.JAVA_SYS_PROPS_RESOLVER,
                               Strings.ENV_VARS_RESOLVER,
                               new Strings.MapResolver(_defaultContext));
+    }
+
+    private static OwnAttributeResolver getOwnAttributeResolver(final ConfiguredObject<?> object)
+    {
+        return object instanceof AbstractConfiguredObject
+                ? ((AbstractConfiguredObject)object).getOwnAttributeResolver()
+                : new OwnAttributeResolver(object);
     }
 
     static void generateInheritedContext(final Model model, final ConfiguredObject<?> object,
@@ -1621,6 +1647,115 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
         }
         return allDescendants.contains(descendantClass);
+    }
+
+    private static class OwnAttributeResolver implements Strings.Resolver
+    {
+        private static final Module _module;
+        static
+        {
+            SimpleModule module= new SimpleModule("ConfiguredObjectSerializer", new Version(1,0,0,null));
+
+            final JsonSerializer<ConfiguredObject> serializer = new JsonSerializer<ConfiguredObject>()
+            {
+                @Override
+                public void serialize(final ConfiguredObject value,
+                                      final JsonGenerator jgen,
+                                      final SerializerProvider provider)
+                        throws IOException, JsonProcessingException
+                {
+                    jgen.writeString(value.getId().toString());
+                }
+            };
+            module.addSerializer(ConfiguredObject.class, serializer);
+
+            _module = module;
+        }
+
+
+        public static final String PREFIX = "this:";
+        private final ThreadLocal<Set<String>> _stack = new ThreadLocal<>();
+        private final ConfiguredObject<?> _object;
+        private final ObjectMapper _objectMapper;
+
+        public OwnAttributeResolver(final ConfiguredObject<?> object)
+        {
+            _object = object;
+            _objectMapper = new ObjectMapper();
+            _objectMapper.registerModule(_module);
+        }
+
+        @Override
+        public String resolve(final String variable)
+        {
+            boolean clearStack = false;
+            Set<String> currentStack = _stack.get();
+            if(currentStack == null)
+            {
+                currentStack = new HashSet<>();
+                _stack.set(currentStack);
+                clearStack = true;
+            }
+
+            try
+            {
+                if(variable.startsWith(PREFIX))
+                {
+                    String attrName = variable.substring(PREFIX.length());
+                    if(currentStack.contains(attrName))
+                    {
+                        throw new IllegalArgumentException("The value of attribute " + attrName + " is defined recursively");
+                    }
+                    else
+                    {
+                        currentStack.add(attrName);
+                        Object returnVal = _object.getAttribute(attrName);
+                        String returnString;
+                        if(returnVal == null)
+                        {
+                            returnString =  null;
+                        }
+                        else if(returnVal instanceof Map || returnVal instanceof Collection)
+                        {
+                            try
+                            {
+                                StringWriter writer = new StringWriter();
+
+                                _objectMapper.writeValue(writer, returnVal);
+
+                                returnString = writer.toString();
+                            }
+                            catch (IOException e)
+                            {
+                                throw new IllegalArgumentException(e);
+                            }
+                        }
+                        else if(returnVal instanceof ConfiguredObject)
+                        {
+                            returnString = ((ConfiguredObject)returnVal).getId().toString();
+                        }
+                        else
+                        {
+                            returnString = returnVal.toString();
+                        }
+
+                        return returnString;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            finally
+            {
+                if(clearStack)
+                {
+                    _stack.remove();
+                }
+
+            }
+        }
     }
 
 
