@@ -78,6 +78,7 @@ class TopicRegistry : public ObjectFactory
     boost::shared_ptr<Topic> remove(const std::string& name);
     boost::shared_ptr<Topic> get(const std::string& name);
     boost::shared_ptr<Topic> createTopic(Broker&, const std::string& name, boost::shared_ptr<Exchange> exchange, const qpid::types::Variant::Map& properties);
+    boost::shared_ptr<Topic> declare(Broker&, const std::string& name, boost::shared_ptr<Exchange> exchange, const qpid::types::Variant::Map& properties);
   private:
     typedef std::map<std::string, boost::shared_ptr<Topic> > Topics;
     qpid::sys::Mutex lock;
