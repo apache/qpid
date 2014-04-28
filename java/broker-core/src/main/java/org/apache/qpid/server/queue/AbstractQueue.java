@@ -171,7 +171,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @ManagedAttributeField
     private ExclusivityPolicy _exclusive;
 
-    private Object _exclusiveOwner; // could be connection, session or Principal
+    private Object _exclusiveOwner; // could be connection, session, Principal or a String for the container name
 
     private final Set<NotificationCheck> _notificationChecks =
             Collections.synchronizedSet(EnumSet.noneOf(NotificationCheck.class));
@@ -242,6 +242,16 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                              || getLifetimePolicy() == LifetimePolicy.DELETE_ON_SESSION_END))
         {
             _virtualHost.getDurableConfigurationStore().create(asObjectRecord());
+        }
+    }
+
+    @Override
+    public void validate()
+    {
+        super.validate();
+        if (_queueFlowResumeSizeBytes > _queueFlowControlSizeBytes)
+        {
+            throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
         }
     }
 
@@ -359,11 +369,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             }
         }
 
-
-        if (_queueFlowResumeSizeBytes > _queueFlowControlSizeBytes)
-        {
-            throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
-        }
 
         // Log the creation of this Queue.
         // The priorities display is toggled on if we set priorities > 0
@@ -1256,7 +1261,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         return _atomicQueueSize;
     }
 
-    public boolean hasExclusiveConsumer()
+    private boolean hasExclusiveConsumer()
     {
         return _exclusiveSubscriber != null;
     }
@@ -2205,11 +2210,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     public int getMaximumDeliveryAttempts()
     {
         return _maximumDeliveryAttempts;
-    }
-
-    public void setMaximumDeliveryAttempts(final int maximumDeliveryAttempts)
-    {
-        _maximumDeliveryAttempts = maximumDeliveryAttempts;
     }
 
     /**

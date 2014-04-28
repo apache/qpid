@@ -514,8 +514,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    public void
-    validate()
+    public void validate()
     {
     }
 
