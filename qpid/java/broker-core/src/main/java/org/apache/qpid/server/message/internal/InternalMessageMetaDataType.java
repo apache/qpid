@@ -20,16 +20,18 @@
  */
 package org.apache.qpid.server.message.internal;
 
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.plugin.MessageMetaDataType;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.util.ByteBufferInputStream;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
+import org.apache.qpid.server.plugin.PluggableService;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
+import org.apache.qpid.util.ByteBufferInputStream;
+
+@PluggableService
 public class InternalMessageMetaDataType implements MessageMetaDataType<InternalMessageMetaData>
 {
     public static final int INTERNAL_ORDINAL = 999;

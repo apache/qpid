@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -37,6 +38,7 @@ public class BDBHAVirtualHost extends AbstractVirtualHost<BDBHAVirtualHost>
     private final BDBMessageStore _messageStore;
     private MessageStoreLogSubject _messageStoreLogSubject;
 
+    @ManagedObjectFactoryConstructor
     protected BDBHAVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
         super(attributes, virtualHostNode);

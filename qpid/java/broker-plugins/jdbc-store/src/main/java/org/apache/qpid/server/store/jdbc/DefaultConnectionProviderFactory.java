@@ -23,7 +23,9 @@ package org.apache.qpid.server.store.jdbc;
 import java.util.Map;
 
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 
+@PluggableService
 public class DefaultConnectionProviderFactory implements JDBCConnectionProviderFactory
 {
 

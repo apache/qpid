@@ -108,7 +108,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
         nodeAttributes.put(VirtualHostNode.ID, _nodeId);
 
-        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, _taskExecutor, _configStore);
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, _configStore);
         node.open();
         node.setDesiredState(node.getState(), State.ACTIVE);
 
@@ -138,7 +138,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
         nodeAttributes.put(VirtualHostNode.ID, _nodeId);
 
-        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, _taskExecutor, _configStore);
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, _configStore);
         node.open();
         node.setDesiredState(node.getState(), State.ACTIVE);
 

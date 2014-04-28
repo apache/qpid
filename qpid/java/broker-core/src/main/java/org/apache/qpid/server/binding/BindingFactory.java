@@ -27,8 +27,10 @@ import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.queue.AMQQueue;
 
+@PluggableService
 public class BindingFactory extends AbstractConfiguredObjectTypeFactory<BindingImpl>
 {
     public BindingFactory()

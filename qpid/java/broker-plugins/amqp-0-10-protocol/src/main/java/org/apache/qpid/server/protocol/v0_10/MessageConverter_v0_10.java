@@ -30,6 +30,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
@@ -40,6 +41,7 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.codec.BBEncoder;
 
+@PluggableService
 public class MessageConverter_v0_10 implements MessageConverter<ServerMessage, MessageTransferMessage>
 {
 

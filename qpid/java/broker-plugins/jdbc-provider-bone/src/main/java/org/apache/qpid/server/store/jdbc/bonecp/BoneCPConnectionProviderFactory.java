@@ -24,8 +24,10 @@ import java.sql.SQLException;
 import java.util.Map;
 
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 
+@PluggableService
 public class BoneCPConnectionProviderFactory implements JDBCConnectionProviderFactory
 {
     @Override

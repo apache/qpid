@@ -22,9 +22,9 @@ package org.apache.qpid.server.virtualhostnode.memory;
 
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.store.MemoryMessageStoreFactory;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
@@ -33,9 +33,10 @@ import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 public class MemoryVirtualHostNode extends AbstractStandardVirtualHostNode<MemoryVirtualHostNode>
 {
 
-    public MemoryVirtualHostNode(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    @ManagedObjectFactoryConstructor
+    public MemoryVirtualHostNode(Map<String, Object> attributes, Broker<?> parent)
     {
-        super(parent, attributes, taskExecutor);
+        super(attributes, parent);
     }
 
     @Override

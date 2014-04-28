@@ -106,6 +106,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     @ManagedAttributeField
     private int _sessionTimeout;
 
+    @ManagedObjectFactoryConstructor
     public HttpManagement(Map<String, Object> attributes, Broker broker)
     {
         super(attributes, broker);

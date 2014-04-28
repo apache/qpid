@@ -44,6 +44,7 @@ import org.apache.qpid.server.model.GroupMember;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
@@ -67,6 +68,7 @@ public class FileBasedGroupProviderImpl
     @ManagedAttributeField
     private String _path;
 
+    @ManagedObjectFactoryConstructor
     public FileBasedGroupProviderImpl(Map<String, Object> attributes,
                                       Broker broker)
     {

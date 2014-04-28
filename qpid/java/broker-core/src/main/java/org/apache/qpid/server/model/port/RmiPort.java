@@ -27,12 +27,14 @@ import java.util.Set;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 
 @ManagedObject( category = false, type = "RMI")
 public class RmiPort extends AbstractPort<RmiPort>
 {
+    @ManagedObjectFactoryConstructor
     public RmiPort(final Map<String, Object> attributes,
                    final Broker<?> broker)
     {

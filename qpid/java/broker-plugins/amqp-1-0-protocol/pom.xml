@@ -39,6 +39,13 @@
 
     <dependency>
       <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-broker-codegen</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-amqp-1-0-common</artifactId>
       <version>${project.version}</version>
     </dependency>

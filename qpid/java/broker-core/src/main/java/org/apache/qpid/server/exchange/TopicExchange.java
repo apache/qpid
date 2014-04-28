@@ -41,6 +41,7 @@ import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -62,6 +63,7 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
 
     private final Map<BindingImpl, Map<String,Object>> _bindings = new HashMap<BindingImpl, Map<String,Object>>();
 
+    @ManagedObjectFactoryConstructor
     public TopicExchange(final Map<String,Object> attributes, final VirtualHostImpl vhost)
     {
         super(attributes, vhost);

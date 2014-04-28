@@ -65,7 +65,7 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
     {
 
         if(!parents[0].getModel().getParentTypes((Class<? extends ConfiguredObject>) getCategoryClass()).contains(
-                parentClass))
+                Model.getCategory(parentClass)))
         {
             throw new IllegalArgumentException(parentClass.getSimpleName() + " is not a parent of " + _clazz.getSimpleName());
         }

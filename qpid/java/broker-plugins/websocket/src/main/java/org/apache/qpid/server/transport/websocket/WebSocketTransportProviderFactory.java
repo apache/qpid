@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.server.transport.websocket;
 
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.plugin.TransportProviderFactory;
-import org.apache.qpid.server.transport.TransportProvider;
-
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.PluggableService;
+import org.apache.qpid.server.plugin.TransportProviderFactory;
+import org.apache.qpid.server.transport.TransportProvider;
+
+@PluggableService
 public class WebSocketTransportProviderFactory implements TransportProviderFactory
 {
 

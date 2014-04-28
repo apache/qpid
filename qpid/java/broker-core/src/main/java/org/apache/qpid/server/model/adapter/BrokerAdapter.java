@@ -100,7 +100,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @ManagedAttributeField
     private boolean _statisticsReportingResetEnabled;
 
-
+    @ManagedObjectFactoryConstructor
     public BrokerAdapter(Map<String, Object> attributes,
                          SystemContext parent)
     {

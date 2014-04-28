@@ -17,7 +17,7 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins AMQP 0.8 to 1.0 MessageConversion" default="build">
-    <property name="module.depends" value="common broker-core amqp-1-0-common broker-plugins/amqp-0-8-protocol broker-plugins/amqp-1-0-protocol" />
+    <property name="module.depends" value="common broker-core amqp-1-0-common broker-plugins/amqp-0-8-protocol broker-plugins/amqp-1-0-protocol broker-codegen" />
     <property name="module.test.depends" value="qpid-test-utils broker-core/tests" />
 
     <property name="module.genpom" value="true"/>

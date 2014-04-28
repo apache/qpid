@@ -25,10 +25,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
 
 public class HttpPortImpl extends AbstractPortWithAuthProvider<HttpPortImpl> implements HttpPort<HttpPortImpl>
 {
+    @ManagedObjectFactoryConstructor
     public HttpPortImpl(final Map<String, Object> attributes,
                         final Broker<?> broker)
     {

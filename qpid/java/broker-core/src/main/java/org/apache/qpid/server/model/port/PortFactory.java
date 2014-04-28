@@ -31,10 +31,12 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Protocol.ProtocolType;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.util.MapValueConverter;
 
+@PluggableService
 public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFactory<X>
 {
     public static final int DEFAULT_AMQP_SEND_BUFFER_SIZE = 262144;

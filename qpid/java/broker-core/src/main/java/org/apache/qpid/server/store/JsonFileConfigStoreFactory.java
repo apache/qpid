@@ -22,9 +22,10 @@ package org.apache.qpid.server.store;
 
 import java.util.Map;
 
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 
+@PluggableService
 public class JsonFileConfigStoreFactory implements DurableConfigurationStoreFactory
 {
     @Override

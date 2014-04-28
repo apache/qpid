@@ -24,8 +24,10 @@ import java.nio.ByteBuffer;
 
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.StoredMessage;
 
+@PluggableService
 public class MessageMetaDataType_1_0 implements MessageMetaDataType<MessageMetaData_1_0>
 {
 

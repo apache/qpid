@@ -20,8 +20,10 @@
  */
 package org.apache.qpid.server.management.amqp;
 
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 
+@PluggableService
 public class ManagementNodeCreator implements SystemNodeCreator
 {
     @Override

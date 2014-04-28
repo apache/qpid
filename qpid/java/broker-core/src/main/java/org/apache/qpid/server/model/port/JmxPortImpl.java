@@ -25,10 +25,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
 
 public class JmxPortImpl extends AbstractPortWithAuthProvider<JmxPortImpl> implements JmxPort<JmxPortImpl>
 {
+    @ManagedObjectFactoryConstructor
     public JmxPortImpl(final Map<String, Object> attributes,
                        final Broker<?> broker)
     {

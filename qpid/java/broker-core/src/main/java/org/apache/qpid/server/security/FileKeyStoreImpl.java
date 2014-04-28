@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.security.access.Operation;
@@ -82,6 +83,7 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
 
     private Broker<?> _broker;
 
+    @ManagedObjectFactoryConstructor
     public FileKeyStoreImpl(Map<String, Object> attributes, Broker<?> broker)
     {
         super(parentsMap(broker), attributes);

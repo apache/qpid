@@ -53,6 +53,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -72,6 +73,7 @@ public class FileSystemPreferencesProviderImpl
 
     private boolean _open;
 
+    @ManagedObjectFactoryConstructor
     public FileSystemPreferencesProviderImpl(Map<String, Object> attributes,
                                              AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {

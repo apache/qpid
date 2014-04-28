@@ -28,7 +28,7 @@ import java.util.Map;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -48,9 +48,10 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractStandardVirtualHostNode.class);
 
-    public AbstractStandardVirtualHostNode(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    public AbstractStandardVirtualHostNode(Map<String, Object> attributes,
+                                           Broker<?> parent)
     {
-        super(parent, attributes, taskExecutor);
+        super(parent, attributes);
     }
 
     @Override

@@ -32,11 +32,13 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ResolvedObject;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.util.ResourceBundleLoader;
 
+@PluggableService
 public class Base64MD5PasswordFileAuthenticationManagerFactory
         extends AbstractConfiguredObjectTypeFactory<Base64MD5PasswordDatabaseAuthenticationManager>
         implements AuthenticationManagerFactory<Base64MD5PasswordDatabaseAuthenticationManager>

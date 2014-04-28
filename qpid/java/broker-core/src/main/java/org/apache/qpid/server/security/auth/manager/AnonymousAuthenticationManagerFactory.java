@@ -19,16 +19,18 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
 import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-
+@PluggableService
 public class AnonymousAuthenticationManagerFactory extends AbstractConfiguredObjectTypeFactory<AnonymousAuthenticationManager> implements AuthenticationManagerFactory<AnonymousAuthenticationManager>
 {
     public static final String PROVIDER_TYPE = "Anonymous";
