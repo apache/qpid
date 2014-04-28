@@ -27,9 +27,11 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 
+@PluggableService
 public class QueueFactory<X extends Queue<X>>  implements ConfiguredObjectTypeFactory<X>
 {
     @Override

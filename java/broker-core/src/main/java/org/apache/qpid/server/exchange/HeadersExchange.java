@@ -35,6 +35,7 @@ import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -82,6 +83,7 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
 
     public static final ExchangeType<HeadersExchange> TYPE = new HeadersExchangeType();
 
+    @ManagedObjectFactoryConstructor
     public HeadersExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost)
     {
         super(attributes, vhost);

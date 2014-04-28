@@ -20,8 +20,11 @@
  */
 package org.apache.qpid.server.protocol.converter.v0_10_v1_0;
 
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.protocol.v0_10.MessageTransferMessage;
 import org.apache.qpid.server.protocol.v1_0.MessageConverter_from_1_0;
@@ -35,8 +38,7 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.ReplyTo;
 
-import java.nio.ByteBuffer;
-
+@PluggableService
 public class MessageConverter_1_0_to_v0_10 implements MessageConverter<Message_1_0, MessageTransferMessage>
 {
 

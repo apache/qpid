@@ -38,10 +38,10 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.TransportProviderFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
@@ -67,6 +67,7 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
     private final Broker<?> _broker;
     private AcceptingTransport _transport;
 
+    @ManagedObjectFactoryConstructor
     public AmqpPortImpl(Map<String, Object> attributes, Broker<?> broker)
     {
         super(attributes, broker);

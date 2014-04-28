@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.store.MessageStore;
@@ -38,6 +39,7 @@ public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost
 
     private MessageStoreLogSubject _messageStoreLogSubject;
 
+    @ManagedObjectFactoryConstructor
     public StandardVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
         super(attributes, virtualHostNode);

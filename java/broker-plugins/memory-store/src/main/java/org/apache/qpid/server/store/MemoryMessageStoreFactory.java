@@ -24,7 +24,9 @@ import java.util.Map;
 
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 
+@PluggableService
 public class MemoryMessageStoreFactory implements MessageStoreFactory, DurableConfigurationStoreFactory
 {
 

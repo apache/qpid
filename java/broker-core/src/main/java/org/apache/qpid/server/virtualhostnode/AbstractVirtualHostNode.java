@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
@@ -66,10 +66,10 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     @ManagedAttributeField
     private boolean _messageStoreProvider;
 
-    public AbstractVirtualHostNode(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    public AbstractVirtualHostNode(Broker<?> parent, Map<String, Object> attributes)
     {
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, parent),
-              attributes, taskExecutor);
+              attributes);
         _broker = parent;
         SystemContext<?> systemContext = _broker.getParent(SystemContext.class);
         _eventLogger = systemContext.getEventLogger();

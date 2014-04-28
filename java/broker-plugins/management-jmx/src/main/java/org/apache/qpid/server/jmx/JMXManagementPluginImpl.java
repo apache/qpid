@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -80,6 +81,7 @@ public class JMXManagementPluginImpl
     @ManagedAttributeField
     private boolean _usePlatformMBeanServer;
 
+    @ManagedObjectFactoryConstructor
     public JMXManagementPluginImpl(Map<String, Object> attributes, Broker broker)
     {
         super(attributes, broker);

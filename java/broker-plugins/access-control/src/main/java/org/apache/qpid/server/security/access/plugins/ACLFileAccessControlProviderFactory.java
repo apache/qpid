@@ -26,8 +26,10 @@ import org.apache.qpid.server.model.AbstractConfiguredObjectTypeFactory;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.AccessControlProviderFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.util.ResourceBundleLoader;
 
+@PluggableService
 public class ACLFileAccessControlProviderFactory extends AbstractConfiguredObjectTypeFactory<ACLFileAccessControlProviderImpl> implements AccessControlProviderFactory<ACLFileAccessControlProviderImpl>
 {
     public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.access.plugins.FileAccessControlProviderAttributeDescriptions";

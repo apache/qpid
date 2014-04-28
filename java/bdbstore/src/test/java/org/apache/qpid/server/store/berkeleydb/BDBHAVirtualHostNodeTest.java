@@ -36,8 +36,10 @@ import com.sleepycat.je.rep.ReplicationConfig;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -45,7 +47,6 @@ import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -118,7 +119,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         attributes.put(BDBHAVirtualHostNode.REPLICATED_ENVIRONMENT_CONFIGURATION,
                 Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
 
-        ConfiguredObjectTypeFactory<?> factory = new BDBHAVirtualHostNodeFactory();
+        ConfiguredObjectFactory objectFactory = BrokerModel.getInstance().getObjectFactory();
+        ConfiguredObjectTypeFactory factory = objectFactory.getConfiguredObjectTypeFactory("VirtualHostNode",
+                                                                                              "BDB_HA");
 
         BDBHAVirtualHostNode<?> node = (BDBHAVirtualHostNode<?>) factory.create(null, attributes, _broker);
 

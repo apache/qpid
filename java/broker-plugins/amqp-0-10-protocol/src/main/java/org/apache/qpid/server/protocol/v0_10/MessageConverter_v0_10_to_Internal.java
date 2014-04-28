@@ -20,17 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.internal.InternalMessage;
-import org.apache.qpid.server.plugin.MessageConverter;
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.transport.MessageProperties;
-import org.apache.qpid.transport.ReplyTo;
-import org.apache.qpid.transport.codec.BBDecoder;
-import org.apache.qpid.typedmessage.TypedBytesContentReader;
-import org.apache.qpid.typedmessage.TypedBytesFormatException;
-
 import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -40,6 +29,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.internal.InternalMessage;
+import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.plugin.PluggableService;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.ReplyTo;
+import org.apache.qpid.transport.codec.BBDecoder;
+import org.apache.qpid.typedmessage.TypedBytesContentReader;
+import org.apache.qpid.typedmessage.TypedBytesFormatException;
+
+@PluggableService
 public class MessageConverter_v0_10_to_Internal implements MessageConverter<MessageTransferMessage, InternalMessage>
 {
     @Override

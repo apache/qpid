@@ -44,40 +44,49 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
     public ConfiguredObjectFactoryImpl(Model model)
     {
         _model = model;
-
-        QpidServiceLoader<ConfiguredObjectTypeFactory> serviceLoader = new QpidServiceLoader<ConfiguredObjectTypeFactory>();
-        Iterable<ConfiguredObjectTypeFactory> allFactories = serviceLoader.instancesOf(ConfiguredObjectTypeFactory.class);
-        for(ConfiguredObjectTypeFactory factory : allFactories)
+        try
         {
-            final Class<? extends ConfiguredObject> categoryClass = factory.getCategoryClass();
-            final String categoryName = categoryClass.getSimpleName();
+            QpidServiceLoader<ConfiguredObjectTypeFactory> serviceLoader =
+                    new QpidServiceLoader<ConfiguredObjectTypeFactory>();
+            Iterable<ConfiguredObjectTypeFactory> allFactories =
+                    serviceLoader.instancesOf(ConfiguredObjectTypeFactory.class);
+            for (ConfiguredObjectTypeFactory factory : allFactories)
+            {
+                final Class<? extends ConfiguredObject> categoryClass = factory.getCategoryClass();
+                final String categoryName = categoryClass.getSimpleName();
 
-            Map<String, ConfiguredObjectTypeFactory> categoryFactories = _allFactories.get(categoryName);
-            if(categoryFactories == null)
-            {
-                categoryFactories = new HashMap<String, ConfiguredObjectTypeFactory>();
-                _allFactories.put(categoryName, categoryFactories);
-                _supportedTypes.put(categoryName, new ArrayList<String>());
-                ManagedObject annotation = categoryClass.getAnnotation(ManagedObject.class);
-                if(annotation != null && !"".equals(annotation.defaultType()))
+                Map<String, ConfiguredObjectTypeFactory> categoryFactories = _allFactories.get(categoryName);
+                if (categoryFactories == null)
                 {
-                    _defaultTypes.put(categoryName, annotation.defaultType());
-                }
-                else
-                {
-                    _defaultTypes.put(categoryName, categoryName);
-                }
+                    categoryFactories = new HashMap<String, ConfiguredObjectTypeFactory>();
+                    _allFactories.put(categoryName, categoryFactories);
+                    _supportedTypes.put(categoryName, new ArrayList<String>());
+                    ManagedObject annotation = categoryClass.getAnnotation(ManagedObject.class);
+                    if (annotation != null && !"".equals(annotation.defaultType()))
+                    {
+                        _defaultTypes.put(categoryName, annotation.defaultType());
+                    }
+                    else
+                    {
+                        _defaultTypes.put(categoryName, categoryName);
+                    }
 
+                }
+                if (categoryFactories.put(factory.getType(), factory) != null)
+                {
+                    throw new ServerScopedRuntimeException(
+                            "Misconfiguration - there is more than one factory defined for class " + categoryName
+                            + " with type " + factory.getType());
+                }
+                if (factory.getType() != null)
+                {
+                    _supportedTypes.get(categoryName).add(factory.getType());
+                }
             }
-            if(categoryFactories.put(factory.getType(),factory) != null)
-            {
-                throw new ServerScopedRuntimeException("Misconfiguration - there is more than one factory defined for class " + categoryName
-                                                       + " with type " + factory.getType());
-            }
-            if(factory.getType() != null)
-            {
-                _supportedTypes.get(categoryName).add(factory.getType());
-            }
+        }
+        catch (RuntimeException | Error e)
+        {
+            e.printStackTrace();
         }
     }
 

@@ -20,12 +20,17 @@
  */
 package org.apache.qpid.server.protocol.converter.v0_8_v1_0;
 
+import java.nio.ByteBuffer;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.protocol.v1_0.MessageConverter_from_1_0;
@@ -35,10 +40,7 @@ import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import java.nio.ByteBuffer;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
+@PluggableService
 public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_0, AMQMessage>
 {
     private static final int BASIC_CLASS_ID = 60;

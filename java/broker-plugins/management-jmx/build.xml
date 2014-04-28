@@ -17,7 +17,7 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Management JMX" default="build">
-    <property name="module.depends" value="common broker-core management/common" />
+    <property name="module.depends" value="common broker-core management/common broker-codegen" />
     <property name="module.test.depends" value="broker-core/tests qpid-test-utils management/common client" />
     
     <property name="module.genpom" value="true"/>

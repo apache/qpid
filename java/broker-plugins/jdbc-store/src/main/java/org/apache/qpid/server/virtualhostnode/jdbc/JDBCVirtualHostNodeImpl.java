@@ -22,13 +22,11 @@ package org.apache.qpid.server.virtualhostnode.jdbc;
 
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
-import org.apache.qpid.server.store.jdbc.JDBCMessageStore;
 import org.apache.qpid.server.store.jdbc.JDBCMessageStoreFactory;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
@@ -53,9 +51,10 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
     @ManagedAttributeField
     private String _blobType;
 
-    public JDBCVirtualHostNodeImpl(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    @ManagedObjectFactoryConstructor
+    public JDBCVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
     {
-        super(parent, attributes, taskExecutor);
+        super(attributes, parent);
     }
 
     @Override

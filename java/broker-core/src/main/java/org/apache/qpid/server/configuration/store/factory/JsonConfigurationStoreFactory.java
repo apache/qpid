@@ -26,7 +26,9 @@ import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.plugin.ConfigurationStoreFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 
+@PluggableService
 public class JsonConfigurationStoreFactory implements ConfigurationStoreFactory
 {
     @Override

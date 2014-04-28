@@ -26,30 +26,30 @@ import java.util.Map;
 
 import javax.security.auth.Subject;
 
+import com.sleepycat.je.rep.StateChangeEvent;
+import com.sleepycat.je.rep.StateChangeListener;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
+
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
 import org.apache.qpid.server.store.berkeleydb.BDBHAVirtualHost;
-import org.apache.qpid.server.store.berkeleydb.BDBHAVirtualHostFactory;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.virtualhost.VirtualHostState;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
-
-import com.sleepycat.je.rep.StateChangeEvent;
-import com.sleepycat.je.rep.StateChangeListener;
 
 @ManagedObject( category = false, type = "BDB_HA" )
 public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtualHostNodeImpl> implements BDBHAVirtualHostNode<BDBHAVirtualHostNodeImpl>
@@ -89,9 +89,10 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @ManagedAttributeField
     private Map<String, String> _replicatedEnvironmentConfiguration;
 
-    public BDBHAVirtualHostNodeImpl(Broker<?> broker, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    @ManagedObjectFactoryConstructor
+    public BDBHAVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> broker)
     {
-        super(broker, attributes, taskExecutor);
+        super(broker, attributes);
     }
 
     @Override
@@ -182,8 +183,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
             if ("MASTER".equals(((ReplicatedEnvironmentFacade)getConfigurationStore().getEnvironmentFacade()).getNodeState()))
             {
-                BDBHAVirtualHostFactory virtualHostFactory = new BDBHAVirtualHostFactory();
-                return (C) virtualHostFactory.create(getObjectFactory(), attributes,this);
+                ConfiguredObjectTypeFactory<? extends ConfiguredObject> factory =
+                        getObjectFactory().getConfiguredObjectTypeFactory(VirtualHost.class.getSimpleName(), "BDB_HA");
+                return (C) factory.create(getObjectFactory(), attributes, this);
             }
             else
             {

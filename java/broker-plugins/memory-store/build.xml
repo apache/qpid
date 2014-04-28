@@ -17,7 +17,7 @@
  - under the License.
  -->
 <project name="Qpid Broker-Plugins Memory Store" default="build">
-    <property name="module.depends" value="common broker-core" />
+    <property name="module.depends" value="common broker-core broker-codegen" />
     <property name="module.test.depends" value="qpid-test-utils broker-core/tests" />
 
     <property name="module.genpom" value="true"/>

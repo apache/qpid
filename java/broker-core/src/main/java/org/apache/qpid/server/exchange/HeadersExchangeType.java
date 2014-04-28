@@ -24,8 +24,10 @@ import java.util.Map;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.plugin.ExchangeType;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
+@PluggableService
 public class HeadersExchangeType implements ExchangeType<HeadersExchange>
 {
     @Override

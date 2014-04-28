@@ -41,6 +41,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.TrustStore;
@@ -66,6 +67,7 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
 
     private Broker<?> _broker;
 
+    @ManagedObjectFactoryConstructor
     public FileTrustStoreImpl(Map<String, Object> attributes, Broker<?> broker)
     {
         super(parentsMap(broker), attributes);

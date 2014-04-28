@@ -25,9 +25,11 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.network.NetworkConnection;
 
+@PluggableService
 public class ProtocolEngineCreator_1_0_0_SASL implements ProtocolEngineCreator
 {
     private static final byte[] AMQP_SASL_1_0_0_HEADER =

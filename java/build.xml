@@ -34,7 +34,7 @@
   <findSubProjects name="broker-plugins" dir="broker-plugins" excludes="${broker-plugins-exclude}"/>
   <findSubProjects name="client-plugins" dir="client-plugins"/>
 
-  <property name="modules.core"       value="qpid-test-utils common management/common amqp-1-0-common broker-core broker client amqp-1-0-client amqp-1-0-client-jms amqp-1-0-client-websocket tools"/>
+  <property name="modules.core"       value="qpid-test-utils common management/common amqp-1-0-common broker-codegen broker-core broker client amqp-1-0-client amqp-1-0-client-jms amqp-1-0-client-websocket tools"/>
   <property name="modules.examples"   value="client/example management/example amqp-1-0-client/example amqp-1-0-client-jms/example"/>
   <property name="modules.tests"      value="systests perftests qpid-perftests-systests"/>
   <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>

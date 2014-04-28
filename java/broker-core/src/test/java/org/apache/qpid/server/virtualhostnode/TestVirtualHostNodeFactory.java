@@ -37,7 +37,7 @@ public class TestVirtualHostNodeFactory extends AbstractConfiguredObjectTypeFact
     public TestVirtualHostNode createInstance(Map<String, Object> attributes, ConfiguredObject<?>... parents)
     {
         Broker<?> broker = getParent(Broker.class, parents);
-        return new TestVirtualHostNode(broker, attributes, broker.getTaskExecutor());
+        return new TestVirtualHostNode(broker, attributes);
     }
 
 }

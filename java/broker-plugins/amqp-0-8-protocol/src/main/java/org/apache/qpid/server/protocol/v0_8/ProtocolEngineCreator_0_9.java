@@ -25,9 +25,11 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.network.NetworkConnection;
 
+@PluggableService
 public class ProtocolEngineCreator_0_9 implements ProtocolEngineCreator
 {
     private static final byte[] AMQP_0_9_HEADER =

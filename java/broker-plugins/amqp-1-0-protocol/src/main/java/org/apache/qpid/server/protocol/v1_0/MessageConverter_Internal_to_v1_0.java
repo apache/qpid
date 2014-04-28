@@ -20,6 +20,15 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
@@ -31,17 +40,10 @@ import org.apache.qpid.amqp_1_0.type.messaging.Data;
 import org.apache.qpid.amqp_1_0.type.messaging.Header;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 import org.apache.qpid.server.message.internal.InternalMessage;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
+@PluggableService
 public class MessageConverter_Internal_to_v1_0 extends MessageConverter_to_1_0<InternalMessage>
 {
     private static final Charset UTF_8 = Charset.forName("UTF-8");

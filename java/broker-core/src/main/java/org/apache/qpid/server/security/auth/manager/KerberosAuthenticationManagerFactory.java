@@ -28,7 +28,9 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 
+@PluggableService
 public class KerberosAuthenticationManagerFactory
         extends AbstractConfiguredObjectTypeFactory<KerberosAuthenticationManager>
         implements AuthenticationManagerFactory<KerberosAuthenticationManager>

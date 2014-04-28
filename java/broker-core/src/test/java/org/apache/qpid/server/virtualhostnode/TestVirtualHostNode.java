@@ -23,7 +23,6 @@ package org.apache.qpid.server.virtualhostnode;
 import java.util.Collections;
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
@@ -36,14 +35,16 @@ public class TestVirtualHostNode extends AbstractStandardVirtualHostNode<TestVir
 {
     private final DurableConfigurationStore _store;
 
-    public TestVirtualHostNode(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    public TestVirtualHostNode(Broker<?> parent, Map<String, Object> attributes)
     {
-        this(parent, attributes, taskExecutor, null);
+        this(parent, attributes, null);
     }
 
-    public TestVirtualHostNode(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor, DurableConfigurationStore store)
+    public TestVirtualHostNode(Broker<?> parent,
+                               Map<String, Object> attributes,
+                               DurableConfigurationStore store)
     {
-        super(parent, attributes, taskExecutor);
+        super(attributes, parent);
         _store = store;
     }
 

@@ -25,9 +25,11 @@ import java.util.Map;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 
+@PluggableService
 public class BDBMessageStoreFactory implements MessageStoreFactory, DurableConfigurationStoreFactory
 {
 

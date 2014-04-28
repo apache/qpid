@@ -32,6 +32,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.plugin.MessageConverter;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.protocol.v0_10.MessageTransferMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
@@ -44,6 +45,7 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.ReplyTo;
 
+@PluggableService
 public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTransferMessage, AMQMessage>
 {
     private static final int BASIC_CLASS_ID = 60;

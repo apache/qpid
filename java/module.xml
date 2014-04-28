@@ -59,7 +59,7 @@
   <property name="module.src.resources" location="src/main/resources"/>
   <property name="module.src.resources.metainf" location="${module.src.resources}/META-INF"/>
   <property name="module.resources.dir" location="resources/"/>
-  <property name="module.metainf"      location="${module.build}/META-INF"/>
+  <property name="module.metainf"      location="${module.build}/classes/META-INF"/>
 
   <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
   <property name="module.namever.osgi" value="${project.name}-${module.name}_${project.version}.0.osgi"/>

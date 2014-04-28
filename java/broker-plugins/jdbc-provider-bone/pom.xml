@@ -38,6 +38,13 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-broker-codegen</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
       <groupId>com.jolbox</groupId>
       <artifactId>bonecp</artifactId>
       <version>${bonecp-version}</version>

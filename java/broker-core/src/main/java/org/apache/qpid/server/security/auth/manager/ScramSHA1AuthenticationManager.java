@@ -22,17 +22,14 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.security.AccessControlException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,15 +41,11 @@ import javax.security.sasl.SaslServer;
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.qpid.server.configuration.updater.Task;
-import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.configuration.updater.VoidTaskWithException;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
-import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.SecurityManager;
@@ -67,7 +60,7 @@ public class ScramSHA1AuthenticationManager
     implements PasswordCredentialManagingAuthenticationProvider<ScramSHA1AuthenticationManager>
 {
     public static final String SCRAM_USER_TYPE = "scram";
-    private static final Charset ASCII = Charset.forName("ASCII");
+    static final Charset ASCII = Charset.forName("ASCII");
     public static final String HMAC_SHA_1 = "HmacSHA1";
     private final SecureRandom _random = new SecureRandom();
     private int _iterationCount = 4096;
@@ -283,7 +276,7 @@ public class ScramSHA1AuthenticationManager
         });
     }
 
-    private SecurityManager getSecurityManager()
+    SecurityManager getSecurityManager()
     {
         return getBroker().getSecurityManager();
     }
@@ -357,187 +350,6 @@ public class ScramSHA1AuthenticationManager
 
     }
 
-    @ManagedObject( category = false, type = "scram")
-    static class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements User<ScramAuthUser>
-    {
-
-        private ScramSHA1AuthenticationManager _authenticationManager;
-        @ManagedAttributeField
-        private String _password;
-
-        protected ScramAuthUser(final Map<String, Object> attributes, ScramSHA1AuthenticationManager parent)
-        {
-            super(parentsMap(parent), attributes);
-            _authenticationManager = parent;
-            if(!ASCII.newEncoder().canEncode(getName()))
-            {
-                throw new IllegalArgumentException("Scram SHA1 user names are restricted to characters in the ASCII charset");
-            }
-
-        }
-
-        @Override
-        protected void onOpen()
-        {
-            super.onOpen();
-            _authenticationManager._users.put(getName(), this);
-        }
-
-        @Override
-        public void validate()
-        {
-            super.validate();
-            if(!isDurable())
-            {
-                throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
-            }
-        }
-
-        @Override
-        protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
-        {
-            super.validateChange(proxyForValidation, changedAttributes);
-            if(changedAttributes.contains(DURABLE) && !proxyForValidation.isDurable())
-            {
-                throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
-            }
-        }
-        @Override
-        protected boolean setState(final State currentState, final State desiredState)
-        {
-            if(desiredState == State.DELETED)
-            {
-                _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.DELETE, getName());
-                _authenticationManager._users.remove(getName());
-                _authenticationManager.deleted();
-                deleted();
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        @Override
-        public void setAttributes(final Map<String, Object> attributes)
-                throws IllegalStateException, AccessControlException, IllegalArgumentException
-        {
-            runTask(new VoidTask()
-            {
-
-                @Override
-                public void execute()
-                {
-                    Map<String, Object> modifiedAttributes = new HashMap<String, Object>(attributes);
-                    final String newPassword = (String) attributes.get(User.PASSWORD);
-                    if (attributes.containsKey(User.PASSWORD)
-                        && !newPassword.equals(getActualAttributes().get(User.PASSWORD)))
-                    {
-                        try
-                        {
-                            modifiedAttributes.put(User.PASSWORD,
-                                                   _authenticationManager.createStoredPassword(newPassword));
-                        }
-                        catch (SaslException e)
-                        {
-                            throw new IllegalArgumentException(e);
-                        }
-                    }
-                    ScramSHA1AuthenticationManager.ScramAuthUser.super.setAttributes(modifiedAttributes);
-                }
-            });
-
-
-        }
-
-        @Override
-        public Object getAttribute(final String name)
-        {
-            return super.getAttribute(name);
-        }
-
-        @Override
-        public String getPassword()
-        {
-            return _password;
-        }
-
-        @Override
-        public void setPassword(final String password)
-        {
-            _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.UPDATE, getName());
-
-            try
-            {
-                changeAttribute(User.PASSWORD, getAttribute(User.PASSWORD), _authenticationManager.createStoredPassword(
-                        password));
-            }
-            catch (SaslException e)
-            {
-                throw new IllegalArgumentException(e);
-            }
-        }
-
-        @Override
-        public State getState()
-        {
-            return State.ACTIVE;
-        }
-
-        @Override
-        public <C extends ConfiguredObject> Collection<C> getChildren(final Class<C> clazz)
-        {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public Map<String, Object> getPreferences()
-        {
-            PreferencesProvider preferencesProvider = _authenticationManager.getPreferencesProvider();
-            if (preferencesProvider == null)
-            {
-                return null;
-            }
-            return preferencesProvider.getPreferences(this.getName());
-        }
-
-        @Override
-        public Object getPreference(String name)
-        {
-            Map<String, Object> preferences = getPreferences();
-            if (preferences == null)
-            {
-                return null;
-            }
-            return preferences.get(name);
-        }
-
-        @Override
-        public Map<String, Object> setPreferences(Map<String, Object> preferences)
-        {
-            PreferencesProvider preferencesProvider = _authenticationManager.getPreferencesProvider();
-            if (preferencesProvider == null)
-            {
-                return null;
-            }
-            return preferencesProvider.setPreferences(this.getName(), preferences);
-        }
-
-        @Override
-        public boolean deletePreferences()
-        {
-            PreferencesProvider preferencesProvider = _authenticationManager.getPreferencesProvider();
-            if (preferencesProvider == null)
-            {
-                return false;
-            }
-            String[] deleted = preferencesProvider.deletePreferences(this.getName());
-            return deleted.length == 1;
-        }
-
-    }
-
     @Override
     public void recoverUser(final User user)
     {
@@ -577,4 +389,13 @@ public class ScramSHA1AuthenticationManager
         return super.addChild(childClass, attributes, otherParents);
     }
 
+    void doDeleted()
+    {
+        deleted();
+    }
+
+    Map<String, ScramAuthUser> getUserMap()
+    {
+        return _users;
+    }
 }

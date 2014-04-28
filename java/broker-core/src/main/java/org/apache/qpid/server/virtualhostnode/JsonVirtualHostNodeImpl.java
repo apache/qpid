@@ -22,10 +22,10 @@ package org.apache.qpid.server.virtualhostnode;
 
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.store.JsonFileConfigStoreFactory;
 
@@ -35,9 +35,10 @@ public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<Jso
     @ManagedAttributeField
     private String _storePath;
 
-    public JsonVirtualHostNodeImpl(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    @ManagedObjectFactoryConstructor
+    public JsonVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
     {
-        super(parent, attributes, taskExecutor);
+        super(attributes, parent);
     }
 
     @Override

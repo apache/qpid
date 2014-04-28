@@ -35,11 +35,13 @@ import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v1_0.MessageConverter_to_1_0;
 import org.apache.qpid.server.protocol.v1_0.MessageMetaData_1_0;
 import org.apache.qpid.url.AMQBindingURL;
 
+@PluggableService
 public class MessageConverter_0_8_to_1_0 extends MessageConverter_to_1_0<AMQMessage>
 {
     @Override

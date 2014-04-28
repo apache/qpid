@@ -942,7 +942,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     }
 
-
     protected void deleted()
     {
         for (ConfiguredObject<?> parent : _parents.values())

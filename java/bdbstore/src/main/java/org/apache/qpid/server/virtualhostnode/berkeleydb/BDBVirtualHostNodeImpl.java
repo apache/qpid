@@ -22,10 +22,10 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
 import java.util.Map;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
@@ -39,9 +39,10 @@ public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBV
     @ManagedAttributeField
     private Map<String, String> _environmentConfiguration;
 
-    public BDBVirtualHostNodeImpl(Broker<?> parent, Map<String, Object> attributes, TaskExecutor taskExecutor)
+    @ManagedObjectFactoryConstructor
+    public BDBVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
     {
-        super(parent, attributes, taskExecutor);
+        super(attributes, parent);
     }
 
     @Override

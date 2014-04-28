@@ -20,14 +20,16 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.plugin.TransportProviderFactory;
-
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.plugin.PluggableService;
+import org.apache.qpid.server.plugin.TransportProviderFactory;
+
+@PluggableService
 public class TCPandSSLTransportProviderFactory implements TransportProviderFactory
 {
 
