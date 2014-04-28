@@ -1687,7 +1687,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected final static class DuplicateIdException extends RuntimeException
+    protected final static class DuplicateIdException extends IllegalArgumentException
     {
         public DuplicateIdException(final ConfiguredObject<?> child)
         {
@@ -1695,7 +1695,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected final static class DuplicateNameException extends RuntimeException
+    protected final static class DuplicateNameException extends IllegalArgumentException
     {
         private final String _name;
         public DuplicateNameException(final ConfiguredObject<?> child)

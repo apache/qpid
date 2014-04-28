@@ -98,8 +98,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 
-    private final long _createTime = System.currentTimeMillis();
-
     private ScheduledThreadPoolExecutor _houseKeepingTasks;
 
     private final Broker<?> _broker;
@@ -391,14 +389,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
     }
 
-    public String setType(final String currentType, final String desiredType)
-            throws IllegalStateException, AccessControlException
-    {
-        throw new IllegalStateException();
-    }
-
-
-
     @Override
     public State getState()
     {
@@ -566,11 +556,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _houseKeepingTasks.getActiveCount();
     }
 
-    public long getCreateTime()
-    {
-        return _createTime;
-    }
-
     @Override
     public AMQQueue<?> getQueue(String name)
     {
@@ -680,98 +665,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         Collection children = getChildren(Exchange.class);
         return children;
-    }
-
-    public ExchangeImpl<?> createExchange(final String name,
-                                   final State initialState,
-                                   final boolean durable,
-                                   final LifetimePolicy lifetime,
-                                   final String type,
-                                   final Map<String, Object> attributes)
-            throws AccessControlException, IllegalArgumentException
-    {
-        checkVHostStateIsActive();
-
-        try
-        {
-            String alternateExchange = null;
-            if(attributes.containsKey(Exchange.ALTERNATE_EXCHANGE))
-            {
-                Object altExchangeObject = attributes.get(Exchange.ALTERNATE_EXCHANGE);
-                if(altExchangeObject instanceof Exchange)
-                {
-                    alternateExchange = ((Exchange) altExchangeObject).getName();
-                }
-                else if(altExchangeObject instanceof UUID)
-                {
-                    for(Exchange ex : getExchanges())
-                    {
-                        if(altExchangeObject.equals(ex.getId()))
-                        {
-                            alternateExchange = ex.getName();
-                            break;
-                        }
-                    }
-                }
-                else if(altExchangeObject instanceof String)
-                {
-
-                    for(Exchange ex : getExchanges())
-                    {
-                        if(altExchangeObject.equals(ex.getName()))
-                        {
-                            alternateExchange = ex.getName();
-                            break;
-                        }
-                    }
-                    if(alternateExchange == null)
-                    {
-                        try
-                        {
-                            UUID id = UUID.fromString(altExchangeObject.toString());
-                            for(Exchange ex : getExchanges())
-                            {
-                                if(id.equals(ex.getId()))
-                                {
-                                    alternateExchange = ex.getName();
-                                    break;
-                                }
-                            }
-                        }
-                        catch(IllegalArgumentException e)
-                        {
-                            // ignore
-                        }
-
-                    }
-                }
-            }
-            Map<String,Object> attributes1 = new HashMap<String, Object>();
-
-            attributes1.put(ID, null);
-            attributes1.put(NAME, name);
-            attributes1.put(Exchange.TYPE, type);
-            attributes1.put(Exchange.DURABLE, durable);
-            attributes1.put(Exchange.LIFETIME_POLICY,
-                            lifetime != null && lifetime != LifetimePolicy.PERMANENT
-                                    ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
-            attributes1.put(Exchange.ALTERNATE_EXCHANGE, alternateExchange);
-            ExchangeImpl exchange = createExchange(attributes1);
-            return exchange;
-
-        }
-        catch(ExchangeExistsException e)
-        {
-            throw new IllegalArgumentException("Exchange with name '" + name + "' already exists");
-        }
-        catch(ReservedExchangeNameException e)
-        {
-            throw new UnsupportedOperationException("'" + name + "' is a reserved exchange name");
-        }
-        catch(AMQUnknownExchangeType e)
-        {
-            throw new IllegalArgumentException(e);
-        }
     }
 
 
@@ -1247,15 +1140,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             return getState();
         }
-        else if(SUPPORTED_EXCHANGE_TYPES.equals(name))
-        {
-            return getObjectFactory().getSupportedTypes(Exchange.class);
-        }
-        else if(SUPPORTED_QUEUE_TYPES.equals(name))
-        {
-            // TODO
-        }
-
         return super.getAttribute(name);
     }
 
@@ -1268,8 +1152,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public Collection<String> getSupportedQueueTypes()
     {
-        // TODO
-        return null;
+        return getObjectFactory().getSupportedTypes(Queue.class);
     }
 
     @Override

@@ -42,14 +42,16 @@ import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
+import org.apache.qpid.server.exchange.AMQUnknownExchangeType;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
+import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
+import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 
 @MBeanDescription("This MBean exposes the broker level management features")
 public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<VirtualHost> implements ManagedBroker
@@ -166,14 +168,36 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
 
         try
         {
-            getConfiguredObject().createExchange(name, State.ACTIVE, durable,
-                                            LifetimePolicy.PERMANENT, type, Collections.EMPTY_MAP);
+            Map<String,Object> attributes = new HashMap<>();
+            attributes.put(Exchange.NAME, name);
+            attributes.put(Exchange.TYPE, type);
+            attributes.put(Exchange.DURABLE, durable);
+            attributes.put(Exchange.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
+
+            getConfiguredObject().createExchange(attributes);
+        }
+        catch(ExchangeExistsException e)
+        {
+            String message = "Exchange with name '" + name + "' already exists";
+            JMException jme = new JMException(message);
+            throw new MBeanException(jme, "Error in creating exchange " + name);
+
+        }
+        catch(ReservedExchangeNameException e)
+        {
+            throw new UnsupportedOperationException("'" + name + "' is a reserved exchange name");
+        }
+        catch(AMQUnknownExchangeType e)
+        {
+            JMException jme = new JMException(e.getMessage());
+            throw new MBeanException(jme, "Error in creating exchange " + name);
         }
         catch (IllegalArgumentException iae)
         {
             JMException jme = new JMException(iae.toString());
             throw new MBeanException(jme, "Error in creating exchange " + name);
         }
+
 
     }
 
