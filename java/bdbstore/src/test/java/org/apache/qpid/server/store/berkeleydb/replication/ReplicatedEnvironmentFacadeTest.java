@@ -40,6 +40,7 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicatedEnvironment.State;
 import com.sleepycat.je.rep.ReplicationConfig;
 import com.sleepycat.je.rep.StateChangeEvent;
@@ -272,6 +273,123 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Unexpected state " + replicatedEnvironmentFacade.getFacadeState(), ReplicatedEnvironmentFacade.State.OPEN, replicatedEnvironmentFacade.getFacadeState());
         replicatedEnvironmentFacade.close();
         assertEquals("Unexpected state " + replicatedEnvironmentFacade.getFacadeState(), ReplicatedEnvironmentFacade.State.CLOSED, replicatedEnvironmentFacade.getFacadeState());
+    }
+
+    public void testTransferMasterToSelf() throws Exception
+    {
+        final CountDownLatch firstNodeReplicaStateLatch = new CountDownLatch(1);
+        final CountDownLatch firstNodeMasterStateLatch = new CountDownLatch(1);
+        StateChangeListener stateChangeListener = new StateChangeListener(){
+
+            @Override
+            public void stateChange(StateChangeEvent event) throws RuntimeException
+            {
+                ReplicatedEnvironment.State state = event.getState();
+                if (state == ReplicatedEnvironment.State.REPLICA)
+                {
+                    firstNodeReplicaStateLatch.countDown();
+                }
+                if (state == ReplicatedEnvironment.State.MASTER)
+                {
+                    firstNodeMasterStateLatch.countDown();
+                }
+            }
+        };
+        ReplicatedEnvironmentFacade firstNode = addNode(State.MASTER, stateChangeListener);
+        assertTrue("Environment did not become a master", firstNodeMasterStateLatch.await(10, TimeUnit.SECONDS));
+
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node1NodeHostPort = "localhost:" + replica1Port;
+        ReplicatedEnvironmentFacade secondNode = createReplica(TEST_NODE_NAME + "_1", node1NodeHostPort);
+        assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), secondNode.getNodeState());
+
+        int replica2Port = getNextAvailable(replica1Port + 1);
+        String node2NodeHostPort = "localhost:" + replica2Port;
+        final CountDownLatch replicaStateLatch = new CountDownLatch(1);
+        final CountDownLatch masterStateLatch = new CountDownLatch(1);
+        StateChangeListener testStateChangeListener = new StateChangeListener()
+        {
+            @Override
+            public void stateChange(StateChangeEvent event) throws RuntimeException
+            {
+                ReplicatedEnvironment.State state = event.getState();
+                if (state == ReplicatedEnvironment.State.REPLICA)
+                {
+                    replicaStateLatch.countDown();
+                }
+                if (state == ReplicatedEnvironment.State.MASTER)
+                {
+                    masterStateLatch.countDown();
+                }
+            }
+        };
+        ReplicatedEnvironmentFacade thirdNode = addNode(TEST_NODE_NAME + "_2", node2NodeHostPort, TEST_DESIGNATED_PRIMARY, State.REPLICA, testStateChangeListener);
+        assertTrue("Environment did not become a replica", replicaStateLatch.await(10, TimeUnit.SECONDS));
+        assertEquals(3, thirdNode.getNumberOfElectableGroupMembers());
+
+        thirdNode.transferMasterToSelfAsynchronously();
+        assertTrue("Environment did not become a master", masterStateLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("First node environment did not become a replica", firstNodeReplicaStateLatch.await(10, TimeUnit.SECONDS));
+        assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), firstNode.getNodeState());
+    }
+
+    public void testTransferMasterAnotherNode() throws Exception
+    {
+        final CountDownLatch firstNodeReplicaStateLatch = new CountDownLatch(1);
+        final CountDownLatch firstNodeMasterStateLatch = new CountDownLatch(1);
+        StateChangeListener stateChangeListener = new StateChangeListener(){
+
+            @Override
+            public void stateChange(StateChangeEvent event) throws RuntimeException
+            {
+                ReplicatedEnvironment.State state = event.getState();
+                if (state == ReplicatedEnvironment.State.REPLICA)
+                {
+                    firstNodeReplicaStateLatch.countDown();
+                }
+                if (state == ReplicatedEnvironment.State.MASTER)
+                {
+                    firstNodeMasterStateLatch.countDown();
+                }
+            }
+        };
+        ReplicatedEnvironmentFacade firstNode = addNode(State.MASTER, stateChangeListener);
+        assertTrue("Environment did not become a master", firstNodeMasterStateLatch.await(10, TimeUnit.SECONDS));
+
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node1NodeHostPort = "localhost:" + replica1Port;
+        ReplicatedEnvironmentFacade secondNode = createReplica(TEST_NODE_NAME + "_1", node1NodeHostPort);
+        assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), secondNode.getNodeState());
+
+        int replica2Port = getNextAvailable(replica1Port + 1);
+        String node2NodeHostPort = "localhost:" + replica2Port;
+        final CountDownLatch replicaStateLatch = new CountDownLatch(1);
+        final CountDownLatch masterStateLatch = new CountDownLatch(1);
+        StateChangeListener testStateChangeListener = new StateChangeListener()
+        {
+            @Override
+            public void stateChange(StateChangeEvent event) throws RuntimeException
+            {
+                ReplicatedEnvironment.State state = event.getState();
+                if (state == ReplicatedEnvironment.State.REPLICA)
+                {
+                    replicaStateLatch.countDown();
+                }
+                if (state == ReplicatedEnvironment.State.MASTER)
+                {
+                    masterStateLatch.countDown();
+                }
+            }
+        };
+        String thirdNodeName = TEST_NODE_NAME + "_2";
+        ReplicatedEnvironmentFacade thirdNode = addNode(thirdNodeName, node2NodeHostPort, TEST_DESIGNATED_PRIMARY, State.REPLICA, testStateChangeListener);
+        assertTrue("Environment did not become a replica", replicaStateLatch.await(10, TimeUnit.SECONDS));
+        assertEquals(3, thirdNode.getNumberOfElectableGroupMembers());
+
+        firstNode.transferMasterAsynchronously(thirdNodeName);
+        assertTrue("Environment did not become a master", masterStateLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("First node environment did not become a replica", firstNodeReplicaStateLatch.await(10, TimeUnit.SECONDS));
+        assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), firstNode.getNodeState());
     }
 
     private ReplicatedEnvironmentFacade createMaster() throws Exception

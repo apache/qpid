@@ -81,14 +81,17 @@ import com.sleepycat.je.utilint.VLSN;
 
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
+    public static final String MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.master_transfer_interval";
     public static final String DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.db_ping_socket_timeout";
     public static final String REMOTE_NODE_MONITOR_INTERVAL_PROPERTY_NAME = "qpid.bdb.ha.remote_node_monitor_interval";
 
     private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacade.class);
 
+    private static final int DEFAULT_MASTER_TRANSFER_TIMEOUT = 1000 * 60;
     private static final int DEFAULT_DB_PING_SOCKET_TIMEOUT = 1000;
     private static final int DEFAULT_REMOTE_NODE_MONITOR_INTERVAL = 1000;
 
+    private static final int MASTER_TRANSFER_TIMEOUT = Integer.getInteger(MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME, DEFAULT_MASTER_TRANSFER_TIMEOUT);
     private static final int DB_PING_SOCKET_TIMEOUT = Integer.getInteger(DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME, DEFAULT_DB_PING_SOCKET_TIMEOUT);
     private static final int REMOTE_NODE_MONITOR_INTERVAL = Integer.getInteger(REMOTE_NODE_MONITOR_INTERVAL_PROPERTY_NAME, DEFAULT_REMOTE_NODE_MONITOR_INTERVAL);
 
@@ -145,13 +148,12 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final AtomicReference<State> _state = new AtomicReference<State>(State.OPENING);
     private final ConcurrentMap<String, DatabaseHolder> _databases = new ConcurrentHashMap<String, DatabaseHolder>();
     private final AtomicReference<StateChangeListener> _stateChangeListener = new AtomicReference<StateChangeListener>();
+    private final AtomicBoolean _initialised;
+    private final EnvironmentFacadeTask[] _initialisationTasks;
 
     private volatile ReplicatedEnvironment _environment;
     private volatile long _joinTime;
     private volatile ReplicatedEnvironment.State _lastKnownEnvironmentState;
-
-    private AtomicBoolean _initialised;
-    private EnvironmentFacadeTask[] _initialisationTasks;
 
     public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration, EnvironmentFacadeTask[] initialisationTasks)
     {
@@ -214,8 +216,14 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 shutdownAndAwaitExecutorService(_environmentJobExecutor);
                 shutdownAndAwaitExecutorService(_groupChangeExecutor);
 
-                closeDatabases();
-                closeEnvironment();
+                try
+                {
+                    closeDatabases();
+                }
+                finally
+                {
+                    closeEnvironment();
+                }
             }
             finally
             {
@@ -634,10 +642,52 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
+    public Future<Void> transferMasterToSelfAsynchronously()
+    {
+        final String nodeName = getNodeName();
+        return transferMasterAsynchronously(nodeName);
+    }
+
+    public Future<Void> transferMasterAsynchronously(final String nodeName)
+    {
+        return _groupChangeExecutor.submit(new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                try
+                {
+                    ReplicationGroupAdmin admin = createReplicationGroupAdmin();
+                    String newMaster = admin.transferMaster(Collections.singleton(nodeName), MASTER_TRANSFER_TIMEOUT, TimeUnit.MILLISECONDS, true);
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("The mastership has been transfered to " + newMaster);
+                    }
+                }
+                catch (DatabaseException e)
+                {
+                    LOGGER.warn("Exception on transfering the mastership to " + _prettyGroupNodeName
+                            + " Master transfer timeout : " + MASTER_TRANSFER_TIMEOUT, e);
+                    throw e;
+                }
+                return null;
+            }
+        });
+    }
+
+    public void removeNodeFromGroup(final String nodeName)
+    {
+        createReplicationGroupAdmin().removeMember(nodeName);
+    }
+
+    public void updateAddress(final String nodeName, final String newHostName, final int newPort)
+    {
+        createReplicationGroupAdmin().updateAddress(nodeName, newHostName, newPort);
+    }
 
     public long getJoinTime()
     {
-        return _joinTime ;
+        return _joinTime;
     }
 
     public long getLastKnownReplicationTransactionId()
@@ -669,16 +719,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return members;
     }
 
-    public void removeNodeFromGroup(final String nodeName)
-    {
-        createReplicationGroupAdmin().removeMember(nodeName);
-    }
-
-    public void updateAddress(final String nodeName, final String newHostName, final int newPort)
-    {
-        createReplicationGroupAdmin().updateAddress(nodeName, newHostName, newPort);
-    }
-
     private ReplicationGroupAdmin createReplicationGroupAdmin()
     {
         final Set<InetSocketAddress> helpers = new HashSet<InetSocketAddress>();
@@ -689,7 +729,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         return new ReplicationGroupAdmin(_configuration.getGroupName(), helpers);
     }
-
 
     public ReplicatedEnvironment getEnvironment()
     {

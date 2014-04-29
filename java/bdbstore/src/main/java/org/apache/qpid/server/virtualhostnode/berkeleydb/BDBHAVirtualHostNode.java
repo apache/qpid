@@ -34,7 +34,10 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     public static final String DESIGNATED_PRIMARY = "designatedPrimary";
     public static final String PRIORITY = "priority";
     public static final String QUORUM_OVERRIDE = "quorumOverride";
+    public static final String ROLE = "role";
     public static final String REPLICATED_ENVIRONMENT_CONFIGURATION = "replicatedEnvironmentConfiguration";
+    public static final String LAST_KNOWN_REPLICATION_TRANSACTION_ID = "lastKnownReplicationTransactionId";
+    public static final String JOIN_TIME = "joinTime";
 
     @ManagedAttribute(automate = true, mandatory=true)
     String getGroupName();
@@ -61,5 +64,14 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     int getQuorumOverride();
 
     @ManagedAttribute(automate = true)
+    String getRole();
+
+    @ManagedAttribute(automate = true)
     Map<String, String> getReplicatedEnvironmentConfiguration();
+
+    @ManagedAttribute(derived = true)
+    Long getLastKnownReplicationTransactionId();
+
+    @ManagedAttribute(derived = true)
+    Long getJoinTime();
 }
