@@ -67,6 +67,8 @@ public class BrokerStartupTest extends AbstractTestLogging
             setTestSystemProperty("qpid.amqp_port",String.valueOf(port));
             setTestSystemProperty("qpid.jmx_port",String.valueOf(managementPort));
             setTestSystemProperty("qpid.rmi_port",String.valueOf(connectorServerPort));
+            setTestSystemProperty("qpid.http_port",String.valueOf(DEFAULT_HTTP_MANAGEMENT_PORT));
+
             startBroker(port, null);
 
             AMQConnectionURL url = new AMQConnectionURL(String.format("amqp://"
