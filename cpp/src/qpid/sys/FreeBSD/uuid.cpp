@@ -1,6 +1,3 @@
-#ifndef _sys_windows_uuid_h
-#define _sys_windows_uuid_h
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -22,14 +19,26 @@
  *
  */
 
-#include "qpid/types/ImportExport.h"
-#include <qpid/sys/IntegerTypes.h>
+#include "qpid/sys/uuid.h"
 
-namespace qpid { namespace sys { const size_t UuidSize = 16; }}
-typedef uint8_t uuid_t[qpid::sys::UuidSize];
+#include <string.h>
+#include <uuid.h>
 
-QPID_TYPES_EXTERN void uuid_generate (uuid_t out);
-QPID_TYPES_EXTERN int  uuid_parse (const char *in, uuid_t uu);  // Returns 0 on success, else -1
-QPID_TYPES_EXTERN void uuid_unparse (const uuid_t uu, char *out);
-
-#endif  /*!_sys_windows_uuid_h*/
+extern "C"
+void uuid_generate (uint8_t out[qpid::sys::UuidSize])
+{
+    uuid_t uuid;
+    uint32_t status;
+    uuid_create(&uuid, &status);
+    out[0] = (uuid.time_low & 0xff000000) >> 24;
+    out[1] = (uuid.time_low & 0x00ff0000) >> 16;
+    out[2] = (uuid.time_low & 0x0000ff00) >> 8;
+    out[3] = (uuid.time_low & 0x000000ff);
+    out[4] = (uuid.time_mid & 0xff00) >> 8;
+    out[5] = (uuid.time_mid & 0x00ff);
+    out[6] = (uuid.time_hi_and_version & 0xff00) >> 8;
+    out[7] = (uuid.time_hi_and_version & 0x00ff);
+    out[8] = uuid.clock_seq_hi_and_reserved;
+    out[9] = uuid.clock_seq_low;
+    ::memcpy(&out[10], &uuid.node, _UUID_NODE_LEN);
+}

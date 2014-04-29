@@ -45,7 +45,7 @@ class TxnCtxt : public qpid::broker::TransactionContext
   protected:
     static qpid::sys::Mutex globalSerialiser;
 
-    static uuid_t uuid;
+    static qpid::sys::uuid_t uuid;
     static IdSequence uuidSeq;
     static bool staticInit;
     static bool setUuid();

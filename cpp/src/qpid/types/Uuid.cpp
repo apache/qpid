@@ -23,6 +23,8 @@
 #include "qpid/sys/IntegerTypes.h"
 #include <sstream>
 #include <iostream>
+#include <iomanip>
+#include <stdio.h>
 #include <string.h>
 
 namespace qpid {
@@ -31,7 +33,7 @@ namespace types {
 using namespace std;
 
 const size_t Uuid::SIZE=16;
-static const size_t UNPARSED_SIZE=36; 
+static const int UNPARSED_SIZE=36;
 
 Uuid::Uuid(bool unique)
 {
@@ -66,7 +68,7 @@ Uuid& Uuid::operator=(const Uuid& other)
 
 void Uuid::generate()
 {
-    uuid_generate(bytes);
+    sys::uuid_generate(bytes);
 }
 
 void Uuid::clear()
@@ -122,17 +124,69 @@ bool operator>=(const Uuid& a, const Uuid& b)
 
 ostream& operator<<(ostream& out, Uuid uuid)
 {
-    char unparsed[UNPARSED_SIZE + 1];
-    uuid_unparse(uuid.bytes, unparsed);
-    return out << unparsed;
+    const uint8_t* bytes = uuid.bytes;
+
+    ios_base::fmtflags f = out.flags();
+    out << hex << setfill('0')
+        << setw(2) << int(bytes[0])
+        << setw(2) << int(bytes[1])
+        << setw(2) << int(bytes[2])
+        << setw(2) << int(bytes[3])
+        << "-"
+        << setw(2) << int(bytes[4])
+        << setw(2) << int(bytes[5])
+        << "-"
+        << setw(2) << int(bytes[6])
+        << setw(2) << int(bytes[7])
+        << "-"
+        << setw(2) << int(bytes[8])
+        << setw(2) << int(bytes[9])
+        << "-"
+        << setw(2) << int(bytes[10])
+        << setw(2) << int(bytes[11])
+        << setw(2) << int(bytes[12])
+        << setw(2) << int(bytes[13])
+        << setw(2) << int(bytes[14])
+        << setw(2) << int(bytes[15]);
+    out.flags(f);
+    return out;
 }
 
 istream& operator>>(istream& in, Uuid& uuid)
 {
+    unsigned bytes[16];
     char unparsed[UNPARSED_SIZE + 1] = {0};
-    in.get(unparsed, sizeof(unparsed));
-    if (uuid_parse(unparsed, uuid.bytes) != 0) 
+
+    istream::sentry s(in);
+    if ( !s ) return in;
+
+    in.get(unparsed, UNPARSED_SIZE+1);
+
+    // Check if we read enough characters
+    if ( in.gcount()!=UNPARSED_SIZE ) {
         in.setstate(ios::failbit);
+        return in;
+    }
+    int r = ::sscanf(unparsed, "%2x%2x%2x%2x-"
+                               "%2x%2x-"
+                               "%2x%2x-"
+                               "%2x%2x-"
+                               "%2x%2x%2x%2x%2x%2x",
+                     &bytes[0], &bytes[1], &bytes[2], &bytes[3],
+                     &bytes[4], &bytes[5],
+                     &bytes[6], &bytes[7],
+                     &bytes[8], &bytes[9],
+                     &bytes[10], &bytes[11], &bytes[12], &bytes[13], &bytes[14], &bytes[15]
+                    );
+    // Check if we got enough converted input
+    if ( r!=int(Uuid::SIZE) ) {
+        in.setstate(ios::failbit);
+        return in;
+    }
+
+    for (unsigned i=0; i<16; ++i) {
+      uuid.bytes[i] = bytes[i];
+    }
     return in;
 }
 

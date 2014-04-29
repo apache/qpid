@@ -49,9 +49,11 @@ QPID_AUTO_TEST_CASE(testUuidCtor) {
     for_each(uuids.begin(), uuids.end(), unique);
 }
 
-boost::array<uint8_t, 16>  sample =  {{0x1b, 0x4e, 0x28, 0xba, 0x2f, 0xa1, 0x11, 0xd2, 0x88, 0x3f, 0xb9, 0xa7, 0x61, 0xbd, 0xe3, 0xfb}};
-const string sampleStr("1b4e28ba-2fa1-11d2-883f-b9a761bde3fb");
+boost::array<uint8_t, 16>  sample =  {{0x1b, 0x4e, 0x28, 0xba, 0x2f, 0xa1, 0x11, 0x02, 0x88, 0x3f, 0xb9, 0xa7, 0x61, 0xbd, 0xe3, 0xfb}};
+const string sampleStr("1b4e28ba-2fa1-1102-883f-b9a761bde3fb");
 const string zeroStr("00000000-0000-0000-0000-000000000000");
+const string badUuid1("1b4e28ba-2fa1-11d2-883f-b9761bde3fb");
+const string badUuid2("1b4e28ba-2fa1-11d23883f-b9761dbde3fb");
 
 QPID_AUTO_TEST_CASE(testUuidIstream) {
     Uuid uuid;
@@ -63,7 +65,7 @@ QPID_AUTO_TEST_CASE(testUuidIstream) {
     istringstream is(zeroStr);
     Uuid zero;
     is >> zero;
-    BOOST_CHECK(!in.fail());
+    BOOST_CHECK(!is.fail());
     BOOST_CHECK_EQUAL(zero, Uuid());
 }
 
@@ -78,6 +80,16 @@ QPID_AUTO_TEST_CASE(testUuidOstream) {
     os << Uuid();
     BOOST_CHECK(out.good());
     BOOST_CHECK_EQUAL(os.str(), zeroStr);
+}
+
+QPID_AUTO_TEST_CASE(testBadUuidIstream) {
+  Uuid a;
+  istringstream is(badUuid1);
+  is >> a;
+  BOOST_CHECK(!is.good());
+  istringstream is2(badUuid2);
+  is2 >> a;
+  BOOST_CHECK(!is2.good());
 }
 
 QPID_AUTO_TEST_CASE(testUuidIOstream) {
