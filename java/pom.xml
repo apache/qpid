@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,7 +26,7 @@
 
   <groupId>org.apache.qpid</groupId>
   <artifactId>qpid-java-build</artifactId>
-  <version>0.28-SNAPSHOT</version>
+  <version>0.30-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Qpid Java Build</name>
@@ -55,7 +54,7 @@
     <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
     <qpid.work>${project.build.directory}${file.separator}QPID_WORK</qpid.work>
 
-    <argLine></argLine>
+    <argLine />
     <profile>java-mms.0-10</profile>
     <profile.broker.language>java</profile.broker.language>
     <profile.broker.type>internal</profile.broker.type>

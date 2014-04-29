@@ -21,11 +21,11 @@
   <parent>
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-java-build</artifactId>
-    <version>0.28-SNAPSHOT</version>
+    <version>0.30-SNAPSHOT</version>
   </parent>
 
   <artifactId>qpid-systests-parent</artifactId>
-  <version>0.28-SNAPSHOT</version>
+  <version>0.30-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Qpid Java System Test Parent</name>
   <description>Parent POM for Qpid system testing modules</description>
@@ -40,7 +40,7 @@
     <test.resource.directory>${basedir}/..</test.resource.directory>
     <test.systest.resource.directory>${basedir}</test.systest.resource.directory>
     <!-- Jacoco skip workaround -->
-    <argLine></argLine>
+    <argLine />
   </properties>
 
   <dependencies>
