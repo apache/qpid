@@ -369,6 +369,32 @@ include_directories( ${CMAKE_CURRENT_BINARY_DIR}/../include )
 
 link_directories( ${Boost_LIBRARY_DIRS} )
 
+CHECK_SYMBOL_EXISTS(uuid_generate "uuid/uuid.h" UUID_GENERATE_IN_LIBC)
+if (UUID_GENERATE_IN_LIBC)
+  set(uuid_SRC "")
+  set(uuid_LIB "")
+else (UUID_GENERATE_IN_LIBC)
+  CHECK_LIBRARY_EXISTS (uuid uuid_generate "" UUID_GENERATE_IN_UUID)
+  if (UUID_GENERATE_IN_UUID)
+    set(uuid_SRC "")
+    set(uuid_LIB uuid)
+  else (UUID_GENERATE_IN_UUID)
+    CHECK_SYMBOL_EXISTS(uuid_create "uuid.h" UUID_CREATE_IN_LIBC)
+    if (UUID_CREATE_IN_LIBC)
+      set(uuid_SRC qpid/sys/FreeBSD/uuid.cpp)
+      set(uuid_LIB "")
+    else (UUID_CREATE_IN_LIBC)
+      CHECK_SYMBOL_EXISTS(UuidToString "rpc.h" WIN_UUID)
+      if (WIN_UUID)
+        set(uuid_SRC qpid/sys/windows/uuid.cpp)
+        set(uuid_LIB rpcrt4)
+      else (WIN_UUID)
+        message(FATAL_ERROR "No Uuid API found")
+      endif (WIN_UUID)
+    endif (UUID_CREATE_IN_LIBC)
+  endif (UUID_GENERATE_IN_UUID)
+endif (UUID_GENERATE_IN_LIBC)
+
 # These dependencies aren't found on windows
 if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   # Ensure we have clock_gettime
@@ -381,14 +407,6 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     message(FATAL_ERROR "Cannot find clock_gettime()")
   endif (CLOCK_GETTIME_IN_RT)
   endif (NOT CLOCK_GETTIME_IN_LIBC)
-
-  # Ensure we have uuid library
-  CHECK_LIBRARY_EXISTS (uuid uuid_generate "" HAVE_UUID)
-  CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
-  if (NOT HAVE_UUID AND NOT HAVE_UUID_H)
-    message(FATAL_ERROR "Uuid library and/or header file not found")
-  endif (NOT HAVE_UUID AND NOT HAVE_UUID_H)
-  set (uuid_LIB "uuid")
 
   # Check for header file for dtrace static probes
   check_include_files(sys/sdt.h HAVE_SDT)
@@ -671,12 +689,6 @@ set (qpid_memstat_module
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (qpidtypes_platform_SOURCES
-    qpid/sys/windows/uuid.cpp
-  )
-  set (qpidtypes_platform_LIBS
-    rpcrt4
-  )
 
   set (qpidcommon_platform_SOURCES
     qpid/log/windows/SinkOptions.cpp
@@ -768,11 +780,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lmalloc")
   endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
-  set (qpidtypes_platform_SOURCES)
-  set (qpidtypes_platform_LIBS
-    "${uuid_LIB}"
-  )
-
   set (qpidcommon_platform_SOURCES
     qpid/sys/posix/AsynchIO.cpp
     qpid/sys/posix/Fork.cpp
@@ -800,7 +807,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidcommon_platform_LIBS
     "${CMAKE_DL_LIBS}"
     "${clock_gettime_LIB}"
-    "${uuid_LIB}"
   )
 
   set (qpidbroker_platform_SOURCES
@@ -948,7 +954,7 @@ set(qpidtypes_SOURCES
   qpid/types/Exception.cpp
   qpid/types/Uuid.cpp
   qpid/types/Variant.cpp
-  ${qpidtypes_platform_SOURCES}
+  ${uuid_SRC}
 )
 set_source_files_properties(
      ${qpidtypes_SOURCES}
@@ -957,7 +963,7 @@ set_source_files_properties(
 
 add_msvc_version (qpidtypes library dll)
 add_library(qpidtypes SHARED ${qpidtypes_SOURCES})
-target_link_libraries(qpidtypes ${qpidtypes_platform_LIBS})
+target_link_libraries(qpidtypes "${uuid_LIB}")
 set_target_properties (qpidtypes PROPERTIES
                        LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
                        VERSION ${qpidtypes_version}
