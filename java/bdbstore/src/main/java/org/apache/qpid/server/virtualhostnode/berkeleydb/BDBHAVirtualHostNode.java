@@ -63,7 +63,7 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     @ManagedAttribute(automate = true, defaultValue = "0")
     int getQuorumOverride();
 
-    @ManagedAttribute(automate = true)
+    @ManagedAttribute(automate = true, persist = false)
     String getRole();
 
     @ManagedAttribute(automate = true)

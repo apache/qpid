@@ -18,20 +18,21 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.server.model.testmodel;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedObject;
 
-@Retention(RetentionPolicy.RUNTIME)
-
-public @interface ManagedAttribute
+@ManagedObject( defaultType = "test" )
+public interface TestRootCategory<X extends TestRootCategory<X>> extends ConfiguredObject<X>
 {
-    boolean secure() default false;
-    boolean derived() default false;
-    boolean automate() default false;
-    boolean state() default false;
-    boolean mandatory() default false;
-    boolean persist() default true;
-    String defaultValue() default "";
+    String AUTOMATED_PERSISTED_VALUE = "automatedPersistedValue";
+    String AUTOMATED_NONPERSISTED_VALUE = "automatedNonPersistedValue";
+
+    @ManagedAttribute( automate = true )
+    String getAutomatedPersistedValue();
+
+    @ManagedAttribute( automate = true, persist = false )
+    String getAutomatedNonPersistedValue();
 }

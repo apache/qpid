@@ -23,7 +23,6 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -31,7 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
+import com.sleepycat.je.rep.ReplicatedEnvironment;
+import com.sleepycat.je.rep.StateChangeEvent;
+import com.sleepycat.je.rep.StateChangeListener;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
@@ -45,7 +48,6 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
 import org.apache.qpid.server.store.berkeleydb.BDBHAVirtualHost;
@@ -55,10 +57,6 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironment
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostState;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
-
-import com.sleepycat.je.rep.ReplicatedEnvironment;
-import com.sleepycat.je.rep.StateChangeEvent;
-import com.sleepycat.je.rep.StateChangeListener;
 
 @ManagedObject( category = false, type = "BDB_HA" )
 public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtualHostNodeImpl> implements BDBHAVirtualHostNode<BDBHAVirtualHostNodeImpl>
@@ -561,42 +559,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
             // Ignored
         }
-    }
-
-    // TODO - need a better way of suppressing the persistence of the role field.
-    @Override
-    public ConfiguredObjectRecord asObjectRecord()
-    {
-        final ConfiguredObjectRecord underlying = super.asObjectRecord();
-        return new ConfiguredObjectRecord()
-        {
-
-            @Override
-            public String getType()
-            {
-                return underlying.getType();
-            }
-
-            @Override
-            public Map<String, ConfiguredObjectRecord> getParents()
-            {
-                return underlying.getParents();
-            }
-
-            @Override
-            public UUID getId()
-            {
-                return underlying.getId();
-            }
-
-            @Override
-            public Map<String, Object> getAttributes()
-            {
-                Map<String, Object> copy = new HashMap<String, Object>(underlying.getAttributes());
-                copy.remove(BDBHAVirtualHostNode.ROLE);
-                return copy;
-            }
-        };
     }
 
     private class ReplicaVirtualHost extends BDBHAVirtualHost
