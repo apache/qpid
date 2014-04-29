@@ -59,7 +59,7 @@ void TxnCtxt::commitTxn(JournalImpl* jc, bool commit) {
 }
 
 // static
-uuid_t TxnCtxt::uuid;
+qpid::sys::uuid_t TxnCtxt::uuid;
 
 // static
 IdSequence TxnCtxt::uuidSeq;
@@ -69,7 +69,7 @@ bool TxnCtxt::staticInit = TxnCtxt::setUuid();
 
 // static
 bool TxnCtxt::setUuid() {
-    ::uuid_generate(uuid);
+    qpid::sys::uuid_generate(uuid);
     return true;
 }
 

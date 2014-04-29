@@ -28,7 +28,7 @@
 #include "qpid/linearstore/journal/JournalLog.h"
 #include "qpid/linearstore/journal/slock.h"
 #include "qpid/linearstore/journal/utils/file_hdr.h"
-#include "qpid/sys/uuid.h"
+#include "qpid/types/Uuid.h"
 #include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
@@ -189,12 +189,9 @@ void EmptyFilePool::createEmptyFile() {
 }
 
 std::string EmptyFilePool::getEfpFileName() {
-    uuid_t uuid;
-    ::uuid_generate(uuid); // NOTE: uuid_generate() is not thread safe
-    char uuid_str[37]; // 36 char uuid + trailing \0
-    ::uuid_unparse(uuid, uuid_str);
+    qpid::types::Uuid uuid(true);
     std::ostringstream oss;
-    oss << efpDirectory_ << "/" << uuid_str << QLS_JRNL_FILE_EXTENSION;
+    oss << efpDirectory_ << "/" << uuid << QLS_JRNL_FILE_EXTENSION;
     return oss.str();
 }
 

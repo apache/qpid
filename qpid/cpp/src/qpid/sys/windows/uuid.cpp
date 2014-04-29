@@ -32,7 +32,7 @@
 #  undef uuid_t
 #endif
 
-#include "qpid/sys/windows/uuid.h"
+#include "qpid/sys/uuid.h"
 
 #include <string.h>
 
@@ -43,7 +43,7 @@ inline void iswap (char *p1, char *p2) {
     *p2 = t;
 }
 
-void toUuid (const UUID *guid, uuid_t uuid) {
+void toUuid (const UUID *guid, uint8_t uuid[qpid::sys::UuidSize]) {
     // copy then swap bytes
     memcpy ((char *) uuid, (char *) guid, qpid::sys::UuidSize);
     char *p = (char *) uuid;
@@ -53,40 +53,16 @@ void toUuid (const UUID *guid, uuid_t uuid) {
     iswap (p+6, p+7);
 }
 
-void printHex (const unsigned char *bytes, char *buf, int n) {
-    static char hexrep[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                          'a', 'b', 'c', 'd', 'e', 'f'};
-    for (;n ; n--) {
-        unsigned char b = *bytes++;
-        *buf++ = hexrep[b >> 4];
-        *buf++ = hexrep[b & 0xf];
-    }
-}
 } // namespace
 
+namespace qpid {
+namespace sys {
 
-void uuid_generate (uuid_t out) {
+void uuid_generate (uint8_t out[qpid::sys::UuidSize]) {
     UUID guid;
     UuidCreate (&guid);
     // Version 4 GUID, convert to UUID
     toUuid (&guid, out);
 }
 
-int uuid_parse (const char *in, uuid_t uu) {
-    UUID guid;
-    if (UuidFromString ((unsigned char*)in, &guid) != RPC_S_OK)
-        return -1;
-    toUuid (&guid, uu);
-    return 0;
-}
-
-void uuid_unparse (const uuid_t uu, char *out) {
-    const uint8_t *in = uu;
-    out[8] = out[13] = out[18] = out[23] = '-';
-    printHex (in, out, 4);
-    printHex (in+4, out+9, 2);
-    printHex (in+6, out+14, 2);
-    printHex (in+8, out+19, 2);
-    printHex (in+10, out+24, 6);
-    out[36] = '\0';
-}
+}}

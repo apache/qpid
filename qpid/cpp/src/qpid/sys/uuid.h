@@ -19,10 +19,19 @@
  *
  */
 
-#ifdef _WIN32
-#  include "qpid/sys/windows/uuid.h"
-#else
-#  include <uuid/uuid.h>
-#endif /* _WIN32 */
+#include "qpid/types/ImportExport.h"
+
+#include "qpid/sys/IntegerTypes.h"
+
+namespace qpid {
+namespace sys {
+
+const int UuidSize = 16;
+typedef uint8_t uuid_t[UuidSize];
+
+extern "C"
+QPID_TYPES_EXTERN void uuid_generate (uint8_t out[UuidSize]);
+
+}}
 
 #endif /* _sys_uuid_h */
