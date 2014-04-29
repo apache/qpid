@@ -24,8 +24,8 @@ use Data::Dumper;
 use qpid;
 
 my $broker            = ( @ARGV > 0 ) ? $ARGV[0] : "localhost:5672";
-my $address           = ( @ARGV > 1 ) ? $ARGV[0] : "amq.topic";
-my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[1] : "";
+my $address           = ( @ARGV > 1 ) ? $ARGV[1] : "amq.topic";
+my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[2] : "";
 
 # create a connection
 my $connection = new qpid::messaging::Connection( $broker, $connectionOptions );
@@ -43,7 +43,7 @@ eval {
     $sender->send( new qpid::messaging::Message("Hello world!") );
 
     # receive the message, fetching it directly from the broker
-    my $message = $receiver->fetch(qpid::messaging::Duration::SECOND);
+    my $message = $receiver->fetch(qpid::messaging::Duration::SECOND, 1);
 
     # output the message content, then acknowledge it
     print $message->get_content() . "\n";
