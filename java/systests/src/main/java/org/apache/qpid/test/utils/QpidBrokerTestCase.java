@@ -136,8 +136,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_SSL_PORT_VALUE = 5671;
     public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
     public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
-    public static final int DEFAULT_HTTP_MANAGEMENT_PORT = 8080;
-    public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = 8443;
+    public static final int DEFAULT_HTTP_MANAGEMENT_PORT_VALUE = 8080;
+    public static final int DEFAULT_HTTPS_MANAGEMENT_PORT_VALUE = 8443;
 
     // values
     protected static final String JAVA = "java";
@@ -148,6 +148,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_PORT = Integer.getInteger("test.port", DEFAULT_PORT_VALUE);
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", DEFAULT_JMXPORT_REGISTRYSERVER);
+    public static final int DEFAULT_HTTP_MANAGEMENT_PORT = Integer.getInteger("test.hport", DEFAULT_HTTP_MANAGEMENT_PORT_VALUE);
+    public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = Integer.getInteger("test.hsport", DEFAULT_HTTPS_MANAGEMENT_PORT_VALUE);
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", DEFAULT_SSL_PORT_VALUE);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
@@ -550,6 +552,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                 setSystemProperty("test.mport");
                 setSystemProperty("test.cport");
                 setSystemProperty("test.hport");
+                setSystemProperty("test.hsport");
                 setSystemProperty("test.port.ssl");
                 setSystemProperty("test.port.alt");
                 setSystemProperty("test.port.alt.ssl");
