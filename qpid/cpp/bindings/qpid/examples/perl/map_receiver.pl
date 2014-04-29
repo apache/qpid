@@ -24,8 +24,8 @@ use Data::Dumper;
 use qpid;
 
 my $url     = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $address = ( @ARGV > 1 ) ? $ARGV[0] : "message_queue; {create: always}";
-my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[1] : "";
+my $address = ( @ARGV > 1 ) ? $ARGV[1] : "message_queue; {create: always}";
+my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[2] : "";
 
 # create a connection object
 my $connection = new qpid::messaging::Connection( $url, $connectionOptions );
