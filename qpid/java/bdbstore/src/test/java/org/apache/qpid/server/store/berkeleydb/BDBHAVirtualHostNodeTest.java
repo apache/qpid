@@ -25,13 +25,12 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import com.sleepycat.je.rep.ReplicatedEnvironment;
-import com.sleepycat.je.rep.ReplicationConfig;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
@@ -43,20 +42,23 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
+import com.sleepycat.je.rep.ReplicatedEnvironment;
+import com.sleepycat.je.rep.ReplicationConfig;
+
 public class BDBHAVirtualHostNodeTest extends QpidTestCase
 {
 
     private Broker<?> _broker;
     private File _bdbStorePath;
-    private VirtualHostNode<?> _virtualHostNode;
     private TaskExecutor _taskExecutor;
+    private final ConfiguredObjectFactory _objectFactory = BrokerModel.getInstance().getObjectFactory();
+    private final Set<BDBHAVirtualHostNode<?>> _nodes = new HashSet<>();
 
     @Override
     protected void setUp() throws Exception
@@ -78,9 +80,24 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
     {
         try
         {
-            if (_virtualHostNode != null)
+            Exception firstException = null;
+            for (VirtualHostNode<?> node : _nodes)
             {
-                _virtualHostNode.setDesiredState(_virtualHostNode.getState(), State.STOPPED);
+                try
+                {
+                    node.setDesiredState(node.getState(), State.DELETED);
+                }
+                catch(Exception e)
+                {
+                    if (firstException != null)
+                    {
+                        firstException = e;
+                    }
+                }
+                if (firstException != null)
+                {
+                    throw firstException;
+                }
             }
         }
         finally
@@ -119,11 +136,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         attributes.put(BDBHAVirtualHostNode.REPLICATED_ENVIRONMENT_CONFIGURATION,
                 Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
 
-        ConfiguredObjectFactory objectFactory = BrokerModel.getInstance().getObjectFactory();
-        ConfiguredObjectTypeFactory factory = objectFactory.getConfiguredObjectTypeFactory("VirtualHostNode",
-                                                                                              "BDB_HA");
-
-        BDBHAVirtualHostNode<?> node = (BDBHAVirtualHostNode<?>) factory.create(null, attributes, _broker);
+        VirtualHostNode<?> node = createHaVHN(attributes);
 
         final CountDownLatch virtualHostAddedLatch = new CountDownLatch(1);
         final CountDownLatch virtualHostStateChangeLatch = new CountDownLatch(1);
@@ -168,6 +181,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertEquals(groupName, environment.getGroup().getName());
         assertEquals(nodeHostPort, replicationConfig.getNodeHostPort());
         assertEquals(helperHostPort, replicationConfig.getHelperHosts());
+
         assertEquals(durability, environment.getConfig().getDurability().toString());
         assertEquals("Unexpected JE replication stream timeout", repStreamTimeout, replicationConfig.getConfigParam(ReplicationConfig.REP_STREAM_TIMEOUT));
 
@@ -191,6 +205,129 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertFalse("Store still exists", _bdbStorePath.exists());
     }
 
+    public void testMutableAttributes() throws Exception
+    {
+        UUID id = UUID.randomUUID();
+        String address = "localhost:" + findFreePort();
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        attributes.put(BDBHAVirtualHostNode.ID, id);
+        attributes.put(BDBHAVirtualHostNode.NAME, "node");
+        attributes.put(BDBHAVirtualHostNode.GROUP_NAME, "group");
+        attributes.put(BDBHAVirtualHostNode.ADDRESS, address);
+        attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, address);
+        attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath);
+
+        BDBHAVirtualHostNode<?> node = createHaVHN(attributes);
+
+        assertEquals("Failed to activate node", State.ACTIVE, node.setDesiredState(node.getState(), State.ACTIVE));
+
+        BDBMessageStore bdbMessageStore = (BDBMessageStore) node.getConfigurationStore();
+        ReplicatedEnvironment environment = (ReplicatedEnvironment) bdbMessageStore.getEnvironmentFacade().getEnvironment();
+
+        assertEquals("Unexpected node priority value before mutation", 1, environment.getRepMutableConfig().getNodePriority());
+        assertFalse("Unexpected designated primary value before mutation", environment.getRepMutableConfig().getDesignatedPrimary());
+        assertEquals("Unexpected electable group override value before mutation", 0, environment.getRepMutableConfig().getElectableGroupSizeOverride());
+
+        node.setAttribute(BDBHAVirtualHostNode.PRIORITY, 1, 2);
+        node.setAttribute(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, false, true);
+        node.setAttribute(BDBHAVirtualHostNode.QUORUM_OVERRIDE, 0, 1);
+
+        assertEquals("Unexpected node priority value after mutation", 2, environment.getRepMutableConfig().getNodePriority());
+        assertTrue("Unexpected designated primary value after mutation", environment.getRepMutableConfig().getDesignatedPrimary());
+        assertEquals("Unexpected electable group override value after mutation", 1, environment.getRepMutableConfig().getElectableGroupSizeOverride());
+
+        assertNotNull("Join time should be set", node.getJoinTime());
+        assertNotNull("Last known replication transaction idshould be set", node.getLastKnownReplicationTransactionId());
+
+    }
+
+    public void testTransferMasterToSelf() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+
+        Map<String, Object> node1Attributes = new HashMap<String, Object>();
+        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
+        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
+
+        BDBHAVirtualHostNode<?> node1 = createHaVHN(node1Attributes);
+        assertEquals("Failed to activate node", State.ACTIVE, node1.setDesiredState(node1.getState(), State.ACTIVE));
+
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
+
+        Map<String, Object> node2Attributes = new HashMap<String, Object>();
+        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
+        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
+
+        BDBHAVirtualHostNode<?> node2 = createHaVHN(node2Attributes);
+        assertEquals("Failed to activate node2", State.ACTIVE, node2.setDesiredState(node2.getState(), State.ACTIVE));
+
+        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+        Map<String, Object> node3Attributes = new HashMap<String, Object>();
+        node3Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node3Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node3Attributes.put(BDBHAVirtualHostNode.NAME, "node3");
+        node3Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
+        node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
+        BDBHAVirtualHostNode<?> node3 = createHaVHN(node3Attributes);
+        assertEquals("Failed to activate node3", State.ACTIVE, node3.setDesiredState(node3.getState(), State.ACTIVE));
+
+        BDBHAVirtualHostNode<?> replica = null;
+        int findReplicaCount = 0;
+        while(replica == null)
+        {
+            for (BDBHAVirtualHostNode<?> node : _nodes)
+            {
+                if ("REPLICA".equals(node.getRole()))
+                {
+                    replica = node;
+                    break;
+                }
+            }
+
+            Thread.sleep(100);
+            if (findReplicaCount > 20)
+            {
+                fail("Could not find a node is replica role");
+            }
+            findReplicaCount++;
+        }
+
+        replica.setAttribute(BDBHAVirtualHostNode.ROLE, "REPLICA", "MASTER");
+
+        int awaitMastershipCount = 0;
+        while(!"MASTER".equals(replica.getRole()))
+        {
+            Thread.sleep(100);
+            if (awaitMastershipCount > 20)
+            {
+                fail("Replica did not assume master role");
+            }
+            awaitMastershipCount++;
+        }
+    }
+
+    private BDBHAVirtualHostNode<?> createHaVHN(Map<String, Object> attributes)
+    {
+        BDBHAVirtualHostNode<?> node = (BDBHAVirtualHostNode<?>) _objectFactory.create(VirtualHostNode.class, attributes, _broker);
+        _nodes.add(node);
+        return node;
+    }
 }
 
 
