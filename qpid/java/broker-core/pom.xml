@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-java-build</artifactId>
-    <version>0.28-SNAPSHOT</version>
+    <version>0.30-SNAPSHOT</version>
   </parent>
 
   <artifactId>qpid-broker-core</artifactId>
@@ -193,11 +193,11 @@
                     <target>
                         <ant antfile="build-generate-sources.xml">
                           <reference torefid="source.generation.classpathref" refid="maven.plugin.classpath" />
-                          <property name="build.compiler" value="extJavac"/>
-                          <property name="generated-logmessages-dir" value ="${generated-logmessages-dir}"/>
+                          <property name="build.compiler" value="extJavac" />
+                          <property name="generated-logmessages-dir" value="${generated-logmessages-dir}" />
                           <property name="gentools.classes" location="${basedir}/../common/target/gentools-classes" />
-                          <property name="velocity.classes" value="${project.build.directory}/velocity-classes"/>
-                          <property name="module.src" value="${basedir}/src/main/java"/>
+                          <property name="velocity.classes" value="${project.build.directory}/velocity-classes" />
+                          <property name="module.src" value="${basedir}/src/main/java" />
                         </ant>
                     </target>
                   </configuration>

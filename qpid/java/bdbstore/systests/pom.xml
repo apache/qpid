@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-systests-parent</artifactId>
-    <version>0.28-SNAPSHOT</version>
+    <version>0.30-SNAPSHOT</version>
     <relativePath>../../qpid-systests-parent/pom.xml</relativePath>
   </parent>
 
@@ -118,7 +118,7 @@
               <target>
                 <chmod perm="755">
                   <fileset dir="${qpid.home}">
-                    <include name="bin/**"/>
+                    <include name="bin/**" />
                   </fileset>
                 </chmod>
               </target>
