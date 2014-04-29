@@ -843,7 +843,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return getClass().getSimpleName() + " [id=" + _id + ", name=" + getName() + "]";
     }
 
-    public ConfiguredObjectRecord asObjectRecord()
+    public final ConfiguredObjectRecord asObjectRecord()
     {
         return new ConfiguredObjectRecord()
         {
@@ -868,9 +868,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     public Map<String, Object> run()
                     {
                         Map<String,Object> actualAttributes = new HashMap<String, Object>(getActualAttributes());
-                        for(Map.Entry<String,Object> entry : actualAttributes.entrySet())
+                        Iterator<Map.Entry<String,Object>> attributeIterator = actualAttributes.entrySet().iterator();
+
+                        while(attributeIterator.hasNext())
                         {
-                            if(entry.getValue() instanceof ConfiguredObject)
+                            Map.Entry<String, Object> entry = attributeIterator.next();
+                            ConfiguredObjectAttribute<?, ?> attributeDefinition =
+                                    _attributeTypes.get(entry.getKey());
+                            if(attributeDefinition != null && !attributeDefinition.getAnnotation().persist())
+                            {
+                                attributeIterator.remove();
+                            }
+                            else if(entry.getValue() instanceof ConfiguredObject)
                             {
                                 entry.setValue(((ConfiguredObject)entry.getValue()).getId());
                             }
