@@ -24,6 +24,7 @@ import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -37,8 +38,8 @@ import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -107,7 +108,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @ManagedAttributeField(afterSet="postSetQuorumOverride")
     private int _quorumOverride;
 
-    @ManagedAttributeField(beforeSet="preSetRole", afterSet="postSetRole")
+    @ManagedAttributeField(afterSet="postSetRole")
     private String _role;
 
     @ManagedAttributeField
@@ -118,6 +119,25 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     public BDBHAVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> broker)
     {
         super(broker, attributes);
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+        if (changedAttributes.contains(ROLE))
+        {
+            String currentRole = getRole();
+            if (!ReplicatedEnvironment.State.REPLICA.name().equals(currentRole))
+            {
+                throw new IllegalStateException("Cannot transfer mastership when not a replica, current role is " + currentRole);
+            }
+            BDBHAVirtualHostNode<?> proposed = (BDBHAVirtualHostNode<?>)proxyForValidation;
+            if (!ReplicatedEnvironment.State.MASTER.name().equals(proposed.getRole()))
+            {
+                throw new IllegalArgumentException("Changing role to other value then " + ReplicatedEnvironment.State.MASTER.name() + " is unsupported");
+            }
+        }
     }
 
     @Override
@@ -527,26 +547,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             {
                 throw new ServerScopedRuntimeException("Failed to set quorum override to value " + _quorumOverride + " on " + this, e);
             }
-        }
-    }
-
-    // used as pre action by field _role
-    @SuppressWarnings("unused")
-    private void preSetRole()
-    {
-        ReplicatedEnvironmentFacade environmentFacade = getReplicatedEnvironmentFacade();
-        if (environmentFacade != null)
-        {
-            String currentRole = environmentFacade.getNodeState();
-            if (!ReplicatedEnvironment.State.REPLICA.name().equals(currentRole))
-            {
-                 throw new IllegalConfigurationException("Cannot transfer mastership when node is not in a replica role."
-                         + "Current role is " + currentRole);
-             }
-        }
-        else
-        {
-            // Ignored
         }
     }
 

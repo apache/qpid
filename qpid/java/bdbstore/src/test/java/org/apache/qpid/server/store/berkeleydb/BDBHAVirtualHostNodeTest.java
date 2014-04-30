@@ -246,7 +246,6 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         assertNotNull("Join time should be set", node.getJoinTime());
         assertNotNull("Last known replication transaction idshould be set", node.getLastKnownReplicationTransactionId());
-
     }
 
     public void testTransferMasterToSelf() throws Exception
@@ -420,6 +419,38 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
             awaitMastershipCount++;
         }
     }
+
+    public void testMutatingRoleWhenNotReplica_IsDisallowed() throws Exception
+    {
+        int nodePortNumber = findFreePort();
+        String helperAddress = "localhost:" + nodePortNumber;
+        String groupName = "group";
+
+        Map<String, Object> node1Attributes = new HashMap<String, Object>();
+        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
+        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
+
+        BDBHAVirtualHostNode<?> node = createHaVHN(node1Attributes);
+        assertEquals("Failed to activate node", State.ACTIVE, node.setDesiredState(node.getState(), State.ACTIVE));
+
+        assertEquals("Node is expected to be master", "MASTER", node.getRole());
+
+        try
+        {
+            node.setAttributes(Collections.<String,Object>singletonMap(BDBHAVirtualHostNode.ROLE, "REPLICA"));
+            fail("Role mutation should fail");
+        }
+        catch(IllegalStateException e)
+        {
+            // PASS
+        }
+    }
+
 
     private BDBHAVirtualHostNode<?> createHaVHN(Map<String, Object> attributes)
     {
