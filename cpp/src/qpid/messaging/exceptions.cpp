@@ -44,6 +44,7 @@ NoMessageAvailable::NoMessageAvailable() : FetchError("No message to fetch") {}
 
 SenderError::SenderError(const std::string& msg) : LinkError(msg) {}
 SendError::SendError(const std::string& msg) : SenderError(msg) {}
+MessageRejected::MessageRejected(const std::string& msg) : SendError(msg) {}
 TargetCapacityExceeded::TargetCapacityExceeded(const std::string& msg) : SendError(msg) {}
 
 SessionError::SessionError(const std::string& msg) : MessagingException(msg) {}
