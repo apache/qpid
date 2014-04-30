@@ -20,22 +20,10 @@
  */
 package org.apache.qpid.server.model;
 
-import java.util.Collection;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ManagedObject;
 
-import org.apache.qpid.server.store.DurableConfigurationStore;
-
-@ManagedObject(category=true, managesChildren=false)
-public interface VirtualHostNode<X extends VirtualHostNode<X>> extends ConfiguredObject<X>
+@ManagedObject(category=true, managesChildren=false, creatable=false)
+public interface RemoteReplicationNode<X extends RemoteReplicationNode<X>> extends ConfiguredObject<X>
 {
-    public static final String IS_MESSAGE_STORE_PROVIDER = "messageStoreProvider";
-
-    @ManagedAttribute (automate = true, defaultValue = "false")
-    boolean isMessageStoreProvider();
-
-    VirtualHost<?,?,?> getVirtualHost();
-
-    DurableConfigurationStore getConfigurationStore();
-
-    @SuppressWarnings("rawtypes")
-    Collection<? extends RemoteReplicationNode> getRemoteReplicationNodes();
 }

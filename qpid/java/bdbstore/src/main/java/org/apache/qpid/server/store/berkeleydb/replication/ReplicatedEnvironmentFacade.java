@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -67,6 +68,7 @@ import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.RepInternal;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
+import com.sleepycat.je.rep.ReplicationGroup;
 import com.sleepycat.je.rep.ReplicationMutableConfig;
 import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.RestartRequiredException;
@@ -147,6 +149,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.OPENING);
     private final ConcurrentMap<String, DatabaseHolder> _databases = new ConcurrentHashMap<String, DatabaseHolder>();
+    private final ConcurrentMap<String, ReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, ReplicationNode>();
+    private final AtomicReference<ReplicationGroupListener> _replicationGroupListener = new AtomicReference<ReplicationGroupListener>();
     private final AtomicReference<StateChangeListener> _stateChangeListener = new AtomicReference<StateChangeListener>();
     private final AtomicBoolean _initialised;
     private final EnvironmentFacadeTask[] _initialisationTasks;
@@ -178,10 +182,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         // we relay on this executor being single-threaded as we need to restart and mutate the environment in one thread
         _environmentJobExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("Environment-" + _prettyGroupNodeName));
         _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
-        _groupChangeExecutor.schedule(new RemoteNodeStateLearner(), 100, TimeUnit.MILLISECONDS);  // TODO make configurable
 
         // create environment in a separate thread to avoid renaming of the current thread by JE
         _environment = createEnvironment(true);
+        populateExistingRemoteReplicationNodes();
+        _groupChangeExecutor.submit(new RemoteNodeStateLearner());
     }
 
     @Override
@@ -805,6 +810,19 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         LOGGER.warn("Ignoring an exception whilst closing databases", e);
                     }
                 }
+                else
+                {
+                    // reset database holders for invalid environments
+                    for (Map.Entry<String, DatabaseHolder> entry : _databases.entrySet())
+                    {
+                        DatabaseHolder databaseHolder = entry.getValue();
+                        Database database = databaseHolder.getDatabase();
+                        if (database != null)
+                        {
+                            databaseHolder.setDatabase(null);
+                        }
+                    }
+                }
                 environment.close();
             }
             catch (EnvironmentFailureException efe)
@@ -1004,7 +1022,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    public NodeState getRemoteNodeState(ReplicationNode repNode) throws IOException, ServiceConnectFailedException
+    NodeState getRemoteNodeState(ReplicationNode repNode) throws IOException, ServiceConnectFailedException
     {
         if (repNode == null)
         {
@@ -1023,84 +1041,229 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return _environment.getGroup().getElectableNodes().size();
     }
 
+    public void setReplicationGroupListener(ReplicationGroupListener replicationGroupListener)
+    {
+        if (_replicationGroupListener.compareAndSet(null, replicationGroupListener))
+        {
+            notifyExistingRemoteReplicationNodes(replicationGroupListener);
+        }
+        else
+        {
+            throw new IllegalStateException("ReplicationGroupListener is already set on " + _prettyGroupNodeName);
+        }
+    }
+
+    private void populateExistingRemoteReplicationNodes()
+    {
+        ReplicationGroup group = _environment.getGroup();
+        Set<ReplicationNode> nodes = new HashSet<ReplicationNode>(group.getElectableNodes());
+        String localNodeName = getNodeName();
+
+        for (ReplicationNode replicationNode : nodes)
+        {
+            String discoveredNodeName = replicationNode.getName();
+            if (!discoveredNodeName.equals(localNodeName))
+            {
+               _remoteReplicationNodes.put(replicationNode.getName(), replicationNode);
+            }
+        }
+     }
+
+    private void notifyExistingRemoteReplicationNodes(ReplicationGroupListener listener)
+    {
+        for (ReplicationNode value : _remoteReplicationNodes.values())
+        {
+            listener.onReplicationNodeRecovered(value);
+        }
+    }
+
     private class RemoteNodeStateLearner implements Callable<Void>
     {
         private Map<String, ReplicatedEnvironment.State> _previousGroupState = Collections.emptyMap();
+
         @Override
         public Void call()
         {
-            final Map<String, ReplicatedEnvironment.State> currentGroupState = new HashMap<String, ReplicatedEnvironment.State>();
             try
             {
-                Set<Future<Void>> futures = new HashSet<Future<Void>>();
-
-                for (final ReplicationNode node : _environment.getGroup().getElectableNodes())
-                {
-                    Future<Void> future = _groupChangeExecutor.submit(new Callable<Void>()
-                    {
-                        @Override
-                        public Void call()
-                        {
-                            DbPing ping = new DbPing(node, _configuration.getGroupName(), REMOTE_NODE_MONITOR_INTERVAL);
-                            ReplicatedEnvironment.State nodeState;
-                            try
-                            {
-                                nodeState = ping.getNodeState().getNodeState();
-                            }
-                            catch (IOException e)
-                            {
-                                nodeState = ReplicatedEnvironment.State.UNKNOWN;
-                            }
-                            catch (ServiceConnectFailedException e)
-                            {
-                                nodeState = ReplicatedEnvironment.State.UNKNOWN;
-                            }
-
-                            currentGroupState.put(node.getName(), nodeState);
-                            return null;
-                        }
-                    });
-                    futures.add(future);
-                }
-
-                for (Future<Void> future : futures)
+                if (_state.get() == State.OPEN)
                 {
                     try
                     {
-                        future.get(REMOTE_NODE_MONITOR_INTERVAL, TimeUnit.MILLISECONDS);
+                        detectGroupChangesAndNotify();
                     }
-                    catch (InterruptedException e)
+                    catch(DatabaseException e)
                     {
-                        Thread.currentThread().interrupt();
+                        handleDatabaseException("Exception on replication group check", e);
                     }
-                    catch (ExecutionException e)
-                    {
-                        LOGGER.warn("Cannot update node state for group " + _configuration.getGroupName(), e.getCause());
-                    }
-                    catch (TimeoutException e)
-                    {
-                        LOGGER.warn("Timeout whilst updating node state for group " + _configuration.getGroupName());
-                        future.cancel(true);
-                    }
+
+                    Map<ReplicationNode, NodeState> nodeStates = discoverNodeStates(_remoteReplicationNodes.values());
+
+                    executeDabasePingerOnNodeChangesIfMaster(nodeStates);
+
+                    notifyGroupListenerAboutNodeStates(nodeStates);
                 }
 
-                if (ReplicatedEnvironment.State.MASTER == _environment.getState())
-                {
-                    boolean stateChanged = !_previousGroupState.equals(currentGroupState);
-                    _previousGroupState = currentGroupState;
-                    if (stateChanged && State.OPEN == _state.get())
-                    {
-                        new DatabasePinger().pingDb(ReplicatedEnvironmentFacade.this);
-                    }
-                }
             }
             finally
             {
-                _groupChangeExecutor.schedule(this, REMOTE_NODE_MONITOR_INTERVAL, TimeUnit.MILLISECONDS);
+                State state = _state.get();
+                if (state != State.CLOSED && state != State.CLOSING)
+                {
+                    _groupChangeExecutor.schedule(this, REMOTE_NODE_MONITOR_INTERVAL, TimeUnit.MILLISECONDS);
+                }
             }
             return null;
         }
+
+        private void detectGroupChangesAndNotify()
+        {
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Checking for changes in the group " + _configuration.getGroupName() + " on node " + _configuration.getName());
+            }
+
+            String groupName = _configuration.getGroupName();
+            ReplicatedEnvironment env = _environment;
+            ReplicationGroupListener replicationGroupListener = _replicationGroupListener.get();
+            if (env != null)
+            {
+                ReplicationGroup group = env.getGroup();
+                Set<ReplicationNode> nodes = new HashSet<ReplicationNode>(group.getElectableNodes());
+                String localNodeName = getNodeName();
+
+                Map<String, ReplicationNode> removalMap = new HashMap<String, ReplicationNode>(_remoteReplicationNodes);
+                for (ReplicationNode replicationNode : nodes)
+                {
+                    String discoveredNodeName = replicationNode.getName();
+                    if (!discoveredNodeName.equals(localNodeName))
+                    {
+                        if (!_remoteReplicationNodes.containsKey(discoveredNodeName))
+                        {
+                            if (LOGGER.isDebugEnabled())
+                            {
+                                LOGGER.debug("Remote replication node added '" + replicationNode + "' to '" + groupName + "'");
+                            }
+
+                            _remoteReplicationNodes.put(discoveredNodeName, replicationNode);
+
+                            if (replicationGroupListener != null)
+                            {
+                                replicationGroupListener.onReplicationNodeAddedToGroup(replicationNode);
+                            }
+                        }
+                        else
+                        {
+                            removalMap.remove(discoveredNodeName);
+                        }
+                    }
+                }
+
+                if (!removalMap.isEmpty())
+                {
+                    for (Map.Entry<String, ReplicationNode> replicationNodeEntry : removalMap.entrySet())
+                    {
+                        String replicationNodeName = replicationNodeEntry.getKey();
+                        if (LOGGER.isDebugEnabled())
+                        {
+                            LOGGER.debug("Remote replication node removed '" + replicationNodeName + "' from '" + groupName + "'");
+                        }
+                        _remoteReplicationNodes.remove(replicationNodeName);
+                        if (replicationGroupListener != null)
+                        {
+                            replicationGroupListener.onReplicationNodeRemovedFromGroup(replicationNodeEntry.getValue());
+                        }
+                    }
+                }
+            }
+        }
+
+        private Map<ReplicationNode, NodeState> discoverNodeStates(Collection<ReplicationNode> electableNodes)
+        {
+            final Map<ReplicationNode, NodeState> nodeStates = new HashMap<ReplicationNode, NodeState>();
+            Set<Future<Void>> futures = new HashSet<Future<Void>>();
+
+            for (final ReplicationNode node : electableNodes)
+            {
+                Future<Void> future = _groupChangeExecutor.submit(new Callable<Void>()
+                {
+                    @Override
+                    public Void call()
+                    {
+                        NodeState nodeStateObject = null;
+                        try
+                        {
+                            nodeStateObject = getRemoteNodeState(node);
+                        }
+                        catch (IOException | ServiceConnectFailedException e )
+                        {
+                            // Cannot discover node states. The node state should be treated as UNKNOWN
+                        }
+
+                        nodeStates.put(node, nodeStateObject);
+                        return null;
+                    }
+                });
+                futures.add(future);
+            }
+
+            for (Future<Void> future : futures)
+            {
+                try
+                {
+                    future.get(REMOTE_NODE_MONITOR_INTERVAL, TimeUnit.MILLISECONDS);
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
+                catch (ExecutionException e)
+                {
+                    LOGGER.warn("Cannot update node state for group " + _configuration.getGroupName(), e.getCause());
+                }
+                catch (TimeoutException e)
+                {
+                    LOGGER.warn("Timeout whilst updating node state for group " + _configuration.getGroupName());
+                    future.cancel(true);
+                }
+            }
+            return nodeStates;
+        }
+
+        private void executeDabasePingerOnNodeChangesIfMaster(final Map<ReplicationNode, NodeState> nodeStates)
+        {
+            if (ReplicatedEnvironment.State.MASTER == _environment.getState())
+            {
+                Map<String, ReplicatedEnvironment.State> currentGroupState = new HashMap<String, ReplicatedEnvironment.State>();
+                for (Map.Entry<ReplicationNode, NodeState> entry : nodeStates.entrySet())
+                {
+                    ReplicationNode node = entry.getKey();
+                    NodeState nodeState = entry.getValue();
+                    ReplicatedEnvironment.State state = nodeState == null? ReplicatedEnvironment.State.UNKNOWN : nodeState.getNodeState();
+                    currentGroupState.put(node.getName(), state);
+                }
+                boolean stateChanged = !_previousGroupState.equals(currentGroupState);
+                _previousGroupState = currentGroupState;
+                if (stateChanged && State.OPEN == _state.get())
+                {
+                    new DatabasePinger().pingDb(ReplicatedEnvironmentFacade.this);
+                }
+            }
+        }
+
+        private void notifyGroupListenerAboutNodeStates(final Map<ReplicationNode, NodeState> nodeStates)
+        {
+            ReplicationGroupListener replicationGroupListener = _replicationGroupListener.get();
+            if (replicationGroupListener != null)
+            {
+                for (Map.Entry<ReplicationNode, NodeState> entry : nodeStates.entrySet())
+                {
+                    replicationGroupListener.onNodeState(entry.getKey(), entry.getValue());
+                }
+            }
+        }
     }
+
     public static enum State
     {
         OPENING,

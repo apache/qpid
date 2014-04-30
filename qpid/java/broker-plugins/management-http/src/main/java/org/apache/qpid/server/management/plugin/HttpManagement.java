@@ -252,6 +252,8 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         addRestServlet(root, "plugin", Plugin.class);
         addRestServlet(root, "preferencesprovider", AuthenticationProvider.class, PreferencesProvider.class);
 
+        addRestServlet(root, "replicationnode", VirtualHostNode.class, RemoteReplicationNode.class);
+
         addRestServlet(root, "virtualhost", VirtualHostNode.class, VirtualHost.class);
         addRestServlet(root, "exchange", VirtualHostNode.class, VirtualHost.class, Exchange.class);
         addRestServlet(root, "queue", VirtualHostNode.class, VirtualHost.class, Queue.class);

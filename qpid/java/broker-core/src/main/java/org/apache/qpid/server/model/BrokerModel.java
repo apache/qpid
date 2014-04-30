@@ -72,6 +72,7 @@ public final class BrokerModel extends Model
         addRelationship(Broker.class, Plugin.class);
 
         addRelationship(VirtualHostNode.class, VirtualHost.class);
+        addRelationship(VirtualHostNode.class, RemoteReplicationNode.class);
 
         addRelationship(VirtualHost.class, Exchange.class);
         addRelationship(VirtualHost.class, Queue.class);
