@@ -34,9 +34,9 @@ import javax.jms.MessageProducer;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Session;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 
 public class ConnectionRestTest extends QpidRestTestCase
 {
@@ -174,7 +174,7 @@ public class ConnectionRestTest extends QpidRestTestCase
     private void assertSession(Map<String, Object> sessionData, AMQSession<?, ?> session)
     {
         assertNotNull("Session map cannot be null", sessionData);
-        Asserts.assertAttributesPresent(sessionData, AbstractConfiguredObject.getAttributeNames(Session.class),
+        Asserts.assertAttributesPresent(sessionData, ConfiguredObjectTypeRegistry.getAttributeNames(Session.class),
                                         ConfiguredObject.TYPE,
                                         ConfiguredObject.CREATED_BY,
                                         ConfiguredObject.CREATED_TIME,

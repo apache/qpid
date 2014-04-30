@@ -31,12 +31,12 @@ import java.util.UUID;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -156,7 +156,7 @@ public class HeadersBindingTest extends TestCase
         final EventLogger eventLogger = new EventLogger();
         when(vhost.getEventLogger()).thenReturn(eventLogger);
         _exchange = mock(ExchangeImpl.class);
-        when(_exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
+        when(_exchange.getType()).thenReturn(ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         when(_exchange.getEventLogger()).thenReturn(eventLogger);
         when(_exchange.getModel()).thenReturn(BrokerModel.getInstance());
     }

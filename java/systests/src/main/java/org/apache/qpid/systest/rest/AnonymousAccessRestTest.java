@@ -29,7 +29,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class AnonymousAccessRestTest extends QpidRestTestCase
@@ -52,7 +52,7 @@ public class AnonymousAccessRestTest extends QpidRestTestCase
         TestBrokerConfiguration config = getBrokerConfiguration();
 
         Map<String, Object> anonymousAuthProviderAttributes = new HashMap<String, Object>();
-        anonymousAuthProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        anonymousAuthProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
         anonymousAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
         config.addObjectConfiguration(AuthenticationProvider.class, anonymousAuthProviderAttributes);
 

@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterSupport;
@@ -38,12 +39,11 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-@ManagedObject( category = false, type = "fanout" )
+@ManagedObject( category = false, type = ExchangeDefaults.FANOUT_EXCHANGE_CLASS )
 public class FanoutExchange extends AbstractExchange<FanoutExchange>
 {
     private static final Logger _logger = Logger.getLogger(FanoutExchange.class);
@@ -64,20 +64,10 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
         _filteredBindings.set(emptyMap);
     }
 
-
-
-    public static final ExchangeType<FanoutExchange> TYPE = new FanoutExchangeType();
-
     @ManagedObjectFactoryConstructor
     public FanoutExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost)
     {
         super(attributes, vhost);
-    }
-
-    @Override
-    public ExchangeType<FanoutExchange> getExchangeType()
-    {
-        return TYPE;
     }
 
     @Override

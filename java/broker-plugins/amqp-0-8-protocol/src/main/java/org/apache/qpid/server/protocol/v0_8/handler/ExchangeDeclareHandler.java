@@ -28,12 +28,12 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.NoFactoryForTypeException;
@@ -81,11 +81,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
         if(isDefaultExchange(exchangeName))
         {
-            if(!new AMQShortString(DirectExchange.TYPE.getType()).equals(body.getType()))
+            if(!new AMQShortString(ExchangeDefaults.DIRECT_EXCHANGE_CLASS).equals(body.getType()))
             {
                 throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare default exchange: "
                                                                           + " of type "
-                                                                          + DirectExchange.TYPE.getType()
+                                                                          + ExchangeDefaults.DIRECT_EXCHANGE_CLASS
                                                                           + " to " + body.getType() +".",
                                                  body.getClazz(), body.getMethod(),
                                                  body.getMajor(), body.getMinor(),null);
@@ -100,11 +100,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 {
                     throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
                 }
-                else if (!(body.getType() == null || body.getType().length() ==0) && !exchange.getTypeName().equals(body.getType().asString()))
+                else if (!(body.getType() == null || body.getType().length() ==0) && !exchange.getType().equals(body.getType().asString()))
                 {
 
                     throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " +
-                                      exchangeName + " of type " + exchange.getTypeName()
+                                      exchangeName + " of type " + exchange.getType()
                                       + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
                 }
 
@@ -137,11 +137,11 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 catch(ExchangeExistsException e)
                 {
                     exchange = e.getExistingExchange();
-                    if(!new AMQShortString(exchange.getTypeName()).equals(body.getType()))
+                    if(!new AMQShortString(exchange.getType()).equals(body.getType()))
                     {
                         throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
                                                                                   + exchangeName + " of type "
-                                                                                  + exchange.getTypeName()
+                                                                                  + exchange.getType()
                                                                                   + " to " + body.getType() +".",
                                                          body.getClazz(), body.getMethod(),
                                                          body.getMajor(), body.getMinor(),null);

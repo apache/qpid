@@ -33,9 +33,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -43,28 +41,30 @@ import org.apache.qpid.test.utils.TestFileUtils;
 public class ACLFileAccessControlProviderFactoryTest extends QpidTestCase
 {
     private Broker _broker;
+    private ConfiguredObjectFactoryImpl _objectFactory;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
         _broker = mock(Broker.class);
-        ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
+        _objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
 
-        when(_broker.getObjectFactory()).thenReturn(objectFactory);
-        when(_broker.getModel()).thenReturn(objectFactory.getModel());
+        when(_broker.getObjectFactory()).thenReturn(_objectFactory);
+        when(_broker.getModel()).thenReturn(_objectFactory.getModel());
         when(_broker.getCategoryClass()).thenReturn(Broker.class);
     }
 
     public void testCreateInstanceWhenAclFileIsNotPresent()
     {
-        ACLFileAccessControlProviderFactory factory = new ACLFileAccessControlProviderFactory();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AccessControlProvider.ID, UUID.randomUUID());
         attributes.put(AccessControlProvider.NAME, "acl");
+        attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+
         try
         {
-            AccessControlProvider acl = factory.create(null, attributes, _broker);
+            AccessControlProvider acl = _objectFactory.create(AccessControlProvider.class, attributes, _broker);
             fail("ACL was created without a configuration file path specified");
         }
         catch(IllegalArgumentException e)
@@ -73,16 +73,16 @@ public class ACLFileAccessControlProviderFactoryTest extends QpidTestCase
         }
     }
 
+
     public void testCreateInstanceWhenAclFileIsSpecified()
     {
         File aclFile = TestFileUtils.createTempFile(this, ".acl", "ACL ALLOW all all");
-        ACLFileAccessControlProviderFactory factory = new ACLFileAccessControlProviderFactory();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AccessControlProvider.ID, UUID.randomUUID());
         attributes.put(AccessControlProvider.NAME, "acl");
-        attributes.put(GroupProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+        attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
         attributes.put(FileAccessControlProviderConstants.PATH, aclFile.getAbsolutePath());
-        AccessControlProvider acl = factory.create(null, attributes, _broker);
+        AccessControlProvider acl = _objectFactory.create(AccessControlProvider.class, attributes, _broker);
         acl.getAccessControl().open();
 
         assertNotNull("ACL was not created from acl file: " + aclFile.getAbsolutePath(), acl);
@@ -92,15 +92,14 @@ public class ACLFileAccessControlProviderFactoryTest extends QpidTestCase
     {
         File aclFile = new File(TMP_FOLDER, "my-non-existing-acl-" + System.currentTimeMillis());
         assertFalse("ACL file " + aclFile.getAbsolutePath() + " actually exists but should not", aclFile.exists());
-        ACLFileAccessControlProviderFactory factory = new ACLFileAccessControlProviderFactory();
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AccessControlProvider.ID, UUID.randomUUID());
         attributes.put(AccessControlProvider.NAME, "acl");
-        attributes.put(GroupProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
+        attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
         attributes.put(FileAccessControlProviderConstants.PATH, aclFile.getAbsolutePath());
         try
         {
-            AccessControlProvider control = factory.create(null, attributes, _broker);
+            AccessControlProvider control = _objectFactory.create(AccessControlProvider.class, attributes, _broker);
             control.getAccessControl().open();
             fail("It should not be possible to create and initialise ACL with non existing file");
         }

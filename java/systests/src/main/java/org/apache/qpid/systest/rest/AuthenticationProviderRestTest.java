@@ -27,15 +27,16 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
+import org.apache.qpid.server.model.ExternalFileBasedAuthenticationManager;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordDatabaseAuthenticationManager;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class AuthenticationProviderRestTest extends QpidRestTestCase
@@ -49,10 +50,10 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         for (Map<String, Object> provider : providerDetails)
         {
             boolean managesPrincipals = true;
-            String type = PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE;
+            String type = PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE;
             if (ANONYMOUS_AUTHENTICATION_PROVIDER.equals(provider.get(AuthenticationProvider.NAME)))
             {
-                type = AnonymousAuthenticationManagerFactory.PROVIDER_TYPE;
+                type = AnonymousAuthenticationManager.PROVIDER_TYPE;
                 managesPrincipals = false;
             }
             assertProvider(managesPrincipals, type , provider);
@@ -70,8 +71,8 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         String providerName = "test-provider";
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, principalDatabase.getAbsolutePath());
+        attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
+        attributes.put(ExternalFileBasedAuthenticationManager.PATH, principalDatabase.getAbsolutePath());
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("failed to create authentication provider", 201, responseCode);
@@ -82,7 +83,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         String providerName = "test-provider";
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
@@ -91,7 +92,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
         Map<String, Object> provider = providerDetails.get(0);
-        assertProvider(false, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE, provider);
+        assertProvider(false, AnonymousAuthenticationManager.PROVIDER_TYPE, provider);
     }
 
     public void testUpdateAuthenticationProviderIdFails() throws Exception
@@ -99,7 +100,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         String providerName = "test-provider";
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
@@ -116,7 +117,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         String providerName = "test-provider";
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code for provider creation", 201, responseCode);
@@ -137,7 +138,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
-        assertProvider(false, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE, providerDetails.get(0));
+        assertProvider(false, AnonymousAuthenticationManager.PROVIDER_TYPE, providerDetails.get(0));
     }
 
     public void testDeleteOfUnusedAuthenticationProvider() throws Exception
@@ -146,7 +147,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         String providerName = "test-provider";
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code for provider creation", 201, responseCode);
@@ -174,9 +175,9 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
         String providerName = getTestName();
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsoluteFile());
+        attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsoluteFile());
 
         UUID id = config.addObjectConfiguration(AuthenticationProvider.class, attributes);
         config.setSaved(false);
@@ -187,7 +188,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
         assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
         assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
-        assertEquals("Unexpected path", file.getAbsolutePath() , provider.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+        assertEquals("Unexpected path", file.getAbsolutePath() , provider.get(ExternalFileBasedAuthenticationManager.PATH));
         assertEquals("Unexpected state", State.ERRORED.name() , provider.get(AuthenticationProvider.STATE));
 
         int status = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "DELETE", null);
@@ -212,9 +213,9 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
         String providerName = getTestName();
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsoluteFile());
+        attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsoluteFile());
 
         UUID id = config.addObjectConfiguration(AuthenticationProvider.class, attributes);
         config.setSaved(false);
@@ -225,7 +226,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
         assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
         assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
-        assertEquals("Unexpected path", file.getAbsolutePath() , provider.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+        assertEquals("Unexpected path", file.getAbsolutePath() , provider.get(ExternalFileBasedAuthenticationManager.PATH));
         assertEquals("Unexpected state", State.ERRORED.name() , provider.get(AuthenticationProvider.STATE));
 
         File principalDatabase = null;
@@ -235,8 +236,8 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
             attributes = new HashMap<String, Object>();
             attributes.put(AuthenticationProvider.NAME, providerName);
             attributes.put(AuthenticationProvider.ID, id);
-            attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-            attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, principalDatabase.getAbsolutePath());
+            attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
+            attributes.put(ExternalFileBasedAuthenticationManager.PATH, principalDatabase.getAbsolutePath());
 
             int status = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
             assertEquals("ACL was not deleted", 200, status);
@@ -244,7 +245,8 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
             provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
             assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
             assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
-            assertEquals("Unexpected path", principalDatabase.getAbsolutePath() , provider.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+            assertEquals("Unexpected path", principalDatabase.getAbsolutePath() , provider.get(
+                    ExternalFileBasedAuthenticationManager.PATH));
             assertEquals("Unexpected state", State.ACTIVE.name() , provider.get(AuthenticationProvider.STATE));
         }
         finally
@@ -277,8 +279,8 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         String providerName = "test-provider";
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsolutePath());
+        attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
+        attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsolutePath());
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Password provider was not created", 201, responseCode);
@@ -287,8 +289,9 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         Map<String, Object> providerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected name", providerName, providerDetails.get(AuthenticationProvider.NAME));
-        assertEquals("Unexpected type", PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE, providerDetails.get(AuthenticationProvider.TYPE));
-        assertEquals("Unexpected path", file.getAbsolutePath(), providerDetails.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+        assertEquals("Unexpected type", PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE, providerDetails.get(AuthenticationProvider.TYPE));
+        assertEquals("Unexpected path", file.getAbsolutePath(), providerDetails.get(
+                ExternalFileBasedAuthenticationManager.PATH));
 
         assertTrue("User file should be created", file.exists());
 
@@ -304,8 +307,8 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
     private void assertProvider(boolean managesPrincipals, String type, Map<String, Object> provider)
     {
-        Asserts.assertAttributesPresent(provider, AbstractConfiguredObject.getAttributeNames(
-                AuthenticationProvider.class),
+        Asserts.assertAttributesPresent(provider, ConfiguredObjectTypeRegistry.getAttributeNames(
+                                                AuthenticationProvider.class),
                 AuthenticationProvider.DESCRIPTION, ConfiguredObject.CONTEXT, ConfiguredObject.CREATED_BY,
                 ConfiguredObject.CREATED_TIME, ConfiguredObject.LAST_UPDATED_BY, ConfiguredObject.LAST_UPDATED_TIME);
         assertEquals("Unexpected value of provider attribute " + AuthenticationProvider.STATE, State.ACTIVE.name(),

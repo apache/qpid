@@ -30,13 +30,13 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -68,7 +68,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
  *  amq.match - pub/sub on field content/value
  *  </pre>
  */
-@ManagedObject( category = false, type = "headers" )
+@ManagedObject( category = false, type = ExchangeDefaults.HEADERS_EXCHANGE_CLASS )
 public class HeadersExchange extends AbstractExchange<HeadersExchange>
 {
 
@@ -80,19 +80,10 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
     private final CopyOnWriteArrayList<HeadersBinding> _bindingHeaderMatchers =
                             new CopyOnWriteArrayList<HeadersBinding>();
 
-
-    public static final ExchangeType<HeadersExchange> TYPE = new HeadersExchangeType();
-
     @ManagedObjectFactoryConstructor
     public HeadersExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost)
     {
         super(attributes, vhost);
-    }
-
-    @Override
-    public ExchangeType<HeadersExchange> getExchangeType()
-    {
-        return TYPE;
     }
 
     @Override

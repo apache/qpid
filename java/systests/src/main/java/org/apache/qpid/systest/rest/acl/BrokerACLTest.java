@@ -33,6 +33,7 @@ import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ExternalFileBasedAuthenticationManager;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Plugin;
@@ -46,8 +47,8 @@ import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
-import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordDatabaseAuthenticationManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -155,8 +156,8 @@ public class BrokerACLTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
-        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsolutePath());
+        attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
+        attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsolutePath());
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Setting of provider attribites should be allowed", 200, responseCode);
@@ -178,16 +179,16 @@ public class BrokerACLTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
-        attributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, file.getAbsolutePath());
+        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
+        attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsolutePath());
 
         int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Setting of provider attribites should be allowed", 403, responseCode);
 
         Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
         assertEquals("Unexpected PATH attribute value",
-                providerData.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH),
-                provider.get(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH));
+                providerData.get(ExternalFileBasedAuthenticationManager.PATH),
+                provider.get(ExternalFileBasedAuthenticationManager.PATH));
     }
 
     /* === VirtualHostNode === */
@@ -1012,7 +1013,7 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AuthenticationProvider.NAME, authenticationProviderName);
-        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
         return getRestTestHelper().submitRequest("/rest/authenticationprovider/" + authenticationProviderName, "PUT", attributes);
     }

@@ -28,9 +28,8 @@ import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -89,7 +88,7 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         config.removeObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
 
         Map<String, Object> anonymousProviderAttributes = new HashMap<String, Object>();
-        anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
         anonymousProviderAttributes.put(AuthenticationProvider.NAME, ANONYMOUS_AUTHENTICATION_PROVIDER);
         config.addObjectConfiguration(AuthenticationProvider.class, anonymousProviderAttributes);
 

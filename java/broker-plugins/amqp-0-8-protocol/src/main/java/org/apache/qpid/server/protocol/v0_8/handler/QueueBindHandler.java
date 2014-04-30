@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -30,16 +34,12 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
-import java.util.Map;
 
 public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 {
@@ -125,7 +125,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             if (!exch.isBound(bindingKey, arguments, queue))
             {
 
-                if(!exch.addBinding(bindingKey, queue, arguments) && TopicExchange.TYPE.equals(exch.getExchangeType()))
+                if(!exch.addBinding(bindingKey, queue, arguments) && ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(exch.getType()))
                 {
                     exch.replaceBinding(bindingKey, queue, arguments);
                 }

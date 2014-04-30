@@ -22,7 +22,6 @@ package org.apache.qpid.server.model;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,11 +29,9 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
-import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -42,8 +39,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -75,19 +70,6 @@ import org.apache.qpid.util.Strings;
 
 public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> implements ConfiguredObject<X>
 {
-
-    private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _allAttributes =
-            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?, ?>>>());
-
-    private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?,?>>> _allStatistics =
-            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?, ?>>>());
-
-    private static final Map<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?,?>>> _allAttributeTypes =
-            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?, ?>>>());
-
-    private static final Map<Class<? extends ConfiguredObject>, Map<String, AutomatedField>> _allAutomatedFields =
-            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, AutomatedField>>());
-
     private static final Map<Class, Object> SECURE_VALUES;
 
     public static final String SECURED_STRING_VALUE = "********";
@@ -105,9 +87,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         SECURE_VALUES = Collections.unmodifiableMap(secureValues);
     }
-
-    private static final Map<String, String> _defaultContext =
-            Collections.synchronizedMap(new HashMap<String, String>());
 
     private final AtomicBoolean _open = new AtomicBoolean();
 
@@ -162,7 +141,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private LifetimePolicy _lifetimePolicy;
 
     private final Map<String, ConfiguredObjectAttribute<?,?>> _attributeTypes;
-    private final Map<String, AutomatedField> _automatedFields;
+    private final Map<String, ConfiguredObjectTypeRegistry.AutomatedField> _automatedFields;
 
     @ManagedAttributeField
     private String _type;
@@ -203,10 +182,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         _taskExecutor = taskExecutor;
         _model = model;
 
-        _category = Model.getCategory(getClass());
+        _category = ConfiguredObjectTypeRegistry.getCategory(getClass());
 
-        _attributeTypes = getAttributeTypes(getClass());
-        _automatedFields = getAutomatedFields(getClass());
+        _attributeTypes = ConfiguredObjectTypeRegistry.getAttributeTypes(getClass());
+        _automatedFields = ConfiguredObjectTypeRegistry.getAutomatedFields(getClass());
 
         Object idObj = attributes.get(ID);
 
@@ -228,7 +207,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             throw new IllegalArgumentException("The name attribute is mandatory for " + getClass().getSimpleName() + " creation.");
         }
 
-        _type = Model.getType(getClass());
+        _type = ConfiguredObjectTypeRegistry.getType(getClass());
         _bestFitInterface = calculateBestFitInterface();
 
         if(attributes.get(TYPE) != null && !_type.equals(attributes.get(TYPE)))
@@ -359,7 +338,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 value = attribute.getAnnotation().defaultValue();
             }
-            AutomatedField field = _automatedFields.get(name);
+            ConfiguredObjectTypeRegistry.AutomatedField field = _automatedFields.get(name);
 
             if(field.getPreSettingAction() != null)
             {
@@ -834,7 +813,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public final Collection<String> getAttributeNames()
     {
-        return getAttributeNames(getClass());
+        return ConfiguredObjectTypeRegistry.getAttributeNames(getClass());
     }
 
     @Override
@@ -988,13 +967,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public final <C extends ConfiguredObject> C getChildById(final Class<C> clazz, final UUID id)
     {
-        return (C) _childrenById.get(Model.getCategory(clazz)).get(id);
+        return (C) _childrenById.get(ConfiguredObjectTypeRegistry.getCategory(clazz)).get(id);
     }
 
     @Override
     public final <C extends ConfiguredObject> C getChildByName(final Class<C> clazz, final String name)
     {
-        Class<? extends ConfiguredObject> categoryClass = Model.getCategory(clazz);
+        Class<? extends ConfiguredObject> categoryClass = ConfiguredObjectTypeRegistry.getCategory(clazz);
         if(getModel().getParentTypes(categoryClass).size() != 1)
         {
             throw new UnsupportedOperationException("Cannot use getChildByName for objects of category "
@@ -1135,7 +1114,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public Map<String,Number> getStatistics()
     {
-        Collection<ConfiguredObjectStatistic> stats = getStatistics(getClass());
+        Collection<ConfiguredObjectStatistic> stats = ConfiguredObjectTypeRegistry.getStatistics(getClass());
         Map<String,Number> map = new HashMap<String,Number>();
         for(ConfiguredObjectStatistic stat : stats)
         {
@@ -1147,7 +1126,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public <Y extends ConfiguredObject<Y>> Y findConfiguredObject(Class<Y> clazz, String name)
     {
-        Collection<Y> reachable = getReachableObjects(this,clazz);
+        Collection<Y> reachable = getModel().getReachableObjects(this, clazz);
         for(Y candidate : reachable)
         {
             if(candidate.getName().equals(name))
@@ -1181,7 +1160,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                               new Strings.MapResolver(inheritedContext),
                               Strings.JAVA_SYS_PROPS_RESOLVER,
                               Strings.ENV_VARS_RESOLVER,
-                              new Strings.MapResolver(_defaultContext));
+                              ConfiguredObjectTypeRegistry.getDefaultContextResolver());
     }
 
     private static OwnAttributeResolver getOwnAttributeResolver(final ConfiguredObject<?> object)
@@ -1210,452 +1189,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private static class AutomatedField
-    {
-        private final Field _field;
-        private final Method _preSettingAction;
-        private final Method _postSettingAction;
-
-        private AutomatedField(final Field field, final Method preSettingAction, final Method postSettingAction)
-        {
-            _field = field;
-            _preSettingAction = preSettingAction;
-            _postSettingAction = postSettingAction;
-        }
-
-        public Field getField()
-        {
-            return _field;
-        }
-
-        public Method getPreSettingAction()
-        {
-            return _preSettingAction;
-        }
-
-        public Method getPostSettingAction()
-        {
-            return _postSettingAction;
-        }
-    }
-
-    private static final Comparator<ConfiguredObjectAttributeOrStatistic<?,?>> NAME_COMPARATOR = new Comparator<ConfiguredObjectAttributeOrStatistic<?, ?>>()
-    {
-        @Override
-        public int compare(final ConfiguredObjectAttributeOrStatistic<?, ?> left,
-                           final ConfiguredObjectAttributeOrStatistic<?, ?> right)
-        {
-            return left.getName().compareTo(right.getName());
-        }
-    };
-
-    private static <X extends ConfiguredObject> void processAttributes(final Class<X> clazz)
-    {
-        synchronized (_allAttributes)
-        {
-            if(_allAttributes.containsKey(clazz))
-            {
-                return;
-            }
-
-
-            for(Class<?> parent : clazz.getInterfaces())
-            {
-                if(ConfiguredObject.class.isAssignableFrom(parent))
-                {
-                    processAttributes((Class<? extends ConfiguredObject>)parent);
-                }
-            }
-            final Class<? super X> superclass = clazz.getSuperclass();
-            if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
-            {
-                processAttributes((Class<? extends ConfiguredObject>) superclass);
-            }
-
-            final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet = new TreeSet<>(NAME_COMPARATOR);
-            final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet = new TreeSet<>(NAME_COMPARATOR);
-
-            _allAttributes.put(clazz, attributeSet);
-            _allStatistics.put(clazz, statisticSet);
-
-            for(Class<?> parent : clazz.getInterfaces())
-            {
-                if(ConfiguredObject.class.isAssignableFrom(parent))
-                {
-                    Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(parent);
-                    for(ConfiguredObjectAttribute<?,?> attr : attrs)
-                    {
-                        if(!attributeSet.contains(attr))
-                        {
-                            attributeSet.add(attr);
-                        }
-                    }
-                    Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(parent);
-                    for(ConfiguredObjectStatistic<?,?> stat : stats)
-                    {
-                        if(!statisticSet.contains(stat))
-                        {
-                            statisticSet.add(stat);
-                        }
-                    }
-                }
-            }
-            if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
-            {
-                Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(superclass);
-                Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(superclass);
-                for(ConfiguredObjectAttribute<?,?> attr : attrs)
-                {
-                    if(!attributeSet.contains(attr))
-                    {
-                        attributeSet.add(attr);
-                    }
-                }
-                for(ConfiguredObjectStatistic<?,?> stat : stats)
-                {
-                    if(!statisticSet.contains(stat))
-                    {
-                        statisticSet.add(stat);
-                    }
-                }
-            }
-
-
-            for(Method m : clazz.getDeclaredMethods())
-            {
-                ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
-                if(annotation != null)
-                {
-                    if(!(annotation.automate() || annotation.derived() || annotation.state()))
-                    {
-                        throw new ServerScopedRuntimeException("ManagedAttributes must be either automated or derived. " + m.getName() + " on "  + clazz.getSimpleName() + " does not meet this criterion.");
-                    }
-                    if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
-                    {
-                        throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
-                    }
-
-                    ConfiguredObjectAttribute attribute = new ConfiguredObjectAttribute(clazz, m, annotation);
-                    if(attributeSet.contains(attribute))
-                    {
-                        attributeSet.remove(attribute);
-                    }
-                    attributeSet.add(attribute);
-                }
-                else
-                {
-                    ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
-                    if(statAnnotation != null)
-                    {
-                        if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
-                        {
-                            throw new ServerScopedRuntimeException("Can only define ManagedStatistics on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
-                        }
-                        ConfiguredObjectStatistic statistic = new ConfiguredObjectStatistic(clazz, m);
-                        if(statisticSet.contains(statistic))
-                        {
-                            statisticSet.remove(statistic);
-                        }
-                        statisticSet.add(statistic);
-                    }
-                }
-            }
-
-            Map<String,ConfiguredObjectAttribute<?,?>> attrMap = new HashMap<String, ConfiguredObjectAttribute<?, ?>>();
-            Map<String,AutomatedField> fieldMap = new HashMap<String, AutomatedField>();
-
-
-            Collection<ConfiguredObjectAttribute<?, ?>> attrCol = _allAttributes.get(clazz);
-            for(ConfiguredObjectAttribute<?,?> attr : attrCol)
-            {
-                attrMap.put(attr.getName(), attr);
-                if(attr.getAnnotation().automate())
-                {
-                    fieldMap.put(attr.getName(), findField(attr, clazz));
-                }
-
-            }
-            _allAttributeTypes.put(clazz, attrMap);
-            _allAutomatedFields.put(clazz, fieldMap);
-
-            for(Field field : clazz.getDeclaredFields())
-            {
-                if(Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && field.isAnnotationPresent(ManagedContextDefault.class))
-                {
-                    try
-                    {
-                        String name = field.getAnnotation(ManagedContextDefault.class).name();
-                        Object value = field.get(null);
-                        if(!_defaultContext.containsKey(name))
-                        {
-                            _defaultContext.put(name,String.valueOf(value));
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException("Multiple definitions of the default context variable ${"+name+"}");
-                        }
-                    }
-                    catch (IllegalAccessException e)
-                    {
-                        throw new ServerScopedRuntimeException("Unkecpected illegal access exception (only inspecting public static fields)", e);
-                    }
-                }
-            }
-        }
-    }
-
-    private static AutomatedField findField(final ConfiguredObjectAttribute<?, ?> attr, Class<?> objClass)
-    {
-        Class<?> clazz = objClass;
-        while(clazz != null)
-        {
-            for(Field field : clazz.getDeclaredFields())
-            {
-                if(field.isAnnotationPresent(ManagedAttributeField.class) && field.getName().equals("_" + attr.getName().replace('.','_')))
-                {
-                    try
-                    {
-                        ManagedAttributeField annotation = field.getAnnotation(ManagedAttributeField.class);
-                        field.setAccessible(true);
-                        Method beforeSet;
-                        if (!"".equals(annotation.beforeSet()))
-                        {
-                            beforeSet = clazz.getDeclaredMethod(annotation.beforeSet());
-                            beforeSet.setAccessible(true);
-                        }
-                        else
-                        {
-                            beforeSet = null;
-                        }
-                        Method afterSet;
-                        if (!"".equals(annotation.afterSet()))
-                        {
-                            afterSet = clazz.getDeclaredMethod(annotation.afterSet());
-                            afterSet.setAccessible(true);
-                        }
-                        else
-                        {
-                            afterSet = null;
-                        }
-                        return new AutomatedField(field, beforeSet, afterSet);
-                    }
-                    catch (NoSuchMethodException e)
-                    {
-                        throw new ServerScopedRuntimeException("Cannot find method referenced by annotation for pre/post setting action", e);
-                    }
-
-                }
-            }
-            clazz = clazz.getSuperclass();
-        }
-        if(objClass.isInterface() || Modifier.isAbstract(objClass.getModifiers()))
-        {
-            return null;
-        }
-        throw new ServerScopedRuntimeException("Unable to find field definition for automated field " + attr.getName() + " in class " + objClass.getName());
-    }
-
-    public static <X extends ConfiguredObject> Collection<String> getAttributeNames(Class<X> clazz)
-    {
-        final Collection<ConfiguredObjectAttribute<? super X, ?>> attrs = getAttributes(clazz);
-
-        return new AbstractCollection<String>()
-        {
-            @Override
-            public Iterator<String> iterator()
-            {
-                final Iterator<ConfiguredObjectAttribute<? super X, ?>> underlyingIterator = attrs.iterator();
-                return new Iterator<String>()
-                {
-                    @Override
-                    public boolean hasNext()
-                    {
-                        return underlyingIterator.hasNext();
-                    }
-
-                    @Override
-                    public String next()
-                    {
-                        return underlyingIterator.next().getName();
-                    }
-
-                    @Override
-                    public void remove()
-                    {
-                        throw new UnsupportedOperationException();
-                    }
-                };
-            }
-
-            @Override
-            public int size()
-            {
-                return attrs.size();
-            }
-        };
-
-    }
-
-    protected static <X extends ConfiguredObject> Collection<ConfiguredObjectAttribute<? super X, ?>> getAttributes(final Class<X> clazz)
-    {
-        if(!_allAttributes.containsKey(clazz))
-        {
-            processAttributes(clazz);
-        }
-        final Collection<ConfiguredObjectAttribute<? super X, ?>> attributes = (Collection) _allAttributes.get(clazz);
-        return attributes;
-    }
-
-
-    protected static Collection<ConfiguredObjectStatistic> getStatistics(final Class<? extends ConfiguredObject> clazz)
-    {
-        if(!_allStatistics.containsKey(clazz))
-        {
-            processAttributes(clazz);
-        }
-        final Collection<ConfiguredObjectStatistic> statistics = (Collection) _allStatistics.get(clazz);
-        return statistics;
-    }
-
-
-    private static Map<String, ConfiguredObjectAttribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
-    {
-        if(!_allAttributeTypes.containsKey(clazz))
-        {
-            processAttributes(clazz);
-        }
-        return _allAttributeTypes.get(clazz);
-    }
-
-    private static Map<String, AutomatedField> getAutomatedFields(Class<? extends ConfiguredObject> clazz)
-    {
-        if(!_allAutomatedFields.containsKey(clazz))
-        {
-            processAttributes(clazz);
-        }
-        return _allAutomatedFields.get(clazz);
-    }
-
-    static <X extends ConfiguredObject<X>> Collection<X> getReachableObjects(final ConfiguredObject<?> object,
-                                                                                     final Class<X> clazz)
-    {
-        Class<? extends ConfiguredObject> category = Model.getCategory(object.getClass());
-        Class<? extends ConfiguredObject> ancestorClass = getAncestorClassWithGivenDescendant(object.getModel(),category, clazz);
-        if(ancestorClass != null)
-        {
-            ConfiguredObject ancestor = getAncestor(ancestorClass, category, object);
-            if(ancestor != null)
-            {
-                return getAllDescendants(ancestor, ancestorClass, clazz);
-            }
-        }
-        return null;
-    }
-
-    private static <X extends ConfiguredObject<X>> Collection<X> getAllDescendants(final ConfiguredObject ancestor,
-                                                                                   final Class<? extends ConfiguredObject> ancestorClass,
-                                                                                   final Class<X> clazz)
-    {
-        Set<X> descendants = new HashSet<X>();
-        for(Class<? extends ConfiguredObject> childClass : ancestor.getModel().getChildTypes(ancestorClass))
-        {
-            Collection<? extends ConfiguredObject> children = ancestor.getChildren(childClass);
-            if(childClass == clazz)
-            {
-
-                if(children != null)
-                {
-                    descendants.addAll((Collection<X>)children);
-                }
-            }
-            else
-            {
-                if(children != null)
-                {
-                    for(ConfiguredObject child : children)
-                    {
-                        descendants.addAll(getAllDescendants(child, childClass, clazz));
-                    }
-                }
-            }
-        }
-        return descendants;
-    }
-
-    private static ConfiguredObject getAncestor(final Class<? extends ConfiguredObject> ancestorClass,
-                                                final Class<? extends ConfiguredObject> category,
-                                                final ConfiguredObject<?> object)
-    {
-        if(ancestorClass.isInstance(object))
-        {
-            return object;
-        }
-        else
-        {
-            for(Class<? extends ConfiguredObject> parentClass : object.getModel().getParentTypes(category))
-            {
-                ConfiguredObject parent = object.getParent(parentClass);
-                if(parent == null)
-                {
-                    System.err.println(parentClass.getSimpleName());
-                }
-                ConfiguredObject ancestor = getAncestor(ancestorClass, parentClass, parent);
-                if(ancestor != null)
-                {
-                    return ancestor;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Class<? extends ConfiguredObject> getAncestorClassWithGivenDescendant(
-            final Model model, final Class<? extends ConfiguredObject> category,
-            final Class<? extends ConfiguredObject> descendantClass)
-    {
-        Collection<Class<? extends ConfiguredObject>> candidateClasses =
-                Collections.<Class<? extends ConfiguredObject>>singleton(category);
-        while(!candidateClasses.isEmpty())
-        {
-            for(Class<? extends ConfiguredObject> candidate : candidateClasses)
-            {
-                if(hasDescendant(model, candidate, descendantClass))
-                {
-                    return candidate;
-                }
-            }
-            Set<Class<? extends ConfiguredObject>> previous = new HashSet<Class<? extends ConfiguredObject>>(candidateClasses);
-            candidateClasses = new HashSet<Class<? extends ConfiguredObject>>();
-            for(Class<? extends ConfiguredObject> prev : previous)
-            {
-                candidateClasses.addAll(model.getParentTypes(prev));
-            }
-        }
-        return null;
-    }
-
-    private static boolean hasDescendant(final Model model, final Class<? extends ConfiguredObject> candidate,
-                                         final Class<? extends ConfiguredObject> descendantClass)
-    {
-        int oldSize = 0;
-
-        Set<Class<? extends ConfiguredObject>> allDescendants = new HashSet<Class<? extends ConfiguredObject>>(model.getChildTypes(
-                candidate));
-        while(allDescendants.size() > oldSize)
-        {
-            oldSize = allDescendants.size();
-            Set<Class<? extends ConfiguredObject>> prev = new HashSet<Class<? extends ConfiguredObject>>(allDescendants);
-            for(Class<? extends ConfiguredObject> clazz : prev)
-            {
-                allDescendants.addAll(model.getChildTypes(clazz));
-            }
-            if(allDescendants.contains(descendantClass))
-            {
-                break;
-            }
-        }
-        return allDescendants.contains(descendantClass);
-    }
 
     private static class OwnAttributeResolver implements Strings.Resolver
     {

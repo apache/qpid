@@ -27,6 +27,9 @@ import org.apache.qpid.server.model.ManagedObject;
 @ManagedObject( category = false, type = "External" )
 public interface ExternalAuthenticationManager<T extends ExternalAuthenticationManager<T>> extends AuthenticationProvider<T>
 {
-    @ManagedAttribute( automate = true )
+    String PROVIDER_TYPE = "External";
+    String ATTRIBUTE_USE_FULL_DN = "useFullDN";
+
+    @ManagedAttribute( automate = true , description = "Use the full DN as the Username")
     boolean getUseFullDN();
 }

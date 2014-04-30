@@ -40,13 +40,13 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
     @Override
     public final String getType()
     {
-        return Model.getType(_clazz);
+        return ConfiguredObjectTypeRegistry.getType(_clazz);
     }
 
     @Override
     public final Class<? super X> getCategoryClass()
     {
-        return (Class<? super X>) Model.getCategory(_clazz);
+        return (Class<? super X>) ConfiguredObjectTypeRegistry.getCategory(_clazz);
     }
 
     @Override
@@ -65,7 +65,7 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
     {
 
         if(!parents[0].getModel().getParentTypes((Class<? extends ConfiguredObject>) getCategoryClass()).contains(
-                Model.getCategory(parentClass)))
+                ConfiguredObjectTypeRegistry.getCategory(parentClass)))
         {
             throw new IllegalArgumentException(parentClass.getSimpleName() + " is not a parent of " + _clazz.getSimpleName());
         }

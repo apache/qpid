@@ -192,7 +192,7 @@ public class RuleSetTest extends QpidTestCase
 
         ExchangeImpl<?> exchange = mock(ExchangeImpl.class);
         when(exchange.getParent(VirtualHost.class)).thenReturn(_virtualHost);
-        when(exchange.getTypeName()).thenReturn(_exchangeType);
+        when(exchange.getType()).thenReturn(_exchangeType);
         when(_virtualHost.getName()).thenReturn(ALLOWED_VH);
 
         assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.EXCHANGE, new ObjectProperties(exchange)));

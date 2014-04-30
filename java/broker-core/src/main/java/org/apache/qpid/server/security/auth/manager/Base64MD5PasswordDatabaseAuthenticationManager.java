@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
@@ -33,8 +34,10 @@ public class Base64MD5PasswordDatabaseAuthenticationManager
 {
 
 
-    protected Base64MD5PasswordDatabaseAuthenticationManager(final Broker broker,
-                                                             final Map<String, Object> attributes)
+    public static final String PROVIDER_TYPE = "Base64MD5PasswordFile";
+
+    @ManagedObjectFactoryConstructor
+    protected Base64MD5PasswordDatabaseAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
         super(attributes, broker);
     }

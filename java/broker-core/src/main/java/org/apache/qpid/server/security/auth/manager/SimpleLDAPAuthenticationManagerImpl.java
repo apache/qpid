@@ -48,6 +48,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -94,6 +95,7 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
      */
     private Class<? extends SocketFactory> _sslSocketFactoryOverrideClass;
 
+    @ManagedObjectFactoryConstructor
     protected SimpleLDAPAuthenticationManagerImpl(final Map<String, Object> attributes, final Broker broker)
     {
         super(attributes, broker);

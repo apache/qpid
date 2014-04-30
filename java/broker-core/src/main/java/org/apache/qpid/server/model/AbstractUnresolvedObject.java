@@ -50,7 +50,7 @@ public abstract class AbstractUnresolvedObject<C extends ConfiguredObject<C>> im
         _parents = parents;
 
         Collection<ConfiguredObjectAttribute<? super C, ?>> attributes =
-                AbstractConfiguredObject.getAttributes(clazz);
+                ConfiguredObjectTypeRegistry.getAttributes(clazz);
         for(ConfiguredObjectAttribute<? super C, ?> attribute : attributes)
         {
             final Class<?> attributeType = attribute.getType();

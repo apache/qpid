@@ -27,14 +27,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
+import org.apache.qpid.server.model.ExternalFileBasedAuthenticationManager;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
-import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordDatabaseAuthenticationManager;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
 
@@ -74,9 +75,9 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
     {
         super.customizeConfiguration();
         Map<String, Object> anonymousAuthProviderAttributes = new HashMap<String, Object>();
-        anonymousAuthProviderAttributes.put(AuthenticationProvider.TYPE, PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        anonymousAuthProviderAttributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
         anonymousAuthProviderAttributes.put(AuthenticationProvider.NAME,  TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "-2");
-        anonymousAuthProviderAttributes.put(PlainPasswordFileAuthenticationManagerFactory.ATTRIBUTE_PATH, _authenticationProviderFile.getAbsolutePath());
+        anonymousAuthProviderAttributes.put(ExternalFileBasedAuthenticationManager.PATH, _authenticationProviderFile.getAbsolutePath());
         getBrokerConfiguration().addObjectConfiguration(AuthenticationProvider.class,anonymousAuthProviderAttributes);
     }
 
@@ -162,7 +163,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
     public void assertProviderCommonAttributes(Map<String, Object> provider)
     {
         Asserts.assertAttributesPresent(provider,
-                                        AbstractConfiguredObject.getAttributeNames(PreferencesProvider.class),
+                                        ConfiguredObjectTypeRegistry.getAttributeNames(PreferencesProvider.class),
                                         ConfiguredObject.CREATED_BY,
                                         ConfiguredObject.CREATED_TIME,
                                         ConfiguredObject.LAST_UPDATED_BY,

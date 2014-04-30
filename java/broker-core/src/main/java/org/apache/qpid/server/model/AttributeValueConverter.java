@@ -620,7 +620,7 @@ abstract class AttributeValueConverter<T>
             }
             else if(value instanceof UUID)
             {
-                Collection<X> reachable = AbstractConfiguredObject.getReachableObjects(object, _klazz);
+                Collection<X> reachable = object.getModel().getReachableObjects(object, _klazz);
                 for(X candidate : reachable)
                 {
                     if(candidate.getId().equals(value))
@@ -633,7 +633,7 @@ abstract class AttributeValueConverter<T>
             else if(value instanceof String)
             {
                 String valueStr = AbstractConfiguredObject.interpolate(object, (String) value);
-                Collection<X> reachable = AbstractConfiguredObject.getReachableObjects(object, _klazz);
+                Collection<X> reachable = object.getModel().getReachableObjects(object, _klazz);
                 for(X candidate : reachable)
                 {
                     if(candidate.getName().equals(valueStr))

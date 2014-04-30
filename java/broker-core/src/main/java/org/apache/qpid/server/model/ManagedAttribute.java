@@ -34,4 +34,5 @@ public @interface ManagedAttribute
     boolean mandatory() default false;
     boolean persist() default true;
     String defaultValue() default "";
+    String description() default "";
 }

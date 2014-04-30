@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.logging.messages;
 
+import java.util.List;
+
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.util.BrokerTestHelper;
-
-import java.util.List;
 
 /**
  * Test EXH Log Messages
@@ -34,7 +34,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     {
         ExchangeImpl exchange = BrokerTestHelper.createExchange("test", false, getEventLogger());
 
-        String type = exchange.getTypeName();
+        String type = exchange.getType();
         String name = exchange.getName();
 
         _logMessage = ExchangeMessages.CREATED(type, name, false);
@@ -49,7 +49,7 @@ public class ExchangeMessagesTest extends AbstractTestMessages
     {
         ExchangeImpl exchange = BrokerTestHelper.createExchange("test", true, getEventLogger());
 
-        String type = exchange.getTypeName();
+        String type = exchange.getType();
         String name = exchange.getName();
 
         _logMessage = ExchangeMessages.CREATED(type, name, true);

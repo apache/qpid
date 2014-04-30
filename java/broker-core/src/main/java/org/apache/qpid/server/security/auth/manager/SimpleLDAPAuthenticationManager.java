@@ -28,21 +28,24 @@ import org.apache.qpid.server.model.TrustStore;
 @ManagedObject( category = false, type = "SimpleLDAP" )
 public interface SimpleLDAPAuthenticationManager<X extends SimpleLDAPAuthenticationManager<X>> extends AuthenticationProvider<X>
 {
-    @ManagedAttribute( automate = true )
+    String PROVIDER_TYPE = "SimpleLDAP";
+    String TRUST_STORE = "trustStore";
+
+    @ManagedAttribute( automate = true, description = "LDAP server URL" )
     String getProviderUrl();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( automate = true, description = "LDAP authentication URL")
     String getProviderAuthUrl();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( automate = true, description = "Search context")
     String getSearchContext();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( automate = true, description = "Search filter")
     String getSearchFilter();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( automate = true, description = "LDAP context factory")
     String getLdapContextFactory();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute( automate = true, description = "Trust store name")
     TrustStore getTrustStore();
 }

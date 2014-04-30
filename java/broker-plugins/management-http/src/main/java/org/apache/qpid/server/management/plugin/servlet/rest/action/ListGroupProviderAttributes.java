@@ -20,32 +20,10 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest.action;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import org.apache.qpid.server.model.GroupProvider;
 
-import org.apache.qpid.server.management.plugin.servlet.rest.Action;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.GroupManagerFactory;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
-
-public class ListGroupProviderAttributes implements Action
+public class ListGroupProviderAttributes extends AbstractSpecialisedAttributeLister<GroupProvider>
 {
-    private static final String ATTRIBUTES = "attributes";
-    private static final String DESCRIPTIONS = "descriptions";
-    private Map<String, GroupManagerFactory> _factories;
-
-    public ListGroupProviderAttributes()
-    {
-        _factories = new TreeMap<String, GroupManagerFactory>();
-        Iterable<GroupManagerFactory> factories = new QpidServiceLoader<GroupManagerFactory>()
-                .instancesOf(GroupManagerFactory.class);
-        for (GroupManagerFactory factory : factories)
-        {
-            _factories.put(factory.getType(), factory);
-        }
-    }
-
     @Override
     public String getName()
     {
@@ -53,24 +31,8 @@ public class ListGroupProviderAttributes implements Action
     }
 
     @Override
-    public Object perform(Map<String, Object> request, Broker broker)
+    Class<GroupProvider> getCategoryClass()
     {
-        Map<String, Object> attributes = new TreeMap<String, Object>();
-        for (String providerType : _factories.keySet())
-        {
-            GroupManagerFactory factory = _factories.get(providerType);
-
-            Map<String, Object> data = new HashMap<String, Object>();
-            data.put(ATTRIBUTES, factory.getAttributeNames());
-            Map<String, String> resources = factory.getAttributeDescriptions();
-            if (resources != null)
-            {
-                data.put(DESCRIPTIONS, resources);
-            }
-
-            attributes.put(factory.getType(), data);
-        }
-        return attributes;
+        return GroupProvider.class;
     }
-
 }

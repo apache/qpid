@@ -171,7 +171,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @ManagedAttributeField
     private ExclusivityPolicy _exclusive;
 
-    private Object _exclusiveOwner; // could be connection, session, Principal or a String for the container name
+    private Object _exclusiveOwner; // could be connection, session, Principal or a String forset the container name
 
     private final Set<NotificationCheck> _notificationChecks =
             Collections.synchronizedSet(EnumSet.noneOf(NotificationCheck.class));

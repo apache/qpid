@@ -31,7 +31,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.security.auth.manager.PlainPasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.PlainPasswordDatabaseAuthenticationManager;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -175,7 +175,7 @@ public class UserManagementTest extends QpidBrokerTestCase
 
     protected String getAuthenticationManagerType()
     {
-        return PlainPasswordFileAuthenticationManagerFactory.PROVIDER_TYPE;
+        return PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE;
     }
 
     private File createTemporaryPasswordFileWithJmxAdminUser() throws Exception
