@@ -130,6 +130,7 @@ void ConnectionContext::sync(boost::shared_ptr<SessionContext> ssn)
     while (!ssn->settled()) {
         QPID_LOG(debug, "Waiting for sends to settle on sync()");
         wait(ssn);//wait until message has been confirmed
+        wakeupDriver();
     }
     checkClosed(ssn);
 }
@@ -142,6 +143,7 @@ void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
         while (!ssn->settled()) {
             QPID_LOG(debug, "Waiting for sends to settle before closing");
             wait(ssn);//wait until message has been confirmed
+            wakeupDriver();
         }
     }
 
