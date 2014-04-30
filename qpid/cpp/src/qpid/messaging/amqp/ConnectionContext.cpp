@@ -399,10 +399,14 @@ void ConnectionContext::send(boost::shared_ptr<SessionContext> ssn, boost::share
     }
     wakeupDriver();
     if (sync && delivery) {
-        while (!delivery->accepted()) {
+        while (!delivery->delivered()) {
             QPID_LOG(debug, "Waiting for confirmation...");
             wait(ssn, snd);//wait until message has been confirmed
         }
+        if (delivery->rejected()) {
+            throw MessageRejected("Message was rejected by peer");
+        }
+
     }
 }
 

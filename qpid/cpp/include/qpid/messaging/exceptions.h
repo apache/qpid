@@ -137,6 +137,15 @@ struct QPID_MESSAGING_CLASS_EXTERN SendError : public SenderError
 };
 
 /**
+ * Thrown on a synchronous send to indicate that the message being
+ * sent was rejected.
+ */
+struct QPID_MESSAGING_CLASS_EXTERN MessageRejected : public SendError
+{
+    QPID_MESSAGING_EXTERN MessageRejected(const std::string&);
+};
+
+/**
  * Thrown to indicate that the sender attempted to send a message that
  * would result in the target node on the peer exceeding a
  * preconfigured capacity.
