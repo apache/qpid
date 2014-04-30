@@ -228,7 +228,7 @@ public class SecurityManagerTest extends QpidTestCase
         ExchangeImpl<?> exchange = mock(ExchangeImpl.class);
         when(exchange.getParent(VirtualHost.class)).thenReturn(_virtualHost);
         when(exchange.getName()).thenReturn(TEST_EXCHANGE);
-        when(exchange.getTypeName()).thenReturn(TEST_EXCHANGE_TYPE);
+        when(exchange.getType()).thenReturn(TEST_EXCHANGE_TYPE);
 
         ObjectProperties properties = createExpectedExchangeObjectProperties();
 
@@ -329,7 +329,7 @@ public class SecurityManagerTest extends QpidTestCase
         ExchangeImpl<?> exchange = mock(ExchangeImpl.class);
         when(exchange.getParent(VirtualHost.class)).thenReturn(_virtualHost);
         when(exchange.getName()).thenReturn(TEST_EXCHANGE);
-        when(exchange.getTypeName()).thenReturn(TEST_EXCHANGE_TYPE);
+        when(exchange.getType()).thenReturn(TEST_EXCHANGE_TYPE);
 
         ObjectProperties properties = createExpectedExchangeObjectProperties();
 
@@ -355,7 +355,7 @@ public class SecurityManagerTest extends QpidTestCase
         ExchangeImpl<?> exchange = mock(ExchangeImpl.class);
         when(exchange.getParent(VirtualHost.class)).thenReturn(_virtualHost);
         when(exchange.getName()).thenReturn(TEST_EXCHANGE);
-        when(exchange.getTypeName()).thenReturn(TEST_EXCHANGE_TYPE);
+        when(exchange.getType()).thenReturn(TEST_EXCHANGE_TYPE);
 
         ObjectProperties properties = createExpectedExchangeObjectProperties();
 

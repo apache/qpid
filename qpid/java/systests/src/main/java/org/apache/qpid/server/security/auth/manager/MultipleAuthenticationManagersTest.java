@@ -48,7 +48,7 @@ public class MultipleAuthenticationManagersTest extends QpidBrokerTestCase
         TestBrokerConfiguration config = getBrokerConfiguration();
 
         Map<String, Object> externalAuthProviderAttributes = new HashMap<String, Object>();
-        externalAuthProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManagerFactory.PROVIDER_TYPE);
+        externalAuthProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
         externalAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
         config.addObjectConfiguration(AuthenticationProvider.class, externalAuthProviderAttributes);
 

@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
+
 import org.apache.qpid.server.management.plugin.servlet.ServletConnectionPrincipal;
 import org.apache.qpid.server.management.plugin.session.LoginLogoutReporter;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -44,7 +45,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class HttpManagementUtil
@@ -162,7 +163,7 @@ public class HttpManagementUtil
             {
                 principal = certificates[0].getSubjectX500Principal();
 
-                if(!Boolean.valueOf(String.valueOf(authenticationProvider.getAttribute(ExternalAuthenticationManagerFactory.ATTRIBUTE_USE_FULL_DN))))
+                if(!Boolean.valueOf(String.valueOf(authenticationProvider.getAttribute(ExternalAuthenticationManager.ATTRIBUTE_USE_FULL_DN))))
                 {
                     String username;
                     String dn = ((X500Principal) principal).getName(X500Principal.RFC2253);

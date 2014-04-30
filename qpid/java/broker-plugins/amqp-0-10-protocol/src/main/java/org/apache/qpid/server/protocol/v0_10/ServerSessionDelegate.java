@@ -32,10 +32,9 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -49,7 +48,6 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.NoFactoryForTypeException;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UnknownConfiguredObjectException;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -694,11 +692,11 @@ public class ServerSessionDelegate extends SessionDelegate
         if(nameNullOrEmpty(method.getExchange()))
         {
             // special case handling to fake the existence of the default exchange for 0-10
-            if(!DirectExchange.TYPE.getType().equals(method.getType()))
+            if(!ExchangeDefaults.DIRECT_EXCHANGE_CLASS.equals(method.getType()))
             {
                 exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
                           "Attempt to redeclare default exchange "
-                          + " of type " + DirectExchange.TYPE.getType()
+                          + " of type " + ExchangeDefaults.DIRECT_EXCHANGE_CLASS
                           + " to " + method.getType() +".");
             }
             if(!nameNullOrEmpty(method.getAlternateExchange()))
@@ -721,11 +719,11 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 else
                 {
-                    if (!exchange.getTypeName().equals(method.getType())
+                    if (!exchange.getType().equals(method.getType())
                             && (method.getType() != null && method.getType().length() > 0))
                     {
                         exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Attempt to redeclare exchange: "
-                                + exchangeName + " of type " + exchange.getTypeName() + " to " + method.getType() + ".");
+                                + exchangeName + " of type " + exchange.getType() + " to " + method.getType() + ".");
                     }
                 }
             }
@@ -762,11 +760,11 @@ public class ServerSessionDelegate extends SessionDelegate
                 catch(ExchangeExistsException e)
                 {
                     ExchangeImpl exchange = e.getExistingExchange();
-                    if(!exchange.getTypeName().equals(method.getType()))
+                    if(!exchange.getType().equals(method.getType()))
                     {
                         exception(session, method, ExecutionErrorCode.NOT_ALLOWED,
                                 "Attempt to redeclare exchange: " + exchangeName
-                                        + " of type " + exchange.getTypeName()
+                                        + " of type " + exchange.getType()
                                         + " to " + method.getType() +".");
                     }
                     else if(method.hasAlternateExchange()
@@ -887,18 +885,6 @@ public class ServerSessionDelegate extends SessionDelegate
         return false;
     }
 
-    private boolean isStandardExchange(ExchangeImpl exchange, Collection<ExchangeType<? extends ExchangeImpl>> registeredTypes)
-    {
-        for(ExchangeType type : registeredTypes)
-        {
-            if(type.getDefaultExchangeName().equals( exchange.getName() ))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     public void exchangeQuery(Session session, ExchangeQuery method)
     {
@@ -912,7 +898,7 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             // Fake the existence of the "default" exchange for 0-10
             result.setDurable(true);
-            result.setType(DirectExchange.TYPE.getType());
+            result.setType(ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
             result.setNotFound(false);
         }
         else
@@ -922,7 +908,7 @@ public class ServerSessionDelegate extends SessionDelegate
             if(exchange != null)
             {
                 result.setDurable(exchange.isDurable());
-                result.setType(exchange.getTypeName());
+                result.setType(exchange.getType());
                 result.setNotFound(false);
             }
             else
@@ -968,9 +954,9 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session, method, ExecutionErrorCode.NOT_FOUND, "Exchange: '" + exchangeName + "' not found");
                 }
-                else if(exchange.getExchangeType().equals(HeadersExchange.TYPE) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
+                else if(exchange.getType().equals(ExchangeDefaults.HEADERS_EXCHANGE_CLASS) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
                 {
-                    exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getType() + " require an x-match header");
+                    exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + ExchangeDefaults.HEADERS_EXCHANGE_CLASS + " require an x-match header");
                 }
                 else
                 {

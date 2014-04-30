@@ -22,6 +22,8 @@ package org.apache.qpid.server.model;
 
 public interface ExternalFileBasedAuthenticationManager<X extends ExternalFileBasedAuthenticationManager<X>> extends PasswordCredentialManagingAuthenticationProvider<X>
 {
-    @ManagedAttribute( automate = true , mandatory = true )
+    String PATH = "path";
+
+    @ManagedAttribute( automate = true , mandatory = true, description = "File location")
     public String getPath();
 }

@@ -34,7 +34,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
-import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class BrokerRestHttpsClientCertAuthTest extends QpidRestTestCase
@@ -66,7 +66,7 @@ public class BrokerRestHttpsClientCertAuthTest extends QpidRestTestCase
 
 
         Map<String, Object> externalProviderAttributes = new HashMap<String, Object>();
-        externalProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
+        externalProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManager.PROVIDER_TYPE);
         externalProviderAttributes.put(AuthenticationProvider.NAME, EXTERNAL_AUTHENTICATION_PROVIDER);
         getBrokerConfiguration().addObjectConfiguration(AuthenticationProvider.class, externalProviderAttributes);
 

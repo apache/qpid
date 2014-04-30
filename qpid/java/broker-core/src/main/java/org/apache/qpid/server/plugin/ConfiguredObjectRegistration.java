@@ -18,32 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.exchange;
+package org.apache.qpid.server.plugin;
 
-import java.util.Map;
+import java.util.Collection;
 
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.server.plugin.ExchangeType;
-import org.apache.qpid.server.plugin.PluggableService;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.model.ConfiguredObject;
 
-@PluggableService
-public class FanoutExchangeType implements ExchangeType<FanoutExchange>
+public interface ConfiguredObjectRegistration extends Pluggable
 {
-    @Override
-    public String getType()
-    {
-        return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
-    }
-
-    @Override
-    public FanoutExchange newInstance(final VirtualHostImpl virtualHost, final Map<String, Object> attributes)
-    {
-        return new FanoutExchange(attributes, virtualHost);
-    }
-
-    public String getDefaultExchangeName()
-    {
-        return ExchangeDefaults.FANOUT_EXCHANGE_NAME;
-    }
+    Collection<Class<? extends ConfiguredObject>> getConfiguredObjectClasses();
 }

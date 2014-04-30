@@ -20,32 +20,10 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest.action;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import org.apache.qpid.server.model.AuthenticationProvider;
 
-import org.apache.qpid.server.management.plugin.servlet.rest.Action;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.plugin.AuthenticationManagerFactory;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
-
-public class ListAuthenticationProviderAttributes implements Action
+public class ListAuthenticationProviderAttributes extends AbstractSpecialisedAttributeLister<AuthenticationProvider>
 {
-    private static final String ATTRIBUTES = "attributes";
-    private static final String DESCRIPTIONS = "descriptions";
-    private Map<String, AuthenticationManagerFactory> _factories;
-
-    public ListAuthenticationProviderAttributes()
-    {
-        _factories = new TreeMap<String, AuthenticationManagerFactory>();
-        Iterable<AuthenticationManagerFactory> factories = new QpidServiceLoader<AuthenticationManagerFactory>()
-                .instancesOf(AuthenticationManagerFactory.class);
-        for (AuthenticationManagerFactory factory : factories)
-        {
-            _factories.put(factory.getType(), factory);
-        }
-    }
-
     @Override
     public String getName()
     {
@@ -53,24 +31,8 @@ public class ListAuthenticationProviderAttributes implements Action
     }
 
     @Override
-    public Object perform(Map<String, Object> request, Broker broker)
+    Class<AuthenticationProvider> getCategoryClass()
     {
-        Map<String, Object> attributes = new TreeMap<String, Object>();
-        for (String providerType : _factories.keySet())
-        {
-            AuthenticationManagerFactory factory = _factories.get(providerType);
-
-            Map<String, Object> data = new HashMap<String, Object>();
-            data.put(ATTRIBUTES, factory.getAttributeNames());
-            Map<String, String> resources = factory.getAttributeDescriptions();
-            if (resources != null)
-            {
-                data.put(DESCRIPTIONS, resources);
-            }
-
-            attributes.put(factory.getType(), data);
-        }
-        return attributes;
+        return AuthenticationProvider.class;
     }
-
 }

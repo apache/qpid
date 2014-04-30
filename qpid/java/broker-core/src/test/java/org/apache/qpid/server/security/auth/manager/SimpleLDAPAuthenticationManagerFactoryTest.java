@@ -33,17 +33,17 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 {
-    private SimpleLDAPAuthenticationManagerFactory _factory = new SimpleLDAPAuthenticationManagerFactory();
+    private ConfiguredObjectFactory _factory = BrokerModel.getInstance().getObjectFactory();
     private Map<String, Object> _configuration = new HashMap<String, Object>();
     private Broker _broker = BrokerTestHelper.createBrokerMock();
-    private SystemContext _systemContext = mock(SystemContext.class);
 
     private TrustStore _trustStore = mock(TrustStore.class);
 
@@ -60,22 +60,22 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
 
     public void testLdapInstanceCreated() throws Exception
     {
-        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManager.PROVIDER_TYPE);
         _configuration.put("providerUrl", "ldap://example.com:389/");
         _configuration.put("searchContext", "dc=example");
 
-        AuthenticationManager manager = _factory.create(null, _configuration, _broker);
+        AuthenticationProvider manager = _factory.create(AuthenticationProvider.class, _configuration, _broker);
         assertNotNull(manager);
 
     }
 
     public void testLdapsInstanceCreated() throws Exception
     {
-        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManager.PROVIDER_TYPE);
         _configuration.put("providerUrl", "ldaps://example.com:636/");
         _configuration.put("searchContext", "dc=example");
 
-        AuthenticationManager manager = _factory.create(null, _configuration, _broker);
+        AuthenticationProvider manager = _factory.create(AuthenticationProvider.class, _configuration, _broker);
         assertNotNull(manager);
 
     }
@@ -85,12 +85,12 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
         when(_broker.getChildren(eq(TrustStore.class))).thenReturn(Collections.singletonList(_trustStore));
 
 
-        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManager.PROVIDER_TYPE);
         _configuration.put("providerUrl", "ldaps://example.com:636/");
         _configuration.put("searchContext", "dc=example");
         _configuration.put("trustStore", "mytruststore");
 
-        AuthenticationManager manager = _factory.create(null, _configuration, _broker);
+        AuthenticationProvider manager = _factory.create(AuthenticationProvider.class, _configuration, _broker);
         assertNotNull(manager);
     }
 
@@ -98,14 +98,14 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
     {
         when(_broker.getChildren(eq(TrustStore.class))).thenReturn(Collections.singletonList(_trustStore));
 
-        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManagerFactory.PROVIDER_TYPE);
+        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManager.PROVIDER_TYPE);
         _configuration.put("providerUrl", "ldaps://example.com:636/");
         _configuration.put("searchContext", "dc=example");
         _configuration.put("trustStore", "notfound");
 
         try
         {
-            _factory.create(null, _configuration, _broker);
+            _factory.create(AuthenticationProvider.class, _configuration, _broker);
             fail("Exception not thrown");
         }
         catch(UnknownConfiguredObjectException e)

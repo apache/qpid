@@ -33,15 +33,18 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 @ManagedObject( category = false, type = "Kerberos" )
 public class KerberosAuthenticationManager extends AbstractAuthenticationManager<KerberosAuthenticationManager>
 {
+    public static final String PROVIDER_TYPE = "Kerberos";
     private static final String GSSAPI_MECHANISM = "GSSAPI";
     private final CallbackHandler _callbackHandler = new GssApiCallbackHandler();
 
+    @ManagedObjectFactoryConstructor
     protected KerberosAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
         super(attributes, broker);

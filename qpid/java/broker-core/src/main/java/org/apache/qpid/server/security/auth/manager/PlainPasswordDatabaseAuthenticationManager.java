@@ -24,14 +24,17 @@ import java.util.Map;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 @ManagedObject( category = false, type = "PlainPasswordFile" )
 public class PlainPasswordDatabaseAuthenticationManager extends PrincipalDatabaseAuthenticationManager<PlainPasswordDatabaseAuthenticationManager>
 {
-    protected PlainPasswordDatabaseAuthenticationManager(final Broker broker,
-                                                         final Map<String, Object> attributes)
+    public static final String PROVIDER_TYPE = "PlainPasswordFile";
+
+    @ManagedObjectFactoryConstructor
+    protected PlainPasswordDatabaseAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
         super(attributes, broker);
     }

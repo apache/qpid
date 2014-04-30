@@ -26,6 +26,7 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.external.ExternalSaslServer;
@@ -38,6 +39,7 @@ public class ExternalAuthenticationManagerImpl extends AbstractAuthenticationMan
     @ManagedAttributeField
     private boolean _useFullDN;
 
+    @ManagedObjectFactoryConstructor
     protected ExternalAuthenticationManagerImpl(final Map<String, Object> attributes, final Broker broker)
     {
         super(attributes, broker);

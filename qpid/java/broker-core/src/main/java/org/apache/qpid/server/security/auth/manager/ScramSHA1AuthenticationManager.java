@@ -45,6 +45,7 @@ import org.apache.qpid.server.configuration.updater.VoidTaskWithException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
@@ -60,6 +61,7 @@ public class ScramSHA1AuthenticationManager
     implements PasswordCredentialManagingAuthenticationProvider<ScramSHA1AuthenticationManager>
 {
     public static final String SCRAM_USER_TYPE = "scram";
+    public static final String PROVIDER_TYPE = "SCRAM-SHA-1";
     static final Charset ASCII = Charset.forName("ASCII");
     public static final String HMAC_SHA_1 = "HmacSHA1";
     private final SecureRandom _random = new SecureRandom();
@@ -67,6 +69,7 @@ public class ScramSHA1AuthenticationManager
     private Map<String, ScramAuthUser> _users = new ConcurrentHashMap<String, ScramAuthUser>();
 
 
+    @ManagedObjectFactoryConstructor
     protected ScramSHA1AuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
         super(attributes, broker);

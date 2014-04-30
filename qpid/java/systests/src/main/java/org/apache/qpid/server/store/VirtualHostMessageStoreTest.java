@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -31,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -39,9 +39,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
-import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.Binding;
@@ -54,7 +52,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -176,15 +173,15 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         createAllTopicQueues();
 
         //Register Non-Durable DirectExchange
-        ExchangeImpl<?> nonDurableExchange = createExchange(DirectExchange.TYPE, nonDurableExchangeName, false);
+        ExchangeImpl<?> nonDurableExchange = createExchange(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, nonDurableExchangeName, false);
         bindAllQueuesToExchange(nonDurableExchange, directRouting);
 
         //Register DirectExchange
-        ExchangeImpl<?> directExchange = createExchange(DirectExchange.TYPE, directExchangeName, true);
+        ExchangeImpl<?> directExchange = createExchange(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, directExchangeName, true);
         bindAllQueuesToExchange(directExchange, directRouting);
 
         //Register TopicExchange
-        ExchangeImpl<?> topicExchange = createExchange(TopicExchange.TYPE, topicExchangeName, true);
+        ExchangeImpl<?> topicExchange = createExchange(ExchangeDefaults.TOPIC_EXCHANGE_CLASS, topicExchangeName, true);
         bindAllTopicQueuesToExchange(topicExchange, topicRouting);
 
         //Send Message To NonDurable direct Exchange = persistent
@@ -344,7 +341,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
     {
         int origExchangeCount = _virtualHost.getExchanges().size();
 
-        createExchange(DirectExchange.TYPE, directExchangeName, true);
+        createExchange(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, directExchangeName, true);
 
         assertEquals("Incorrect number of exchanges registered before recovery",
                 origExchangeCount + 1,  _virtualHost.getExchanges().size());
@@ -408,7 +405,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
     public void testDurableBindingRemoval() throws Exception
     {
         //create durable queue and exchange, bind them
-        ExchangeImpl<?> exch = createExchange(DirectExchange.TYPE, directExchangeName, true);
+        ExchangeImpl<?> exch = createExchange(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, directExchangeName, true);
         createQueue(durableQueueName, false, true, false, false);
         bindQueueToExchange(exch, directRouting, _virtualHost.getQueue(durableQueueName), false);
 
@@ -670,23 +667,23 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         Map<String, ExchangeImpl<?>> exchanges = new HashMap<String, ExchangeImpl<?>>();
 
         //Register non-durable DirectExchange
-        exchanges.put(nonDurableExchangeName, createExchange(DirectExchange.TYPE, nonDurableExchangeName, false));
+        exchanges.put(nonDurableExchangeName, createExchange(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, nonDurableExchangeName, false));
 
         //Register durable DirectExchange and TopicExchange
-        exchanges.put(directExchangeName ,createExchange(DirectExchange.TYPE, directExchangeName, true));
-        exchanges.put(topicExchangeName,createExchange(TopicExchange.TYPE, topicExchangeName, true));
+        exchanges.put(directExchangeName ,createExchange(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, directExchangeName, true));
+        exchanges.put(topicExchangeName,createExchange(ExchangeDefaults.TOPIC_EXCHANGE_CLASS, topicExchangeName, true));
 
         return exchanges;
     }
 
-    private ExchangeImpl<?> createExchange(ExchangeType<?> type, String name, boolean durable) throws Exception
+    private ExchangeImpl<?> createExchange(String type, String name, boolean durable) throws Exception
     {
         ExchangeImpl<?> exchange = null;
 
         Map<String,Object> attributes = new HashMap<String, Object>();
 
         attributes.put(org.apache.qpid.server.model.Exchange.NAME, name);
-        attributes.put(org.apache.qpid.server.model.Exchange.TYPE, type.getType());
+        attributes.put(org.apache.qpid.server.model.Exchange.TYPE, type);
         attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, durable);
         attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
                 durable ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);

@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.systest.management.jmx;
 
-import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordDatabaseAuthenticationManager;
 import org.apache.qpid.tools.security.Passwd;
 
 public class UserManagementWithBase64MD5PasswordsTest extends UserManagementTest
@@ -32,6 +32,6 @@ public class UserManagementWithBase64MD5PasswordsTest extends UserManagementTest
     @Override
     protected String getAuthenticationManagerType()
     {
-        return Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE;
+        return Base64MD5PasswordDatabaseAuthenticationManager.PROVIDER_TYPE;
     }
 }

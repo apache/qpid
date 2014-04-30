@@ -32,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterSupport;
@@ -41,12 +42,11 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-@ManagedObject( category = false, type = "direct" )
+@ManagedObject( category = false, type = ExchangeDefaults.DIRECT_EXCHANGE_CLASS )
 public class DirectExchange extends AbstractExchange<DirectExchange>
 {
 
@@ -136,18 +136,10 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
     private final ConcurrentHashMap<String, BindingSet> _bindingsByKey =
             new ConcurrentHashMap<String, BindingSet>();
 
-    public static final ExchangeType<DirectExchange> TYPE = new DirectExchangeType();
-
     @ManagedObjectFactoryConstructor
     public DirectExchange(final Map<String, Object> attributes, final VirtualHostImpl vhost)
     {
         super(attributes, vhost);
-    }
-
-    @Override
-    public ExchangeType<DirectExchange> getExchangeType()
-    {
-        return TYPE;
     }
 
     @Override

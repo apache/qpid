@@ -196,7 +196,7 @@ public class ObjectProperties
         put(Property.AUTO_DELETE, exchange.isAutoDelete());
         put(Property.TEMPORARY, exchange.getLifetimePolicy() != LifetimePolicy.PERMANENT);
         put(Property.DURABLE, exchange.isDurable());
-        put(Property.TYPE, exchange.getTypeName());
+        put(Property.TYPE, exchange.getType());
         put(Property.VIRTUALHOST_NAME, exchange.getParent(VirtualHost.class).getName());
     }
 

@@ -18,3 +18,4 @@
 #
 org.apache.qpid.server.model.ConfiguredObjectFactoryGenerator
 org.apache.qpid.server.plugin.PluggableProcessor
+org.apache.qpid.server.model.ConfiguredObjectRegistrationGenerator

@@ -175,4 +175,6 @@ abstract class ConfiguredObjectAttributeOrStatistic<C extends ConfiguredObject, 
     {
         return _converter;
     }
+
+
 }

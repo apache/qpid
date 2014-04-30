@@ -28,9 +28,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
@@ -63,7 +63,7 @@ public class BrokerRestHttpsTest extends QpidRestTestCase
     {
         Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
 
-        Asserts.assertAttributesPresent(brokerDetails, AbstractConfiguredObject.getAttributeNames(Broker.class),
+        Asserts.assertAttributesPresent(brokerDetails, ConfiguredObjectTypeRegistry.getAttributeNames(Broker.class),
                 Broker.PROCESS_PID, Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES,
                 ConfiguredObject.TYPE,
                 ConfiguredObject.CREATED_BY,

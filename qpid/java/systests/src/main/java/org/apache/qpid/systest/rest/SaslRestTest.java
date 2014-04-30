@@ -39,7 +39,7 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordFileAuthenticationManagerFactory;
+import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordDatabaseAuthenticationManager;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.tools.security.Passwd;
 
@@ -378,7 +378,7 @@ public class SaslRestTest extends QpidRestTestCase
         // configure broker to use Base64MD5PasswordFilePrincipalDatabase
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put("path", passwordFile.getAbsolutePath());
-        newAttributes.put(AuthenticationProvider.TYPE, Base64MD5PasswordFileAuthenticationManagerFactory.PROVIDER_TYPE);
+        newAttributes.put(AuthenticationProvider.TYPE, Base64MD5PasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
         getBrokerConfiguration().setObjectAttributes(AuthenticationProvider.class,TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, newAttributes);
     }
 }

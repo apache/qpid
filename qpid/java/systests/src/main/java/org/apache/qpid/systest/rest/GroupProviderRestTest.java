@@ -29,8 +29,8 @@ import java.util.Properties;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -322,7 +322,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
 
     private void assertProvider(String name, String type, Map<String, Object> provider)
     {
-        Asserts.assertAttributesPresent(provider, AbstractConfiguredObject.getAttributeNames(GroupProvider.class),
+        Asserts.assertAttributesPresent(provider, ConfiguredObjectTypeRegistry.getAttributeNames(GroupProvider.class),
                 ConfiguredObject.TYPE,
                 ConfiguredObject.CREATED_BY,
                 ConfiguredObject.CREATED_TIME,

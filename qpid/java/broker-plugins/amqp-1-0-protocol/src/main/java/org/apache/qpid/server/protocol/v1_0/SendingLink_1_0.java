@@ -58,13 +58,12 @@ import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.message.MessageInstance;
@@ -259,7 +258,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     {
                         if(!hasBindingFilter
                            && entry.getValue() instanceof ExactSubjectFilter
-                           && exchange.getExchangeType() == DirectExchange.TYPE)
+                           && exchange.getType().equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
                         {
                             ExactSubjectFilter filter = (ExactSubjectFilter) filters.values().iterator().next();
                             source.setFilter(filters);
@@ -269,7 +268,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                         }
                         else if(!hasBindingFilter
                                 && entry.getValue() instanceof MatchingSubjectFilter
-                                && exchange.getExchangeType() == TopicExchange.TYPE)
+                                && exchange.getType().equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
                         {
                             MatchingSubjectFilter filter = (MatchingSubjectFilter) filters.values().iterator().next();
                             source.setFilter(filters);

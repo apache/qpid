@@ -22,93 +22,127 @@
 package org.apache.qpid.server.model;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class Model
 {
 
-    public static Class<? extends ConfiguredObject> getCategory(final Class<?> clazz)
+    <X extends ConfiguredObject<X>> Collection<X> getReachableObjects(final ConfiguredObject<?> object,
+                                                                      final Class<X> clazz)
     {
-        ManagedObject annotation = clazz.getAnnotation(ManagedObject.class);
-        if(annotation != null && annotation.category())
+        Class<? extends ConfiguredObject> category = ConfiguredObjectTypeRegistry.getCategory(object.getClass());
+        Class<? extends ConfiguredObject> ancestorClass = getAncestorClassWithGivenDescendant(category, clazz);
+        if(ancestorClass != null)
         {
-            return (Class<? extends ConfiguredObject>) clazz;
-        }
-        for(Class<?> iface : clazz.getInterfaces() )
-        {
-            Class<? extends ConfiguredObject> cat = getCategory(iface);
-            if(cat != null)
+            ConfiguredObject ancestor = getAncestor(ancestorClass, category, object);
+            if(ancestor != null)
             {
-                return cat;
+                return getAllDescendants(ancestor, ancestorClass, clazz);
             }
-        }
-        if(clazz.getSuperclass() != null)
-        {
-            return getCategory(clazz.getSuperclass());
         }
         return null;
     }
 
-    public static String getType(final Class<? extends ConfiguredObject> clazz)
+    <X extends ConfiguredObject<X>> Collection<X> getAllDescendants(final ConfiguredObject ancestor,
+                                                                    final Class<? extends ConfiguredObject> ancestorClass,
+                                                                    final Class<X> clazz)
     {
-        String type = getActualType(clazz);
-
-        if("".equals(type))
+        Set<X> descendants = new HashSet<X>();
+        for(Class<? extends ConfiguredObject> childClass : getChildTypes(ancestorClass))
         {
-            Class<? extends ConfiguredObject> category = getCategory(clazz);
-            if (category == null)
+            Collection<? extends ConfiguredObject> children = ancestor.getChildren(childClass);
+            if(childClass == clazz)
             {
-                throw new IllegalArgumentException("No category for " + clazz.getSimpleName());
-            }
-            ManagedObject annotation = category.getAnnotation(ManagedObject.class);
-            if (annotation == null)
-            {
-                throw new NullPointerException("No definition found for category " + category.getSimpleName());
-            }
-            if (!"".equals(annotation.defaultType()))
-            {
-                type = annotation.defaultType();
+
+                if(children != null)
+                {
+                    descendants.addAll((Collection<X>)children);
+                }
             }
             else
             {
-                type = category.getSimpleName();
-            }
-        }
-        return type;
-    }
-
-    private static String getActualType(final Class<? extends ConfiguredObject> clazz)
-    {
-        ManagedObject annotation = clazz.getAnnotation(ManagedObject.class);
-        if(annotation != null)
-        {
-            if(!"".equals(annotation.type()))
-            {
-                return annotation.type();
-            }
-        }
-
-        for(Class<?> iface : clazz.getInterfaces() )
-        {
-            if(ConfiguredObject.class.isAssignableFrom(iface))
-            {
-                String type = getActualType((Class<? extends ConfiguredObject>) iface);
-                if(!"".equals(type))
+                if(children != null)
                 {
-                    return type;
+                    for(ConfiguredObject child : children)
+                    {
+                        descendants.addAll(getAllDescendants(child, childClass, clazz));
+                    }
                 }
             }
         }
+        return descendants;
+    }
 
-        if(clazz.getSuperclass() != null && ConfiguredObject.class.isAssignableFrom(clazz.getSuperclass()))
+    <C extends ConfiguredObject> C getAncestor(final Class<C> ancestorClass,
+                                               final Class<? extends ConfiguredObject> category,
+                                               final ConfiguredObject<?> object)
+    {
+        if(ancestorClass.isInstance(object))
         {
-            String type = getActualType((Class<? extends ConfiguredObject>) clazz.getSuperclass());
-            if(!"".equals(type))
+            return (C) object;
+        }
+        else
+        {
+            for(Class<? extends ConfiguredObject> parentClass : object.getModel().getParentTypes(category))
             {
-                return type;
+                ConfiguredObject<?> parent = object.getParent(parentClass);
+                ConfiguredObject<?> ancestor = getAncestor(ancestorClass, parentClass, parent);
+                if(ancestor != null)
+                {
+                    return (C) ancestor;
+                }
             }
         }
+        return null;
+    }
 
-        return "";
+    private Class<? extends ConfiguredObject> getAncestorClassWithGivenDescendant(
+            final Class<? extends ConfiguredObject> category,
+            final Class<? extends ConfiguredObject> descendantClass)
+    {
+        Collection<Class<? extends ConfiguredObject>> candidateClasses =
+                Collections.<Class<? extends ConfiguredObject>>singleton(category);
+        while(!candidateClasses.isEmpty())
+        {
+            for(Class<? extends ConfiguredObject> candidate : candidateClasses)
+            {
+                if(hasDescendant(candidate, descendantClass))
+                {
+                    return candidate;
+                }
+            }
+            Set<Class<? extends ConfiguredObject>> previous = new HashSet<>(candidateClasses);
+            candidateClasses = new HashSet<>();
+            for(Class<? extends ConfiguredObject> prev : previous)
+            {
+                candidateClasses.addAll(getParentTypes(prev));
+            }
+        }
+        return null;
+    }
+
+    private boolean hasDescendant(final Class<? extends ConfiguredObject> candidate,
+                                  final Class<? extends ConfiguredObject> descendantClass)
+    {
+        int oldSize = 0;
+
+        Set<Class<? extends ConfiguredObject>> allDescendants = new HashSet<>(getChildTypes(candidate));
+        while(allDescendants.size() > oldSize)
+        {
+            oldSize = allDescendants.size();
+            Set<Class<? extends ConfiguredObject>> prev = new HashSet<>(allDescendants);
+            for(Class<? extends ConfiguredObject> clazz : prev)
+            {
+                allDescendants.addAll(getChildTypes(clazz));
+            }
+            if(allDescendants.contains(descendantClass))
+            {
+                break;
+            }
+        }
+        return allDescendants.contains(descendantClass);
     }
 
     public abstract Collection<Class<? extends ConfiguredObject>> getSupportedCategories();

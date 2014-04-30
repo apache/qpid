@@ -56,7 +56,6 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -168,7 +167,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         super.onOpen();
 
         // Log Exchange creation
-        getEventLogger().message(ExchangeMessages.CREATED(getExchangeType().getType(), getName(), isDurable()));
+        getEventLogger().message(ExchangeMessages.CREATED(getType(), getName(), isDurable()));
     }
 
     @Override
@@ -188,14 +187,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return _virtualHost.getEventLogger();
     }
 
-    public abstract ExchangeType<T> getExchangeType();
-
-    @Override
-    public String getTypeName()
-    {
-        return getExchangeType().getType();
-    }
-
     public boolean isAutoDelete()
     {
         return getLifetimePolicy() != LifetimePolicy.PERMANENT;
@@ -210,7 +201,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             throw new ExchangeIsAlternateException(getName());
         }
 
-        if(getExchangeType().getDefaultExchangeName().equals( getName() ))
+        if(isReservedExchangeName(getName()))
         {
             throw new RequiredExchangeException(getName());
         }

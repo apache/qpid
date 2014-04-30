@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
@@ -42,18 +43,14 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-@ManagedObject( category = false, type = "topic" )
+@ManagedObject( category = false, type = ExchangeDefaults.TOPIC_EXCHANGE_CLASS )
 public class TopicExchange extends AbstractExchange<TopicExchange>
 {
-    public static final ExchangeType<TopicExchange> TYPE = new TopicExchangeType();
-
-
     private static final Logger _logger = Logger.getLogger(TopicExchange.class);
 
     private final TopicParser _parser = new TopicParser();
@@ -67,12 +64,6 @@ public class TopicExchange extends AbstractExchange<TopicExchange>
     public TopicExchange(final Map<String,Object> attributes, final VirtualHostImpl vhost)
     {
         super(attributes, vhost);
-    }
-
-    @Override
-    public ExchangeType<TopicExchange> getExchangeType()
-    {
-        return TYPE;
     }
 
     @Override

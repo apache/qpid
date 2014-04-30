@@ -23,8 +23,7 @@ package org.apache.qpid.server.model;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -54,7 +53,7 @@ public class ConfiguredObjectFactoryGenerator extends AbstractProcessor
     @Override
     public Set<String> getSupportedAnnotationTypes()
     {
-        return new HashSet<>(Arrays.asList(ManagedObjectFactory.class.getName(), ManagedObjectFactoryConstructor.class.getName()));
+        return Collections.singleton(ManagedObjectFactoryConstructor.class.getName());
     }
 
     @Override

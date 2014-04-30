@@ -38,6 +38,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -52,7 +53,6 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.plugin.ExchangeType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
@@ -496,7 +496,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         actualAttributes.put("type", getName() + "Type");
         actualAttributes.put("lifetimePolicy", LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS);
         when(exchange.getName()).thenReturn(getName());
-        when(exchange.getTypeName()).thenReturn(getName() + "Type");
+        when(exchange.getType()).thenReturn(getName() + "Type");
         when(exchange.isAutoDelete()).thenReturn(true);
         when(exchange.getId()).thenReturn(_exchangeId);
         when(exchange.getCategoryClass()).thenReturn(Exchange.class);
@@ -510,7 +510,6 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchangeRecord.getAttributes()).thenReturn(actualAttributes);
         when(exchangeRecord.getParents()).thenReturn(Collections.singletonMap(_rootRecord.getType(), _rootRecord));
         when(exchange.asObjectRecord()).thenReturn(exchangeRecord);
-        when(exchange.getExchangeType()).thenReturn(mock(ExchangeType.class));
         when(exchange.getEventLogger()).thenReturn(new EventLogger());
         return exchange;
     }

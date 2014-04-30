@@ -35,8 +35,8 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.plugin.AccessControlProviderFactory;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.MapValueConverter;
@@ -50,12 +50,12 @@ public class ACLFileAccessControlProviderImpl
     protected DefaultAccessControl _accessControl;
     protected final Broker _broker;
 
-    protected Map<String, AccessControlProviderFactory> _factories;
     private AtomicReference<State> _state;
 
     @ManagedAttributeField
     private String _path;
 
+    @ManagedObjectFactoryConstructor
     public ACLFileAccessControlProviderImpl(Map<String, Object> attributes, Broker broker)
     {
         super(parentsMap(broker), attributes);

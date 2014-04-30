@@ -284,7 +284,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         JMXTestUtils jmxUtils = new JMXTestUtils(this);
 
         setCommonBrokerSSLProperties(true);
-        getBrokerConfiguration().setObjectAttribute(AuthenticationProvider.class, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER, ExternalAuthenticationManagerFactory.ATTRIBUTE_USE_FULL_DN, "true");
+        getBrokerConfiguration().setObjectAttribute(AuthenticationProvider.class, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER, ExternalAuthenticationManager.ATTRIBUTE_USE_FULL_DN, "true");
         getBrokerConfiguration().addJmxManagementConfiguration();
 
         super.setUp();
@@ -348,7 +348,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
 
         Map<String, Object> externalAuthProviderAttributes = new HashMap<String, Object>();
         externalAuthProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);
-        externalAuthProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManagerFactory.PROVIDER_TYPE);
+        externalAuthProviderAttributes.put(AuthenticationProvider.TYPE, ExternalAuthenticationManager.PROVIDER_TYPE);
         config.addObjectConfiguration(AuthenticationProvider.class, externalAuthProviderAttributes);
 
         config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_EXTERNAL_PROVIDER);

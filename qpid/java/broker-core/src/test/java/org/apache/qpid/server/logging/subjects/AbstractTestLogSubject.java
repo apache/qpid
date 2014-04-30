@@ -21,6 +21,8 @@
 package org.apache.qpid.server.logging.subjects;
 
 
+import java.util.List;
+
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
@@ -30,8 +32,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import java.util.List;
 
 /**
  * Abstract Test for LogSubject testing
@@ -181,7 +181,7 @@ public abstract class AbstractTestLogSubject extends QpidTestCase
                      exchangeParts.length);
 
         assertEquals("Exchange type not correct",
-                     exchange.getExchangeType().getType(), exchangeParts[0]);
+                     exchange.getType(), exchangeParts[0]);
 
         assertEquals("Exchange name not correct",
                      exchange.getName(), exchangeParts[1]);

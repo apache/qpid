@@ -31,10 +31,10 @@ import java.util.Map;
 import javax.jms.JMSException;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
@@ -56,7 +56,7 @@ public class Asserts
     {
         assertNotNull("Virtualhost " + virtualHostName + " data are not found", virtualHost);
         assertAttributesPresent(virtualHost,
-                                AbstractConfiguredObject.getAttributeNames(VirtualHost.class),
+                                ConfiguredObjectTypeRegistry.getAttributeNames(VirtualHost.class),
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,
                                 ConfiguredObject.LAST_UPDATED_BY,
@@ -105,7 +105,7 @@ public class Asserts
     {
         assertNotNull("Queue " + queueName + " is not found!", queueData);
         Asserts.assertAttributesPresent(queueData,
-                                        AbstractConfiguredObject.getAttributeNames(Queue.class),
+                                        ConfiguredObjectTypeRegistry.getAttributeNames(Queue.class),
                                         Queue.CREATED_BY,
                                         Queue.CREATED_TIME,
                                         Queue.LAST_UPDATED_BY,
@@ -211,7 +211,7 @@ public class Asserts
     {
         assertNotNull("Unexpected connection data", connectionData);
         assertAttributesPresent(connectionData,
-                                AbstractConfiguredObject.getAttributeNames(Connection.class),
+                                ConfiguredObjectTypeRegistry.getAttributeNames(Connection.class),
                                 Connection.STATE,
                                 Connection.DURABLE,
                                 Connection.LIFETIME_POLICY,
@@ -271,7 +271,7 @@ public class Asserts
         if ("AMQP".equals(port.get(ConfiguredObject.TYPE)))
         {
             assertAttributesPresent(port,
-                                    AbstractConfiguredObject.getAttributeNames(Port.class),
+                                    ConfiguredObjectTypeRegistry.getAttributeNames(Port.class),
                                     ConfiguredObject.TYPE,
                                     ConfiguredObject.CREATED_BY,
                                     ConfiguredObject.CREATED_TIME,
@@ -288,7 +288,7 @@ public class Asserts
         else
         {
             assertAttributesPresent(port,
-                                    AbstractConfiguredObject.getAttributeNames(Port.class),
+                                    ConfiguredObjectTypeRegistry.getAttributeNames(Port.class),
                                     ConfiguredObject.TYPE,
                                     ConfiguredObject.CREATED_BY,
                                     ConfiguredObject.CREATED_TIME,
@@ -325,7 +325,7 @@ public class Asserts
     public static void assertExchange(String exchangeName, String type, Map<String, Object> exchangeData)
     {
         assertNotNull("Exchange " + exchangeName + " is not found!", exchangeData);
-        assertAttributesPresent(exchangeData, AbstractConfiguredObject.getAttributeNames(Exchange.class),
+        assertAttributesPresent(exchangeData, ConfiguredObjectTypeRegistry.getAttributeNames(Exchange.class),
                                 Exchange.ALTERNATE_EXCHANGE,
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,
@@ -360,7 +360,7 @@ public class Asserts
     {
         assertNotNull("Binding map should not be null", binding);
         assertAttributesPresent(binding,
-                                AbstractConfiguredObject.getAttributeNames(Binding.class),
+                                ConfiguredObjectTypeRegistry.getAttributeNames(Binding.class),
                                 Binding.STATE,
                                 ConfiguredObject.TYPE,
                                 ConfiguredObject.CREATED_BY,
