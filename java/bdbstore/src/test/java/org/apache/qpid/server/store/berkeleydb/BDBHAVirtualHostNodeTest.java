@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,11 +40,13 @@ import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -159,8 +162,11 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
             @Override
             public void childAdded(ConfiguredObject object, ConfiguredObject child)
             {
-                child.addChangeListener(this);
-                virtualHostAddedLatch.countDown();
+                if (child instanceof VirtualHost)
+                {
+                    child.addChangeListener(this);
+                    virtualHostAddedLatch.countDown();
+                }
             }
 
             @Override
@@ -314,7 +320,100 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         while(!"MASTER".equals(replica.getRole()))
         {
             Thread.sleep(100);
-            if (awaitMastershipCount > 20)
+            if (awaitMastershipCount > 50)
+            {
+                fail("Replica did not assume master role");
+            }
+            awaitMastershipCount++;
+        }
+    }
+
+
+    public void testTransferMasterToReplica() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+
+        Map<String, Object> node1Attributes = new HashMap<String, Object>();
+        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
+        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
+
+        BDBHAVirtualHostNode<?> node1 = createHaVHN(node1Attributes);
+        assertEquals("Failed to activate node", State.ACTIVE, node1.setDesiredState(node1.getState(), State.ACTIVE));
+
+        final CountDownLatch remoteNodeLatch = new CountDownLatch(2);
+        node1.addChangeListener(new ConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(ConfiguredObject object, State oldState, State newState)
+            {
+            }
+
+            @Override
+            public void childRemoved(ConfiguredObject object, ConfiguredObject child)
+            {
+            }
+
+            @Override
+            public void childAdded(ConfiguredObject object, ConfiguredObject child)
+            {
+                if (child instanceof RemoteReplicationNode)
+                {
+                    remoteNodeLatch.countDown();
+                }
+            }
+
+            @Override
+            public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue,
+                    Object newAttributeValue)
+            {
+            }
+        });
+
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
+
+        Map<String, Object> node2Attributes = new HashMap<String, Object>();
+        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
+        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
+
+        BDBHAVirtualHostNode<?> node2 = createHaVHN(node2Attributes);
+        assertEquals("Failed to activate node2", State.ACTIVE, node2.setDesiredState(node2.getState(), State.ACTIVE));
+
+        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+        Map<String, Object> node3Attributes = new HashMap<String, Object>();
+        node3Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node3Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node3Attributes.put(BDBHAVirtualHostNode.NAME, "node3");
+        node3Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
+        node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
+        BDBHAVirtualHostNode<?> node3 = createHaVHN(node3Attributes);
+        assertEquals("Failed to activate node3", State.ACTIVE, node3.setDesiredState(node3.getState(), State.ACTIVE));
+
+        assertTrue("Replication nodes have not been seen during 5s", remoteNodeLatch.await(5, TimeUnit.SECONDS));
+
+        Collection<? extends RemoteReplicationNode> remoteNodes = node1.getRemoteReplicationNodes();
+        RemoteReplicationNode replicaRemoteNode = remoteNodes.iterator().next();
+        replicaRemoteNode.setAttribute(BDBHARemoteReplicationNode.ROLE, "REPLICA", "MASTER");
+
+        BDBHAVirtualHostNode<?> replica = replicaRemoteNode.getName().equals(node2.getName())? node2 : node3;
+        int awaitMastershipCount = 0;
+        while(!"MASTER".equals(replica.getRole()))
+        {
+            Thread.sleep(100);
+            if (awaitMastershipCount > 50)
             {
                 fail("Replica did not assume master role");
             }

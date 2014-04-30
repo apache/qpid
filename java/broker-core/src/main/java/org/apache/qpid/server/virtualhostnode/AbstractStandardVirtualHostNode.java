@@ -22,17 +22,19 @@ package org.apache.qpid.server.virtualhostnode;
 
 import java.io.File;
 import java.security.PrivilegedAction;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -153,6 +155,12 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
     public String toString()
     {
         return this.getClass().getSimpleName() +  "[id=" + getId() + ", name=" + getName() + ", state=" + getState() + "]";
+    }
+
+    @Override
+    public Collection<RemoteReplicationNode<?>> getRemoteReplicationNodes()
+    {
+        return Collections.emptyList();
     }
 
     // protected for unit testing purposes
