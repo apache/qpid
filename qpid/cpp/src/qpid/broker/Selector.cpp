@@ -92,7 +92,9 @@ const Value MessageSelectorEnv::specialValue(const string& id) const
     if ( id=="delivery_mode" ) {
         v = msg.getEncoding().isPersistent() ? PERSISTENT : NON_PERSISTENT;
     } else if ( id=="redelivered" ) {
-        v = msg.getDeliveryCount()>0 ? true : false;
+        // Although redelivered is defined to be true delivery-count>0 if it is 0 now
+        // it will be 1 by the time the message is delivered
+        v = msg.getDeliveryCount()>=0 ? true : false;
     } else if ( id=="priority" ) {
         v = int64_t(msg.getPriority());
     } else if ( id=="correlation_id" ) {
