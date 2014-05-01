@@ -67,6 +67,7 @@
       <groupId>com.sleepycat</groupId>
       <artifactId>je</artifactId>
       <version>${bdb-version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
