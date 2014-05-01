@@ -153,15 +153,15 @@ acl allow all all
         if not "--acl-file" in args:
             args += [ "--acl-file", acl, ]
         args += ["--socket-fd=%s"%ha_port.fileno, "--listen-disable=tcp"]
-        Broker.__init__(self, test, args, port=ha_port.port, **kwargs)
-        self.qpid_ha_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-ha")
-        assert os.path.exists(self.qpid_ha_path)
-        self.qpid_config_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-config")
-        assert os.path.exists(self.qpid_config_path)
-        self.qpid_ha_script=import_script(self.qpid_ha_path)
         self._agent = None
         self.client_credentials = client_credentials
         self.ha_port = ha_port
+        Broker.__init__(self, test, args, port=ha_port.port, **kwargs)
+
+    # Do some static setup to locate the qpid-config and qpid-ha tools.
+    qpid_ha_script=import_script(os.path.join(os.getenv("PYTHON_COMMANDS"),"qpid-ha"))
+    qpid_config_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-config")
+    assert os.path.isfile(qpid_config_path)
 
     def __repr__(self): return "<HaBroker:%s:%d>"%(self.log, self.port())
 

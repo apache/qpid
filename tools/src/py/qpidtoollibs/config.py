@@ -24,10 +24,12 @@ QPID_ENV_PREFIX="QPID_"
 
 def parse_qpidd_conf(config_file):
     """Parse a qpidd.conf configuration file into a dictionary"""
-    with open(config_file) as f:
+    f =  open(config_file)
+    try:
         clean = filter(None, [line.split("#")[0].strip() for line in f]) # Strip comments and blanks
         def item(line): return [x.strip() for x in line.split("=")]
         config = dict(item(line) for line in clean if "=" in line)
+    finally: f.close()
     def name(env_name): return env_name[len(QPID_ENV_PREFIX):].lower()
     env = dict((name(i[0]), i[1]) for i in os.environ.iteritems() if i[0].startswith(QPID_ENV_PREFIX))
     config.update(env)          # Environment takes precedence

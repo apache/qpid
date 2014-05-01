@@ -178,29 +178,27 @@ class Popen(subprocess.Popen):
         raise BadProcessStatus("%s %s%s" % (self.pname, msg, err))
 
     def teardown(self):         # Clean up at end of test.
-        try:
-            if self.expect == EXPECT_UNKNOWN:
-                try: self.kill()            # Just make sure its dead
-                except: pass
-            elif self.expect == EXPECT_RUNNING:
-                    if self.poll() != None:
-                        self.unexpected("expected running, exit code %d" % self.returncode)
-                    else:
-                        try:
-                            self.kill()
-                        except Exception,e:
-                            self.unexpected("exception from kill: %s" % str(e))
-            else:
-                retry(lambda: self.poll() is not None)
-                if self.returncode is None: # Still haven't stopped
-                    self.kill()
-                    self.unexpected("still running")
-                elif self.expect == EXPECT_EXIT_OK and self.returncode != 0:
-                    self.unexpected("exit code %d" % self.returncode)
-                elif self.expect == EXPECT_EXIT_FAIL and self.returncode == 0:
-                    self.unexpected("expected error")
-        finally:
-            self.wait()                 # Clean up the process.
+        if self.expect == EXPECT_UNKNOWN:
+            try: self.kill()            # Just make sure its dead
+            except: pass
+        elif self.expect == EXPECT_RUNNING:
+                if self.poll() != None:
+                    self.unexpected("expected running, exit code %d" % self.returncode)
+                else:
+                    try:
+                        self.kill()
+                    except Exception,e:
+                        self.unexpected("exception from kill: %s" % str(e))
+        else:
+            retry(lambda: self.poll() is not None)
+            if self.returncode is None: # Still haven't stopped
+                self.kill()
+                self.unexpected("still running")
+            elif self.expect == EXPECT_EXIT_OK and self.returncode != 0:
+                self.unexpected("exit code %d" % self.returncode)
+            elif self.expect == EXPECT_EXIT_FAIL and self.returncode == 0:
+                self.unexpected("expected error")
+        self.wait()
 
 
     def communicate(self, input=None):
@@ -325,7 +323,7 @@ class Broker(Popen):
         self._host = "127.0.0.1"
         self._agent = None
 
-        log.debug("Started broker %s (%s, %s)" % (self.name, self.pname, self.log))
+        log.debug("Started broker %s" % self)
 
     def host(self): return self._host
 
