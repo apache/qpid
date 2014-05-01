@@ -47,6 +47,7 @@ import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNodeImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -315,18 +316,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         replica.setAttribute(BDBHAVirtualHostNode.ROLE, "REPLICA", "MASTER");
 
-        int awaitMastershipCount = 0;
-        while(!"MASTER".equals(replica.getRole()))
-        {
-            Thread.sleep(100);
-            if (awaitMastershipCount > 50)
-            {
-                fail("Replica did not assume master role");
-            }
-            awaitMastershipCount++;
-        }
+        assertNodeRole(replica, "MASTER");
     }
-
 
     public void testTransferMasterToReplica() throws Exception
     {
@@ -404,20 +395,22 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertTrue("Replication nodes have not been seen during 5s", remoteNodeLatch.await(5, TimeUnit.SECONDS));
 
         Collection<? extends RemoteReplicationNode> remoteNodes = node1.getRemoteReplicationNodes();
-        RemoteReplicationNode replicaRemoteNode = remoteNodes.iterator().next();
-        replicaRemoteNode.setAttribute(BDBHARemoteReplicationNode.ROLE, "REPLICA", "MASTER");
+        BDBHARemoteReplicationNodeImpl replicaRemoteNode = (BDBHARemoteReplicationNodeImpl)remoteNodes.iterator().next();
 
-        BDBHAVirtualHostNode<?> replica = replicaRemoteNode.getName().equals(node2.getName())? node2 : node3;
-        int awaitMastershipCount = 0;
-        while(!"MASTER".equals(replica.getRole()))
+        long awaitReplicaRoleCount = 0;
+        while(!"REPLICA".equals(replicaRemoteNode.getRole()))
         {
             Thread.sleep(100);
-            if (awaitMastershipCount > 50)
+            if (awaitReplicaRoleCount > 50)
             {
-                fail("Replica did not assume master role");
+                fail("Remote replication node is not in a REPLICA role");
             }
-            awaitMastershipCount++;
+            awaitReplicaRoleCount++;
         }
+        replicaRemoteNode.setAttributes(Collections.<String,Object>singletonMap(BDBHARemoteReplicationNode.ROLE, "MASTER"));
+
+        BDBHAVirtualHostNode<?> replica = replicaRemoteNode.getName().equals(node2.getName())? node2 : node3;
+        assertNodeRole(replica, "MASTER");
     }
 
     public void testMutatingRoleWhenNotReplica_IsDisallowed() throws Exception
@@ -438,7 +431,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         BDBHAVirtualHostNode<?> node = createHaVHN(node1Attributes);
         assertEquals("Failed to activate node", State.ACTIVE, node.setDesiredState(node.getState(), State.ACTIVE));
 
-        assertEquals("Node is expected to be master", "MASTER", node.getRole());
+        assertNodeRole(node, "MASTER");
 
         try
         {
@@ -457,6 +450,20 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         BDBHAVirtualHostNode<?> node = (BDBHAVirtualHostNode<?>) _objectFactory.create(VirtualHostNode.class, attributes, _broker);
         _nodes.add(node);
         return node;
+    }
+
+    private void assertNodeRole(BDBHAVirtualHostNode<?> node, String roleName) throws InterruptedException
+    {
+        int awaitMastershipCount = 0;
+        while(!roleName.equals(node.getRole()))
+        {
+            Thread.sleep(100);
+            if (awaitMastershipCount > 50)
+            {
+                fail("Node " + node.getName() + " did not transit into role " + roleName);
+            }
+            awaitMastershipCount++;
+        }
     }
 }
 
