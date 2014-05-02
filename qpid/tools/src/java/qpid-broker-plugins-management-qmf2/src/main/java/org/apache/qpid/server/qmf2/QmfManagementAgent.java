@@ -22,29 +22,24 @@
 package org.apache.qpid.server.qmf2;
 
 // Misc Imports
+
+import static org.apache.qpid.qmf2.common.WorkItem.WorkItemType.METHOD_CALL;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Simple Logging Facade 4 Java
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// QMF2 Imports
 import org.apache.qpid.qmf2.agent.Agent;
 import org.apache.qpid.qmf2.agent.MethodCallParams;
 import org.apache.qpid.qmf2.agent.MethodCallWorkItem;
 import org.apache.qpid.qmf2.agent.QmfAgentData;
 import org.apache.qpid.qmf2.common.ObjectId;
-import org.apache.qpid.qmf2.common.QmfData;
-import org.apache.qpid.qmf2.common.QmfEvent;
 import org.apache.qpid.qmf2.common.QmfEventListener;
 import org.apache.qpid.qmf2.common.QmfException;
-import org.apache.qpid.qmf2.common.QmfType;
 import org.apache.qpid.qmf2.common.WorkItem;
 import org.apache.qpid.qmf2.util.ConnectionHelper;
-import static org.apache.qpid.qmf2.common.WorkItem.WorkItemType.*;
-
-// Java Broker model Imports
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
@@ -52,13 +47,15 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Exchange;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
+
+// Simple Logging Facade 4 Java
+// QMF2 Imports
+// Java Broker model Imports
 
 /**
  * This class implements a QMF2 Agent providing access to the Java broker Management Objects via QMF2 thus
@@ -215,8 +212,10 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     {
         childAdded(null, _broker);
 
-        for (VirtualHost<?> vhost : _broker.getVirtualHosts())
+        for (VirtualHostNode<?> vhostNode : _broker.getVirtualHostNodes())
         {
+            VirtualHost<?,?,?> vhost = vhostNode.getVirtualHost();
+
             // We don't add QmfAgentData VirtualHost objects. Possibly TODO, but it's a bit awkward at the moment
             // because the C++ Broker doesn't *seem* to do much with them and the command line tools such
             // as qpid-config don't appear to be VirtualHost aware. A way to stay compatible is to mark queues,

@@ -44,6 +44,13 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-broker-codegen</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j-version}</version>

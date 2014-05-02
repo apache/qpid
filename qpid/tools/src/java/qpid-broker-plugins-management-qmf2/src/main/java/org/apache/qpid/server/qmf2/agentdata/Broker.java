@@ -22,30 +22,20 @@
 package org.apache.qpid.server.qmf2.agentdata;
 
 // Misc Imports
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-// Simple Logging Facade 4 Java
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// QMF2 Imports
 import org.apache.qpid.qmf2.agent.Agent;
 import org.apache.qpid.qmf2.agent.QmfAgentData;
 import org.apache.qpid.qmf2.common.Handle;
 import org.apache.qpid.qmf2.common.ObjectId;
 import org.apache.qpid.qmf2.common.QmfData;
-/*import org.apache.qpid.qmf2.common.QmfEvent;
-import org.apache.qpid.qmf2.common.QmfEventListener;
-import org.apache.qpid.qmf2.common.QmfException;
-import org.apache.qpid.qmf2.common.QmfType;*/
-import org.apache.qpid.qmf2.common.SchemaEventClass;
-import org.apache.qpid.qmf2.common.SchemaMethod;
 import org.apache.qpid.qmf2.common.SchemaObjectClass;
-import org.apache.qpid.qmf2.common.SchemaProperty;
-
-// Java Broker model Imports
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -55,6 +45,15 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
+
+// Simple Logging Facade 4 Java
+// QMF2 Imports
+/*import org.apache.qpid.qmf2.common.QmfEvent;
+import org.apache.qpid.qmf2.common.QmfEventListener;
+import org.apache.qpid.qmf2.common.QmfException;
+import org.apache.qpid.qmf2.common.QmfType;*/
+// Java Broker model Imports
 
 /**
  * This class provides a concrete implementation of QmfAgentData for the Broker Management Object.
@@ -112,8 +111,8 @@ public class Broker extends QmfAgentData
      */
     private class NameParser
     {
-        private String _vhostName = _defaultVirtualHost;
-        private VirtualHost<?> _vhost = null;
+        private String _vhostName;
+        private VirtualHost<?,?,?> _vhost = null;
         private String _exchangeName = "";
         private Exchange<?> _exchange = null;
         private String _queueName = "";
@@ -148,13 +147,18 @@ public class Broker extends QmfAgentData
                     _vhostName = _vhostName.substring(6, _vhostName.length());
                 }
             }
+            else
+            {
+                _vhostName = _defaultVirtualHost;
+            }
 
             // If the vhostName isn't malformed then try to find the actual Virtual Host that it relates to.
             // If it is malformed the vhost stays set to null, which will cause an exception to be returned later.
             if (!malformedVHostName)
             {
-                for (VirtualHost vhost : _broker.getVirtualHosts())
+                for (VirtualHostNode<?> vhostNode : _broker.getVirtualHostNodes())
                 {
+                    VirtualHost<?,?,?> vhost = vhostNode.getVirtualHost();
                     if (vhost.getName().equals(_vhostName))
                     {
                         _vhost = vhost;
@@ -539,22 +543,19 @@ System.out.println("properties = " + properties);
                                 return;
                             }
 
-                            // TODO delete this block when adding an AlternateExchange is implemented.
-                            if (alternateExchange != null)
-                            {
-                                agent.raiseException(handle,
-                                    "Setting an Alternate Exchange on an Exchange is not yet implemented.");
-                                return;
-                            }
-
                             // Note that for Qpid 0.20 the "qpid.msg_sequence=1" and "qpid.ive=1" properties are
                             // not suppored, indeed no exchange properties seem to be supported yet.
-                            vhost.createExchange(nameParser.getExchangeName(), State.ACTIVE, durable,
-                                                 LifetimePolicy.PERMANENT, exchangeType, properties);
-                            if (alternateExchange != null)
-                            {
-                                // TODO set Alternate Exchange. There doesn't seem to be a way to do this yet!!!
-                            }
+                            Map<String,Object> attributes = new HashMap<>();
+                            attributes.put(Exchange.NAME, nameParser.getExchangeName());
+                            attributes.put(Exchange.STATE, State.ACTIVE);
+                            attributes.put(Exchange.DURABLE, durable);
+                            attributes.put(Exchange.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
+                            attributes.put(Exchange.TYPE, exchangeType);
+                            attributes.put(Exchange.ALTERNATE_EXCHANGE, alternateExchange);
+
+
+                            vhost.createExchange(attributes);
+
                         } // End of create exchange.
                         else if (type.equals("queue")) // create queue.
                         {
@@ -583,7 +584,6 @@ System.out.println("properties = " + properties);
                             attributes.put(Queue.DURABLE, durable);
                             attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
 
-                            Queue queue = vhost.createQueue(attributes);
 
                             // Set the queue's alternateExchange, which is just a little bit involved......
                             // The queue.setAttribute() method needs an org.apache.qpid.server.model.Exchange instance
@@ -600,13 +600,14 @@ System.out.println("properties = " + properties);
                                 QmfAgentData object = agent.getObject(objectId);
                                 if (object != null)
                                 {
-                                    org.apache.qpid.server.qmf2.agentdata.Exchange ex = 
+                                    org.apache.qpid.server.qmf2.agentdata.Exchange ex =
                                         (org.apache.qpid.server.qmf2.agentdata.Exchange)object;
 
                                     Exchange altEx = ex.getExchange();
-                                    queue.setAttribute("alternateExchange", null, altEx);
+                                    attributes.put(Queue.ALTERNATE_EXCHANGE, altEx.getId());
                                 }
                             }
+                            Queue queue = vhost.createQueue(attributes);
                         }
                         else if (type.equals("binding")) // create binding.
                         {
