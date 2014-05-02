@@ -41,7 +41,7 @@ managed file via the Web Management GUI. It is IMPORTANT to ensure that the foll
 
 {
     "name" : "qmf2Management",
-    "pluginType" : "MANAGEMENT-QMF2",
+    "type" : "MANAGEMENT-QMF2",
     "connectionURL" : "amqp://guest:guest@/?brokerlist='tcp://0.0.0.0:5672'"
   }
 
