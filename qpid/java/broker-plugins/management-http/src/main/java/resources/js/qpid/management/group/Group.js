@@ -96,7 +96,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.groupUpdater,
                                                 that.groupUpdater.groupMembersUpdatableStore.grid,
-                                                "rest/groupmember/"+ encodeURIComponent(that.getGroupProviderName()) +
+                                                "api/latest/groupmember/"+ encodeURIComponent(that.getGroupProviderName()) +
                                                  "/" + encodeURIComponent(that.getGroupName()),
                                                 "Are you sure you want to remove group member");
                                 }
@@ -129,7 +129,7 @@ define(["dojo/_base/xhr",
                            "lifetimePolicy",
                            "type"]);
 
-               this.query = "rest/groupmember/"+ encodeURIComponent(groupObj.getGroupProviderName()) + "/" + encodeURIComponent(groupObj.getGroupName());
+               this.query = "api/latest/groupmember/"+ encodeURIComponent(groupObj.getGroupProviderName()) + "/" + encodeURIComponent(groupObj.getGroupName());
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {
@@ -184,7 +184,7 @@ define(["dojo/_base/xhr",
 
            Group.prototype.deleteGroupMember = function() {
                if(confirm("Are you sure you want to delete group member'" +this.name+"'?")) {
-                   var query = "rest/groupmember/"+ encodeURIComponent(this.getGroupProviderName()) + "/" + encodeURIComponent(this.name);
+                   var query = "api/latest/groupmember/"+ encodeURIComponent(this.getGroupProviderName()) + "/" + encodeURIComponent(this.name);
                    this.success = true
                    var that = this;
                    xhr.del({url: query, sync: true, handleAs: "json"}).then(

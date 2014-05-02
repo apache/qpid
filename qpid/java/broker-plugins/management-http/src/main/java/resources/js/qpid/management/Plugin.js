@@ -34,11 +34,7 @@ define(["dojo/_base/xhr",
            function Plugin(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "plugin", name: name };
-               if(parent) {
-                    this.modelObj.parent = {};
-                    this.modelObj.parent[ parent.type] = parent;
-                }
+               this.modelObj = { type: "plugin", name: name, parent: parent };
            }
 
            Plugin.prototype.getTitle = function() {
@@ -67,7 +63,7 @@ define(["dojo/_base/xhr",
                this.controller = controller;
                this.name = query(".name", node)[0];
                this.type = query(".type", node)[0];
-               this.query = "rest/plugin/"+encodeURIComponent(pluginObject.name);
+               this.query = "api/latest/plugin/"+encodeURIComponent(pluginObject.name);
 
                var that = this;
 
@@ -78,7 +74,7 @@ define(["dojo/_base/xhr",
 
                              that.updateHeader();
 
-                             require(["qpid/management/plugin/"+ that.pluginData.pluginType.toLowerCase().replace('-','')],
+                             require(["qpid/management/plugin/"+ that.pluginData.type.toLowerCase().replace('-','')],
                                  function(SpecificPlugin) {
                                  that.details = new SpecificPlugin(query(".pluginDetails", node)[0], pluginObject, controller);
                              });
@@ -90,7 +86,7 @@ define(["dojo/_base/xhr",
            PluginUpdater.prototype.updateHeader = function()
            {
                this.name.innerHTML = entities.encode(String(this.pluginData[ "name" ]));
-               this.type.innerHTML = entities.encode(String(this.pluginData[ "pluginType" ]));
+               this.type.innerHTML = entities.encode(String(this.pluginData[ "type" ]));
            };
 
            return Plugin;

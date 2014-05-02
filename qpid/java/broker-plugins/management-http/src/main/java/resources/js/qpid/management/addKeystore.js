@@ -146,7 +146,7 @@ define(["dojo/_base/lang",
           util.showSetAttributesDialog(
               keystoreAttributeWidgetFactories,
               keystore ? keystore : {},
-              "rest/keystore" + (keystore ? "/" + encodeURIComponent(keystore.name) : ""),
+              "api/latest/keystore" + (keystore ? "/" + encodeURIComponent(keystore.name) : ""),
               keystore ? "Edit keystore - " + keystore.name : "Add keystore",
               keystore ? false : true);
         };
@@ -156,7 +156,7 @@ define(["dojo/_base/lang",
           util.showSetAttributesDialog(
               truststoreAttributeWidgetFactories,
               truststore ? truststore : {},
-              "rest/truststore" + (truststore ? "/" + encodeURIComponent(truststore.name) : ""),
+              "api/latest/truststore" + (truststore ? "/" + encodeURIComponent(truststore.name) : ""),
               truststore ? "Edit truststore - " + truststore.name : "Add truststore",
               truststore ? false : true);
         };

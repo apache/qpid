@@ -77,7 +77,7 @@ define(["dojo/_base/lang",
                   var providers =  [];
                   var fieldSetContainers = {};
                   xhr.get({
-                    url: "rest/helper?action=ListGroupProviderAttributes",
+                    url: "service/helper?action=ListGroupProviderAttributes",
                     handleAs: "json",
                     sync: true
                   }).then(
@@ -169,7 +169,7 @@ define(["dojo/_base/lang",
           util.showSetAttributesDialog(
               fields,
               groupProvider ? groupProvider : {},
-              "rest/groupprovider" + (name ? "/" + encodeURIComponent(name.name) : ""),
+              "api/latest/groupprovider" + (name ? "/" + encodeURIComponent(name.name) : ""),
               groupProvider ? "Edit group provider - " + groupProvider.name : "Add group provider",
               groupProvider ? false : true);
         };

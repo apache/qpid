@@ -77,7 +77,7 @@ define(["dojo/_base/lang",
                   var providers =  [];
                   var fieldSetContainers = {};
                   xhr.get({
-                    url: "rest/helper?action=ListAccessControlProviderAttributes",
+                    url: "service/helper?action=ListAccessControlProviderAttributes",
                     handleAs: "json",
                     sync: true
                   }).then(
@@ -169,7 +169,7 @@ define(["dojo/_base/lang",
           util.showSetAttributesDialog(
               fields,
               accessControlProvider ? accessControlProvider : {},
-              "rest/accesscontrolprovider" + (name ? "/" + encodeURIComponent(name.name) : ""),
+              "api/latest/accesscontrolprovider" + (name ? "/" + encodeURIComponent(name.name) : ""),
               accessControlProvider ? "Edit access control provider - " + accessControlProvider.name : "Add access control provider",
               accessControlProvider ? false : true);
         };

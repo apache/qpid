@@ -36,11 +36,7 @@ define(["dojo/dom",
            function Port(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "port", name: name };
-               if(parent) {
-                   this.modelObj.parent = {};
-                   this.modelObj.parent[ parent.type] = parent;
-               }
+               this.modelObj = { type: "port", name: name, parent: parent};
            }
 
            Port.prototype.getTitle = function() {
@@ -56,7 +52,7 @@ define(["dojo/dom",
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
 
-                            that.portUpdater = new PortUpdater(contentPane.containerNode, that.modelObj, that.controller, "rest/port/" + encodeURIComponent(that.name));
+                            that.portUpdater = new PortUpdater(contentPane.containerNode, that.modelObj, that.controller, "api/latest/port/" + encodeURIComponent(that.name));
 
                             updater.add( that.portUpdater );
 
@@ -85,7 +81,7 @@ define(["dojo/dom",
 
            Port.prototype.deletePort = function() {
                if(confirm("Are you sure you want to delete port '" +this.name+"'?")) {
-                   var query = "rest/port/" + encodeURIComponent(this.name);
+                   var query = "api/latest/port/" + encodeURIComponent(this.name);
                    this.success = true
                    var that = this;
                    xhr.del({url: query, sync: true, handleAs: "json"}).then(
@@ -104,7 +100,7 @@ define(["dojo/dom",
 
            Port.prototype.showEditDialog = function() {
                var that = this;
-               xhr.get({url: "rest/broker", sync: properties.useSyncGet, handleAs: "json"})
+               xhr.get({url: "api/latest/broker", sync: properties.useSyncGet, handleAs: "json"})
                .then(function(data)
                      {
                          var brokerData= data[0];

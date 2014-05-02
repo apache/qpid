@@ -57,7 +57,7 @@ define(["dojo/_base/xhr",
 
         var convertToVirtualHost = function convertToVirtualHost(formValues)
         {
-            var newVirtualHost = {};
+            var newVirtualHost = {messageStoreProvider:true};
             var id = dojo.byId("formAddVirtualHost.id").value;
             if (id)
             {
@@ -74,6 +74,16 @@ define(["dojo/_base/xhr",
                 }
             }
 
+            //temporary hacks to verify the REST API
+            if (newVirtualHost.type == "STANDARD")
+            {
+                newVirtualHost.type = newVirtualHost.storeType;
+                delete newVirtualHost.storeType;
+            }
+            else if (newVirtualHost.type == "BDB_HA")
+            {
+                newVirtualHost.name =registry.byId("formAddVirtualHost.specific.nodeName").value;
+            }
             return newVirtualHost;
         }
 
@@ -126,7 +136,7 @@ define(["dojo/_base/xhr",
                                     var newVirtualHost = convertToVirtualHost(formValues);
                                     var that = this;
 
-                                    xhr.put({url: "rest/virtualhost/" + encodeURIComponent(newVirtualHost.name),
+                                    xhr.put({url: "api/latest/virtualhostnode/" + encodeURIComponent(newVirtualHost.name),
                                              sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newVirtualHost),
@@ -170,7 +180,7 @@ define(["dojo/_base/xhr",
             {
                 xhr.get({
                     sync: true,
-                    url: "rest/helper?action=ListVirtualHostTypes",
+                    url: "service/helper?action=ListVirtualHostTypes",
                     handleAs: "json"
                 }).then(
                    function(data) {

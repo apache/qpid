@@ -38,11 +38,7 @@ define(["dojo/_base/xhr",
            function VirtualHost(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "virtualhost", name: name};
-               if(parent) {
-                   this.modelObj.parent = {};
-                   this.modelObj.parent[ parent.type] = parent;
-               }
+               this.modelObj = { type: "virtualhost", name: name, parent: parent};
            }
 
            VirtualHost.prototype.getTitle = function()
@@ -66,7 +62,9 @@ define(["dojo/_base/xhr",
                             that.vhostUpdater.update();
 
                             var addQueueButton = query(".addQueueButton", contentPane.containerNode)[0];
-                            connect.connect(registry.byNode(addQueueButton), "onClick", function(evt){ addQueue.show(that.name) });
+                            connect.connect(registry.byNode(addQueueButton), "onClick", function(evt){
+                                addQueue.show({virtualhost:that.name,virtualhostnode:that.modelObj.parent.name})
+                            });
 
                             var deleteQueueButton = query(".deleteQueueButton", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(deleteQueueButton), "onClick",
@@ -74,7 +72,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.vhostUpdater,
                                                 that.vhostUpdater.queuesGrid.grid,
-                                                "rest/queue/"+ encodeURIComponent(that.name),
+                                                "api/latest/queue/" + encodeURIComponent(that.modelObj.parent.name) + "/" + encodeURIComponent(that.name),
                                                 "Are you sure you want to delete queue");
                                 }
                             );
@@ -89,7 +87,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.vhostUpdater,
                                                 that.vhostUpdater.exchangesGrid.grid,
-                                                "rest/exchange/"+ encodeURIComponent(that.name),
+                                                "api/latest/exchange/"+ encodeURIComponent(that.modelObj.parent.name) + "/" + encodeURIComponent(that.name),
                                                 "Are you sure you want to delete exchange");
                                     }
                             );
@@ -121,15 +119,6 @@ define(["dojo/_base/xhr",
                            "state",
                            "durable",
                            "lifetimePolicy",
-                           "alertRepeatGap",
-                           "alertRepeatGapUnits",
-                           "alertThresholdMessageAge",
-                           "alertThresholdMessageAgeUnits",
-                           "alertThresholdMessageSize",
-                           "alertThresholdMessageSizeUnits",
-                           "alertThresholdQueueDepthBytes",
-                           "alertThresholdQueueDepthBytesUnits",
-                           "alertThresholdQueueDepthMessages",
                            "msgInRate",
                            "bytesInRate",
                            "bytesInRateUnits",
@@ -140,7 +129,7 @@ define(["dojo/_base/xhr",
                            "storePath",
                            "configPath"]);
 
-               this.query = "rest/virtualhost/"+ encodeURIComponent(vhost.name);
+               this.query = "api/latest/virtualhost/"+ encodeURIComponent(vhost.parent.name) + "/" + encodeURIComponent(vhost.name);
 
                var that = this;
 
@@ -245,9 +234,11 @@ define(["dojo/_base/xhr",
                this.state.innerHTML = entities.encode(String(this.vhostData[ "state" ]));
                this.durable.innerHTML = entities.encode(String(this.vhostData[ "durable" ]));
                this.lifetimePolicy.innerHTML = entities.encode(String(this.vhostData[ "lifetimePolicy" ]));
-               this.storeType.innerHTML = entities.encode(String(this.vhostData[ "storeType" ]));
-               this.storePath.innerHTML = entities.encode(String(this.vhostData[ "storePath" ]));
-               this.configPath.innerHTML = entities.encode(String(this.vhostData[ "configPath" ]));
+               if (this.vhostData.messageStoreSettings)
+               {
+                   this.storeType.innerHTML = entities.encode(String(this.vhostData[ "messageStoreSettings" ].storeType));
+                   this.storePath.innerHTML = entities.encode(String(this.vhostData[ "messageStoreSettings" ].storePath));
+               }
            };
 
            Updater.prototype.update = function()
@@ -264,31 +255,6 @@ define(["dojo/_base/xhr",
                        var exchanges = thisObj.vhostData[ "exchanges" ];
 
                        thisObj.updateHeader();
-
-
-                       // update alerting info
-                       var alertRepeatGap = formatter.formatTime( thisObj.vhostData["queue.alertRepeatGap"] );
-
-                       thisObj.alertRepeatGap.innerHTML = alertRepeatGap.value;
-                       thisObj.alertRepeatGapUnits.innerHTML = alertRepeatGap.units;
-
-
-                       var alertMsgAge = formatter.formatTime( thisObj.vhostData["queue.alertThresholdMessageAge"] );
-
-                       thisObj.alertThresholdMessageAge.innerHTML = alertMsgAge.value;
-                       thisObj.alertThresholdMessageAgeUnits.innerHTML = alertMsgAge.units;
-
-                       var alertMsgSize = formatter.formatBytes( thisObj.vhostData["queue.alertThresholdMessageSize"] );
-
-                       thisObj.alertThresholdMessageSize.innerHTML = alertMsgSize.value;
-                       thisObj.alertThresholdMessageSizeUnits.innerHTML = alertMsgSize.units;
-
-                       var alertQueueDepth = formatter.formatBytes( thisObj.vhostData["queue.alertThresholdQueueDepthBytes"] );
-
-                       thisObj.alertThresholdQueueDepthBytes.innerHTML = alertQueueDepth.value;
-                       thisObj.alertThresholdQueueDepthBytesUnits.innerHTML = alertQueueDepth.units;
-
-                       thisObj.alertThresholdQueueDepthMessages.innerHTML = entities.encode(String(thisObj.vhostData["queue.alertThresholdQueueDepthMessages"]));
 
                        var stats = thisObj.vhostData[ "statistics" ];
 

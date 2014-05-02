@@ -66,7 +66,7 @@ define(["dojo/_base/xhr",
                                 }
                                 xhr.get({
                                     sync: true,
-                                    url: "rest/helper?action=ListMessageStoreTypes",
+                                    url: "service/helper?action=ListMessageStoreTypes",
                                     handleAs: "json"
                                 }).then(
                                     function(data) {

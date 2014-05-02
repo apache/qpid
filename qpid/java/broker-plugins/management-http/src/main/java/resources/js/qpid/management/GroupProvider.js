@@ -38,11 +38,7 @@ define(["dojo/_base/xhr",
            function GroupProvider(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "groupprovider", name: name };
-               if(parent) {
-                    this.modelObj.parent = {};
-                    this.modelObj.parent[ parent.type] = parent;
-                }
+               this.modelObj = { type: "groupprovider", name: name, parent: parent};
            }
 
            GroupProvider.prototype.getTitle = function() {
@@ -85,7 +81,7 @@ define(["dojo/_base/xhr",
                warnMessage = "NOTE: provider deletion will also remove the group file on disk.\n\n";
              }
              if(confirm(warnMessage + "Are you sure you want to delete group provider '" + this.name + "'?")) {
-                 var query = "rest/groupprovider/" +encodeURIComponent(this.name);
+                 var query = "api/latest/groupprovider/" +encodeURIComponent(this.name);
                  this.success = true
                  var that = this;
                  xhr.del({url: query, sync: true, handleAs: "json"}).then(
@@ -108,7 +104,7 @@ define(["dojo/_base/xhr",
                this.name = query(".name", node)[0];
                this.type = query(".type", node)[0];
                this.state = query(".state", node)[0];
-               this.query = "rest/groupprovider/"+encodeURIComponent(groupProviderObj.name);
+               this.query = "api/latest/groupprovider/"+encodeURIComponent(groupProviderObj.name);
                this.typeUI ={"GroupFile": "FileGroupManager"};
                var that = this;
 

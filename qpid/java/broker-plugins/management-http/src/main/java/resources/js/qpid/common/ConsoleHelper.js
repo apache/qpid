@@ -47,7 +47,7 @@ define(["dojo/_base/xhr", "dojo/domReady!"], function (xhr) {
           {
             xhr.get({
               sync: true,
-              url: "rest/helper?action=version",
+              url: "service/helper?action=version",
               handleAs: "json"
              }).then(function(version) {
                qpidVersion = version;

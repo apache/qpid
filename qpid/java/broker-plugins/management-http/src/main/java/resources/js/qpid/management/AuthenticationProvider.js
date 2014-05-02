@@ -43,11 +43,7 @@ define(["dojo/_base/xhr",
            function AuthenticationProvider(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "authenticationprovider", name: name };
-               if(parent) {
-                    this.modelObj.parent = {};
-                    this.modelObj.parent[ parent.type] = parent;
-                }
+               this.modelObj = { type: "authenticationprovider", name: name, parent: parent};
            }
 
            AuthenticationProvider.prototype.getTitle = function() {
@@ -104,7 +100,7 @@ define(["dojo/_base/xhr",
 
            AuthenticationProvider.prototype.deleteAuthenticationProvider = function() {
                if(confirm("Are you sure you want to delete authentication provider '" + this.name + "'?")) {
-                   var query = "rest/authenticationprovider/" +encodeURIComponent(this.name);
+                   var query = "api/latest/authenticationprovider/" +encodeURIComponent(this.name);
                    this.success = true
                    var that = this;
                    xhr.del({url: query, sync: true, handleAs: "json"}).then(
@@ -144,7 +140,7 @@ define(["dojo/_base/xhr",
                this.deletePreferencesProviderButton = query(".deletePreferencesProviderButton", node)[0];
                this.preferencesProviderAttributes = dom.byId("preferencesProviderAttributes")
 
-               this.query = "rest/authenticationprovider/" + encodeURIComponent(authProviderObj.name);
+               this.query = "api/latest/authenticationprovider/" + encodeURIComponent(authProviderObj.name);
 
                var that = this;
 

@@ -121,7 +121,7 @@ define(["dojo/_base/xhr",
                      updatable: false,
                      serviceUrl: function()
                      {
-                       return "rest/logrecords?lastLogId=" + self.lastLogId;
+                       return "service/logrecords?lastLogId=" + self.lastLogId;
                      },
                      onUpdate: function(items)
                      {

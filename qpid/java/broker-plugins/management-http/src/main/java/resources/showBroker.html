@@ -41,18 +41,6 @@
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker model version:</div>
                 <div id="brokerAttribute.modelVersion" style="float:left;"></div>
             </div>
-            <div id="brokerAttribute.storeType.container" style="clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker store type:</div>
-                <div id="brokerAttribute.storeType" style="float:left;"></div>
-            </div>
-            <div id="brokerAttribute.storeVersion.container" style="clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker store version:</div>
-                <div id="brokerAttribute.storeVersion" style="float:left;"></div>
-            </div>
-            <div id="brokerAttribute.storePath.container" style="clear:both">
-                <div class="formLabel-labelCell" style="float:left; width: 250px;">Broker store location:</div>
-                <div id="brokerAttribute.storePath" style="float:left;"></div>
-            </div>
             <div id="brokerAttribute.defaultVirtualHost.container" style="display: none; clear:both; clear:both;">
                 <div class="formLabel-labelCell" style="float:left; width: 250px;">Default virtual host:</div>
                 <div id="brokerAttribute.defaultVirtualHost" style="float:left;"></div>
@@ -67,46 +55,6 @@
             </div>
             <div style="clear:both"></div>
             <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Global Queue Defaults',  open: true">
-                <div id="brokerAttribute.queue.alertThresholdQueueDepthMessages.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Depth messages alert threshold:</div>
-                    <div id="brokerAttribute.queue.alertThresholdQueueDepthMessages" style="float:left;"></div>
-                </div>
-                <div id="brokerAttribute.queue.alertThresholdQueueDepthBytes.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Depth bytes alert threshold:</div>
-                    <div id="brokerAttribute.queue.alertThresholdQueueDepthBytes" style="float:left;"></div> bytes
-                </div>
-                <div id="brokerAttribute.queue.alertThresholdMessageAge.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Message age alert threshold:</div>
-                    <div id="brokerAttribute.queue.alertThresholdMessageAge" style="float:left;"></div> ms
-                </div>
-                <div id="brokerAttribute.queue.alertThresholdMessageSize.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Message size alert threshold:</div>
-                    <div id="brokerAttribute.queue.alertThresholdMessageSize" style="float:left;"></div> bytes
-                </div>
-                <div id="brokerAttribute.queue.alertRepeatGap.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Alert repeat gap:</div>
-                    <div id="brokerAttribute.queue.alertRepeatGap" style="float:left;"></div> ms
-                </div>
-                <div id="brokerAttribute.queue.maximumDeliveryAttempts.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 250px;">Maximum delivery retries:</div>
-                    <div id="brokerAttribute.queue.maximumDeliveryAttempts" style="float:left;"></div>
-                </div>
-                <div id="brokerAttribute.queue.deadLetterQueueEnabled.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Dead letter queue enabled:</div>
-                    <div id="brokerAttribute.queue.deadLetterQueueEnabled" style="float:left;"></div>
-                </div>
-                <div id="brokerAttribute.queue.flowControlSizeBytes.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Flow control threshold:</div>
-                    <div id="brokerAttribute.queue.flowControlSizeBytes" style="float:left;"></div> bytes
-                </div>
-                <div id="brokerAttribute.queue.flowResumeSizeBytes.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Flow resume threshold:</div>
-                    <div id="brokerAttribute.queue.flowResumeSizeBytes" style="float:left;"></div> bytes
-                </div>
-                <div style="clear:both"></div>
-            </div>
-            <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Global Connection Defaults',  open: true">
                 <div id="brokerAttribute.connection.sessionCountLimit.container" style="clear:both">
                     <div class="formLabel-labelCell" style="float:left; width: 240px;">Maximum number of sessions:</div>
@@ -115,30 +63,6 @@
                 <div id="brokerAttribute.connection.heartBeatDelay.container" style="clear:both">
                     <div class="formLabel-labelCell" style="float:left; width: 240px;">Heart beat delay:</div>
                     <div id="brokerAttribute.connection.heartBeatDelay" style="float:left;"></div> ms
-                </div>
-                <div style="clear:both"></div>
-            </div>
-            <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Global Virtual Host Defaults',  open: true">
-                <div id="brokerAttribute.virtualhost.housekeepingCheckPeriod.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">House keeping check period:</div>
-                    <div id="brokerAttribute.virtualhost.housekeepingCheckPeriod" style="float:left;"></div>ms
-                </div>
-                <div id="brokerAttribute.virtualhost.storeTransactionIdleTimeoutClose.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Idle store transaction close timeout:</div>
-                    <div id="brokerAttribute.virtualhost.storeTransactionIdleTimeoutClose" style="float:left;"></div>ms
-                </div>
-                <div id="brokerAttribute.virtualhost.storeTransactionIdleTimeoutWarn.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Idle store transaction warn timeout:</div>
-                    <div id="brokerAttribute.virtualhost.storeTransactionIdleTimeoutWarn" style="float:left;"></div>ms
-                </div>
-                <div id="brokerAttribute.virtualhost.storeTransactionOpenTimeoutClose.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Open store transaction close timeout:</div>
-                    <div id="brokerAttribute.virtualhost.storeTransactionOpenTimeoutClose" style="float:left;"></div>ms
-                </div>
-                <div id="brokerAttribute.virtualhost.storeTransactionOpenTimeoutWarn.container" style="clear:both">
-                    <div class="formLabel-labelCell" style="float:left; width: 240px;">Open store transaction warn timeout:</div>
-                    <div id="brokerAttribute.virtualhost.storeTransactionOpenTimeoutWarn" style="float:left;"></div>ms
                 </div>
                 <div style="clear:both"></div>
             </div>

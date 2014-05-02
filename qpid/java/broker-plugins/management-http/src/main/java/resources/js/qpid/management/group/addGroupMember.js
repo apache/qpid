@@ -70,7 +70,7 @@ define(["dojo/_base/xhr",
 
                                     var newGroupMember = convertToGroupMember(theForm.getValues());
                                     var that = this;
-                                    xhr.put({url: "rest/groupmember/"+encodeURIComponent(addGroupMember.groupProvider) +
+                                    xhr.put({url: "api/latest/groupmember/"+encodeURIComponent(addGroupMember.groupProvider) +
                                                   "/" + encodeURIComponent(addGroupMember.group) + "/" + encodeURIComponent(newGroupMember.name), sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newGroupMember),

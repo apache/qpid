@@ -135,7 +135,7 @@ return declare("qpid.management.logs.LogFileDownloadDialog", null, {
                 }
                 query+="l="+encodeURIComponent(data[i].appenderName +'/' + data[i].name);
             }
-            window.location="rest/logfile?" + query;
+            window.location="service/logfile?" + query;
             this.logFileDialog.hide();
         }
     },
@@ -151,7 +151,7 @@ return declare("qpid.management.logs.LogFileDownloadDialog", null, {
 
     showDialog: function(){
         var self = this;
-        var requestArguments = {url: "rest/logfilenames", sync: true, handleAs: "json"};
+        var requestArguments = {url: "service/logfilenames", sync: true, handleAs: "json"};
         xhr.get(requestArguments).then(function(data){
           try
           {

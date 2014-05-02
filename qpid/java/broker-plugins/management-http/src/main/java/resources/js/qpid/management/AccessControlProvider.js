@@ -38,11 +38,7 @@ define(["dojo/_base/xhr",
            function AccessControlProvider(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "accesscontrolprovider", name: name };
-               if(parent) {
-                    this.modelObj.parent = {};
-                    this.modelObj.parent[ parent.type] = parent;
-                }
+               this.modelObj = { type: "accesscontrolprovider", name: name, parent: parent};
            }
 
            AccessControlProvider.prototype.getTitle = function() {
@@ -79,7 +75,7 @@ define(["dojo/_base/xhr",
 
            AccessControlProvider.prototype.deleteAccessControlProvider = function() {
              if(confirm("Are you sure you want to delete access control provider '" + this.name + "'?")) {
-                 var query = "rest/accesscontrolprovider/" +encodeURIComponent(this.name);
+                 var query = "api/latest/accesscontrolprovider/" +encodeURIComponent(this.name);
                  this.success = true
                  var that = this;
                  xhr.del({url: query, sync: true, handleAs: "json"}).then(
@@ -102,7 +98,7 @@ define(["dojo/_base/xhr",
                this.name = query(".name", node)[0];
                this.type = query(".type", node)[0];
                this.state = query(".state", node)[0];
-               this.query = "rest/accesscontrolprovider/"+encodeURIComponent(groupProviderObj.name);
+               this.query = "api/latest/accesscontrolprovider/"+encodeURIComponent(groupProviderObj.name);
 
                var that = this;
 

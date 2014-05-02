@@ -36,12 +36,8 @@ define(["dojo/dom",
            function KeyStore(name, parent, controller, objectType) {
                this.keyStoreName = name;
                this.controller = controller;
-               this.modelObj = { type: "keystore", name: name };
-               if(parent) {
-                   this.modelObj.parent = {};
-                   this.modelObj.parent[ parent.type] = parent;
-               }
-               this.url = "rest/keystore/" + encodeURIComponent(name);
+               this.modelObj = { type: "keystore", name: name, parent: parent};
+               this.url = "api/latest/keystore/" + encodeURIComponent(name);
                this.dialog =  addKeystore.showKeystoreDialog;
            }
 

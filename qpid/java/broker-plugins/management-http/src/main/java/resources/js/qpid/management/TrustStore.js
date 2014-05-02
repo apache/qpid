@@ -36,12 +36,8 @@ define(["dojo/dom",
            function TrustStore(name, parent, controller) {
                this.keyStoreName = name;
                this.controller = controller;
-               this.modelObj = { type: "truststore", name: name };
-               if(parent) {
-                   this.modelObj.parent = {};
-                   this.modelObj.parent[ parent.type] = parent;
-               }
-               this.url = "rest/truststore/" + encodeURIComponent(name);
+               this.modelObj = { type: "truststore", name: name, parent: parent};
+               this.url = "api/latest/truststore/" + encodeURIComponent(name);
                this.dialog =  addKeystore.showTruststoreDialog;
            }
 

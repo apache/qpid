@@ -135,7 +135,7 @@ define(["dojo/_base/xhr",
 
                         queryParam += "id=" + data[i].id;
                     }
-                    var query = "rest/user/"+ encodeURIComponent(that.name)
+                    var query = "api/latest/user/"+ encodeURIComponent(that.name)
                        + queryParam;
                     that.success = true
                     xhr.del({url: query, sync: true, handleAs: "json"}).then(
@@ -198,7 +198,7 @@ define(["dojo/_base/xhr",
                                     var newUser = convertToUser(theForm.getValues());
 
 
-                                    var url = "rest/user/"+encodeURIComponent(addUser.authProvider) +
+                                    var url = "api/latest/user/"+encodeURIComponent(addUser.authProvider) +
                                         "/"+encodeURIComponent(newUser.name);
 
                                     xhr.put({url: url, sync: true, handleAs: "json",
@@ -255,7 +255,7 @@ define(["dojo/_base/xhr",
                             newUser.name = setPassword.name;
                             newUser.id = setPassword.id;
 
-                            var url = "rest/user/"+encodeURIComponent(setPassword.authProvider) +
+                            var url = "api/latest/user/"+encodeURIComponent(setPassword.authProvider) +
                                 "/"+encodeURIComponent(newUser.name);
 
                             xhr.put({url: url, sync: true, handleAs: "json",

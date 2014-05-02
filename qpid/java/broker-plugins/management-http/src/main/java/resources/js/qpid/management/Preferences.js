@@ -174,7 +174,7 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
       if (util.deleteGridSelections(
          null,
          this.usersGrid,
-         "rest/userpreferences",
+         "service/userpreferences",
          "Are you sure you want to delete preferences for user",
          "user"))
        {
@@ -228,7 +228,7 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
     {
       var that = this;
       xhr.get({
-        url: "rest/userpreferences",
+        url: "service/userpreferences",
         sync: false,
         handleAs: "json"
       }).then(

@@ -37,7 +37,7 @@ define(["dojo/_base/xhr",
     {
       var that = this;
       xhr.get({
-        url: "rest/preferences",
+        url: "service/preferences",
         sync: true,
         handleAs: "json",
         load: function(data)
@@ -65,7 +65,7 @@ define(["dojo/_base/xhr",
     {
       var that = this;
       xhr.post({
-        url: "rest/preferences",
+        url: "service/preferences",
         sync: !noSync,
         handleAs: "json",
         headers: { "Content-Type": "application/json"},

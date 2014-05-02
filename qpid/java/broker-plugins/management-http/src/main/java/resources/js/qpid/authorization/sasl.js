@@ -63,6 +63,8 @@ var errorHandler = function errorHandler(error)
     }
 }
 
+var saslServiceUrl="service/sasl";
+
 var saslPlain = function saslPlain(user, password, callbackFunction)
 {
     var responseArray = [ 0 ].concat(encodeUTF8( user )).concat( [ 0 ] ).concat( encodeUTF8( password ) );
@@ -71,7 +73,7 @@ var saslPlain = function saslPlain(user, password, callbackFunction)
     // Using dojo.xhrGet, as very little information is being sent
     dojo.xhrPost({
         // The URL of the request
-        url: "rest/sasl",
+        url: saslServiceUrl,
         content: {
             mechanism: "PLAIN",
             response: plainResponse
@@ -85,7 +87,7 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
 {
             dojo.xhrPost({
                 // The URL of the request
-                url: "rest/sasl",
+                url: saslServiceUrl,
                 content: {
                     mechanism: saslMechanism
                 },
@@ -110,7 +112,7 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
 
                     dojo.xhrPost({
                         // The URL of the request
-                        url: "rest/sasl",
+                        url: saslServiceUrl,
                         content: {
                             id: id,
                             response: response
@@ -214,7 +216,7 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
                         clientFirstMessageBare = "n=" + user + ",r=" + clientNonce;
                         dojo.xhrPost({
                             // The URL of the request
-                            url: "rest/sasl",
+                            url: saslServiceUrl,
                             content: {
                                 mechanism: saslMechanism,
                                 response: toBase64(GS2_HEADER + clientFirstMessageBare)
@@ -244,7 +246,7 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
                                 serverSignature = CryptoJS.HmacSHA1(authMessage, serverKey);
                                 dojo.xhrPost({
                                     // The URL of the request
-                                    url: "rest/sasl",
+                                    url: saslServiceUrl,
                                     content: {
                                         id: id,
                                         response: toBase64(clientFinalMessageWithoutProof
@@ -292,7 +294,7 @@ var SaslClient = {};
 SaslClient.authenticate = function(username, password, callbackFunction)
 {
     dojo.xhrGet({
-        url: "rest/sasl",
+        url: saslServiceUrl,
         handleAs: "json",
         failOk: true
     }).then(function(data)
@@ -325,7 +327,7 @@ SaslClient.authenticate = function(username, password, callbackFunction)
 SaslClient.getUser = function(callbackFunction)
 {
     dojo.xhrGet({
-        url: "rest/sasl",
+        url: saslServiceUrl,
         handleAs: "json",
         failOk: true
     }).then(callbackFunction, errorHandler);

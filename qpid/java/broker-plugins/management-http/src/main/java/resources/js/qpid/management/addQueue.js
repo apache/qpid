@@ -161,7 +161,8 @@ define(["dojo/_base/xhr",
                                     var newQueue = convertToQueue(theForm.getValues());
                                     var that = this;
 
-                                    xhr.put({url: "rest/queue/"+encodeURIComponent(addQueue.vhost)
+                                    xhr.put({url: "api/latest/queue/"+encodeURIComponent(addQueue.vhostnode)
+                                                  +"/"+encodeURIComponent(addQueue.vhost)
                                                   +"/"+encodeURIComponent(newQueue.name), sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newQueue),
@@ -188,8 +189,9 @@ define(["dojo/_base/xhr",
                             });
                         }});
 
-        addQueue.show = function(vhost) {
-                            addQueue.vhost = vhost;
+        addQueue.show = function(data) {
+                            addQueue.vhost = data.virtualhost;
+                            addQueue.vhostnode = data.virtualhostnode;
                             registry.byId("formAddQueue").reset();
                             registry.byId("addQueue").show();
                         };

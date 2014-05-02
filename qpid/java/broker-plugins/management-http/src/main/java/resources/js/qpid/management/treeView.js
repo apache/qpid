@@ -223,13 +223,22 @@ define(["dojo/_base/xhr",
 
            TreeViewModel.prototype.relocate = function (theItem) {
 
-               function findItemDetails(theItem, details, type, object) {
+               function findItemDetails(theItem, details, type, object, parent) {
                    if (theItem.id == object.id) {
                        details.type = type;
                        details[ type ] = object.name;
+                       details.parent = parent;
                    } else {
                        details[ type ] = object.name;
 
+                       var parentObject ={
+                               type: type,
+                               name: object.name
+                       };
+                       if (parent)
+                       {
+                           parentObject.parent = parent;
+                       }
                        // iterate over children
                        for (var propName in object) {
                            if (object.hasOwnProperty(propName)) {
@@ -237,7 +246,7 @@ define(["dojo/_base/xhr",
                                if (util.isArray(prop)) {
                                    for (var i = 0; i < prop.length; i++) {
                                        findItemDetails(theItem, details, propName.substring(0, propName.length - 1),
-                                                       prop[i]);
+                                                       prop[i], parentObject);
 
                                        if (details.type) {
                                            break;
@@ -257,37 +266,36 @@ define(["dojo/_base/xhr",
                }
 
                var details = new Object();
-
-               findItemDetails(theItem, details, "broker", this.model);
+               findItemDetails(theItem, details, "broker", this.model, null);
 
                if (details.type == "broker") {
                    controller.show("broker", "", null, theItem.id);
                } else if (details.type == "virtualhost") {
-                   controller.show("virtualhost", details.virtualhost, {type:"broker", name:""}, theItem.id);
+                   controller.show("virtualhost", details.virtualhost, details.parent, theItem.id);
                } else if (details.type == "exchange") {
-                   controller.show("exchange", details.exchange, { type: "virtualhost", name: details.virtualhost, parent: {type:"broker", name:""}}, theItem.id);
+                   controller.show("exchange", details.exchange, details.parent, theItem.id);
                } else if (details.type == "queue") {
-                   controller.show("queue", details.queue, { type: "virtualhost", name: details.virtualhost, parent: {type:"broker", name:""}}, theItem.id);
+                   controller.show("queue", details.queue, details.parent, theItem.id);
                } else if (details.type == "connection") {
-                   controller.show("connection", details.connection, { type: "virtualhost", name: details.virtualhost, parent: {type:"broker", name:""}}, theItem.id);
+                   controller.show("connection", details.connection, details.parent, theItem.id);
                } else if (details.type == 'port') {
-                   controller.show("port", details.port, { type: "virtualhost", name: details.virtualhost, parent: {type:"broker", name:""}}, theItem.id);
+                   controller.show("port", details.port, details.parent, theItem.id);
                } else if (details.type == 'authenticationprovider') {
-                   controller.show("authenticationprovider", details.authenticationprovider, {type:"broker", name:""}, theItem.id);
+                   controller.show("authenticationprovider", details.authenticationprovider, details.parent, theItem.id);
                } else if (details.type == 'groupprovider') {
-                   controller.show("groupprovider", details.groupprovider, {type:"broker", name:""}, theItem.id);
+                   controller.show("groupprovider", details.groupprovider, details.parent, theItem.id);
                } else if (details.type == 'group') {
-                   controller.show("group", details.group, { type: "groupprovider", name: details.groupprovider, parent: {type:"broker", name:""}}, theItem.id);
+                   controller.show("group", details.group, details.parent, theItem.id);
                } else if (details.type == 'keystore') {
-                 controller.show("keystore", details.keystore, {type:"broker", name:""}, theItem.id);
+                 controller.show("keystore", details.keystore, details.parent, theItem.id);
                } else if (details.type == 'truststore') {
-                 controller.show("truststore", details.truststore, {type:"broker", name:""}, theItem.id);
+                 controller.show("truststore", details.truststore, details.parent, theItem.id);
                } else if (details.type == 'accesscontrolprovider') {
-                 controller.show("accesscontrolprovider", details.accesscontrolprovider, {type:"broker", name:""}, theItem.id);
+                 controller.show("accesscontrolprovider", details.accesscontrolprovider, details.parent, theItem.id);
                } else if (details.type == 'plugin') {
                  controller.show("plugin", details.plugin, {type:"broker", name:""}, theItem.id);
                } else if (details.type == "preferencesprovider") {
-                 controller.show("preferencesprovider", details.preferencesprovider, { type: "authenticationprovider", name: details.authenticationprovider, parent: {type:"broker", name:""}}, theItem.id);
+                 controller.show("preferencesprovider", details.preferencesprovider, details.parent, theItem.id);
                }
            };
 
@@ -307,7 +315,7 @@ define(["dojo/_base/xhr",
            };
 
            query('div[qpid-type="treeView"]').forEach(function(node, index, arr) {
-               var treeModel = new TreeViewModel("rest/structure");
+               var treeModel = new TreeViewModel("service/structure");
                treeModel.update();
                var tree = new Tree({ model: treeModel }, node);
                tree.on("dblclick",
