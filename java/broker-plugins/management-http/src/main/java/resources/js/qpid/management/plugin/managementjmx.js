@@ -85,14 +85,14 @@ define(["dojo/_base/xhr",
           util.showSetAttributesDialog(
               widgetFactories,
               data,
-              "rest/plugin/" + encodeURIComponent(data.name),
+              "api/latest/plugin/" + encodeURIComponent(data.name),
               "Edit plugin - " + data.name);
         };
 
         function ManagementJmxUpdater(node, pluginObject, controller)
         {
             this.controller = controller;
-            this.query = "rest/plugin/"+encodeURIComponent(pluginObject.name);
+            this.query = "api/latest/plugin/"+encodeURIComponent(pluginObject.name);
             this.name = pluginObject.name;
             this.usePlatformMBeanServer = query(".usePlatformMBeanServer", node)[0];
         }

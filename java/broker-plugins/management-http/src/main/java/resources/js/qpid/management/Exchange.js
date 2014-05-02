@@ -37,11 +37,7 @@ define(["dojo/_base/xhr",
            function Exchange(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "exchange", name: name };
-               if(parent) {
-                   this.modelObj.parent = {};
-                   this.modelObj.parent[ parent.type] = parent;
-               }
+               this.modelObj = { type: "exchange", name: name, parent: parent};
            }
 
 
@@ -53,7 +49,12 @@ define(["dojo/_base/xhr",
 
            Exchange.prototype.getVirtualHostName = function()
            {
-               return this.modelObj.parent.virtualhost.name;
+               return this.modelObj.parent.name;
+           };
+
+           Exchange.prototype.getVirtualHostNodeName = function()
+           {
+               return this.modelObj.parent.parent.name;
            };
 
            Exchange.prototype.getTitle = function()
@@ -81,6 +82,7 @@ define(["dojo/_base/xhr",
                             connect.connect(registry.byNode(addBindingButton), "onClick",
                                             function(evt){
                                                 addBinding.show({ virtualhost: that.getVirtualHostName(),
+                                                                  virtualhostnode: that.getVirtualHostNodeName(),
                                                                   exchange: that.getExchangeName()});
                                             });
 
@@ -117,7 +119,8 @@ define(["dojo/_base/xhr",
                util.deleteGridSelections(
                        this.exchangeUpdater,
                        this.exchangeUpdater.bindingsGrid.grid,
-                       "rest/binding/"+ encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name),
+                       "api/latest/binding/" + encodeURIComponent(this.getVirtualHostNodeName())
+                           + "/" + encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name),
                        "Are you sure you want to delete binding for queue");
            }
 
@@ -158,7 +161,8 @@ define(["dojo/_base/xhr",
 
 
 
-               this.query = "rest/exchange/"+ encodeURIComponent(exchangeObj.parent.virtualhost.name) + "/" + encodeURIComponent(exchangeObj.name);
+               this.query = "api/latest/exchange/" + encodeURIComponent(exchangeObj.parent.parent.name)
+                               + "/" + encodeURIComponent(exchangeObj.parent.name) + "/" + encodeURIComponent(exchangeObj.name);
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {
@@ -272,7 +276,8 @@ define(["dojo/_base/xhr",
 
            Exchange.prototype.deleteExchange = function() {
                if(confirm("Are you sure you want to delete exchange '" +this.name+"'?")) {
-                   var query = "rest/exchange/"+ encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name);
+                   var query = "api/latest/exchange/" + encodeURIComponent(this.getVirtualHostNodeName())
+                                   + "/" + encodeURIComponent(this.getVirtualHostName()) +  "/" + encodeURIComponent(this.name);
                    this.success = true
                    var that = this;
                    xhr.del({url: query, sync: true, handleAs: "json"}).then(

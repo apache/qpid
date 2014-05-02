@@ -62,7 +62,7 @@ define(["dojo/_base/xhr",
                                     moveMessages.data.destinationQueue = theForm.getValues()["queue"];
                                     var that = this;
 
-                                    xhr.post({url: "rest/message/"+encodeURIComponent(moveMessages.vhost)
+                                    xhr.post({url: "service/message/"+encodeURIComponent(moveMessages.vhost)
                                                       +"/"+encodeURIComponent(moveMessages.queue),
                                              sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
@@ -102,7 +102,7 @@ define(["dojo/_base/xhr",
 
 
 
-            xhr.get({url: "rest/queue/" + encodeURIComponent(obj.virtualhost) + "?depth=0",
+            xhr.get({url: "api/latest/queue/" + encodeURIComponent(obj.virtualhost) + "?depth=0",
                      handleAs: "json"}).then(
                 function(data) {
                     var queues =  [];

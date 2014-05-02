@@ -66,23 +66,18 @@ define(["dojo/dom",
                function generateName(obj)
                {
                     if(obj) {
-                        var name = "";
-                        if(obj.parent)
+                        var name = obj.type + (obj.type == "broker" ? "" : ":" + obj.name);
+                        if (obj.parent)
                         {
-                            for(var prop in obj.parent) {
-                                if(obj.parent.hasOwnProperty(prop)) {
-                                    name = name + generateName( obj.parent[ prop ]);
-                                }
-                            }
-
+                            name = generateName(obj.parent) + "/" + name;
                         }
-                        return name + parent.type +":" + parent.name + "/"
+                        return name;
                     }
                     return "";
                }
 
                var that = this;
-               var objId = generateName(parent) + objType+":"+name;
+               var objId = (parent ? generateName(parent) + "/" : "") + objType + ":" + name;
 
                var obj = this.viewedObjects[ objId ];
                if(obj) {

@@ -72,7 +72,7 @@ define(["dojo/_base/xhr",
         function AclFileUpdater(node, aclProviderObj, controller)
         {
             this.controller = controller;
-            this.query = "rest/accesscontrolprovider/"+encodeURIComponent(aclProviderObj.name);
+            this.query = "api/latest/accesscontrolprovider/"+encodeURIComponent(aclProviderObj.name);
             this.name = aclProviderObj.name;
             this.path = query(".path", node)[0];
         }

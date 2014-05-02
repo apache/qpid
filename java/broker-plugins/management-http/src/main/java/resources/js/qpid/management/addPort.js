@@ -297,7 +297,7 @@ define(["dojo/_base/xhr",
                                     }
                                     var that = this;
 
-                                    xhr.put({url: "rest/port/"+encodeURIComponent(newPort.name), sync: true, handleAs: "json",
+                                    xhr.put({url: "api/latest/port/"+encodeURIComponent(newPort.name), sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newPort),
                                              load: function(x) {that.success = true; },
@@ -376,7 +376,7 @@ define(["dojo/_base/xhr",
                 editWarning.style.display = "block";
 
                 xhr.get({
-                    url: "rest/port/" + encodeURIComponent(portName),
+                    url: "api/latest/port/" + encodeURIComponent(portName),
                     handleAs: "json"
                 }).then(
                    function(data){

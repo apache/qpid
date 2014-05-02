@@ -34,11 +34,7 @@ define(["dojo/_base/xhr",
            function Connection(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "exchange", name: name };
-               if(parent) {
-                   this.modelObj.parent = {};
-                   this.modelObj.parent[ parent.type] = parent;
-               }
+               this.modelObj = { type: "exchange", name: name, parent: parent };
            }
 
            Connection.prototype.getTitle = function()
@@ -98,7 +94,8 @@ define(["dojo/_base/xhr",
 
 
 
-               this.query = "rest/connection/"+ encodeURIComponent(connectionObj.parent.virtualhost.name) + "/" + encodeURIComponent(connectionObj.name);
+               this.query = "api/latest/connection/"+ encodeURIComponent(connectionObj.parent.parent.name)
+                               + "/" + encodeURIComponent(connectionObj.parent.name) + "/" + encodeURIComponent(connectionObj.name);
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {

@@ -30,7 +30,7 @@ define(["dojo/_base/xhr",
         "dijit/form/ValidationTextBox",
         "dojox/html/entities",
         "dojo/text!../../showPreferencesProviderFields.html",
-        "dojo/text!rest/helper?action=ListPreferencesProvidersTypes",
+        "dojo/text!service/helper?action=ListPreferencesProvidersTypes",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"], function (xhr, dom, query, parser, string, json, Memory, registry, FilteringSelect, ValidationTextBox, entities, template, preferencesProvidersTypes) {
@@ -130,7 +130,7 @@ define(["dojo/_base/xhr",
       {
         var that = this;
         xhr.get({
-          url: "rest/preferencesprovider/"  +encodeURIComponent(authenticationProviderName) + "/" + encodeURIComponent(provider),
+          url: "api/latest/preferencesprovider/"  +encodeURIComponent(authenticationProviderName) + "/" + encodeURIComponent(provider),
           sync: true,
           handleAs: "json"
         }).then(function(data){if (data && data[0]) { that.init(data[0]);}});
@@ -173,7 +173,7 @@ define(["dojo/_base/xhr",
     if (this.type.value)
     {
       var data = this.getValues();
-      xhr.put({url: "rest/preferencesprovider/"  +encodeURIComponent(authenticationProviderName) + "/" + encodeURIComponent(data.name),
+      xhr.put({url: "api/latest/preferencesprovider/"  +encodeURIComponent(authenticationProviderName) + "/" + encodeURIComponent(data.name),
         sync: true,
         handleAs: "json",
         headers: { "Content-Type": "application/json"},

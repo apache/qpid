@@ -125,7 +125,7 @@ define(["dojo/_base/xhr",
             if (providerName)
             {
                 xhr.get({
-                    url: "rest/authenticationprovider/" + encodeURIComponent(providerName),
+                    url: "api/latest/authenticationprovider/" + encodeURIComponent(providerName),
                     handleAs: "json"
                 }).then(
                    function(data) {
@@ -175,7 +175,7 @@ define(["dojo/_base/xhr",
                                     var newAuthenticationManager = convertToAuthenticationProvider(theForm.getValues());
                                     var that = this;
 
-                                    xhr.put({url: "rest/authenticationprovider/" + encodeURIComponent(newAuthenticationManager.name),
+                                    xhr.put({url: "api/latest/authenticationprovider/" + encodeURIComponent(newAuthenticationManager.name),
                                              sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newAuthenticationManager),
@@ -214,7 +214,7 @@ define(["dojo/_base/xhr",
             if (!that.hasOwnProperty("providerFieldSets"))
             {
                 xhr.get({
-                    url: "rest/helper?action=ListAuthenticationProviderAttributes",
+                    url: "service/helper?action=ListAuthenticationProviderAttributes",
                     handleAs: "json"
                 }).then(
                    function(data) {

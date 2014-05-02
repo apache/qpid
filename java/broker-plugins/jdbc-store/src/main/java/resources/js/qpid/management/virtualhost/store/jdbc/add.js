@@ -67,7 +67,7 @@ define(["dojo/_base/xhr",
 
                                  xhr.get({
                                      sync: true,
-                                     url: "rest/helper?action=pluginList&plugin=JDBCConnectionProviderFactory",
+                                     url: "service/helper?action=pluginList&plugin=JDBCConnectionProviderFactory",
                                      handleAs: "json"
                                  }).then(
                                      function(data) {

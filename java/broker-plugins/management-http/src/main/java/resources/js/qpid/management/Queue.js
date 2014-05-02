@@ -47,11 +47,7 @@ define(["dojo/_base/xhr",
            function Queue(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "queue", name: name };
-               if(parent) {
-                   this.modelObj.parent = {};
-                   this.modelObj.parent[ parent.type] = parent;
-               }
+               this.modelObj = { type: "queue", name: name, parent: parent };
            }
 
            Queue.prototype.getQueueName = function()
@@ -62,7 +58,12 @@ define(["dojo/_base/xhr",
 
            Queue.prototype.getVirtualHostName = function()
            {
-               return this.modelObj.parent.virtualhost.name;
+               return this.modelObj.parent.name;
+           };
+
+           Queue.prototype.getVirtualHostNodeName = function()
+           {
+               return this.modelObj.parent.parent.name;
            };
 
            Queue.prototype.getTitle = function()
@@ -85,7 +86,7 @@ define(["dojo/_base/xhr",
 
                             that.queueUpdater.update();
 
-                            var myStore = new JsonRest({target:"rest/message/"+ encodeURIComponent(that.getVirtualHostName()) +
+                            var myStore = new JsonRest({target:"service/message/"+ encodeURIComponent(that.getVirtualHostName()) +
                                                                                "/" + encodeURIComponent(that.getQueueName())});
                             var messageGridDiv = query(".messages",contentPane.containerNode)[0];
                             that.dataStore = new ObjectStore({objectStore: myStore});
@@ -123,7 +124,8 @@ define(["dojo/_base/xhr",
                                                  var id = that.dataStore.getValue(theItem,"id");
                                                  showMessage.show({ messageNumber: id,
                                                                     queue: that.getQueueName(),
-                                                                    virtualhost: that.getVirtualHostName() });
+                                                                    virtualhost: that.getVirtualHostName(),
+                                                                    virtualhostnode: that.getVirtualHostNodeName()});
                                              });
 
                             var deleteMessagesButton = query(".deleteMessagesButton", contentPane.containerNode)[0];
@@ -153,7 +155,8 @@ define(["dojo/_base/xhr",
                                             function(evt){
                                                 event.stop(evt);
                                                 addBinding.show({ virtualhost: that.getVirtualHostName(),
-                                                                  queue: that.getQueueName()});
+                                                                  queue: that.getQueueName(),
+                                                                  virtualhostnode: that.getVirtualHostNodeName()});
                                             });
 
                             var deleteQueueButton = query(".deleteQueueButton", contentPane.containerNode)[0];
@@ -184,7 +187,7 @@ define(["dojo/_base/xhr",
 
                            queryParam += "id=" + data[i].id;
                        }
-                       var query = "rest/message/"+ encodeURIComponent(that.getVirtualHostName())
+                       var query = "service/message/"+ encodeURIComponent(that.getVirtualHostName())
                            + "/" + encodeURIComponent(that.getQueueName()) + queryParam;
                        that.success = true
                        xhr.del({url: query, sync: true, handleAs: "json"}).then(
@@ -307,7 +310,7 @@ define(["dojo/_base/xhr",
 
 
 
-               this.query = "rest/queue/"+ encodeURIComponent(queueObj.getVirtualHostName()) + "/" + encodeURIComponent(queueObj.getQueueName());
+               this.query = "api/latest/queue/" + encodeURIComponent(queueObj.getVirtualHostNodeName()) + "/"  + encodeURIComponent(queueObj.getVirtualHostName()) + "/" + encodeURIComponent(queueObj.getQueueName());
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {
@@ -490,7 +493,8 @@ define(["dojo/_base/xhr",
 
            Queue.prototype.deleteQueue = function() {
                if(confirm("Are you sure you want to delete queue '" +this.name+"'?")) {
-                   var query = "rest/queue/"+ encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name);
+                   var query = "api/latest/queue/" + encodeURIComponent(this.getVirtualHostNodeName())
+                                   + "/" + encodeURIComponent(this.getVirtualHostName()) + "/" + encodeURIComponent(this.name);
                    this.success = true
                    var that = this;
                    xhr.del({url: query, sync: true, handleAs: "json"}).then(

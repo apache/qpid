@@ -100,14 +100,14 @@ define(["dojo/_base/xhr",
             var contentField = query(".message-content", this.dialogNode)[0];
 
             if(data.mimeType && data.mimeType.match(/text\/.*/)) {
-                xhr.get({url: "rest/message-content/" + encodeURIComponent(showMessage.virtualhost)
+                xhr.get({url: "service/message-content/" + encodeURIComponent(showMessage.virtualhost)
                                             + "/" + encodeURIComponent(showMessage.queue)
                                             + "/" + encodeURIComponent(showMessage.messageNumber),
                                      sync: true
 
                                     }).then(function(obj) { contentField.innerHTML = encode(obj) });
             } else {
-                contentField.innerHTML = "<a href=\"" + "rest/message-content/" + encodeURIComponent(showMessage.virtualhost)
+                contentField.innerHTML = "<a href=\"" + "service/message-content/" + encodeURIComponent(showMessage.virtualhost)
                                                             + "/" + encodeURIComponent(showMessage.queue)
                                                             + "/" + encodeURIComponent(showMessage.messageNumber)
                                         + "\" target=\"_blank\">Download</a>";
@@ -122,7 +122,7 @@ define(["dojo/_base/xhr",
             showMessage.queue = obj.queue;
             showMessage.messageNumber = obj.messageNumber;
 
-            xhr.get({url: "rest/message/" + encodeURIComponent(obj.virtualhost)
+            xhr.get({url: "service/message/" + encodeURIComponent(obj.virtualhost)
                             + "/" + encodeURIComponent(obj.queue)
                             + "/" + encodeURIComponent(obj.messageNumber),
                      sync: properties.useSyncGet,

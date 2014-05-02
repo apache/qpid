@@ -67,11 +67,14 @@ define(["dojo/_base/xhr",
                }, {
                        name: "defaultVirtualHost",
                        createWidget: function(brokerData) {
-                         var hosts = brokerData.virtualhosts;
+                         var nodes = brokerData.virtualhostnodes;
                          var data = [];
-                         if (hosts) {
-                           for (var i=0; i< hosts.length; i++) {
-                               data.push({id: hosts[i].name, name: hosts[i].name});
+                         if (nodes) {
+                           for (var i=0; i< nodes.length; i++) {
+                               if (nodes[i].virtualhosts)
+                               {
+                                   data.push({id: nodes[i].virtualhosts[0].name, name: nodes[i].virtualhosts[0].name});
+                               }
                            }
                          }
                          var hostsStore = new dojo.store.Memory({ data: data });
@@ -106,130 +109,6 @@ define(["dojo/_base/xhr",
                          });
                        }
                }, {
-                       name: "queue.alertThresholdQueueDepthMessages",
-                       groupName: "Global Queue Defaults",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["queue.alertThresholdQueueDepthMessages"],
-                           placeholder: "Number of messages",
-                           label: "Depth alert threshold (messages):",
-                           name: "queue.alertThresholdQueueDepthMessages"
-                         });
-                       }
-               }, {
-                     name: "queue.alertThresholdQueueDepthBytes",
-                     createWidget: function(brokerData) {
-                       return new dijit.form.ValidationTextBox({
-                         trim: "true",
-                         regexp: "[0-9]+",
-                         invalidMessage: "Invalid value",
-                         required: false,
-                         value: brokerData["queue.alertThresholdQueueDepthBytes"],
-                         placeholder: "Number of bytes",
-                         label: "Depth alert threshold (bytes):",
-                         name: "queue.alertThresholdQueueDepthBytes"
-                       });
-                     }
-               }, {
-                       name: "queue.alertThresholdMessageAge",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["queue.alertThresholdMessageAge"],
-                           placeholder: "Time in ms",
-                           label: "Message age alert threshold (ms):",
-                           name: "queue.alertThresholdMessageAge"
-                         });
-                       }
-               }, {
-                       name: "queue.alertThresholdMessageSize",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["queue.alertThresholdMessageSize"],
-                           placeholder: "Size in bytes",
-                           label: "Message size alert threshold (bytes):",
-                           name: "queue.alertThresholdMessageSize"
-                         });
-                       }
-               }, {
-                       name: "queue.alertRepeatGap",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["queue.alertRepeatGap"],
-                           placeholder: "Time in ms",
-                           label: "Alert repeat gap (ms):",
-                           name: "queue.alertRepeatGap"
-                         });
-                       }
-               }, {
-                       name: "queue.maximumDeliveryAttempts",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["queue.maximumDeliveryAttempts"],
-                           placeholder: "Number of messages",
-                           label: "Maximum delivery retries (messages):",
-                           name: "queue.maximumDeliveryAttempts"
-                         });
-                       }
-               }, {
-                       name: "queue.deadLetterQueueEnabled",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.CheckBox({
-                           required: false,
-                           checked: brokerData["queue.deadLetterQueueEnabled"],
-                           value: "true",
-                           label: "Dead letter queue enabled:",
-                           name: "queue.deadLetterQueueEnabled"
-                         });
-                       }
-               }, {
-                       name: "queue.flowControlSizeBytes",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["queue.flowControlSizeBytes"],
-                           placeholder: "Size in bytes",
-                           label: "Flow control threshold (bytes):",
-                           name: "queue.flowControlSizeBytes"
-                         });
-                       }
-               }, {
-                       name: "queue.flowResumeSizeBytes",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["queue.flowResumeSizeBytes"],
-                           placeholder: "Size in bytes",
-                           label: "Flow resume threshold (bytes):",
-                           name: "queue.flowResumeSizeBytes"
-                         });
-                       }
-               }, {
                        name: "connection.sessionCountLimit",
                        groupName: "Global Connection Defaults",
                        createWidget: function(brokerData)
@@ -256,77 +135,6 @@ define(["dojo/_base/xhr",
                            placeholder: "Time in ms",
                            label: "Heart beat delay (ms):",
                            name: "connection.heartBeatDelay"
-                         });
-                       }
-               }, {
-                       name: "virtualhost.housekeepingCheckPeriod",
-                       groupName: "Global Virtual Host defaults",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["virtualhost.housekeepingCheckPeriod"],
-                           placeholder: "Time in ms",
-                           label: "House keeping check period (ms):",
-                           name: "virtualhost.housekeepingCheckPeriod"
-                         });
-                       }
-               }, {
-                       name: "virtualhost.storeTransactionIdleTimeoutClose",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["virtualhost.storeTransactionIdleTimeoutClose"],
-                           placeholder: "Time in ms",
-                           label: "Idle store transaction close timeout (ms):",
-                           name: "virtualhost.storeTransactionIdleTimeoutClose"
-                         });
-                       }
-               }, {
-                       name: "virtualhost.storeTransactionIdleTimeoutWarn",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["virtualhost.storeTransactionIdleTimeoutWarn"],
-                           placeholder: "Time in ms",
-                           label: "Idle store transaction warn timeout (ms):",
-                           name: "virtualhost.storeTransactionIdleTimeoutWarn"
-                         });
-                       }
-               }, {
-                       name: "virtualhost.storeTransactionOpenTimeoutClose",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["virtualhost.storeTransactionOpenTimeoutClose"],
-                           placeholder: "Time in ms",
-                           label: "Open store transaction close timeout (ms):",
-                           name: "virtualhost.storeTransactionOpenTimeoutClose"
-                         });
-                       }
-               }, {
-                       name: "virtualhost.storeTransactionOpenTimeoutWarn",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regexp: "[0-9]+",
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["virtualhost.storeTransactionOpenTimeoutWarn"],
-                           placeholder: "Time in ms",
-                           label: "Open store transaction warn timeout (ms):",
-                           name: "virtualhost.storeTransactionOpenTimeoutWarn"
                          });
                        }
                } ];
@@ -381,7 +189,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.authenticationProvidersGrid.grid,
-                                                "rest/authenticationprovider",
+                                                "api/latest/authenticationprovider",
                                                 warning + "Are you sure you want to delete authentication provider");
                                 }
                             );
@@ -395,7 +203,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.vhostsGrid.grid,
-                                                "rest/virtualhost",
+                                                "api/latest/virtualhostnodes",
                                                 "Deletion of virtual host will delete the message store data.\n\n Are you sure you want to delete virtual host");
                                 }
                             );
@@ -412,7 +220,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.portsGrid.grid,
-                                                "rest/port",
+                                                "api/latest/port",
                                                 "Are you sure you want to delete port");
                                 }
                             );
@@ -423,7 +231,7 @@ define(["dojo/_base/xhr",
                                     util.showSetAttributesDialog(
                                             that.attributeWidgetFactories,
                                             that.brokerUpdater.brokerData,
-                                            "rest/broker",
+                                            "api/latest/broker",
                                             "Set broker attributes");
                                 }
                             );
@@ -438,7 +246,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.keyStoresGrid.grid,
-                                                "rest/keystore",
+                                                "api/latest/keystore",
                                                 "Are you sure you want to delete key store");
                                 }
                             );
@@ -453,7 +261,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.trustStoresGrid.grid,
-                                                "rest/truststore",
+                                                "api/latest/truststore",
                                                 "Are you sure you want to delete trust store");
                                 }
                             );
@@ -482,7 +290,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.groupProvidersGrid.grid,
-                                                "rest/groupprovider",
+                                                "api/latest/groupprovider",
                                                 warning + "Are you sure you want to delete group provider");
                                 }
                             );
@@ -497,7 +305,7 @@ define(["dojo/_base/xhr",
                                         util.deleteGridSelections(
                                                 that.brokerUpdater,
                                                 that.brokerUpdater.accessControlProvidersGrid.grid,
-                                                "rest/accesscontrolprovider",
+                                                "api/latest/accesscontrolprovider",
                                                 "Are you sure you want to delete access control provider");
                                 }
                             );
@@ -511,7 +319,7 @@ define(["dojo/_base/xhr",
            function BrokerUpdater(node, brokerObj, controller, attributes)
            {
                this.controller = controller;
-               this.query = "rest/broker";
+               this.query = "api/latest/broker?depth=2";
                this.attributes = attributes;
                this.accessControlProvidersWarn = query(".broker-access-control-providers-warning", node)[0]
                var that = this;
@@ -541,19 +349,41 @@ define(["dojo/_base/xhr",
                                      }};
 
                              that.vhostsGrid =
-                                new UpdatableStore(that.brokerData.vhosts, query(".broker-virtualhosts")[0],
-                                                [ { name: "Virtual Host",    field: "name",      width: "120px"},
-                                                  { name: "State",    field: "state",      width: "70px"},
-                                                    { name: "Connections",    field: "connectionCount",      width: "80px"},
-                                                    { name: "Queues",    field: "queueCount",      width: "80px"},
-                                                    { name: "Exchanges",    field: "exchangeCount",      width: "100%"}
+                                new UpdatableStore(that.brokerData.virtualhostnodes, query(".broker-virtualhosts")[0],
+                                                [ { name: "Virtual Host",    field: "_item",      width: "120px",
+                                                    formatter: function(item){
+                                                      return item && item.virtualhosts? item.virtualhosts[0].name: (item?item.name: "N/A");
+                                                    }
+                                                  },
+                                                  { name: "State",    field: "_item",      width: "70px",
+                                                    formatter: function(item){
+                                                      return item && item.virtualhosts? item.virtualhosts[0].state: (item?item.state: "N/A");
+                                                    }
+                                                  },
+                                                  { name: "Connections",    field: "_item",      width: "80px",
+                                                    formatter: function(item){
+                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.connectionCount: 0;
+                                                    }
+                                                  },
+                                                  { name: "Queues",    field: "_item",      width: "80px",
+                                                    formatter: function(item){
+                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.queueCount: 0;
+                                                    }
+                                                  },
+                                                  { name: "Exchanges",    field: "_item",      width: "100%",
+                                                    formatter: function(item){
+                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.exchangeCount: 0;
+                                                    }
+                                                  }
                                                 ], function(obj) {
                                                         connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                         function(evt){
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
-                                                            var name = obj.dataStore.getValue(theItem,"name");
-                                                            that.controller.show("virtualhost", name, brokerObj, theItem.id);
+                                                            var nodeName = obj.dataStore.getValue(theItem,"name");
+                                                            var host = theItem && theItem.virtualhosts? theItem.virtualhosts[0]: null;
+                                                            var nodeObject = { type: "virtualhostnode", name: nodeName, parent: brokerObj};
+                                                            that.controller.show("virtualhost", host?host.name:nodeName, nodeObject, host?host.id:null);
                                                         });
                                                 }, gridProperties, EnhancedGrid);
 
@@ -749,7 +579,7 @@ define(["dojo/_base/xhr",
 
                                                                                        that.updateHeader();
 
-                                                                                       that.vhostsGrid.update(that.brokerData.virtualhosts);
+                                                                                       that.vhostsGrid.update(that.brokerData.virtualhostnodes);
 
                                                                                        that.portsGrid.update(that.brokerData.ports);
 
@@ -784,9 +614,6 @@ define(["dojo/_base/xhr",
                dojo.byId("brokerAttribute.platform").innerHTML = entities.encode(String(brokerData.platform));
                dojo.byId("brokerAttribute.productVersion").innerHTML = entities.encode(String(brokerData.productVersion));
                dojo.byId("brokerAttribute.modelVersion").innerHTML = entities.encode(String(brokerData.modelVersion));
-               dojo.byId("brokerAttribute.storeType").innerHTML = entities.encode(String(brokerData.storeType));
-               dojo.byId("brokerAttribute.storeVersion").innerHTML = entities.encode(String(brokerData.storeVersion));
-               dojo.byId("brokerAttribute.storePath").innerHTML = entities.encode(String(brokerData.storePath));
            }
 
            return Broker;

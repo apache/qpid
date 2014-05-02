@@ -36,12 +36,8 @@ define(["dojo/_base/xhr",
            function PreferencesProvider(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.modelObj = { type: "preferencesprovider", name: name };
+               this.modelObj = { type: "preferencesprovider", name: name, parent: parent};
                this.authenticationProviderName = parent.name;
-               if(parent) {
-                    this.modelObj.parent = {};
-                    this.modelObj.parent[parent.type] = parent;
-               }
            }
 
            PreferencesProvider.prototype.getTitle = function() {
@@ -89,7 +85,7 @@ define(["dojo/_base/xhr",
              if (this.preferencesProviderData){
                var preferencesProviderData = this.preferencesProviderData;
                if(confirm("Are you sure you want to delete preferences provider '" + preferencesProviderData.name + "'?")) {
-                 var query = "rest/preferencesprovider/" + encodeURIComponent(this.authenticationProviderName) + "/" + encodeURIComponent(preferencesProviderData.name);
+                 var query = "api/latest/preferencesprovider/" + encodeURIComponent(this.authenticationProviderName) + "/" + encodeURIComponent(preferencesProviderData.name);
                  this.success = true
                  var that = this;
                  xhr.del({url: query, sync: true, handleAs: "json"}).then(
@@ -155,7 +151,7 @@ define(["dojo/_base/xhr",
 
            PreferencesProvider.prototype.reload = function()
            {
-             var query = "rest/preferencesprovider/" + encodeURIComponent(this.authenticationProviderName) + "/" + encodeURIComponent(this.name);
+             var query = "api/latest/preferencesprovider/" + encodeURIComponent(this.authenticationProviderName) + "/" + encodeURIComponent(this.name);
              var that = this;
              xhr.get({url: query, sync: properties.useSyncGet, handleAs: "json"})
                  .then(function(data) {

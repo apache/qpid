@@ -77,7 +77,7 @@ define(["dojo/_base/xhr",
         function GroupProviderUpdater(node, groupProviderObj, controller)
         {
             this.controller = controller;
-            this.query = "rest/groupprovider/"+encodeURIComponent(groupProviderObj.name);
+            this.query = "api/latest/groupprovider/"+encodeURIComponent(groupProviderObj.name);
             this.name = groupProviderObj.name;
             var that = this;
 
@@ -152,7 +152,7 @@ define(["dojo/_base/xhr",
 
                         queryParam += "id=" + data[i].id;
                     }
-                    var query = "rest/group/"+ encodeURIComponent(that.name)
+                    var query = "api/latest/group/"+ encodeURIComponent(that.name)
                        + queryParam;
                     that.success = true
                     xhr.del({url: query, sync: true, handleAs: "json"}).then(
@@ -226,7 +226,7 @@ define(["dojo/_base/xhr",
                                     var newGroup = convertToGroup(theForm.getValues());
 
 
-                                    var url = "rest/group/"+encodeURIComponent(addGroup.groupProvider) +
+                                    var url = "api/latest/group/"+encodeURIComponent(addGroup.groupProvider) +
                                         "/"+encodeURIComponent(newGroup.name);
 
                                     xhr.put({url: url, sync: true, handleAs: "json",
