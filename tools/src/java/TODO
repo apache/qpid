@@ -1,0 +1,6 @@
+- The qpid-qmf2-tools package needs a README.txt for its release package
+  - Could just be a link to the main one in this dir, or vice versa.
+- The LICENCE and/or NOTICE files inluded in the binary assemblies need updated to account for any 3rd party dependencies
+
+
+- This file needs deleted. Deliberately not licenced.

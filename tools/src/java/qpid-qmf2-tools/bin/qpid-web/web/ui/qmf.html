@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  
+    http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<html>
+<head>
+    <title>QMF Console</title>
+    <link rel="stylesheet" type="text/css" href="/itablet/css/itablet.css"/>
+    <link rel="stylesheet" type="text/css" href="/qmf-ui/css/qmf.css"/>
+<!--[if IE 9]>
+	<link rel="stylesheet" type="text/css" href="/itablet/css/itablet-ie9.css" />
+<![endif]-->
+<!--[if (lte IE 8) & (gt IE 6)]>
+	<link rel="stylesheet" type="text/css" href="/itablet/css/itablet-ie8.css" />
+<![endif]-->
+<!--[if IE 7]>
+	<link rel="stylesheet" type="text/css" href="/itablet/css/itablet-ie7.css" />
+<![endif]-->
+<!--[if lte IE 6]>
+	<link rel="stylesheet" type="text/css" href="/itablet/css/itablet-ie6.css" />
+<![endif]-->
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <!-- Changes the logical window size used when displaying a page on iOS. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+
+    <!-- Sets whether a web application runs in full-screen mode. -->
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+
+    <!-- Sets home screen icon. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+
+    <!-- Sets home screen icon. -->
+<!--
+    <link rel="apple-touch-startup-image" href="/startup-landscape.png" />
+-->
+
+    <script src="/itablet/scripts/jquery.js"></script>
+    <script src="/itablet/scripts/iscroll.js"></script>
+    <script src="/itablet/scripts/itablet.js"></script>
+    <script src="/qpid/scripts/qpid.js"></script>
+    <script src="/qmf-ui/scripts/qmf-ui.js"></script>
+    <script src="/ui/config.js"></script>
+<!--[if lte IE 8]>
+    <script type="text/javascript" src="/qmf-ui/scripts/excanvas.js"></script>
+<![endif]-->
+
+</head>
+
+
+<body>
+
+<!-- display simple splash screen as app loads -->
+<div id="splash">
+    <div class="logo">
+        <div class="loading">
+        </div>
+    </div>
+</div> <!-- End of splash -->
+
+<!-- The blocks provide banner style displays when an error occurs -->
+<div id="resource-deleted" class="alert">Resource Deleted</div>
+<div id="broker-disconnected" class="alert">Broker Disconnected</div>
+<div id="restapi-disconnected" class="alert">RestAPI Disconnected</div>
+<div id="failed-to-connect" class="alert">Failed to Connect</div>
+
+<!----------------------------------------------------------------------------------------------------------------->
+<!--                                               Menu/Sidebar                                                  -->
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="menu" class="sidebar">
+	<div class="header">
+	    <h1>QMF Console</h1>
+	</div>
+
+    <div id="sidebar-scroller" class="scroll-area">
+        <ul class="contents">
+            <li id="settings-tab" class="icon"><a class="settings" href="#settings">Settings</a></li>
+            <li id="broker-tab" class="icon"><a class="brokers" href="#broker">Broker</a></li>
+            <li id="connections-tab" class="icon"><a class="connections" href="#connections">Connections</a></li>
+            <li id="exchanges-tab" class="icon"><a class="exchanges" href="#exchanges">Exchanges</a></li>
+            <li id="queues-tab" class="icon"><a class="queues" href="#queues">Queues</a></li>
+<!-- TODO add link/bridge features a la qpid-route
+            <li id="links-tab" class="icon"><a class="links" href="#links">Links</a></li>
+            <li id="route-topology-tab" class="icon"><a class="route-topology" href="#route-topology">Route Topology</a></li>
+-->
+            <li id="events-tab" class="icon"><a class="events" href="#events">Events</a></li>
+        </ul>
+    </div>
+</div>
+
+
+<!----------------------------------------------------------------------------------------------------------------->
+<!--                                                 Settings                                                    -->
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="settings" class="main">
+    <div class="header">
+		<a class="menu back button" href="#">QMF Con...</a>
+        <h1>Settings</h1>
+    </div>
+
+    <div id="settings-scroller" class="scroll-area">
+        <div class="page">
+
+    	    <ul id="settings-add-console" class="list">
+    		    <li class="pop"><a href="#add-console-connection">Add QMF Console Connection</a></li>
+            </ul>
+
+            <h1>Available Brokers</h1>
+            <ul id="qmf-console-selector" class="list">
+                <li class="arrow">
+                    <label for="qmf-console0">default</label>
+                    <input type="radio" id="qmf-console0" name="qmf-console-selector" checked />
+                    <a href="#selected-qmf-console-connection"></a>
+                </li>
+            </ul>
+            <p class="note">Note that selecting a new Broker Connection will clear statistics/graphs.</p>
+
+            <ul class="list">
+                <li> 
+                    <label for="settings-hide-qmf-objects">Hide QMF Objects</label>
+                    <input type="checkbox" id="settings-hide-qmf-objects" />
+                </li>
+            </ul>
+            <p class="note">Hide Exchanges and Queues that relate to QMF.</p>
+
+            <div id="settings-hide-details-container">
+                <ul class="list">
+                    <li> 
+                        <label for="settings-hide-details">Hide Details</label>
+                        <input type="checkbox" id="settings-hide-details" checked />
+                    </li>
+                </ul>
+            </div>
+            <p class="note">Hide Flow to Disk & Dequeue Details.</p>
+        </div> <!-- End of page -->
+    </div> <!-- End of settings-scroller -->
+</div> <!-- End of settings -->
+
+<div id="selected-qmf-console-connection" class="main">
+    <div class="header">
+		<a class="back button" href="#">Settings</a>
+        <h1>QMF Console Connection</h1>
+
+        <span class="toolbar">
+            <a class="delete" href="#"></a>
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="selected-qmf-console-connection-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul class="list">
+                <li id="selected-qmf-console-connection-url"><a href="#">URL<p>url</p></a></li>
+                <li id="selected-qmf-console-connection-name"><a href="#">Name<p>name</p></a></li>
+                <li id="selected-qmf-console-connection-events-disabled"><a href="#">Events Disabled<p>false</p></a></li>
+    	    </ul>
+            <p id="selected-qmf-console-connection-default-info" class="note nopadding">A default URL means that the Connection URL configured on the QpidRestAPI server is being used.</p>
+
+            <div id="selected-qmf-console-connection-connection-options">
+                <h1>Connection Options</h1>
+    	        <ul class="list">
+                    <li><textarea readonly></textarea></li>
+    	        </ul>
+            </div>
+        </div> <!-- End of page -->
+    </div> <!-- End of selected-qmf-console-connection-scroller -->
+</div> <!-- End of selected-qmf-console-connection -->
+
+
+<!----------------------------------------------------------------------------------------------------------------->
+<!--                                            Broker Information                                               -->
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="broker" class="main">
+    <div class="header">
+		<a class="menu back button" href="#">QMF Con...</a>
+        <h1>Broker</h1>
+    </div>
+
+    <div id="broker-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="broker-list" class="list">
+    		    <li class><a href="#">Broker row 1</a></li>
+    	    </ul>
+
+            <div id="broker-msgio-container">
+                <h1>Message Input/Output</h1>
+    	        <ul id="broker-msgio" class="list">
+                    <li><a href="#">Broker row 1</a></li>
+    	        </ul>
+            </div>
+
+            <div id="broker-byteio-container">
+                <h1>Byte Input/Output</h1>
+    	        <ul id="broker-byteio" class="list">
+                    <li><a href="#">Broker row 1</a></li>
+    	        </ul>
+            </div>
+
+            <div id="broker-flow-to-disk-container">
+                <h1>Flow to Disk</h1>
+    	        <ul id="broker-flow-to-disk" class="list">
+                    <li><a href="#">Broker row 1</a></li>
+    	        </ul>
+            </div>
+
+            <div id="broker-dequeue-container">
+                <h1>Dequeue Details</h1>
+    	        <ul id="broker-dequeue" class="list">
+                    <li><a href="#">Broker row 1</a></li>
+    	        </ul>
+            </div>
+
+            <h1>Set Log Level</h1>
+            <ul id="broker-log-level" class="list">
+                <li>
+                    <label for="broker-log-normal">Normal</label>
+                    <input type="radio" id="broker-log-normal" name="broker-log-level" value="normal" checked />
+                </li>
+                <li>
+                    <label for="broker-log-debug">Debug</label>
+                    <input type="radio" id="broker-log-debug" name="broker-log-level" value="debug"/>
+                </li>
+            </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of broker-scroller -->
+</div> <!-- End of broker -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+<!--                                          Connection Information                                             -->
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="connections" class="main">
+    <div class="header">
+		<a class="menu back button" href="#">QMF Con...</a>
+        <h1>Connections</h1>
+    </div>
+
+    <div id="connections-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="connections-list" class="list">
+    		    <li class="arrow"><a href="#selected-connection">Dummy Connection</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of connections-scroller -->
+</div> <!-- End of connections -->
+
+<div id="selected-connection" class="main">
+    <div class="header">
+		<a class="back button" href="#">Connect...</a>
+        <h1>Selected Connection</h1>
+
+        <span class="toolbar">
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="selected-connection-scroller" class="scroll-area">
+        <div class="page">
+            <h1 class="first">Message Input/Output</h1>
+    	    <ul id="selected-connection-msgio" class="list">
+                <li class="arrow"><a href="#graphs">Selected Connection row 1</a></li>
+    	    </ul>
+
+            <h1>Byte Input/Output</h1>
+    	    <ul id="selected-connection-byteio" class="list">
+                <li><a href="#">Selected Connection row 1</a></li>
+    	    </ul>
+
+            <h1>Frame Input/Output</h1>
+    	    <ul id="selected-connection-frameio" class="list">
+                <li><a href="#">Selected Connection row 1</a></li>
+    	    </ul>
+
+            <h1>General</h1>
+    	    <ul id="selected-connection-general" class="list">
+                <li><a href="#">Selected Connection row 1</a></li>
+    	    </ul>
+
+            <h1>Subscribed Sessions</h1>
+	        <ul id="selected-connection-subscribed-sessions" class="list">
+		        <li class="arrow"><a href="#connection-sessions">Selected Connection Session 1</a></li>
+            </ul>
+
+            <h1>Unsubscribed Sessions</h1>
+	        <ul id="selected-connection-unsubscribed-sessions" class="list">
+		        <li><a href="#connection-sessions">Selected Connection Session 1</a></li>
+            </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of selected-connection-scroller -->
+</div> <!-- End of selected-connection -->
+
+<div id="connection-subscriptions" class="main">
+    <div class="header">
+		<a class="back button" href="#">Connect...</a>
+        <h1>Connection Subscriptions</h1>
+
+        <span class="toolbar">
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="connection-subscriptions-scroller" class="scroll-area">
+        <div class="page">
+            <h1>Subscription</h1>
+    	    <ul id="connection-subscriptions-list" class="list">
+                <li><a href="#">Selected Subscription row 1</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of connection-subscriptions-scroller -->
+</div> <!-- End of connection-subscriptions -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+<!--                                            Exchange Information                                             -->
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="exchanges" class="main">
+    <div class="header">
+		<a class="menu back button" href="#">QMF Con...</a>
+        <h1>Exchanges</h1>
+    </div>
+
+    <div id="exchanges-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="exchanges-add-exchange" class="list">
+    		    <li class="pop"><a href="#add-exchange">Add Exchange</a></li>
+            </ul>
+            <p/>
+
+    	    <ul id="exchanges-list" class="list">
+    		    <li class="arrow"><a href="#selected-exchange">Dummy Exchange</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of exchanges-scroller -->
+</div> <!-- End of exchanges -->
+
+<div id="selected-exchange" class="main">
+    <div class="header">
+		<a class="back button" href="#">Exchan...</a>
+        <h1>Selected Exchange</h1>
+
+        <span class="toolbar">
+            <a class="delete" href="#"></a>
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="selected-exchange-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="selected-exchange-bindings" class="list">
+    		    <li class="arrow"><a href="#bindings">Bindings</a></li>
+            </ul>
+
+            <h1>Message Input/Output</h1>
+    	    <ul id="selected-exchange-msgio" class="list">
+                <li class="arrow" ><a href="#graphs">Selected Exchange row 1</a></li>
+    	    </ul>
+
+            <h1>Byte Input/Output</h1>
+    	    <ul id="selected-exchange-byteio" class="list">
+                <li><a href="#">Selected Exchange row 1</a></li>
+    	    </ul>
+
+            <h1>General</h1>
+    	    <ul id="selected-exchange-general" class="list">
+                <li><a href="#">Selected Exchange row 1</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of selected-exchange-scroller -->
+</div> <!-- End of selected-exchange -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+<!--                                             Queue Information                                               -->
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="queues" class="main">
+    <div class="header">
+		<a class="menu back button" href="#">QMF Con...</a>
+        <h1>Queues</h1>
+    </div>
+
+    <div id="queues-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="queues-add-queue" class="list">
+    		    <li class="pop"><a href="#add-queue">Add Queue</a></li>
+            </ul>
+            <p/>
+
+    	    <ul id="queues-list" class="list">
+                <li class="arrow"><a href="#selected-queue">Dummy Queue</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of queues-scroller -->
+</div> <!-- End of queues -->
+
+<div id="selected-queue" class="main">
+    <div class="header">
+		<a class="back button" href="#">Queues</a>
+        <h1>Selected Queue</h1>
+
+        <span class="toolbar">
+            <a class="delete" href="#"></a>
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="selected-queue-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="selected-queue-bindings" class="list">
+    		    <li class="arrow"><a href="#bindings">Bindings</a></li>
+            </ul>
+
+            <h1>Message Input/Output</h1>
+    	    <ul id="selected-queue-msgio" class="list">
+                <li class="arrow"><a href="#graphs">Selected Queue row 1</a></li>
+    	    </ul>
+
+            <h1>Byte Input/Output</h1>
+    	    <ul id="selected-queue-byteio" class="list">
+                <li><a href="#">Selected Queue row 1</a></li>
+    	    </ul>
+
+            <h1>General</h1>
+    	    <ul id="selected-queue-general" class="list">
+                <li><a href="#">Selected Queue row 1</a></li>
+    	    </ul>
+
+            <div id="selected-queue-flow-to-disk-container">
+                <h1>Flow to Disk</h1>
+    	        <ul id="selected-queue-flow-to-disk" class="list">
+                    <li><a href="#">Selected Queue row 1</a></li>
+    	        </ul>
+            </div>
+
+            <div id="selected-queue-dequeue-container">
+                <h1>Dequeue Details</h1>
+    	        <ul id="selected-queue-dequeue" class="list">
+                    <li><a href="#">Selected Queue row 1</a></li>
+    	        </ul>
+            </div>
+
+            <h1>Subscriptions</h1>
+    	    <ul id="selected-queue-subscriptions" class="list">
+    		    <li class="arrow"><a href="#queue-subscriptions">Selected Queue Subscription 1</a></li>
+            </ul>
+
+            <!-- This wrapper div makes it easy to hide these admin functions on QMF queues -->
+            <div id="selected-queue-admin-wrapper">
+                <h1>Admin</h1>
+    	        <ul id="selected-queue-admin" class="list">
+    		        <li class="arrow pop"><a href="#purge-queue">Purge</a></li>
+    		        <li class="arrow pop"><a href="#reroute-messages">Reroute Messages</a></li>
+    		        <li class="arrow pop"><a href="#move-messages">Move Messages</a></li>
+    	        </ul>
+            </div>
+        </div> <!-- End of page -->
+    </div> <!-- End of selected-queue-scroller -->
+</div> <!-- End of selected-queue -->
+
+<div id="queue-subscriptions" class="main">
+    <div class="header">
+		<a class="back button" href="#">Queue</a>
+        <h1>Selected Subscription</h1>
+
+        <span class="toolbar">
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="queue-subscriptions-scroller" class="scroll-area">
+        <div class="page">
+            <h1 class="first">Connection</h1>
+    	    <ul id="queue-subscriptions-connection" class="list">
+                <li class="arrow"><a href="#">Selected Subscription row 1</a></li>
+    	    </ul>
+
+            <h1>Session</h1>
+    	    <ul id="queue-subscriptions-session" class="list">
+                <li><a href="#">Selected Subscription row 1</a></li>
+    	    </ul>
+
+            <h1>Subscription</h1>
+    	    <ul id="queue-subscriptions-subscription" class="list">
+                <li><a href="#">Selected Subscription row 1</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of queue-subscriptions-scroller -->
+</div> <!-- End of queue-subscriptions -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="bindings" class="main">
+    <div class="header">
+		<a class="back button" href="#">Queue</a>
+        <h1>Bindings</h1>
+
+        <span class="toolbar">
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="bindings-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="bindings-add-binding" class="list">
+    		    <li class="pop"><a href="#add-binding">Add Binding</a></li>
+            </ul>
+
+            <h1 class="first">Bindings</h1>
+    	    <ul id="bindings-list" class="list">
+                <li class="arrow"><a href="#">Binding 1</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of bindings-scroller -->
+</div> <!-- End of bindings -->
+
+<div id="graphs" class="main">
+    <div class="header">
+		<a class="back button" href="#">Back</a>
+        <h1>Graphs</h1>
+
+        <span class="toolbar">
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="graphs-scroller" class="scroll-area">
+        <div class="page">
+
+            <ul id="graphs-time-selector" class="list">
+                <li>
+                    <label>10 minutes</label><input type="radio" value="tenMinutes" name="graphs-time-selector" checked />
+                </li>
+                <li>
+                    <label>1 hour</label><input type="radio" value="oneHour" name="graphs-time-selector" />
+                </li>
+                <li>
+                    <label>1 day</label><input type="radio" value="oneDay" name="graphs-time-selector" />
+                </li>
+            </ul>
+
+            <h1>Graph Title</h1>
+            <canvas id="graphs-canvas">
+                Your browser does not support the canvas element.
+            </canvas>
+        </div> <!-- End of page -->
+    </div> <!-- End of graphs-scroller -->
+</div> <!-- End of graphs -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="links" class="main">
+    <div class="header">
+		<a class="menu back button" href="#">QMF Con...</a>
+        <h1>Links</h1>
+    </div>
+
+    <div id="links-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="links-list" class="list">
+    		    <li class="arrow"><a href="#">Not Yet Supported</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of links-scroller -->
+</div> <!-- End of links -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="route-topology" class="main">
+    <div class="header">
+		<a class="menu back button" href="#">QMF Con...</a>
+        <h1>Route Topology</h1>
+    </div>
+
+    <div id="route-topology-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="route-topology-list" class="list">
+    		    <li class="arrow"><a href="#">Not Yet Supported</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of route-topology-scroller -->
+</div> <!-- End of route-topology -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+<!--                                        Asynchronous Broker Events                                           -->
+<!----------------------------------------------------------------------------------------------------------------->
+
+<div id="events" class="main">
+    <div class="header">
+		<a class="menu back button" href="#">QMF Con...</a>
+        <h1>Events</h1>
+    </div>
+
+    <div id="events-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="events-list" class="list">
+    		    <li class="grey"><a href="#">There are currently no events available</a></li>
+            </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of events-scroller -->
+</div> <!-- End of events -->
+
+<div id="selected-event" class="main">
+    <div class="header">
+		<a class="back button" href="#">Events</a>
+        <h1>Selected Event</h1>
+
+        <span class="toolbar">
+            <a class="menu home" href="#"></a>
+        </span>
+    </div>
+
+    <div id="selected-event-scroller" class="scroll-area">
+        <div class="page">
+    	    <ul id="selected-event-list" class="list">
+                <li><a href="#">Selected Event row 1</a></li>
+    	    </ul>
+            <p/>
+    	    <ul id="selected-event-values" class="list">
+                <li><a href="#">Selected Event row 1</a></li>
+    	    </ul>
+        </div> <!-- End of page -->
+    </div> <!-- End of selected-event-scroller -->
+</div> <!-- End of selected-event -->
+
+
+
+<!----------------------------------------------------------------------------------------------------------------->
+<!--                                            Popup Form Windows                                               -->
+<!----------------------------------------------------------------------------------------------------------------->
+
+<!--
+<div class="popup-window"> and <div class="popup-container"> act as the container elements for all popup windows
+these are used to enable a semi-transparent "smoked glass" background behind the actual popup.
+-->
+<div class="popup-window">
+    <div class="popup-container">
+
+
+        <div id="add-console-connection" class="popup">
+            <div class="header">
+		        <a class="cancel button" href="#">Cancel</a>
+                <h1>Add QMF Console Connection</h1>
+		        <a class="blue right button" href="#">Done</a>
+            </div>
+
+            <div id="add-console-connection-scroller" class="scroll-area">
+                <div class="page">
+                    <form action="#">
+	                    <ul class="list">
+    	                    <li>
+                                <label for="console-url">URL</label>
+                                <input type="text" id="console-url" placeholder="guest/guest@host:5672" required />
+                            </li>
+    	                    <li>
+                                <label for="console-name">Name</label>
+                                <input type="text" id="console-name" placeholder="Operational Broker" />
+                            </li>
+	                    </ul>
+                        <p class="note">URL may be any AMQP URL format, Name is a name used to identify the Broker.</p>
+
+                        <ul class="list">
+                            <li> 
+                                <label for="console-disable-events">Disable Events</label>
+                                <input type="checkbox" id="console-disable-events" />
+                            </li>
+                        </ul>
+                        <p class="note nopadding">Disable QMF2 Events, use polling to update state instead.</p>
+
+                        <h1>Connection Options</h1>
+                        <ul id="add-connection-options" class="list">
+    	                    <li>
+                                <textarea placeholder='{"sasl_mechanisms": "GSSAPI", "protocol": "ssl"}'></textarea>
+                            </li>
+                        </ul>
+                        <p class="note">Connection Options are not required for most QMF Connections, but may be needed in some authentication edge cases.</p>
+                    </form>
+                </div> <!-- End of page -->
+            </div> <!-- End of add-console-connection-scroller -->
+        </div> <!-- End of add-console-connection -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+
+        <div id="add-exchange" class="popup">
+            <div class="header">
+		        <a class="cancel button" href="#">Cancel</a>
+                <h1>Add Exchange</h1>
+		        <a class="blue right button" href="#">Done</a>
+            </div>
+
+            <div id="add-exchange-scroller" class="scroll-area">
+                <div class="page">
+                    <form action="#">
+	                    <ul class="list">
+    	                    <li>
+                                <label for="exchange-name">Name</label>
+                                <input type="text" id="exchange-name" placeholder="Exchange Name" required />
+                            </li>
+	                    </ul>
+                        <p/>
+        	            <ul class="list">
+        		            <li id="add-exchange-exchange-type" class="arrow">
+                                <a href="#exchange-type">Exchange Type<p>direct</p></a>
+                            </li>
+        		            <li class="arrow"><a href="#add-exchange-additional">Additional Options</a></li>
+        	            </ul>
+                    </form>
+                </div> <!-- End of page -->
+            </div> <!-- End of add-exchange-scroller -->
+        </div> <!-- End of add-exchange -->
+
+        <div id="exchange-type" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Exc...</a>
+                <h1>Exchange Type</h1>
+            </div>
+
+            <div id="exchange-type-scroller" class="scroll-area">
+                <div class="page">
+	                <ul class="list">
+                        <li>
+                            <label for="direct">direct</label>
+                            <input type="radio" id="direct" name="exchange-type" value="direct" checked />
+                        </li>
+                        <li>
+                            <label for="fanout">fanout</label>
+                            <input type="radio" id="fanout" name="exchange-type" value="fanout" />
+                        </li>
+                        <li>
+                            <label for="topic">topic</label>
+                            <input type="radio" id="topic" name="exchange-type" value="topic" />
+                        </li>
+                        <li>
+                            <label for="headers">headers</label>
+                            <input type="radio" id="headers" name="exchange-type" value="headers" />
+                        </li>
+                        <li>
+                            <label for="xml">xml</label>
+                            <input type="radio" id="xml" name="exchange-type" value="xml" />
+                        </li>
+	                </ul>
+                </div> <!-- End of page -->
+            </div> <!-- End of exchange-type-scroller -->
+        </div> <!-- End of exchange-type -->
+
+        <div id="add-exchange-additional" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Exc...</a>
+                <h1>Additional Options</h1>
+            </div>
+
+            <div id="add-exchange-additional-scroller" class="scroll-area">
+                <div class="page">
+                    <h1 class="first">Alternate Exchange</h1>
+                    <ul class="list">
+                        <li id="add-exchange-additional-alternate-exchange-name" class="arrow">
+                            <a href="#exchange-selector?id=#add-exchange-additional-alternate-exchange-name">Exchange<p>None (default)</p></a>
+                        </li>
+                    </ul>
+                    <p class="note">Route messages here if this exchange is unable to route them elsewhere.</p>
+
+                    <ul class="list">
+                        <li> 
+                            <label for="exchange-durable">Durable</label>
+                            <input type="checkbox" id="exchange-durable"/>
+                        </li>
+                        <li> 
+                            <label for="sequence">Sequence Number</label>
+                            <input type="checkbox" id="sequence"/>
+                        </li>
+                        <li> 
+                            <label for="ive">Initial Value Exchange</label>
+                            <input type="checkbox" id="ive"/>
+                        </li>
+                    </ul>
+                    <p class="note">An Initial Value Exchange will keep a reference  to the last message forwarded and enqueue that message to newly bound queues.</p>
+                </div> <!-- End of page -->
+            </div> <!-- End of add-exchange-additional-scroller -->
+        </div> <!-- End of add-exchange-additional -->
+
+        <div id="exchange-selector" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Additio...</a>
+                <h1>Alternate Exchange</h1>
+            </div>
+
+            <div id="exchange-selector-scroller" class="scroll-area">
+                <div class="page">
+	                <ul id="exchange-selector-list" class="list">
+                        <li>
+                            <label for="exchange-selector-exchangeNone">None (default)</label>
+                            <input type="radio" id="exchange-selector-exchangeNone"
+                                                name="exchange-selector" value="None (default)" checked />
+                        </li>
+	                </ul>
+                </div> <!-- End of page -->
+            </div> <!-- End of exchange-selector-scroller -->
+        </div> <!-- End of exchange-selector -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+
+        <div id="add-queue" class="popup">
+            <div class="header">
+		        <a class="cancel button" href="#">Cancel</a>
+                <h1>Add Queue</h1>
+		        <a class="blue right button" href="#">Done</a>
+            </div>
+
+            <div id="add-queue-scroller" class="scroll-area">
+                <div class="page">
+                    <form action="#">
+	                    <ul class="list">
+    	                    <li>
+                                <label for="queue-name">Name</label>
+                                <input type="text" id="queue-name" placeholder="Queue Name" required />
+                            </li>
+	                    </ul>
+
+                        <h1>Maximum In-memory Queue Size</h1>
+	                    <ul class="list">
+    	                    <li>
+                                <label for="max-queue-size">Max Size</label>
+                                <input type="text" id="max-queue-size" placeholder="Size (bytes) [K|M|G]"/>
+                            </li>
+	        	            <li>
+                                <label for="max-queue-count">Max Count</label>
+                                <input type="text" id="max-queue-count" placeholder="Size (messages)"/>
+                            </li>
+	                    </ul>
+                        <p class="note">Queue sizes are optional, if not specified broker defaults will be used.</p>
+
+        	            <ul class="list">
+        		            <li id="add-queue-limit-policy" class="arrow">
+                                <a href="#limit-policy">Limit Policy<p>None (default)</p></a>
+                            </li>
+        		            <li id="add-queue-ordering-policy" class="arrow">
+                                <a href="#ordering-policy">Order Policy<p>Fifo (default)</p></a>
+                            </li>
+        		            <li id="add-queue-generate-queue-events" class="arrow">
+                                <a href="#generate-queue-events">Event Policy<p>Off (default)</p></a>
+                            </li>
+        		            <li class="arrow"><a href="#add-queue-additional">Additional Options</a></li>
+        	            </ul>
+                    </form>
+                </div> <!-- End of page -->
+            </div> <!-- End of add-queue-scroller -->
+        </div> <!-- End of add-queue -->
+
+        <div id="limit-policy" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Queue</a>
+                <h1>Limit Policy</h1>
+            </div>
+
+            <div id="limit-policy-scroller" class="scroll-area">
+                <div class="page">
+	                <ul class="list">
+                        <li>
+                            <label for="none">None (default)</label>
+                            <input type="radio" id="none" name="limit-policy" value="none" checked />
+                        </li>
+                        <li>
+                            <label for="reject">Reject</label>
+                            <input type="radio" id="reject" name="limit-policy" value="reject" />
+                        </li>
+                        <li>
+                            <label for="flow-to-disc">Flow to Disc</label>
+                            <input type="radio" id="flow-to-disc" name="limit-policy" value="flow_to_disk" />
+                        </li>
+                        <li>
+                            <label for="ring">Ring</label>
+                            <input type="radio" id="ring" name="limit-policy" value="ring" />
+                        </li>
+                        <li>
+                            <label for="ring-strict">Ring Strict</label>
+                            <input type="radio" id="ring-strict" name="limit-policy" value="ring_strict" />
+                        </li>
+	                </ul>
+                </div> <!-- End of page -->
+            </div> <!-- End of limit-policy-scroller -->
+        </div> <!-- End of limit-policy -->
+
+        <div id="ordering-policy" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Queue</a>
+                <h1>Order Policy</h1>
+            </div>
+
+            <div id="ordering-policy-scroller" class="scroll-area">
+                <div class="page">
+	                <ul class="list">
+                        <li>
+                            <label for="fifo">Fifo (default)</label>
+                            <input type="radio" id="fifo" name="ordering-policy" value="fifo" checked />
+                        </li>
+                        <li>
+                            <label for="lvq">LVQ</label>
+                            <input type="radio" id="lvq" name="ordering-policy" value="lvq" />
+                        </li>
+                        <li>
+                            <label for="lvq-no-browse">LVQ No Browse</label>
+                            <input type="radio" id="lvq-no-browse" name="ordering-policy" value="lvq-no-browse" />
+                        </li>
+	                </ul>
+                    <p class="note">Fifo or Last Value Queue.</p>
+                </div> <!-- End of page -->
+            </div> <!-- End of ordering-policy-scroller -->
+        </div> <!-- End of ordering-policy -->
+
+        <div id="generate-queue-events" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Queue</a>
+                <h1>Event Policy</h1>
+            </div>
+
+            <div id="generate-queue-events-scroller" class="scroll-area">
+                <div class="page">
+	                <ul class="list">
+                        <li>
+                            <label for="generate-no-events">Off (default)</label>
+                            <input type="radio" id="generate-no-events" name="generate-queue-events" value="" checked />
+                        </li>
+                        <li>
+                            <label for="generate-enqueue-events">Enqueue</label>
+                            <input type="radio" id="generate-enqueue-events" name="generate-queue-events" value="1" />
+                        </li>
+                        <li>
+                            <label for="generate-enqueue-dequeue-events">Enqueue & Dequeue</label>
+                            <input type="radio" id="generate-enqueue-dequeue-events" name="generate-queue-events" value="2" />
+                        </li>
+	                </ul>
+                    <p class="note">Generate an event that can be processed by registered listeners (e.g. for replication).</p>
+                </div> <!-- End of page -->
+            </div> <!-- End of generate-queue-events-scroller -->
+        </div> <!-- End of generate-queue-events -->
+
+        <div id="add-queue-additional" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Que...</a>
+                <h1>Additional Options</h1>
+            </div>
+
+            <div id="add-queue-additional-scroller" class="scroll-area">
+                <div class="page">
+                    <h1 class="first">Alternate Exchange</h1>
+	                <ul class="list">
+                        <li id="add-queue-additional-alternate-exchange-name" class="arrow">
+                            <a href="#exchange-selector?id=#add-queue-additional-alternate-exchange-name">Exchange<p>None (default)</p></a>
+                        </li>
+	                </ul>
+                    <p class="note">Route messages here if rejected by a subscriber or orphaned by queue deletion.</p>
+
+                    <ul id="add-queue-additional-durable-list" class="list">
+                        <li>
+                            <label for="queue-durable">Durable</label>
+                            <input type="checkbox" id="queue-durable"/>
+                        </li>
+			<li>
+                            <label for="file-size">File Size</label>
+                            <input type="text" id="file-size" placeholder="24"/>
+                        </li>
+    	                <li>
+                            <label for="file-count">File Count</label>
+                            <input type="text" id="file-count" placeholder="8"/>
+                        </li>
+                    </ul>
+
+                    <ul id="add-queue-additional-hidden-list" class="list">
+                        hidden list
+                    </ul>
+
+                    <p id="add-queue-additional-journal-note" class="note nopadding">
+                        Journal sizes are optional, if not specified defaults will be used.
+                    </p>
+
+                    <h1>Flow Control</h1>
+	                <ul class="list">
+    	                <li>
+                            <label for="flow-stop-size">Stop Size</label>
+                            <input type="text" id="flow-stop-size" placeholder="0 (bytes)"/>
+                        </li>
+    	                <li>
+                            <label for="flow-stop-count">Stop Count</label>
+                            <input type="text" id="flow-stop-count" placeholder="0 (messages)"/>
+                        </li>
+    	                <li>
+                            <label for="flow-resume-size">Start Size</label>
+                            <input type="text" id="flow-resume-size" placeholder="0 (bytes)"/>
+                        </li>
+    	                <li>
+                            <label for="flow-resume-count">Start Count</label>
+                            <input type="text" id="flow-resume-count" placeholder="0 (messages)"/>
+                        </li>
+	                </ul>
+                    <p class="note">When one of the stop thresholds are exceeded producer flow control is enabled until the flow drops below one of the start thresholds</p>
+                </div> <!-- End of page -->
+            </div> <!-- End of add-queue-additional-scroller -->
+        </div> <!-- End of add-queue-additional -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+
+        <div id="purge-queue" class="popup">
+            <div class="header">
+		        <a class="cancel button" href="#">Cancel</a>
+                <h1>Purge Queue</h1>
+		        <a class="blue right button" href="#">Done</a>
+            </div>
+
+            <div id="purge-queue-scroller" class="scroll-area">
+                <div class="page">
+                    <form action="#">
+	                    <ul class="list">
+    	                    <li>
+                                <label for="purge-queue-request-number">Number</label>
+                                <input type="text" id="purge-queue-request-number" placeholder="Message Count" />
+                            </li>
+	                    </ul>
+                        <p class="note">Discards all or some messages from this queue. A value of 0 (default) discards all messages otherwise use the specified number.</p>
+                    </form>
+                </div> <!-- End of page -->
+            </div> <!-- End of purge-queue-scroller -->
+        </div> <!-- End of purge-queue -->
+
+
+        <div id="reroute-messages" class="popup">
+            <div class="header">
+		        <a class="cancel button" href="#">Cancel</a>
+                <h1>Reroute Messages</h1>
+		        <a class="blue right button" href="#">Done</a>
+            </div>
+
+            <div id="reroute-messages-scroller" class="scroll-area">
+                <div class="page">
+                    <form action="#">
+	                    <ul class="list">
+    	                    <li>
+                                <label for="reroute-messages-request-number">Number</label>
+                                <input type="text" id="reroute-messages-request-number" placeholder="Message Count" />
+                            </li>
+	                    </ul>
+                        <p class="note">Remove all or some messages from this queue and route them to an exchange. A value of 0 (default) reroutes all messages otherwise use the specified number.</p>
+
+                        <ul class="list">
+                            <li>
+                                <label for="reroute-messages-use-alternate-exchange">Alternate Exchange</label>
+                                <input type="checkbox" id="reroute-messages-use-alternate-exchange"/>
+                            </li>
+                        </ul>
+                        <p class="note">Use the queue's configured alternate exchange.</p>
+                        <!-- reroute-messages-use-selected-exchange div is used to show/hide the following  -->
+                        <ul id="reroute-messages-use-selected-exchange" class="list">
+	                        <li id="reroute-messages-exchange-name" class="arrow">
+                                <a href="#exchange-selector?id=#reroute-messages-exchange-name">Exchange<p>None (default)</p></a>
+                            </li>
+                        </ul>
+                    </form>
+                </div> <!-- End of page -->
+            </div> <!-- End of reroute-messages-scroller -->
+        </div> <!-- End of reroute-messages -->
+
+
+        <div id="move-messages" class="popup">
+            <div class="header">
+		        <a class="cancel button" href="#">Cancel</a>
+                <h1>Move Messages</h1>
+		        <a class="blue right button" href="#">Done</a>
+            </div>
+
+            <div id="move-messages-scroller" class="scroll-area">
+                <div class="page">
+                    <form action="#">
+	                    <ul class="list">
+    	                    <li>
+                                <label for="move-messages-request-number">Number</label>
+                                <input type="text" id="move-messages-request-number" placeholder="Message Count" />
+                            </li>
+	                    </ul>
+                        <p class="note">Move messages from this queue to another. A value of 0 (default) moves all messages otherwise use the specified number.</p>
+
+	                    <ul class="list">
+    	                    <li id="move-messages-queue-name" class="arrow">
+                                <a href="#queue-selector?id=#move-messages-queue-name">Queue<p>None (default)</p></a>
+                                <!--<a href="#move-messages-select-queue">Queue<p>None (default)</p></a>-->
+                            </li>
+                        </ul>
+                        <p class="note">Destination Queue.</p>
+                    </form>
+                </div> <!-- End of page -->
+            </div> <!-- End of move-messages-scroller -->
+        </div> <!-- End of move-messages -->
+
+<!----------------------------------------------------------------------------------------------------------------->
+
+        <div id="add-binding" class="popup">
+            <div class="header">
+		        <a class="cancel button" href="#">Cancel</a>
+                <h1>Add Binding</h1>
+		        <a class="blue right button" href="#">Done</a>
+            </div>
+
+            <div id="add-binding-scroller" class="scroll-area">
+                <div class="page">
+                    <form action="#">
+	                    <ul class="list">
+    	                    <li id="add-binding-exchange-name" class="arrow">
+                                <a href="#exchange-selector?id=#add-binding-exchange-name">Exchange<p>None (default)</p></a>
+                            </li>
+    	                    <li id="add-binding-queue-name" class="arrow">
+                                <a href="#queue-selector?id=#add-binding-queue-name">Queue<p>None (default)</p></a>
+                            </li>
+    	                    <li>
+                                <label for="add-binding-key-name">Key</label>
+                                <input type="text" id="add-binding-key-name" placeholder="Binding Key"/>
+                            </li>
+	                    </ul>
+                        <p class="note nopadding">
+                            Key is optional, but without it the Binding cannot be explicitly deleted.
+                        </p>
+
+                        <h1>Headers</h1>
+                        <ul id="add-headers-binding" class="list">
+        		            <li id="add-headers-binding-x-match" class="arrow">
+                                <a href="#x-match">Match<p>all</p></a>
+                            </li>
+        		            <li class="arrow">
+                                <a href="#add-header-match">Add...</a>
+                            </li>
+                        </ul>
+
+                        <ul id="add-xml-binding" class="list">
+    	                    <li>
+                                <textarea placeholder="Add XQuery here"></textarea>
+                            </li>
+                        </ul>
+                    </form>
+                </div> <!-- End of page -->
+            </div> <!-- End of add-binding-scroller -->
+        </div> <!-- End of add-binding -->
+
+        <div id="queue-selector" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Bind...</a>
+                <h1>Select Queue</h1>
+            </div>
+
+            <div id="queue-selector-scroller" class="scroll-area">
+                <div class="page">
+	                <ul id="queue-selector-list" class="list">
+                        <li>
+                            <label for="queue-selector-queueNone">None (default)</label>
+                            <input type="radio" id="queue-selector-queueNone"
+                                                name="queue-selector" value="None (default)" checked />
+                        </li>
+	                </ul>
+                </div> <!-- End of page -->
+            </div> <!-- End of queue-selector-scroller -->
+        </div> <!-- End of queue-selector -->
+
+        <div id="x-match" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Binding</a>
+                <h1>Match</h1>
+            </div>
+
+            <div id="x-match-scroller" class="scroll-area">
+                <div class="page">
+	                <ul class="list">
+                        <li>
+                            <label for="x-match-all">all</label>
+                            <input type="radio" id="x-match-all" name="x-match" value="all" checked />
+                        </li>
+                        <li>
+                            <label for="x-match-any">any</label>
+                            <input type="radio" id="x-match-any" name="x-match" value="any" />
+                        </li>
+	                </ul>
+                </div> <!-- End of page -->
+            </div> <!-- End of x-match-scroller -->
+        </div> <!-- End of x-match -->
+
+        <div id="add-header-match" class="popup">
+            <div class="header">
+		        <a class="back button" href="#">Add Bind...</a>
+                <h1>Header Match</h1>
+		        <a class="blue right button" href="#">Add</a>
+            </div>
+
+            <div id="add-header-match-scroller" class="scroll-area">
+                <div class="page">
+                    <form action="#">
+	                    <ul class="list">
+    	                    <li>
+                                <label for="header-match-key">Key</label>
+                                <input type="text" id="header-match-key" placeholder="Header Name"/>
+                            </li>
+    	                    <li>
+                                <label for="header-match-value">Value</label>
+                                <input type="text" id="header-match-value" placeholder="Match Value"/>
+                            </li>
+	                    </ul>
+                        <p class="note">
+                            Specify a Header name and a value to match the Header against.
+                        </p>
+                    </form>
+                </div> <!-- End of page -->
+            </div> <!-- End of add-header-match-scroller -->
+        </div> <!-- End of add-header-match -->
+
+
+    </div> <!-- End of popup-container -->
+</div> <!-- End of popup-window -->
+
+
+<!----------------------------------------------------------------------------------------------------------------->
+
+</body>
+</html>

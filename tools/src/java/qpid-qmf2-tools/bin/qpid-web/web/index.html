@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  
+    http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<!--
+This page provides a "welcome" page for the Qpid REST Service it immediately redirects to ui/qmf.html
+which requires authentication. The main reason for this page is to provide a "welcome" screen prior to
+the browser's authentication popup appearing, which makes it more obvious that it's the Qpid REST Service
+that is requesting authentication.
+-->
+<html>
+<head>
+    <title>QMF Console</title>
+    <link rel="stylesheet" type="text/css" href="/qmf-ui/css/index.css"/>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <!-- Changes the logical window size used when displaying a page on iOS. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+
+    <noscript>
+        <meta http-equiv="refresh" content="2; URL=/ui/qmf.html">
+    </noscript>
+
+    <script>
+    <!--
+        window.onload=function()
+        { // Do redirect
+            window.location.replace("/ui/qmf.html");
+        }
+    //-->
+    </script>
+
+</head>
+
+<body>
+    <div class="logo"></div>
+</body>
+
+</html>

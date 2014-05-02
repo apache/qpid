@@ -1,0 +1,323 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+
+/**
+ * Stylesheet to try and make things look not *too* bad in IE6 and below. Supporting IE6 really is a nightmare :-(
+ */
+
+/* Needed to get rid of annoying "permanent" IE6 scrollbar. */
+html
+{
+    overflow: hidden;
+}
+
+/* Explicitly setting height to 100% avoids some evil IE6 layout bugs */
+html, .sidebar, .main, .popup-window, .popup-container, .popup, .scroll-area
+{
+    height: 100%;
+}
+
+/* Explicitly setting width to 100% avoids some evil IE6 layout bugs */
+ul.list, .popup, .scroll-area
+{
+    width: 100%;
+}
+
+#sidebar-wrapper /* Make sure IE "hasLayout" is enabled by doing zoom: 1. */
+{
+    zoom: 1;
+}
+
+/* IE6 doesn't support color: inherit so we have to set it explicitly. */
+ul li.grey a /* Grey text generally used to show inactive fields */
+{
+	color: #8f8f8f;
+}
+
+ul li a
+{
+	color: #060606;
+}
+
+ul li.active a
+{
+	color: #fff;
+}
+
+/* IE6 form has a default non-zero margin, so we need to zero it. */
+form
+{
+    margin: 0;
+}
+
+.sidebar .scroll-area
+{
+    border-right: 1px solid #000;
+}
+
+ul.list li.first-child
+{
+	border-top: 1px groove #fff;
+}
+
+ul.list li.last-child
+{
+	border-bottom: 2px groove #fff;
+}
+
+ul.list li a p
+{
+    right: 0;
+}
+
+ul.list li.arrow a p, ul.list li.multiline a div p
+{
+    right: 18px;
+}
+
+
+ul.list li.multiline a.icon p, ul.list li.multiline a.icon div p
+{
+    right: 4px;
+}
+
+/**
+ * white-space: nowrap; doesn't work especially well in IE6, so we set it to normal and constrain height.
+ * Unfortunately with the approach below ellipses aren't displayed, but it's the lesser of the evils.
+ * white-space: nowrap; does seem to work with an explicit width set, but doing that breaks loads of other things.
+ */
+ul li a p.sub, ul li a p.title
+{
+    white-space: normal;
+}
+
+ul li a p.title, ul li a p.sub
+{
+    height: 16px;
+}
+
+/* For IE6 we need to use a GIF instead of a PNG to make the input background transparent but still receive events. */
+input, textarea
+{
+    background: url(/itablet/images/ie/transparent.gif) repeat;
+}
+
+/**
+ * For IE6 button :before and :after don't work so we have to resort to some JavaScript to add extra classes and tags
+ * IE6 doesn't support PNG images with alpha transparency, so we use gifs, which are OK but a littly more jagged.
+ */
+
+a.button
+{
+    background: url(/itablet/images/ie/button-sprite.gif) 0px -30px repeat-x;
+}
+
+a.button .before
+{
+    position: absolute;
+    top: 0;
+    left: -5px;
+    width: 5px;
+    height: 30px;
+    background: url(/itablet/images/ie/button-sprite.gif) -18px 0;
+}
+
+a.button .after
+{
+    position: absolute;
+    top: 0;
+    right: -5px;
+    width: 5px;
+    height: 30px;
+    background: url(/itablet/images/ie/button-sprite.gif) -13px 0;
+}
+
+a.button:active
+{
+    background-color: #766d69;
+    background-position: 0px -60px;
+}
+
+a.button:active .before
+{
+    background-position: -41px 0;
+}
+
+a.button:active .after
+{
+    background-position: -36px 0;
+}
+
+a.button.back .before
+{
+    position: absolute;
+    left: -13px;
+    width: 13px;
+    height: 30px;
+    background-position: 0 0;
+}
+
+a.button.back:active .before
+{
+    background-position: -23px 0;
+}
+
+a.button.blue
+{
+    background: url(/itablet/images/ie/blue-button-sprite.gif) 0px -30px repeat-x;
+}
+
+a.button.blue .before
+{
+    background: url(/itablet/images/ie/blue-button-sprite.gif) -18px 0;
+}
+
+a.button.blue .after
+{
+    background: url(/itablet/images/ie/blue-button-sprite.gif) -13px 0;
+}
+
+a.button.blue-back .before
+{
+    background-position: 0 0;
+}
+
+a.button.blue:active
+{
+    background-color: #6b6f76;
+    background-position: 0px -60px;
+}
+
+a.button.blue:active .before
+{
+    background-position: -41px 0;
+}
+
+a.button.blue:active .after
+{
+    background-position: -36px 0;
+}
+
+a.button.blue-back:active .before
+{
+    background-position: -23px 0;
+}
+
+.popup-window
+{
+    background: url(/itablet/images/ie/transparent.gif);
+    filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='/itablet/images/ie/transparent.png', sizingMethod='scale');
+}
+
+.popup-window.smoked
+{
+    background: url(/itablet/images/ie/transparent.gif);
+    filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='/itablet/images/ie/smoked.png', sizingMethod='scale');
+}
+
+div.mask
+{
+    background: url(/itablet/images/ie/transparent.gif);
+    filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='/itablet/images/mask.png', sizingMethod='crop');
+}
+
+div.onoff
+{
+    background: url(/itablet/images/ie/transparent.gif);
+    filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='/itablet/images/on_off.png', sizingMethod='crop');
+}
+
+/**
+ * Unfortunately AlphaImageLoader doesn't play nicely with alignment and these images need to be right aligned.
+ * Fortunately the single level of transparency allowed by gif images is good enough and only a little granier.
+ */
+
+ul.list li.arrow.radio
+{
+    background: #f7f7f7;
+}
+
+ul.list li.radio label
+{
+    padding: 0 11px 0 11px; /* top right bottom left */
+}
+
+ul li.active, ul.list li.radio.active, ul.list li.radio.ie6-checked-active /* Highlight in blue with white text */
+{
+    background: #035de7;
+}
+
+ul li.arrow
+{
+    background: url(/itablet/images/ie/chevron.gif) no-repeat right;
+}
+
+ul.list li.arrow
+{
+    background: #f7f7f7 url(/itablet/images/ie/chevron.gif) no-repeat right;
+}
+
+ul li.ie6-arrow-active, ul.list li.ie6-arrow-active
+{
+    background: #035de7 url(/itablet/images/ie/chevron-active.gif) no-repeat right;
+}
+
+ul.list li.radio.checked label
+{
+    background: url(/itablet/images/ie/tick.gif) no-repeat right;
+}
+
+ul.list li.radio.ie6-checked-active label
+{
+    background: url(/itablet/images/ie/tick-active.gif) no-repeat right;
+}
+
+ul.list li.ie6-radio-arrow
+{
+    background: #f7f7f7 url(/itablet/images/ie/blue-chevron.gif) no-repeat right;
+}
+
+ul.list li.ie6-radio-arrow label
+{
+    padding: 0 11px 0 32px; /* top right bottom left */
+}
+
+ul.list li.ie6-radio-arrow a
+{
+    height: 0;
+    width: 0;
+}
+
+ul.list li.ie6-checked-arrow label
+{
+    background: url(/itablet/images/ie/tick.gif) no-repeat 11px;
+}
+
+ul.list li.ie6-radio-arrow-active, ul.list li.ie6-checked-arrow-active
+{
+    background: #035de7 url(/itablet/images/ie/blue-chevron.gif) no-repeat right;
+}
+
+ul.list li.ie6-checked-arrow-active label
+{
+	background: url(/itablet/images/ie/tick-active.gif) no-repeat 11px;
+}
+

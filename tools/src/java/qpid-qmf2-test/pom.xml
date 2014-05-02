@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-qmf2-parent</artifactId>
+    <version>0.30-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>qpid-qmf2-test</artifactId>
+  <name>Qpid QMF2 Test</name>
+  <description>QMF2 Test</description>
+
+  <properties>
+    <testCase>SpecifyTestOnCommandLine</testCase>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-qmf2</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-qmf2-rest</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-qmf2-tools</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j-version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>${slf4j-version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>${log4j-version}</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <!--version specified in qpid-parent pluginManagement -->
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- Profile with helper exec plugin config to execute a particular test class
+         from the org.apache.qpid.qmf2.test package.
+
+         Usage:
+         mvn test -DtestCase=<Simple Class Name> [-Dexec.args=<arguments>]
+
+         Currently available classes:
+         AgentExternalTest
+         AgentSubscriptionTestConsole
+         AgentTestConsole
+         AgentTest
+         BigPayloadAgentTestConsole
+         BigPayloadAgentTest
+         BrokerSubscriptionTestConsole
+         InvokeMethodTest
+         PartialGetObjectsTest
+         SchemaTest
+         Test1
+         Test2
+         Test3
+         Test4
+         URLTest
+    -->
+    <profile>
+      <id>test</id>
+      <activation>
+        <property>
+          <name>testCase</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <!--version specified in qpid-parent pluginManagement -->
+            <executions>
+              <execution>
+                <phase>test</phase>
+                <goals>
+                  <goal>java</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <mainClass>org.apache.qpid.qmf2.test.${testCase}</mainClass>
+              <systemProperties>
+                <systemProperty>
+                  <key>log4j.configuration</key>
+                  <value>file://${basedir}/log4j.xml</value>
+                </systemProperty>
+              </systemProperties>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>
