@@ -22,7 +22,7 @@
 find_package(Proton 0.5)
 
 set (amqp_default ${amqp_force})
-set (maximum_version 0.6)
+set (maximum_version 0.7)
 if (Proton_FOUND)
     if (Proton_VERSION GREATER ${maximum_version})
         message(WARNING "Qpid proton ${Proton_VERSION} is not a tested version and might not be compatible, ${maximum_version} is highest tested; build may not work")
