@@ -398,6 +398,8 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         switch (_state)
         {
             case UNOPENED:
+                sendOpen((short)0,0);
+                sendClose(close);
                 _state = ConnectionState.CLOSED;
                 break;
             case AWAITING_OPEN:
