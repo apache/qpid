@@ -131,7 +131,7 @@ public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagement
      * @return true if a valid state has been set, otherwise false.
      */
     @Override // From org.apache.qpid.server.model.adapter.AbstractAdapter
-    protected boolean setState(State desiredState)
+    protected boolean setState(State currentState, State desiredState)
     {
         if (desiredState == State.ACTIVE)
         {
