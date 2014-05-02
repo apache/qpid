@@ -56,7 +56,6 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Durability;
-import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.Transaction;
@@ -96,6 +95,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private static final int MASTER_TRANSFER_TIMEOUT = Integer.getInteger(MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME, DEFAULT_MASTER_TRANSFER_TIMEOUT);
     private static final int DB_PING_SOCKET_TIMEOUT = Integer.getInteger(DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME, DEFAULT_DB_PING_SOCKET_TIMEOUT);
     private static final int REMOTE_NODE_MONITOR_INTERVAL = Integer.getInteger(REMOTE_NODE_MONITOR_INTERVAL_PROPERTY_NAME, DEFAULT_REMOTE_NODE_MONITOR_INTERVAL);
+    private static final int RESTART_TRY_LIMIT = 3;
 
     @SuppressWarnings("serial")
     private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
@@ -280,17 +280,26 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 @Override
                 public void run()
                 {
-                    try
+                    for (int i = 0; i < RESTART_TRY_LIMIT; i++)
                     {
-                        restartEnvironment();
-                    }
-                    catch (Exception e)
-                    {
-                        LOGGER.error("Exception on environment restart", e);
+                        try
+                        {
+                            restartEnvironment();
+                            break;
+                        }
+                        catch(EnvironmentFailureException e)
+                        {
+                            // log exception and try again
+                            LOGGER.warn("Unexpected failure on environment restart. Restart iteration: " + i, e);
+                        }
+                        catch (Exception e)
+                        {
+                            LOGGER.error("Exception on environment restart", e);
+                            break;
+                        }
                     }
                 }
             });
-
         }
         else
         {
@@ -794,13 +803,24 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private void closeEnvironmentOnRestart()
     {
-        Environment environment = _environment;
+        ReplicatedEnvironment environment = _environment;
         if (environment != null)
         {
             try
             {
                 if (environment.isValid())
                 {
+                    environment.setStateChangeListener(new StateChangeListener()
+                    {
+                        @Override
+                        public void stateChange(StateChangeEvent stateChangeEvent) throws RuntimeException
+                        {
+                            if (LOGGER.isInfoEnabled())
+                            {
+                                LOGGER.debug("When restarting a state change event is recieved on NOOP listener for state:" + stateChangeEvent.getState());
+                            }
+                        }
+                    });
                     try
                     {
                         closeDatabases();
@@ -823,7 +843,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         }
                     }
                 }
+
+                LOGGER.debug("Closing environent");
                 environment.close();
+                LOGGER.debug("Environent is closed");
             }
             catch (EnvironmentFailureException efe)
             {
