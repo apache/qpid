@@ -136,7 +136,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         if (isMaster)
         {
             assertEquals("Unexpected role", "MASTER", nodeData.get(BDBHAVirtualHostNode.ROLE));
-            Map<String, Object> hostData = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + masterNode + "/" + _hostName);
+            Map<String, Object> hostData = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + masterNode + "/" + _hostName + "?depth=0");
             assertEquals("Unexpected host name", _hostName, hostData.get(VirtualHost.NAME));
         }
         else
