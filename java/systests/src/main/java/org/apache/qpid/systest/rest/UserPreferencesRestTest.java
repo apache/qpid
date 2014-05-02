@@ -79,7 +79,7 @@ public class UserPreferencesRestTest extends QpidRestTestCase
     public void testGetUserPreferences() throws Exception
     {
         Map<String, Object> preferences = getRestTestHelper().getJsonAsMap(
-                "/rest/userpreferences/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/webadmin");
+                "/service/userpreferences/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/webadmin");
         assertEquals("Unexpected number of preferences", 2, preferences.size());
         assertEquals("Unexpected language preference", "en", preferences.get("language"));
         assertEquals("Unexpected saveTabs preference", true, preferences.get("saveTabs"));
@@ -88,7 +88,7 @@ public class UserPreferencesRestTest extends QpidRestTestCase
     public void testGetUserListForAuthenticationProvider() throws Exception
     {
         List<Map<String, Object>> users = getRestTestHelper().getJsonAsList(
-                "/rest/userpreferences/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+                "/service/userpreferences/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
         assertEquals("Unexpected number of users", 2, users.size());
         String[] expectedUsers = { "webadmin", "admin" };
         for (int i = 0; i < expectedUsers.length; i++)
@@ -100,7 +100,7 @@ public class UserPreferencesRestTest extends QpidRestTestCase
 
     public void testGetUserList() throws Exception
     {
-        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/userpreferences");
+        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/service/userpreferences");
         assertEquals("Unexpected number of users", 2, users.size());
         String[] expectedUsers = { "webadmin", "admin" };
         for (int i = 0; i < expectedUsers.length; i++)
@@ -113,11 +113,11 @@ public class UserPreferencesRestTest extends QpidRestTestCase
     public void testDeleteUser() throws Exception
     {
         int status = getRestTestHelper().submitRequest(
-                "/rest/userpreferences?user="
+                "/service/userpreferences?user="
                         + URLEncoder.encode(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/webadmin",
-                                "UTF-8"), "DELETE", null);
+                                "UTF-8"), "DELETE");
         assertEquals("Unexpected status ", 200, status);
-        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/userpreferences");
+        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/service/userpreferences");
         assertEquals("Unexpected number of users", 1, users.size());
         Map<String, Object> user = findUser("admin", users);
         assertNotNull("User admin is not found", user);
@@ -126,12 +126,12 @@ public class UserPreferencesRestTest extends QpidRestTestCase
 
     public void testDeleteMultipleUser() throws Exception
     {
-        int status = getRestTestHelper().submitRequest("/rest/userpreferences?user="
+        int status = getRestTestHelper().submitRequest("/service/userpreferences?user="
                 + URLEncoder.encode(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/webadmin", "UTF-8")
                 + "&user=" + URLEncoder.encode(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/admin", "UTF-8"),
-                "DELETE", null);
+                "DELETE");
         assertEquals("Unexpected status ", 200, status);
-        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/userpreferences");
+        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/service/userpreferences");
         assertEquals("Unexpected number of users", 0, users.size());
     }
 

@@ -73,7 +73,7 @@ public class PreferencesRestTest extends QpidRestTestCase
 
     public void testGetPreferences() throws Exception
     {
-        Map<String, Object> preferences = getRestTestHelper().getJsonAsMap("/rest/preferences");
+        Map<String, Object> preferences = getRestTestHelper().getJsonAsMap("/service/preferences");
         assertEquals("Unexpected number of preferences", 2, preferences.size());
         assertEquals("Unexpected language preference", "en", preferences.get("language"));
         assertEquals("Unexpected saveTabs preference", true, preferences.get("saveTabs"));
@@ -85,10 +85,10 @@ public class PreferencesRestTest extends QpidRestTestCase
         additionalPreferences.put("timezone", "Europe/London");
         additionalPreferences.put("test", 1);
 
-        int status = getRestTestHelper().submitRequest("/rest/preferences", "POST", additionalPreferences);
+        int status = getRestTestHelper().submitRequest("/service/preferences", "POST", additionalPreferences);
         assertEquals("Unexpected response code", 200, status);
 
-        Map<String, Object> preferences = getRestTestHelper().getJsonAsMap("/rest/preferences");
+        Map<String, Object> preferences = getRestTestHelper().getJsonAsMap("/service/preferences");
         assertEquals("Unexpected number of preferences", 4, preferences.size());
         assertEquals("Unexpected language preference", "en", preferences.get("language"));
         assertEquals("Unexpected saveTabs preference", true, preferences.get("saveTabs"));
@@ -102,10 +102,10 @@ public class PreferencesRestTest extends QpidRestTestCase
         additionalPreferences.put("timezone", "Europe/London");
         additionalPreferences.put("test", 1);
 
-        int status = getRestTestHelper().submitRequest("/rest/preferences", "PUT", additionalPreferences);
+        int status = getRestTestHelper().submitRequest("/service/preferences", "PUT", additionalPreferences);
         assertEquals("Unexpected response code", 200, status);
 
-        Map<String, Object> preferences = getRestTestHelper().getJsonAsMap("/rest/preferences");
+        Map<String, Object> preferences = getRestTestHelper().getJsonAsMap("/service/preferences");
         assertEquals("Unexpected number of preferences", 2, preferences.size());
         assertEquals("Unexpected timezone preference", "Europe/London", preferences.get("timezone"));
         assertEquals("Unexpected test preference", 1, preferences.get("test"));

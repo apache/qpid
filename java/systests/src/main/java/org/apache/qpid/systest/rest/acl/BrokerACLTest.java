@@ -119,7 +119,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertAuthenticationProviderExists(providerName);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "DELETE");
         assertEquals("Provider deletion should be allowed", 200, responseCode);
 
         assertAuthenticationProviderDoesNotExist(TEST2_VIRTUALHOST);
@@ -137,7 +137,7 @@ public class BrokerACLTest extends QpidRestTestCase
         assertAuthenticationProviderExists(providerName);
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "DELETE");
         assertEquals("Provider deletion should be denied", 403, responseCode);
 
         assertAuthenticationProviderExists(providerName);
@@ -159,7 +159,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
         attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsolutePath());
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Setting of provider attribites should be allowed", 200, responseCode);
     }
 
@@ -169,8 +169,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         String providerName = TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER;
 
-        Map<String, Object> providerData = getRestTestHelper().getJsonAsSingletonList(
-                "/rest/authenticationprovider/" + providerName);
+        Map<String, Object> providerData = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/" + providerName);
 
         File file = TestFileUtils.createTempFile(this, ".users", "guest:guest\n" + ALLOWED_USER + ":" + ALLOWED_USER + "\n"
                 + DENIED_USER + ":" + DENIED_USER);
@@ -182,10 +181,10 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
         attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsolutePath());
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Setting of provider attribites should be allowed", 403, responseCode);
 
-        Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+        Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/" + providerName);
         assertEquals("Unexpected PATH attribute value",
                 providerData.get(ExternalFileBasedAuthenticationManager.PATH),
                 provider.get(ExternalFileBasedAuthenticationManager.PATH));
@@ -223,7 +222,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertVirtualHostNodeExists(TEST2_VIRTUALHOST);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest("virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE");
         assertEquals("Virtual host node deletion should be allowed", 200, responseCode);
 
         assertVirtualHostNodeDoesNotExist(TEST2_VIRTUALHOST);
@@ -237,7 +236,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest("virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE");
         assertEquals("Virtual host node deletion should be denied", 403, responseCode);
 
         assertVirtualHostNodeExists(TEST2_VIRTUALHOST);
@@ -278,7 +277,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "DELETE");
         assertEquals("Port deletion should be denied", 403, responseCode);
 
         assertPortExists(portName);
@@ -293,7 +292,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "DELETE");
         assertEquals("Port deletion should be allowed", 200, responseCode);
 
         assertPortDoesNotExist(portName);
@@ -315,10 +314,10 @@ public class BrokerACLTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
         attributes.put(Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Setting of port attribites should be allowed", 200, responseCode);
 
-        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("port/" + portName);
         assertEquals("Unexpected authentication provider attribute value", ANONYMOUS_AUTHENTICATION_PROVIDER,
                 port.get(Port.AUTHENTICATION_PROVIDER));
     }
@@ -340,10 +339,10 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(Port.NAME, portName);
         attributes.put(Port.PROTOCOLS, Arrays.asList(Protocol.AMQP_0_9));
         attributes.put(Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Setting of port attribites should be denied", 403, responseCode);
 
-        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("port/" + portName);
         assertEquals("Unexpected authentication provider attribute value",
                 TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, port.get(Port.AUTHENTICATION_PROVIDER));
     }
@@ -393,7 +392,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("keystore/" + keyStoreName, "DELETE");
         assertEquals("keystore deletion should be denied", 403, responseCode);
 
         assertKeyStoreExistence(keyStoreName, true);
@@ -414,7 +413,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("keystore/" + keyStoreName, "DELETE");
         assertEquals("keystore deletion should be allowed", 200, responseCode);
 
         assertKeyStoreExistence(keyStoreName, false);
@@ -434,16 +433,16 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("keyStore creation should be allowed", 201, responseCode);
 
         assertKeyStoreExistence(keyStoreName, true);
-        Map<String, Object> keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
+        Map<String, Object> keyStore = getRestTestHelper().getJsonAsSingletonList("keystore/" + keyStoreName);
         assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(FileKeyStore.CERTIFICATE_ALIAS));
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, keyStoreName);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, updatedCertAlias);
-        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("keystore/" + keyStoreName, "PUT", attributes);
         assertEquals("Setting of keystore attributes should be allowed", 200, responseCode);
 
-        keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
+        keyStore = getRestTestHelper().getJsonAsSingletonList("keystore/" + keyStoreName);
         assertEquals("Unexpected certificateAlias attribute value", updatedCertAlias, keyStore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
@@ -461,7 +460,7 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("keyStore creation should be allowed", 201, responseCode);
 
         assertKeyStoreExistence(keyStoreName, true);
-        Map<String, Object> keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
+        Map<String, Object> keyStore = getRestTestHelper().getJsonAsSingletonList("keystore/" + keyStoreName);
         assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(FileKeyStore.CERTIFICATE_ALIAS));
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
@@ -469,10 +468,10 @@ public class BrokerACLTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, keyStoreName);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, updatedCertAlias);
-        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + keyStoreName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("keystore/" + keyStoreName, "PUT", attributes);
         assertEquals("Setting of keystore attributes should be denied", 403, responseCode);
 
-        keyStore = getRestTestHelper().getJsonAsSingletonList("/rest/keystore/" + keyStoreName);
+        keyStore = getRestTestHelper().getJsonAsSingletonList("keystore/" + keyStoreName);
         assertEquals("Unexpected certificateAlias attribute value", initialCertAlias, keyStore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
@@ -521,7 +520,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("truststore/" + trustStoreName, "DELETE");
         assertEquals("truststore deletion should be denied", 403, responseCode);
 
         assertTrustStoreExistence(trustStoreName, true);
@@ -542,7 +541,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("truststore/" + trustStoreName, "DELETE");
         assertEquals("truststore deletion should be allowed", 200, responseCode);
 
         assertTrustStoreExistence(trustStoreName, false);
@@ -562,16 +561,16 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("trustStore creation should be allowed", 201, responseCode);
 
         assertTrustStoreExistence(trustStoreName, true);
-        Map<String, Object> trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
+        Map<String, Object> trustStore = getRestTestHelper().getJsonAsSingletonList("truststore/" + trustStoreName);
         assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(FileTrustStore.PEERS_ONLY));
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, trustStoreName);
         attributes.put(FileTrustStore.PEERS_ONLY, updatedPeersOnly);
-        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("truststore/" + trustStoreName, "PUT", attributes);
         assertEquals("Setting of truststore attributes should be allowed", 200, responseCode);
 
-        trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
+        trustStore = getRestTestHelper().getJsonAsSingletonList("truststore/" + trustStoreName);
         assertEquals("Unexpected peersOnly attribute value", updatedPeersOnly, trustStore.get(FileTrustStore.PEERS_ONLY));
     }
 
@@ -589,7 +588,7 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("trustStore creation should be allowed", 201, responseCode);
 
         assertTrustStoreExistence(trustStoreName, true);
-        Map<String, Object> trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
+        Map<String, Object> trustStore = getRestTestHelper().getJsonAsSingletonList("truststore/" + trustStoreName);
         assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(FileTrustStore.PEERS_ONLY));
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
@@ -597,10 +596,10 @@ public class BrokerACLTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, trustStoreName);
         attributes.put(FileTrustStore.PEERS_ONLY, updatedPeersOnly);
-        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + trustStoreName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("truststore/" + trustStoreName, "PUT", attributes);
         assertEquals("Setting of truststore attributes should be denied", 403, responseCode);
 
-        trustStore = getRestTestHelper().getJsonAsSingletonList("/rest/truststore/" + trustStoreName);
+        trustStore = getRestTestHelper().getJsonAsSingletonList("truststore/" + trustStoreName);
         assertEquals("Unexpected peersOnly attribute value", initialPeersOnly, trustStore.get(FileTrustStore.PEERS_ONLY));
     }
 
@@ -613,17 +612,17 @@ public class BrokerACLTest extends QpidRestTestCase
         int initialSessionCountLimit = 256;
         int updatedSessionCountLimit = 299;
 
-        Map<String, Object> brokerAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerAttributes = getRestTestHelper().getJsonAsSingletonList("broker");
         assertEquals("Unexpected alert repeat gap", initialSessionCountLimit,
                 brokerAttributes.get(Broker.CONNECTION_SESSION_COUNT_LIMIT));
 
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, updatedSessionCountLimit);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/broker", "PUT", newAttributes);
+        int responseCode = getRestTestHelper().submitRequest("broker", "PUT", newAttributes);
         assertEquals("Setting of port attribites should be allowed", 200, responseCode);
 
-        brokerAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        brokerAttributes = getRestTestHelper().getJsonAsSingletonList("broker");
         assertEquals("Unexpected default alert repeat gap", updatedSessionCountLimit,
                 brokerAttributes.get(Broker.CONNECTION_SESSION_COUNT_LIMIT));
     }
@@ -635,7 +634,7 @@ public class BrokerACLTest extends QpidRestTestCase
         int initialSessionCountLimit = 256;
         int updatedSessionCountLimit = 299;
 
-        Map<String, Object> brokerAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerAttributes = getRestTestHelper().getJsonAsSingletonList("broker");
         assertEquals("Unexpected alert repeat gap", initialSessionCountLimit,
                 brokerAttributes.get(Broker.CONNECTION_SESSION_COUNT_LIMIT));
 
@@ -643,10 +642,10 @@ public class BrokerACLTest extends QpidRestTestCase
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put(Broker.CONNECTION_SESSION_COUNT_LIMIT, updatedSessionCountLimit);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/broker", "PUT", newAttributes);
+        int responseCode = getRestTestHelper().submitRequest("broker", "PUT", newAttributes);
         assertEquals("Setting of port attribites should be allowed", 403, responseCode);
 
-        brokerAttributes = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        brokerAttributes = getRestTestHelper().getJsonAsSingletonList("broker");
         assertEquals("Unexpected default alert repeat gap", initialSessionCountLimit,
                 brokerAttributes.get(Broker.CONNECTION_SESSION_COUNT_LIMIT));
     }
@@ -696,7 +695,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("groupprovider/" + groupProviderName, "DELETE");
         assertEquals("Group provider deletion should be denied", 403, responseCode);
 
         assertGroupProviderExistence(groupProviderName, true);
@@ -717,7 +716,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("groupprovider/" + groupProviderName, "DELETE");
         assertEquals("Group provider deletion should be allowed", 200, responseCode);
 
         assertGroupProviderExistence(groupProviderName, false);
@@ -740,7 +739,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(GroupProvider.NAME, groupProviderName);
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
-        responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("groupprovider/" + groupProviderName, "PUT", attributes);
         assertEquals("Setting of group provider attributes should be allowed but not supported", 409, responseCode);
     }
 
@@ -763,7 +762,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(GroupProvider.NAME, groupProviderName);
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
-        responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("groupprovider/" + groupProviderName, "PUT", attributes);
         assertEquals("Setting of group provider attributes should be denied", 403, responseCode);
     }
 
@@ -812,7 +811,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "DELETE");
         assertEquals("Access control provider deletion should be denied", 403, responseCode);
 
         assertAccessControlProviderExistence(accessControlProviderName, true);
@@ -831,7 +830,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertAccessControlProviderExistence(accessControlProviderName, true);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "DELETE");
         assertEquals("Access control provider deletion should be allowed", 200, responseCode);
 
         assertAccessControlProviderExistence(accessControlProviderName, false);
@@ -854,7 +853,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(GroupProvider.NAME, accessControlProviderName);
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
-        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
         assertEquals("Setting of access control provider attributes should be allowed but not supported", 409, responseCode);
     }
 
@@ -877,7 +876,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(GroupProvider.NAME, accessControlProviderName);
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
-        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
         assertEquals("Setting of access control provider attributes should be denied", 403, responseCode);
     }
 
@@ -895,11 +894,11 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(HttpManagement.TIME_OUT, 10000);
 
         int responseCode = getRestTestHelper().submitRequest(
-                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+                "plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
         assertEquals("Setting of http management should be allowed", 200, responseCode);
 
         Map<String, Object> details = getRestTestHelper().getJsonAsSingletonList(
-                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
+                "plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
 
         assertEquals("Unexpected session timeout", 10000, details.get(HttpManagement.TIME_OUT));
         assertEquals("Unexpected http basic auth enabled", true, details.get(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED));
@@ -920,11 +919,11 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(HttpManagement.TIME_OUT, 10000);
 
         int responseCode = getRestTestHelper().submitRequest(
-                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+                "plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
         assertEquals("Setting of http management should be denied", 403, responseCode);
 
         Map<String, Object> details = getRestTestHelper().getJsonAsSingletonList(
-                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
+                "plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
 
         assertEquals("Unexpected session timeout", HttpManagement.DEFAULT_TIMEOUT_IN_SECONDS,
                 details.get(HttpManagement.TIME_OUT));
@@ -947,7 +946,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(Port.PORT, findFreePort());
         attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
 
-        return getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        return getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
     }
 
     private void assertPortExists(String portName) throws Exception
@@ -962,19 +961,19 @@ public class BrokerACLTest extends QpidRestTestCase
 
     private void assertPortExistence(String portName, boolean exists) throws Exception
     {
-        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
+        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("port/" + portName);
         assertEquals("Unexpected result", exists, !hosts.isEmpty());
     }
 
     private void assertKeyStoreExistence(String keyStoreName, boolean exists) throws Exception
     {
-        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("/rest/keystore/" + keyStoreName);
+        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + keyStoreName);
         assertEquals("Unexpected result", exists, !keyStores.isEmpty());
     }
 
     private void assertTrustStoreExistence(String trustStoreName, boolean exists) throws Exception
     {
-        List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("/rest/truststore/" + trustStoreName);
+        List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore/" + trustStoreName);
         assertEquals("Unexpected result", exists, !trustStores.isEmpty());
     }
 
@@ -985,7 +984,7 @@ public class BrokerACLTest extends QpidRestTestCase
         data.put(VirtualHostNode.TYPE, getTestProfileVirtualHostNodeType());
         data.put(DurableConfigurationStore.STORE_PATH, getStoreLocation(virtualHostNodeName));
 
-        return getRestTestHelper().submitRequest("/rest/virtualhostnode/" + virtualHostNodeName, "PUT", data);
+        return getRestTestHelper().submitRequest("virtualhostnode/" + virtualHostNodeName, "PUT", data);
     }
 
     private void assertVirtualHostNodeDoesNotExist(String name) throws Exception
@@ -1000,7 +999,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
     private void assertVirtualHostNodeExistence(String name, boolean exists) throws Exception
     {
-        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("/rest/virtualhostnode/" + name);
+        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("virtualhostnode/" + name);
         assertEquals("Node " + name + (exists ? " does not exist" : " exists" ), exists, !hosts.isEmpty());
     }
 
@@ -1015,7 +1014,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.NAME, authenticationProviderName);
         attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
-        return getRestTestHelper().submitRequest("/rest/authenticationprovider/" + authenticationProviderName, "PUT", attributes);
+        return getRestTestHelper().submitRequest("authenticationprovider/" + authenticationProviderName, "PUT", attributes);
     }
 
     private void assertAuthenticationProviderDoesNotExist(String authenticationProviderName) throws Exception
@@ -1030,7 +1029,7 @@ public class BrokerACLTest extends QpidRestTestCase
 
     private void assertAuthenticationProviderExistence(String authenticationProviderName, boolean exists) throws Exception
     {
-        String path = "/rest/authenticationprovider/" + authenticationProviderName;
+        String path = "authenticationprovider/" + authenticationProviderName;
         List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList(path);
         assertEquals("Unexpected result", exists, !providers.isEmpty());
     }
@@ -1043,7 +1042,7 @@ public class BrokerACLTest extends QpidRestTestCase
         keyStoreAttributes.put(FileKeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
         keyStoreAttributes.put(FileKeyStore.CERTIFICATE_ALIAS, certAlias);
 
-        return getRestTestHelper().submitRequest("/rest/keystore/" + name, "PUT", keyStoreAttributes);
+        return getRestTestHelper().submitRequest("keystore/" + name, "PUT", keyStoreAttributes);
     }
 
     private int createTrustStore(String name, boolean peersOnly) throws IOException, JsonGenerationException, JsonMappingException
@@ -1054,12 +1053,12 @@ public class BrokerACLTest extends QpidRestTestCase
         trustStoreAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
         trustStoreAttributes.put(FileTrustStore.PEERS_ONLY, peersOnly);
 
-        return getRestTestHelper().submitRequest("/rest/truststore/" + name, "PUT", trustStoreAttributes);
+        return getRestTestHelper().submitRequest("truststore/" + name, "PUT", trustStoreAttributes);
     }
 
     private void assertGroupProviderExistence(String groupProviderName, boolean exists) throws Exception
     {
-        String path = "/rest/groupprovider/" + groupProviderName;
+        String path = "groupprovider/" + groupProviderName;
         List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList(path);
         assertEquals("Unexpected result", exists, !providers.isEmpty());
     }
@@ -1072,12 +1071,12 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileBasedGroupProvider.PATH, file.getAbsoluteFile());
 
-        return getRestTestHelper().submitRequest("/rest/groupprovider/" + groupProviderName, "PUT", attributes);
+        return getRestTestHelper().submitRequest("groupprovider/" + groupProviderName, "PUT", attributes);
     }
 
     private void assertAccessControlProviderExistence(String accessControlProviderName, boolean exists) throws Exception
     {
-        String path = "/rest/accesscontrolprovider/" + accessControlProviderName;
+        String path = "accesscontrolprovider/" + accessControlProviderName;
         List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList(path);
         assertEquals("Unexpected result", exists, !providers.isEmpty());
     }
@@ -1090,6 +1089,6 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
         attributes.put(FileAccessControlProviderConstants.PATH, file.getAbsoluteFile());
 
-        return getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
+        return getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
     }
 }

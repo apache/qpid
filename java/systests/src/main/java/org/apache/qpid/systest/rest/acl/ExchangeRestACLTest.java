@@ -77,11 +77,11 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         Map<String, Object> queueData = new HashMap<String, Object>();
         queueData.put(Queue.NAME, _queueName);
         queueData.put(Queue.DURABLE, Boolean.TRUE);
-        int status = getRestTestHelper().submitRequest("/rest/queue/test/test/" + _queueName, "PUT", queueData);
+        int status = getRestTestHelper().submitRequest("queue/test/test/" + _queueName, "PUT", queueData);
         assertEquals("Unexpected status", 201, status);
 
         _exchangeName = getTestName();
-        _exchangeUrl = "/rest/exchange/test/test/" + _exchangeName;
+        _exchangeUrl = "exchange/test/test/" + _exchangeName;
     }
 
     public void testCreateExchangeAllowed() throws Exception
@@ -114,7 +114,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         assertExchangeExists();
 
 
-        responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "DELETE");
         assertEquals("Exchange deletion should be allowed", 200, responseCode);
 
         assertExchangeDoesNotExist();
@@ -130,7 +130,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         assertExchangeExists();
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "DELETE");
         assertEquals("Exchange deletion should be denied", 403, responseCode);
 
         assertExchangeExists();
@@ -222,7 +222,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         attributes.put(Binding.QUEUE, _queueName);
         attributes.put(Binding.EXCHANGE, "amq.direct");
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/binding/test/test/amq.direct/" + _queueName + "/" + bindingName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("binding/test/test/amq.direct/" + _queueName + "/" + bindingName, "PUT", attributes);
         return responseCode;
     }
 
@@ -238,7 +238,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
 
     private void assertBindingExistence(String bindingName, boolean exists) throws Exception
     {
-        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("/rest/binding/test/test/amq.direct/" + _queueName + "/" + bindingName);
+        List<Map<String, Object>> bindings = getRestTestHelper().getJsonAsList("binding/test/test/amq.direct/" + _queueName + "/" + bindingName);
         assertEquals("Unexpected result", exists, !bindings.isEmpty());
     }
 }

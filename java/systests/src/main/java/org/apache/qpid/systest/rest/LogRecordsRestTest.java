@@ -27,7 +27,7 @@ public class LogRecordsRestTest extends QpidRestTestCase
 {
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> logs = getRestTestHelper().getJsonAsList("/rest/logrecords");
+        List<Map<String, Object>> logs = getRestTestHelper().getJsonAsList("/service/logrecords");
         assertNotNull("Logs data cannot be null", logs);
         assertTrue("Logs are not found", logs.size() > 0);
         Map<String, Object> record = getRestTestHelper().find("message", "[Broker] BRK-1004 : Qpid Broker Ready", logs);
@@ -42,7 +42,7 @@ public class LogRecordsRestTest extends QpidRestTestCase
 
     public void testGetLogsFromGivenId() throws Exception
     {
-        List<Map<String, Object>> logs = getRestTestHelper().getJsonAsList("/rest/logrecords");
+        List<Map<String, Object>> logs = getRestTestHelper().getJsonAsList("/service/logrecords");
         assertNotNull("Logs data cannot be null", logs);
         assertTrue("Logs are not found", logs.size() > 0);
 
@@ -52,7 +52,7 @@ public class LogRecordsRestTest extends QpidRestTestCase
         //make sure that new logs are created
         getConnection();
 
-        List<Map<String, Object>> newLogs = getRestTestHelper().getJsonAsList("/rest/logrecords?lastLogId=" + lastId);
+        List<Map<String, Object>> newLogs = getRestTestHelper().getJsonAsList("/service/logrecords?lastLogId=" + lastId);
         assertNotNull("Logs data cannot be null", newLogs);
         assertTrue("Logs are not found", newLogs.size() > 0);
 

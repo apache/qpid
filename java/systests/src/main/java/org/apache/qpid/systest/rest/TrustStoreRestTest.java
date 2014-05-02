@@ -69,7 +69,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         createTrustStore(name, true);
         assertNumberOfTrustStores(2);
 
-        List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("/rest/truststore/" + name);
+        List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details cannot be null", trustStores);
 
         assertTrustStoreAttributes(trustStores.get(0), name, TestSSLConstants.TRUSTSTORE, true);
@@ -85,10 +85,10 @@ public class TrustStoreRestTest extends QpidRestTestCase
         createTrustStore(name, false);
         assertNumberOfTrustStores(2);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "DELETE");
         assertEquals("Unexpected response code for provider deletion", 200, responseCode);
 
-        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("/rest/truststore/" + name);
+        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
         assertTrue("details should be empty as the truststore no longer exists", trustStore.isEmpty());
 
@@ -125,17 +125,17 @@ public class TrustStoreRestTest extends QpidRestTestCase
         //verify the truststore is there
         assertNumberOfTrustStores(2);
 
-        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("/rest/truststore/" + name);
+        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
         assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
 
         //try to delete it, which should fail as it is in use
-        int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "DELETE");
         assertEquals("Unexpected response code for provider deletion", 409, responseCode);
 
         //check its still there
         assertNumberOfTrustStores(2);
-        trustStore = getRestTestHelper().getJsonAsList("/rest/truststore/" + name);
+        trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
         assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
     }
@@ -154,10 +154,10 @@ public class TrustStoreRestTest extends QpidRestTestCase
         attributes.put(TrustStore.NAME, name);
         attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for truststore update", 200, responseCode);
 
-        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("/rest/truststore/" + name);
+        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
 
         assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
@@ -177,10 +177,10 @@ public class TrustStoreRestTest extends QpidRestTestCase
         attributes.put(TrustStore.NAME, name);
         attributes.put(FileTrustStore.PATH, "does.not.exist");
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for trust store update", 409, responseCode);
 
-        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("/rest/truststore/" + name);
+        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
 
         //verify the details remain unchanged
@@ -202,10 +202,10 @@ public class TrustStoreRestTest extends QpidRestTestCase
         attributes.put(TrustStore.NAME, name);
         attributes.put(FileTrustStore.PEERS_ONLY, true);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for trust store update", 200, responseCode);
 
-        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("/rest/truststore/" + name);
+        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
 
         assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, true);
@@ -215,10 +215,10 @@ public class TrustStoreRestTest extends QpidRestTestCase
         attributes.put(TrustStore.NAME, name);
         attributes.put(FileTrustStore.PEERS_ONLY, null);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name , "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for trust store update", 200, responseCode);
 
-        trustStore = getRestTestHelper().getJsonAsList("/rest/truststore/" + name);
+        trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
 
         assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
@@ -227,7 +227,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
     private List<Map<String, Object>> assertNumberOfTrustStores(int numberOfTrustStores) throws IOException,
     JsonParseException, JsonMappingException
     {
-        List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("/rest/truststore");
+        List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore");
         assertNotNull("trust stores should not be null", trustStores);
         assertEquals("Unexpected number of trust stores", numberOfTrustStores, trustStores.size());
 
@@ -243,7 +243,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         trustStoreAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
         trustStoreAttributes.put(FileTrustStore.PEERS_ONLY, peersOnly);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/truststore/" + name, "PUT", trustStoreAttributes);
+        int responseCode = getRestTestHelper().submitRequest("truststore/" + name, "PUT", trustStoreAttributes);
         assertEquals("Unexpected response code", 201, responseCode);
     }
 

@@ -52,7 +52,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/logrecords", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/service/logrecords", "GET");
         assertEquals("Access to log records should be allowed", 200, responseCode);
     }
 
@@ -60,7 +60,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/logrecords", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/service/logrecords", "GET");
         assertEquals("Access to log records should be denied", 403, responseCode);
     }
 
@@ -68,7 +68,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/logfilenames", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/service/logfilenames", "GET");
         assertEquals("Access to log files should be allowed", 200, responseCode);
     }
 
@@ -76,7 +76,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/logfilenames", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/service/logfilenames", "GET");
         assertEquals("Access to log files should be denied", 403, responseCode);
     }
 
@@ -84,7 +84,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/logfile?l=appender%2fqpid.log", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/service/logfile?l=appender%2fqpid.log", "GET");
         assertEquals("Access to log files should be allowed", 404, responseCode);
     }
 
@@ -92,7 +92,7 @@ public class LogViewerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/logfile?l=appender%2fqpid.log", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/service/logfile?l=appender%2fqpid.log", "GET");
         assertEquals("Access to log files should be denied", 403, responseCode);
     }
 

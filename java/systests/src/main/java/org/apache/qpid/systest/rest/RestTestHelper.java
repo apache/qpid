@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -57,7 +58,6 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
-
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Binding;
@@ -68,6 +68,12 @@ import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class RestTestHelper
 {
+
+    private static final TypeReference<List<LinkedHashMap<String, Object>>> TYPE_LIST_OF_LINKED_HASH_MAPS = new TypeReference<List<LinkedHashMap<String, Object>>>()
+    {
+    };
+    public static final String API_BASE = "/api/latest/";
+
     private static final Logger LOGGER = Logger.getLogger(RestTestHelper.class);
     private static final String CERT_ALIAS_APP1 = "app1";
 
@@ -116,6 +122,10 @@ public class RestTestHelper
 
     public HttpURLConnection openManagementConnection(String path, String method) throws IOException
     {
+        if (!path.startsWith("/"))
+        {
+            path = API_BASE + path;
+        }
         URL url = getManagementURL(path);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
 
@@ -179,13 +189,8 @@ public class RestTestHelper
             JsonParseException, JsonMappingException
     {
         byte[] data = readConnectionInputStream(connection);
-String dataAsString = new String(data);
         ObjectMapper mapper = new ObjectMapper();
-
-        TypeReference<List<LinkedHashMap<String, Object>>> typeReference = new TypeReference<List<LinkedHashMap<String, Object>>>()
-        {
-        };
-        List<Map<String, Object>> providedObject = mapper.readValue(new ByteArrayInputStream(data), typeReference);
+        List<Map<String, Object>> providedObject = mapper.readValue(new ByteArrayInputStream(data), TYPE_LIST_OF_LINKED_HASH_MAPS);
         return providedObject;
     }
 
@@ -203,7 +208,7 @@ String dataAsString = new String(data);
         return providedObject;
     }
 
-    public byte[] readConnectionInputStream(HttpURLConnection connection) throws IOException
+    private byte[] readConnectionInputStream(HttpURLConnection connection) throws IOException
     {
         InputStream is = connection.getInputStream();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -220,7 +225,7 @@ String dataAsString = new String(data);
         return baos.toByteArray();
     }
 
-    public void writeJsonRequest(HttpURLConnection connection, Map<String, Object> data) throws JsonGenerationException,
+    private void writeJsonRequest(HttpURLConnection connection, Map<String, Object> data) throws JsonGenerationException,
             JsonMappingException, IOException
     {
         ObjectMapper mapper = new ObjectMapper();
@@ -296,7 +301,7 @@ String dataAsString = new String(data);
     public void createNewGroupMember(String groupProviderName, String groupName, String memberName, int responseCode) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(
-                "/rest/groupmember/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8") + "/" +  URLDecoder.decode(memberName, "UTF-8"),
+                "groupmember/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8") + "/" +  URLDecoder.decode(memberName, "UTF-8"),
                 "PUT");
 
         Map<String, Object> groupMemberData = new HashMap<String, Object>();
@@ -316,7 +321,7 @@ String dataAsString = new String(data);
     public void removeMemberFromGroup(String groupProviderName, String groupName, String memberName, int responseCode) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(
-                "/rest/groupmember/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8") + "/" +  URLDecoder.decode(memberName, "UTF-8"),
+                "groupmember/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8") + "/" +  URLDecoder.decode(memberName, "UTF-8"),
                 "DELETE");
 
         Assert.assertEquals("Unexpected response code", responseCode, connection.getResponseCode());
@@ -349,7 +354,7 @@ String dataAsString = new String(data);
     public void createGroup(String groupName, String groupProviderName, int responseCode) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(
-                "/rest/group/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8"),
+                "group/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8"),
                 "PUT");
 
         Map<String, Object> groupData = new HashMap<String, Object>();
@@ -367,7 +372,7 @@ String dataAsString = new String(data);
 
     public void createOrUpdateUser(String username, String password, int responseCode) throws IOException
     {
-        HttpURLConnection connection = openManagementConnection("/rest/user/"
+        HttpURLConnection connection = openManagementConnection("user/"
                 + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + username, "PUT");
 
         Map<String, Object> data = new HashMap<String, Object>();
@@ -382,7 +387,7 @@ String dataAsString = new String(data);
     public void removeGroup(String groupName, String groupProviderName, int responseCode) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(
-                "/rest/group/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8"),
+                "group/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8"),
                 "DELETE");
 
         Assert.assertEquals("Unexpected response code", responseCode, connection.getResponseCode());
@@ -396,7 +401,7 @@ String dataAsString = new String(data);
 
     public void removeUserById(String id) throws IOException
     {
-        HttpURLConnection connection = openManagementConnection("/rest/user/"
+        HttpURLConnection connection = openManagementConnection("user/"
                 + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "?id=" + id, "DELETE");
         Assert.assertEquals("Unexpected response code", HttpServletResponse.SC_OK, connection.getResponseCode());
         connection.disconnect();
@@ -404,7 +409,7 @@ String dataAsString = new String(data);
 
     public void removeUser(String username, int responseCode) throws IOException
     {
-        HttpURLConnection connection = openManagementConnection("/rest/user/"
+        HttpURLConnection connection = openManagementConnection("user/"
                 + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + username, "DELETE");
         Assert.assertEquals("Unexpected response code", responseCode, connection.getResponseCode());
         connection.disconnect();
@@ -505,6 +510,25 @@ String dataAsString = new String(data);
         return responseCode;
     }
 
+    public int submitRequest(String url, String method) throws IOException
+    {
+        return submitRequest(url, method, (byte[])null);
+    }
+
+    public int submitRequest(String url, String method, byte[] parameters) throws IOException
+    {
+        HttpURLConnection connection = openManagementConnection(url, method);
+        if (parameters != null)
+        {
+            OutputStream os = connection.getOutputStream();
+            os.write(parameters);
+            os.flush();
+        }
+        int responseCode = connection.getResponseCode();
+        connection.disconnect();
+        return responseCode;
+    }
+
     public byte[] getBytes(String path) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(path, "GET");
@@ -526,15 +550,16 @@ String dataAsString = new String(data);
             Map<String, Object> queueData = new HashMap<String, Object>();
             queueData.put(Queue.NAME, queueName);
             queueData.put(Queue.DURABLE, Boolean.FALSE);
-            int responseCode = submitRequest("/rest/queue/test/test/" + queueName, "PUT", queueData);
+            int responseCode = submitRequest("queue/test/test/" + queueName, "PUT", queueData);
             Assert.assertEquals("Unexpected response code creating queue" + queueName, 201, responseCode);
 
             Map<String, Object> bindingData = new HashMap<String, Object>();
             bindingData.put(Binding.NAME, queueName);
             bindingData.put(Binding.QUEUE, queueName);
             bindingData.put(Binding.EXCHANGE, "amq.direct");
-            responseCode = submitRequest("/rest/binding/test/test/amq.direct/" + queueName + "/" + queueName, "PUT", queueData);
+            responseCode = submitRequest("binding/test/test/amq.direct/" + queueName + "/" + queueName, "PUT", queueData);
             Assert.assertEquals("Unexpected response code binding queue " + queueName, 201, responseCode);
         }
     }
+
 }

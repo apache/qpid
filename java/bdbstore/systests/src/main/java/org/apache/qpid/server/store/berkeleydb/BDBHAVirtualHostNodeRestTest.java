@@ -60,7 +60,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
 
         super.setUp();
         _hostName = getTestName();
-        _baseNodeRestUrl = "/rest/virtualhostnode/";
+        _baseNodeRestUrl = "virtualhostnode/";
 
         _storeBaseDir = new File(TMP_FOLDER, "store-" + _hostName + "-" + System.currentTimeMillis());
 
@@ -136,7 +136,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         if (isMaster)
         {
             assertEquals("Unexpected role", "MASTER", nodeData.get(BDBHAVirtualHostNode.ROLE));
-            Map<String, Object> hostData = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/" + masterNode + "/" + _hostName + "?depth=0");
+            Map<String, Object> hostData = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + masterNode + "/" + _hostName + "?depth=0");
             assertEquals("Unexpected host name", _hostName, hostData.get(VirtualHost.NAME));
         }
         else
@@ -156,7 +156,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
             remotes.remove(clusterNodeName);
             for (String remote : remotes)
             {
-                String remoteUrl = "/rest/replicationnode/" + clusterNodeName + "/" + remote;
+                String remoteUrl = "replicationnode/" + clusterNodeName + "/" + remote;
                 waitForAttributeChanged(remoteUrl, BDBHARemoteReplicationNode.ROLE, remote.equals(masterNode) ? "MASTER" : "REPLICA");
             }
         }

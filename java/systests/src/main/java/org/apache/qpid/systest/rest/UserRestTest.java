@@ -39,7 +39,7 @@ public class UserRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/user");
+        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("user");
         assertNotNull("Users cannot be null", users);
         assertTrue("Unexpected number of users", users.size() > 1);
         for (Map<String, Object> user : users)
@@ -50,7 +50,7 @@ public class UserRestTest extends QpidRestTestCase
 
     public void testGetUserByName() throws Exception
     {
-        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/user");
+        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("user");
         assertNotNull("Users cannot be null", users);
         assertTrue("Unexpected number of users", users.size() > 1);
         for (Map<String, Object> user : users)
@@ -58,7 +58,7 @@ public class UserRestTest extends QpidRestTestCase
             assertNotNull("Attribute " + User.ID, user.get(User.ID));
             String userName = (String) user.get(User.NAME);
             assertNotNull("Attribute " + User.NAME, userName);
-            Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/"
+            Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("user/"
                     + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
             assertUser(userDetails);
             assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
@@ -70,7 +70,7 @@ public class UserRestTest extends QpidRestTestCase
         String userName = getTestName();
         getRestTestHelper().createOrUpdateUser(userName, "newPassword");
 
-        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/"
+        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("user/"
                 + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
         assertUser(userDetails);
         assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
@@ -81,13 +81,13 @@ public class UserRestTest extends QpidRestTestCase
         String userName = getTestName();
         getRestTestHelper().createOrUpdateUser(userName, "newPassword");
 
-        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("/rest/user/"
+        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList("user/"
                 + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
         String id = (String) userDetails.get(User.ID);
 
         getRestTestHelper().removeUserById(id);
 
-        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("/rest/user/"
+        List<Map<String, Object>> users = getRestTestHelper().getJsonAsList("user/"
                 + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
         assertEquals("User should be deleted", 0, users.size());
     }

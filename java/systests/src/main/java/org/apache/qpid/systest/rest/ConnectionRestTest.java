@@ -91,14 +91,14 @@ public class ConnectionRestTest extends QpidRestTestCase
 
     public void testGetAllConnections() throws Exception
     {
-        List<Map<String, Object>> connections = getRestTestHelper().getJsonAsList("/rest/connection");
+        List<Map<String, Object>> connections = getRestTestHelper().getJsonAsList("connection");
         assertEquals("Unexpected number of connections", 1, connections.size());
         Asserts.assertConnection(connections.get(0), (AMQConnection) _connection);
     }
 
     public void testGetVirtualHostConnections() throws Exception
     {
-        List<Map<String, Object>> connections = getRestTestHelper().getJsonAsList("/rest/connection/test/test");
+        List<Map<String, Object>> connections = getRestTestHelper().getJsonAsList("connection/test/test");
         assertEquals("Unexpected number of connections", 1, connections.size());
         Asserts.assertConnection(connections.get(0), (AMQConnection) _connection);
     }
@@ -108,21 +108,21 @@ public class ConnectionRestTest extends QpidRestTestCase
         // get connection name
         String connectionName = getConnectionName();
 
-        Map<String, Object> connectionDetails = getRestTestHelper().getJsonAsSingletonList("/rest/connection/test/test/"
+        Map<String, Object> connectionDetails = getRestTestHelper().getJsonAsSingletonList("connection/test/test/"
                 + URLDecoder.decode(connectionName, "UTF-8"));
         assertConnection(connectionDetails);
     }
 
     public void testGetAllSessions() throws Exception
     {
-        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("/rest/session");
+        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session");
         assertEquals("Unexpected number of sessions", 1, sessions.size());
         assertSession(sessions.get(0), (AMQSession<?, ?>) _session);
     }
 
     public void testGetVirtualHostSessions() throws Exception
     {
-        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("/rest/session/test/test");
+        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session/test/test");
         assertEquals("Unexpected number of sessions", 1, sessions.size());
         assertSession(sessions.get(0), (AMQSession<?, ?>) _session);
     }
@@ -132,7 +132,7 @@ public class ConnectionRestTest extends QpidRestTestCase
         // get connection name
         String connectionName = getConnectionName();
 
-        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("/rest/session/test/test/"
+        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session/test/test/"
                 + URLDecoder.decode(connectionName, "UTF-8"));
         assertEquals("Unexpected number of sessions", 1, sessions.size());
         assertSession(sessions.get(0), (AMQSession<?, ?>) _session);
@@ -143,7 +143,7 @@ public class ConnectionRestTest extends QpidRestTestCase
         // get connection name
         String connectionName = getConnectionName();
 
-        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("/rest/session/test/test/"
+        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session/test/test/"
                 + URLDecoder.decode(connectionName, "UTF-8") + "/" + ((AMQSession<?, ?>) _session).getChannelId());
         assertEquals("Unexpected number of sessions", 1, sessions.size());
         assertSession(sessions.get(0), (AMQSession<?, ?>) _session);
@@ -210,7 +210,7 @@ public class ConnectionRestTest extends QpidRestTestCase
 
     private String getConnectionName() throws IOException
     {
-        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("/rest/virtualhost/test/test");
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/test/test");
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> connections = (List<Map<String, Object>>) hostDetails
                 .get(VirtualHostRestTest.VIRTUALHOST_CONNECTIONS_ATTRIBUTE);
