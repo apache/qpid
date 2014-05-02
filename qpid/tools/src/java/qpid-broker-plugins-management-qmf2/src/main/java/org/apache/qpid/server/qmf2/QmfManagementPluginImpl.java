@@ -81,7 +81,7 @@ import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
  * </pre>
  * @author Fraser Adams
  */
-public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagementPluginImpl>
+public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagementPluginImpl> implements QmfManagementPlugin<QmfManagementPluginImpl>
 {
     private static final Logger _log = LoggerFactory.getLogger(QmfManagementPluginImpl.class);
 
