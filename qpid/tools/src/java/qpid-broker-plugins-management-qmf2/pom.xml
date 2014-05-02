@@ -39,7 +39,7 @@
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-broker-core</artifactId>
-      <version>0.28-SNAPSHOT</version> <!--TODO: change to ${project.version} when merged to trunk -->
+      <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
 

@@ -91,7 +91,7 @@
          from the org.apache.qpid.qmf2.test package.
 
          Usage:
-         mvn test -DtestClass=<Simple Class Name> [-Dexec.args=<arguments>]
+         mvn test -DtestCase=<Simple Class Name> [-Dexec.args=<arguments>]
 
          Currently available classes:
          AgentExternalTest
