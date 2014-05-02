@@ -171,10 +171,11 @@ a source distribution:
 
 Optional support for AMQP 1.0 requires (see AMQP_1.0 for details):
 * Qpid proton-c <http://qpid.apache.org/proton>         (0.5)
-Note: If you are using a custom installed Proton it is recommended that
-you use version 0.7 or later and use the same install prefix for both Proton
-and Qpid. This is the easiest way that will ensure that Qpid finds and uses
-Proton.
+Note: If Proton is installed in a non-standard location, there are two ways to locate it:
+1. Recommended: use proton 0.7 or later and use the same install prefix
+   for both Proton and Qpid.
+2. Using pkg-config: set the PKG_CONFIG_PATH environment variable to
+   <proton-prefix>/lib[64]/pkgconfig before running cmake.
 
 Optional XML exchange requires:
  * xqilla  <http://xqilla.sourceforge.net/HomePage>     (2.0.0)
