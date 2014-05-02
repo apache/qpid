@@ -1,0 +1,161 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+
+/**
+ * Stylesheet to try and make things look not *too* bad in IE8 and below
+ */
+
+/**
+ * To handle opacity in IE < 9 we animate progid:DXImageTransform.Microsoft.gradient in itablet.js
+ * We use a transparent background image rather than background: transparent to block mouse events to the main page.
+ * progid:DXImageTransform messes with the font so we only use it for animating and use a 50% alpha png as end style.
+ */
+.popup-window, input, textarea
+{
+    background: url(/itablet/images/ie/transparent.png) repeat;
+}
+
+.popup-window.smoked
+{
+    background: url(/itablet/images/ie/smoked.png) repeat;
+}
+
+/**
+ * Create fake top rounded corners using images. Fortunately we can do this using pure CSS as ie8 supports
+ * :first-child, :before and :after so we supply the images as content.
+ */
+
+.header:before, .header:after
+{
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 5px;
+    background: url(/itablet/images/ie/radius-5px-sprite.png);
+}
+
+.header:after
+{
+    left: auto;
+    right: 0;
+    background-position: -5px;
+}
+
+ul.list li:first-child:before, ul.list li:first-child:after,
+ul.horiz-checkbox li.horiz-checkbox:first-child:before, ul.list li.horiz-checkbox:first-child label.first-child:before,
+ul.horiz-checkbox li.horiz-checkbox:first-child:after, ul.list li.horiz-checkbox:first-child label.last-child:after
+{
+    position: absolute;
+    content: "";
+    top: -2px;
+    left: -2px;
+    width: 10px;
+    height: 10px;
+    background: url(/itablet/images/ie/radius-10px-sprite.png);
+}
+
+ul.list li:first-child:after,
+ul.horiz-checkbox li.horiz-checkbox:first-child:after, ul.list li.horiz-checkbox:first-child label.last-child:after
+{
+    left: auto;
+    right: -2px;
+    background-position: -10px 0;
+}
+
+/**
+ * Create fake bottom rounded corners using images. Unfortunately this isn't as easy as the top corners because
+ * a) ie8 doesn't support :last-child and b) if we have a single list item we've already used :before and :after
+ * Unfortunately we have to resort to some JavaScript so itablet.js has some ie8 specific code to add a
+ * "last-child" class and prepend/append div elements with "before" and "after" classes. Fortunately this is
+ * fairly clean to do using jQuery using $("ul.list li:last-child") to find the item that we need to modify.
+ */
+
+ul.list li.last-child
+{
+	border-bottom: 2px groove #fff;
+}
+
+ul.list li.last-child > .before, ul.list li.last-child > .after
+{
+    position: absolute;
+    bottom: -2px;
+    left: -2px;
+    width: 10px;
+    height: 10px;
+    z-index: 1;
+    background: url(/itablet/images/ie/radius-10px-sprite.png) 0 -10px;
+}
+
+ul.list li.last-child > .after
+{
+    left: auto;
+    right: -2px;
+    background-position: -10px -10px;
+}
+
+/**
+ * For IE < 9 use solid background colour instead of a gradient - no bigee, it was a subtle gradient anyway.
+ */
+ul li.active, ul li.radio.checked.active /* Highlight in blue with white text */
+{
+    background: #035de7;
+}
+
+ul li.active.arrow
+{
+    background: #035de7 url(/itablet/images/chevron-active.png) no-repeat right;
+}
+
+ul.list li.arrow.radio.active
+{
+    background: #035de7 url(/itablet/images/blue-chevron.png) no-repeat right;
+}
+
+/**
+ * We need to apply the fake border radius to the labels in the horiz-checkbox too as child elements aren't clipped.
+ * Unfortunately IE8 doesn't seem to distinguish between the selectors ul.list li:first-child:before and 
+ * ul.list li.horiz-checkbox:first-child:before when horiz-checkbox is dynamically added (though it does if it's
+ * placed in the static HTML) this stops the <li> fake radiused border being correctly repositioned
+ * for horiz-checkboxes. By adding horiz-checkbox to the <ul> too we can use a more explicit rule in the CSS.
+ */
+
+/* First we remove the original borders that were previously added for ul.list li:first-child:before and after. */
+ul.list li.horiz-checkbox:first-child:before, ul.list li.horiz-checkbox:first-child:after
+{
+    content: ".";
+}
+
+/* The we re-add them in the correct position using the more explicit rule on ul.horiz-checkbox */
+/* We need to add the rounded borders to the labels too as they are positioned above the li in the stack. */
+ul.horiz-checkbox li.horiz-checkbox:first-child:before, ul.list li.horiz-checkbox:first-child label.first-child:before,
+ul.horiz-checkbox li.horiz-checkbox:first-child:after, ul.list li.horiz-checkbox:first-child label.last-child:after
+{
+    top: -1px;
+}
+
+canvas /* For IE < 9 the radiused borders for the canvas are actually rendered on the canvas. */
+{
+	border: 0;
+}
+
+

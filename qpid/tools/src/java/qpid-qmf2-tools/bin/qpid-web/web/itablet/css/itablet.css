@@ -1,0 +1,993 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+
+body
+{
+	font: 13px/1.5 Helvetica, Arial, 'Liberation Sans', FreeSans, sans-serif;
+    overflow-x: hidden; /* Hide horizontal scrollbar */
+    background: #dddddd;
+}
+
+p
+{
+    margin: 0;
+    padding: 11px 0 11px 0; /* top right bottom left */
+}
+
+.sidebar, .main, .popup-window, .popup-container, .popup, .scroll-area
+{
+    -moz-user-select: -moz-none; /*  Disable selection on fields other than input & textarea. */
+    -webkit-user-select: none;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+    left: 0;
+	right: 0;
+    background: #000;
+}
+
+.sidebar
+{
+	width: 250px;
+    border-right: 1px solid #000;
+    z-index: 2;
+}
+
+.main
+{
+	left: 251px;
+}
+
+.popup-window
+{
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 5;
+}
+
+.popup, .popup-container
+{
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+}
+
+.popup-container
+{
+    top: 64px;
+    bottom: 64px;
+    left: 20%;
+    right: 20%;
+
+    overflow-x: hidden;
+    box-shadow: 10px 10px 10px #777;
+}
+
+.scroll-area
+{
+	top: 44px;
+	overflow-x: hidden;
+	overflow-y: auto;
+    background: #dddddd;
+}
+
+div .mail
+{
+    background: #f5f5f5;
+}
+
+.popup .scroll-area
+{
+    -moz-border-bottom-left-radius: 5px;
+    -webkit-border-bottom-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    -moz-border-bottom-right-radius: 5px;
+    -webkit-border-bottom-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.page
+{
+	padding: 31px 5% 31px 5%; /* top right bottom left */
+}
+
+.page h1
+{
+	color: #666666;
+	text-shadow: #fff 0 1px 0;
+    text-indent: 10px;
+	font-size: 17px;
+
+    margin: 0;
+    padding: 16px 0 4px 0; /* top right bottom left */
+}
+
+.page h1.first
+{
+    padding: 0 0 4px 0; /* top right bottom left */
+}
+
+.page p.note
+{
+	color: #717880;
+	text-shadow: #fff 0 1px 0;
+	text-align: center;
+	font-size: 15px;
+    font-weight: normal;
+
+    margin: 0;
+    padding: 4px 0 16px 0; /* top right bottom left */
+}
+
+.page p.note.nopadding
+{
+    padding-bottom: 0;
+}
+
+/*------------------------------------------- Header ------------------------------------------------*/
+
+div.header
+{
+	left: 0;
+	right: 0;
+	height: 43px;
+    line-height: 43px;
+
+    -moz-border-top-left-radius: 5px;
+    -webkit-border-top-left-radius: 5px;
+    border-top-left-radius: 5px;
+    -moz-border-top-right-radius: 5px;
+    -webkit-border-top-right-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom: 1px solid #858b9b;
+
+	background: #bbb url(/itablet/images/ie/header-gradient.png) repeat-x;
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0, #fff), color-stop(1, #999));
+	background: -webkit-linear-gradient(top center, #fff 0%, #999 100%);
+	background: -moz-linear-gradient(top center, #fff 0%, #999 100%);
+	background: -ms-linear-gradient(top center, #fff 0%, #999 100%);
+	background: -o-linear-gradient(top center, #fff 0%, #999 100%);
+	background: linear-gradient(top center, #fff 0%, #999 100%);
+}
+
+div.header h1
+{
+	text-align: center;
+	font-size: 20px;
+    font-weight: bold;
+	color: #717880;
+	text-shadow: #fff 0 1px 0;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    margin: 0 12px 0 12px; /* top right bottom left */
+}
+
+div.header a.back.button + h1
+{
+    margin: 0 88px 0 88px; /* top right bottom left */
+}
+
+div.header a.cancel.button + h1
+{
+    margin: 0 62px 0 62px; /* top right bottom left */
+}
+
+/*--------------------------------------- Header Buttons --------------------------------------------*/
+
+a.button
+{
+    outline: none;
+	text-decoration: none;
+	text-shadow: rgba(0, 0, 0, 0.6) 0 -1px 0;
+	color: #ddd;
+    background: #777;
+	font-size: 12px;
+	font-weight: bold;
+	line-height: 28px;
+
+	display: block;
+    position: absolute;
+    top: 7px;
+    left: 12px;
+	height: 30px;
+
+    background: url(/itablet/images/button-sprite.png) 0px -30px repeat-x;
+}
+
+a.button:before
+{
+    position: absolute;
+    content: "";
+    top: 0;
+    left: -5px;
+    width: 5px;
+    height: 30px;
+    background: url(/itablet/images/button-sprite.png) -18px 0 no-repeat;
+}
+
+a.button:after
+{
+    position: absolute;
+    content: "";
+    top: 0;
+    right: -5px;
+    width: 5px;
+    height: 30px;
+    background: url(/itablet/images/button-sprite.png) -13px 0 no-repeat;
+}
+
+a.button:active
+{
+    background-color: #766d69;
+    background-position: 0 -60px;
+}
+
+a.button:active:before
+{
+    background-position: -41px 0;
+}
+
+a.button:active:after
+{
+    background-position: -36px 0;
+}
+
+a.button.back
+{
+    left: 20px;
+}
+
+a.button.back:before
+{
+    position: absolute;
+    left: -13px;
+    width: 13px;
+    height: 30px;
+    background-position: 0 0;
+}
+
+a.button.back:active:before
+{
+    background-position: -23px 0;
+}
+
+a.button.right
+{
+    left: auto;
+    right: 12px;
+}
+
+a.button.blue
+{
+	color: #fff;
+    background: url(/itablet/images/blue-button-sprite.png) 0px -30px repeat-x;
+}
+
+a.button.blue:before
+{
+    background: url(/itablet/images/blue-button-sprite.png) -18px 0 no-repeat;
+}
+
+a.button.blue:after
+{
+    background: url(/itablet/images/blue-button-sprite.png) -13px 0 no-repeat;
+}
+
+a.button.back.blue:before
+{
+    background-position: 0 0;
+}
+
+a.button.blue:active
+{
+    background-color: #6b6f76;
+    background-position: 0px -60px;
+}
+
+a.button.blue:active:before
+{
+    background-position: -41px 0;
+}
+
+a.button.blue:active:after
+{
+    background-position: -36px 0;
+}
+
+a.button.back.blue:active:before
+{
+    background-position: -23px 0;
+}
+
+/*----------------------------------- Toolbar and Stock Buttons -------------------------------------*/
+
+span.toolbar
+{
+    position: absolute;
+    overflow: hidden;
+    top: 7px;
+    left: auto;
+    right: 12px;
+}
+
+span.toolbar a
+{
+    outline: none;
+	text-decoration: none;
+    display: block;
+    float: left;
+    width: 32px;
+	height: 32px;
+}
+
+a.delete
+{
+    background: url(/itablet/images/delete.png) no-repeat left;
+}
+
+a.add
+{
+    background: url(/itablet/images/add.png) no-repeat left;
+}
+
+a.home
+{
+    background: url(/itablet/images/home.png) no-repeat left;
+}
+
+a.flag
+{
+    background: url(/itablet/images/flag.png) no-repeat left;
+}
+
+a.move
+{
+    background: url(/itablet/images/move.png) no-repeat left;
+}
+
+a.bin
+{
+    background: url(/itablet/images/bin.png) no-repeat left;
+}
+
+a.action
+{
+    background: url(/itablet/images/action.png) no-repeat left;
+}
+
+a.write
+{
+    background: url(/itablet/images/write.png) no-repeat left;
+}
+
+/* Add a "glowing" highlight to toolbar and clickable icons */
+span.toolbar a:active:before,
+ul.list li.clickable-icon a:active:before
+{
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 100%;
+    background: url(/itablet/images/ie/radial-gradient.png) no-repeat left;
+    background: -webkit-gradient(radial, center center, 0, center center, 16, from(rgba(255,255,255,1)), to(rgba(200,200,200,0)));
+    background: -webkit-radial-gradient(center center, circle cover, rgba(255,255,255,1), rgba(200,200,200,0) 75%);
+    background: -moz-radial-gradient(center center, circle cover, rgba(255,255,255,1), rgba(200,200,200,0) 75%);
+    background: -ms-radial-gradient(center center, circle cover, rgba(255,255,255,1), rgba(200,200,200,0) 75%);
+    background: -o-radial-gradient(center center, circle cover, rgba(255,255,255,1), rgba(200,200,200,0) 75%);
+    background: radial-gradient(center center, circle cover, rgba(255,255,255,1), rgba(200,200,200,0) 75%);
+}
+
+span.toolbar a:active:before
+{
+    position: relative;
+    float: left;
+}
+
+/*---- this is hidden for desktop browsers it is shown by the styles enabled by the media query -----*/
+
+div.header a.menu
+{
+    display: none;
+}
+
+/*------------------------------- Define the styles for list elements -------------------------------*/
+
+ul
+{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul li
+{
+    position: relative;
+    line-height: 42px;
+    padding: 1px 0 0 0; /* top right bottom left */
+
+	color: #060606;
+	font-size: 17px;
+	font-weight: bold;
+	border-bottom: 1px solid #ccc;
+}
+
+ul.list li
+{
+    line-height: 21px;
+    padding: 11px 0 11px 0;
+
+	background-color: #f7f7f7;
+	border-left: 2px groove #fff;
+	border-right: 2px groove #fff;
+}
+
+ul.list li.multiline, ul.list li.icon, ul.list li.clickable-icon
+{
+    padding: 5px 0 5px 0;
+}
+
+ul.list li:first-child
+{
+    -moz-border-top-left-radius: 10px;
+    -webkit-border-top-left-radius: 10px;
+    border-top-left-radius: 10px;
+    -moz-border-top-right-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    border-top-right-radius: 10px;
+	border-top: 2px groove #fff;
+}
+
+ul.list li:last-child
+{
+    -moz-border-bottom-left-radius: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    -moz-border-bottom-right-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+	border-bottom: 2px groove #fff;
+}
+
+ul.mail li
+{
+    line-height: 24px;
+    padding-bottom: 3px;
+}
+
+ul li.pop
+{
+	text-align: center;
+}
+
+ul li.radio.checked /* Adjust text colour on selected radio item */
+{
+	color: #385487;
+	background: #f7f7f7;
+}
+
+ul li.grey /* Grey text generally used to show inactive fields */
+{
+	color: #8f8f8f;
+}
+
+ul li.active, ul li.radio.checked.active /* Highlight in blue with white text */
+{
+	background: #035de7 url(/itablet/images/ie/active-gradient.png) repeat-x;
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0, #058cf7), color-stop(1, #035de7));
+	background: -webkit-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: -moz-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: -ms-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: -o-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	color: #fff;
+}
+
+/*------------------------------ Define the styles for anchor elements ------------------------------*/
+
+input, textarea, a
+{
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0); /* Hide the tap highlighting by making it transparent. */
+}
+
+a
+{
+    -webkit-touch-callout: none;
+    cursor: default; /* Disable the "hand" cursor over anchors. */
+}
+
+ul li a
+{
+    outline: none;
+	text-decoration: none; /* Hide the underline */
+    color: inherit;        /* Get the text colour from the item containing the anchor. */
+    display: block;        /* Treat anchor as a block element - needed to correctly display image. */
+}
+
+
+ul.list li a, label, ul.list li.arrow a, ul.mail li a, ul.list li.multiline a div
+{
+    position: relative;
+    padding: 0 11px 0 11px; /* top right bottom left */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+ul.list li.arrow a, ul.mail li.arrow a
+{
+    padding-right: 30px; /* When a list item has a chevron we need to increase anchor right padding past it. */
+}
+
+ul li.icon a, ul li.clickable-icon a
+{
+    margin-left: 5px;
+    text-indent: 40px;
+}
+
+ul.list li.icon a, ul.list li.clickable-icon a
+{
+    margin-left: 8px;
+    text-indent: 30px;
+
+    /* For icon/clickable-icon when not a multiline item we need to increase anchor top and bottom padding so 
+       that we don't end up clipping the top and bottom off the icon. */
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+ul.mail li a
+{
+    left: 8px;
+    text-indent: 18px; /* Indents the text to the right of the image. */
+}
+
+ul.mail li.unread a
+{
+    background: url(/itablet/images/blueball.png) no-repeat left;
+}
+
+
+ul li.arrow
+{
+    text-align: left; /* This resets alignment in case class="pop arrow" is used because pop centre aligns. */
+    background: url(/itablet/images/chevron.png) no-repeat right;
+}
+
+ul.list li.arrow
+{
+    background: #f7f7f7 url(/itablet/images/chevron.png) no-repeat right;
+}
+
+ul li.active.arrow
+{
+	background: url(/itablet/images/chevron-active.png) no-repeat right, #035de7 url(/itablet/images/ie/active-gradient.png) repeat-x;
+    background: url(/itablet/images/chevron-active.png) no-repeat right, -webkit-gradient(linear, left top, left bottom, color-stop(0, #058cf7), color-stop(1, #035de7));
+	background: url(/itablet/images/chevron-active.png) no-repeat right, -webkit-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: url(/itablet/images/chevron-active.png) no-repeat right, -moz-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: url(/itablet/images/chevron-active.png) no-repeat right, -ms-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: url(/itablet/images/chevron-active.png) no-repeat right, -o-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: url(/itablet/images/chevron-active.png) no-repeat right, linear-gradient(top center, #058cf7 0%, #035de7 100%);
+}
+
+/*--------------------------- Define the styles for right justified text ----------------------------*/
+
+ul li a p
+{
+    position: absolute;
+    top: 0;
+    right: 11px;
+
+    padding: 0;
+    width: 50%;
+    text-align: right;
+    text-indent: 0;
+
+	color: #464646;
+	font-weight: normal;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+ul li a p.fullwidth
+{
+    width: 100%;
+}
+
+ul li a p.date
+{
+	color: #3078da;
+	font-size: 13px;
+}
+
+ul li.arrow a p
+{
+    right: 30px;
+}
+
+/*----------------------------- Define the styles for multiline items -------------------------------*/
+
+ul.list li.multiline a
+{
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+ul.list li.multiline a div
+{
+    padding: 0;
+}
+
+ul.list li.multiline a div p
+{
+    right: 0;
+}
+
+ul li a p.sub, ul li a p.title
+{
+    position: relative;
+    top: 0;
+    left: 0;
+
+    width: auto;
+    text-align: left;
+
+	color: gray;
+	font-size: 14px;
+    line-height: 16px;
+}
+
+ul li a p.title
+{
+    color: #060606;
+}
+
+ul.list li.icon a p.sub, ul.list li.clickable-icon a p.sub,
+ul.list li.icon a p.title, ul.list li.clickable-icon a p.title
+{
+    margin-left: 30px;
+}
+
+ul.mail li a p.sub, ul.mail li a p.title
+{
+    margin-left: 18px;
+}
+
+ul.mail li a p.sub
+{
+	font-size: 12px;
+    height: 33px;
+    white-space: normal;
+}
+
+ul li.active a p, ul.mail li.active a p
+{
+	color: #fff;
+}
+
+/*------------------------------- Define the styles for input fields --------------------------------*/
+
+label
+{
+    display: block;
+}
+
+label.input /* Adding the input class to a label will allow overflow truncation to work */
+{
+    width: 115px;
+}
+
+input, .placeholder
+{
+    position: absolute;
+    top: 0;
+    left: 115px;
+    right: 11px;
+    padding: 9px 0 9px 0; /* top right bottom left */
+    border: 0;
+	font: 17px Helvetica, Arial, 'Liberation Sans', FreeSans, sans-serif;
+}
+
+
+.placeholder.textarea
+{
+    left: 11px;
+    font-size: 12px
+}
+
+.placeholder /* Used to fake HTML5 input placeholders in browsers that don't have native support. */
+{
+    padding: 12px 0 12px 0; /* top right bottom left */
+    color: #9f9f9f;
+}
+
+input.error, textarea.error
+{
+    -webkit-appearance: none;
+    moz-box-shadow: 0 0 4px red;
+    webkit-box-shadow: 0 0 4px red;
+    box-shadow: 0 0 4px red;
+}
+
+textarea
+{
+    position: relative; /* Needs to be set for fake placeholders to work properly - the z-index needs to be 1 */
+
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+
+    resize: vertical;
+
+    width: 100%;
+    height: 100px;
+
+    border: 0;
+    padding: 0 11px 0 11px;
+
+    overflow: auto;
+}
+
+/*
+ For fake placeholders to work we want to ensure the input/textarea is in the foreground and receiving events,
+ but we also need them to be transparent so we can see the placeholder through them.
+*/
+input, textarea
+{
+    background: rgba(0, 0, 0, 0);
+    z-index: 1;
+}
+
+/*---------------------------- Define the styles for radio button widget ----------------------------*/
+
+ul.list li.radio label
+{
+    padding: 0 32px 0 11px; /* top right bottom left */
+}
+
+ul.list li.radio.checked label
+{
+    background: url(/itablet/images/tick.png) no-repeat right;
+}
+
+ul.list li.radio.active.checked label
+{
+    background: url(/itablet/images/tick-active.png) no-repeat right;
+}
+
+ul.list li.arrow.radio
+{
+    background: #f7f7f7 url(/itablet/images/blue-chevron.png) no-repeat right;
+}
+
+ul.list li.arrow.radio.active
+{
+	background: url(/itablet/images/blue-chevron.png) no-repeat right, #035de7 url(/itablet/images/ie/active-gradient.png) repeat-x;
+    background: url(/itablet/images/blue-chevron.png) no-repeat right, -webkit-gradient(linear, left top, left bottom, color-stop(0, #058cf7), color-stop(1, #035de7));
+	background: url(/itablet/images/blue-chevron.png) no-repeat right, -webkit-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: url(/itablet/images/blue-chevron.png) no-repeat right, -moz-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: url(/itablet/images/blue-chevron.png) no-repeat right, -ms-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: url(/itablet/images/blue-chevron.png) no-repeat right, -o-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	background: url(/itablet/images/blue-chevron.png) no-repeat right, linear-gradient(top center, #058cf7 0%, #035de7 100%);
+}
+
+ul.list li.arrow.radio label
+{
+    padding: 0 38px 0 32px; /* top right bottom left */
+}
+
+ul.list li.arrow.radio.checked label
+{
+    background: url(/itablet/images/tick.png) no-repeat 11px;
+}
+
+ul.list li.arrow.radio.active.checked label
+{
+	background: url(/itablet/images/tick-active.png) no-repeat 11px;
+}
+
+/*------------------------------ Define the styles for checkbox widget ------------------------------*/
+
+div.checkbox
+{
+    position: absolute;
+    overflow: hidden; /* clip the child div to the size of this one */
+    top: 7px;
+    right: 11px;
+    width: 77px;
+    height: 27px;
+}
+
+div.mask
+{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background: url(/itablet/images/mask.png) no-repeat;
+}
+
+div.onoff
+{
+    position: absolute;
+    top: 0;
+    left: -50px;
+    width: 127px;
+    height: 27px;
+    background: url(/itablet/images/on_off.png) no-repeat;
+}
+
+/*------------------------- Define the styles for horizontal checkbox widget ------------------------*/
+
+ul.list li.horiz-checkbox
+{
+    display: block;
+    padding: 0;
+    line-height: 40px;
+    background: url(/itablet/images/toggle-off.png) repeat-x;
+}
+
+ul.list li.horiz-checkbox label
+{
+	color: #717880;
+	text-shadow: #fff 0 1px 0;
+
+    display: inline-block;
+    vertical-align: bottom;
+    text-align: center;
+    padding: 0;
+    width: 100%;
+    background: url(/itablet/images/toggle-off.png) repeat-x;
+}
+
+ul.list li.horiz-checkbox label span
+{
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    border-right: 1px solid #828278;
+}
+ 
+/* Use toggle-on class not checked to avoid IE6 confusing with a radio button as IE6 doesn't support multiple classes. */
+ul.list li.horiz-checkbox.toggle-on, ul.list li.horiz-checkbox label.checked
+{
+	color: #fff;
+    text-shadow: 0 0 0 #000; /* passing all the arguments will reset it to nothing */
+    background: url(/itablet/images/toggle-on.png) repeat-x;
+}
+
+ul.list li.horiz-checkbox label.checked span
+{
+    border-right: 0;
+    width: 5px;
+    height: 40px;
+    background: url(/itablet/images/toggle-on-border.png) no-repeat right;
+}
+
+ul.list li.horiz-checkbox:first-child
+{
+	border-top: 1px groove #fff;
+}
+
+/* Need to apply border radius to the labels in the horiz-checkbox too as child elements aren't clipped. */
+
+ul.list li.horiz-checkbox:first-child label.first-child
+{
+    -moz-border-top-left-radius: 10px;
+    -webkit-border-top-left-radius: 10px;
+    border-top-left-radius: 10px;
+}
+
+ul.list li.horiz-checkbox:first-child label.last-child
+{
+    -moz-border-top-right-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+ul.list li.horiz-checkbox:last-child label.first-child
+{
+    -moz-border-bottom-left-radius: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+ul.list li.horiz-checkbox:last-child label.last-child
+{
+    -moz-border-bottom-right-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+/*-------------------------------- Style for the HTML5 drawing canvas -------------------------------*/ 
+/* N.B. By the standard, CSS does not size the canvas coordinate system, it scales the content. This */
+/* means that we can't style canvas width and height, these must be set via Javascript if we wish to */
+/* use relative sizes.                                                                               */
+/*---------------------------------------------------------------------------------------------------*/ 
+canvas
+{
+	border: 2px groove #fff;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+	background-color: #f6f6f6;
+    display: block;
+}
+
+
+
+
+/*---------------------------- Detect mobile sized screen via media query ---------------------------*/
+/*
+@media only screen and (max-width: 480px)
+*/
+
+@media only screen and (max-device-width: 480px),
+       only screen and (min-device-width: 640px) and (max-device-width: 1136px) and (-webkit-min-device-pixel-ratio: 2)
+{
+    .sidebar
+    {
+        width: 100%;
+    }
+
+    .main /* We check the .main left value in JavaScript if we want to detect mobile or non-mobile */
+    {
+	    left: 0;
+    }
+
+    .popup-container
+    {   /* For some reason the Android VM I'm using isn't respecting top & bottom of zero here iPhone is fine!! */
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    /* For mobile devices display the menu back buttons */
+    div.header a.menu
+    {
+        display: block;
+    }
+
+    .sidebar ul li
+    {
+        background: url(/itablet/images/chevron.png) no-repeat right;
+    }
+
+    .sidebar ul li.active
+    {
+	    background: url(/itablet/images/chevron-active.png) no-repeat right, #035de7 url(/itablet/images/ie/active-gradient.png) repeat-x;
+        background: url(/itablet/images/chevron-active.png) no-repeat right, -webkit-gradient(linear, left top, left bottom, color-stop(0, #058cf7), color-stop(1, #035de7));
+	    background: url(/itablet/images/chevron-active.png) no-repeat right, -webkit-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	    background: url(/itablet/images/chevron-active.png) no-repeat right, -moz-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	    background: url(/itablet/images/chevron-active.png) no-repeat right, -ms-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	    background: url(/itablet/images/chevron-active.png) no-repeat right, -o-linear-gradient(top center, #058cf7 0%, #035de7 100%);
+	    background: url(/itablet/images/chevron-active.png) no-repeat right, linear-gradient(top center, #058cf7 0%, #035de7 100%);
+    }
+}
+
+
