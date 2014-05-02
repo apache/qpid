@@ -92,9 +92,9 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         validateKeyStoreAttributes(this);
     }
 
@@ -116,7 +116,7 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     }
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
+    protected boolean setState(State desiredState)
     {
         if(desiredState == State.DELETED)
         {
@@ -139,7 +139,7 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     }
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {

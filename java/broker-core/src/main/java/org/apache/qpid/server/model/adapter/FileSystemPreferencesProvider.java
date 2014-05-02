@@ -30,6 +30,6 @@ public interface FileSystemPreferencesProvider<X extends FileSystemPreferencesPr
     String PATH = "path";
     String PROVIDER_TYPE = "FileSystemPreferences";
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getPath();
 }

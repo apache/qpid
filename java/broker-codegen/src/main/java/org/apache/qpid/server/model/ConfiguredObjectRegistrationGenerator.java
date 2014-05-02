@@ -87,7 +87,6 @@ public class ConfiguredObjectRegistrationGenerator extends AbstractProcessor
                     }
                     classNames.add(e.getSimpleName().toString());
                 }
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, e.getSimpleName());
             }
             for (Map.Entry<String, Set<String>> entry : _managedObjectClasses.entrySet())
             {

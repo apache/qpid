@@ -46,9 +46,9 @@ public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
 
 
         VirtualHostNode<?> virtualHostNode = getParent(VirtualHostNode.class);

@@ -26,7 +26,7 @@ import javax.net.ssl.TrustManager;
 @ManagedObject( defaultType = "FileTrustStore" )
 public interface TrustStore<X extends TrustStore<X>> extends ConfiguredObject<X>
 {
-    @ManagedAttribute( secure = true, automate = true, mandatory = true)
+    @ManagedAttribute( secure = true, mandatory = true)
     public String getPassword();
 
     public void setPassword(String password);

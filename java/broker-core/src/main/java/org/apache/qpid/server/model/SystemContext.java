@@ -31,10 +31,10 @@ public interface SystemContext<X extends SystemContext<X>> extends ConfiguredObj
 
     BrokerOptions getBrokerOptions();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getStorePath();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getStoreType();
 
     void close();

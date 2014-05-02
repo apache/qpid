@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.model.adapter.FileSystemPreferencesProvider;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
@@ -411,8 +412,8 @@ public abstract class ConfigurationEntryStoreTestCase extends QpidTestCase
         attributes.put(Port.PORT, 9999);
         attributes.put(Port.TRANSPORTS, tcpTransportSet);
         attributes.put(Port.TCP_NO_DELAY, true);
-        attributes.put(Port.RECEIVE_BUFFER_SIZE, 1);
-        attributes.put(Port.SEND_BUFFER_SIZE, 2);
+        attributes.put(AmqpPort.RECEIVE_BUFFER_SIZE, 1);
+        attributes.put(AmqpPort.SEND_BUFFER_SIZE, 2);
         attributes.put(Port.NEED_CLIENT_AUTH, true);
         attributes.put(Port.WANT_CLIENT_AUTH, true);
 

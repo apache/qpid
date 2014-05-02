@@ -127,7 +127,7 @@ public class BrokerTestHelper
         when(virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
         AbstractVirtualHost host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class, attributes, virtualHostNode );
-        host.setDesiredState(host.getState(), State.ACTIVE);
+        host.setDesiredState(State.ACTIVE);
 
         return host;
     }

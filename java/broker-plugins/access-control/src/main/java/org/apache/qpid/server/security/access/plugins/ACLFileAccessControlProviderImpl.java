@@ -69,9 +69,9 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         if(!isDurable())
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
@@ -124,7 +124,7 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
-    public boolean setState(State currentState, State desiredState)
+    public boolean setState(State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
         State state = _state.get();
@@ -186,7 +186,7 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {

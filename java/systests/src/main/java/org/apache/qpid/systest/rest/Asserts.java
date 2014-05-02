@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.queue.LastValueQueue;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.SortedQueue;
@@ -63,6 +64,7 @@ public class Asserts
                                 ConfiguredObject.LAST_UPDATED_TIME,
                                 ConfiguredObject.DESCRIPTION,
                                 ConfiguredObject.CONTEXT,
+                                ConfiguredObject.DESIRED_STATE,
                                 VirtualHost.SUPPORTED_QUEUE_TYPES,
                                 VirtualHost.TYPE,
                                 VirtualHost.MESSAGE_STORE_SETTINGS);
@@ -120,7 +122,8 @@ public class Asserts
                                         Queue.MESSAGE_GROUP_KEY,
                                         Queue.MESSAGE_GROUP_SHARED_GROUPS,
                                         PriorityQueue.PRIORITIES,
-                                        ConfiguredObject.CONTEXT);
+                                        ConfiguredObject.CONTEXT,
+                                        ConfiguredObject.DESIRED_STATE);
 
         assertEquals("Unexpected value of queue attribute " + Queue.NAME, queueName, queueData.get(Queue.NAME));
         assertNotNull("Unexpected value of queue attribute " + Queue.ID, queueData.get(Queue.ID));
@@ -226,7 +229,8 @@ public class Asserts
                                 ConfiguredObject.LAST_UPDATED_BY,
                                 ConfiguredObject.LAST_UPDATED_TIME,
                                 ConfiguredObject.DESCRIPTION,
-                                ConfiguredObject.CONTEXT);
+                                ConfiguredObject.CONTEXT,
+                                ConfiguredObject.DESIRED_STATE);
 
         assertEquals("Unexpected value for connection attribute " + Connection.PORT,
                      TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, connectionData.get(Connection.PORT));
@@ -279,6 +283,7 @@ public class Asserts
                                     ConfiguredObject.LAST_UPDATED_TIME,
                                     ConfiguredObject.DESCRIPTION,
                                     ConfiguredObject.CONTEXT,
+                                    ConfiguredObject.DESIRED_STATE,
                                     Port.AUTHENTICATION_PROVIDER,
                                     Port.KEY_STORE,
                                     Port.TRUST_STORES,
@@ -296,11 +301,12 @@ public class Asserts
                                     ConfiguredObject.LAST_UPDATED_TIME,
                                     ConfiguredObject.DESCRIPTION,
                                     ConfiguredObject.CONTEXT,
+                                    ConfiguredObject.DESIRED_STATE,
                                     Port.AUTHENTICATION_PROVIDER,
                                     Port.BINDING_ADDRESS,
                                     Port.TCP_NO_DELAY,
-                                    Port.SEND_BUFFER_SIZE,
-                                    Port.RECEIVE_BUFFER_SIZE,
+                                    AmqpPort.SEND_BUFFER_SIZE,
+                                    AmqpPort.RECEIVE_BUFFER_SIZE,
                                     Port.NEED_CLIENT_AUTH,
                                     Port.WANT_CLIENT_AUTH,
                                     Port.KEY_STORE,
@@ -332,7 +338,8 @@ public class Asserts
                                 ConfiguredObject.LAST_UPDATED_BY,
                                 ConfiguredObject.LAST_UPDATED_TIME,
                                 ConfiguredObject.DESCRIPTION,
-                                ConfiguredObject.CONTEXT);
+                                ConfiguredObject.CONTEXT,
+                                ConfiguredObject.DESIRED_STATE);
 
         assertEquals("Unexpected value of exchange attribute " + Exchange.NAME, exchangeName,
                      exchangeData.get(Exchange.NAME));
@@ -368,7 +375,8 @@ public class Asserts
                                 ConfiguredObject.LAST_UPDATED_BY,
                                 ConfiguredObject.LAST_UPDATED_TIME,
                                 ConfiguredObject.DESCRIPTION,
-                                ConfiguredObject.CONTEXT);
+                                ConfiguredObject.CONTEXT,
+                                ConfiguredObject.DESIRED_STATE);
 
         assertEquals("Unexpected binding attribute " + Binding.NAME, bindingName, binding.get(Binding.NAME));
         assertEquals("Unexpected binding attribute " + Binding.QUEUE, queueName, binding.get(Binding.QUEUE));

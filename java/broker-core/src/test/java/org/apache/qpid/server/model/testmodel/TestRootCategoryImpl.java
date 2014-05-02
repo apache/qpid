@@ -60,7 +60,7 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
     }
 
     @Override
-    protected boolean setState(final State currentState, final State desiredState)
+    protected boolean setState(final State desiredState)
     {
         return false;
     }

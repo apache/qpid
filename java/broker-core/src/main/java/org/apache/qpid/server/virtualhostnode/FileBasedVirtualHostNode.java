@@ -27,7 +27,7 @@ public interface FileBasedVirtualHostNode<X extends FileBasedVirtualHostNode<X>>
 {
     public static final String STORE_PATH = "storePath";
 
-    @ManagedAttribute(automate = true, mandatory = true)
+    @ManagedAttribute(mandatory = true)
     public String getStorePath();
 
 }

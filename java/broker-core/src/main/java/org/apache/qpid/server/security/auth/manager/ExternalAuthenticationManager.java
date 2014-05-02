@@ -30,6 +30,6 @@ public interface ExternalAuthenticationManager<T extends ExternalAuthenticationM
     String PROVIDER_TYPE = "External";
     String ATTRIBUTE_USE_FULL_DN = "useFullDN";
 
-    @ManagedAttribute( automate = true , description = "Use the full DN as the Username")
+    @ManagedAttribute( description = "Use the full DN as the Username")
     boolean getUseFullDN();
 }

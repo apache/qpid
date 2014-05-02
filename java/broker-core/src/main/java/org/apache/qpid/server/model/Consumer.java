@@ -29,19 +29,19 @@ public interface Consumer<X extends Consumer<X>> extends ConfiguredObject<X>
     public String SELECTOR = "selector";
     public String SETTLEMENT_MODE = "settlementMode";
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getDistributionMode();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getSettlementMode();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     boolean isExclusive();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     boolean isNoLocal();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getSelector();
 
     @ManagedStatistic

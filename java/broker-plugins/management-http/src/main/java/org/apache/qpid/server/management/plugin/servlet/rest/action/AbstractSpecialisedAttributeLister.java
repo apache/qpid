@@ -59,9 +59,9 @@ abstract class AbstractSpecialisedAttributeLister<T extends ConfiguredObject>  i
             for(ConfiguredObjectAttribute<?, ?> attr : typeSpecificAttributes)
             {
                 attributeNames.add(attr.getName());
-                if(!"".equals(attr.getAnnotation().description()))
+                if(!"".equals(attr.getDescription()))
                 {
-                    descriptions.put(attr.getName(), attr.getAnnotation().description());
+                    descriptions.put(attr.getName(), attr.getDescription());
                 }
             }
             data.put(ATTRIBUTES, attributeNames);

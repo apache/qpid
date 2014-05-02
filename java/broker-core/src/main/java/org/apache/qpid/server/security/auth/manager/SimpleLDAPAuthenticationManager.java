@@ -31,21 +31,21 @@ public interface SimpleLDAPAuthenticationManager<X extends SimpleLDAPAuthenticat
     String PROVIDER_TYPE = "SimpleLDAP";
     String TRUST_STORE = "trustStore";
 
-    @ManagedAttribute( automate = true, description = "LDAP server URL" )
+    @ManagedAttribute( description = "LDAP server URL" )
     String getProviderUrl();
 
-    @ManagedAttribute( automate = true, description = "LDAP authentication URL")
+    @ManagedAttribute( description = "LDAP authentication URL")
     String getProviderAuthUrl();
 
-    @ManagedAttribute( automate = true, description = "Search context")
+    @ManagedAttribute( description = "Search context")
     String getSearchContext();
 
-    @ManagedAttribute( automate = true, description = "Search filter")
+    @ManagedAttribute( description = "Search filter")
     String getSearchFilter();
 
-    @ManagedAttribute( automate = true, description = "LDAP context factory")
+    @ManagedAttribute( description = "LDAP context factory")
     String getLdapContextFactory();
 
-    @ManagedAttribute( automate = true, description = "Trust store name")
+    @ManagedAttribute( description = "Trust store name")
     TrustStore getTrustStore();
 }

@@ -175,9 +175,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     }
 
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         String name = getName();
         if (name == null || "".equals(name.trim()))
         {
@@ -347,7 +347,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {
@@ -404,7 +404,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             case ACTIVE:
                 return State.ACTIVE;
             case PASSIVE:
-                return State.REPLICA;
+                // TODO
+                return State.ACTIVE;
             case STOPPED:
                 return State.STOPPED;
             case ERRORED:
@@ -1248,7 +1249,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
+    protected boolean setState(State desiredState)
     {
         if (desiredState == State.ACTIVE)
         {
@@ -1273,7 +1274,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 if (getVirtualHostState() == VirtualHostState.ACTIVE
                     || getVirtualHostState() == VirtualHostState.INITIALISING)
                 {
-                    setDesiredState(currentState, State.STOPPED);
+                    setDesiredState(State.STOPPED);
                 }
 
                 MessageStore ms = getMessageStore();

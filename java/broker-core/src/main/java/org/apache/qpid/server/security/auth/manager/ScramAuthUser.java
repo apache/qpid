@@ -68,9 +68,9 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         if(!isDurable())
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
@@ -87,7 +87,7 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
         }
     }
     @Override
-    protected boolean setState(final State currentState, final State desiredState)
+    protected boolean setState(final State desiredState)
     {
         if(desiredState == State.DELETED)
         {

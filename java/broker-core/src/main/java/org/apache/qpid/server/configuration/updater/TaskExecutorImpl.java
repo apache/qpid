@@ -32,12 +32,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.State;
+
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class TaskExecutorImpl implements TaskExecutor
@@ -46,25 +46,20 @@ public class TaskExecutorImpl implements TaskExecutor
     private static final Logger LOGGER = Logger.getLogger(TaskExecutorImpl.class);
 
     private volatile Thread _taskThread;
-    private final AtomicReference<State> _state;
+    private final AtomicBoolean _running = new AtomicBoolean();
     private volatile ExecutorService _executor;
 
 
-    public TaskExecutorImpl()
-    {
-        _state = new AtomicReference<State>(State.INITIALISING);
-    }
-
     @Override
-    public State getState()
+    public boolean isRunning()
     {
-        return _state.get();
+        return _running.get();
     }
 
     @Override
     public void start()
     {
-        if (_state.compareAndSet(State.INITIALISING, State.ACTIVE))
+        if (_running.compareAndSet(false, true))
         {
             LOGGER.debug("Starting task executor");
             _executor = Executors.newFixedThreadPool(1, new ThreadFactory()
@@ -83,7 +78,7 @@ public class TaskExecutorImpl implements TaskExecutor
     @Override
     public void stopImmediately()
     {
-        if (_state.compareAndSet(State.ACTIVE, State.STOPPED))
+        if (_running.compareAndSet(true,false))
         {
             ExecutorService executor = _executor;
             if (executor != null)
@@ -108,7 +103,7 @@ public class TaskExecutorImpl implements TaskExecutor
     @Override
     public void stop()
     {
-        if (_state.compareAndSet(State.ACTIVE, State.STOPPED))
+        if (_running.compareAndSet(true,false))
         {
             ExecutorService executor = _executor;
             if (executor != null)
@@ -288,7 +283,7 @@ public class TaskExecutorImpl implements TaskExecutor
 
     private void checkState()
     {
-        if (_state.get() != State.ACTIVE)
+        if (!_running.get())
         {
             throw new IllegalStateException("Task executor is not in ACTIVE state");
         }

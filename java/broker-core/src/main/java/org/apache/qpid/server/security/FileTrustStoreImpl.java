@@ -75,9 +75,9 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         validateTrustStore(this);
         if(!isDurable())
         {
@@ -92,7 +92,7 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
+    protected boolean setState(State desiredState)
     {
         if(desiredState == State.DELETED)
         {
@@ -107,7 +107,7 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
                 {
                     for (TrustStore store : trustStores)
                     {
-                        if (storeName.equals(store.getAttribute(TrustStore.NAME)))
+                        if(storeName.equals(store.getAttribute(TrustStore.NAME)))
                         {
                             throw new IntegrityViolationException("Trust store '"
                                                                   + storeName
@@ -121,12 +121,18 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
             Collection<AuthenticationProvider> authenticationProviders = new ArrayList<AuthenticationProvider>(_broker.getAuthenticationProviders());
             for (AuthenticationProvider authProvider : authenticationProviders)
             {
-                Object attributeType = authProvider.getAttribute(AuthenticationProvider.TYPE);
-                Object attributeValue = authProvider.getAttribute(SimpleLDAPAuthenticationManager.TRUST_STORE);
-                if (SimpleLDAPAuthenticationManager.PROVIDER_TYPE.equals(attributeType)
-                    && storeName.equals(attributeValue))
+                if(authProvider.getAttributeNames().contains(SimpleLDAPAuthenticationManager.TRUST_STORE))
                 {
-                    throw new IntegrityViolationException("Trust store '" + storeName + "' can't be deleted as it is in use by an authentication manager: " + authProvider.getName());
+                    Object attributeType = authProvider.getAttribute(AuthenticationProvider.TYPE);
+                    Object attributeValue = authProvider.getAttribute(SimpleLDAPAuthenticationManager.TRUST_STORE);
+                    if (SimpleLDAPAuthenticationManager.PROVIDER_TYPE.equals(attributeType)
+                        && storeName.equals(attributeValue))
+                    {
+                        throw new IntegrityViolationException("Trust store '"
+                                                              + storeName
+                                                              + "' can't be deleted as it is in use by an authentication manager: "
+                                                              + authProvider.getName());
+                    }
                 }
             }
             deleted();
@@ -136,7 +142,7 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {

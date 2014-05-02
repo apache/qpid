@@ -119,7 +119,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         attributes.put(VirtualHost.ID, UUID.randomUUID());
         StandardVirtualHost host = new StandardVirtualHost(attributes, _virtualHostNode);
         host.create();
-        host.setDesiredState(host.getState(), State.ACTIVE);
+        host.setDesiredState(State.ACTIVE);
         return host;
     }
 

@@ -27,6 +27,6 @@ import org.apache.qpid.server.model.ManagedObject;
 @ManagedObject( category = false, type="AclFile" )
 public interface ACLFileAccessControlProvider<X extends ACLFileAccessControlProvider<X>> extends AccessControlProvider<X>
 {
-    @ManagedAttribute( automate = true, mandatory = true, description = "File location" )
+    @ManagedAttribute( mandatory = true, description = "File location" )
     String getPath();
 }

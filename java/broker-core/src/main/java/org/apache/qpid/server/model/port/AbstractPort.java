@@ -86,9 +86,9 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
 
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
 
         boolean useTLSTransport = getTransports().contains(Transport.SSL) || getTransports().contains(Transport.WSS);
 
@@ -282,7 +282,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     }
 
     @Override
-    public boolean setState(State currentState, State desiredState)
+    public boolean setState(State desiredState)
     {
         State state = _state.get();
         if (desiredState == State.DELETED)
@@ -355,7 +355,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
 
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {

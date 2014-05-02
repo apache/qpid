@@ -43,37 +43,37 @@ public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
     String TRANSPORT = "transport";
     String PORT = "port";
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getClientId();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getClientVersion();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     boolean isIncoming();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getLocalAddress();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getPrincipal();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getRemoteAddress();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getRemoteProcessName();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getRemoteProcessPid();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     long getSessionCountLimit();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Transport getTransport();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Port getPort();
 
     @ManagedStatistic

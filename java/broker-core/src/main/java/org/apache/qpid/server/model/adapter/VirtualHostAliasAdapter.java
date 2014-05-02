@@ -86,7 +86,7 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
     }
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
+    protected boolean setState(State desiredState)
     {
         // TODO: state is not supported at the moment
         return false;

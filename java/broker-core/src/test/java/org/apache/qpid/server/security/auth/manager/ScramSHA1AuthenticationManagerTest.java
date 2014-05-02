@@ -96,7 +96,7 @@ public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
         assertEquals("Manager should have exactly one user child",1, _authManager.getUsers().size());
 
 
-        user.setDesiredState(State.ACTIVE, State.DELETED);
+        user.setDesiredState(State.DELETED);
 
         assertEquals("No users should be present after child deletion", 0, _authManager.getChildren(User.class).size());
 

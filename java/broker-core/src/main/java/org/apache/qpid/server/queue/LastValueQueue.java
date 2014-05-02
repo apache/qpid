@@ -32,6 +32,6 @@ public interface LastValueQueue<X extends LastValueQueue<X>> extends AMQQueue<X>
     @ManagedContextDefault( name = "queue.lvqKey" )
     String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
 
-    @ManagedAttribute(automate = true, defaultValue = "${queue.lvqKey}")
+    @ManagedAttribute(defaultValue = "${queue.lvqKey}")
     String getLvqKey();
 }

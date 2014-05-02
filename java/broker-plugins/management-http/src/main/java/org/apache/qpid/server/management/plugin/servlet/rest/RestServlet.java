@@ -541,7 +541,7 @@ public class RestServlet extends AbstractServlet
             Collection<ConfiguredObject<?>> allObjects = getObjects(request);
             for(ConfiguredObject o : allObjects)
             {
-                o.setDesiredState(o.getState(), State.DELETED);
+                o.setDesiredState(State.DELETED);
             }
 
             response.setStatus(HttpServletResponse.SC_OK);

@@ -53,42 +53,47 @@ public abstract class AbstractUnresolvedObject<C extends ConfiguredObject<C>> im
                 ConfiguredObjectTypeRegistry.getAttributes(clazz);
         for(ConfiguredObjectAttribute<? super C, ?> attribute : attributes)
         {
-            final Class<?> attributeType = attribute.getType();
-            if(ConfiguredObject.class.isAssignableFrom(attributeType))
+            if(attribute.isPersisted())
             {
-                addUnresolvedObject((Class<? extends ConfiguredObject>) attributeType, attribute.getName(), attribute.getAnnotation().mandatory());
-            }
-            else if(Collection.class.isAssignableFrom(attributeType))
-            {
-                Type returnType = attribute.getGetter().getGenericReturnType();
-                Class<? extends ConfiguredObject> attrClass = getMemberType(returnType);
-                if(attrClass != null)
+                final Class<?> attributeType = attribute.getType();
+                if (ConfiguredObject.class.isAssignableFrom(attributeType))
                 {
-                    Object attrValue = _record.getAttributes().get(attribute.getName());
-                    if(attrValue != null)
+                    addUnresolvedObject((Class<? extends ConfiguredObject>) attributeType,
+                                        attribute.getName(),
+                                        attribute.isAutomated() && ((ConfiguredAutomatedAttribute<? super C,?>)attribute).isMandatory());
+                }
+                else if (Collection.class.isAssignableFrom(attributeType))
+                {
+                    Type returnType = attribute.getGetter().getGenericReturnType();
+                    Class<? extends ConfiguredObject> attrClass = getMemberType(returnType);
+                    if (attrClass != null)
                     {
-                        if (attrValue instanceof Collection)
+                        Object attrValue = _record.getAttributes().get(attribute.getName());
+                        if (attrValue != null)
                         {
-                            for (Object val : (Collection) attrValue)
+                            if (attrValue instanceof Collection)
                             {
-                                addUnresolvedObject(attrClass, attribute.getName(), val);
+                                for (Object val : (Collection) attrValue)
+                                {
+                                    addUnresolvedObject(attrClass, attribute.getName(), val);
+                                }
                             }
-                        }
-                        else if(attrValue instanceof Object[])
-                        {
-                            for (Object val : (Object[]) attrValue)
+                            else if (attrValue instanceof Object[])
                             {
-                                addUnresolvedObject(attrClass, attribute.getName(), val);
+                                for (Object val : (Object[]) attrValue)
+                                {
+                                    addUnresolvedObject(attrClass, attribute.getName(), val);
+                                }
                             }
-                        }
-                        else
-                        {
-                            addUnresolvedObject(attrClass, attribute.getName(), attrValue);
+                            else
+                            {
+                                addUnresolvedObject(attrClass, attribute.getName(), attrValue);
+                            }
                         }
                     }
+
+
                 }
-
-
             }
         }
     }

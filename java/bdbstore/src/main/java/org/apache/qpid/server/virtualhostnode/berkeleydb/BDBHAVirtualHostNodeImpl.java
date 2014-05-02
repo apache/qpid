@@ -37,9 +37,8 @@ import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
-
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
+
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -385,7 +384,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     }
                 });
             }
-            host.setDesiredState(host.getState(), State.ACTIVE);
+            host.setDesiredState(State.ACTIVE);
 
         }
         catch (Exception e)
@@ -422,7 +421,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         VirtualHost<?,?,?> virtualHost = getVirtualHost();
         if (virtualHost!= null)
         {
-            virtualHost.setDesiredState(virtualHost.getState(), State.STOPPED);
+            virtualHost.setDesiredState(State.STOPPED);
         }
     }
 
@@ -655,13 +654,13 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
 
         @Override
-        public boolean setState(State currentState, State desiredState)
+        public boolean setState(State desiredState)
         {
             if (desiredState != State.STOPPED)
             {
                 throw new IllegalArgumentException("Unsupported state " + desiredState);
             }
-            return super.setState(currentState, desiredState);
+            return super.setState(desiredState);
         }
     }
 

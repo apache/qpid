@@ -35,7 +35,6 @@ import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class TaskExecutorTest extends TestCase
@@ -62,13 +61,13 @@ public class TaskExecutorTest extends TestCase
 
     public void testGetState()
     {
-        assertEquals("Unexpected initial state", State.INITIALISING, _executor.getState());
+        assertFalse("Unexpected initial state", _executor.isRunning());
     }
 
     public void testStart()
     {
         _executor.start();
-        assertEquals("Unexpected started state", State.ACTIVE, _executor.getState());
+        assertTrue("Unexpected started state", _executor.isRunning());
     }
 
     public void testStopImmediately() throws Exception
@@ -112,7 +111,7 @@ public class TaskExecutorTest extends TestCase
         assertTrue("The first task has not been triggered", waitForCallLatch.await(1000, TimeUnit.MILLISECONDS));
 
         _executor.stopImmediately();
-        assertEquals("Unexpected stopped state", State.STOPPED, _executor.getState());
+        assertFalse("Unexpected stopped state", _executor.isRunning());
 
         Exception e = submitExceptions.poll(1000l, TimeUnit.MILLISECONDS);
         assertNotNull("The task execution was not interrupted or cancelled", e);
@@ -129,7 +128,7 @@ public class TaskExecutorTest extends TestCase
     {
         _executor.start();
         _executor.stop();
-        assertEquals("Unexpected stopped state", State.STOPPED, _executor.getState());
+        assertFalse("Unexpected stopped state", _executor.isRunning());
     }
 
     public void testSubmitAndWait() throws Exception

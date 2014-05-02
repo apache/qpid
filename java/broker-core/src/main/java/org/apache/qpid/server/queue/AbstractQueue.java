@@ -171,7 +171,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @ManagedAttributeField
     private ExclusivityPolicy _exclusive;
 
-    private Object _exclusiveOwner; // could be connection, session, Principal or a String forset the container name
+    private Object _exclusiveOwner; // could be connection, session, Principal or a String for the container name
 
     private final Set<NotificationCheck> _notificationChecks =
             Collections.synchronizedSet(EnumSet.noneOf(NotificationCheck.class));
@@ -246,9 +246,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         if (_queueFlowResumeSizeBytes > _queueFlowControlSizeBytes)
         {
             throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
@@ -302,9 +302,17 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
                 case PRINCIPAL:
                     _exclusiveOwner = sessionModel.getConnectionModel().getAuthorizedPrincipal();
+                    if(isDurable())
+                    {
+                        _virtualHost.getDurableConfigurationStore().update(false,asObjectRecord());
+                    }
                     break;
                 case CONTAINER:
                     _exclusiveOwner = sessionModel.getConnectionModel().getRemoteContainerName();
+                    if(isDurable())
+                    {
+                        _virtualHost.getDurableConfigurationStore().update(false,asObjectRecord());
+                    }
                     break;
                 case CONNECTION:
                     _exclusiveOwner = sessionModel.getConnectionModel();
@@ -2510,7 +2518,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
 
     @Override
-    protected boolean setState(final State currentState, final State desiredState)
+    protected boolean setState(final State desiredState)
     {
         if(desiredState == State.DELETED)
         {

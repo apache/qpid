@@ -29,6 +29,6 @@ public interface BDBVirtualHostNode<X extends BDBVirtualHostNode<X>> extends Fil
 {
     public static final String ENVIRONMENT_CONFIGURATION = "environmentConfiguration";
 
-    @ManagedAttribute(mandatory=false, automate=true)
+    @ManagedAttribute(mandatory=false)
     Map<String, String> getEnvironmentConfiguration();
 }

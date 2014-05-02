@@ -32,6 +32,6 @@ public interface PriorityQueue<X extends PriorityQueue<X>> extends AMQQueue<X>
     @ManagedContextDefault( name = "queue.priorities")
     int DEFAULT_PRIORITY_LEVELS = 10;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.priorities}")
+    @ManagedAttribute( defaultValue = "${queue.priorities}")
     int getPriorities();
 }

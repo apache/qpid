@@ -45,89 +45,89 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     String QUEUE_FLOW_RESUME_SIZE_BYTES = "queueFlowResumeSizeBytes";
     String QUEUE_FLOW_STOPPED = "queueFlowStopped";
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     Exchange getAlternateExchange();
 
-    @ManagedAttribute( automate = true, defaultValue = "NONE" )
+    @ManagedAttribute( defaultValue = "NONE" )
     ExclusivityPolicy getExclusive();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute( persist = true )
     String getOwner();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     boolean isNoLocal();
 
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getMessageGroupKey();
 
     @ManagedContextDefault( name = "qpid.broker_default-shared-message-group")
     String DEFAULT_SHARED_MESSAGE_GROUP = "qpid.no-group";
 
-    @ManagedAttribute( automate = true, defaultValue = "${qpid.broker_default-shared-message-group}")
+    @ManagedAttribute( defaultValue = "${qpid.broker_default-shared-message-group}")
     String getMessageGroupDefaultGroup();
 
     @ManagedContextDefault( name = "queue.maximumDistinctGroups")
     int DEFAULT_MAXIMUM_DISTINCT_GROUPS = 255;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.maximumDistinctGroups}")
+    @ManagedAttribute( defaultValue = "${queue.maximumDistinctGroups}")
     int getMaximumDistinctGroups();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     boolean isMessageGroupSharedGroups();
 
     @ManagedContextDefault( name = "queue.maximumDeliveryAttempts")
     int DEFAULT_MAXIMUM_DELIVERY_ATTEMPTS = 0;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.maximumDeliveryAttempts}")
+    @ManagedAttribute( defaultValue = "${queue.maximumDeliveryAttempts}")
     int getMaximumDeliveryAttempts();
 
     @ManagedContextDefault( name = "queue.queueFlowControlSizeBytes")
     long DEFAULT_FLOW_CONTROL_SIZE_BYTES = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.queueFlowControlSizeBytes}")
+    @ManagedAttribute( defaultValue = "${queue.queueFlowControlSizeBytes}")
     long getQueueFlowControlSizeBytes();
 
     @ManagedContextDefault( name = "queue.queueFlowResumeSizeBytes")
     long DEFAULT_FLOW_CONTROL_RESUME_SIZE_BYTES = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.queueFlowResumeSizeBytes}")
+    @ManagedAttribute( defaultValue = "${queue.queueFlowResumeSizeBytes}")
     long getQueueFlowResumeSizeBytes();
 
 
     // TODO - this is not an attribute
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     boolean isQueueFlowStopped();
 
     @ManagedContextDefault( name = "queue.alertThresholdMessageAge")
     long DEFAULT_ALERT_THRESHOLD_MESSAGE_AGE = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.alertThresholdMessageAge}")
+    @ManagedAttribute( defaultValue = "${queue.alertThresholdMessageAge}")
     long getAlertThresholdMessageAge();
 
     @ManagedContextDefault( name = "queue.alertThresholdMessageSize")
     long DEFAULT_ALERT_THRESHOLD_MESSAGE_SIZE = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.alertThresholdMessageSize}")
+    @ManagedAttribute( defaultValue = "${queue.alertThresholdMessageSize}")
     long getAlertThresholdMessageSize();
 
     @ManagedContextDefault( name = "queue.alertThresholdQueueDepthBytes")
     long DEFAULT_ALERT_THRESHOLD_QUEUE_DEPTH = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.alertThresholdQueueDepthBytes}")
+    @ManagedAttribute( defaultValue = "${queue.alertThresholdQueueDepthBytes}")
     long getAlertThresholdQueueDepthBytes();
 
     @ManagedContextDefault( name = "queue.alertThresholdQueueDepthMessages")
     long DEFAULT_ALERT_THRESHOLD_MESSAGE_COUNT = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.alertThresholdQueueDepthMessages}")
+    @ManagedAttribute( defaultValue = "${queue.alertThresholdQueueDepthMessages}")
     long getAlertThresholdQueueDepthMessages();
 
 
     @ManagedContextDefault( name = "queue.alertRepeatGap")
     long DEFAULT_ALERT_REPEAT_GAP = 30000l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.alertRepeatGap}")
+    @ManagedAttribute( defaultValue = "${queue.alertRepeatGap}")
     long getAlertRepeatGap();
 
 

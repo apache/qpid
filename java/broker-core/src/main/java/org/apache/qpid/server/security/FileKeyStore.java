@@ -57,18 +57,18 @@ public interface FileKeyStore<X extends FileKeyStore<X>> extends KeyStore<X>
                 }
             };
 
-    @ManagedAttribute( automate = true, mandatory = true)
+    @ManagedAttribute(  mandatory = true)
     String getPath();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getCertificateAlias();
 
-    @ManagedAttribute( automate = true, defaultValue = "${keyStoreFile.keyManagerFactoryAlgorithm}" )
+    @ManagedAttribute( defaultValue = "${keyStoreFile.keyManagerFactoryAlgorithm}" )
     String getKeyManagerFactoryAlgorithm();
 
-    @ManagedAttribute( automate = true, defaultValue = "${keyStoreFile.keyStoreType}" )
+    @ManagedAttribute( defaultValue = "${keyStoreFile.keyStoreType}" )
     String getKeyStoreType();
 
-    @ManagedAttribute( secure = true, automate = true, mandatory = true )
+    @ManagedAttribute( secure = true, mandatory = true )
     String getPassword();
 }

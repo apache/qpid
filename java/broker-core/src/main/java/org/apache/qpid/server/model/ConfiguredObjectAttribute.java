@@ -22,27 +22,29 @@ package org.apache.qpid.server.model;
 
 import java.lang.reflect.Method;
 
-public final class ConfiguredObjectAttribute<C extends ConfiguredObject, T> extends ConfiguredObjectAttributeOrStatistic<C,T>
+public abstract class ConfiguredObjectAttribute<C extends ConfiguredObject, T> extends ConfiguredObjectAttributeOrStatistic<C,T>
 {
 
-    private final ManagedAttribute _annotation;
 
     ConfiguredObjectAttribute(Class<C> clazz,
-                              final Method getter,
-                              final ManagedAttribute annotation)
+                              final Method getter)
     {
         super(getter);
         if(getter.getParameterTypes().length != 0)
         {
             throw new IllegalArgumentException("ManagedAttribute annotation should only be added to no-arg getters");
         }
-        _annotation = annotation;
     }
 
-    public ManagedAttribute getAnnotation()
-    {
-        return _annotation;
-    }
+    public abstract boolean isAutomated();
+
+    public abstract boolean isDerived();
+
+    public abstract boolean isSecure();
+
+    public abstract boolean isPersisted();
+
+    public abstract String getDescription();
 
     public T convert(final Object value, C object)
     {

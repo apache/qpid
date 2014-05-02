@@ -47,47 +47,47 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String MODEL_VERSION                        = "modelVersion";
 
     // TODO - this isn't really an attribute
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Collection<String> getSupportedExchangeTypes();
 
     // TODO - this isn't really an attribute
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Collection<String> getSupportedQueueTypes();
 
     @ManagedContextDefault( name = "queue.deadLetterQueueEnabled")
     public static final boolean DEFAULT_DEAD_LETTER_QUEUE_ENABLED = false;
 
-    @ManagedAttribute( automate = true, defaultValue = "${queue.deadLetterQueueEnabled}")
+    @ManagedAttribute( defaultValue = "${queue.deadLetterQueueEnabled}")
     boolean isQueue_deadLetterQueueEnabled();
 
     @ManagedContextDefault( name = "virtualhost.housekeepingCheckPeriod")
     public static final long DEFAULT_HOUSEKEEPING_CHECK_PERIOD = 30000l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.housekeepingCheckPeriod}")
+    @ManagedAttribute( defaultValue = "${virtualhost.housekeepingCheckPeriod}")
     long getHousekeepingCheckPeriod();
 
     @ManagedContextDefault( name = "virtualhost.storeTransactionIdleTimeoutClose")
     public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_CLOSE = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionIdleTimeoutClose}")
+    @ManagedAttribute( defaultValue = "${virtualhost.storeTransactionIdleTimeoutClose}")
     long getStoreTransactionIdleTimeoutClose();
 
     @ManagedContextDefault( name = "virtualhost.storeTransactionIdleTimeoutWarn")
     public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionIdleTimeoutWarn}")
+    @ManagedAttribute( defaultValue = "${virtualhost.storeTransactionIdleTimeoutWarn}")
     long getStoreTransactionIdleTimeoutWarn();
 
     @ManagedContextDefault( name = "virtualhost.storeTransactionOpenTimeoutClose")
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionOpenTimeoutClose}")
+    @ManagedAttribute( defaultValue = "${virtualhost.storeTransactionOpenTimeoutClose}")
     long getStoreTransactionOpenTimeoutClose();
 
     @ManagedContextDefault( name = "virtualhost.storeTransactionOpenTimeoutWarn")
     public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
 
-    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.storeTransactionOpenTimeoutWarn}")
+    @ManagedAttribute( defaultValue = "${virtualhost.storeTransactionOpenTimeoutWarn}")
     long getStoreTransactionOpenTimeoutWarn();
 
     @ManagedContextDefault( name = "virtualhost.housekeepingThreadCount")
@@ -101,13 +101,13 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
                 }
             };
 
-    @ManagedAttribute( automate = true, defaultValue = "${virtualhost.housekeepingThreadCount}")
+    @ManagedAttribute( defaultValue = "${virtualhost.housekeepingThreadCount}")
     int getHousekeepingThreadCount();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     Map<String, Object> getMessageStoreSettings();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute( persist = true )
     String getModelVersion();
 
     @ManagedStatistic

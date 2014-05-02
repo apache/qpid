@@ -72,9 +72,9 @@ abstract public class AbstractPortWithAuthProvider<X extends AbstractPortWithAut
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         boolean useClientAuth = getNeedClientAuth() || getWantClientAuth();
 
         if(useClientAuth && (getTrustStores() == null || getTrustStores().isEmpty()))

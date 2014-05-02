@@ -20,14 +20,19 @@
  */
 package org.apache.qpid.server.store;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.security.auth.Subject;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -39,6 +44,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
+import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageSource;
@@ -52,6 +58,8 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -130,7 +138,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         nodeAttributes.put(VirtualHostNode.NAME, hostName);
         nodeAttributes.put(VirtualHostNode.ID, UUID.randomUUID());
         _node = factory.create(VirtualHostNode.class, nodeAttributes, broker);
-        _node.setDesiredState(_node.getState(), State.ACTIVE);
+        _node.setDesiredState(State.ACTIVE);
 
         _virtualHost = (VirtualHostImpl<?,?,?>)_node.getVirtualHost();
 
@@ -144,7 +152,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
             if (_virtualHost != null)
             {
                 VirtualHostNode<?> node = _virtualHost.getParent(VirtualHostNode.class);
-                node.setDesiredState(node.getState(), State.STOPPED);
+                node.setDesiredState(State.STOPPED);
             }
         }
         finally
@@ -157,10 +165,10 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
     protected void reloadVirtualHost()
     {
         assertEquals("Virtual host node is not active", State.ACTIVE, _virtualHost.getState());
-        State currentState = _node.setDesiredState(State.ACTIVE, State.STOPPED);
+        State currentState = _node.setDesiredState(State.STOPPED);
         assertEquals("Virtual host node is not stopped", State.STOPPED, currentState);
 
-        currentState = _node.setDesiredState(State.STOPPED, State.ACTIVE);
+        currentState = _node.setDesiredState(State.ACTIVE);
         assertEquals("Virtual host node is not active", State.ACTIVE, currentState);
         _virtualHost = (VirtualHostImpl<?, ?, ?>) _node.getVirtualHost();
     }
@@ -628,7 +636,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
             throws Exception
     {
 
-        Map<String,Object> queueArguments = new HashMap<String, Object>();
+        final Map<String,Object> queueArguments = new HashMap<String, Object>();
 
         if(usePriority || lastValueQueue)
         {
@@ -650,14 +658,25 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         queueArguments.put(Queue.DURABLE, durable);
         queueArguments.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
         queueArguments.put(Queue.EXCLUSIVE, exclusive ? ExclusivityPolicy.CONTAINER : ExclusivityPolicy.NONE);
-        if(exclusive && queueOwner != null)
-        {
-            queueArguments.put(Queue.OWNER, queueOwner);
-        }
-        AMQQueue<?> queue = null;
+        AMQSessionModel sessionModel = mock(AMQSessionModel.class);
+        AMQConnectionModel connectionModel = mock(AMQConnectionModel.class);
+        when(sessionModel.getConnectionModel()).thenReturn(connectionModel);
+        when(connectionModel.getRemoteContainerName()).thenReturn(queueOwner);
+        SessionPrincipal principal = new SessionPrincipal(sessionModel);
+        AMQQueue<?> queue = Subject.doAs(new Subject(true,
+                                                     Collections.singleton(principal),
+                                                     Collections.emptySet(),
+                                                     Collections.emptySet()),
+                                         new PrivilegedAction<AMQQueue<?>>()
+                                         {
+                                             @Override
+                                             public AMQQueue<?> run()
+                                             {
+                                                 return _virtualHost.createQueue(queueArguments);
 
-        //Ideally we would be able to use the QueueDeclareHandler here.
-        queue = _virtualHost.createQueue(queueArguments);
+                                             }
+                                         });
+
 
         validateQueueProperties(queue, usePriority, durable, exclusive, lastValueQueue);
     }

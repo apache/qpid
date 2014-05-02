@@ -496,7 +496,7 @@ class ManagementNode implements MessageSource, MessageDestination
         responseHeader.setHeader(TYPE_ATTRIBUTE, type);
         try
         {
-            entity.setDesiredState(entity.getState(),State.DELETED);
+            entity.setDesiredState(State.DELETED);
             responseHeader.setHeader(STATUS_CODE_HEADER, STATUS_CODE_NO_CONTENT);
         }
         catch(AccessControlException e)

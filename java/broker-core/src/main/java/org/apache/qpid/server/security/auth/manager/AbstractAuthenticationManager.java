@@ -64,9 +64,9 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         Collection<PreferencesProvider> prefsProviders = getChildren(PreferencesProvider.class);
         if(prefsProviders != null && prefsProviders.size() > 1)
         {
@@ -151,7 +151,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
             attributes.put(ConfiguredObject.ID, UUID.randomUUID());
 
             PreferencesProvider pp = getObjectFactory().create(PreferencesProvider.class, attributes, this);
-            pp.setDesiredState(State.INITIALISING, State.ACTIVE);
+            pp.setDesiredState(State.ACTIVE);
             _preferencesProvider = pp;
             return (C)pp;
         }
@@ -160,7 +160,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
 
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {
@@ -181,7 +181,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @Override
-    public boolean setState(State currentState, State desiredState)
+    public boolean setState(State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
         State state = _state.get();
@@ -207,7 +207,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
                 delete();
                 if (_preferencesProvider != null)
                 {
-                    _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.DELETED);
+                    _preferencesProvider.setDesiredState(State.DELETED);
                 }
                 deleted();
                 return true;
@@ -225,7 +225,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
                 {
                     if (_preferencesProvider != null)
                     {
-                        _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.ACTIVE);
+                        _preferencesProvider.setDesiredState(State.ACTIVE);
                     }
                     return true;
                 }
@@ -265,7 +265,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
                 close();
                 if (_preferencesProvider != null)
                 {
-                    _preferencesProvider.setDesiredState(_preferencesProvider.getState(), State.STOPPED);
+                    _preferencesProvider.setDesiredState(State.STOPPED);
                 }
                 return true;
             }

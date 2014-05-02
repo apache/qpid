@@ -28,19 +28,19 @@ import org.apache.qpid.server.model.Plugin;
 
 public interface HttpManagementConfiguration<X extends HttpManagementConfiguration<X>> extends Plugin<X>
 {
-    @ManagedAttribute( automate = true, defaultValue = "true" )
+    @ManagedAttribute( defaultValue = "true" )
     boolean isHttpsSaslAuthenticationEnabled();
 
-    @ManagedAttribute( automate = true, defaultValue = "true" )
+    @ManagedAttribute( defaultValue = "true" )
     boolean isHttpSaslAuthenticationEnabled();
 
-    @ManagedAttribute( automate = true, defaultValue = "true" )
+    @ManagedAttribute( defaultValue = "true" )
     boolean isHttpsBasicAuthenticationEnabled();
 
-    @ManagedAttribute( automate = true, defaultValue = "false" )
+    @ManagedAttribute( defaultValue = "false" )
     boolean isHttpBasicAuthenticationEnabled();
 
-    @ManagedAttribute( automate = true, defaultValue = "600" )
+    @ManagedAttribute( defaultValue = "600" )
     public int getSessionTimeout();
 
     AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);

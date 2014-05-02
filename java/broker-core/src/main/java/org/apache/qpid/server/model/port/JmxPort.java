@@ -33,12 +33,12 @@ public interface JmxPort<X extends JmxPort<X>> extends Port<X>
     String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
 
 
-    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )
+    @ManagedAttribute( defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )
     boolean getNeedClientAuth();
 
-    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_WANT_CLIENT_AUTH )
+    @ManagedAttribute( defaultValue = DEFAULT_AMQP_WANT_CLIENT_AUTH )
     boolean getWantClientAuth();
 
-    @ManagedAttribute( automate = true, mandatory = true )
+    @ManagedAttribute( mandatory = true )
     AuthenticationProvider getAuthenticationProvider();
 }

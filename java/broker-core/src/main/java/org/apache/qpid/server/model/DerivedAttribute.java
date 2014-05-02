@@ -1,4 +1,4 @@
-/*
+package org.apache.qpid.server.model;/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,14 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
 
-public enum State
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface DerivedAttribute
 {
-    INITIALISING,
-    QUIESCED,
-    STOPPED,
-    ACTIVE,
-    DELETED,
-    ERRORED
+    boolean secure() default false;
+    boolean persist() default false;
+    String description() default "";
+
 }

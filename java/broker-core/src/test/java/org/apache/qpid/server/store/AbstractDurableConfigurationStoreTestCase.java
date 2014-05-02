@@ -248,6 +248,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
                 Map<String,Object> arg = new HashMap<String, Object>(binding.getAttributes());
                 arg.remove("createdBy");
                 arg.remove("createdTime");
+                arg.remove("lastUpdatedTime");
+                arg.remove("lastUpdatedBy");
                 return (_id == ANY_UUID || _id.equals(binding.getId()))
                        && _name.equals(binding.getType())
                        && (_matchingMap == ANY_MAP || arg.equals(_matchingMap))

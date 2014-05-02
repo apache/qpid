@@ -215,7 +215,8 @@ public class QueueRestTest extends QpidRestTestCase
                 ConfiguredObject.LAST_UPDATED_BY,
                 ConfiguredObject.LAST_UPDATED_TIME,
                 ConfiguredObject.DESCRIPTION,
-                ConfiguredObject.CONTEXT);
+                ConfiguredObject.CONTEXT,
+                ConfiguredObject.DESIRED_STATE);
 
         assertEquals("Unexpected binding attribute " + Consumer.NAME, "1", consumer.get(Consumer.NAME));
         assertEquals("Unexpected binding attribute " + Consumer.DURABLE, Boolean.FALSE, consumer.get(Consumer.DURABLE));

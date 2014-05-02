@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
+import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.RemoteReplicationNode;
@@ -33,19 +34,19 @@ public interface BDBHARemoteReplicationNode<X extends BDBHARemoteReplicationNode
     String LAST_KNOWN_REPLICATION_TRANSACTION_ID = "lastKnownReplicationTransactionId";
     String JOIN_TIME = "joinTime";
 
-    @ManagedAttribute(derived = true)
+    @DerivedAttribute
     String getGroupName();
 
-    @ManagedAttribute(derived = true)
+    @DerivedAttribute
     String getAddress();
 
-    @ManagedAttribute(automate = true)
+    @ManagedAttribute(persist = false)
     String getRole();
 
-    @ManagedAttribute(derived = true)
+    @DerivedAttribute
     long getJoinTime();
 
-    @ManagedAttribute(derived = true)
+    @DerivedAttribute
     long getLastKnownReplicationTransactionId();
 
 }

@@ -123,9 +123,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         initialiseStatistics();
     }
 
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         String modelVersion = (String) getActualAttributes().get(Broker.MODEL_VERSION);
         if (modelVersion == null)
         {
@@ -412,7 +412,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                                 @Override
                                 public Object run()
                                 {
-                                    virtualHostNode.setDesiredState(State.INITIALISING, State.ACTIVE);
+                                    virtualHostNode.setDesiredState(State.ACTIVE);
                                     return null;
                                 }
                             });
@@ -508,7 +508,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         //   restarted for it to take effect so we can't reuse port numbers until it is.
         boolean quiesce = isManagementMode() || !(port instanceof AmqpPort) || isPreviouslyUsedPortNumber(port);
 
-        port.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
+        port.setDesiredState(quiesce ? State.QUIESCED : State.ACTIVE);
 
         return port;
     }
@@ -544,7 +544,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         addAccessControlProvider(accessControlProvider);
 
         boolean quiesce = isManagementMode();
-        accessControlProvider.setDesiredState(State.INITIALISING, quiesce ? State.QUIESCED : State.ACTIVE);
+        accessControlProvider.setDesiredState(quiesce ? State.QUIESCED : State.ACTIVE);
 
         return accessControlProvider;
 
@@ -574,7 +574,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             {
                 AuthenticationProvider<?> authenticationProvider = createChild(AuthenticationProvider.class, attributes);
                 addAuthenticationProvider(authenticationProvider);
-                authenticationProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+                authenticationProvider.setDesiredState(State.ACTIVE);
                 return authenticationProvider;
             }
         });
@@ -609,7 +609,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             {
                 GroupProvider<?> groupProvider = createChild(GroupProvider.class, attributes);
                 addGroupProvider(groupProvider);
-                groupProvider.setDesiredState(State.INITIALISING, State.ACTIVE);
+                groupProvider.setDesiredState(State.ACTIVE);
                 return groupProvider;
             }
         });
@@ -715,12 +715,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
-    public boolean setState(State currentState, State desiredState)
+    public boolean setState(State desiredState)
     {
         if (desiredState == State.ACTIVE)
         {
             initialiseStatisticsReporting();
-            changeChildState(currentState, State.ACTIVE, false);
+            changeChildState(State.ACTIVE, false);
             if (isManagementMode())
             {
                 _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
@@ -736,14 +736,13 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                 _reportingTimer.cancel();
             }
 
-            changeChildState(currentState, State.STOPPED, true);
+            changeChildState(State.STOPPED, true);
             return true;
         }
         return false;
     }
 
-    private void changeChildState(final State currentState,
-                                  final State desiredState,
+    private void changeChildState(final State desiredState,
                                   final boolean swallowException)
     {
         runTask(new VoidTask()
@@ -765,7 +764,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                         }
                         try
                         {
-                            configuredObject.setDesiredState(currentState, desiredState);
+                            configuredObject.setDesiredState(desiredState);
                         }
                         catch (RuntimeException e)
                         {

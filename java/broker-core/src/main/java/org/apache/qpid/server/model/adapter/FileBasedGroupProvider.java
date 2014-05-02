@@ -29,6 +29,6 @@ public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> ext
 {
     String PATH="path";
 
-    @ManagedAttribute( automate = true, mandatory = true, description = "File location" )
+    @ManagedAttribute( mandatory = true, description = "File location" )
     String getPath();
 }
