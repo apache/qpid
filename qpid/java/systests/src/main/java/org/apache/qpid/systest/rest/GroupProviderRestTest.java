@@ -71,13 +71,13 @@ public class GroupProviderRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/groupprovider");
+        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("groupprovider");
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
         for (Map<String, Object> provider : providerDetails)
         {
             assertProvider(FILE_GROUP_MANAGER, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE, provider);
-            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/"
+            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("groupprovider/"
                     + provider.get(GroupProvider.NAME));
             assertNotNull("Cannot load data for " + provider.get(GroupProvider.NAME), data);
             assertProvider(FILE_GROUP_MANAGER, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE, data);
@@ -88,14 +88,14 @@ public class GroupProviderRestTest extends QpidRestTestCase
     {
         String groupName = "newGroup";
 
-        Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         assertNotNull("Cannot load data for provider", data);
 
         getRestTestHelper().assertNumberOfGroups(data, 1);
 
         getRestTestHelper().createGroup(groupName, FILE_GROUP_MANAGER);
 
-        data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         assertNotNull("Cannot load data for provider", data);
 
         getRestTestHelper().assertNumberOfGroups(data, 2);
@@ -105,14 +105,14 @@ public class GroupProviderRestTest extends QpidRestTestCase
     {
         String groupName = "myGroup";
 
-        Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         assertNotNull("Cannot load data for provider", data);
 
         getRestTestHelper().assertNumberOfGroups(data, 1);
 
         getRestTestHelper().removeGroup(groupName, FILE_GROUP_MANAGER);
 
-        data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         assertNotNull("Cannot load data for provider", data);
 
         getRestTestHelper().assertNumberOfGroups(data, 0);
@@ -130,10 +130,10 @@ public class GroupProviderRestTest extends QpidRestTestCase
             attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
             attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
-            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            int responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Group provider was not created", 201, responseCode);
 
-            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + providerName + "?depth=2");
+            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + providerName + "?depth=2");
             assertProvider(providerName, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE, data);
             assertEquals("Unexpected name", providerName, data.get(GroupProvider.NAME));
             assertEquals("Unexpected path", groupFile.getAbsolutePath(), data.get(FileBasedGroupProvider.PATH));
@@ -176,7 +176,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
         attributes.put(GroupProvider.NAME, providerName);
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
         assertEquals("Group provider was created", 409, responseCode);
     }
 
@@ -192,10 +192,10 @@ public class GroupProviderRestTest extends QpidRestTestCase
             attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
             attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
-            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            int responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Group provider was not created", 201, responseCode);
 
-            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + providerName);
+            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + providerName);
             assertEquals("Unexpected name", providerName, data.get(GroupProvider.NAME));
             assertEquals("Unexpected path", groupFile.getAbsolutePath(), data.get(FileBasedGroupProvider.PATH));
 
@@ -223,11 +223,11 @@ public class GroupProviderRestTest extends QpidRestTestCase
             attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
             attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
-            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            int responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Group provider was not created", 201, responseCode);
 
             attributes.put(GroupProvider.NAME, providerName + 2);
-            responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName + 2, "PUT", attributes);
+            responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName + 2, "PUT", attributes);
             assertEquals("Group provider for the same group file was created", 409, responseCode);
         }
         finally
@@ -247,13 +247,13 @@ public class GroupProviderRestTest extends QpidRestTestCase
             attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
             attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
-            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            int responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Expected to fail because we can have only one password provider", 201, responseCode);
 
-            responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName , "DELETE", null);
+            responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName , "DELETE");
             assertEquals("Group provider was not deleted", 200, responseCode);
 
-            List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/groupprovider/" + providerName);
+            List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("groupprovider/" + providerName);
             assertEquals("Provider was not deleted", 0, providerDetails.size());
             assertFalse("Groups file should be deleted", groupFile.exists());
         }
@@ -274,13 +274,13 @@ public class GroupProviderRestTest extends QpidRestTestCase
             attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
             attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
-            int responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            int responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Expected to fail because we can have only one password provider", 201, responseCode);
 
             File newGroupFile = new File(TMP_FOLDER + File.separator + getTestName() + File.separator + "groups");
             attributes.put(FileBasedGroupProvider.PATH, newGroupFile.getAbsolutePath());
 
-            responseCode = getRestTestHelper().submitRequest("/rest/groupprovider/" + providerName, "PUT", attributes);
+            responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
             assertEquals("Expected to fail because we can have only one password provider", 409, responseCode);
         }
         finally
@@ -308,15 +308,15 @@ public class GroupProviderRestTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
 
-        Map<String, Object> groupProvider = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
+        Map<String, Object> groupProvider = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
         assertEquals("Unexpected id", id.toString(), groupProvider.get(GroupProvider.ID));
         assertEquals("Unexpected path", file.getAbsolutePath() , groupProvider.get(FileBasedGroupProvider.PATH));
         assertEquals("Unexpected state", State.ERRORED.name() , groupProvider.get(GroupProvider.STATE));
 
-        int status = getRestTestHelper().submitRequest("/rest/groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE, "DELETE", null);
+        int status = getRestTestHelper().submitRequest("groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE, "DELETE");
         assertEquals("ACL was not deleted", 200, status);
 
-        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("/rest/groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
+        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("groupprovider/" + TestBrokerConfiguration.ENTRY_NAME_GROUP_FILE);
         assertEquals("Provider exists", 0, providers.size());
     }
 

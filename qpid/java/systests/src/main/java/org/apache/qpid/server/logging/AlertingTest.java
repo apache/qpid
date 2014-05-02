@@ -52,7 +52,6 @@ public class AlertingTest extends AbstractTestLogging
     public void setUp() throws Exception
     {
         _numMessages = 50;
-        TestBrokerConfiguration brokerConfiguration = getBrokerConfiguration();
         setTestSystemProperty("virtualhost.housekeepingCheckPeriod", String.valueOf(ALERT_LOG_WAIT_PERIOD));
         setTestSystemProperty("queue.alertThresholdQueueDepthMessages", String.valueOf(_numMessages));
 
@@ -186,7 +185,7 @@ public class AlertingTest extends AbstractTestLogging
         setTestSystemProperty("queue.alertThresholdQueueDepthMessages","5");
         brokerConfiguration.setSaved(false);
 
-        restTestHelper.submitRequest("/rest/queue/test/test/" + getTestQueueName(), "PUT", Collections.<String, Object>singletonMap(org.apache.qpid.server.model.Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 5));
+        restTestHelper.submitRequest("queue/test/test/" + getTestQueueName(), "PUT", Collections.<String, Object>singletonMap(org.apache.qpid.server.model.Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES, 5));
         // Trigger the new value
         sendMessage(_session, _destination, 3);
         _session.commit();

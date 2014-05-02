@@ -40,7 +40,7 @@ import org.apache.qpid.test.utils.TestFileUtils;
 public class UserPreferencesRestACLTest extends QpidRestTestCase
 {
 
-    private static final String REST_USER_PREFERENCES_BASE_URL = "/rest/userpreferences";
+    private static final String REST_USER_PREFERENCES_BASE_URL = "/service/userpreferences";
     private static final String ALLOWED_USER = "webadmin";
     private static final String DENIED_USER = "admin";
     private static final String TEST_USER_PREFERENCES_GET_URL = REST_USER_PREFERENCES_BASE_URL + "/"
@@ -121,9 +121,9 @@ public class UserPreferencesRestACLTest extends QpidRestTestCase
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
         int responseCode = getRestTestHelper().submitRequest(
-                "/rest/userpreferences?user="
+                "/service/userpreferences?user="
                         + URLEncoder.encode(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + ALLOWED_USER, "UTF-8"),
-                "DELETE", null);
+                "DELETE");
         assertEquals("Preferences deletion should be denied", 403, responseCode);
     }
 
@@ -138,9 +138,9 @@ public class UserPreferencesRestACLTest extends QpidRestTestCase
         assertEquals("Unexpected saveTabs preference", false, preferences.get("saveTabs"));
 
         int responseCode = getRestTestHelper().submitRequest(
-                "/rest/userpreferences?user="
+                "/service/userpreferences?user="
                         + URLEncoder.encode(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + DENIED_USER, "UTF-8"),
-                "DELETE", null);
+                "DELETE");
         assertEquals("Preferences deletion should be allowed", 200, responseCode);
 
         preferences = getRestTestHelper().getJsonAsMap(userPreferencesUrl);
@@ -160,9 +160,9 @@ public class UserPreferencesRestACLTest extends QpidRestTestCase
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
         int responseCode = getRestTestHelper().submitRequest(
-                "/rest/userpreferences?user="
+                "/service/userpreferences?user="
                         + URLEncoder.encode(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + ALLOWED_USER, "UTF-8"),
-                "DELETE", null);
+                "DELETE");
         assertEquals("Preferences deletion should be denied", 403, responseCode);
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);

@@ -103,19 +103,19 @@ public class GroupRestACLTest extends QpidRestTestCase
         super.setUp();
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 3);
 
         getRestTestHelper().createGroup("newGroup", FILE_GROUP_MANAGER);
 
-        data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 4);
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
         getRestTestHelper().createGroup("anotherNewGroup", FILE_GROUP_MANAGER, HttpServletResponse.SC_FORBIDDEN);
 
-        data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 4);
     }
 
@@ -129,19 +129,19 @@ public class GroupRestACLTest extends QpidRestTestCase
         super.setUp();
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 3);
 
         getRestTestHelper().removeGroup(OTHER_GROUP, FILE_GROUP_MANAGER, HttpServletResponse.SC_FORBIDDEN);
 
-        data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 3);
 
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
         getRestTestHelper().removeGroup(OTHER_GROUP, FILE_GROUP_MANAGER);
 
-        data = getRestTestHelper().getJsonAsSingletonList("/rest/groupprovider/" + FILE_GROUP_MANAGER);
+        data = getRestTestHelper().getJsonAsSingletonList("groupprovider/" + FILE_GROUP_MANAGER);
         getRestTestHelper().assertNumberOfGroups(data, 2);
     }
 
@@ -187,7 +187,7 @@ public class GroupRestACLTest extends QpidRestTestCase
 
     private void assertNumberOfGroupMembers(String groupName, int expectedNumberOfMembers) throws IOException
     {
-        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/" + groupName);
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/" + groupName);
         getRestTestHelper().assertNumberOfGroupMembers(group, expectedNumberOfMembers);
     }
 }

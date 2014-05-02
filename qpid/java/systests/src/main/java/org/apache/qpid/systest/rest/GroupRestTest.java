@@ -64,7 +64,7 @@ public class GroupRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
         List<Map<String, Object>> groupmembers = (List<Map<String, Object>>) group.get("groupmembers");
         assertEquals(1, groupmembers.size());
 
@@ -74,23 +74,23 @@ public class GroupRestTest extends QpidRestTestCase
 
     public void testCreateNewMemberOfGroup() throws Exception
     {
-        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 1);
 
         getRestTestHelper().createNewGroupMember(FILE_GROUP_MANAGER, GROUP_NAME, NEW_MEMBER);
 
-        group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
+        group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 2);
     }
 
     public void testRemoveMemberFromGroup() throws Exception
     {
-        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 1);
 
         getRestTestHelper().removeMemberFromGroup(FILE_GROUP_MANAGER, GROUP_NAME, EXISTING_MEMBER);
 
-        group = getRestTestHelper().getJsonAsSingletonList("/rest/group/" + FILE_GROUP_MANAGER + "/myGroup");
+        group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 0);
     }
 

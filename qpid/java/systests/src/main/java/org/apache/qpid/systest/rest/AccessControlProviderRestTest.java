@@ -113,7 +113,7 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
         //remove the access control provider using the 'allowed' user
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "DELETE");
         assertEquals("Access control provider deletion should be allowed", 200, responseCode);
         assertAccessControlProviderExistence(accessControlProviderName, false);
 
@@ -164,7 +164,7 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
 
         //remove the original access control provider using the 'allowed' user
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName1, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName1, "DELETE");
         assertEquals("Access control provider deletion should be allowed", 200, responseCode);
         assertAccessControlProviderExistence(accessControlProviderName1, false);
 
@@ -218,7 +218,7 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
 
         //remove the second access control provider using the 'allowed' user
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName2, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName2, "DELETE");
         assertEquals("Access control provider deletion should be allowed", 200, responseCode);
         assertAccessControlProviderExistence(accessControlProviderName2, false);
 
@@ -249,28 +249,28 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
 
-        Map<String, Object> acl = getRestTestHelper().getJsonAsSingletonList("/rest/accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE);
+        Map<String, Object> acl = getRestTestHelper().getJsonAsSingletonList("accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE);
         assertEquals("Unexpected id", id.toString(), acl.get(AccessControlProvider.ID));
         assertEquals("Unexpected path", file.getAbsolutePath() , acl.get(FileAccessControlProviderConstants.PATH));
         assertEquals("Unexpected state", State.ERRORED.name() , acl.get(AccessControlProvider.STATE));
 
-        int status = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE, "DELETE", null);
+        int status = getRestTestHelper().submitRequest("accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE, "DELETE");
         assertEquals("ACL was not deleted", 200, status);
 
-        List<Map<String, Object>> acls = getRestTestHelper().getJsonAsList("/rest/accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE);
+        List<Map<String, Object>> acls = getRestTestHelper().getJsonAsList("accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE);
         assertEquals("ACL exists", 0, acls.size());
     }
 
     private void assertCanAccessManagementInterface(String accessControlProviderName, boolean canAccess) throws Exception
     {
         int expected = canAccess ? 200 : 403;
-        int responseCode = getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "GET");
         assertEquals("Unexpected response code", expected, responseCode);
     }
 
     private void assertAccessControlProviderExistence(String accessControlProviderName, boolean exists) throws Exception
     {
-        String path = "/rest/accesscontrolprovider/" + accessControlProviderName;
+        String path = "accesscontrolprovider/" + accessControlProviderName;
         List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList(path);
         assertEquals("Unexpected result", exists, !providers.isEmpty());
     }
@@ -283,6 +283,6 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
         attributes.put(AccessControlProvider.TYPE, FileAccessControlProviderConstants.ACL_FILE_PROVIDER_TYPE);
         attributes.put(FileAccessControlProviderConstants.PATH, file.getAbsoluteFile());
 
-        return getRestTestHelper().submitRequest("/rest/accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
+        return getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
     }
 }

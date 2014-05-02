@@ -24,7 +24,6 @@ import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE;
 import static org.apache.qpid.test.utils.TestSSLConstants.TRUSTSTORE_PASSWORD;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.util.Collections;
 
 import javax.servlet.http.HttpServletResponse;
@@ -66,8 +65,7 @@ public class BasicAuthRestTest extends QpidRestTestCase
 
     private void verifyGetBrokerAttempt(int responseCode) throws IOException
     {
-        HttpURLConnection conn = getRestTestHelper().openManagementConnection("/rest/broker", "GET");
-        assertEquals(responseCode, conn.getResponseCode());
+        assertEquals(responseCode, getRestTestHelper().submitRequest("broker", "GET"));
     }
 
     public void testBasicAuthWhenEnabledWithHttps() throws Exception

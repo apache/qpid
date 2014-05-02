@@ -21,7 +21,6 @@
 package org.apache.qpid.systest.rest;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
@@ -82,7 +81,7 @@ public class QueueRestTest extends QpidRestTestCase
     public void testGetVirtualHostQueues() throws Exception
     {
         String queueName = getTestQueueName();
-        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("/rest/queue/test");
+        List<Map<String, Object>> queues = getRestTestHelper().getJsonAsList("queue/test");
         assertEquals("Unexpected number of queues", 1, queues.size());
         String[] expectedQueues = new String[]{queueName};
 
@@ -104,7 +103,7 @@ public class QueueRestTest extends QpidRestTestCase
     public void testGetByName() throws Exception
     {
         String queueName = getTestQueueName();
-        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/test/" + queueName);
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("queue/test/test/" + queueName);
         Asserts.assertQueue(queueName, "standard", queueDetails);
         assertStatistics(queueDetails);
 
@@ -130,7 +129,7 @@ public class QueueRestTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Queue.NAME, queueName);
 
-        String queueUrl = "/rest/queue/test/test/" + queueName;
+        String queueUrl = "queue/test/test/" + queueName;
         int responseCode =  getRestTestHelper().submitRequest(queueUrl, "PUT", attributes);
         assertEquals("Queue was not created", 201, responseCode);
 
@@ -172,7 +171,7 @@ public class QueueRestTest extends QpidRestTestCase
             createBinding(bindingName, exchanges[i], queueName);
         }
 
-        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("/rest/queue/test/test/" + queueName);
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList("queue/test/test/" + queueName);
         Asserts.assertQueue(queueName, "standard", queueDetails);
 
         @SuppressWarnings("unchecked")
@@ -193,19 +192,14 @@ public class QueueRestTest extends QpidRestTestCase
 
     private void createBinding(String bindingName, String exchangeName, String queueName) throws IOException
     {
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection(
-                "/rest/binding/test/test/" + URLDecoder.decode(exchangeName, "UTF-8") + "/" + queueName + "/" + bindingName,
-                "PUT");
-
         Map<String, Object> bindingData = new HashMap<String, Object>();
         bindingData.put(Binding.NAME, bindingName);
         bindingData.put(Binding.EXCHANGE, exchangeName);
         bindingData.put(Binding.QUEUE, queueName);
 
-        getRestTestHelper().writeJsonRequest(connection, bindingData);
-        assertEquals("Unexpected response code", 201, connection.getResponseCode());
-
-        connection.disconnect();
+        String url = "binding/test/test/" + URLDecoder.decode(exchangeName, "UTF-8") + "/" + queueName + "/" + bindingName;
+        int responseCode = getRestTestHelper().submitRequest(url, "PUT", bindingData);
+        assertEquals("Unexpected response code", 201, responseCode);
     }
 
     private void assertConsumer(Map<String, Object> consumer)

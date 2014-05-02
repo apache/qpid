@@ -62,7 +62,7 @@ public class SaslRestTest extends QpidRestTestCase
     {
         startBrokerNow();
 
-        Map<String, Object> saslData = getRestTestHelper().getJsonAsMap("/rest/sasl");
+        Map<String, Object> saslData = getRestTestHelper().getJsonAsMap("/service/sasl");
         assertNotNull("mechanisms attribute is not found", saslData.get("mechanisms"));
 
         @SuppressWarnings("unchecked")
@@ -80,7 +80,7 @@ public class SaslRestTest extends QpidRestTestCase
         configureBase64MD5FilePrincipalDatabase();
         startBrokerNow();
 
-        Map<String, Object> saslData = getRestTestHelper().getJsonAsMap("/rest/sasl");
+        Map<String, Object> saslData = getRestTestHelper().getJsonAsMap("/service/sasl");
         assertNotNull("mechanisms attribute is not found", saslData.get("mechanisms"));
 
         @SuppressWarnings("unchecked")
@@ -102,18 +102,18 @@ public class SaslRestTest extends QpidRestTestCase
         String responseData = Base64.encodeBase64String(responseBytes);
         String parameters= "mechanism=PLAIN&response=" + responseData;
 
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/sasl", "POST");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/service/sasl", "POST");
         OutputStream os = connection.getOutputStream();
         os.write(parameters.getBytes());
         os.flush();
 
-         int code = connection.getResponseCode();
+        int code = getRestTestHelper().submitRequest("/service/sasl", "POST", parameters.getBytes());
         assertEquals("Unexpected response code", 200, code);
 
         List<String> cookies = connection.getHeaderFields().get("Set-Cookie");
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertEquals("Unexpected user", "admin", response2.get("user"));
@@ -127,7 +127,7 @@ public class SaslRestTest extends QpidRestTestCase
         String responseData = Base64.encodeBase64String(responseBytes);
         String parameters= "mechanism=PLAIN&response=" + responseData;
 
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/sasl", "POST");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/service/sasl", "POST");
         OutputStream os = connection.getOutputStream();
         os.write(parameters.getBytes());
         os.flush();
@@ -138,7 +138,7 @@ public class SaslRestTest extends QpidRestTestCase
         List<String> cookies = connection.getHeaderFields().get("Set-Cookie");
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertNull("Unexpected user", response2.get("user"));
@@ -152,7 +152,7 @@ public class SaslRestTest extends QpidRestTestCase
         String responseData = Base64.encodeBase64String(responseBytes);
         String parameters= "mechanism=PLAIN&response=" + responseData;
 
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/sasl", "POST");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/service/sasl", "POST");
         OutputStream os = connection.getOutputStream();
         os.write(parameters.getBytes());
         os.flush();
@@ -163,7 +163,7 @@ public class SaslRestTest extends QpidRestTestCase
         List<String> cookies = connection.getHeaderFields().get("Set-Cookie");
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertNull("Unexpected user", response2.get("user"));
@@ -182,7 +182,7 @@ public class SaslRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code", 200, code);
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertEquals("Unexpected user", "admin", response2.get("user"));
@@ -201,7 +201,7 @@ public class SaslRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code", 401, code);
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertNull("Unexpected user", response2.get("user"));
@@ -220,7 +220,7 @@ public class SaslRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code", 401, code);
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertNull("Unexpected user",  response2.get("user"));
@@ -240,7 +240,7 @@ public class SaslRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code", 200, code);
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertEquals("Unexpected user", "admin", response2.get("user"));
@@ -259,7 +259,7 @@ public class SaslRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code", 401, code);
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertNull("Unexpected user", response2.get("user"));
@@ -278,7 +278,7 @@ public class SaslRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code", 401, code);
 
         // request authenticated user details
-        connection = getRestTestHelper().openManagementConnection("/rest/sasl", "GET");
+        connection = getRestTestHelper().openManagementConnection("/service/sasl", "GET");
         applyCookiesToConnection(cookies, connection);
         Map<String, Object> response2 = getRestTestHelper().readJsonResponseAsMap(connection);
         assertNull("Unexpected user", response2.get("user"));
@@ -286,14 +286,14 @@ public class SaslRestTest extends QpidRestTestCase
 
     private HttpURLConnection requestSasServerChallenge(String mechanism) throws IOException
     {
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/sasl", "POST");
+        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/service/sasl", "POST");
         OutputStream os = connection.getOutputStream();
         os.write(("mechanism=" + mechanism).getBytes());
         os.flush();
         return connection;
     }
 
-    private int authenticateUser(HttpURLConnection requestChallengeConnection, String userName, String userPassword, String mechanism)
+    public int authenticateUser(HttpURLConnection requestChallengeConnection, String userName, String userPassword, String mechanism)
             throws IOException, JsonParseException, JsonMappingException, Exception
     {
         // get the response
@@ -311,7 +311,7 @@ public class SaslRestTest extends QpidRestTestCase
         String requestParameters = ("id=" + response.get("id") + "&response=" + responseData);
 
         // re-open connection
-        HttpURLConnection authenticateConnection = getRestTestHelper().openManagementConnection("/rest/sasl", "POST");
+        HttpURLConnection authenticateConnection = getRestTestHelper().openManagementConnection("/service/sasl", "POST");
 
         // set cookies to use the same server session
         applyCookiesToConnection(cookies, authenticateConnection);

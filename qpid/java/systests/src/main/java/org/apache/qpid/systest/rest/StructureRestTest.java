@@ -39,7 +39,7 @@ public class StructureRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        Map<String, Object> structure = getRestTestHelper().getJsonAsMap("/rest/structure");
+        Map<String, Object> structure = getRestTestHelper().getJsonAsMap("/service/structure");
         assertNotNull("Structure data cannot be null", structure);
         assertNode(structure, "Broker");
 

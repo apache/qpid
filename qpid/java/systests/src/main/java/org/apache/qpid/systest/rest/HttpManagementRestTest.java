@@ -32,7 +32,7 @@ public class HttpManagementRestTest extends QpidRestTestCase
     public void testGetHttpManagement() throws Exception
     {
         Map<String, Object> details = getRestTestHelper().getJsonAsSingletonList(
-                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
+                "plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
 
         assertEquals("Unexpected session timeout", HttpManagement.DEFAULT_TIMEOUT_IN_SECONDS,
                 details.get(HttpManagement.TIME_OUT));
@@ -55,10 +55,10 @@ public class HttpManagementRestTest extends QpidRestTestCase
         attributes.put(HttpManagement.HTTP_SASL_AUTHENTICATION_ENABLED, false);
         attributes.put(HttpManagement.TIME_OUT, 10000);
 
-        getRestTestHelper().submitRequest("/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+        getRestTestHelper().submitRequest("plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
 
         Map<String, Object> details = getRestTestHelper().getJsonAsSingletonList(
-                "/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
+                "plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT);
 
         assertEquals("Unexpected session timeout", 10000, details.get(HttpManagement.TIME_OUT));
         assertEquals("Unexpected http basic auth enabled", true, details.get(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED));
@@ -79,13 +79,13 @@ public class HttpManagementRestTest extends QpidRestTestCase
         {
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(invalidAttribute.getKey(), invalidAttribute.getValue());
-            int response = getRestTestHelper().submitRequest("/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+            int response = getRestTestHelper().submitRequest("plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
             assertEquals("Update should fail for attribute " + invalidAttribute.getKey() + " with value " + invalidAttribute.getValue() , 409, response);
         }
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(HttpManagement.TIME_OUT, -1l);
-        int response  = getRestTestHelper().submitRequest("/rest/plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
+        int response  = getRestTestHelper().submitRequest("plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
         assertEquals("Update should fail for invalid session timeout", 409, response);
     }
 }

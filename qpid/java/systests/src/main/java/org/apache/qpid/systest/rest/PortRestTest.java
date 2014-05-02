@@ -42,7 +42,7 @@ public class PortRestTest extends QpidRestTestCase
 {
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("/rest/port/");
+        List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("port/");
         assertNotNull("Port data cannot be null", ports);
         assertEquals("Unexpected number of ports", 2, ports.size());
 
@@ -59,14 +59,14 @@ public class PortRestTest extends QpidRestTestCase
 
     public void testGetPort() throws Exception
     {
-        List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("/rest/port/");
+        List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("port/");
         assertNotNull("Ports data cannot be null", ports);
         assertEquals("Unexpected number of ports", 2, ports.size());
         for (Map<String, Object> portMap : ports)
         {
             String portName = (String) portMap.get(Port.NAME);
             assertNotNull("Port name attribute is not found", portName);
-            Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + URLDecoder.decode(portName, "UTF-8"));
+            Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("port/" + URLDecoder.decode(portName, "UTF-8"));
             assertNotNull("Port " + portName + " is not found", portData);
             Asserts.assertPortAttributes(portData);
         }
@@ -80,10 +80,10 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.PORT, findFreePort());
         attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
 
-        List<Map<String, Object>> portDetails = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
+        List<Map<String, Object>> portDetails = getRestTestHelper().getJsonAsList("port/" + portName);
         assertNotNull("Port details cannot be null", portDetails);
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
         Map<String, Object> port = portDetails.get(0);
@@ -92,7 +92,7 @@ public class PortRestTest extends QpidRestTestCase
         // make sure that port is there after broker restart
         restartBroker();
 
-        portDetails = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
+        portDetails = getRestTestHelper().getJsonAsList("port/" + portName);
         assertNotNull("Port details cannot be null", portDetails);
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
     }
@@ -105,10 +105,10 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.PORT, findFreePort());
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
 
-        List<Map<String, Object>> portDetails = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
+        List<Map<String, Object>> portDetails = getRestTestHelper().getJsonAsList("port/" + portName);
         assertNotNull("Port details cannot be null", portDetails);
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
         Map<String, Object> port = portDetails.get(0);
@@ -117,7 +117,7 @@ public class PortRestTest extends QpidRestTestCase
         // make sure that port is there after broker restart
         restartBroker();
 
-        portDetails = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
+        portDetails = getRestTestHelper().getJsonAsList("port/" + portName);
         assertNotNull("Port details cannot be null", portDetails);
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
         port = portDetails.get(0);
@@ -130,7 +130,7 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.PORT, findFreePort());
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
 
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Adding of a second RMI port should fail", 409, responseCode);
     }
 
@@ -142,10 +142,10 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.PORT, findFreePort());
         attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response code for port creation", 201, responseCode);
 
-        List<Map<String, Object>> portDetails = getRestTestHelper().getJsonAsList("/rest/port/" + portName);
+        List<Map<String, Object>> portDetails = getRestTestHelper().getJsonAsList("port/" + portName);
         assertNotNull("Port details cannot be null", portDetails);
         assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
         Map<String, Object> port = portDetails.get(0);
@@ -155,14 +155,14 @@ public class PortRestTest extends QpidRestTestCase
         authProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
         authProviderAttributes.put(AuthenticationProvider.NAME, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER, "PUT", authProviderAttributes);
+        responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER, "PUT", authProviderAttributes);
         assertEquals("Unexpected response code for authentication provider creation", 201, responseCode);
 
         attributes = new HashMap<String, Object>(port);
         attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.AMQP_0_9_1));
 
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response code for port update", 200, responseCode);
     }
 
@@ -174,10 +174,10 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
         attributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Transport has not been changed to SSL " , 200, responseCode);
 
-        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("port/" + portName);
 
         @SuppressWarnings("unchecked")
         Collection<String> transports = (Collection<String>) port.get(Port.TRANSPORTS);
@@ -195,7 +195,7 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.NAME, portName);
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Creation of SSL port without keystore should fail", 409, responseCode);
     }
 
@@ -210,16 +210,16 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
         attributes.put(Port.TRUST_STORES, Collections.singleton(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE));
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("SSL port was not added", 201, responseCode);
 
         attributes.put(Port.NEED_CLIENT_AUTH, true);
         attributes.put(Port.WANT_CLIENT_AUTH, true);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Attributes for need/want client auth are not set", 200, responseCode);
 
-        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("port/" + portName);
         assertEquals("Unexpected " + Port.NEED_CLIENT_AUTH, true, port.get(Port.NEED_CLIENT_AUTH));
         assertEquals("Unexpected " + Port.WANT_CLIENT_AUTH, true, port.get(Port.WANT_CLIENT_AUTH));
         assertEquals("Unexpected " + Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE, port.get(Port.KEY_STORE));
@@ -232,7 +232,7 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.NAME, portName);
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
 
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Should not be able to change transport to TCP without reseting of attributes for need/want client auth", 409, responseCode);
 
         attributes = new HashMap<String, Object>();
@@ -241,10 +241,10 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.NEED_CLIENT_AUTH, false);
         attributes.put(Port.WANT_CLIENT_AUTH, false);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Should be able to change transport to TCP ", 200, responseCode);
 
-        port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        port = getRestTestHelper().getJsonAsSingletonList("port/" + portName);
         assertEquals("Unexpected " + Port.NEED_CLIENT_AUTH, false, port.get(Port.NEED_CLIENT_AUTH));
         assertEquals("Unexpected " + Port.WANT_CLIENT_AUTH, false, port.get(Port.WANT_CLIENT_AUTH));
 
@@ -260,13 +260,13 @@ public class PortRestTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
         attributes.put(Port.NEED_CLIENT_AUTH, true);
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response when trying to set 'needClientAuth' on non-SSL port", 409, responseCode);
 
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
         attributes.put(Port.WANT_CLIENT_AUTH, true);
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response when trying to set 'wantClientAuth' on non-SSL port", 409, responseCode);
     }
 
@@ -276,16 +276,16 @@ public class PortRestTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
         attributes.put(Port.AUTHENTICATION_PROVIDER, "non-existing");
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response when trying to change auth provider to non-existing one", 409, responseCode);
 
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
         attributes.put(Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response when trying to change auth provider to existing one", 200, responseCode);
 
-        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + portName);
+        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("port/" + portName);
         assertEquals("Unexpected auth provider", ANONYMOUS_AUTHENTICATION_PROVIDER, port.get(Port.AUTHENTICATION_PROVIDER));
     }
 
@@ -297,17 +297,17 @@ public class PortRestTest extends QpidRestTestCase
         getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
 
         String ampqPortName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
-        Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + URLDecoder.decode(ampqPortName, "UTF-8"));
+        Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("port/" + URLDecoder.decode(ampqPortName, "UTF-8"));
         Asserts.assertPortAttributes(portData, State.QUIESCED);
     }
 
     public void testNewPortQuiescedIfPortNumberWasUsed() throws Exception
     {
         String ampqPortName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
-        Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + URLDecoder.decode(ampqPortName, "UTF-8"));
+        Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("port/" + URLDecoder.decode(ampqPortName, "UTF-8"));
         int amqpPort = (Integer)portData.get(Port.PORT);
 
-        int deleteResponseCode = getRestTestHelper().submitRequest("/rest/port/" + ampqPortName, "DELETE", null);
+        int deleteResponseCode = getRestTestHelper().submitRequest("port/" + ampqPortName, "DELETE");
         assertEquals("Port deletion should be allowed", 200, deleteResponseCode);
 
         String newPortName = "reused-port";
@@ -316,10 +316,10 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.PORT, amqpPort);  // reuses port that was previously in use
         attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/port/" + newPortName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + newPortName, "PUT", attributes);
         assertEquals("Unexpected response code for port creation", 201, responseCode);
 
-        portData = getRestTestHelper().getJsonAsSingletonList("/rest/port/" + URLDecoder.decode(newPortName, "UTF-8"));
+        portData = getRestTestHelper().getJsonAsSingletonList("port/" + URLDecoder.decode(newPortName, "UTF-8"));
         Asserts.assertPortAttributes(portData, State.QUIESCED);
     }
 }

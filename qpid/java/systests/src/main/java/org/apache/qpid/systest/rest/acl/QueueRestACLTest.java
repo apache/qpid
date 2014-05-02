@@ -44,7 +44,7 @@ public class QueueRestACLTest extends QpidRestTestCase
     {
         super.setUp();
         _queueName = getTestName();
-        _queueUrl = "/rest/queue/test/test/" + _queueName;
+        _queueUrl = "queue/test/test/" + _queueName;
     }
 
     @Override
@@ -95,7 +95,7 @@ public class QueueRestACLTest extends QpidRestTestCase
 
         assertQueueExists();
 
-        responseCode = getRestTestHelper().submitRequest(_queueUrl, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest(_queueUrl, "DELETE");
         assertEquals("Queue deletion should be allowed", 200, responseCode);
 
         assertQueueDoesNotExist();
@@ -111,7 +111,7 @@ public class QueueRestACLTest extends QpidRestTestCase
         assertQueueExists();
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        responseCode = getRestTestHelper().submitRequest(_queueUrl, "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest(_queueUrl, "DELETE");
         assertEquals("Queue deletion should be denied", 403, responseCode);
 
         assertQueueExists();

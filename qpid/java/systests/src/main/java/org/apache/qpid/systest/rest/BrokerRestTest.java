@@ -54,7 +54,7 @@ public class BrokerRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("broker");
 
         assertBrokerAttributes(brokerDetails);
 
@@ -102,11 +102,11 @@ public class BrokerRestTest extends QpidRestTestCase
     {
         Map<String, Object> brokerAttributes = getValidBrokerAttributes();
 
-        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", brokerAttributes);
+        int response = getRestTestHelper().submitRequest("broker", "PUT", brokerAttributes);
         assertEquals("Unexpected update response", 200, response);
 
         restartBroker();
-        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("broker");
         assertBrokerAttributes(brokerAttributes, brokerDetails);
     }
 
@@ -125,10 +125,10 @@ public class BrokerRestTest extends QpidRestTestCase
             attributes.put(entry.getKey(), value);
         }
 
-        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", attributes);
+        int response = getRestTestHelper().submitRequest("broker", "PUT", attributes);
         assertEquals("Unexpected update response", 200, response);
 
-        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("broker");
         assertBrokerAttributes(validAttributes, brokerDetails);
     }
 
@@ -144,7 +144,7 @@ public class BrokerRestTest extends QpidRestTestCase
         {
             Map<String, Object> brokerAttributes = getValidBrokerAttributes();
             brokerAttributes.put(entry.getKey(), entry.getValue());
-            int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", brokerAttributes);
+            int response = getRestTestHelper().submitRequest("broker", "PUT", brokerAttributes);
             assertEquals("Unexpected update response for invalid attribute " + entry.getKey() + "=" + entry.getValue(), 409, response);
         }
 
@@ -152,16 +152,16 @@ public class BrokerRestTest extends QpidRestTestCase
 
     public void testSetCloseOnNoRoute() throws Exception
     {
-        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("broker");
         assertTrue("closeOnNoRoute should be true", (Boolean)brokerDetails.get(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE));
 
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE, false);
 
-        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", brokerAttributes);
+        int response = getRestTestHelper().submitRequest("broker", "PUT", brokerAttributes);
         assertEquals("Unexpected update response", 200, response);
 
-        brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        brokerDetails = getRestTestHelper().getJsonAsSingletonList("broker");
         assertFalse("closeOnNoRoute should be false", (Boolean)brokerDetails.get(Broker.CONNECTION_CLOSE_WHEN_NO_ROUTE));
 
         Connection connection = getConnection();

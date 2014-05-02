@@ -49,7 +49,7 @@ public class LogViewerTest extends QpidRestTestCase
 
     public void testGetLogFiles() throws Exception
     {
-        List<Map<String, Object>> logFiles = getRestTestHelper().getJsonAsList("/rest/logfilenames");
+        List<Map<String, Object>> logFiles = getRestTestHelper().getJsonAsList("/service/logfilenames");
         assertNotNull("Log files data cannot be null", logFiles);
 
         // 1 file appender is configured in QPID default log4j xml:
@@ -65,7 +65,7 @@ public class LogViewerTest extends QpidRestTestCase
 
     public void testDownloadExistingLogFiles() throws Exception
     {
-        byte[] bytes = getRestTestHelper().getBytes("/rest/logfile?l=" + DEFAULT_FILE_APPENDER_NAME + "%2F" + _expectedLogFileName);
+        byte[] bytes = getRestTestHelper().getBytes("/service/logfile?l=" + DEFAULT_FILE_APPENDER_NAME + "%2F" + _expectedLogFileName);
 
         ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(bytes));
         try
@@ -91,15 +91,15 @@ public class LogViewerTest extends QpidRestTestCase
 
     public void testDownloadNonExistingLogFiles() throws Exception
     {
-        int responseCode = getRestTestHelper().submitRequest("/rest/logfile?l=" + DEFAULT_FILE_APPENDER_NAME + "%2F"
-                + _expectedLogFileName + "_" + System.currentTimeMillis(), "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/service/logfile?l=" + DEFAULT_FILE_APPENDER_NAME + "%2F"
+                + _expectedLogFileName + "_" + System.currentTimeMillis(), "GET");
 
         assertEquals("Unexpected response code", 404, responseCode);
     }
 
     public void testDownloadNonLogFiles() throws Exception
     {
-        int responseCode = getRestTestHelper().submitRequest("/rest/logfile?l=config.json", "GET", null);
+        int responseCode = getRestTestHelper().submitRequest("/service/logfile?l=config.json", "GET");
         assertEquals("Unexpected response code", 400, responseCode);
     }
 }

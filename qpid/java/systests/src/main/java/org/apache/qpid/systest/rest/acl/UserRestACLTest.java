@@ -21,7 +21,6 @@ package org.apache.qpid.systest.rest.acl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -168,26 +167,24 @@ public class UserRestACLTest extends QpidRestTestCase
     private void checkPassword(String username, String password, boolean passwordExpectedToBeCorrect) throws IOException
     {
         getRestTestHelper().setUsernameAndPassword(username, password);
-        HttpURLConnection connection = getRestTestHelper().openManagementConnection("/rest/user/"
-                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/", "GET");
 
-        boolean passwordIsCorrect = connection.getResponseCode() == HttpServletResponse.SC_OK;
-
-        connection.disconnect();
+        int responseCode = getRestTestHelper().submitRequest("user/"
+                + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/", "GET", (byte[])null);
+        boolean passwordIsCorrect = responseCode == HttpServletResponse.SC_OK;
 
         assertEquals(passwordExpectedToBeCorrect, passwordIsCorrect);
     }
 
     private void assertUserDoesNotExist(String newUser) throws JsonParseException, JsonMappingException, IOException
     {
-        String path = "/rest/user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + newUser;
+        String path = "user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + newUser;
         List<Map<String, Object>> userDetailsList = getRestTestHelper().getJsonAsList(path);
         assertTrue(userDetailsList.isEmpty());
     }
 
     private void assertUserExists(String username) throws IOException
     {
-        String path = "/rest/user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + username;
+        String path = "user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + username;
         Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList(path);
 
         assertEquals(

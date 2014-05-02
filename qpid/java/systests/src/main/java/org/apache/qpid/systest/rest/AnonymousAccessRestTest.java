@@ -69,7 +69,7 @@ public class AnonymousAccessRestTest extends QpidRestTestCase
     {
         startBrokerNow();
 
-        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("broker");
         assertNotNull("Unexpected broker attributes", brokerDetails);
         assertNotNull("Unexpected value of attribute " + Broker.ID, brokerDetails.get(Broker.ID));
     }
@@ -81,10 +81,10 @@ public class AnonymousAccessRestTest extends QpidRestTestCase
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, TEST3_VIRTUALHOST);
 
-        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", brokerAttributes);
+        int response = getRestTestHelper().submitRequest("broker", "PUT", brokerAttributes);
         assertEquals("Unexpected update response", 200, response);
 
-        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/broker");
+        Map<String, Object> brokerDetails = getRestTestHelper().getJsonAsSingletonList("broker");
         assertNotNull("Unexpected broker attributes", brokerDetails);
         assertNotNull("Unexpected value of attribute " + Broker.ID, brokerDetails.get(Broker.ID));
         assertEquals("Unexpected default virtual host", TEST3_VIRTUALHOST, brokerDetails.get(Broker.DEFAULT_VIRTUAL_HOST));
@@ -96,7 +96,7 @@ public class AnonymousAccessRestTest extends QpidRestTestCase
                 TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
         startBrokerNow();
 
-        int response = getRestTestHelper().submitRequest("/rest/broker", "GET", null);
+        int response = getRestTestHelper().submitRequest("broker", "GET");
         assertEquals("Anonymous access should be denied", 401, response);
     }
 
@@ -109,7 +109,7 @@ public class AnonymousAccessRestTest extends QpidRestTestCase
         Map<String, Object> brokerAttributes = new HashMap<String, Object>();
         brokerAttributes.put(Broker.DEFAULT_VIRTUAL_HOST, TEST3_VIRTUALHOST);
 
-        int response = getRestTestHelper().submitRequest("/rest/broker", "PUT", brokerAttributes);
+        int response = getRestTestHelper().submitRequest("broker", "PUT", brokerAttributes);
         assertEquals("Anonymous access should be denied", 401, response);
     }
 }

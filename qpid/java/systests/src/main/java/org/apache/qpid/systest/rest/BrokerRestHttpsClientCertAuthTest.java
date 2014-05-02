@@ -79,7 +79,7 @@ public class BrokerRestHttpsClientCertAuthTest extends QpidRestTestCase
 
     public void testGetWithHttps() throws Exception
     {
-        Map<String, Object> saslData = getRestTestHelper().getJsonAsMap("/rest/sasl");
+        Map<String, Object> saslData = getRestTestHelper().getJsonAsMap("/service/sasl");
 
         Asserts.assertAttributesPresent(saslData, "user");
     }

@@ -232,8 +232,9 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         root.getServletContext().setAttribute(HttpManagementUtil.ATTR_MANAGEMENT_CONFIGURATION, this);
 
         FilterHolder restAuthorizationFilter = new FilterHolder(new ForbiddingAuthorisationFilter());
-        restAuthorizationFilter.setInitParameter(ForbiddingAuthorisationFilter.INIT_PARAM_ALLOWED, "/rest/sasl");
-        root.addFilter(restAuthorizationFilter, "/rest/*", EnumSet.of(DispatcherType.REQUEST));
+        restAuthorizationFilter.setInitParameter(ForbiddingAuthorisationFilter.INIT_PARAM_ALLOWED, "/service/sasl");
+        root.addFilter(restAuthorizationFilter, "/api/*", EnumSet.of(DispatcherType.REQUEST));
+        root.addFilter(restAuthorizationFilter, "/service/*", EnumSet.of(DispatcherType.REQUEST));
         root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), HttpManagementUtil.ENTRY_POINT_PATH, EnumSet.of(DispatcherType.REQUEST));
         root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), "/index.html", EnumSet.of(DispatcherType.REQUEST));
         root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), "/", EnumSet.of(DispatcherType.REQUEST));
@@ -261,15 +262,15 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         addRestServlet(root, "binding", VirtualHostNode.class, VirtualHost.class, Exchange.class, Queue.class, Binding.class);
         addRestServlet(root, "session", VirtualHostNode.class, VirtualHost.class, Connection.class, Session.class);
 
-        root.addServlet(new ServletHolder(new UserPreferencesServlet()), "/rest/userpreferences/*");
-        root.addServlet(new ServletHolder(new LoggedOnUserPreferencesServlet()), "/rest/preferences");
-        root.addServlet(new ServletHolder(new StructureServlet()), "/rest/structure");
-        root.addServlet(new ServletHolder(new MessageServlet()), "/rest/message/*");
-        root.addServlet(new ServletHolder(new MessageContentServlet()), "/rest/message-content/*");
+        root.addServlet(new ServletHolder(new UserPreferencesServlet()), "/service/userpreferences/*");
+        root.addServlet(new ServletHolder(new LoggedOnUserPreferencesServlet()), "/service/preferences");
+        root.addServlet(new ServletHolder(new StructureServlet()), "/service/structure");
+        root.addServlet(new ServletHolder(new MessageServlet()), "/service/message/*");
+        root.addServlet(new ServletHolder(new MessageContentServlet()), "/service/message-content/*");
 
-        root.addServlet(new ServletHolder(new LogRecordsServlet()), "/rest/logrecords");
+        root.addServlet(new ServletHolder(new LogRecordsServlet()), "/service/logrecords");
 
-        root.addServlet(new ServletHolder(new SaslServlet()), "/rest/sasl");
+        root.addServlet(new ServletHolder(new SaslServlet()), "/service/sasl");
 
         root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), HttpManagementUtil.ENTRY_POINT_PATH);
         root.addServlet(new ServletHolder(new DefinedFileServlet("index.html")), "/");
@@ -289,9 +290,9 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         root.addServlet(new ServletHolder(new FileServlet()), "*.json");
         root.addServlet(new ServletHolder(new FileServlet()), "*.txt");
         root.addServlet(new ServletHolder(new FileServlet()), "*.xsl");
-        root.addServlet(new ServletHolder(new HelperServlet()), "/rest/helper");
-        root.addServlet(new ServletHolder(new LogFileListingServlet()), "/rest/logfilenames");
-        root.addServlet(new ServletHolder(new LogFileServlet()), "/rest/logfile");
+        root.addServlet(new ServletHolder(new HelperServlet()), "/service/helper");
+        root.addServlet(new ServletHolder(new LogFileListingServlet()), "/service/logfilenames");
+        root.addServlet(new ServletHolder(new LogFileServlet()), "/service/logfile");
 
         final SessionManager sessionManager = root.getSessionHandler().getSessionManager();
         sessionManager.getSessionCookieConfig().setName(JSESSIONID_COOKIE_PREFIX + lastPort);
@@ -384,7 +385,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
     private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
-        root.addServlet(new ServletHolder(name, new RestServlet(hierarchy)), "/rest/" + name + "/*");
+        root.addServlet(new ServletHolder(name, new RestServlet(hierarchy)), "/api/latest/" + name + "/*");
     }
 
     private void logOperationalListenMessages(Server server)

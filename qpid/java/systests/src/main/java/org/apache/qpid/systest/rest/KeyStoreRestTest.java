@@ -70,7 +70,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         createKeyStore(name, certAlias);
         assertNumberOfKeyStores(2);
 
-        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details cannot be null", keyStores);
 
         assertKeyStoreAttributes(keyStores.get(0), name, TestSSLConstants.KEYSTORE, certAlias);
@@ -87,10 +87,10 @@ public class KeyStoreRestTest extends QpidRestTestCase
         createKeyStore(name, certAlias);
         assertNumberOfKeyStores(2);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "DELETE");
         assertEquals("Unexpected response code for provider deletion", 200, responseCode);
 
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
         assertTrue("details should be empty as the keystore no longer exists", keyStore.isEmpty());
 
@@ -126,17 +126,17 @@ public class KeyStoreRestTest extends QpidRestTestCase
         //verify the keystore is there
         assertNumberOfKeyStores(2);
 
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
         assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.BROKER_KEYSTORE, null);
 
         //try to delete it, which should fail as it is in use
-        int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "DELETE");
         assertEquals("Unexpected response code for provider deletion", 409, responseCode);
 
         //check its still there
         assertNumberOfKeyStores(2);
-        keyStore = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
         assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.BROKER_KEYSTORE, null);
     }
@@ -155,10 +155,10 @@ public class KeyStoreRestTest extends QpidRestTestCase
         attributes.put(KeyStore.NAME, name);
         attributes.put(FileKeyStore.PATH, TestSSLConstants.UNTRUSTED_KEYSTORE);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for keystore update", 200, responseCode);
 
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
 
         assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.UNTRUSTED_KEYSTORE, null);
@@ -178,10 +178,10 @@ public class KeyStoreRestTest extends QpidRestTestCase
         attributes.put(KeyStore.NAME, name);
         attributes.put(FileKeyStore.PATH, "does.not.exist");
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for keystore update", 409, responseCode);
 
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
 
         //verify the details remain unchanged
@@ -198,7 +198,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         createKeyStore(name, "app1");
         assertNumberOfKeyStores(2);
 
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
         assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.KEYSTORE, "app1");
 
@@ -207,10 +207,10 @@ public class KeyStoreRestTest extends QpidRestTestCase
         attributes.put(KeyStore.NAME, name);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "app2");
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for keystore update", 200, responseCode);
 
-        keyStore = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
 
         assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.KEYSTORE, "app2");
@@ -220,10 +220,10 @@ public class KeyStoreRestTest extends QpidRestTestCase
         attributes.put(KeyStore.NAME, name);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, null);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name , "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("keystore/" + name , "PUT", attributes);
         assertEquals("Unexpected response code for keystore update", 200, responseCode);
 
-        keyStore = getRestTestHelper().getJsonAsList("/rest/keystore/" + name);
+        keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
 
         assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.KEYSTORE, null);
@@ -232,7 +232,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
     private List<Map<String, Object>> assertNumberOfKeyStores(int numberOfKeystores) throws IOException,
     JsonParseException, JsonMappingException
     {
-        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("/rest/keystore");
+        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore");
         assertNotNull("keystores should not be null", keyStores);
         assertEquals("Unexpected number of keystores", numberOfKeystores, keyStores.size());
 
@@ -247,7 +247,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         keyStoreAttributes.put(FileKeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
         keyStoreAttributes.put(FileKeyStore.CERTIFICATE_ALIAS, certAlias);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/keystore/" + name, "PUT", keyStoreAttributes);
+        int responseCode = getRestTestHelper().submitRequest("keystore/" + name, "PUT", keyStoreAttributes);
         assertEquals("Unexpected response code", 201, responseCode);
     }
 

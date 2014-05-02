@@ -44,7 +44,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider");
+        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("authenticationprovider");
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 2, providerDetails.size());
         for (Map<String, Object> provider : providerDetails)
@@ -57,7 +57,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
                 managesPrincipals = false;
             }
             assertProvider(managesPrincipals, type , provider);
-            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/"
+            Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/"
                     + provider.get(AuthenticationProvider.NAME));
             assertNotNull("Cannot load data for " + provider.get(AuthenticationProvider.NAME), data);
             assertProvider(managesPrincipals, type, data);
@@ -74,7 +74,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
         attributes.put(ExternalFileBasedAuthenticationManager.PATH, principalDatabase.getAbsolutePath());
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("failed to create authentication provider", 201, responseCode);
     }
 
@@ -85,10 +85,10 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.NAME, providerName);
         attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
 
-        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
+        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
         Map<String, Object> provider = providerDetails.get(0);
@@ -102,12 +102,12 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.NAME, providerName);
         attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
 
         attributes.put(AuthenticationProvider.ID, UUID.randomUUID());
 
-        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Update with new ID should fail", 409, responseCode);
     }
 
@@ -119,7 +119,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.NAME, providerName);
         attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code for provider creation", 201, responseCode);
 
         // create port
@@ -129,13 +129,13 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         portAttributes.put(Port.AUTHENTICATION_PROVIDER, providerName);
         portAttributes.put(Port.PORT, findFreePort());
 
-        responseCode = getRestTestHelper().submitRequest("/rest/port/" + portName, "PUT", portAttributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", portAttributes);
         assertEquals("Unexpected response code for port creation", 201, responseCode);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName , "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName , "DELETE");
         assertEquals("Unexpected response code for provider deletion", 409, responseCode);
 
-        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
+        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 1, providerDetails.size());
         assertProvider(false, AnonymousAuthenticationManager.PROVIDER_TYPE, providerDetails.get(0));
@@ -149,13 +149,13 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.NAME, providerName);
         attributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code for provider creation", 201, responseCode);
 
-        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName , "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName , "DELETE");
         assertEquals("Unexpected response code for provider deletion", 200, responseCode);
 
-        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
+        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected number of providers", 0, providerDetails.size());
     }
@@ -185,16 +185,16 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
 
-        Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+        Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/" + providerName);
         assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
         assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
         assertEquals("Unexpected path", file.getAbsolutePath() , provider.get(ExternalFileBasedAuthenticationManager.PATH));
         assertEquals("Unexpected state", State.ERRORED.name() , provider.get(AuthenticationProvider.STATE));
 
-        int status = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "DELETE", null);
+        int status = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "DELETE");
         assertEquals("ACL was not deleted", 200, status);
 
-        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
+        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("authenticationprovider/" + providerName);
         assertEquals("Provider exists", 0, providers.size());
     }
 
@@ -223,7 +223,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
 
-        Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+        Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/" + providerName);
         assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
         assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
         assertEquals("Unexpected path", file.getAbsolutePath() , provider.get(ExternalFileBasedAuthenticationManager.PATH));
@@ -239,10 +239,10 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
             attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
             attributes.put(ExternalFileBasedAuthenticationManager.PATH, principalDatabase.getAbsolutePath());
 
-            int status = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+            int status = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
             assertEquals("ACL was not deleted", 200, status);
 
-            provider = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+            provider = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/" + providerName);
             assertEquals("Unexpected id", id.toString(), provider.get(AuthenticationProvider.ID));
             assertEquals("Unexpected name", providerName, provider.get(AuthenticationProvider.NAME));
             assertEquals("Unexpected path", principalDatabase.getAbsolutePath() , provider.get(
@@ -282,11 +282,11 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
         attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsolutePath());
 
-        int responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
         assertEquals("Password provider was not created", 201, responseCode);
 
 
-        Map<String, Object> providerDetails = getRestTestHelper().getJsonAsSingletonList("/rest/authenticationprovider/" + providerName);
+        Map<String, Object> providerDetails = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providerDetails);
         assertEquals("Unexpected name", providerName, providerDetails.get(AuthenticationProvider.NAME));
         assertEquals("Unexpected type", PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE, providerDetails.get(AuthenticationProvider.TYPE));
@@ -295,10 +295,10 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
         assertTrue("User file should be created", file.exists());
 
-        responseCode = getRestTestHelper().submitRequest("/rest/authenticationprovider/" + providerName , "DELETE", null);
+        responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName , "DELETE");
         assertEquals("Unexpected response code for provider deletion", 200, responseCode);
 
-        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("/rest/authenticationprovider/" + providerName);
+        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providers);
         assertEquals("Unexpected number of providers", 0, providers.size());
 

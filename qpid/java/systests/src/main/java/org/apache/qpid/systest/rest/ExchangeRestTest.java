@@ -39,7 +39,7 @@ public class ExchangeRestTest extends QpidRestTestCase
 
     public void testGet() throws Exception
     {
-        List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("/rest/exchange");
+        List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("exchange");
         assertNotNull("Exchanges cannot be null", exchanges);
         assertTrue("Unexpected number of exchanges", exchanges.size() >= EXPECTED_VIRTUALHOSTS.length * EXPECTED_EXCHANGES.length);
         for (Map<String, Object> exchange : exchanges)
@@ -50,7 +50,7 @@ public class ExchangeRestTest extends QpidRestTestCase
 
     public void testGetHostExchanges() throws Exception
     {
-        List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("/rest/exchange/test");
+        List<Map<String, Object>> exchanges = getRestTestHelper().getJsonAsList("exchange/test");
         assertNotNull("Users cannot be null", exchanges);
         assertEquals("Unexpected number of exchanges", exchanges.size(), EXPECTED_EXCHANGES.length);
         for (String exchangeName : EXPECTED_EXCHANGES)
@@ -64,7 +64,7 @@ public class ExchangeRestTest extends QpidRestTestCase
     {
         for (String exchangeName : EXPECTED_EXCHANGES)
         {
-            Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList("/rest/exchange/test/test/"
+            Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList("exchange/test/test/"
                     + URLDecoder.decode(exchangeName, "UTF-8"));
             assertExchange(exchangeName, exchange);
         }
@@ -73,7 +73,7 @@ public class ExchangeRestTest extends QpidRestTestCase
     public void testSetExchangeAttributesUnsupported() throws Exception
     {
         String exchangeName = getTestName();
-        String exchangeUrl = "/rest/exchange/test/test/" + exchangeName;
+        String exchangeUrl = "exchange/test/test/" + exchangeName;
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Exchange.NAME, exchangeName);

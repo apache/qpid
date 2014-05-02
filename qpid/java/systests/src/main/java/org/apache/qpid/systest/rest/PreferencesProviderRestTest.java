@@ -83,13 +83,13 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
 
     public void testCreateAndGetProvider() throws Exception
     {
-        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("/rest/preferencesprovider");
+        List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("preferencesprovider");
         assertEquals("Unexpected number of providers", 0, providerDetails.size());
 
         createPreferencesProvider(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, "test1");
         createPreferencesProvider(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "-2", "test2");
 
-        providerDetails = getRestTestHelper().getJsonAsList("/rest/preferencesprovider");
+        providerDetails = getRestTestHelper().getJsonAsList("preferencesprovider");
         assertEquals("Unexpected number of providers", 2, providerDetails.size());
 
         for (Map<String, Object> provider : providerDetails)
@@ -98,12 +98,12 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
         }
 
         Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList(
-                "/rest/preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/test1");
+                "preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/test1");
         assertProvider(provider);
         assertEquals("Unexpected provider name ", "test1", provider.get(PreferencesProvider.NAME));
 
         Map<String, Object> provider2 = getRestTestHelper().getJsonAsSingletonList(
-                "/rest/preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "-2/test2");
+                "preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "-2/test2");
         assertProvider(provider);
         assertEquals("Unexpected provider name ", "test2", provider2.get(PreferencesProvider.NAME));
     }
@@ -111,12 +111,12 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
     public void testDeleteProvider() throws Exception
     {
         createPreferencesProvider(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, "test1");
-        String providerUrl = "/rest/preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/test1";
+        String providerUrl = "preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/test1";
         Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList(providerUrl);
         assertProvider(provider);
         assertEquals("Unexpected provider name ", "test1", provider.get(PreferencesProvider.NAME));
 
-        int responseCode = getRestTestHelper().submitRequest(providerUrl, "DELETE", null);
+        int responseCode = getRestTestHelper().submitRequest(providerUrl, "DELETE");
         assertEquals("Failed to delete preferences provider", 200, responseCode);
 
         List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList(providerUrl);
@@ -126,7 +126,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
     public void testUpdateProvider() throws Exception
     {
         createPreferencesProvider(TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, "test1");
-        String providerUrl = "/rest/preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/test1";
+        String providerUrl = "preferencesprovider/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/test1";
         Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList(providerUrl);
         assertProvider(provider);
         assertEquals("Unexpected provider name ", "test1", provider.get(PreferencesProvider.NAME));
@@ -190,7 +190,7 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
         attributes.put(FileSystemPreferencesProvider.PATH, file.getAbsolutePath());
 
         int responseCode = getRestTestHelper().submitRequest(
-                "/rest/preferencesprovider/" + authenticationProvider + "/" + providerName, "PUT", attributes);
+                "preferencesprovider/" + authenticationProvider + "/" + providerName, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
     }
 
