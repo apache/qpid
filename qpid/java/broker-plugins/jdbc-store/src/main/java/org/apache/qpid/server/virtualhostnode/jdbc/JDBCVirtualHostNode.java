@@ -27,22 +27,22 @@ import org.apache.qpid.server.store.jdbc.DefaultConnectionProviderFactory;
 public interface JDBCVirtualHostNode
 {
     //TODO: Split this attribute into connectionUrl, username and password. Make the password attribute secure.
-    @ManagedAttribute(automate=true, mandatory=true)
+    @ManagedAttribute(mandatory=true)
     String getConnectionUrl();
 
-    @ManagedAttribute(automate=true, defaultValue=DefaultConnectionProviderFactory.TYPE)
+    @ManagedAttribute(defaultValue=DefaultConnectionProviderFactory.TYPE)
     String getConnectionPoolType();
 
-    @ManagedAttribute(automate=true)
+    @ManagedAttribute
     String getBigIntType();
 
-    @ManagedAttribute(automate=true)
+    @ManagedAttribute
     boolean isBytesForBlob();
 
-    @ManagedAttribute(automate=true)
+    @ManagedAttribute
     String getVarBinaryType();
 
-    @ManagedAttribute(automate=true)
+    @ManagedAttribute
     String getBlobType();
 
 }

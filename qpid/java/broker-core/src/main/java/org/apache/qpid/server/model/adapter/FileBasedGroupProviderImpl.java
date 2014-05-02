@@ -81,7 +81,7 @@ public class FileBasedGroupProviderImpl
         _state = new AtomicReference<State>(state);
     }
 
-    public void validate()
+    public void onValidate()
     {
         Collection<GroupProvider<?>> groupProviders = _broker.getGroupProviders();
         for(GroupProvider<?> provider : groupProviders)
@@ -128,7 +128,7 @@ public class FileBasedGroupProviderImpl
             }
             catch (IOException e)
             {
-                setState(getState(), State.ERRORED);
+                setState(State.ERRORED);
                 LOGGER.warn(("Unable to open preferences file at " + _path));
             }
         }
@@ -182,7 +182,7 @@ public class FileBasedGroupProviderImpl
         }
         catch (IOException e)
         {
-            setState(getState(), State.ERRORED);
+            setState(State.ERRORED);
             LOGGER.warn(("Unable to open preferences file at " + _path));
         }
 
@@ -266,7 +266,7 @@ public class FileBasedGroupProviderImpl
     }
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
+    protected boolean setState(State desiredState)
     {
         State state = _state.get();
         if (desiredState == State.ACTIVE)
@@ -379,7 +379,7 @@ public class FileBasedGroupProviderImpl
     }
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {
@@ -423,9 +423,9 @@ public class FileBasedGroupProviderImpl
 
 
         @Override
-        public void validate()
+        public void onValidate()
         {
-            super.validate();
+            super.onValidate();
             if(!isDurable())
             {
                 throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
@@ -507,7 +507,7 @@ public class FileBasedGroupProviderImpl
         }
 
         @Override
-        protected boolean setState(State currentState, State desiredState)
+        protected boolean setState(State desiredState)
                 throws IllegalStateTransitionException, AccessControlException
         {
             if (desiredState == State.DELETED)
@@ -547,9 +547,9 @@ public class FileBasedGroupProviderImpl
 
 
             @Override
-            public void validate()
+            public void onValidate()
             {
-                super.validate();
+                super.onValidate();
                 if(!isDurable())
                 {
                     throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
@@ -580,7 +580,7 @@ public class FileBasedGroupProviderImpl
             }
 
             @Override
-            protected boolean setState(State currentState, State desiredState)
+            protected boolean setState(State desiredState)
                     throws IllegalStateTransitionException,
                     AccessControlException
             {

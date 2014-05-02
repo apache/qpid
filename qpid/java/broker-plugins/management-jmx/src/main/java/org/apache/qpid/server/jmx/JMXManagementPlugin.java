@@ -30,6 +30,6 @@ public interface JMXManagementPlugin<X extends JMXManagementPlugin<X>> extends P
     String USE_PLATFORM_MBEAN_SERVER = "usePlatformMBeanServer";
     String DEFAULT_USE_PLATFORM_MBEAN_SERVER = "true";
 
-    @ManagedAttribute( automate = true, defaultValue = DEFAULT_USE_PLATFORM_MBEAN_SERVER )
+    @ManagedAttribute( defaultValue = DEFAULT_USE_PLATFORM_MBEAN_SERVER )
     boolean getUsePlatformMBeanServer();
 }

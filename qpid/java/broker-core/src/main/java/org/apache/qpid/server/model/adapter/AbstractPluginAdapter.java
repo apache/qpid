@@ -45,9 +45,9 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
 
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         if(!isDurable())
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
@@ -87,7 +87,7 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     }
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {

@@ -31,7 +31,7 @@ public interface User<X extends User<X>> extends ConfiguredObject<X>
 
     // Attributes
 
-    @ManagedAttribute( secure = true , automate = true )
+    @ManagedAttribute( secure = true )
     String getPassword();
 
     public void setPassword(String password);

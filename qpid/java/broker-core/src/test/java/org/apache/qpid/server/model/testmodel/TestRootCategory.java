@@ -30,9 +30,9 @@ public interface TestRootCategory<X extends TestRootCategory<X>> extends Configu
     String AUTOMATED_PERSISTED_VALUE = "automatedPersistedValue";
     String AUTOMATED_NONPERSISTED_VALUE = "automatedNonPersistedValue";
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getAutomatedPersistedValue();
 
-    @ManagedAttribute( automate = true, persist = false )
+    @ManagedAttribute( persist = false )
     String getAutomatedNonPersistedValue();
 }

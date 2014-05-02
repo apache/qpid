@@ -93,9 +93,9 @@ public class FileSystemPreferencesProviderImpl
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         if(!isDurable())
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
@@ -132,11 +132,11 @@ public class FileSystemPreferencesProviderImpl
 
     public void close()
     {
-        setDesiredState(getState(), State.STOPPED);
+        setDesiredState(State.STOPPED);
     }
 
     @Override
-    public boolean setState(State currentState, State desiredState) throws IllegalStateTransitionException, AccessControlException
+    public boolean setState(State desiredState) throws IllegalStateTransitionException, AccessControlException
     {
         State state = _state.get();
         if (desiredState == State.DELETED)

@@ -193,7 +193,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     }
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
+    protected boolean setState(State desiredState)
     {
         // TODO: add state management
         return false;

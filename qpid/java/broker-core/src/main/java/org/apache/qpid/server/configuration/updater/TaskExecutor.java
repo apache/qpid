@@ -22,11 +22,9 @@ package org.apache.qpid.server.configuration.updater;
 
 import java.util.concurrent.CancellationException;
 
-import org.apache.qpid.server.model.State;
-
 public interface TaskExecutor
 {
-    State getState();
+    boolean isRunning();
 
     void start();
 

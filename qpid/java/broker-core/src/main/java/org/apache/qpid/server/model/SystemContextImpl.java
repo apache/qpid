@@ -72,7 +72,7 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     }
 
     @Override
-    protected boolean setState(final State currentState, final State desiredState)
+    protected boolean setState(final State desiredState)
     {
         throw new IllegalArgumentException("Cannot change the state of the SystemContext object");
     }

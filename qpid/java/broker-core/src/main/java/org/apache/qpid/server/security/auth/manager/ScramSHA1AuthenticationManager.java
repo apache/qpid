@@ -295,7 +295,7 @@ public class ScramSHA1AuthenticationManager
                 final ScramAuthUser authUser = getUser(user);
                 if(authUser != null)
                 {
-                    authUser.setState(State.ACTIVE, State.DELETED);
+                    authUser.setState(State.DELETED);
                 }
                 else
                 {

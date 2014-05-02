@@ -136,9 +136,9 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
 
         if(!_virtualHost.getSecurityManager().isSystemProcess())
         {
@@ -732,7 +732,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                              final Map<String, Object> oldArguments);
 
     @Override
-    protected boolean setState(final State currentState, final State desiredState)
+    protected boolean setState(final State desiredState)
     {
         if(desiredState == State.DELETED)
         {

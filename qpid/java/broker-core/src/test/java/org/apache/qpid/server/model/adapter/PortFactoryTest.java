@@ -99,8 +99,8 @@ public class PortFactoryTest extends QpidTestCase
         _attributes.put(Port.TRANSPORTS, _tcpStringSet);
         _attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         _attributes.put(Port.TCP_NO_DELAY, "true");
-        _attributes.put(Port.RECEIVE_BUFFER_SIZE, "1");
-        _attributes.put(Port.SEND_BUFFER_SIZE, "2");
+        _attributes.put(AmqpPort.RECEIVE_BUFFER_SIZE, "1");
+        _attributes.put(AmqpPort.SEND_BUFFER_SIZE, "2");
         _attributes.put(Port.BINDING_ADDRESS, "127.0.0.1");
     }
 
@@ -172,9 +172,9 @@ public class PortFactoryTest extends QpidTestCase
         assertEquals("Unexpected protocols", EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1, Protocol.AMQP_0_10,
                                                         Protocol.AMQP_1_0), port.getAvailableProtocols());
         assertEquals("Unexpected send buffer size", PortFactory.DEFAULT_AMQP_SEND_BUFFER_SIZE,
-                port.getAttribute(Port.SEND_BUFFER_SIZE));
+                port.getAttribute(AmqpPort.SEND_BUFFER_SIZE));
         assertEquals("Unexpected receive buffer size", PortFactory.DEFAULT_AMQP_RECEIVE_BUFFER_SIZE,
-                port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
+                port.getAttribute(AmqpPort.RECEIVE_BUFFER_SIZE));
         assertEquals("Unexpected need client auth", PortFactory.DEFAULT_AMQP_NEED_CLIENT_AUTH,
                 port.getAttribute(Port.NEED_CLIENT_AUTH));
         assertEquals("Unexpected want client auth", PortFactory.DEFAULT_AMQP_WANT_CLIENT_AUTH,
@@ -317,8 +317,8 @@ public class PortFactoryTest extends QpidTestCase
             assertEquals(_tcpTransports, port.getTransports());
         }
         assertEquals(amqp010ProtocolSet, port.getAvailableProtocols());
-        assertEquals("Unexpected send buffer size", 2, port.getAttribute(Port.SEND_BUFFER_SIZE));
-        assertEquals("Unexpected receive buffer size", 1, port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
+        assertEquals("Unexpected send buffer size", 2, port.getAttribute(AmqpPort.SEND_BUFFER_SIZE));
+        assertEquals("Unexpected receive buffer size", 1, port.getAttribute(AmqpPort.RECEIVE_BUFFER_SIZE));
         assertEquals("Unexpected need client auth", needClientAuth, port.getAttribute(Port.NEED_CLIENT_AUTH));
         assertEquals("Unexpected want client auth", wantClientAuth, port.getAttribute(Port.WANT_CLIENT_AUTH));
         assertEquals("Unexpected tcp no delay", true, port.getAttribute(Port.TCP_NO_DELAY));
@@ -345,11 +345,6 @@ public class PortFactoryTest extends QpidTestCase
         assertEquals(_portNumber, port.getPort());
         assertEquals(_tcpTransports, port.getTransports());
         assertEquals(nonAmqpProtocolSet, port.getAvailableProtocols());
-        assertNull("Unexpected send buffer size", port.getAttribute(Port.SEND_BUFFER_SIZE));
-        assertNull("Unexpected receive buffer size", port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
-        assertNull("Unexpected need client auth", port.getAttribute(Port.NEED_CLIENT_AUTH));
-        assertNull("Unexpected want client auth", port.getAttribute(Port.WANT_CLIENT_AUTH));
-        assertNull("Unexpected tcp no delay", port.getAttribute(Port.TCP_NO_DELAY));
     }
 
     public void testCreateNonAmqpPortWithPartiallySetAttributes()
@@ -371,11 +366,7 @@ public class PortFactoryTest extends QpidTestCase
         assertEquals(_portNumber, port.getPort());
         assertEquals(Collections.singleton(PortFactory.DEFAULT_TRANSPORT), port.getTransports());
         assertEquals(nonAmqpProtocolSet, port.getAvailableProtocols());
-        assertNull("Unexpected send buffer size", port.getAttribute(Port.SEND_BUFFER_SIZE));
-        assertNull("Unexpected receive buffer size", port.getAttribute(Port.RECEIVE_BUFFER_SIZE));
-        assertNull("Unexpected need client auth", port.getAttribute(Port.NEED_CLIENT_AUTH));
-        assertNull("Unexpected want client auth", port.getAttribute(Port.WANT_CLIENT_AUTH));
-        assertNull("Unexpected tcp no delay", port.getAttribute(Port.TCP_NO_DELAY));
+
     }
 
     public void testCreateMixedAmqpAndNonAmqpThrowsException()

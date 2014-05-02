@@ -32,8 +32,6 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     String PROTOCOLS                            = "protocols";
     String TRANSPORTS                           = "transports";
     String TCP_NO_DELAY                         = "tcpNoDelay";
-    String SEND_BUFFER_SIZE                     = "sendBufferSize";
-    String RECEIVE_BUFFER_SIZE                  = "receiveBufferSize";
     String NEED_CLIENT_AUTH                     = "needClientAuth";
     String WANT_CLIENT_AUTH                     = "wantClientAuth";
     String AUTHENTICATION_PROVIDER              = "authenticationProvider";
@@ -42,22 +40,22 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 
     // Attributes
 
-    @ManagedAttribute(automate = true, defaultValue = "*")
+    @ManagedAttribute(defaultValue = "*")
     String getBindingAddress();
 
-    @ManagedAttribute(mandatory = true, automate = true)
+    @ManagedAttribute( mandatory = true )
     int getPort();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     Set<Protocol> getProtocols();
 
-    @ManagedAttribute( automate = true, defaultValue = "TCP" )
+    @ManagedAttribute( defaultValue = "TCP" )
     Set<Transport> getTransports();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     KeyStore getKeyStore();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     Collection<TrustStore> getTrustStores();
 
 

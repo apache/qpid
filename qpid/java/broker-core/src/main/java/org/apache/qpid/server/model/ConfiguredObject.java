@@ -45,6 +45,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     String LAST_UPDATED_BY = "lastUpdatedBy";
     String LAST_UPDATED_TIME = "lastUpdatedTime";
     String STATE = "state";
+    String DESIRED_STATE = "desiredState";
     String CREATED_BY = "createdBy";
     String CREATED_TIME = "createdTime";
 
@@ -54,7 +55,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the objects id
      */
-    @ManagedAttribute( automate = true, mandatory = true )
+    @ManagedAttribute( mandatory = true )
     UUID getId();
 
     /**
@@ -62,31 +63,31 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the name of the object
      */
-    @ManagedAttribute( automate = true, mandatory = true)
+    @ManagedAttribute( mandatory = true)
     String getName();
 
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getDescription();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getType();
 
-    @ManagedAttribute(automate = true)
+    @ManagedAttribute
     Map<String, String> getContext();
 
     <T> T getContextValue(Class<T> clazz, String propertyName);
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute( persist = true )
     String getLastUpdatedBy();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute( persist = true )
     long getLastUpdatedTime();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute( persist = true )
     String getCreatedBy();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute( persist = true )
     long getCreatedTime();
 
 
@@ -99,6 +100,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the desired state of the object
      */
+    @ManagedAttribute
     State getDesiredState();
 
     /**
@@ -107,13 +109,12 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      * Request a change to the current state. The caller must pass in the state it believe the object to be in, if
      * this differs from the current desired state when the object evaluates the request, then no state change will occur.
      *
-     * @param currentState the state the caller believes the object to be in
      * @param desiredState the state the caller wishes the object to attain
      * @return the new current state
      * @throws IllegalStateTransitionException  the requested state transition is invalid
      * @throws AccessControlException the current context does not have sufficient permissions to change the state
      */
-    State setDesiredState(State currentState, State desiredState) throws IllegalStateTransitionException,
+    State setDesiredState(State desiredState) throws IllegalStateTransitionException,
                                                                          AccessControlException;
 
     /**
@@ -125,7 +126,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the actual state of the object
      */
-    @ManagedAttribute( state = true )
+    @DerivedAttribute
     State getState();
 
 
@@ -159,7 +160,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the durability
      */
-    @ManagedAttribute( automate = true, defaultValue = "true" )
+    @ManagedAttribute( defaultValue = "true" )
     boolean isDurable();
 
     /**
@@ -167,7 +168,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the lifetime policy
      */
-    @ManagedAttribute( automate = true, defaultValue = "PERMANENT" )
+    @ManagedAttribute( defaultValue = "PERMANENT" )
     LifetimePolicy getLifetimePolicy();
 
     /**
@@ -253,8 +254,6 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     ConfiguredObjectRecord asObjectRecord();
 
     void open();
-
-    void validate();
 
     TaskExecutor getTaskExecutor();
 

@@ -83,7 +83,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         _broker.open();
 
         // starting the broker
-        _broker.setDesiredState(State.INITIALISING, State.ACTIVE);
+        _broker.setDesiredState(State.ACTIVE);
 
         startupLogger.message(BrokerMessages.READY());
         _broker.setEventLogger(eventLogger);
@@ -101,7 +101,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         {
             if (_broker != null)
             {
-                _broker.setDesiredState(_broker.getState(), State.STOPPED);
+                _broker.setDesiredState(State.STOPPED);
             }
         }
         finally

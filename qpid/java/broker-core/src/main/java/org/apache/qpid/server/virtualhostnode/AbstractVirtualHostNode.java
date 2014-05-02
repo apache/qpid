@@ -98,14 +98,14 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     }
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
+    protected boolean setState(State desiredState)
     {
         State state = _state.get();
         if (desiredState == State.DELETED)
         {
             if (state == State.ACTIVE || state == State.INITIALISING)
             {
-                state = setDesiredState(currentState, State.STOPPED);
+                state = setDesiredState(State.STOPPED);
             }
 
             if (state == State.STOPPED || state == State.ERRORED)
@@ -238,7 +238,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         VirtualHost<?, ?, ?> virtualHost = getVirtualHost();
         if (virtualHost != null)
         {
-            virtualHost.setDesiredState(virtualHost.getState(), State.DELETED);
+            virtualHost.setDesiredState(State.DELETED);
         }
 
         deleted();
@@ -254,7 +254,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         VirtualHost<?, ?, ?> virtualHost = getVirtualHost();
         if (virtualHost != null)
         {
-            virtualHost.setDesiredState(virtualHost.getState(), State.STOPPED);
+            virtualHost.setDesiredState(State.STOPPED);
         }
         getConfigurationStore().closeConfigurationStore();
 
@@ -262,7 +262,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     }
 
     @Override
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {

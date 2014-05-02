@@ -74,52 +74,52 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     @ManagedContextDefault(name = QPID_JMX_PORT)
     public static final String DEFAULT_JMX_PORT_NUMBER  = "9099";
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getBuildVersion();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getOperatingSystem();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getPlatform();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getProcessPid();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     String getProductVersion();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Collection<String> getSupportedVirtualHostStoreTypes();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Collection<String> getSupportedAuthenticationProviders();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Collection<String> getSupportedPreferencesProviderTypes();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Collection<String> getSupportedVirtualHostTypes();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     String getDefaultVirtualHost();
 
-    @ManagedAttribute( automate = true, defaultValue = "256" )
+    @ManagedAttribute( defaultValue = "256" )
     int getConnection_sessionCountLimit();
 
-    @ManagedAttribute( automate = true, defaultValue = "0")
+    @ManagedAttribute( defaultValue = "0")
     int getConnection_heartBeatDelay();
 
-    @ManagedAttribute( automate = true, defaultValue = "true" )
+    @ManagedAttribute( defaultValue = "true" )
     boolean getConnection_closeWhenNoRoute();
 
-    @ManagedAttribute( automate = true, defaultValue = "0" )
+    @ManagedAttribute( defaultValue = "0" )
     int getStatisticsReportingPeriod();
 
-    @ManagedAttribute( automate = true, defaultValue = "false")
+    @ManagedAttribute( defaultValue = "false")
     boolean getStatisticsReportingResetEnabled();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute( persist = true )
     String getModelVersion();
 
     @ManagedStatistic

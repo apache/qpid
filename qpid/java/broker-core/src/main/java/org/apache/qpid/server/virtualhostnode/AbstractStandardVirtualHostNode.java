@@ -57,9 +57,9 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         DurableConfigurationStoreFactory durableConfigurationStoreFactory = getDurableConfigurationStoreFactory();
         Map<String, Object> storeSettings = new HashMap<String, Object>(getActualAttributes());
         storeSettings.put(DurableConfigurationStore.STORE_TYPE, durableConfigurationStoreFactory.getType());
@@ -148,7 +148,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
             });
         }
 
-        host.setDesiredState(host.getState(), State.ACTIVE);
+        host.setDesiredState(State.ACTIVE);
     }
 
     @Override

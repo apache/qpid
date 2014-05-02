@@ -142,7 +142,7 @@ public class PluggableProcessor extends AbstractProcessor
                     .printMessage(Diagnostic.Kind.NOTE, "Generating service file for " + serviceName);
 
             String relativeName = "META-INF/services/" + serviceName;
-
+            loadExistingServicesFile(filer, serviceName);
             try
             {
                 FileObject serviceFile = filer.createResource(StandardLocation.CLASS_OUTPUT, "", relativeName);

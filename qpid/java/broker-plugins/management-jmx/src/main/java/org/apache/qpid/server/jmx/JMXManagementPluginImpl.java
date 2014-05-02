@@ -88,7 +88,7 @@ public class JMXManagementPluginImpl
     }
 
     @Override
-    protected boolean setState(State currentState, State desiredState)
+    protected boolean setState(State desiredState)
     {
         if(desiredState == State.ACTIVE)
         {

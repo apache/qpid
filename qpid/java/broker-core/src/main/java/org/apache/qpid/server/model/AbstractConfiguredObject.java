@@ -148,6 +148,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private final OwnAttributeResolver _attributeResolver = new OwnAttributeResolver(this);
 
+    @ManagedAttributeField
+    private State _desiredState;
+
     protected static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(ConfiguredObject<?>... parents)
     {
         final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap =
@@ -237,7 +240,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
 
         Object durableObj = attributes.get(DURABLE);
-        _durable = AttributeValueConverter.BOOLEAN_CONVERTER.convert(durableObj == null ? _attributeTypes.get(DURABLE).getAnnotation().defaultValue() : durableObj, this);
+        _durable = AttributeValueConverter.BOOLEAN_CONVERTER.convert(durableObj == null
+                                                                             ? ((ConfiguredAutomatedAttribute) (_attributeTypes
+                .get(DURABLE))).defaultValue()
+                                                                             : durableObj, this);
 
         for (String name : getAttributeNames())
         {
@@ -265,11 +271,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         for(ConfiguredObjectAttribute<?,?> attr : _attributeTypes.values())
         {
-            if(attr.getAnnotation().mandatory() && !(_attributes.containsKey(attr.getName())
-                                                     || !"".equals(attr.getAnnotation().defaultValue())))
+            if(attr.isAutomated())
             {
-                deleted();
-                throw new IllegalArgumentException("Mandatory attribute " + attr.getName() + " not supplied for instance of " + getClass().getName());
+                ConfiguredAutomatedAttribute<?,?> autoAttr = (ConfiguredAutomatedAttribute<?,?>)attr;
+                if (autoAttr.isMandatory() && !(_attributes.containsKey(attr.getName())
+                                            || !"".equals(autoAttr.defaultValue())))
+                {
+                    deleted();
+                    throw new IllegalArgumentException("Mandatory attribute "
+                                                       + attr.getName()
+                                                       + " not supplied for instance of "
+                                                       + getClass().getName());
+                }
             }
         }
     }
@@ -333,10 +346,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         try
         {
-            final ConfiguredObjectAttribute attribute = _attributeTypes.get(name);
-            if(value == null && !"".equals(attribute.getAnnotation().defaultValue()))
+            final ConfiguredAutomatedAttribute attribute = (ConfiguredAutomatedAttribute) _attributeTypes.get(name);
+            if(value == null && !"".equals(attribute.defaultValue()))
             {
-                value = attribute.getAnnotation().defaultValue();
+                value = attribute.defaultValue();
             }
             ConfiguredObjectTypeRegistry.AutomatedField field = _automatedFields.get(name);
 
@@ -436,7 +449,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     }
                 }
             });
-            validate();
+            onValidate();
         }
     }
 
@@ -444,7 +457,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(skipCheck || !_open.get())
         {
-            resolve();
+            onResolve();
             applyToChildren(new Action<ConfiguredObject<?>>()
             {
                 @Override
@@ -493,25 +506,25 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    public void validate()
+    public void onValidate()
     {
     }
 
-    protected void resolve()
+    protected void onResolve()
     {
         for (ConfiguredObjectAttribute<?, ?> attr : _attributeTypes.values())
         {
             String attrName = attr.getName();
-            ManagedAttribute attrAnnotation = attr.getAnnotation();
-            if (attrAnnotation.automate())
+            if (attr.isAutomated())
             {
+                ConfiguredAutomatedAttribute<?,?> autoAttr = (ConfiguredAutomatedAttribute<?,?>)attr;
                 if (_attributes.containsKey(attrName))
                 {
                     automatedSetValue(attrName, _attributes.get(attrName));
                 }
-                else if (!"".equals(attrAnnotation.defaultValue()))
+                else if (!"".equals(autoAttr.defaultValue()))
                 {
-                    automatedSetValue(attrName, attrAnnotation.defaultValue());
+                    automatedSetValue(attrName, autoAttr.defaultValue());
                 }
 
             }
@@ -566,11 +579,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public State getDesiredState()
     {
-        return null;  //TODO
+        return _desiredState;
     }
 
     @Override
-    public final State setDesiredState(final State currentState, final State desiredState)
+    public final State setDesiredState(final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
 
@@ -580,10 +593,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                             @Override
                             public State execute()
                             {
-                                authoriseSetDesiredState(currentState, desiredState);
-                                if (setState(currentState, desiredState))
+                                State state = getState();
+                                authoriseSetDesiredState(desiredState);
+                                if (setState(desiredState))
                                 {
-                                    notifyStateChanged(currentState, desiredState);
+                                    notifyStateChanged(state, desiredState);
                                     return desiredState;
                                 }
                                 else
@@ -597,7 +611,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     /**
      * @return true when the state has been successfully updated to desiredState or false otherwise
      */
-    protected abstract boolean setState(State currentState, State desiredState);
+    protected abstract boolean setState(State desiredState);
 
     protected void notifyStateChanged(final State currentState, final State desiredState)
     {
@@ -689,10 +703,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public Object getAttribute(String name)
     {
         ConfiguredObjectAttribute<X,?> attr = (ConfiguredObjectAttribute<X, ?>) _attributeTypes.get(name);
-        if(attr != null && (attr.getAnnotation().automate() || attr.getAnnotation().derived()))
+        if(attr != null && (attr.isAutomated() || attr.isDerived()))
         {
             Object value = attr.getValue((X)this);
-            if(value != null && attr.getAnnotation().secure() &&
+            if(value != null && attr.isSecure() &&
                !SecurityManager.isSystemProcess())
             {
                 return SECURE_VALUES.get(value.getClass());
@@ -702,10 +716,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 return value;
             }
         }
-        else
+        else if(attr != null)
         {
             Object value = getActualAttribute(name);
             return value;
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unknown attribute: '" + name + "'");
         }
     }
 
@@ -732,20 +750,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private Object getActualAttribute(final String name)
     {
-        if(CREATED_BY.equals(name))
+        synchronized (_attributes)
         {
-            return getCreatedBy();
-        }
-        else if(CREATED_TIME.equals(name))
-        {
-            return getCreatedTime();
-        }
-        else
-        {
-            synchronized (_attributes)
-            {
-                return _attributes.get(name);
-            }
+            return _attributes.get(name);
         }
     }
 
@@ -784,7 +791,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 //TODO: don't put nulls
                 _attributes.put(name, desired);
                 ConfiguredObjectAttribute<?,?> attr = _attributeTypes.get(name);
-                if(attr != null && attr.getAnnotation().automate())
+                if(attr != null && attr.isAutomated())
                 {
                     automatedSetValue(name, desired);
                 }
@@ -846,25 +853,29 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     @Override
                     public Map<String, Object> run()
                     {
-                        Map<String,Object> actualAttributes = new HashMap<String, Object>(getActualAttributes());
-                        Iterator<Map.Entry<String,Object>> attributeIterator = actualAttributes.entrySet().iterator();
-
-                        while(attributeIterator.hasNext())
+                        Map<String,Object> attributes = new HashMap<String, Object>();
+                        Map<String,Object> actualAttributes = getActualAttributes();
+                        for(ConfiguredObjectAttribute<?,?> attr : _attributeTypes.values())
                         {
-                            Map.Entry<String, Object> entry = attributeIterator.next();
-                            ConfiguredObjectAttribute<?, ?> attributeDefinition =
-                                    _attributeTypes.get(entry.getKey());
-                            if(attributeDefinition != null && !attributeDefinition.getAnnotation().persist())
+                            if(attr.isPersisted())
                             {
-                                attributeIterator.remove();
-                            }
-                            else if(entry.getValue() instanceof ConfiguredObject)
-                            {
-                                entry.setValue(((ConfiguredObject)entry.getValue()).getId());
+                                if(attr.isDerived())
+                                {
+                                    attributes.put(attr.getName(), getAttribute(attr.getName()));
+                                }
+                                else if(actualAttributes.containsKey(attr.getName()))
+                                {
+                                    Object value = actualAttributes.get(attr.getName());
+                                    if(value instanceof ConfiguredObject)
+                                    {
+                                        value = ((ConfiguredObject)value).getId();
+                                    }
+                                    attributes.put(attr.getName(), value);
+                                }
                             }
                         }
-                        actualAttributes.remove(ID);
-                        return actualAttributes;
+                        attributes.remove(ID);
+                        return attributes;
                     }
                 });
             }
@@ -1070,7 +1081,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                                             new AttributeGettingHandler(attributes));
     }
 
-    protected void authoriseSetDesiredState(State currentState, State desiredState) throws AccessControlException
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         // allowed by default
     }
@@ -1337,11 +1348,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         protected Object getValue(final ConfiguredObjectAttribute attribute)
         {
-            ManagedAttribute annotation = attribute.getAnnotation();
-            if(annotation.automate())
+            if(attribute.isAutomated())
             {
+                ConfiguredAutomatedAttribute autoAttr = (ConfiguredAutomatedAttribute)attribute;
                 Object value = _attributes.get(attribute.getName());
-                return attribute.convert(value == null && !"".equals(annotation.defaultValue()) ? annotation.defaultValue() : value , AbstractConfiguredObject.this);
+                return attribute.convert(value == null && !"".equals(autoAttr.defaultValue()) ? autoAttr.defaultValue() : value , AbstractConfiguredObject.this);
             }
             else
             {

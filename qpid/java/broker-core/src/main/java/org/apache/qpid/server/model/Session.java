@@ -30,10 +30,10 @@ public interface Session<X extends Session<X>> extends ConfiguredObject<X>
     // available credit of both producer and consumer sides.
     String PRODUCER_FLOW_BLOCKED = "producerFlowBlocked";
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     int getChannelId();
 
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     boolean isProducerFlowBlocked();
 
 

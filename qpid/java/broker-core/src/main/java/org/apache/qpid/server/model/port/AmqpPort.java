@@ -35,24 +35,26 @@ public interface AmqpPort<X extends AmqpPort<X>> extends Port<X>
 
     String DEFAULT_AMQP_NEED_CLIENT_AUTH = "false";
     String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
+    String SEND_BUFFER_SIZE                     = "sendBufferSize";
+    String RECEIVE_BUFFER_SIZE                  = "receiveBufferSize";
 
-    @ManagedAttribute( automate = true , defaultValue = AmqpPort.DEFAULT_AMQP_TCP_NO_DELAY )
+    @ManagedAttribute( defaultValue = AmqpPort.DEFAULT_AMQP_TCP_NO_DELAY )
     boolean isTcpNoDelay();
 
-    @ManagedAttribute( automate = true , defaultValue = AmqpPort.DEFAULT_AMQP_SEND_BUFFER_SIZE )
+    @ManagedAttribute( defaultValue = AmqpPort.DEFAULT_AMQP_SEND_BUFFER_SIZE )
     int getSendBufferSize();
 
-    @ManagedAttribute( automate = true , defaultValue = AmqpPort.DEFAULT_AMQP_RECEIVE_BUFFER_SIZE )
+    @ManagedAttribute( defaultValue = AmqpPort.DEFAULT_AMQP_RECEIVE_BUFFER_SIZE )
     int getReceiveBufferSize();
 
 
-    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )
+    @ManagedAttribute( defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )
     boolean getNeedClientAuth();
 
-    @ManagedAttribute( automate = true, defaultValue = DEFAULT_AMQP_WANT_CLIENT_AUTH )
+    @ManagedAttribute( defaultValue = DEFAULT_AMQP_WANT_CLIENT_AUTH )
     boolean getWantClientAuth();
 
-    @ManagedAttribute( automate = true, mandatory = true )
+    @ManagedAttribute( mandatory = true )
     AuthenticationProvider getAuthenticationProvider();
 
     VirtualHostImpl getVirtualHost(String name);

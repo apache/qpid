@@ -32,14 +32,14 @@ public interface Binding<X extends Binding<X>> extends ConfiguredObject<X>
     public String EXCHANGE = "exchange";
 
     // TODO - this is a hack
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Queue<?> getQueue();
 
     // TODO - this is a hack
-    @ManagedAttribute( derived = true )
+    @DerivedAttribute
     Exchange<?> getExchange();
 
-    @ManagedAttribute( automate = true )
+    @ManagedAttribute
     Map<String,Object> getArguments();
 
     @ManagedStatistic

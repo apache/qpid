@@ -190,7 +190,7 @@ public class BindingImpl
         return result;
     }
 
-    protected boolean setState(final State currentState, final State desiredState)
+    protected boolean setState(final State desiredState)
     {
         if(desiredState == State.DELETED)
         {

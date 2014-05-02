@@ -31,6 +31,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
@@ -123,13 +124,13 @@ class TCPandSSLTransport implements AcceptingTransport
         @Override
         public Integer getSendBufferSize()
         {
-            return (Integer)_port.getAttribute(Port.SEND_BUFFER_SIZE);
+            return (Integer)_port.getAttribute(AmqpPort.SEND_BUFFER_SIZE);
         }
 
         @Override
         public Integer getReceiveBufferSize()
         {
-            return (Integer)_port.getAttribute(Port.RECEIVE_BUFFER_SIZE);
+            return (Integer)_port.getAttribute(AmqpPort.RECEIVE_BUFFER_SIZE);
         }
 
         @Override

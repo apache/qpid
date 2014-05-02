@@ -256,7 +256,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         PrincipalAdapter user = _userMap.get(principal);
         if(user != null)
         {
-            user.setState(user.getState(), State.DELETED);
+            user.setState(State.DELETED);
         }
         else
         {
@@ -391,9 +391,9 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
 
         @Override
-        public void validate()
+        public void onValidate()
         {
-            super.validate();
+            super.onValidate();
             if(!isDurable())
             {
                 throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
@@ -449,7 +449,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
 
         @Override
-        protected boolean setState(State currentState, State desiredState)
+        protected boolean setState(State desiredState)
                 throws IllegalStateTransitionException, AccessControlException
         {
             if(desiredState == State.DELETED)

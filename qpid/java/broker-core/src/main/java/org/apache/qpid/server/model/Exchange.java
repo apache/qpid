@@ -32,7 +32,7 @@ public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>, Me
 
     // Attributes
 
-    @ManagedAttribute(automate = true)
+    @ManagedAttribute
     Exchange<?> getAlternateExchange();
 
     //children

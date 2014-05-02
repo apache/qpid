@@ -20,12 +20,43 @@
  */
 package org.apache.qpid.server.model;
 
-public enum State
+import java.lang.reflect.Method;
+
+public class ConfiguredDerivedAttribute<C extends ConfiguredObject, T>  extends ConfiguredObjectAttribute<C,T>
 {
-    INITIALISING,
-    QUIESCED,
-    STOPPED,
-    ACTIVE,
-    DELETED,
-    ERRORED
+    private final DerivedAttribute _annotation;
+
+    ConfiguredDerivedAttribute(final Class<C> clazz,
+                               final Method getter,
+                               final DerivedAttribute annotation)
+    {
+        super(clazz, getter);
+        _annotation = annotation;
+    }
+
+    public boolean isAutomated()
+    {
+        return false;
+    }
+
+    public boolean isDerived()
+    {
+        return true;
+    }
+
+    public boolean isSecure()
+    {
+        return _annotation.secure();
+    }
+
+    public boolean isPersisted()
+    {
+        return _annotation.persist();
+    }
+
+    public String getDescription()
+    {
+        return _annotation.description();
+    }
+
 }

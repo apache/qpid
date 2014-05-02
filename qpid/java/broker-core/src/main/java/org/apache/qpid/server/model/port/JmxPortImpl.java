@@ -38,9 +38,9 @@ public class JmxPortImpl extends AbstractPortWithAuthProvider<JmxPortImpl> imple
     }
 
     @Override
-    public void validate()
+    public void onValidate()
     {
-        super.validate();
+        super.onValidate();
         validateOnlyOneInstance();
     }
 

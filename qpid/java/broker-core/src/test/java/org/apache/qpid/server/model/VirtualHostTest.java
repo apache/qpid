@@ -84,7 +84,7 @@ public class VirtualHostTest extends QpidTestCase
         VirtualHost<?,?,?> host = createHost();
 
 
-        host.setDesiredState(State.INITIALISING, State.ACTIVE);
+        host.setDesiredState(State.ACTIVE);
         assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
     }
 
@@ -94,10 +94,10 @@ public class VirtualHostTest extends QpidTestCase
 
         assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
 
-        host.setDesiredState(State.INITIALISING, State.ACTIVE);
+        host.setDesiredState(State.ACTIVE);
         assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
 
-        host.setDesiredState(State.ACTIVE, State.STOPPED);
+        host.setDesiredState(State.STOPPED);
         assertEquals("Unexpected state", State.STOPPED, host.getAttribute(VirtualHost.STATE));
     }
 
@@ -107,7 +107,7 @@ public class VirtualHostTest extends QpidTestCase
 
         assertEquals("Unexpected state", State.INITIALISING, host.getAttribute(VirtualHost.STATE));
 
-        host.setDesiredState(State.INITIALISING, State.DELETED);
+        host.setDesiredState(State.DELETED);
         assertEquals("Unexpected state", State.DELETED, host.getAttribute(VirtualHost.STATE));
     }
 
@@ -115,7 +115,7 @@ public class VirtualHostTest extends QpidTestCase
     {
         VirtualHost<?,?,?> host = createHost();
 
-        host.setDesiredState(State.INITIALISING, State.ACTIVE);
+        host.setDesiredState(State.ACTIVE);
 
         String queueName = getTestName();
         Map<String, Object> arguments = new HashMap<String, Object>();

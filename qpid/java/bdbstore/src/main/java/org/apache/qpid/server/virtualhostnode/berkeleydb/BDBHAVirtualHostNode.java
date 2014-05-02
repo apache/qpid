@@ -22,6 +22,7 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
 import java.util.Map;
 
+import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 
 public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends BDBVirtualHostNode<X>
@@ -39,39 +40,39 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     public static final String LAST_KNOWN_REPLICATION_TRANSACTION_ID = "lastKnownReplicationTransactionId";
     public static final String JOIN_TIME = "joinTime";
 
-    @ManagedAttribute(automate = true, mandatory=true)
+    @ManagedAttribute(mandatory=true)
     String getGroupName();
 
-    @ManagedAttribute(automate = true, mandatory=true)
+    @ManagedAttribute(mandatory=true)
     String getAddress();
 
-    @ManagedAttribute(automate = true, mandatory=true)
+    @ManagedAttribute(mandatory=true)
     String getHelperAddress();
 
-    @ManagedAttribute(automate = true, defaultValue = "NO_SYNC,NO_SYNC,SIMPLE_MAJORITY")
+    @ManagedAttribute(defaultValue = "NO_SYNC,NO_SYNC,SIMPLE_MAJORITY")
     String getDurability();
 
-    @ManagedAttribute(automate = true, defaultValue = "true")
+    @ManagedAttribute(defaultValue = "true")
     boolean isCoalescingSync();
 
-    @ManagedAttribute(automate = true, defaultValue = "false")
+    @ManagedAttribute(defaultValue = "false")
     boolean isDesignatedPrimary();
 
-    @ManagedAttribute(automate = true, defaultValue = "1")
+    @ManagedAttribute(defaultValue = "1")
     int getPriority();
 
-    @ManagedAttribute(automate = true, defaultValue = "0")
+    @ManagedAttribute(defaultValue = "0")
     int getQuorumOverride();
 
-    @ManagedAttribute(automate = true, persist = false)
+    @ManagedAttribute(persist = false)
     String getRole();
 
-    @ManagedAttribute(automate = true)
+    @ManagedAttribute
     Map<String, String> getReplicatedEnvironmentConfiguration();
 
-    @ManagedAttribute(derived = true)
+    @DerivedAttribute
     Long getLastKnownReplicationTransactionId();
 
-    @ManagedAttribute(derived = true)
+    @DerivedAttribute
     Long getJoinTime();
 }

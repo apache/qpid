@@ -390,41 +390,53 @@ public class ConfiguredObjectTypeRegistry
 
             for(Method m : clazz.getDeclaredMethods())
             {
-                ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
-                if(annotation != null)
+
+                if(m.isAnnotationPresent(ManagedAttribute.class))
                 {
-                    if(!(annotation.automate() || annotation.derived() || annotation.state()))
-                    {
-                        throw new ServerScopedRuntimeException("ManagedAttributes must be either automated or derived. " + m.getName() + " on "  + clazz.getSimpleName() + " does not meet this criterion.");
-                    }
+                    ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
+
                     if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
                     {
                         throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
                     }
 
-                    ConfiguredObjectAttribute<?,?> attribute = new ConfiguredObjectAttribute(clazz, m, annotation);
+                    ConfiguredObjectAttribute<?,?> attribute = new ConfiguredAutomatedAttribute<>(clazz, m, annotation);
                     if(attributeSet.contains(attribute))
                     {
                         attributeSet.remove(attribute);
                     }
                     attributeSet.add(attribute);
                 }
-                else
+                else if(m.isAnnotationPresent(DerivedAttribute.class))
+                {
+                    DerivedAttribute annotation = m.getAnnotation(DerivedAttribute.class);
+
+                    if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
+                    {
+                        throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
+                    }
+
+                    ConfiguredObjectAttribute<?,?> attribute = new ConfiguredDerivedAttribute<>(clazz, m, annotation);
+                    if(attributeSet.contains(attribute))
+                    {
+                        attributeSet.remove(attribute);
+                    }
+                    attributeSet.add(attribute);
+
+                }
+                else if(m.isAnnotationPresent(ManagedStatistic.class))
                 {
                     ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
-                    if(statAnnotation != null)
+                    if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
                     {
-                        if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
-                        {
-                            throw new ServerScopedRuntimeException("Can only define ManagedStatistics on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
-                        }
-                        ConfiguredObjectStatistic statistic = new ConfiguredObjectStatistic(clazz, m);
-                        if(statisticSet.contains(statistic))
-                        {
-                            statisticSet.remove(statistic);
-                        }
-                        statisticSet.add(statistic);
+                        throw new ServerScopedRuntimeException("Can only define ManagedStatistics on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
                     }
+                    ConfiguredObjectStatistic statistic = new ConfiguredObjectStatistic(clazz, m);
+                    if(statisticSet.contains(statistic))
+                    {
+                        statisticSet.remove(statistic);
+                    }
+                        statisticSet.add(statistic);
                 }
             }
 
@@ -436,7 +448,7 @@ public class ConfiguredObjectTypeRegistry
             for(ConfiguredObjectAttribute<?,?> attr : attrCol)
             {
                 attrMap.put(attr.getName(), attr);
-                if(attr.getAnnotation().automate())
+                if(attr.isAutomated())
                 {
                     fieldMap.put(attr.getName(), findField(attr, clazz));
                 }

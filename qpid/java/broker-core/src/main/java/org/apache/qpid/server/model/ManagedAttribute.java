@@ -20,17 +20,16 @@
  */
 package org.apache.qpid.server.model;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-
+@Target(ElementType.METHOD)
 public @interface ManagedAttribute
 {
     boolean secure() default false;
-    boolean derived() default false;
-    boolean automate() default false;
-    boolean state() default false;
     boolean mandatory() default false;
     boolean persist() default true;
     String defaultValue() default "";

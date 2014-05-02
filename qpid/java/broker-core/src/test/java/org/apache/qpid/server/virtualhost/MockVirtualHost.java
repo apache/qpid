@@ -155,7 +155,7 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     }
 
     @Override
-    public State setDesiredState(final State currentState, final State desiredState)
+    public State setDesiredState(final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
         return null;
@@ -541,12 +541,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     @Override
     public void open()
-    {
-
-    }
-
-    @Override
-    public void validate()
     {
 
     }

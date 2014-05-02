@@ -29,7 +29,7 @@ public interface VirtualHostNode<X extends VirtualHostNode<X>> extends Configure
 {
     public static final String IS_MESSAGE_STORE_PROVIDER = "messageStoreProvider";
 
-    @ManagedAttribute (automate = true, defaultValue = "false")
+    @ManagedAttribute (defaultValue = "false")
     boolean isMessageStoreProvider();
 
     VirtualHost<?,?,?> getVirtualHost();

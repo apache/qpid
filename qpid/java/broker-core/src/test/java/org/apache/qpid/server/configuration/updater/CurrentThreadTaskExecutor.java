@@ -23,17 +23,15 @@ package org.apache.qpid.server.configuration.updater;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.qpid.server.model.State;
-
 public class CurrentThreadTaskExecutor implements TaskExecutor
 {
     private final AtomicReference<Thread> _thread = new AtomicReference<>();
-    private State _state;
+    private boolean _running;
 
     @Override
-    public State getState()
+    public boolean isRunning()
     {
-        return null;
+        return _running;
     }
 
     @Override
@@ -43,14 +41,14 @@ public class CurrentThreadTaskExecutor implements TaskExecutor
         {
             checkThread();
         }
-        _state = State.ACTIVE;
+        _running = true;
     }
 
     @Override
     public void stopImmediately()
     {
         checkThread();
-        _state = State.STOPPED;
+        _running = false;
 
     }
 

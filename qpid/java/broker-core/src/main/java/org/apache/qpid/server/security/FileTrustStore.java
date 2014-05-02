@@ -57,18 +57,18 @@ public interface FileTrustStore<X extends FileTrustStore<X>> extends TrustStore<
                 }
             };
 
-    @ManagedAttribute( automate = true, mandatory = true )
+    @ManagedAttribute( mandatory = true )
     String getPath();
 
-    @ManagedAttribute( automate = true, defaultValue = "${trustStoreFile.trustManagerFactoryAlgorithm}")
+    @ManagedAttribute( defaultValue = "${trustStoreFile.trustManagerFactoryAlgorithm}")
     String getTrustManagerFactoryAlgorithm();
 
-    @ManagedAttribute( automate = true, defaultValue = "${trustStoreFile.trustStoreType}")
+    @ManagedAttribute( defaultValue = "${trustStoreFile.trustStoreType}")
     String getTrustStoreType();
 
-    @ManagedAttribute( automate = true, defaultValue = "false" )
+    @ManagedAttribute( defaultValue = "false" )
     boolean isPeersOnly();
 
-    @ManagedAttribute( secure = true, automate = true, mandatory = true )
+    @ManagedAttribute( secure = true, mandatory = true )
     String getPassword();
 }
