@@ -19,6 +19,8 @@
  -
  -->
 <project name="Broker Codegen" default="build">
+    <property name="broker-codegen.libs" value="" />
+
     <import file="../module.xml"/>
 
     <property name="module.genpom" value="false"/>
