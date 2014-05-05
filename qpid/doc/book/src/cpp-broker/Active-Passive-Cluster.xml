@@ -54,7 +54,7 @@ under the License.
       <title>Avoiding message loss</title>
       <para>
 	In order to avoid message loss, the primary broker <emphasis>delays
-	acknowledgment</emphasis> of messages received from clients until the
+	acknowledgement</emphasis> of messages received from clients until the
 	message has been replicated and acknowledged by all of the back-up
 	brokers, or has been consumed from the primary queue.
       </para>
@@ -414,9 +414,9 @@ ssl_addr = "ssl:" host [":" port]'
       <para>
 	Once all components are installed it is important to take the following step:
 	<programlisting>
-	  chkconfig rgmanager on
-	  chkconfig cman on
-	  chkconfig qpidd <emphasis>off</emphasis>
+chkconfig rgmanager on
+chkconfig cman on
+chkconfig qpidd <emphasis>off</emphasis>
 	</programlisting>
       </para>
       <para>
@@ -429,7 +429,7 @@ ssl_addr = "ssl:" host [":" port]'
 	be stopped when in fact there is a <literal>qpidd</literal> process
 	running. The <literal>qpidd</literal> log will show errors like this:
 	<programlisting>
-	  critical Unexpected error: Daemon startup failed: Cannot lock /var/lib/qpidd/lock: Resource temporarily unavailable
+critical Unexpected error: Daemon startup failed: Cannot lock /var/lib/qpidd/lock: Resource temporarily unavailable
 	</programlisting>
       </para>
     </note>
@@ -537,8 +537,8 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       <filename>qpidd.conf</filename> should contain these  lines:
     </para>
     <programlisting>
-      ha-cluster=yes
-      ha-brokers-url=20.0.20.1,20.0.20.2,20.0.20.3
+ha-cluster=yes
+ha-brokers-url=20.0.20.1,20.0.20.2,20.0.20.3
     </programlisting>
     <para>
       The brokers connect to each other directly via the addresses
@@ -587,7 +587,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <title>Controlling replication of queues and exchanges</title>
     <para>
       By default, queues and exchanges are not replicated automatically. You can change
-      the default behavior by setting the <literal>ha-replicate</literal> configuration
+      the default behaviour by setting the <literal>ha-replicate</literal> configuration
       option. It has one of the following values:
       <itemizedlist>
 	<listitem>
@@ -624,14 +624,14 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       <command>qpid-config</command> management tool like this:
     </para>
     <programlisting>
-      qpid-config add queue myqueue --replicate all
+qpid-config add queue myqueue --replicate all
     </programlisting>
     <para>
       To create replicated queues and exchanges via the client API, add a
       <literal>node</literal> entry to the address like this:
     </para>
     <programlisting>
-      "myqueue;{create:always,node:{x-declare:{arguments:{'qpid.replicate':all}}}}"
+"myqueue;{create:always,node:{x-declare:{arguments:{'qpid.replicate':all}}}}"
     </programlisting>
     <para>
       There are some built-in exchanges created automatically by the broker, these
@@ -714,18 +714,18 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	    The full grammar for the URL is:
 	  </para>
 	  <programlisting>
-	    url = ["amqp:"][ user ["/" password] "@" ] addr ("," addr)*
-	    addr = tcp_addr / rmda_addr / ssl_addr / ...
-	    tcp_addr = ["tcp:"] host [":" port]
-	    rdma_addr = "rdma:" host [":" port]
-	    ssl_addr = "ssl:" host [":" port]'
+url = ["amqp:"][ user ["/" password] "@" ] addr ("," addr)*
+addr = tcp_addr / rmda_addr / ssl_addr / ...
+tcp_addr = ["tcp:"] host [":" port]
+rdma_addr = "rdma:" host [":" port]
+ssl_addr = "ssl:" host [":" port]'
 	  </programlisting>
 	</footnote>
 	You also need to specify the connection option
 	<literal>reconnect</literal> to be true.  For example:
       </para>
       <programlisting>
-	qpid::messaging::Connection c("node1,node2,node3","{reconnect:true}");
+qpid::messaging::Connection c("node1,node2,node3","{reconnect:true}");
       </programlisting>
       <para>
 	Heartbeats are disabled by default. You can enable them by specifying a
@@ -733,7 +733,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	<literal>heartbeat</literal> option. For example:
       </para>
       <programlisting>
-	qpid::messaging::Connection c("node1,node2,node3","{reconnect:true,heartbeat:10}");
+qpid::messaging::Connection c("node1,node2,node3","{reconnect:true,heartbeat:10}");
       </programlisting>
     </section>
     <section id="ha-python-client">
@@ -746,7 +746,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	<literal>Connection.open</literal>
       </para>
       <programlisting>
-	connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconnect_urls=["node1", "node2", "node3"])
+connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconnect_urls=["node1", "node2", "node3"])
       </programlisting>
       <para>
 	Heartbeats are disabled by default. You can
@@ -754,7 +754,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
 	connection via the &#39;heartbeat&#39; option. For example:
       </para>
       <programlisting>
-	connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconnect_urls=["node1", "node2", "node3"], heartbeat=10)
+connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconnect_urls=["node1", "node2", "node3"], heartbeat=10)
       </programlisting>
     </section>
     <section id="ha-jms-client">
@@ -864,7 +864,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
       <literal>ha-username</literal>=<replaceable>USER</replaceable>
     </para>
     <programlisting>
-      acl allow <replaceable>USER</replaceable>@QPID all all
+acl allow <replaceable>USER</replaceable>@QPID all all
     </programlisting>
   </section>
 
@@ -886,7 +886,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       To test if a broker is the primary:
       <programlisting>
-	qpid-ha -b <replaceable>broker-address</replaceable> status --expect=primary
+qpid-ha -b <replaceable>broker-address</replaceable> status --expect=primary
       </programlisting>
       This command will return 0 if the broker at <replaceable>broker-address</replaceable>
       is the primary, non-0 otherwise.
@@ -894,7 +894,7 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     <para>
       To promote a broker to primary:
       <programlisting>
-	qpid-ha -b <replaceable>broker-address</replaceable> promote
+qpid-ha -b <replaceable>broker-address</replaceable> promote
       </programlisting>
     </para>
     <para>
@@ -916,4 +916,205 @@ NOTE: fencing is not shown, you must configure fencing appropriately for your cl
     </para>
   </section>
 
+  <section id="ha-troubleshoot">
+    <title>Troubleshooting a cluster</title>
+    <para>
+      This section applies to clusters that are using rgmanager as the
+      cluster manager.
+    </para>
+    <section id="authentication-failures">
+      <title>Authentication failures</title>
+      <para>
+	If a broker is unable to establish a connection to another broker
+	in the cluster due to authentication problems, the log will
+	contain SASL errors, for example:
+	<programlisting>
+2012-aug-04 10:17:37 info SASL: Authentication failed: SASL(-13): user not found: Password verification failed
+	</programlisting>
+      </para>
+      <para>
+	Set the SASL user name and password used to connect to other
+	brokers using the ha-username and ha-password properties when you
+	start the broker. Set the SASL mode using ha-mechanism. Any
+	mechanism you enable for broker-to-broker communication can also
+	be used by a client, so do not enable ha-mechanism=ANONYMOUS in a
+	secure environment. Once the cluster is running, run qpid-ha to
+	make sure that the brokers are running as one cluster.
+      </para>
+    </section>
+    <section id="slow-recovery-times">
+      <title>Slow recovery times</title>
+      <para>
+	The following configuration settings affect recovery time. The
+	values shown are examples that give fast recovery on a lightly
+	loaded system. You should run tests to determine if the values are
+	appropriate for your system and load conditions.
+      </para>
+      <section id="cluster.conf">
+	<title>cluster.conf:</title>
+	<programlisting>
+&lt;rm status_poll_interval=1&gt;
+	</programlisting>
+	<para>
+	  status_poll_interval is the interval in seconds that the
+	  resource manager checks the status of managed services. This
+	  affects how quickly the manager will detect failed services.
+	</para>
+	<programlisting>
+&lt;ip address=&quot;20.0.20.200&quot; monitor_link=&quot;yes&quot; sleeptime=&quot;0&quot;/&gt;
+	</programlisting>
+	<para>
+	  This is a virtual IP address for client traffic.
+	  monitor_link=&quot;yes&quot; means monitor the health of the network interface
+	  used for the VIP. sleeptime=&quot;0&quot; means don't delay when
+	  failing over the VIP to a new address.
+	</para>
+      </section>
+      <section id="qpidd.conf">
+	<title>qpidd.conf</title>
+	<programlisting>
+link-maintenance-interval=0.1
+	</programlisting>
+	<para>
+	  Interval for backup brokers to check the link to the primary
+	  re-connect if need be. Default 2 seconds. Can be set lower for
+	  faster fail-over. Setting too low will result in excessive
+	  link-checking activity on the broker.
+	</para>
+	<programlisting>
+link-heartbeat-interval=5
+	</programlisting>
+	<para>
+	  Heartbeat interval for federation links. The HA cluster uses
+	  federation links between the primary and each backup. The
+	  primary can take up to twice the heartbeat interval to detect a
+	  failed backup. When a sender sends a message the primary waits
+	  for all backups to acknowledge before acknowledging to the
+	  sender. A disconnected backup may cause the primary to block
+	  senders until it is detected via heartbeat.
+	</para>
+	<para>
+	  This interval is also used as the timeout for broker status
+	  checks by rgmanager. It may take up to this interval for
+	  rgmanager to detect a hung broker.
+	</para>
+	<para>
+	  The default of 120 seconds is very high, you will probably want
+	  to set this to a lower value. If set too low, under network
+	  congestion or heavy load, a slow-to-respond broker may be
+	  re-started by rgmanager.
+	</para>
+      </section>
+    </section>
+    <section id="total-cluster-failure">
+      <title>Total cluster failure</title>
+      <para>
+	The cluster can only guarantee availability as long as there is at
+	least one active primary broker or ready backup broker left alive.
+	If all the brokers fail simultaneously, the cluster will fail and
+	non-persistent data will be lost.
+      </para>
+      <para>
+	To explain this better, note that brokers are in one of 4 states:
+	- standalone: not part of a HA cluster - joining: newly started
+	backup, not yet joined to the cluster. - catch-up: backup has
+	connected to the primary and is downloading queues, messages etc.
+	- ready: backup is connected and actively replicating from
+	primary, it is ready to take over. - recovering: newly-promoted to
+	primary, waiting for backups to catch up before serving clients.
+	Only a single primary broker can be recovering at a time. -
+	active: serving clients, only a single primary broker can be
+	active at a time.
+      </para>
+      <para>
+	While there is an active primary broker, clients can get service.
+	If the active primary fails, one of the &quot;ready&quot; backup
+	brokers will take over, recover and become active. Note a backup
+	can only be promoted to primary if it is in the &quot;ready&quot;
+	state (with the exception of the first primary in a new cluster
+	where all brokers are in the &quot;joining&quot; state)
+      </para>
+      <para>
+	Given a stable cluster of N brokers with one active primary and
+	N-1 ready backups, the system can sustain up to N-1 failures in
+	rapid succession. The surviving broker will be promoted to active
+	and continue to give service.
+      </para>
+      <para>
+	However at this point the system <emphasis>cannot</emphasis>
+	sustain a failure of the surviving broker until at least one of
+	the other brokers recovers, catches up and becomes a ready backup.
+	If the surviving broker fails before that the cluster will fail in
+	one of two modes (depending on the exact timing of failures)
+      </para>
+      <section id="the-cluster-hangs">
+	<title>1. The cluster hangs</title>
+	<para>
+	  All brokers are in joining or catch-up mode. rgmanager tries to
+	  promote a new primary but cannot find any candidates and so
+	  gives up. clustat will show that the qpidd services are running
+	  but the the qpidd-primary service has stopped, something like
+	  this:
+	</para>
+	<programlisting>
+Service Name                   Owner (Last)                   State         
+------- ----                   ----- ------                   -----         
+service:mrg33-qpidd-service    20.0.10.33                     started       
+service:mrg34-qpidd-service    20.0.10.34                     started       
+service:mrg35-qpidd-service    20.0.10.35                     started       
+service:qpidd-primary-service  (20.0.10.33)                   stopped       
+	</programlisting>
+	<para>
+	  Eventually all brokers become stuck in &quot;joining&quot; mode,
+	  as shown by qpid-ha status --all.
+	</para>
+	<para>
+	  At this point you need to restart the cluster in one of the
+	  following ways: Restart the entire cluster: - In
+	  luci:<replaceable>your-cluster</replaceable>:Nodes click reboot to restart the entire
+	  cluster. - OR stop and restart the cluster with ccs --stopall;
+	  ccs --startall Restart just the Qpid services: - In
+	  luci:<replaceable>your-cluster</replaceable>:Service Groups - select all the qpidd (not
+	  primary) services, click restart - select the qpidd-primary
+	  service, click restart - OR stop the primary and qpidd services
+	  with clusvcadm, then restart (primary last)
+	</para>
+      </section>
+      <section id="the-cluster-reboots">
+	<title>2. The cluster reboots</title>
+	<para>
+	  A new primary is promoted and the cluster is functional but all
+	  non-persistent data from before the failure is lost.
+	</para>
+      </section>
+    </section>
+    <section id="fencing-and-network-partitions">
+      <title>Fencing and network partitions</title>
+      <para>
+	A network partition is a a network failure that divides the
+	cluster into two or more sub-clusters, where each broker can
+	communicate with brokers in its own sub-cluster but not with
+	brokers in other sub-clusters. This condition is also referred to
+	as a &quot;split brain&quot;.
+      </para>
+      <para>
+	Nodes in one sub-cluster can't tell whether nodes in other
+	sub-clusters are dead or are still running but disconnected. We
+	cannot allow each sub-cluster to independently declare its own
+	qpidd primary and start serving clients, as the cluster will
+	become inconsistent. We must ensure only one sub-cluster continues
+	to provide service.
+      </para>
+      <para>
+	A <emphasis>quorum</emphasis> determines which sub-cluster
+	continues to operate, and <emphasis>power fencing</emphasis>
+	ensures that nodes in non-quorate sub-clusters cannot attempt to
+	provide service inconsistently. For more information see:
+      </para>
+      <para>
+	https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/High_Availability_Add-On_Overview/index.html,
+	chapter 2. Quorum and 4. Fencing.
+      </para>
+    </section>
+  </section>
 </section>
