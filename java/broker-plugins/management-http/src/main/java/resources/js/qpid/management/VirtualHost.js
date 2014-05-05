@@ -78,7 +78,7 @@ define(["dojo/_base/xhr",
                             );
 
                             var addExchangeButton = query(".addExchangeButton", contentPane.containerNode)[0];
-                            connect.connect(registry.byNode(addExchangeButton), "onClick", function(evt){ addExchange.show(that.name) });
+                            connect.connect(registry.byNode(addExchangeButton), "onClick", function(evt){ addExchange.show({virtualhost:that.name,virtualhostnode:that.modelObj.parent.name}) });
 
                             var deleteExchangeButton = query(".deleteExchangeButton", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(deleteExchangeButton), "onClick",

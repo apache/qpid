@@ -109,7 +109,8 @@ define(["dojo/_base/xhr",
 
                                     var newExchange = convertToExchange(theForm.getValues());
                                     var that = this;
-                                    xhr.put({url: "api/latest/exchange/"+encodeURIComponent(addExchange.vhost) +
+                                    xhr.put({url: "api/latest/exchange/"+encodeURIComponent(addExchange.vhostnode) +
+                                                  "/"+encodeURIComponent(addExchange.vhost) +
                                                   "/"+encodeURIComponent(newExchange.name), sync: true, handleAs: "json",
                                              headers: { "Content-Type": "application/json"},
                                              putData: json.toJson(newExchange),
@@ -136,8 +137,9 @@ define(["dojo/_base/xhr",
                             });
                         }});
 
-        addExchange.show = function(vhost) {
-                            addExchange.vhost = vhost;
+        addExchange.show = function(data) {
+                            addExchange.vhost = data.virtualhost;
+                            addExchange.vhostnode = data.virtualhostnode;
                             registry.byId("formAddExchange").reset();
                             registry.byId("addExchange").show();
                         };
