@@ -1,11 +1,9 @@
-Apache Qpid C++ 0.8 Release Notes
+Apache Qpid Release Notes
 --------------------------------
 
-The Qpid 0.8 release of the c++ client and broker support the 0-10
-version of the AMQP specification.  You can access this specification
-from: 
+Please see: 
 
-http://www.amqp.org/confluence/display/AMQP/AMQP+Specification
+http://qpid.apache.org/releases/
 
-Please take time to go through the README file provided with the
-distro to get a good understanding about build system etc.
+for information about this release and other related Qpid component
+current and past releases.
