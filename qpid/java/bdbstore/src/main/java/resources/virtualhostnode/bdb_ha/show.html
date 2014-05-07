@@ -1,0 +1,87 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Group Name:</div>
+      <div class="groupName" style="float:left;"></div>
+  </div>
+  <div style="clear:both">
+       <div class="formLabel-labelCell" style="float:left; width: 200px">Store Path:</div>
+       <div class="storePath" style="float:left;"></div>
+  </div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Role:</div>
+      <div class="role" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Address:</div>
+      <div class="address" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both">
+    <div class="formLabel-labelCell" style="float:left; width: 200px;">Coalescing Sync:</div>
+    <div class="coalescingSync" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both">
+    <div class="formLabel-labelCell" style="float:left; width: 200px;">Durability:</div>
+    <div class="durability" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both" class="designatedPrimaryContainer">
+    <div class="formLabel-labelCell" style="float:left; width: 200px;">Allow this node to operate solo:</div>
+    <div class="designatedPrimary" style="float:left;">N/A</div>
+  </div>
+  <div style="clear:both" class="priorityContainer">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Election priority:</div>
+      <div class="priority" style="float:left;">Never</div>
+  </div>
+  <div style="clear:both" class="quorumOverrideContainer">
+      <div class="formLabel-labelCell" style="float:left; width: 200px;">Required minimum number of nodes:</div>
+      <div style="float:left;">
+          <span class="quorumOverride" >N/A</span>
+          <span style="margin-left: 20px;">[ 0 signifies simple majority ]</span>
+      </div>
+  </div>
+  <div style="clear:both"></div>
+  <br/>
+  <div style="clear:both" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Environment Configuration'" class="environmentConfigurationPanel">
+    <div class="environmentConfiguration"></div>
+  </div>
+  <div style="clear:both"></div>
+  <br/>
+  <div style="clear:both" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Replicated Environment Configuration'" class="replicatedEnvironmentConfigurationPanel">
+    <div class="replicatedEnvironmentConfiguration"></div>
+  </div>
+  <div style="clear:both"></div>
+  <div class="dijitDialogPaneActionBar">
+      <button data-dojo-type="dijit.form.Button" class="startNodeButton" type="button" data-dojo-props="disabled: true">Start</button>
+      <button data-dojo-type="dijit.form.Button" class="stopNodeButton" type="button" data-dojo-props="disabled: true">Stop</button>
+      <button data-dojo-type="dijit.form.Button" class="editNodeButton" type="button" data-dojo-props="disabled: true">Edit</button>
+      <button data-dojo-type="dijit.form.Button" class="deleteNodeButton" data-dojo-props="iconClass: 'dijitIconDelete', disabled: true">Delete Node</button>
+  </div>
+
+  <br/>
+  <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Group nodes'" class="membersGridPanel">
+      <div class="groupMembers"></div>
+      <div class="groupMembersToolbar dijitDialogPaneActionBar">
+        <button data-dojo-type="dijit.form.Button" class="removeNodeButton" data-dojo-props="iconClass: 'dijitIconDelete'">Remove Node</button>
+        <button data-dojo-type="dijit.form.Button" class="transferMasterButton" data-dojo-props="iconClass: 'dijitIconConfigure'">Make Node Master</button>
+      </div>
+  </div>
+</div>

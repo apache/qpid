@@ -74,7 +74,27 @@
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Virtual Hosts'">
         <div class="broker-virtualhosts"></div>
         <button data-dojo-type="dijit.form.Button" class="addVirtualHost">Add Virtual Host</button>
-        <button data-dojo-type="dijit.form.Button" class="deleteVirtualHost">Delete Virtual Host</button>
+        <div data-dojo-type="dijit.form.DropDownButton" class="virtualHostNodeMenuButton" data-dojo-props="iconClass: 'dijitIconConnector',disabled:true">
+            <span>Virtual Host Node</span>
+            <div data-dojo-type="dijit.Menu">
+                <div data-dojo-type="dijit.MenuItem">View</div>
+                <div data-dojo-type="dijit.MenuItem">Delete</div>
+                <div data-dojo-type="dijit.MenuItem"
+                    data-dojo-props="disabled: true,onClick: function(){alert('TODO');}">Start</div>
+                <div data-dojo-type="dijit.MenuItem"
+                    data-dojo-props="disabled:true, onClick: function(){alert('TODO');}">Stop</div>
+            </div>
+          </div>
+        <div data-dojo-type="dijit.form.DropDownButton" class="virtualHostMenuButton" data-dojo-props="iconClass: 'dijitIconPackage',disabled:true">
+            <span>Virtual Host</span>
+            <div data-dojo-type="dijit.Menu" class="virtualHostMenu">
+                <div data-dojo-type="dijit.MenuItem" class="viewVirtualHost" >View</div>
+                <div data-dojo-type="dijit.MenuItem"
+                    data-dojo-props="disabled: true,onClick: function(){alert('TODO');}">Start</div>
+                <div data-dojo-type="dijit.MenuItem"
+                    data-dojo-props="disabled:true, onClick: function(){alert('TODO');}">Quiesce</div>
+            </div>
+          </div>
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Ports'">

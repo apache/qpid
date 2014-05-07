@@ -39,10 +39,11 @@ define(["dojo/dom",
         "qpid/management/Plugin",
         "qpid/management/logs/LogViewer",
         "qpid/management/PreferencesProvider",
+        "qpid/management/VirtualHostNode",
         "dojo/ready",
         "dojo/domReady!"],
        function (dom, registry, ContentPane, CheckBox, UserPreferences, entities, Broker, VirtualHost, Exchange, Queue, Connection, AuthProvider,
-                 GroupProvider, Group, KeyStore, TrustStore, AccessControlProvider, Port, Plugin, LogViewer, PreferencesProvider, ready) {
+                 GroupProvider, Group, KeyStore, TrustStore, AccessControlProvider, Port, Plugin, LogViewer, PreferencesProvider, VirtualHostNode, ready) {
            var controller = {};
 
            var constructors = { broker: Broker, virtualhost: VirtualHost, exchange: Exchange,
@@ -50,7 +51,8 @@ define(["dojo/dom",
                                 authenticationprovider: AuthProvider, groupprovider: GroupProvider,
                                 group: Group, keystore: KeyStore, truststore: TrustStore,
                                 accesscontrolprovider: AccessControlProvider, port: Port,
-                                plugin: Plugin, logViewer: LogViewer, preferencesprovider: PreferencesProvider};
+                                plugin: Plugin, logViewer: LogViewer, preferencesprovider: PreferencesProvider,
+                                virtualhostnode: VirtualHostNode};
 
            var tabDiv = dom.byId("managedViews");
 

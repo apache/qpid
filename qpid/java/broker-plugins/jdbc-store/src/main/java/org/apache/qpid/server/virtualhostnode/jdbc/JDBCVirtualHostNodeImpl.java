@@ -31,7 +31,7 @@ import org.apache.qpid.server.store.jdbc.JDBCMessageStoreFactory;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
 @ManagedObject( category = false, type = "JDBC" )
-public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDBCVirtualHostNodeImpl> implements JDBCVirtualHostNode
+public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDBCVirtualHostNodeImpl> implements JDBCVirtualHostNode<JDBCVirtualHostNodeImpl>
 {
     @ManagedAttributeField
     private String _connectionUrl;

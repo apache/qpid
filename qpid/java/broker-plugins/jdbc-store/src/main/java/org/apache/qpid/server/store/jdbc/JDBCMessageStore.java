@@ -50,7 +50,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     private static final Logger _logger = Logger.getLogger(JDBCMessageStore.class);
 
     public static final String TYPE = "JDBC";
-    public static final String CONNECTION_URL = "connectionURL";
+    public static final String CONNECTION_URL = "connectionUrl";
     public static final String CONNECTION_POOL_TYPE = "connectionPoolType";
     public static final String JDBC_BIG_INT_TYPE = "bigIntType";
     public static final String JDBC_BYTES_FOR_BLOB = "bytesForBlob";
