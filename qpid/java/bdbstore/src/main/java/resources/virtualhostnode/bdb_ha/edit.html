@@ -1,0 +1,159 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<div class="dijitHidden">
+  <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit BDB HA Virtual Host Node'" id="editBDBHANodeDialog">
+      <form id="editBDBHANodeForm" method="post" data-dojo-type="dijit/form/Form">
+          <table class="tableContainer-table tableContainer-table-horiz">
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Path to store location*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" id="editBDBHANode.storePath"
+                          data-dojo-type="dijit/form/ValidationTextBox"
+                          data-dojo-props="
+                            name: 'storePath',
+                            placeHolder: '/path/to/message/store',
+                            required: true,
+                            disabled: true,
+                            missingMessage: 'A store path must be supplied',
+                            title: 'Enter path to the store folder'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Node Name*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" id="editBDBHANode.name"
+                            data-dojo-type="dijit/form/ValidationTextBox"
+                            data-dojo-props="
+                                name: 'name',
+                                placeHolder: 'Node Name',
+                                required: true,
+                                disabled: true,
+                                missingMessage: 'A node name must be supplied',
+                                title: 'Enter node name',
+                                pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Replication Group*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" id="editBDBHANode.groupName"
+                            data-dojo-type="dijit/form/ValidationTextBox"
+                            data-dojo-props="
+                                name: 'groupName',
+                                placeHolder: 'Group Name',
+                                required: true,
+                                disabled: true,
+                                missingMessage: 'A group name must be supplied',
+                                title: 'Enter group name',
+                                pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Address*: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" id="editBDBHANode.address"
+                            data-dojo-type="dijit/form/ValidationTextBox"
+                            data-dojo-props="
+                                name: 'address',
+                                placeHolder: 'host:port',
+                                disabled: true,
+                                required: true,
+                                missingMessage: 'A Host and Port must be supplied',
+                                invalidMessage: 'Must be of the form host:port',
+                                title: 'Enter Host and Port name',
+                                pattern: '^([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Durability: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="text" id="editBDBHANode.durability"
+                        data-dojo-type="dijit/form/ValidationTextBox"
+                        data-dojo-props="
+                            name: 'durability',
+                            disabled: true,
+                            required: false,
+                            placeHolder: 'NO_SYNC,NO_SYNC,SIMPLE_MAJORITY',
+                            title: 'Enter node durability settings',
+                            pattern: '^(SYN|NO_SYNC|WRITE_NO_SYNC),(SYN|NO_SYNC|WRITE_NO_SYNC),(SIMPLE_MAJORITY|ALL|NONE)*$'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Coalescing sync: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="checkbox" id="editBDBHANode.coalescingSync" checked="checked"
+                        data-dojo-type="dijit/form/CheckBox"
+                        data-dojo-props="
+                            name: 'coalescingSync',
+                            required: false,
+                            disabled: true,
+                            title: 'Enable coalescing sync mode for a better performance: when many transactions are synced to disk at the same time'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Allow this node to operate solo: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <input type="checkbox" id="editBDBHANode.designatedPrimary" checked="checked"
+                            data-dojo-type="dijit/form/CheckBox"
+                            data-dojo-props="
+                                name: 'designatedPrimary',
+                                required: false,
+                                title: 'Designate node as primary. It is applicable only to 2-nodes cluster'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Election priority of this node: </strong></td>
+                <td class="tableContainer-valueCell">
+                    <div data-dojo-type="dojo/store/Memory" data-dojo-id="nodePriorityStore"
+                        data-dojo-props="data: [
+                                                  {id: '0', name: 'Never'},
+                                                  {id: '1', name: 'Default', selected: '1'},
+                                                  {id: '2', name: 'Normal'},
+                                                  {id: '3', name: 'High'}
+                                               ]"></div>
+                    <input id="editBDBHANode.priority" data-dojo-type="dijit/form/FilteringSelect" value="1"
+                        data-dojo-props="
+                            name: 'priority',
+                            required: false,
+                            title: 'Select node priority for election as a Master',
+                            store: nodePriorityStore,
+                            searchAttr: 'name'" />
+                </td>
+            </tr>
+            <tr>
+                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Required minimum number of nodes: </strong></td>
+                <td class="tableContainer-valueCell">
+                     <div data-dojo-type="dojo/store/Memory" data-dojo-id="nodeQuorumOverrideStore"
+                        data-dojo-props="data: [{id: '0', name: 'Majority', selected: '1'}]"></div>
+                    <input type="text" id="editBDBHANode.quorumOverride"
+                        data-dojo-type="dijit/form/FilteringSelect" value="0"
+                        data-dojo-props="
+                            name: 'quorumOverride',
+                            required: false,
+                            title: 'Enter quorum override. 0 signifies simple majority',
+                            store: nodeQuorumOverrideStore,
+                            searchAttr: 'name'" />
+                </td>
+            </tr>
+          </table>
+          <div class="dijitDialogPaneActionBar">
+              <button data-dojo-type="dijit/form/Button" id="editBDBHANode.saveButton" data-dojo-props="label: 'Save'" type="submit">Save</button>
+              <button data-dojo-type="dijit/form/Button" id="editBDBHANode.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+          </div>
+      </form>
+  </div>
+</div>

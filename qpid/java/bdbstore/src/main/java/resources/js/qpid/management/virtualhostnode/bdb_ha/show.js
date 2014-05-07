@@ -30,8 +30,9 @@ define(["dojo/_base/xhr",
         "dojox/grid/EnhancedGrid",
         "qpid/common/UpdatableStore",
         "qpid/management/UserPreferences",
+        "qpid/management/virtualhostnode/bdb_ha/edit",
         "dojo/domReady!"],
-  function (xhr, lang, connect, parser, json, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences)
+  function (xhr, lang, connect, parser, json, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences, edit)
   {
     var nodeFields = ["storePath", "groupName", "role", "address", "coalescingSync", "designatedPrimary", "durability", "priority", "quorumOverride"];
 
@@ -173,6 +174,12 @@ define(["dojo/_base/xhr",
       this.stopNodeButton = registry.byNode(findNode("stopNodeButton", containerNode));
       this.startNodeButton = registry.byNode(findNode("startNodeButton", containerNode));
       this.editNodeButton = registry.byNode(findNode("editNodeButton", containerNode));
+      this.editNodeButton.on("click",
+          function(e)
+          {
+            edit.show(that.data.name);
+          }
+      );
       this.deleteNodeButton = registry.byNode(query(".deleteNodeButton", containerNode)[0]);
       this.deleteNodeButton.on("click",
           function(e)
