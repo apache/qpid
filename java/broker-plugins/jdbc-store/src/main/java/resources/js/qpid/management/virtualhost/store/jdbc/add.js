@@ -81,7 +81,7 @@ define(["dojo/_base/xhr",
                                          var poolTypesDiv = dom.byId("addVirtualHost.specific.selectPoolType");
                                          var input = construct.create("input", {id: "addPoolType", required: false}, poolTypesDiv);
                                          that.poolTypeChooser = new FilteringSelect({ id: "addVirtualHost.specific.store.poolType",
-                                                                                   name: "connectionPool",
+                                                                                   name: "connectionPoolType",
                                                                                    store: poolTypesStore,
                                                                                    searchAttr: "name", required: false,
                                                                                    onChange: selectPoolType }, input);

@@ -296,6 +296,8 @@ define(["dojo/_base/xhr",
                  controller.show("plugin", details.plugin, {type:"broker", name:""}, theItem.id);
                } else if (details.type == "preferencesprovider") {
                  controller.show("preferencesprovider", details.preferencesprovider, details.parent, theItem.id);
+               } else if (details.type == "virtualhostnode") {
+                 controller.show("virtualhostnode", details.virtualhostnode, details.parent, theItem.id);
                }
            };
 

@@ -256,9 +256,12 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         {
             virtualHost.setDesiredState(State.STOPPED);
         }
-        getConfigurationStore().closeConfigurationStore();
-
-        getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CLOSE());
+        DurableConfigurationStore configurationStore = getConfigurationStore();
+        if (configurationStore != null)
+        {
+            configurationStore.closeConfigurationStore();
+            getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CLOSE());
+        }
     }
 
     @Override

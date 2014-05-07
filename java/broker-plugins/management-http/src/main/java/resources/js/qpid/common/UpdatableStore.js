@@ -97,8 +97,11 @@ define(["dojo/store/Memory",
                         }
                     }
                     if(modified) {
-                        // ... check attributes for updates
-                        store.notify(theItem, data[i].id);
+                        store.put(data[i], {overwrite: true});
+                        if (store instanceof Observable)
+                        {
+                          store.notify(theItem, data[i].id);
+                        }
                         changed = true;
                     }
                 } else {
