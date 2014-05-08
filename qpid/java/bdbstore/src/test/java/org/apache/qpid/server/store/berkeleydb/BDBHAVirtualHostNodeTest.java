@@ -89,7 +89,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
             {
                 try
                 {
-                    node.setDesiredState(State.DELETED);
+                    node.delete();
                 }
                 catch(Exception e)
                 {
@@ -175,7 +175,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
             {
             }
         });
-        assertEquals(State.ACTIVE, node.setDesiredState(State.ACTIVE));
+
+        node.start();
+        assertEquals(State.ACTIVE, node.getState());
 
         DurableConfigurationStore store = node.getConfigurationStore();
         assertNotNull(store);
@@ -200,14 +202,14 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertEquals("Unexpected virtual host store", store, virtualHost.getMessageStore());
         assertEquals("Unexpected virtual host state", State.ACTIVE, virtualHost.getState());
 
-        State currentState = node.setDesiredState(State.STOPPED);
-        assertEquals("Unexpected state returned after stop", State.STOPPED, currentState);
+        node.stop();
+        assertEquals("Unexpected state returned after stop", State.STOPPED, node.getState());
         assertEquals("Unexpected state", State.STOPPED, node.getState());
 
         assertNull("Virtual host is not destroyed", node.getVirtualHost());
 
-        currentState = node.setDesiredState(State.DELETED);
-        assertEquals("Unexpected state returned after delete", State.DELETED, currentState);
+        node.delete();
+        assertEquals("Unexpected state returned after delete", State.DELETED, node.getState());
         assertEquals("Unexpected state", State.DELETED, node.getState());
         assertFalse("Store still exists", _bdbStorePath.exists());
     }
@@ -228,7 +230,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         BDBHAVirtualHostNode<?> node = createHaVHN(attributes);
 
-        assertEquals("Failed to activate node", State.ACTIVE, node.setDesiredState(State.ACTIVE));
+        node.start();
+        assertEquals("Failed to activate node", State.ACTIVE, node.getState());
 
         BDBMessageStore bdbMessageStore = (BDBMessageStore) node.getConfigurationStore();
         ReplicatedEnvironment environment = (ReplicatedEnvironment) bdbMessageStore.getEnvironmentFacade().getEnvironment();
@@ -265,7 +268,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
 
         BDBHAVirtualHostNode<?> node1 = createHaVHN(node1Attributes);
-        assertEquals("Failed to activate node", State.ACTIVE, node1.setDesiredState(State.ACTIVE));
+        node1.start();
+        assertEquals("Failed to activate node", State.ACTIVE, node1.getState());
 
         int node2PortNumber = getNextAvailable(node1PortNumber+1);
 
@@ -279,7 +283,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
 
         BDBHAVirtualHostNode<?> node2 = createHaVHN(node2Attributes);
-        assertEquals("Failed to activate node2", State.ACTIVE, node2.setDesiredState(State.ACTIVE));
+        node2.start();
+        assertEquals("Failed to activate node2", State.ACTIVE, node2.getState());
 
         int node3PortNumber = getNextAvailable(node2PortNumber+1);
         Map<String, Object> node3Attributes = new HashMap<String, Object>();
@@ -291,7 +296,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
         BDBHAVirtualHostNode<?> node3 = createHaVHN(node3Attributes);
-        assertEquals("Failed to activate node3", State.ACTIVE, node3.setDesiredState(State.ACTIVE));
+        node3.start();
+        assertEquals("Failed to activate node3", State.ACTIVE, node3.getState());
 
         BDBHAVirtualHostNode<?> replica = null;
         int findReplicaCount = 0;
@@ -335,7 +341,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
 
         BDBHAVirtualHostNode<?> node1 = createHaVHN(node1Attributes);
-        assertEquals("Failed to activate node", State.ACTIVE, node1.setDesiredState(State.ACTIVE));
+        node1.start();
+        assertEquals("Failed to activate node", State.ACTIVE, node1.getState());
 
         final CountDownLatch remoteNodeLatch = new CountDownLatch(2);
         node1.addChangeListener(new ConfigurationChangeListener()
@@ -378,7 +385,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
 
         BDBHAVirtualHostNode<?> node2 = createHaVHN(node2Attributes);
-        assertEquals("Failed to activate node2", State.ACTIVE, node2.setDesiredState(State.ACTIVE));
+        node2.start();
+        assertEquals("Failed to activate node2", State.ACTIVE, node2.getState());
 
         int node3PortNumber = getNextAvailable(node2PortNumber+1);
         Map<String, Object> node3Attributes = new HashMap<String, Object>();
@@ -390,7 +398,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
         BDBHAVirtualHostNode<?> node3 = createHaVHN(node3Attributes);
-        assertEquals("Failed to activate node3", State.ACTIVE, node3.setDesiredState(State.ACTIVE));
+        node3.start();
+        assertEquals("Failed to activate node3", State.ACTIVE, node3.getState());
 
         assertTrue("Replication nodes have not been seen during 5s", remoteNodeLatch.await(5, TimeUnit.SECONDS));
 
@@ -429,7 +438,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
 
         BDBHAVirtualHostNode<?> node = createHaVHN(node1Attributes);
-        assertEquals("Failed to activate node", State.ACTIVE, node.setDesiredState(State.ACTIVE));
+        node.start();
+        assertEquals("Failed to activate node", State.ACTIVE, node.getState());
 
         assertNodeRole(node, "MASTER");
 

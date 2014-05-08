@@ -113,11 +113,10 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     }
 
     @Override
-    public void close()
+    protected void onClose()
     {
         try
         {
-
 
             if (getTaskExecutor() != null)
             {

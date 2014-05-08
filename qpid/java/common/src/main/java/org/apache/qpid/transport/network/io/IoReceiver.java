@@ -20,15 +20,6 @@
  */
 package org.apache.qpid.transport.network.io;
 
-import org.apache.qpid.common.Closeable;
-import org.apache.qpid.thread.Threading;
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.Ticker;
-import org.apache.qpid.transport.util.Logger;
-import org.apache.qpid.util.SystemUtils;
-
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
@@ -37,12 +28,21 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.net.ssl.SSLSocket;
+
+import org.apache.qpid.thread.Threading;
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.network.Ticker;
+import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.util.SystemUtils;
+
 /**
  * IoReceiver
  *
  */
 
-final class IoReceiver implements Runnable, Closeable
+final class IoReceiver implements Runnable
 {
 
     private static final Logger log = Logger.get(IoReceiver.class);

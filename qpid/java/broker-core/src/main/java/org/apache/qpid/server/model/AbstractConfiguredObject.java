@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
@@ -88,7 +88,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         SECURE_VALUES = Collections.unmodifiableMap(secureValues);
     }
 
-    private final AtomicBoolean _open = new AtomicBoolean();
+    private enum DynamicState { UNINIT, OPENED, CLOSED };
+    private final AtomicReference<DynamicState> _dynamicState = new AtomicReference<>(DynamicState.UNINIT);
+
+
 
     private final Map<String,Object> _attributes = new HashMap<String, Object>();
     private final Map<Class<? extends ConfiguredObject>, ConfiguredObject> _parents =
@@ -142,14 +145,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private final Map<String, ConfiguredObjectAttribute<?,?>> _attributeTypes;
     private final Map<String, ConfiguredObjectTypeRegistry.AutomatedField> _automatedFields;
+    private final Map<State, Map<State, Method>> _stateChangeMethods;
 
     @ManagedAttributeField
     private String _type;
 
     private final OwnAttributeResolver _attributeResolver = new OwnAttributeResolver(this);
 
-    @ManagedAttributeField
+    @ManagedAttributeField( afterSet = "attainStateIfResolved" )
     private State _desiredState;
+    private boolean _openComplete;
 
     protected static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(ConfiguredObject<?>... parents)
     {
@@ -183,12 +188,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                        Model model)
     {
         _taskExecutor = taskExecutor;
+        if(taskExecutor == null)
+        {
+            throw new NullPointerException("task executor is null");
+        }
         _model = model;
 
         _category = ConfiguredObjectTypeRegistry.getCategory(getClass());
 
         _attributeTypes = ConfiguredObjectTypeRegistry.getAttributeTypes(getClass());
         _automatedFields = ConfiguredObjectTypeRegistry.getAutomatedFields(getClass());
+        _stateChangeMethods = ConfiguredObjectTypeRegistry.getStateChangeMethods(getClass());
 
         Object idObj = attributes.get(ID);
 
@@ -378,20 +388,65 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    @Override
     public final void open()
     {
-        if(_open.compareAndSet(false,true))
+        if(_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
         {
             doResolution(true);
             doValidation(true);
             doOpening(true);
+            doAttainState();
         }
     }
 
+    protected void closeChildren()
+    {
+        applyToChildren(new Action<ConfiguredObject<?>>()
+        {
+            @Override
+            public void performAction(final ConfiguredObject<?> child)
+            {
+                child.close();
+            }
+        });
+
+        for(Collection<ConfiguredObject<?>> childList : _children.values())
+        {
+            childList.clear();
+        }
+
+        for(Map<UUID,ConfiguredObject<?>> childIdMap : _childrenById.values())
+        {
+            childIdMap.clear();
+        }
+
+        for(Map<String,ConfiguredObject<?>> childNameMap : _childrenByName.values())
+        {
+            childNameMap.clear();
+        }
+
+    }
+
+    @Override
+    public final void close()
+    {
+        if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
+        {
+            closeChildren();
+            onClose();
+            unregister(false);
+
+        }
+    }
+
+    protected void onClose()
+    {
+    }
 
     public final void create()
     {
-        if(_open.compareAndSet(false,true))
+        if(_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
         {
             final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
             if(currentUser != null)
@@ -412,14 +467,32 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             doValidation(true);
             doCreation(true);
             doOpening(true);
+            doAttainState();
         }
+    }
+
+    private void doAttainState()
+    {
+        applyToChildren(new Action<ConfiguredObject<?>>()
+        {
+            @Override
+            public void performAction(final ConfiguredObject<?> child)
+            {
+                if (child instanceof AbstractConfiguredObject)
+                {
+                    ((AbstractConfiguredObject) child).doAttainState();
+                }
+            }
+        });
+        attainState();
     }
 
     protected void doOpening(final boolean skipCheck)
     {
-        if(skipCheck || _open.compareAndSet(false,true))
+        if(skipCheck || _dynamicState.compareAndSet(DynamicState.UNINIT,DynamicState.OPENED))
         {
             onOpen();
+            notifyStateChanged(State.UNINITIALIZED, getState());
             applyToChildren(new Action<ConfiguredObject<?>>()
             {
                 @Override
@@ -431,12 +504,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     }
                 }
             });
+            _openComplete = true;
         }
     }
 
     protected final void doValidation(final boolean skipCheck)
     {
-        if(skipCheck || !_open.get())
+        if(skipCheck || _dynamicState.get() != DynamicState.OPENED)
         {
             applyToChildren(new Action<ConfiguredObject<?>>()
             {
@@ -455,7 +529,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected final void doResolution(final boolean skipCheck)
     {
-        if(skipCheck || !_open.get())
+        if(skipCheck || _dynamicState.get() != DynamicState.OPENED)
         {
             onResolve();
             applyToChildren(new Action<ConfiguredObject<?>>()
@@ -474,7 +548,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected final void doCreation(final boolean skipCheck)
     {
-        if(skipCheck || !_open.get())
+        if(skipCheck || _dynamicState.get() != DynamicState.OPENED)
         {
             onCreate();
             applyToChildren(new Action<ConfiguredObject<?>>()
@@ -531,8 +605,62 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    private void attainStateIfResolved()
+    {
+        if(_openComplete)
+        {
+            attainState();
+        }
+    }
+
     protected void onOpen()
     {
+
+    }
+
+    protected void attainState()
+    {
+        State currentState = getState();
+        State desiredState = getDesiredState();
+        if(currentState != desiredState)
+        {
+            Method stateChangingMethod = getStateChangeMethod(currentState, desiredState);
+            if(stateChangingMethod != null)
+            {
+                try
+                {
+                    stateChangingMethod.invoke(this);
+                }
+                catch (IllegalAccessException e)
+                {
+                    throw new ServerScopedRuntimeException("Unexpected access exception when calling state transition", e);
+                }
+                catch (InvocationTargetException e)
+                {
+                    Throwable underlying = e.getTargetException();
+                    if(underlying instanceof RuntimeException)
+                    {
+                        throw (RuntimeException)underlying;
+                    }
+                    if(underlying instanceof Error)
+                    {
+                        throw (Error) underlying;
+                    }
+                    throw new ServerScopedRuntimeException("Unexpected checked exception when calling state transition", underlying);
+                }
+            }
+        }
+    }
+
+    private Method getStateChangeMethod(final State currentState, final State desiredState)
+    {
+        Map<State, Method> stateChangeMethodMap = _stateChangeMethods.get(currentState);
+        Method method = null;
+        if(stateChangeMethodMap != null)
+        {
+            method = stateChangeMethodMap.get(desiredState);
+        }
+        return method;
     }
 
 
@@ -582,27 +710,39 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _desiredState;
     }
 
-    @Override
-    public final State setDesiredState(final State desiredState)
+
+    private State setDesiredState(final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
-
 
         return runTask(new Task<State>()
                         {
                             @Override
                             public State execute()
                             {
+
                                 State state = getState();
-                                authoriseSetDesiredState(desiredState);
-                                if (setState(desiredState))
+                                if(desiredState == getDesiredState() && desiredState != state)
                                 {
-                                    notifyStateChanged(state, desiredState);
-                                    return desiredState;
+                                    attainState();
+                                    return getState();
                                 }
                                 else
                                 {
-                                    return getState();
+                                    authoriseSetDesiredState(desiredState);
+
+                                    setAttributes(Collections.<String, Object>singletonMap(DESIRED_STATE,
+                                                                                           desiredState));
+
+                                    if (setState(desiredState))
+                                    {
+                                        notifyStateChanged(state, desiredState);
+                                        return desiredState;
+                                    }
+                                    else
+                                    {
+                                        return getState();
+                                    }
                                 }
                             }
                         });
@@ -611,7 +751,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     /**
      * @return true when the state has been successfully updated to desiredState or false otherwise
      */
-    protected abstract boolean setState(State desiredState);
+    protected boolean setState(State desiredState)
+    {
+        return getState() == desiredState;
+    }
+
 
     protected void notifyStateChanged(final State currentState, final State desiredState)
     {
@@ -953,7 +1097,29 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     }
 
+    public final void quiesce()
+    {
+        setDesiredState(State.QUIESCED);
+    }
+
+    public final void stop()
+    {
+        setDesiredState(State.STOPPED);
+    }
+
+    public final void delete()
+    {
+        setDesiredState(State.DELETED);
+    }
+
+    public final void start() { setDesiredState(State.ACTIVE); }
+
     protected void deleted()
+    {
+        unregister(true);
+    }
+
+    private void unregister(boolean removed)
     {
         for (ConfiguredObject<?> parent : _parents.values())
         {
@@ -961,7 +1127,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 AbstractConfiguredObject<?> parentObj = (AbstractConfiguredObject<?>) parent;
                 parentObj.unregisterChild(this);
-                parentObj.childRemoved(this);
+                if(removed)
+                {
+                    parentObj.childRemoved(this);
+                }
             }
         }
     }

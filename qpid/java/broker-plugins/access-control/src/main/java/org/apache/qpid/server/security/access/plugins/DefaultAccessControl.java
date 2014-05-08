@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.io.File;
 import java.net.SocketAddress;
 import java.security.AccessController;
 import java.util.Set;
@@ -31,12 +31,12 @@ import javax.security.auth.Subject;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
-import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
-import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.AccessControl;
+import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
@@ -73,7 +73,7 @@ public class DefaultAccessControl implements AccessControl
     {
         if(_aclFile != null)
         {
-            if (!_aclFile.exists())
+            if (!validate())
             {
                 throw new IllegalConfigurationException("ACL file '" + _aclFile + "' is not found");
             }
@@ -81,6 +81,12 @@ public class DefaultAccessControl implements AccessControl
             ConfigurationFile configFile = new PlainConfiguration(_aclFile, _eventLogger);
             _ruleSet = configFile.load();
         }
+    }
+
+    @Override
+    public boolean validate()
+    {
+        return _aclFile.exists();
     }
 
     @Override
@@ -101,7 +107,7 @@ public class DefaultAccessControl implements AccessControl
         if(_aclFile != null)
         {
             //verify it exists
-            if (!_aclFile.exists())
+            if (!validate())
             {
                 throw new IllegalConfigurationException("ACL file '" + _aclFile + "' is not found");
             }

@@ -753,7 +753,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
         if (exceptionOccured)
         {
-            throw new RuntimeException("Exception occured on stopping of test broker. Please, examine logs for details");
+            throw new RuntimeException("Exception occurred on stopping of test broker. Please, examine logs for details");
         }
     }
 

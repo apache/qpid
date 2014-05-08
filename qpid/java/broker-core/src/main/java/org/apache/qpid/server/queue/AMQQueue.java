@@ -102,8 +102,6 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     void deliverAsync();
 
-    void stop();
-
     Collection<String> getAvailableAttributes();
 
     void setNotificationListener(QueueNotificationListener listener);

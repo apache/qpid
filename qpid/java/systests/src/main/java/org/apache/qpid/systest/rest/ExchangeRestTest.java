@@ -70,7 +70,7 @@ public class ExchangeRestTest extends QpidRestTestCase
         }
     }
 
-    public void testSetExchangeAttributesUnsupported() throws Exception
+    public void testSetExchangeSupported() throws Exception
     {
         String exchangeName = getTestName();
         String exchangeUrl = "exchange/test/test/" + exchangeName;
@@ -89,7 +89,10 @@ public class ExchangeRestTest extends QpidRestTestCase
         attributes.put(Exchange.ALTERNATE_EXCHANGE, "amq.direct");
 
         responseCode = getRestTestHelper().submitRequest(exchangeUrl, "PUT", attributes);
-        assertEquals("Exchange update should be unsupported", 409, responseCode);
+        assertEquals("Exchange update should be supported", 200, responseCode);
+        exchange = getRestTestHelper().getJsonAsSingletonList(exchangeUrl);
+        assertNotNull("Exchange not found", exchange);
+        assertEquals("amq.direct",exchange.get(Exchange.ALTERNATE_EXCHANGE));
     }
 
     private void assertExchange(String exchangeName, Map<String, Object> exchange)

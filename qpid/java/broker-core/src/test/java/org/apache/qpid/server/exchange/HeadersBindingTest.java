@@ -33,6 +33,8 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.model.Binding;
@@ -148,10 +150,11 @@ public class HeadersBindingTest extends TestCase
     {
         _count++;
         _queue = mock(AMQQueue.class);
-
+        TaskExecutor executor = new CurrentThreadTaskExecutor();
         VirtualHostImpl vhost = mock(VirtualHostImpl.class);
         when(_queue.getVirtualHost()).thenReturn(vhost);
         when(_queue.getModel()).thenReturn(BrokerModel.getInstance());
+        when(_queue.getTaskExecutor()).thenReturn(executor);
         when(vhost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         final EventLogger eventLogger = new EventLogger();
         when(vhost.getEventLogger()).thenReturn(eventLogger);
@@ -159,6 +162,7 @@ public class HeadersBindingTest extends TestCase
         when(_exchange.getType()).thenReturn(ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         when(_exchange.getEventLogger()).thenReturn(eventLogger);
         when(_exchange.getModel()).thenReturn(BrokerModel.getInstance());
+        when(_exchange.getTaskExecutor()).thenReturn(executor);
     }
 
     protected String getQueueName()

@@ -29,20 +29,20 @@ import java.util.Map;
 import javax.jms.Session;
 import javax.servlet.http.HttpServletResponse;
 
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.queue.LastValueQueue;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.SortedQueue;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
-
-import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.util.FileUtils;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
 
 public class VirtualHostRestTest extends QpidRestTestCase
 {
@@ -147,7 +147,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertEquals("Host should be deleted", 1, hosts.size());
     }
 
-    public void testUpdateActiveHostFails() throws Exception
+    public void testUpdateActiveHost() throws Exception
     {
         String hostToUpdate = TEST3_VIRTUALHOST;
         String restHostUrl = "virtualhost/" + hostToUpdate + "/" + hostToUpdate;
@@ -156,16 +156,16 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put(VirtualHost.NAME, hostToUpdate);
-        newAttributes.put("fakeAttribute", "value");
+        newAttributes.put(VirtualHost.DESCRIPTION, "This is a virtual host");
 
         int response = getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes);
-        assertEquals("Unexpected response code", 409, response);
+        assertEquals("Unexpected response code", 200, response);
 
         restartBroker();
 
         Map<String, Object> rereadHostDetails = getRestTestHelper().getJsonAsSingletonList(restHostUrl);
         Asserts.assertVirtualHost(hostToUpdate, rereadHostDetails);
-        assertFalse(rereadHostDetails.containsKey("fakeAttribute"));
+        assertEquals("This is a virtual host", rereadHostDetails.get(VirtualHost.DESCRIPTION));
     }
 
     public void testPutCreateQueue() throws Exception

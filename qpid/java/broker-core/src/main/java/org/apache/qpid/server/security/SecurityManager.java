@@ -25,16 +25,7 @@ import static org.apache.qpid.server.security.access.ObjectType.METHOD;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
 import static org.apache.qpid.server.security.access.ObjectType.USER;
 import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
-import static org.apache.qpid.server.security.access.Operation.ACCESS_LOGS;
-import static org.apache.qpid.server.security.access.Operation.BIND;
-import static org.apache.qpid.server.security.access.Operation.CONFIGURE;
-import static org.apache.qpid.server.security.access.Operation.CONSUME;
-import static org.apache.qpid.server.security.access.Operation.CREATE;
-import static org.apache.qpid.server.security.access.Operation.DELETE;
-import static org.apache.qpid.server.security.access.Operation.PUBLISH;
-import static org.apache.qpid.server.security.access.Operation.PURGE;
-import static org.apache.qpid.server.security.access.Operation.UNBIND;
-import static org.apache.qpid.server.security.access.Operation.UPDATE;
+import static org.apache.qpid.server.security.access.Operation.*;
 
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -140,6 +131,17 @@ public class SecurityManager implements ConfigurationChangeListener
             user = null;
         }
         return user;
+    }
+
+    public void addPlugin(final AccessControl accessControl)
+    {
+
+        synchronized (_plugins)
+        {
+            String pluginTypeName = getPluginTypeName(accessControl);
+
+            _plugins.put(pluginTypeName, accessControl);
+        }
     }
 
     private static final class SystemPrincipal implements Principal

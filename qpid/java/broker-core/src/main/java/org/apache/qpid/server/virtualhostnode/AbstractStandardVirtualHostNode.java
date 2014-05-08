@@ -30,12 +30,12 @@ import java.util.Map;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.RemoteReplicationNode;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
@@ -148,7 +148,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
             });
         }
 
-        host.setDesiredState(State.ACTIVE);
+        host.start();
     }
 
     @Override

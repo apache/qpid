@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.qpid.common.Closeable;
+import java.io.IOException;
 
 import javax.management.JMException;
-
-import java.io.IOException;
 
 /**
  * Handles the registration (and unregistration and so on) of managed objects.
@@ -38,11 +36,13 @@ import java.io.IOException;
  * be the obvious choice for managed objects.
  *
  */
-public interface ManagedObjectRegistry extends Closeable
+public interface ManagedObjectRegistry
 {
     void start() throws IOException;
 
     void registerObject(ManagedObject managedObject) throws JMException;
 
     void unregisterObject(ManagedObject managedObject) throws JMException;
+
+    void close();
 }

@@ -36,6 +36,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
@@ -122,33 +123,6 @@ public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagement
         _defaultVirtualHost = _broker.getDefaultVirtualHost();
     }
 
-    /**
-     * Set the state of the Plugin, I believe that this is called from the BrokerAdapter object when it
-     * has its own state set to State.ACTIVE or State.STOPPED.
-     * When State.ACTIVE is set this calls the start() method to startup the Plugin, when State.STOPPED
-     * is set this calls the stop() method to shutdown the Plugin.
-     * @param desiredState the desired state of the Plugin (either State.ACTIVE or State.STOPPED).
-     * @return true if a valid state has been set, otherwise false.
-     */
-    @Override // From org.apache.qpid.server.model.adapter.AbstractAdapter
-    protected boolean setState(State desiredState)
-    {
-        if (desiredState == State.ACTIVE)
-        {
-            start();
-            return true;
-        }
-        else if (desiredState == State.STOPPED)
-        {
-            stop();
-            return true;
-        }
-        else
-        {
-            _log.info("QmfManagementPlugin.setState() received invalid desiredState {}", desiredState);
-            return false;
-        }
-    }
 
     /**
      * Start the Plugin. Note that we bind the QMF Connection the the default Virtual Host, this is important
@@ -159,7 +133,8 @@ public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagement
      * as these don't exist by default on the Java Broker, however we have to check if they already exist
      * as attempting to add an Exchange that already exists will cause IllegalArgumentException.
      */
-    private void start()
+    @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
+    private void doStart()
     {
         // Log "QMF2 Management Startup" message.
         getBroker().getEventLogger().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
@@ -232,7 +207,8 @@ public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagement
     /**
      * Stop the Plugin, closing the QMF Connection and logging "QMF2 Management Stopped".
      */
-    private void stop()
+    @StateTransition( currentState = State.ACTIVE, desiredState = State.STOPPED )
+    private void doStop()
     {
         // When the Plugin state gets set to STOPPED we close the QMF Connection.
         if (_agent != null)

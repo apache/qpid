@@ -107,17 +107,6 @@ public class KerberosAuthenticationManager extends AbstractAuthenticationManager
         return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR);
     }
 
-    @Override
-    public void close()
-    {
-    }
-
-    @Override
-    public void delete()
-    {
-        // nothing to do, no external resource is used
-    }
-
     private static class GssApiCallbackHandler implements CallbackHandler
     {
 

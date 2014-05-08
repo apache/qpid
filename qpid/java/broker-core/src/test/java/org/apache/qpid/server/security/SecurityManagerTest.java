@@ -72,7 +72,7 @@ public class SecurityManagerTest extends QpidTestCase
         when(_virtualHost.getName()).thenReturn(TEST_VIRTUAL_HOST);
 
         _securityManager = new SecurityManager(mock(Broker.class), false);
-        _securityManager.stateChanged(aclProvider, State.INITIALISING, State.ACTIVE);
+        _securityManager.stateChanged(aclProvider, State.UNINITIALIZED, State.ACTIVE);
     }
 
     public void testAuthoriseCreateBinding()

@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
@@ -74,6 +75,7 @@ public class PreferencesProviderCreationTest extends QpidTestCase
         when(_authenticationProvider.getParent(Broker.class)).thenReturn(_broker);
         when(_authenticationProvider.getObjectFactory()).thenReturn(factory);
         when(_authenticationProvider.getModel()).thenReturn(factory.getModel());
+        when(_authenticationProvider.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
     }
 
     public void tearDown() throws Exception

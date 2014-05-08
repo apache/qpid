@@ -30,6 +30,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -53,6 +54,7 @@ public class ACLFileAccessControlProviderFactoryTest extends QpidTestCase
         when(_broker.getObjectFactory()).thenReturn(_objectFactory);
         when(_broker.getModel()).thenReturn(_objectFactory.getModel());
         when(_broker.getCategoryClass()).thenReturn(Broker.class);
+        when(_broker.getTaskExecutor()).thenReturn(mock(TaskExecutor.class));
     }
 
     public void testCreateInstanceWhenAclFileIsNotPresent()

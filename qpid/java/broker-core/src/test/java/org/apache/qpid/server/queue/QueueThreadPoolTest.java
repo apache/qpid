@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class QueueThreadPoolTest extends QpidTestCase
 {
@@ -63,7 +63,7 @@ public class QueueThreadPoolTest extends QpidTestCase
 
             assertEquals("References not increased", initialCount + 1, ReferenceCountingExecutorService.getInstance().getReferenceCount());
 
-            queue.stop();
+            queue.close();
 
             assertEquals("References not decreased", initialCount , ReferenceCountingExecutorService.getInstance().getReferenceCount());
         }

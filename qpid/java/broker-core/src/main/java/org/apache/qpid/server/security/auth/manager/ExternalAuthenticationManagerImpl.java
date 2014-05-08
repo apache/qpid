@@ -109,14 +109,4 @@ public class ExternalAuthenticationManagerImpl extends AbstractAuthenticationMan
         return new AuthenticationResult(new UsernamePrincipal(username));
     }
 
-    @Override
-    public void close()
-    {
-    }
-
-    @Override
-    public void delete()
-    {
-        // nothing to do, no external resource is used
-    }
 }

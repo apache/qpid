@@ -64,5 +64,5 @@ public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>, Me
 
 
 
-    void delete();
+    void deleteWithChecks();
 }

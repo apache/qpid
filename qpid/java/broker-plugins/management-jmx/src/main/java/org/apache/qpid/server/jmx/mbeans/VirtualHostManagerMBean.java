@@ -215,7 +215,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
 
         try
         {
-            exchange.delete();
+            exchange.deleteWithChecks();
         }
         catch(RequiredExchangeException e)
         {
@@ -291,7 +291,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         {
             throw new OperationsException("No such queue \""+ queueName +"\"");
         }
-        queue.delete();
+        queue.deleteAndReturnCount();
     }
 
     @Override

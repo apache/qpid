@@ -21,9 +21,10 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.security.Principal;
+
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import org.apache.qpid.common.Closeable;
+
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 
 /**
@@ -35,7 +36,7 @@ import org.apache.qpid.server.security.auth.AuthenticationResult;
  * more other implementation-specific principals.
  * </p>
  */
-public interface AuthenticationManager extends Closeable
+public interface AuthenticationManager
 {
     /**
      * Initialise the authentication plugin.
@@ -82,8 +83,5 @@ public interface AuthenticationManager extends Closeable
      */
     AuthenticationResult authenticate(String username, String password);
 
-    /**
-     * Called before manager deletion to release and clean the resources.
-     */
-    void delete();
+
 }

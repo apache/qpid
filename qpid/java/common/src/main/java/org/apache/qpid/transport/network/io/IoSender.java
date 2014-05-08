@@ -18,23 +18,20 @@
  */
 package org.apache.qpid.transport.network.io;
 
-import org.apache.qpid.common.Closeable;
-import org.apache.qpid.thread.Threading;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.SenderClosedException;
-import org.apache.qpid.transport.SenderException;
-import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.util.Logger;
-
 import static org.apache.qpid.transport.util.Functions.mod;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.qpid.thread.Threading;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.SenderClosedException;
+import org.apache.qpid.transport.SenderException;
+import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.util.Logger;
 
 
 public final class IoSender implements Runnable, Sender<ByteBuffer>
@@ -59,7 +56,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     private final Object notEmpty = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread senderThread;
-    private final List<Closeable> _listeners = new ArrayList<Closeable>();
+    private IoReceiver _receiver;
     private final String _remoteSocketAddress;
 
     private volatile Throwable exception = null;
@@ -222,7 +219,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
             }
             finally
             {
-                closeListeners();
+                closeReceiver();
             }
             if (reportException && exception != null)
             {
@@ -231,25 +228,19 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         }
     }
 
-    private void closeListeners()
+    private void closeReceiver()
     {
-        Exception ex = null;
-        for(Closeable listener : _listeners)
+        if(_receiver != null)
         {
             try
             {
-                listener.close();
+                _receiver.close();
             }
-            catch(Exception e)
+            catch(RuntimeException e)
             {
-                log.error(e, "Exception closing listener for socket %s", _remoteSocketAddress);
-                ex = e;
+                log.error(e, "Exception closing receiver for socket %s", _remoteSocketAddress);
+                throw new SenderException(e.getMessage(), e);
             }
-        }
-
-        if (ex != null)
-        {
-            throw new SenderException(ex.getMessage(), ex);
         }
     }
 
@@ -337,9 +328,9 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         }
     }
 
-    public void registerCloseListener(Closeable listener)
+    public void setReceiver(IoReceiver receiver)
     {
-        _listeners.add(listener);
+        _receiver = receiver;
     }
 
     private void awaitSenderThreadShutdown()

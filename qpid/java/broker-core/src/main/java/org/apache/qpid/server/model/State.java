@@ -22,10 +22,27 @@ package org.apache.qpid.server.model;
 
 public enum State
 {
-    INITIALISING,
+    UNINITIALIZED(false),
     QUIESCED,
     STOPPED,
     ACTIVE,
     DELETED,
-    ERRORED
+    ERRORED(false);
+
+    private final boolean _valid;
+
+    State()
+    {
+        this(true);
+    }
+
+    State(boolean valid)
+    {
+        _valid = valid;
+    }
+
+    public boolean isValid()
+    {
+        return _valid;
+    }
 }

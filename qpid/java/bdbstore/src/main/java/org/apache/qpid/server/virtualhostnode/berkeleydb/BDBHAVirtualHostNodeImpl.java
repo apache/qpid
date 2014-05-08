@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
@@ -322,17 +323,33 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
     }
 
-    @Override
-    protected void stop()
+    @StateTransition( currentState = { State.ACTIVE, State.ERRORED }, desiredState = State.STOPPED )
+    protected void doStop()
     {
         try
         {
-            super.stop();
+            super.doStop();
         }
         finally
         {
             ReplicatedEnvironmentFacade environmentFacade = getReplicatedEnvironmentFacade();
             if (_environmentFacade.compareAndSet(environmentFacade, null))
+            {
+                environmentFacade.close();
+            }
+        }
+    }
+
+    protected void onClose()
+    {
+        try
+        {
+            super.onClose();
+        }
+        finally
+        {
+            ReplicatedEnvironmentFacade environmentFacade = getReplicatedEnvironmentFacade();
+            if (environmentFacade != null && _environmentFacade.compareAndSet(environmentFacade, null))
             {
                 environmentFacade.close();
             }
@@ -384,7 +401,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     }
                 });
             }
-            host.setDesiredState(State.ACTIVE);
+            host.start();
 
         }
         catch (Exception e)
@@ -421,7 +438,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         VirtualHost<?,?,?> virtualHost = getVirtualHost();
         if (virtualHost!= null)
         {
-            virtualHost.setDesiredState(State.STOPPED);
+            virtualHost.close();
         }
     }
 
@@ -653,15 +670,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
         }
 
-        @Override
-        public boolean setState(State desiredState)
-        {
-            if (desiredState != State.STOPPED)
-            {
-                throw new IllegalArgumentException("Unsupported state " + desiredState);
-            }
-            return super.setState(desiredState);
-        }
     }
 
 }

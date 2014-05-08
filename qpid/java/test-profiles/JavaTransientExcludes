@@ -50,3 +50,5 @@ org.apache.qpid.systest.management.jmx.QueueManagementTest#testMoveMessageBetwee
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testCopyMessageBetweenQueuesWithBrokerRestart
 
 org.apache.qpid.test.unit.client.MaxDeliveryCountTest#testWhenBrokerIsRestartedAfterEnqeuingMessages
+
+org.apache.qpid.systest.rest.VirtualHostRestTest#testUpdateActiveHost

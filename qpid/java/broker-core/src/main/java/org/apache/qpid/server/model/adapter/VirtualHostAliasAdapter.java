@@ -85,11 +85,5 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
         return Collections.emptySet();
     }
 
-    @Override
-    protected boolean setState(State desiredState)
-    {
-        // TODO: state is not supported at the moment
-        return false;
-    }
 
 }

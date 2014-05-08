@@ -43,7 +43,6 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
@@ -99,6 +98,8 @@ public class BrokerTestHelper
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         when(broker.getParent(SystemContext.class)).thenReturn(systemContext);
 
+        when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
+        when(systemContext.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         return broker;
     }
 
@@ -126,8 +127,9 @@ public class BrokerTestHelper
         when(virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
+        when(virtualHostNode.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         AbstractVirtualHost host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class, attributes, virtualHostNode );
-        host.setDesiredState(State.ACTIVE);
+        host.start();
 
         return host;
     }
@@ -187,6 +189,7 @@ public class BrokerTestHelper
         final ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         when(virtualHost.getObjectFactory()).thenReturn(objectFactory);
         when(virtualHost.getModel()).thenReturn(objectFactory.getModel());
+        when(virtualHost.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         final Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.Exchange.ID, UUIDGenerator.generateExchangeUUID("amp.direct", virtualHost.getName()));
         attributes.put(org.apache.qpid.server.model.Exchange.NAME, "amq.direct");

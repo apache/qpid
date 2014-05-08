@@ -29,12 +29,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementTest extends QpidTestCase
@@ -54,6 +57,8 @@ public class HttpManagementTest extends QpidTestCase
         when(_broker.getObjectFactory()).thenReturn(objectFactory);
         when(_broker.getModel()).thenReturn(objectFactory.getModel());
         when(_broker.getCategoryClass()).thenReturn(Broker.class);
+        when(_broker.getEventLogger()).thenReturn(mock(EventLogger.class));
+        when(_broker.getTaskExecutor()).thenReturn(mock(TaskExecutor.class));
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, false);
@@ -63,6 +68,7 @@ public class HttpManagementTest extends QpidTestCase
         attributes.put(HttpManagement.NAME, getTestName());
         attributes.put(HttpManagement.TIME_OUT, 10000l);
         attributes.put(ConfiguredObject.ID, _id);
+        attributes.put(HttpManagement.DESIRED_STATE, State.QUIESCED);
         _management = new HttpManagement(attributes, _broker);
         _management.open();
     }

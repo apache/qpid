@@ -40,6 +40,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.StateChangeListener;
@@ -60,6 +61,8 @@ public class BindingImpl
     final AtomicBoolean _deleted = new AtomicBoolean();
     final CopyOnWriteArrayList<StateChangeListener<BindingImpl,State>> _stateChangeListeners =
             new CopyOnWriteArrayList<StateChangeListener<BindingImpl, State>>();
+
+    private State _state = State.UNINITIALIZED;
 
     public BindingImpl(Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
@@ -190,25 +193,13 @@ public class BindingImpl
         return result;
     }
 
-    protected boolean setState(final State desiredState)
-    {
-        if(desiredState == State.DELETED)
-        {
-            delete();
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
     public String toString()
     {
         return "Binding{bindingKey="+_bindingKey+", exchange="+_exchange+", queue="+_queue+", id= " + getId() + " }";
     }
 
-    public void delete()
+    @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
+    private void doDelete()
     {
         if(_deleted.compareAndSet(false,true))
         {
@@ -218,11 +209,18 @@ public class BindingImpl
             }
             getEventLogger().message(_logSubject, BindingMessages.DELETED());
         }
+        _state = State.DELETED;
+    }
+
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    private void activate()
+    {
+        _state = State.ACTIVE;
     }
 
     public State getState()
     {
-        return _deleted.get() ? State.DELETED : State.ACTIVE;
+        return _state;
     }
 
     public void addStateChangeListener(StateChangeListener<BindingImpl,State> listener)
@@ -233,20 +231,6 @@ public class BindingImpl
     public void removeStateChangeListener(StateChangeListener<BindingImpl,State> listener)
     {
         _stateChangeListeners.remove(listener);
-    }
-
-    @Override
-    public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
-                                                                                                      AccessControlException, IllegalArgumentException
-    {
-        throw new UnsupportedOperationException("Changing attributes on binding is not supported.");
-    }
-
-    @Override
-    public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException,
-                                                                           IllegalArgumentException
-    {
-        throw new UnsupportedOperationException("Changing attributes on binding is not supported.");
     }
 
     private EventLogger getEventLogger()

@@ -46,7 +46,7 @@ public class AsynchMessageListenerTest extends QpidBrokerTestCase
     private static final int MSG_COUNT = 10;
     private static final long AWAIT_MESSAGE_TIMEOUT = 2000;
     private static final long AWAIT_MESSAGE_TIMEOUT_NEGATIVE = 250;
-    private final String _testQueueName = getTestQueueName();
+    private String _testQueueName;
     private Connection _consumerConnection;
     private Session _consumerSession;
     private MessageConsumer _consumer;
@@ -55,7 +55,7 @@ public class AsynchMessageListenerTest extends QpidBrokerTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-
+        _testQueueName = getTestQueueName();
         _consumerConnection = getConnection();
         _consumerConnection.start();
         _consumerSession = _consumerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);

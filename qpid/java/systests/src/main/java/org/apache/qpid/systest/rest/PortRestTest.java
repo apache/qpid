@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.systest.rest;
 
+import java.net.ServerSocket;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,15 +32,18 @@ import java.util.Map;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.JmxPort;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class PortRestTest extends QpidRestTestCase
 {
+
     public void testGet() throws Exception
     {
         List<Map<String, Object>> ports = getRestTestHelper().getJsonAsList("port/");
@@ -99,38 +103,65 @@ public class PortRestTest extends QpidRestTestCase
 
     public void testPutRmiPortWithMinimumAttributes() throws Exception
     {
-        String portName = "test-port";
+        String portNameRMI = "test-port-rmi";
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Port.NAME, portName);
-        attributes.put(Port.PORT, findFreePort());
+        attributes.put(Port.NAME, portNameRMI);
+        int rmiPort = findFreePort();
+        attributes.put(Port.PORT, rmiPort);
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
 
-        int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("port/" + portNameRMI, "PUT", attributes);
         assertEquals("Unexpected response code", 201, responseCode);
 
-        List<Map<String, Object>> portDetails = getRestTestHelper().getJsonAsList("port/" + portName);
+
+        List<Map<String, Object>> portDetails = getRestTestHelper().getJsonAsList("port/" + portNameRMI);
         assertNotNull("Port details cannot be null", portDetails);
-        assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
+        assertEquals("Unexpected number of ports with name " + portNameRMI, 1, portDetails.size());
         Map<String, Object> port = portDetails.get(0);
         Asserts.assertPortAttributes(port, State.QUIESCED);
+
+        String portNameJMX = "test-port-jmx";
+        attributes = new HashMap<String, Object>();
+        attributes.put(Port.NAME, portNameJMX);
+        attributes.put(Port.PORT, getNextAvailable(rmiPort + 1));
+        attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.JMX_RMI));
+        attributes.put(JmxPort.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
+
+        responseCode = getRestTestHelper().submitRequest("port/" + portNameJMX, "PUT", attributes);
+        assertEquals("Unexpected response code", 201, responseCode);
+
+
+        portDetails = getRestTestHelper().getJsonAsList("port/" + portNameJMX);
+        assertNotNull("Port details cannot be null", portDetails);
+        assertEquals("Unexpected number of ports with name " + portNameRMI, 1, portDetails.size());
+        port = portDetails.get(0);
+        Asserts.assertPortAttributes(port, State.QUIESCED);
+
+
+        attributes.put(Plugin.TYPE, "MANAGEMENT-JMX");
+        attributes.put(Plugin.NAME, "JmxPlugin");
+        responseCode = getRestTestHelper().submitRequest("plugin/JmxPlugin", "PUT", attributes);
+        assertEquals("Unexpected response code", 201, responseCode);
+
+
 
         // make sure that port is there after broker restart
         restartBroker();
 
-        portDetails = getRestTestHelper().getJsonAsList("port/" + portName);
+        portDetails = getRestTestHelper().getJsonAsList("port/" + portNameRMI);
         assertNotNull("Port details cannot be null", portDetails);
-        assertEquals("Unexpected number of ports with name " + portName, 1, portDetails.size());
+        assertEquals("Unexpected number of ports with name " + portNameRMI, 1, portDetails.size());
         port = portDetails.get(0);
         Asserts.assertPortAttributes(port, State.ACTIVE);
 
         // try to add a second RMI port
-        portName = portName + "2";
+        portNameRMI = portNameRMI + "2";
         attributes = new HashMap<String, Object>();
-        attributes.put(Port.NAME, portName);
+        attributes.put(Port.NAME, portNameRMI);
         attributes.put(Port.PORT, findFreePort());
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
 
-        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
+        responseCode = getRestTestHelper().submitRequest("port/" + portNameRMI, "PUT", attributes);
         assertEquals("Adding of a second RMI port should fail", 409, responseCode);
     }
 
@@ -301,11 +332,14 @@ public class PortRestTest extends QpidRestTestCase
         Asserts.assertPortAttributes(portData, State.QUIESCED);
     }
 
-    public void testNewPortQuiescedIfPortNumberWasUsed() throws Exception
+    public void testNewPortErroredIfPortNumberInUse() throws Exception
     {
         String ampqPortName = TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT;
         Map<String, Object> portData = getRestTestHelper().getJsonAsSingletonList("port/" + URLDecoder.decode(ampqPortName, "UTF-8"));
         int amqpPort = (Integer)portData.get(Port.PORT);
+
+        ServerSocket socket = new ServerSocket(0);
+        int occupiedPort = socket.getLocalPort();
 
         int deleteResponseCode = getRestTestHelper().submitRequest("port/" + ampqPortName, "DELETE");
         assertEquals("Port deletion should be allowed", 200, deleteResponseCode);
@@ -313,13 +347,13 @@ public class PortRestTest extends QpidRestTestCase
         String newPortName = "reused-port";
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, newPortName);
-        attributes.put(Port.PORT, amqpPort);  // reuses port that was previously in use
+        attributes.put(Port.PORT, occupiedPort);  // port in use
         attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
 
         int responseCode = getRestTestHelper().submitRequest("port/" + newPortName, "PUT", attributes);
         assertEquals("Unexpected response code for port creation", 201, responseCode);
 
         portData = getRestTestHelper().getJsonAsSingletonList("port/" + URLDecoder.decode(newPortName, "UTF-8"));
-        Asserts.assertPortAttributes(portData, State.QUIESCED);
+        Asserts.assertPortAttributes(portData, State.ERRORED);
     }
 }

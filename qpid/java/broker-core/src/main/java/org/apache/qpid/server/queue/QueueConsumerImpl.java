@@ -244,7 +244,7 @@ class QueueConsumerImpl
     }
 
     @Override
-    public void close()
+    protected void onClose()
     {
         if(_closed.compareAndSet(false,true))
         {
@@ -474,12 +474,6 @@ class QueueConsumerImpl
         ServerMessage message = entry.getMessage();
         _deliveredBytes.addAndGet(message.getSize());
         _target.send(entry, batch);
-    }
-
-    @Override
-    protected boolean setState(final State desiredState)
-    {
-        return false;
     }
 
     @Override

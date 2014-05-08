@@ -19,12 +19,12 @@
 
 package org.apache.qpid.transport.network.io;
 
+import java.net.Socket;
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.util.Logger;
-
-import java.net.Socket;
-import java.nio.ByteBuffer;
 
 /**
  * This class provides a socket based transport using the java.io
@@ -70,7 +70,7 @@ public final class IoTransport<E>
                                        2*readBufferSize, timeout);
         this.receiver.initiate();
 
-        ios.registerCloseListener(this.receiver);
+        ios.setReceiver(this.receiver);
     }
 
     public Sender<ByteBuffer> getSender()

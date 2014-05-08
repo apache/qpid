@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -41,7 +43,6 @@ import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -50,6 +51,7 @@ import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.PriorityQueueImpl;
 import org.apache.qpid.server.queue.StandardQueueImpl;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
@@ -69,6 +71,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
 
         EventLogger eventLogger = mock(EventLogger.class);
         SecurityManager securityManager = mock(SecurityManager.class);
+        when(securityManager.authoriseConfiguringBroker(anyString(),any(Class.class),any(Operation.class))).thenReturn(true);
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
 
         _taskExecutor = new CurrentThreadTaskExecutor();
@@ -119,7 +122,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         attributes.put(VirtualHost.ID, UUID.randomUUID());
         StandardVirtualHost host = new StandardVirtualHost(attributes, _virtualHostNode);
         host.create();
-        host.setDesiredState(State.ACTIVE);
+        host.start();
         return host;
     }
 

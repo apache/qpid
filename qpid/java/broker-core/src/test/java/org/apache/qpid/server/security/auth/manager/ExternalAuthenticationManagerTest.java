@@ -53,6 +53,7 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
         attrsFullDN.put(AuthenticationProvider.ID, UUID.randomUUID());
         attrsFullDN.put(AuthenticationProvider.NAME, getTestName()+"FullDN");
         attrsFullDN.put("useFullDN",true);
+
         _managerUsingFullDN = new ExternalAuthenticationManagerImpl(attrsFullDN, BrokerTestHelper.createBrokerMock());
         _managerUsingFullDN.open();
     }

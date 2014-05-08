@@ -42,10 +42,10 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupMember;
 import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
@@ -77,7 +77,7 @@ public class FileBasedGroupProviderImpl
 
         _broker = broker;
 
-        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
+        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.UNINITIALIZED);
         _state = new AtomicReference<State>(state);
     }
 
@@ -115,6 +115,10 @@ public class FileBasedGroupProviderImpl
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
+        if(changedAttributes.contains(PATH))
+        {
+            throw new IllegalArgumentException("Cannot change the path");
+        }
     }
     protected void onOpen()
     {
@@ -142,6 +146,7 @@ public class FileBasedGroupProviderImpl
             attrMap.put(Group.NAME, group.getName());
             GroupAdapter groupAdapter = new GroupAdapter(attrMap);
             principals.add(groupAdapter);
+            groupAdapter.open();
         }
 
     }
@@ -265,87 +270,52 @@ public class FileBasedGroupProviderImpl
         return _broker.getSecurityManager();
     }
 
-    @Override
-    protected boolean setState(State desiredState)
+    @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED, State.STOPPED }, desiredState = State.ACTIVE )
+    private void activate()
     {
-        State state = _state.get();
-        if (desiredState == State.ACTIVE)
+        try
         {
-            if ((state == State.INITIALISING || state == State.QUIESCED || state == State.STOPPED)
-                    && _state.compareAndSet(state, State.ACTIVE))
+            _groupDatabase.setGroupFile(getPath());
+            _state.set(State.ACTIVE);
+        }
+        catch(IOException | RuntimeException e)
+        {
+            _state.set(State.ERRORED);
+            if (_broker.isManagementMode())
             {
-                try
-                {
-                    try
-                    {
-                        _groupDatabase.setGroupFile(getPath());
-                    }
-                    catch (IOException e)
-                    {
-                        throw new IllegalConfigurationException("Unable to set group file " + getPath(), e);
-                    }
+                LOGGER.warn("Failed to activate group provider: " + getName(), e);
+            }
+        }
+    }
 
-                    return true;
-                }
-                catch(RuntimeException e)
-                {
-                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
-                    if (_broker.isManagementMode())
-                    {
-                        LOGGER.warn("Failed to activate group provider: " + getName(), e);
-                    }
-                    else
-                    {
-                        throw e;
-                    }
-                }
-            }
-            else
+    @StateTransition( currentState = { State.QUIESCED, State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
+    private void doDelete()
+    {
+        File file = new File(getPath());
+        if (file.exists())
+        {
+            if (!file.delete())
             {
-                throw new IllegalStateException("Cannot activate group provider in state: " + state);
+                throw new IllegalConfigurationException("Cannot delete group file");
             }
         }
-        else if (desiredState == State.STOPPED)
-        {
-            if (_state.compareAndSet(state, State.STOPPED))
-            {
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot stop group provider in state: " + state);
-            }
-        }
-        else if (desiredState == State.DELETED)
-        {
-            if ((state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED || state == State.ERRORED)
-                    && _state.compareAndSet(state, State.DELETED))
-            {
-                File file = new File(getPath());
-                if (file.exists())
-                {
-                    if (!file.delete())
-                    {
-                        throw new IllegalConfigurationException("Cannot delete group file");
-                    }
-                }
 
-                deleted();
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot delete group provider in state: " + state);
-            }
-        }
-        else if (desiredState == State.QUIESCED)
-        {
-            if (state == State.INITIALISING && _state.compareAndSet(state, State.QUIESCED))
-            {
-                return true;
-            }
-        }
-        return false;
+        deleted();
+        _state.set(State.DELETED);
+    }
+
+
+    @StateTransition( currentState = { State.UNINITIALIZED, State.ACTIVE, State.QUIESCED}, desiredState = State.STOPPED )
+    private void doStop()
+    {
+        // TODO - this seem inadequate :-)
+        _state.set(State.STOPPED);
+    }
+
+    @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
+    private void startQuiesced()
+    {
+        _state.set(State.QUIESCED);
     }
 
     public Set<Principal> getGroupPrincipalsForUser(String username)
@@ -399,15 +369,9 @@ public class FileBasedGroupProviderImpl
         }
     }
 
-    @Override
-    protected void changeAttributes(Map<String, Object> attributes)
-    {
-        throw new UnsupportedOperationException("Changing attributes on group providers is not supported.");
-    }
-
-
     private class GroupAdapter extends AbstractConfiguredObject<GroupAdapter> implements Group<GroupAdapter>
     {
+        private State _state = State.UNINITIALIZED;
 
         public GroupAdapter(Map<String, Object> attributes)
         {
@@ -418,7 +382,7 @@ public class FileBasedGroupProviderImpl
         @Override
         public State getState()
         {
-            return State.ACTIVE;
+            return _state;
         }
 
 
@@ -430,6 +394,12 @@ public class FileBasedGroupProviderImpl
             {
                 throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
             }
+        }
+
+        @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
+        private void activate()
+        {
+            _state = State.ACTIVE;
         }
 
         @Override
@@ -506,38 +476,20 @@ public class FileBasedGroupProviderImpl
                             + childClass);
         }
 
-        @Override
-        protected boolean setState(State desiredState)
-                throws IllegalStateTransitionException, AccessControlException
+        @StateTransition( currentState = State.ACTIVE, desiredState = State.DELETED )
+        private void doDelete()
         {
-            if (desiredState == State.DELETED)
-            {
-                getSecurityManager().authoriseGroupOperation(Operation.DELETE, getName());
-                _groupDatabase.removeGroup(getName());
-                deleted();
-                return true;
-            }
-
-            return false;
-        }
-
-        @Override
-        public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
-                AccessControlException, IllegalArgumentException
-        {
-            throw new UnsupportedOperationException("Changing attributes on group is not supported.");
-        }
-
-        @Override
-        public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException,
-                IllegalArgumentException
-        {
-            throw new UnsupportedOperationException("Changing attributes on group is not supported.");
+            getSecurityManager().authoriseGroupOperation(Operation.DELETE, getName());
+            _groupDatabase.removeGroup(getName());
+            deleted();
+            _state = State.DELETED;
         }
 
         private class GroupMemberAdapter extends AbstractConfiguredObject<GroupMemberAdapter> implements
                 GroupMember<GroupMemberAdapter>
         {
+
+            private State _state = State.UNINITIALIZED;
 
             public GroupMemberAdapter(Map<String, Object> attrMap)
             {
@@ -569,46 +521,32 @@ public class FileBasedGroupProviderImpl
             @Override
             public State getState()
             {
-                return null;
+                return _state;
             }
 
             @Override
             public <C extends ConfiguredObject> Collection<C> getChildren(
                     Class<C> clazz)
             {
-                return null;
+                return Collections.emptySet();
             }
 
-            @Override
-            protected boolean setState(State desiredState)
-                    throws IllegalStateTransitionException,
-                    AccessControlException
+            @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+            private void activate()
             {
-                if (desiredState == State.DELETED)
-                {
-                    getSecurityManager().authoriseGroupOperation(Operation.UPDATE, GroupAdapter.this.getName());
-
-                    _groupDatabase.removeUserFromGroup(getName(), GroupAdapter.this.getName());
-                    deleted();
-                    return true;
-
-                }
-                return false;
+                _state = State.ACTIVE;
             }
 
-            @Override
-            public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
-                    AccessControlException, IllegalArgumentException
+            @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
+            private void doDelete()
             {
-                throw new UnsupportedOperationException("Changing attributes on group member is not supported.");
+                getSecurityManager().authoriseGroupOperation(Operation.UPDATE, GroupAdapter.this.getName());
+
+                _groupDatabase.removeUserFromGroup(getName(), GroupAdapter.this.getName());
+                deleted();
+                _state = State.DELETED;
             }
 
-            @Override
-            public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException,
-                    IllegalArgumentException
-            {
-                throw new UnsupportedOperationException("Changing attributes on group member is not supported.");
-            }
         }
     }
 

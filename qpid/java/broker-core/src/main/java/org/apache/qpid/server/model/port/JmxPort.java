@@ -41,4 +41,6 @@ public interface JmxPort<X extends JmxPort<X>> extends Port<X>
 
     @ManagedAttribute( mandatory = true )
     AuthenticationProvider getAuthenticationProvider();
+
+    void setPortManager(PortManager manager);
 }

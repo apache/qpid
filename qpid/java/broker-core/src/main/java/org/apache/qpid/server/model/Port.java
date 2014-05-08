@@ -85,4 +85,6 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     //children
     Collection<VirtualHostAlias> getVirtualHostBindings();
     Collection<Connection> getConnections();
+
+    void start();
 }

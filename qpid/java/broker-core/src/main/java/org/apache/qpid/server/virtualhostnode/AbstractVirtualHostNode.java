@@ -42,6 +42,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -56,7 +57,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     private static final Logger LOGGER = Logger.getLogger(AbstractVirtualHostNode.class);
 
     private final Broker<?> _broker;
-    private final AtomicReference<State> _state = new AtomicReference<State>(State.INITIALISING);
+    private final AtomicReference<State> _state = new AtomicReference<State>(State.UNINITIALIZED);
     private final EventLogger _eventLogger;
 
     private DurableConfigurationStore _durableConfigurationStore;
@@ -97,70 +98,27 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         return LifetimePolicy.PERMANENT;
     }
 
-    @Override
-    protected boolean setState(State desiredState)
-    {
-        State state = _state.get();
-        if (desiredState == State.DELETED)
-        {
-            if (state == State.ACTIVE || state == State.INITIALISING)
-            {
-                state = setDesiredState(State.STOPPED);
-            }
 
-            if (state == State.STOPPED || state == State.ERRORED)
-            {
-                if( _state.compareAndSet(state, State.DELETED))
-                {
-                    delete();
-                    return true;
-                }
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot delete virtual host node in " + state + " state");
-            }
-        }
-        else if (desiredState == State.ACTIVE)
+    @StateTransition( currentState = {State.UNINITIALIZED, State.STOPPED }, desiredState = State.ACTIVE )
+    private void doActivate()
+    {
+        try
         {
-            if ((state == State.INITIALISING || state == State.STOPPED) && _state.compareAndSet(state, State.ACTIVE))
-            {
-                try
-                {
-                    activate();
-                }
-                catch(RuntimeException e)
-                {
-                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
-                    if (_broker.isManagementMode())
-                    {
-                        LOGGER.warn("Failed to make " + this + " active.", e);
-                    }
-                    else
-                    {
-                        throw e;
-                    }
-                }
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot activate virtual host node in " + state + " state");
-            }
+            activate();
+            _state.set(State.ACTIVE);
         }
-        else if (desiredState == State.STOPPED)
+        catch(RuntimeException e)
         {
-            if (_state.compareAndSet(state, State.STOPPED))
+            _state.set(State.ERRORED);
+            if (_broker.isManagementMode())
             {
-                stop();
-                return true;
+                LOGGER.warn("Failed to make " + this + " active.", e);
             }
             else
             {
-                throw new IllegalStateException("Cannot stop virtual host node in " + state + " state");
+                throw e;
             }
         }
-        return false;
     }
 
     @Override
@@ -233,12 +191,16 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         return attributes;
     }
 
-    protected void delete()
+    @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
+    protected void doDelete()
     {
+
+        close();
+        _state.set(State.DELETED);
         VirtualHost<?, ?, ?> virtualHost = getVirtualHost();
         if (virtualHost != null)
         {
-            virtualHost.setDesiredState(State.DELETED);
+            virtualHost.delete();
         }
 
         deleted();
@@ -249,13 +211,16 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         }
     }
 
-    protected void stop()
+    @StateTransition( currentState = { State.ACTIVE, State.ERRORED }, desiredState = State.STOPPED )
+    protected void doStop()
     {
-        VirtualHost<?, ?, ?> virtualHost = getVirtualHost();
-        if (virtualHost != null)
-        {
-            virtualHost.setDesiredState(State.STOPPED);
-        }
+        closeChildren();
+        _state.set(State.STOPPED);
+    }
+
+    @Override
+    protected void onClose()
+    {
         DurableConfigurationStore configurationStore = getConfigurationStore();
         if (configurationStore != null)
         {

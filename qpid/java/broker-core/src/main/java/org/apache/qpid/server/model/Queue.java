@@ -144,7 +144,7 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 
     void visit(QueueEntryVisitor visitor);
 
-    int delete();
+    int deleteAndReturnCount();
 
     void setNotificationListener(QueueNotificationListener listener);
 

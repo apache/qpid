@@ -34,7 +34,6 @@ import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -96,7 +95,7 @@ public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
         assertEquals("Manager should have exactly one user child",1, _authManager.getUsers().size());
 
 
-        user.setDesiredState(State.DELETED);
+        user.delete();
 
         assertEquals("No users should be present after child deletion", 0, _authManager.getChildren(User.class).size());
 

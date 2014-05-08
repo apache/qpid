@@ -33,13 +33,12 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.util.MapValueConverter;
 
 public class ACLFileAccessControlProviderImpl
         extends AbstractConfiguredObject<ACLFileAccessControlProviderImpl>
@@ -50,7 +49,7 @@ public class ACLFileAccessControlProviderImpl
     protected DefaultAccessControl _accessControl;
     protected final Broker _broker;
 
-    private AtomicReference<State> _state;
+    private AtomicReference<State> _state = new AtomicReference<>(State.UNINITIALIZED);
 
     @ManagedAttributeField
     private String _path;
@@ -62,9 +61,6 @@ public class ACLFileAccessControlProviderImpl
 
 
         _broker = broker;
-
-        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
-        _state = new AtomicReference<State>(state);
 
     }
 
@@ -108,81 +104,68 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
-    public Object getAttribute(String name)
-    {
-        if(STATE.equals(name))
-        {
-            return getState();
-        }
-        return super.getAttribute(name);
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptySet();
     }
 
-    @Override
-    public boolean setState(State desiredState)
-            throws IllegalStateTransitionException, AccessControlException
+
+    @StateTransition(currentState = {State.UNINITIALIZED, State.QUIESCED, State.ERRORED}, desiredState = State.ACTIVE)
+    private void activate()
     {
-        State state = _state.get();
+        if(_broker.isManagementMode())
+        {
 
-        if(desiredState == State.DELETED)
-        {
-            deleted();
-            return _state.compareAndSet(state, State.DELETED);
+            _state.set(_accessControl.validate() ? State.QUIESCED : State.ERRORED);
         }
-        else if (desiredState == State.QUIESCED)
+        else
         {
-            return _state.compareAndSet(state, State.QUIESCED);
-        }
-        else if(desiredState == State.ACTIVE)
-        {
-            if ((state == State.INITIALISING || state == State.QUIESCED) && _state.compareAndSet(state, State.ACTIVE))
+            try
             {
-                try
+                _accessControl.open();
+                _state.set(State.ACTIVE);
+            }
+            catch (RuntimeException e)
+            {
+                _state.set(State.ERRORED);
+                if (_broker.isManagementMode())
                 {
-                    _accessControl.open();
-                    return true;
+                    LOGGER.warn("Failed to activate ACL provider: " + getName(), e);
                 }
-                catch(RuntimeException e)
+                else
                 {
-                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
-                    if (_broker.isManagementMode())
-                    {
-                        LOGGER.warn("Failed to activate ACL provider: " + getName(), e);
-                    }
-                    else
-                    {
-                        throw e;
-                    }
+                    throw e;
                 }
             }
-            else
-            {
-                throw new IllegalStateException("Can't activate access control provider in " + state + " state");
-            }
         }
-        else if(desiredState == State.STOPPED)
-        {
-            if(_state.compareAndSet(state, State.STOPPED))
-            {
-                _accessControl.close();
-                return true;
-            }
-
-            return false;
-        }
-        return false;
     }
 
+    @StateTransition(currentState = {State.ACTIVE, State.QUIESCED}, desiredState = State.STOPPED)
+    private void doStop()
+    {
+        close();
+        _state.set(State.STOPPED);
+    }
 
     @Override
-    protected void changeAttributes(Map<String, Object> attributes)
+    protected void onClose()
     {
-        throw new UnsupportedOperationException("Changing attributes on AccessControlProvider is not supported");
+        super.onClose();
+        _accessControl.close();
+    }
+
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
+    private void startQuiesced()
+    {
+        _state.set(State.QUIESCED);
+    }
+
+    @StateTransition(currentState = {State.ACTIVE, State.QUIESCED, State.STOPPED, State.ERRORED}, desiredState = State.DELETED)
+    private void doDelete()
+    {
+        close();
+        _state.set(State.DELETED);
+        deleted();
     }
 
     @Override

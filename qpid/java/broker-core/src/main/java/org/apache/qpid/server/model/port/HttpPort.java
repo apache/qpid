@@ -41,4 +41,6 @@ public interface HttpPort<X extends HttpPort<X>> extends Port<X>
 
     @ManagedAttribute( mandatory = true )
     AuthenticationProvider getAuthenticationProvider();
+
+    void setPortManager(PortManager manager);
 }

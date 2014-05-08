@@ -125,7 +125,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
         when(_mockVirtualHost.getChildByName(eq(Queue.class), eq(QUEUE_1_NAME))).thenReturn(mockQueue);
 
         _virtualHostManagerMBean.deleteQueue(QUEUE_1_NAME);
-        verify(mockQueue).delete();
+        verify(mockQueue).deleteAndReturnCount();
     }
 
     public void testDeleteQueueWhenQueueDoesNotExist() throws Exception
@@ -145,7 +145,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
             // PASS
             assertEquals("No such queue \"unknownqueue\"", oe.getMessage());
         }
-        verify(mockQueue, never()).delete();
+        verify(mockQueue, never()).deleteAndReturnCount();
     }
 
     public void testCreateNewDurableExchange() throws Exception
@@ -182,7 +182,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
 
 
         _virtualHostManagerMBean.unregisterExchange(EXCHANGE_1_NAME);
-        verify(mockExchange).delete();
+        verify(mockExchange).deleteWithChecks();
     }
 
     public void testUnregisterExchangeWhenExchangeDoesNotExist() throws Exception
@@ -203,7 +203,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
             assertEquals("No such exchange \"unknownexchange\"", oe.getMessage());
         }
 
-        verify(mockExchange, never()).delete();
+        verify(mockExchange, never()).deleteWithChecks();
     }
 
     private static Map<String,Object> matchesMap(final String name,

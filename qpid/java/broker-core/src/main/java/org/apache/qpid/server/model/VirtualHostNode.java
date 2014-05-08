@@ -38,4 +38,8 @@ public interface VirtualHostNode<X extends VirtualHostNode<X>> extends Configure
 
     @SuppressWarnings("rawtypes")
     Collection<? extends RemoteReplicationNode> getRemoteReplicationNodes();
+
+    void stop();
+
+    void start();
 }

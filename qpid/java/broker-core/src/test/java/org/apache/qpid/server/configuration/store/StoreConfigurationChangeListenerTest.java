@@ -95,6 +95,6 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
     private void notifyBrokerStarted()
     {
         Broker broker = mock(Broker.class);
-        _listener.stateChanged(broker, State.INITIALISING, State.ACTIVE);
+        _listener.stateChanged(broker, State.UNINITIALIZED, State.ACTIVE);
     }
 }

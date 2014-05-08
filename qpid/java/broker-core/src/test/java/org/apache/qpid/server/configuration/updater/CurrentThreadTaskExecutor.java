@@ -94,4 +94,11 @@ public class CurrentThreadTaskExecutor implements TaskExecutor
         return task.execute();
     }
 
+    public static TaskExecutor newStartedInstance()
+    {
+        TaskExecutor executor = new CurrentThreadTaskExecutor();
+        executor.start();
+        return executor;
+    }
+
 }

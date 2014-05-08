@@ -650,7 +650,7 @@ System.out.println("properties = " + properties);
                             Queue queue = nameParser.getQueue();
                             if (queue != null)
                             {
-                                queue.delete();
+                                queue.deleteAndReturnCount();
                             }
                         }
                         else if (type.equals("binding")) // delete binding.

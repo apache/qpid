@@ -67,11 +67,12 @@ import org.apache.qpid.server.management.plugin.servlet.rest.UserPreferencesServ
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
 import org.apache.qpid.server.model.port.HttpPort;
+import org.apache.qpid.server.model.port.PortManager;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
 @ManagedObject( category = false, type = "MANAGEMENT-HTTP" )
-public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implements HttpManagementConfiguration<HttpManagement>
+public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implements HttpManagementConfiguration<HttpManagement>, PortManager
 {
     private final Logger _logger = Logger.getLogger(HttpManagement.class);
 
@@ -106,29 +107,16 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     @ManagedAttributeField
     private int _sessionTimeout;
 
+    private boolean _allowPortActivation;
+
     @ManagedObjectFactoryConstructor
     public HttpManagement(Map<String, Object> attributes, Broker broker)
     {
         super(attributes, broker);
     }
 
-    @Override
-    protected boolean setState(State desiredState)
-    {
-        if(desiredState == State.ACTIVE)
-        {
-            start();
-            return true;
-        }
-        else if(desiredState == State.STOPPED)
-        {
-            stop();
-            return true;
-        }
-        return false;
-    }
-
-    private void start()
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    private void doStart()
     {
         getBroker().getEventLogger().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
@@ -145,9 +133,18 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         }
 
         getBroker().getEventLogger().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
+        setCurrentState(State.ACTIVE);
     }
 
-    private void stop()
+    @StateTransition(currentState = State.ACTIVE, desiredState = State.STOPPED)
+    private void doStop()
+    {
+        close();
+        setCurrentState(State.STOPPED);
+    }
+
+    @Override
+    protected void onClose()
     {
         if (_server != null)
         {
@@ -176,7 +173,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         {
             _logger.info("Starting up web server on " + ports);
         }
-
+        _allowPortActivation = true;
         Server server = new Server();
         int lastPort = -1;
         for (Port<?> port : ports)
@@ -184,11 +181,16 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
             if(port instanceof HttpPort)
             {
 
-                if (State.QUIESCED.equals(port.getState()))
+                if (!State.ACTIVE.equals(port.getDesiredState()))
                 {
                     continue;
                 }
+                ((HttpPort<?>)port).setPortManager(this);
 
+                if(port.getState() != State.ACTIVE)
+                {
+                    port.start();
+                }
                 Connector connector = null;
 
                 Collection<Transport> transports = port.getTransports();
@@ -222,6 +224,8 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
             }
 
         }
+
+        _allowPortActivation = false;
 
         ServletContextHandler root = new ServletContextHandler(ServletContextHandler.SESSIONS);
         root.setContextPath("/");
@@ -432,6 +436,12 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
             }
         }
         return httpPorts;
+    }
+
+    @Override
+    public boolean isActivationAllowed(final Port<?> port)
+    {
+        return _allowPortActivation;
     }
 
     @Override

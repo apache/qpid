@@ -152,6 +152,7 @@ public class HeadersExchangeTest extends TestCase
         when(q.getCategoryClass()).thenReturn(Queue.class);
         when(q.getObjectFactory()).thenReturn(_factory);
         when(q.getModel()).thenReturn(_factory.getModel());
+        when(q.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
         return q;
     }
 

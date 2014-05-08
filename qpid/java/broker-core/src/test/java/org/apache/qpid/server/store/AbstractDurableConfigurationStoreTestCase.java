@@ -41,6 +41,7 @@ import org.mockito.stubbing.Answer;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Binding;
@@ -447,6 +448,8 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(queue.getAlternateExchange()).thenReturn(alternateExchange);
         when(queue.getCategoryClass()).thenReturn((Class)Queue.class);
         when(queue.isDurable()).thenReturn(true);
+        when(queue.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+
         final VirtualHostImpl vh = mock(VirtualHostImpl.class);
         when(vh.getSecurityManager()).thenReturn(mock(SecurityManager.class));
         when(queue.getVirtualHost()).thenReturn(vh);
@@ -505,6 +508,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchange.isDurable()).thenReturn(true);
         when(exchange.getObjectFactory()).thenReturn(_factory);
         when(exchange.getModel()).thenReturn(_factory.getModel());
+        when(exchange.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
 
         ConfiguredObjectRecord exchangeRecord = mock(ConfiguredObjectRecord.class);
         when(exchangeRecord.getId()).thenReturn(_exchangeId);

@@ -138,7 +138,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         nodeAttributes.put(VirtualHostNode.NAME, hostName);
         nodeAttributes.put(VirtualHostNode.ID, UUID.randomUUID());
         _node = factory.create(VirtualHostNode.class, nodeAttributes, broker);
-        _node.setDesiredState(State.ACTIVE);
+        _node.start();
 
         _virtualHost = (VirtualHostImpl<?,?,?>)_node.getVirtualHost();
 
@@ -152,7 +152,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
             if (_virtualHost != null)
             {
                 VirtualHostNode<?> node = _virtualHost.getParent(VirtualHostNode.class);
-                node.setDesiredState(State.STOPPED);
+                node.close();
             }
         }
         finally
@@ -165,10 +165,12 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
     protected void reloadVirtualHost()
     {
         assertEquals("Virtual host node is not active", State.ACTIVE, _virtualHost.getState());
-        State currentState = _node.setDesiredState(State.STOPPED);
+        _node.stop();
+        State currentState = _node.getState();
         assertEquals("Virtual host node is not stopped", State.STOPPED, currentState);
 
-        currentState = _node.setDesiredState(State.ACTIVE);
+        _node.start();
+        currentState = _node.getState();
         assertEquals("Virtual host node is not active", State.ACTIVE, currentState);
         _virtualHost = (VirtualHostImpl<?, ?, ?>) _node.getVirtualHost();
     }
