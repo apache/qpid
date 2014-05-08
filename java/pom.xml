@@ -30,7 +30,7 @@
   <packaging>pom</packaging>
 
   <name>Qpid Java Build</name>
-  <description>Apache Qpid™ Java Build POM</description>
+  <description>Apache Qpid Java Build POM</description>
 
   <scm>
     <connection>scm:svn:http://svn.apache.org/repos/asf/qpid/trunk/qpid/java</connection>
