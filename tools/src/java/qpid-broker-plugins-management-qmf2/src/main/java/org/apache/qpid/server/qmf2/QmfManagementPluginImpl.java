@@ -220,6 +220,16 @@ public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagement
         getBroker().getEventLogger().message(ManagementConsoleMessages.STOPPED(OPERATIONAL_LOGGING_NAME));
     }
 
+    @Override
+    protected void onClose()
+    {
+        super.onClose();
+        if (_agent != null)
+        {
+            _agent.close();
+        }
+    }
+
     /**
      * Accessor to retrieve the connectionURL attribute.
      * @return the JMS connectionURL of the Plugin.
