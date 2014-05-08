@@ -31,8 +31,10 @@ define(["dojo/_base/xhr",
   {
     var fieldNames = ["connectionUrl", "bigIntType", "varBinaryType", "blobType", "bytesForBlob", "connectionPoolType"];
 
-    function JdbcNode(containerNode)
+    function JdbcNode(data)
     {
+      var containerNode = data.containerNode;
+      this.parent = data.parent;
       var that = this;
       xhr.get({url: "virtualhostnode/jdbc/show.html",
         sync: true,

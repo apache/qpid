@@ -57,7 +57,7 @@ define(["dojo/_base/xhr",
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
 
-                            that.vhostNodeUpdater = new Updater(contentPane.containerNode, that.modelObj, that.controller);
+                            that.vhostNodeUpdater = new Updater(contentPane.containerNode, that.modelObj, that);
                             that.vhostNodeUpdater.update();
 
                             updater.add( that.vhostNodeUpdater );
@@ -70,13 +70,22 @@ define(["dojo/_base/xhr",
                updater.remove( this.vhostNodeUpdater );
            };
 
-           function Updater(node, vhost, controller)
+           VirtualHostNode.prototype.destroy = function()
            {
+             this.close();
+             this.contentPane.onClose()
+             this.controller.tabContainer.removeChild(this.contentPane);
+             this.contentPane.destroyRecursive();
+           }
+
+           function Updater(domNode, nodeObject, virtualHostNode)
+           {
+               this.virtualHostNode = virtualHostNode;
                var that = this;
 
                function findNode(name)
                {
-                   return query("." + name, node)[0];
+                   return query("." + name, domNode)[0];
                }
 
                function storeNodes(names)
@@ -90,7 +99,7 @@ define(["dojo/_base/xhr",
                storeNodes(["name", "state", "type", "messageStoreProviderYes","messageStoreProviderNo"]);
                this.detailsDiv = findNode("virtualhostnodedetails");
 
-               this.query = "api/latest/virtualhostnode/" + encodeURIComponent(vhost.name);
+               this.query = "api/latest/virtualhostnode/" + encodeURIComponent(nodeObject.name);
           }
 
            Updater.prototype.update = function()
@@ -117,7 +126,7 @@ define(["dojo/_base/xhr",
                require(["qpid/management/virtualhostnode/" + data.type.toLowerCase() + "/show"],
                  function(VirtualHostNodeDetails)
                  {
-                   that.details = new VirtualHostNodeDetails(that.detailsDiv);
+                   that.details = new VirtualHostNodeDetails({containerNode:that.detailsDiv, parent: that.virtualHostNode});
                    that.details.update(data);
                  }
                );

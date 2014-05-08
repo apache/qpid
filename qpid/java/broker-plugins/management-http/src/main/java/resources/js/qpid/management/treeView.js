@@ -229,8 +229,6 @@ define(["dojo/_base/xhr",
                        details[ type ] = object.name;
                        details.parent = parent;
                    } else {
-                       details[ type ] = object.name;
-
                        var parentObject ={
                                type: type,
                                name: object.name

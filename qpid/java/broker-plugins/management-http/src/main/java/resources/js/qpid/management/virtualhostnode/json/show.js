@@ -29,8 +29,10 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
   function (xhr, lang, connect, parser, json, entities, query, json)
   {
-    function JsonNode(containerNode)
+    function JsonNode(data)
     {
+      var containerNode = data.containerNode;
+      this.parent = data.parent;
       var that = this;
       xhr.get({url: "virtualhostnode/json/show.html",
         sync: true,
