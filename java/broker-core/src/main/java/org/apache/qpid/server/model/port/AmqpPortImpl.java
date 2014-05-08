@@ -40,13 +40,13 @@ import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.TransportProviderFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.transport.TransportProvider;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
@@ -133,48 +133,61 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
 
 
     @Override
-    protected void onActivate()
+    protected State onActivate()
     {
-        Collection<Transport> transports = getTransports();
-
-        TransportProvider transportProvider = null;
-        final HashSet<Transport> transportSet = new HashSet<Transport>(transports);
-        for(TransportProviderFactory tpf : (new QpidServiceLoader<TransportProviderFactory>()).instancesOf(TransportProviderFactory.class))
+        if(_broker.isManagementMode())
         {
-            if(tpf.getSupportedTransports().contains(transports))
+            return State.QUIESCED;
+        }
+        else
+        {
+            Collection<Transport> transports = getTransports();
+
+            TransportProvider transportProvider = null;
+            final HashSet<Transport> transportSet = new HashSet<Transport>(transports);
+            for (TransportProviderFactory tpf : (new QpidServiceLoader<TransportProviderFactory>()).instancesOf(
+                    TransportProviderFactory.class))
             {
-                transportProvider = tpf.getTransportProvider(transportSet);
+                if (tpf.getSupportedTransports().contains(transports))
+                {
+                    transportProvider = tpf.getTransportProvider(transportSet);
+                }
             }
-        }
 
-        if(transportProvider == null)
-        {
-            throw new IllegalConfigurationException("No transport providers found which can satisfy the requirement to support the transports: " + transports);
-        }
+            if (transportProvider == null)
+            {
+                throw new IllegalConfigurationException(
+                        "No transport providers found which can satisfy the requirement to support the transports: "
+                        + transports
+                );
+            }
 
-        SSLContext sslContext = null;
-        if (transports.contains(Transport.SSL) || transports.contains(Transport.WSS))
-        {
-            sslContext = createSslContext();
-        }
+            SSLContext sslContext = null;
+            if (transports.contains(Transport.SSL) || transports.contains(Transport.WSS))
+            {
+                sslContext = createSslContext();
+            }
 
-        Protocol defaultSupportedProtocolReply = getDefaultAmqpSupportedReply();
+            Protocol defaultSupportedProtocolReply = getDefaultAmqpSupportedReply();
 
-        _transport = transportProvider.createTransport(transportSet,
-                                                       sslContext,
-                                                       this,
-                                                       getAvailableProtocols(),
-                                                       defaultSupportedProtocolReply);
+            _transport = transportProvider.createTransport(transportSet,
+                                                           sslContext,
+                                                           this,
+                                                           getAvailableProtocols(),
+                                                           defaultSupportedProtocolReply);
 
-        _transport.start();
-        for(Transport transport : getTransports())
-        {
-            _broker.getEventLogger().message(BrokerMessages.LISTENING(String.valueOf(transport), getPort()));
+            _transport.start();
+            for (Transport transport : getTransports())
+            {
+                _broker.getEventLogger().message(BrokerMessages.LISTENING(String.valueOf(transport), getPort()));
+            }
+
+            return State.ACTIVE;
         }
     }
 
     @Override
-    protected void onStop()
+    protected void onClose()
     {
         if (_transport != null)
         {
@@ -248,7 +261,7 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
         }
         catch (GeneralSecurityException e)
         {
-            throw new ServerScopedRuntimeException("Unable to create SSLContext for key or trust store", e);
+            throw new IllegalArgumentException("Unable to create SSLContext for key or trust store", e);
         }
     }
 

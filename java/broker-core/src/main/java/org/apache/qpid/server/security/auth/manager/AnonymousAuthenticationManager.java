@@ -112,14 +112,5 @@ public class AnonymousAuthenticationManager extends AbstractAuthenticationManage
         return ANONYMOUS_AUTHENTICATION;
     }
 
-    @Override
-    public void close()
-    {
-    }
 
-    @Override
-    public void delete()
-    {
-        // nothing to do, no external resource is used
-    }
 }

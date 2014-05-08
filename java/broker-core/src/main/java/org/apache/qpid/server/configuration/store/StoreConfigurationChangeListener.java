@@ -20,20 +20,9 @@
  */
 package org.apache.qpid.server.configuration.store;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
-
-import org.apache.qpid.server.configuration.ConfigurationEntry;
-import org.apache.qpid.server.configuration.ConfigurationEntryImpl;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 
@@ -73,6 +62,7 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
     public void childRemoved(ConfiguredObject object, ConfiguredObject child)
     {
         _store.remove(child.asObjectRecord());
+        child.removeChangeListener(this);
     }
 
     @Override

@@ -43,7 +43,6 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.State;
 
 public class RestServlet extends AbstractServlet
 {
@@ -541,7 +540,7 @@ public class RestServlet extends AbstractServlet
             Collection<ConfiguredObject<?>> allObjects = getObjects(request);
             for(ConfiguredObject o : allObjects)
             {
-                o.setDesiredState(State.DELETED);
+                o.delete();
             }
 
             response.setStatus(HttpServletResponse.SC_OK);

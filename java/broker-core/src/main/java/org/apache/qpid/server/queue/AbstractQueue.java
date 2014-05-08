@@ -71,6 +71,7 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SecurityManager;
@@ -222,6 +223,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private String _messageGroupDefaultGroup;
     @ManagedAttributeField
     private int _maximumDistinctGroups;
+
+    private State _state = State.UNINITIALIZED;
 
     protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
@@ -1481,7 +1484,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     // TODO list all thrown exceptions
-    public int delete()
+    public int deleteAndReturnCount()
     {
         // Check access
         _virtualHost.getSecurityManager().authoriseDelete(this);
@@ -1547,7 +1550,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             }
 
             _deleteTaskList.clear();
-            stop();
+            close();
             deleted();
             //Log Queue Deletion
             getEventLogger().message(_logSubject, QueueMessages.DELETED());
@@ -1557,8 +1560,10 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     }
 
-    public void stop()
+    @Override
+    protected void onClose()
     {
+        super.onClose();
         if (!_stopped.getAndSet(true))
         {
             ReferenceCountingExecutorService.getInstance().releaseExecutorService();
@@ -2516,17 +2521,19 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     //=============
 
-
-    @Override
-    protected boolean setState(final State desiredState)
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    private void activate()
     {
-        if(desiredState == State.DELETED)
-        {
-            _virtualHost.removeQueue(this);
-            return true;
-        }
-        return false;
+        _state = State.ACTIVE;
     }
+
+    @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
+    private void doDelete()
+    {
+        _virtualHost.removeQueue(this);
+        _state = State.DELETED;
+    }
+
 
     @Override
     public ExclusivityPolicy getExclusive()
@@ -2573,7 +2580,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @Override
     public State getState()
     {
-        return isDeleted() ? State.DELETED : State.ACTIVE;
+        return _state;
     }
 
     @Override
@@ -2644,7 +2651,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
         finally
         {
-            if (isDurable())
+            if (isDurable() && getState() != State.DELETED)
             {
                 this.getVirtualHost().getDurableConfigurationStore().update(false, asObjectRecord());
             }

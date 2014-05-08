@@ -74,6 +74,8 @@ public class ConfiguredObjectTypeRegistry
     private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _typeSpecificAttributes =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?, ?>>>());
 
+    private static final Map<Class<? extends ConfiguredObject>, Map<State, Map<State, Method>>> _stateChangeMethods =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<State, Map<State, Method>>>());
 
     static
     {
@@ -86,7 +88,7 @@ public class ConfiguredObjectTypeRegistry
         {
             for (Class<? extends ConfiguredObject> configuredObjectClass : registration.getConfiguredObjectClasses())
             {
-                processAttributes(configuredObjectClass);
+                process(configuredObjectClass);
                 ManagedObject annotation = configuredObjectClass.getAnnotation(ManagedObject.class);
                 if (annotation.category())
                 {
@@ -316,7 +318,7 @@ public class ConfiguredObjectTypeRegistry
 
 
 
-    private static <X extends ConfiguredObject> void processAttributes(final Class<X> clazz)
+    private static <X extends ConfiguredObject> void process(final Class<X> clazz)
     {
         synchronized (_allAttributes)
         {
@@ -330,13 +332,13 @@ public class ConfiguredObjectTypeRegistry
             {
                 if(ConfiguredObject.class.isAssignableFrom(parent))
                 {
-                    processAttributes((Class<? extends ConfiguredObject>)parent);
+                    process((Class<? extends ConfiguredObject>) parent);
                 }
             }
             final Class<? super X> superclass = clazz.getSuperclass();
             if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
             {
-                processAttributes((Class<? extends ConfiguredObject>) superclass);
+                process((Class<? extends ConfiguredObject>) superclass);
             }
 
             final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet = new TreeSet<>(NAME_COMPARATOR);
@@ -349,42 +351,16 @@ public class ConfiguredObjectTypeRegistry
             {
                 if(ConfiguredObject.class.isAssignableFrom(parent))
                 {
-                    Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(parent);
-                    for(ConfiguredObjectAttribute<?,?> attr : attrs)
-                    {
-                        if(!attributeSet.contains(attr))
-                        {
-                            attributeSet.add(attr);
-                        }
-                    }
-                    Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(parent);
-                    for(ConfiguredObjectStatistic<?,?> stat : stats)
-                    {
-                        if(!statisticSet.contains(stat))
-                        {
-                            statisticSet.add(stat);
-                        }
-                    }
+                    initialiseWithParentAttributes(attributeSet,
+                                                   statisticSet,
+                                                   (Class<? extends ConfiguredObject>) parent);
                 }
             }
             if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
             {
-                Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(superclass);
-                Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(superclass);
-                for(ConfiguredObjectAttribute<?,?> attr : attrs)
-                {
-                    if(!attributeSet.contains(attr))
-                    {
-                        attributeSet.add(attr);
-                    }
-                }
-                for(ConfiguredObjectStatistic<?,?> stat : stats)
-                {
-                    if(!statisticSet.contains(stat))
-                    {
-                        statisticSet.add(stat);
-                    }
-                }
+                initialiseWithParentAttributes(attributeSet,
+                                               statisticSet,
+                                               (Class<? extends ConfiguredObject>) superclass);
             }
 
 
@@ -413,7 +389,7 @@ public class ConfiguredObjectTypeRegistry
 
                     if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
                     {
-                        throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
+                        throw new ServerScopedRuntimeException("Can only define DerivedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
                     }
 
                     ConfiguredObjectAttribute<?,?> attribute = new ConfiguredDerivedAttribute<>(clazz, m, annotation);
@@ -436,50 +412,178 @@ public class ConfiguredObjectTypeRegistry
                     {
                         statisticSet.remove(statistic);
                     }
-                        statisticSet.add(statistic);
+                    statisticSet.add(statistic);
                 }
             }
 
-            Map<String,ConfiguredObjectAttribute<?,?>> attrMap = new HashMap<String, ConfiguredObjectAttribute<?, ?>>();
-            Map<String,AutomatedField> fieldMap = new HashMap<String, AutomatedField>();
+            processAttributesTypesAndFields(clazz);
 
+            processDefaultContext(clazz);
 
-            Collection<ConfiguredObjectAttribute<?, ?>> attrCol = _allAttributes.get(clazz);
-            for(ConfiguredObjectAttribute<?,?> attr : attrCol)
+            processStateChangeMethods(clazz);
+        }
+    }
+
+    private static void initialiseWithParentAttributes(final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
+                                                       final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet,
+                                                       final Class<? extends ConfiguredObject> parent)
+    {
+        Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(parent);
+        for(ConfiguredObjectAttribute<?,?> attr : attrs)
+        {
+            if(!attributeSet.contains(attr))
             {
-                attrMap.put(attr.getName(), attr);
-                if(attr.isAutomated())
-                {
-                    fieldMap.put(attr.getName(), findField(attr, clazz));
-                }
-
+                attributeSet.add(attr);
             }
-            _allAttributeTypes.put(clazz, attrMap);
-            _allAutomatedFields.put(clazz, fieldMap);
-
-            for(Field field : clazz.getDeclaredFields())
+        }
+        Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(parent);
+        for(ConfiguredObjectStatistic<?,?> stat : stats)
+        {
+            if(!statisticSet.contains(stat))
             {
-                if(Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && field.isAnnotationPresent(ManagedContextDefault.class))
+                statisticSet.add(stat);
+            }
+        }
+    }
+
+    private static <X extends ConfiguredObject> void processAttributesTypesAndFields(final Class<X> clazz)
+    {
+        Map<String,ConfiguredObjectAttribute<?,?>> attrMap = new HashMap<String, ConfiguredObjectAttribute<?, ?>>();
+        Map<String,AutomatedField> fieldMap = new HashMap<String, AutomatedField>();
+
+
+        Collection<ConfiguredObjectAttribute<?, ?>> attrCol = _allAttributes.get(clazz);
+        for(ConfiguredObjectAttribute<?,?> attr : attrCol)
+        {
+            attrMap.put(attr.getName(), attr);
+            if(attr.isAutomated())
+            {
+                fieldMap.put(attr.getName(), findField(attr, clazz));
+            }
+
+        }
+        _allAttributeTypes.put(clazz, attrMap);
+        _allAutomatedFields.put(clazz, fieldMap);
+    }
+
+    private static <X extends ConfiguredObject> void processDefaultContext(final Class<X> clazz)
+    {
+        for(Field field : clazz.getDeclaredFields())
+        {
+            if(Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && field.isAnnotationPresent(ManagedContextDefault.class))
+            {
+                try
                 {
-                    try
+                    String name = field.getAnnotation(ManagedContextDefault.class).name();
+                    Object value = field.get(null);
+                    if(!_defaultContext.containsKey(name))
                     {
-                        String name = field.getAnnotation(ManagedContextDefault.class).name();
-                        Object value = field.get(null);
-                        if(!_defaultContext.containsKey(name))
-                        {
-                            _defaultContext.put(name,String.valueOf(value));
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException("Multiple definitions of the default context variable ${"+name+"}");
-                        }
+                        _defaultContext.put(name,String.valueOf(value));
                     }
-                    catch (IllegalAccessException e)
+                    else
                     {
-                        throw new ServerScopedRuntimeException("Unkecpected illegal access exception (only inspecting public static fields)", e);
+                        throw new IllegalArgumentException("Multiple definitions of the default context variable ${"+name+"}");
+                    }
+                }
+                catch (IllegalAccessException e)
+                {
+                    throw new ServerScopedRuntimeException("Unexpected illegal access exception (only inspecting public static fields)", e);
+                }
+            }
+        }
+    }
+
+    private static void processStateChangeMethods(Class<? extends ConfiguredObject> clazz)
+    {
+        Map<State, Map<State, Method>> map = new HashMap<>();
+
+        _stateChangeMethods.put(clazz, map);
+
+        addStateTransitions(clazz, map);
+        for(Class<?> parent : clazz.getInterfaces())
+        {
+            if(ConfiguredObject.class.isAssignableFrom(parent))
+            {
+                inheritTransitions((Class<? extends ConfiguredObject>) parent, map);
+            }
+        }
+
+        Class<?> superclass = clazz.getSuperclass();
+
+        if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
+        {
+            inheritTransitions((Class<? extends ConfiguredObject>) superclass, map);
+        }
+    }
+
+    private static void inheritTransitions(final Class<? extends ConfiguredObject> parent,
+                                           final Map<State, Map<State, Method>> map)
+    {
+        Map<State, Map<State, Method>> parentMap = _stateChangeMethods.get(parent);
+        for(Map.Entry<State, Map<State,Method>> parentEntry : parentMap.entrySet())
+        {
+            if(map.containsKey(parentEntry.getKey()))
+            {
+                Map<State, Method> methodMap = map.get(parentEntry.getKey());
+                for(Map.Entry<State,Method> methodEntry : parentEntry.getValue().entrySet())
+                {
+                    if(!methodMap.containsKey(methodEntry.getKey()))
+                    {
+                        methodMap.put(methodEntry.getKey(), methodEntry.getValue());
                     }
                 }
             }
+            else
+            {
+                map.put(parentEntry.getKey(), new HashMap<State, Method>(parentEntry.getValue()));
+            }
+        }
+    }
+
+    private static void addStateTransitions(final Class<? extends ConfiguredObject> clazz,
+                                            final Map<State, Map<State, Method>> map)
+    {
+        for(Method m : clazz.getDeclaredMethods())
+        {
+            if(m.isAnnotationPresent(StateTransition.class))
+            {
+                if(m.getParameterTypes().length == 0)
+                {
+                    m.setAccessible(true);
+                    StateTransition annotation = m.getAnnotation(StateTransition.class);
+
+                    for(State state : annotation.currentState())
+                    {
+                        addStateTransition(state, annotation.desiredState(), m, map);
+                    }
+
+                }
+                else
+                {
+                    throw new ServerScopedRuntimeException("A state transition method must have no arguments. Method " + m.getName() + " on " + clazz.getName() + " does not meet this criteria.");
+                }
+            }
+        }
+    }
+
+    private static void addStateTransition(final State fromState,
+                                           final State toState,
+                                           final Method method,
+                                           final Map<State, Map<State, Method>> map)
+    {
+        if(map.containsKey(fromState))
+        {
+            Map<State,Method> toMap = map.get(fromState);
+            if(!toMap.containsKey(toState))
+            {
+                toMap.put(toState,method);
+            }
+        }
+        else
+        {
+            HashMap<State,Method> toMap = new HashMap<>();
+            toMap.put(toState,method);
+            map.put(fromState, toMap);
         }
     }
 
@@ -579,7 +683,7 @@ public class ConfiguredObjectTypeRegistry
     {
         if(!_allAttributes.containsKey(clazz))
         {
-            processAttributes(clazz);
+            process(clazz);
         }
         final Collection<ConfiguredObjectAttribute<? super X, ?>> attributes = (Collection) _allAttributes.get(clazz);
         return attributes;
@@ -588,9 +692,9 @@ public class ConfiguredObjectTypeRegistry
 
     protected static Collection<ConfiguredObjectStatistic> getStatistics(final Class<? extends ConfiguredObject> clazz)
     {
-        if(!_allStatistics.containsKey(clazz))
+        if(!_allAttributes.containsKey(clazz))
         {
-            processAttributes(clazz);
+            process(clazz);
         }
         final Collection<ConfiguredObjectStatistic> statistics = (Collection) _allStatistics.get(clazz);
         return statistics;
@@ -599,20 +703,31 @@ public class ConfiguredObjectTypeRegistry
 
     static Map<String, ConfiguredObjectAttribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
     {
-        if(!_allAttributeTypes.containsKey(clazz))
+        if(!_allAttributes.containsKey(clazz))
         {
-            processAttributes(clazz);
+            process(clazz);
         }
         return _allAttributeTypes.get(clazz);
     }
 
     static Map<String, AutomatedField> getAutomatedFields(Class<? extends ConfiguredObject> clazz)
     {
-        if(!_allAutomatedFields.containsKey(clazz))
+        if(!_allAttributes.containsKey(clazz))
         {
-            processAttributes(clazz);
+            process(clazz);
         }
         return _allAutomatedFields.get(clazz);
+    }
+
+    static Map<State, Map<State, Method>> getStateChangeMethods(final Class<? extends ConfiguredObject> objectClass)
+    {
+        if(!_allAttributes.containsKey(objectClass))
+        {
+            process(objectClass);
+        }
+        Map<State, Map<State, Method>> map = _stateChangeMethods.get(objectClass);
+
+        return map != null ? Collections.unmodifiableMap(map) : Collections.<State, Map<State, Method>>emptyMap();
     }
 
 

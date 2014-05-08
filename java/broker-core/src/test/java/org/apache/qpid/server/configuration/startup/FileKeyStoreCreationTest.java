@@ -33,6 +33,8 @@ import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -61,8 +63,10 @@ public class FileKeyStoreCreationTest extends TestCase
         Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
 
         Broker broker = mock(Broker.class);
+        TaskExecutor executor = new CurrentThreadTaskExecutor();
         when(broker.getObjectFactory()).thenReturn(_factory);
         when(broker.getModel()).thenReturn(_factory.getModel());
+        when(broker.getTaskExecutor()).thenReturn(executor);
 
         final FileKeyStore keyStore =
                 createKeyStore(attributes, broker);
@@ -108,7 +112,7 @@ public class FileKeyStoreCreationTest extends TestCase
         Broker broker = mock(Broker.class);
         when(broker.getObjectFactory()).thenReturn(_factory);
         when(broker.getModel()).thenReturn(_factory.getModel());
-
+        when(broker.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
         String[] mandatoryProperties = {KeyStore.NAME, FileKeyStore.PATH, FileKeyStore.PASSWORD};
         for (int i = 0; i < mandatoryProperties.length; i++)
         {

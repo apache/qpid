@@ -29,7 +29,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -41,19 +42,20 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.access.Operation;
-import org.apache.qpid.server.util.MapValueConverter;
 
 abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractConfiguredObject<X> implements Port<X>
 {
+    private static final Logger LOGGER = Logger.getLogger(AbstractPort.class);
 
     private final Broker<?> _broker;
-    private AtomicReference<State> _state;
+    private State _state = State.UNINITIALIZED;
 
     @ManagedAttributeField
     private int _port;
@@ -80,10 +82,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
 
         _broker = broker;
 
-        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
-        _state = new AtomicReference<State>(state);
     }
-
 
     @Override
     public void onValidate()
@@ -100,6 +99,19 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         if(!isDurable())
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
+        }
+
+        for (Port p : _broker.getPorts())
+        {
+            if (p.getPort() == getPort() && p != this)
+            {
+                throw new IllegalConfigurationException("Can't add port "
+                                                        + getName()
+                                                        + " because port number "
+                                                        + getPort()
+                                                        + " is already configured for port "
+                                                        + p.getName());
+            }
         }
     }
 
@@ -254,7 +266,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     @Override
     public State getState()
     {
-        return _state.get();
+        return _state;
     }
 
 
@@ -281,76 +293,39 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         return super.getAttribute(name);
     }
 
-    @Override
-    public boolean setState(State desiredState)
+    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
+    private void doDelete()
     {
-        State state = _state.get();
-        if (desiredState == State.DELETED)
-        {
-            if (state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED  || state == State.ERRORED)
-            {
-                if( _state.compareAndSet(state, State.DELETED))
-                {
-                    onStop();
-                    deleted();
-                    return true;
-                }
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot delete port in " + state + " state");
-            }
-        }
-        else if (desiredState == State.ACTIVE)
-        {
-            if ((state == State.INITIALISING || state == State.QUIESCED) && _state.compareAndSet(state, State.ACTIVE))
-            {
-                try
-                {
-                    onActivate();
-                }
-                catch(RuntimeException e)
-                {
-                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
-                    throw e;
-                }
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot activate port in " + state + " state");
-            }
-        }
-        else if (desiredState == State.QUIESCED)
-        {
-            if (state == State.INITIALISING && _state.compareAndSet(state, State.QUIESCED))
-            {
-                return true;
-            }
-        }
-        else if (desiredState == State.STOPPED)
-        {
-            if (_state.compareAndSet(state, State.STOPPED))
-            {
-                onStop();
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot stop port in " + state + " state");
-            }
-        }
-        return false;
+        close();
+        _state = State.DELETED;
     }
 
-    protected void onActivate()
+    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED,  State.ERRORED}, desiredState = State.STOPPED )
+    private void doStop()
     {
-        // no-op: expected to be overridden by subclass
+        close();
+        _state = State.STOPPED;
     }
 
-    protected void onStop()
+    @StateTransition( currentState = {State.UNINITIALIZED, State.QUIESCED, State.STOPPED}, desiredState = State.ACTIVE )
+    protected void activate()
+    {
+        try
+        {
+            _state = onActivate();
+        }
+        catch (RuntimeException e)
+        {
+            _state = State.ERRORED;
+            LOGGER.error("Unable to active port '" + getName() + "'of type " + getType() + " on port " + getPort(),
+                         e);
+        }
+    }
+
+    protected State onActivate()
     {
         // no-op: expected to be overridden by subclass
+        return State.ACTIVE;
     }
 
 

@@ -45,10 +45,10 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ExternalFileBasedAuthenticationManager;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -109,7 +109,9 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
                     _principalDatabase == null ? Collections.<Principal>emptyList() : _principalDatabase.getUsers();
             for (Principal user : users)
             {
-                _userMap.put(user, new PrincipalAdapter(user));
+                PrincipalAdapter principalAdapter = new PrincipalAdapter(user);
+                principalAdapter.open();
+                _userMap.put(user, principalAdapter);
             }
         }
         catch(IllegalConfigurationException e)
@@ -202,25 +204,22 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
     }
 
-    public void close()
-    {
-
-    }
-
     public PrincipalDatabase getPrincipalDatabase()
     {
         return _principalDatabase;
     }
 
 
-    @Override
-    public void delete()
+    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
+    public void doDelete()
     {
         File file = new File(_path);
         if (file.exists() && file.isFile())
         {
             file.delete();
         }
+        deleted();
+        setState(State.DELETED);
     }
 
     @Override
@@ -234,7 +233,9 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         {
             principal = getPrincipalDatabase().getUser(username);
 
-            _userMap.put(principal, new PrincipalAdapter(principal));
+            PrincipalAdapter principalAdapter = new PrincipalAdapter(principal);
+            principalAdapter.create();
+            _userMap.put(principal, principalAdapter);
         }
         return created;
 
@@ -256,7 +257,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         PrincipalAdapter user = _userMap.get(principal);
         if(user != null)
         {
-            user.setState(State.DELETED);
+            user.delete();
         }
         else
         {
@@ -369,16 +370,32 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     protected void changeAttributes(Map<String, Object> attributes)
     {
         super.changeAttributes(attributes);
-        initialise();
+        if(getState() != State.DELETED && getDesiredState() != State.DELETED)
+        {
+            // TODO - this does not belong here!
+            try
+            {
+                initialise();
+                // if provider was previously in ERRORED state then set its state to ACTIVE
+                updateState(State.ERRORED, State.ACTIVE);
+            }
+            catch(RuntimeException e)
+            {
+                if(getState() != State.ERRORED)
+                {
+                    throw e;
+                }
+            }
+        }
 
-        // if provider was previously in ERRORED state then set its state to ACTIVE
-        updateState(State.ERRORED, State.ACTIVE);
 
     }
 
     private class PrincipalAdapter extends AbstractConfiguredObject<PrincipalAdapter> implements User<PrincipalAdapter>
     {
         private final Principal _user;
+
+        private State _state = State.UNINITIALIZED;
 
         @ManagedAttributeField
         private String _password;
@@ -433,7 +450,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         @Override
         public State getState()
         {
-            return State.ACTIVE;
+            return _state;
         }
 
         @Override
@@ -448,30 +465,32 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             return super.changeAttribute(name, expected, desired);
         }
 
-        @Override
-        protected boolean setState(State desiredState)
-                throws IllegalStateTransitionException, AccessControlException
+        @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+        private void activate()
         {
-            if(desiredState == State.DELETED)
+            _state = State.ACTIVE;
+        }
+
+        @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
+        private void doDelete()
+        {
+            try
             {
-                try
+                String userName = _user.getName();
+                deleteUserFromDatabase(userName);
+                PreferencesProvider preferencesProvider = getPreferencesProvider();
+                if (preferencesProvider != null)
                 {
-                    String userName = _user.getName();
-                    deleteUserFromDatabase(userName);
-                    PreferencesProvider preferencesProvider = getPreferencesProvider();
-                    if (preferencesProvider != null)
-                    {
-                        preferencesProvider.deletePreferences(userName);
-                    }
-                    deleted();
+                    preferencesProvider.deletePreferences(userName);
                 }
-                catch (AccountNotFoundException e)
-                {
-                    LOGGER.warn("Failed to delete user " + _user, e);
-                }
-                return true;
+                deleted();
+                _state = State.DELETED;
             }
-            return false;
+            catch (AccountNotFoundException e)
+            {
+                LOGGER.warn("Failed to delete user " + _user, e);
+            }
+
         }
 
         @Override

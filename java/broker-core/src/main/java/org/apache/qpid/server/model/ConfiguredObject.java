@@ -100,22 +100,8 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
      *
      * @return the desired state of the object
      */
-    @ManagedAttribute
+    @ManagedAttribute( defaultValue = "ACTIVE" )
     State getDesiredState();
-
-    /**
-     * Change the desired state of the object
-     *
-     * Request a change to the current state. The caller must pass in the state it believe the object to be in, if
-     * this differs from the current desired state when the object evaluates the request, then no state change will occur.
-     *
-     * @param desiredState the state the caller wishes the object to attain
-     * @return the new current state
-     * @throws IllegalStateTransitionException  the requested state transition is invalid
-     * @throws AccessControlException the current context does not have sufficient permissions to change the state
-     */
-    State setDesiredState(State desiredState) throws IllegalStateTransitionException,
-                                                                         AccessControlException;
 
     /**
      * Get the actual state of the object.
@@ -255,9 +241,13 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
 
     void open();
 
+    void close();
+
     TaskExecutor getTaskExecutor();
 
     ConfiguredObjectFactory getObjectFactory();
 
     Model getModel();
+
+    void delete();
 }

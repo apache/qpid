@@ -259,11 +259,6 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         }
     }
 
-    @Override
-    public void close()
-    {
-    }
-
     private Hashtable<String, Object> createInitialDirContextEnvironment(String providerUrl)
     {
         Hashtable<String,Object> env = new Hashtable<String,Object>();
@@ -461,9 +456,4 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         }
     }
 
-    @Override
-    public void delete()
-    {
-        // nothing to do, no external resource is used
-    }
 }

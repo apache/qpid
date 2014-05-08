@@ -110,7 +110,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
 
         VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, _configStore);
         node.open();
-        node.setDesiredState(State.ACTIVE);
+        node.start();
 
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
         assertNotNull("Virtual host was not recovered", virtualHost);
@@ -140,7 +140,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
 
         VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, _configStore);
         node.open();
-        node.setDesiredState(State.ACTIVE);
+        node.start();
 
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
         assertNotNull("Virtual host was not recovered", virtualHost);

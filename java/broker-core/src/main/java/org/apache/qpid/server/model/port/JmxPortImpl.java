@@ -27,9 +27,12 @@ import java.util.Set;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.State;
 
 public class JmxPortImpl extends AbstractPortWithAuthProvider<JmxPortImpl> implements JmxPort<JmxPortImpl>
 {
+    private PortManager _portManager;
+
     @ManagedObjectFactoryConstructor
     public JmxPortImpl(final Map<String, Object> attributes,
                        final Broker<?> broker)
@@ -48,5 +51,24 @@ public class JmxPortImpl extends AbstractPortWithAuthProvider<JmxPortImpl> imple
     protected Set<Protocol> getDefaultProtocols()
     {
         return Collections.singleton(Protocol.JMX_RMI);
+    }
+
+    @Override
+    public void setPortManager(PortManager manager)
+    {
+        _portManager = manager;
+    }
+
+    @Override
+    protected State onActivate()
+    {
+        if(_portManager != null && _portManager.isActivationAllowed(this))
+        {
+            return super.onActivate();
+        }
+        else
+        {
+            return State.QUIESCED;
+        }
     }
 }

@@ -21,7 +21,6 @@
 package org.apache.qpid.server.exchange;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -32,18 +31,11 @@ import org.apache.qpid.server.queue.AMQQueue;
 public interface ExchangeImpl<T extends ExchangeImpl<T>> extends Exchange<T>, ExchangeReferrer, MessageDestination
 {
 
-    UUID getId();
-
-    String getName();
-
-    boolean isDurable();
-
     /**
      * @return true if the exchange will be deleted after all queues have been detached
      */
     boolean isAutoDelete();
 
-    Exchange<?> getAlternateExchange();
 
     boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments);
     boolean deleteBinding(String bindingKey, AMQQueue queue);
@@ -54,7 +46,7 @@ public interface ExchangeImpl<T extends ExchangeImpl<T>> extends Exchange<T>, Ex
                            AMQQueue queue,
                            Map<String, Object> arguments);
 
-    void delete();
+    void deleteWithChecks();
 
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments

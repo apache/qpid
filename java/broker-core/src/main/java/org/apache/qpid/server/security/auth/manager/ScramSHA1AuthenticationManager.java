@@ -147,17 +147,6 @@ public class ScramSHA1AuthenticationManager
 
     }
 
-    @Override
-    public void delete()
-    {
-
-    }
-
-    @Override
-    public void close()
-    {
-
-    }
 
     public int getIterationCount()
     {

@@ -133,6 +133,7 @@ public class FanoutExchangeTest extends TestCase
         when(queue.getVirtualHost()).thenReturn(_virtualHost);
         when(queue.getCategoryClass()).thenReturn(Queue.class);
         when(queue.getModel()).thenReturn(BrokerModel.getInstance());
+        when(queue.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
         return queue;
     }
 

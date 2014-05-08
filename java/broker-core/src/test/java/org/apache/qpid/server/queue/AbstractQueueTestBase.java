@@ -90,7 +90,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
     {
         try
         {
-            _queue.stop();
+            _queue.close();
             _virtualHost.close();
         }
         finally
@@ -102,7 +102,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
     public void testCreateQueue() throws Exception
     {
-        _queue.stop();
+        _queue.close();
         try
         {
             Map<String,Object> attributes = new HashMap<String, Object>(_arguments);

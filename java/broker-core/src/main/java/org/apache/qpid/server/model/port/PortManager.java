@@ -18,26 +18,11 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.server.model.port;
 
-import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.Port;
 
-@ManagedObject (creatable = false)
-public interface SystemContext<X extends SystemContext<X>> extends ConfiguredObject<X>
+public interface PortManager
 {
-    EventLogger getEventLogger();
-
-    BrokerOptions getBrokerOptions();
-
-    @ManagedAttribute
-    String getStorePath();
-
-    @ManagedAttribute
-    String getStoreType();
-
-    Broker getBroker();
-
-    LogRecorder getLogRecorder();
+    boolean isActivationAllowed(Port<?> port);
 }

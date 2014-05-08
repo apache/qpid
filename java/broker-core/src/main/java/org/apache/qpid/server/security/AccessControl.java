@@ -43,6 +43,8 @@ public interface AccessControl
      */
     void open();
 
+    boolean validate();
+
     /**
      * Called to close any resources required by the implementation.
      */

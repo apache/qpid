@@ -36,6 +36,7 @@ import org.apache.qpid.server.security.access.Operation;
 public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends AbstractConfiguredObject<X> implements Plugin<X>
 {
     private Broker _broker;
+    private State _state = State.UNINITIALIZED;
 
     protected AbstractPluginAdapter(Map<String, Object> attributes, Broker broker)
     {
@@ -67,7 +68,12 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     @Override
     public State getState()
     {
-        return null;
+        return _state;
+    }
+
+    protected void setCurrentState(State state)
+    {
+        _state = state;
     }
 
     @Override

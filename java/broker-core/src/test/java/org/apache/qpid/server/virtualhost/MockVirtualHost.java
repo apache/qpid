@@ -37,7 +37,6 @@ import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Connection;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
@@ -150,13 +149,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     @Override
     public State getDesiredState()
-    {
-        return null;
-    }
-
-    @Override
-    public State setDesiredState(final State desiredState)
-            throws IllegalStateTransitionException, AccessControlException
     {
         return null;
     }
@@ -355,6 +347,18 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     public Collection<String> getExchangeTypeNames()
     {
         return null;
+    }
+
+    @Override
+    public void delete()
+    {
+
+    }
+
+    @Override
+    public void start()
+    {
+
     }
 
     @Override

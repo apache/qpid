@@ -31,6 +31,7 @@ import java.util.Set;
 import javax.management.JMException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
@@ -48,15 +49,19 @@ import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProv
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.model.adapter.AbstractPluginAdapter;
+import org.apache.qpid.server.model.port.JmxPort;
+import org.apache.qpid.server.model.port.PortManager;
+import org.apache.qpid.server.model.port.RmiPort;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class JMXManagementPluginImpl
         extends AbstractPluginAdapter<JMXManagementPluginImpl> implements ConfigurationChangeListener,
-                                                                          JMXManagementPlugin<JMXManagementPluginImpl>
+                                                                          JMXManagementPlugin<JMXManagementPluginImpl>,
+                                                                          PortManager
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagementPluginImpl.class);
 
@@ -81,55 +86,48 @@ public class JMXManagementPluginImpl
     @ManagedAttributeField
     private boolean _usePlatformMBeanServer;
 
+    private boolean _allowPortActivation;
+
     @ManagedObjectFactoryConstructor
     public JMXManagementPluginImpl(Map<String, Object> attributes, Broker broker)
     {
         super(attributes, broker);
     }
 
-    @Override
-    protected boolean setState(State desiredState)
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    private void doStart() throws JMException, IOException
     {
-        if(desiredState == State.ACTIVE)
-        {
-            try
-            {
-                start();
-            }
-            catch (Exception e)
-            {
-                throw new ServerScopedRuntimeException("Couldn't start JMX management", e);
-            }
-            return true;
-        }
-        else if(desiredState == State.STOPPED)
-        {
-            stop();
-            return true;
-        }
-        return false;
-    }
-
-    private void start() throws JMException, IOException
-    {
+        _allowPortActivation = true;
         Broker<?> broker = getBroker();
-        Port connectorPort = null;
-        Port registryPort = null;
+        JmxPort<?> connectorPort = null;
+        RmiPort registryPort = null;
         Collection<Port<?>> ports = broker.getPorts();
         for (Port port : ports)
         {
-            if (State.QUIESCED.equals(port.getState()))
+            if (port.getDesiredState() != State.ACTIVE)
             {
                 continue;
             }
 
             if(isRegistryPort(port))
             {
-                registryPort = port;
+                registryPort = (RmiPort) port;
+                registryPort.setPortManager(this);
+                if(port.getState() != State.ACTIVE)
+                {
+                    port.start();
+                }
+
             }
             else if(isConnectorPort(port))
             {
-                connectorPort = port;
+                connectorPort = (JmxPort<?>) port;
+                connectorPort.setPortManager(this);
+                if(port.getState() != State.ACTIVE)
+                {
+                    port.start();
+                }
+
             }
         }
         if(connectorPort == null)
@@ -184,6 +182,14 @@ public class JMXManagementPluginImpl
             new LoggingManagementMBean(LoggingManagementFacade.getCurrentInstance(), _objectRegistry);
         }
         _objectRegistry.start();
+        setCurrentState(State.ACTIVE);
+        _allowPortActivation = false;
+    }
+
+    @Override
+    public boolean isActivationAllowed(final Port<?> port)
+    {
+        return _allowPortActivation;
     }
 
     @Override
@@ -203,7 +209,15 @@ public class JMXManagementPluginImpl
         return port.getAvailableProtocols().contains(Protocol.RMI);
     }
 
-    private void stop()
+    @StateTransition( currentState = State.ACTIVE, desiredState = State.STOPPED )
+    private void doStop()
+    {
+        close();
+        setCurrentState(State.STOPPED);
+    }
+
+    @Override
+    protected void onClose()
     {
         synchronized (_childrenLock)
         {

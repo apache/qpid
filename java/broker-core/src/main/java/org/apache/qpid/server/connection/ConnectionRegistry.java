@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.server.connection;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.common.Closeable;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class ConnectionRegistry implements IConnectionRegistry, Closeable
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+
+public class ConnectionRegistry implements IConnectionRegistry
 {
     private List<AMQConnectionModel> _registry = new CopyOnWriteArrayList<AMQConnectionModel>();
 

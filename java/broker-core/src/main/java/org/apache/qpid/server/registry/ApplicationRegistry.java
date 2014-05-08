@@ -21,6 +21,7 @@
 package org.apache.qpid.server.registry;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -31,7 +32,6 @@ import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.store.BrokerStoreUpgraderAndRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -83,7 +83,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         _broker.open();
 
         // starting the broker
-        _broker.setDesiredState(State.ACTIVE);
+        //_broker.setDesiredState(State.ACTIVE);
 
         startupLogger.message(BrokerMessages.READY());
         _broker.setEventLogger(eventLogger);
@@ -101,7 +101,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         {
             if (_broker != null)
             {
-                _broker.setDesiredState(State.STOPPED);
+                _broker.close();
             }
         }
         finally

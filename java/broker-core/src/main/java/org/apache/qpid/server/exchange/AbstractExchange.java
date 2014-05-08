@@ -56,6 +56,7 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -104,6 +105,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     private final ConcurrentHashMap<BindingIdentifier, BindingImpl> _bindingsMap = new ConcurrentHashMap<BindingIdentifier, BindingImpl>();
 
     private StateChangeListener<BindingImpl, State> _bindingListener;
+    private State _state = State.UNINITIALIZED;
 
     public AbstractExchange(Map<String, Object> attributes, VirtualHostImpl vhost)
     {
@@ -192,7 +194,8 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return getLifetimePolicy() != LifetimePolicy.PERMANENT;
     }
 
-    public void delete()
+    @Override
+    public void deleteWithChecks()
     {
         _virtualHost.getSecurityManager().authoriseDelete(this);
 
@@ -241,7 +244,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             }
         }
         deleted();
-
     }
 
     public String toString()
@@ -731,32 +733,31 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     protected abstract void onBindingUpdated(final BindingImpl binding,
                                              final Map<String, Object> oldArguments);
 
-    @Override
-    protected boolean setState(final State desiredState)
+
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    private void activate()
     {
-        if(desiredState == State.DELETED)
+        _state = State.ACTIVE;
+    }
+
+    @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
+    private void doDelete()
+    {
+        try
         {
-            try
-            {
-                _virtualHost.removeExchange(this,true);
-            }
-            catch (ExchangeIsAlternateException e)
-            {
-                return false;
-            }
-            catch (RequiredExchangeException e)
-            {
-                return false;
-            }
-            return true;
+            _virtualHost.removeExchange(this,true);
+            _state = State.DELETED;
         }
-        return false;
+        catch (ExchangeIsAlternateException | RequiredExchangeException e)
+        {
+            return;
+        }
     }
 
     @Override
     public State getState()
     {
-        return _closed.get() ? State.DELETED : State.ACTIVE;
+        return _state;
     }
 
     @Override
@@ -877,17 +878,19 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return super.getAttribute(name);
     }
 
-
-    @Override
-    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
-    {
-        super.validateChange(proxyForValidation, changedAttributes);
-        throw new UnsupportedOperationException("Changing attributes on exchange is not supported.");
-    }
-
     @Override
     protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         _virtualHost.getSecurityManager().authoriseUpdate(this);
+    }
+
+    @Override
+    protected void changeAttributes(final Map<String, Object> attributes)
+    {
+        super.changeAttributes(attributes);
+        if (isDurable() && getState() != State.DELETED)
+        {
+            this.getVirtualHost().getDurableConfigurationStore().update(false, asObjectRecord());
+        }
     }
 }

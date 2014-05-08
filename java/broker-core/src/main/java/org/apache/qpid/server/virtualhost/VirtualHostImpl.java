@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
-import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -43,7 +42,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 
 public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AMQQueue<?>, E extends ExchangeImpl<?> >
-        extends Closeable, StatisticsGatherer,
+        extends StatisticsGatherer,
                 EventLoggerProvider,
                 VirtualHost<X,Q,E>
 {
@@ -86,10 +85,6 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
     MessageStore getMessageStore();
 
     SecurityManager getSecurityManager();
-
-    void close();
-
-    UUID getId();
 
     void scheduleHouseKeepingTask(long period, HouseKeepingTask task);
 

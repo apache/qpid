@@ -31,6 +31,8 @@ import java.util.UUID;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.Subject;
 
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -55,6 +57,8 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         Broker broker = mock(Broker.class);
         when(broker.getObjectFactory()).thenReturn(factory);
         when(broker.getModel()).thenReturn(factory.getModel());
+        TaskExecutor executor = new CurrentThreadTaskExecutor();
+        when(broker.getTaskExecutor()).thenReturn(executor);
 
         final FileTrustStore trustStore = new FileTrustStoreImpl(attributes, broker);
         trustStore.open();
@@ -95,7 +99,7 @@ public class FileTrustStoreCreationTest extends QpidTestCase
         Broker broker = mock(Broker.class);
         when(broker.getObjectFactory()).thenReturn(factory);
         when(broker.getModel()).thenReturn(factory.getModel());
-
+        when(broker.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
         String[] mandatoryProperties = {TrustStore.NAME, FileTrustStore.PATH, FileTrustStore.PASSWORD};
         for (int i = 0; i < mandatoryProperties.length; i++)
         {

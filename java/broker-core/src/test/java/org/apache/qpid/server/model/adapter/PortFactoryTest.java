@@ -36,14 +36,18 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.port.AmqpPort;
@@ -72,6 +76,7 @@ public class PortFactoryTest extends QpidTestCase
     @Override
     protected void setUp() throws Exception
     {
+        TaskExecutor executor = CurrentThreadTaskExecutor.newStartedInstance();
         when(_authProvider.getName()).thenReturn(_authProviderName);
         when(_broker.getChildren(eq(AuthenticationProvider.class))).thenReturn(Collections.singleton(_authProvider));
         when(_broker.getCategoryClass()).thenReturn(Broker.class);
@@ -88,6 +93,11 @@ public class PortFactoryTest extends QpidTestCase
         when(_keyStore.getObjectFactory()).thenReturn(objectFactory);
         when(_trustStore.getModel()).thenReturn(objectFactory.getModel());
         when(_trustStore.getObjectFactory()).thenReturn(objectFactory);
+
+        for(ConfiguredObject obj : new ConfiguredObject[]{_authProvider, _broker, _keyStore, _trustStore})
+        {
+            when(obj.getTaskExecutor()).thenReturn(executor);
+        }
 
 
         setTestSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
@@ -109,6 +119,7 @@ public class PortFactoryTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.PORT, 1);
         attributes.put(Port.NAME, getName());
+        attributes.put(Port.DESIRED_STATE, State.QUIESCED);
 
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
         Port<?> port = _factory.create(Port.class, attributes, _broker);
@@ -129,6 +140,7 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.PORT, 1);
         attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
+        attributes.put(Port.DESIRED_STATE, State.QUIESCED);
         Port<?> port = _factory.create(Port.class, attributes, _broker);
 
 
@@ -149,6 +161,7 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.PORT, 1);
         attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
+        attributes.put(Port.DESIRED_STATE, State.QUIESCED);
         Port<?> port = _factory.create(Port.class, attributes, _broker);
 
         Collection<Protocol> protocols = port.getAvailableProtocols();
@@ -163,6 +176,8 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.PORT, 1);
         attributes.put(Port.NAME, getName());
         attributes.put(Port.AUTHENTICATION_PROVIDER, _authProviderName);
+        attributes.put(Port.DESIRED_STATE, State.QUIESCED);
+
         Port<?> port = _factory.create(Port.class, attributes, _broker);
 
         assertNotNull(port);
@@ -301,6 +316,8 @@ public class PortFactoryTest extends QpidTestCase
         {
             _attributes.put(Port.TRUST_STORES, Arrays.asList(trustStoreNames));
         }
+
+        _attributes.put(Port.DESIRED_STATE, State.QUIESCED);
 
         Port<?> port = _factory.create(Port.class, _attributes, _broker);
 

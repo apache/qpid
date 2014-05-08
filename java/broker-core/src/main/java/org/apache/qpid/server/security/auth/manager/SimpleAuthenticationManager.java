@@ -133,17 +133,6 @@ public class SimpleAuthenticationManager extends AbstractAuthenticationManager<S
         return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR);
     }
 
-    @Override
-    public void close()
-    {
-    }
-
-    @Override
-    public void delete()
-    {
-        // nothing to do, no external resource is used
-    }
-
     private class SimpleCramMd5CallbackHandler implements CallbackHandler
     {
         public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException

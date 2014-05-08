@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
 public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDBHARemoteReplicationNodeImpl> implements BDBHARemoteReplicationNode<BDBHARemoteReplicationNodeImpl>
@@ -96,7 +97,8 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         return _lastTransactionId;
     }
 
-    public void delete()
+    @StateTransition(currentState = {State.ACTIVE, State.QUIESCED, State.STOPPED, State.ERRORED}, desiredState = State.DELETED)
+    private void doDelete()
     {
         this.deleted();
     }
@@ -115,7 +117,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("The mastership has been transfered to " + nodeName);
+                LOGGER.debug("The mastership has been transferred to " + nodeName);
             }
         }
         catch(Exception e)

@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
-import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,7 +36,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonParser;
@@ -49,13 +47,11 @@ import org.codehaus.jackson.type.TypeReference;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.util.MapValueConverter;
+import org.apache.qpid.server.model.StateTransition;
 
 
 public class FileSystemPreferencesProviderImpl
@@ -64,7 +60,7 @@ public class FileSystemPreferencesProviderImpl
     private static final Logger LOGGER = Logger.getLogger(FileSystemPreferencesProviderImpl.class);
 
     private final AuthenticationProvider<? extends AuthenticationProvider> _authenticationProvider;
-    private AtomicReference<State> _state;
+    private State _state = State.UNINITIALIZED;
 
     private FileSystemPreferencesStore _store;
 
@@ -78,18 +74,24 @@ public class FileSystemPreferencesProviderImpl
                                              AuthenticationProvider<? extends AuthenticationProvider> authenticationProvider)
     {
         super(parentsMap(authenticationProvider), attributes);
-        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.INITIALISING);
-        _state = new AtomicReference<State>(state);
         _authenticationProvider = authenticationProvider;
     }
 
-    @Override
-    protected void onOpen()
+    @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
+    private void activate()
     {
-        super.onOpen();
-        _store = new FileSystemPreferencesStore(new File(_path));
-        createStoreIfNotExist();
-        _open = true;
+        try
+        {
+            _store = new FileSystemPreferencesStore(new File(_path));
+            createStoreIfNotExist();
+            _store.open();
+            _open = true;
+            _state = State.ACTIVE;
+        }
+        catch( RuntimeException e )
+        {
+            _state = State.ERRORED;
+        }
     }
 
     @Override
@@ -111,7 +113,7 @@ public class FileSystemPreferencesProviderImpl
     @Override
     public State getState()
     {
-        return _state.get();
+        return _state;
     }
 
     @Override
@@ -130,94 +132,51 @@ public class FileSystemPreferencesProviderImpl
         return super.getAttribute(name);
     }
 
-    public void close()
+    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED }, desiredState = State.STOPPED)
+    private void doStop()
     {
-        setDesiredState(State.STOPPED);
+        close();
+        _state = State.STOPPED;
     }
 
-    @Override
-    public boolean setState(State desiredState) throws IllegalStateTransitionException, AccessControlException
+    protected void onClose()
     {
-        State state = _state.get();
-        if (desiredState == State.DELETED)
+        if(_store != null)
         {
-            if ((state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED || state == State.ERRORED)
-                    && _state.compareAndSet(state, State.DELETED))
-            {
-                if(_store != null)
-                {
-                    try
-                    {
-                        _store.close();
-                    }
-                    finally
-                    {
-                        _store.delete();
-                        deleted();
-                        _authenticationProvider.setPreferencesProvider(null);
-                    }
-                }
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot delete preferences provider in state: " + state);
-            }
+            _store.close();
         }
-        else if (desiredState == State.ACTIVE)
-        {
-            if ((state == State.INITIALISING || state == State.QUIESCED || state == State.STOPPED)
-                    && _state.compareAndSet(state, State.ACTIVE))
-            {
-                try
-                {
-                    _store.open();
-                    return true;
-                }
-                catch (RuntimeException e)
-                {
-                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
-                    Broker<?> broker = getAuthenticationProvider().getParent(Broker.class);
-                    if (broker != null && broker.isManagementMode())
-                    {
-                        LOGGER.warn("Failed to activate preferences provider: " + getName(), e);
-                    }
-                    else
-                    {
-                        throw e;
-                    }
-                }
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot activate preferences provider in state: " + state);
-            }
-        }
-        else if (desiredState == State.QUIESCED)
-        {
-            if (state == State.INITIALISING && _state.compareAndSet(state, State.QUIESCED))
-            {
-                _store.close();
-                return true;
-            }
-        }
-        else if (desiredState == State.STOPPED)
-        {
-            if (_state.compareAndSet(state, State.STOPPED))
-            {
-                if(_store != null)
-                {
-                    _store.close();
-                }
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot stop preferences preferences in state: " + state);
-            }
-        }
+    }
 
-        return false;
+    @StateTransition(currentState = { State.ACTIVE }, desiredState = State.QUIESCED)
+    private void doQuiesce()
+    {
+        if(_store != null)
+        {
+            _store.close();
+        }
+        _state = State.QUIESCED;
+    }
+
+    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.STOPPED, State.ERRORED }, desiredState = State.DELETED )
+    private void doDelete()
+    {
+        close();
+
+        if(_store != null)
+        {
+            _store.delete();
+            deleted();
+            _authenticationProvider.setPreferencesProvider(null);
+
+        }
+        _state = State.DELETED;
+    }
+
+    @StateTransition(currentState = { State.QUIESCED, State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
+    private void restart()
+    {
+        _store.open();
+        _state = State.ACTIVE;
     }
 
     @Override
@@ -258,7 +217,10 @@ public class FileSystemPreferencesProviderImpl
         super.changeAttributes(attributes);
 
         // if provider was previously in ERRORED state then set its state to ACTIVE
-        _state.compareAndSet(State.ERRORED, State.ACTIVE);
+        if(_state == State.ERRORED)
+        {
+            onOpen();
+        }
     }
 
     /* Note this method is used: it is referenced by the annotation on _path to be called after _path is set */

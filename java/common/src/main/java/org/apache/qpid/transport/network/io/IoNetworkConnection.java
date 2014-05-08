@@ -28,12 +28,13 @@ import java.security.Principal;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
 
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.network.Ticker;
-import org.apache.qpid.transport.network.NetworkConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.Ticker;
 
 public class IoNetworkConnection implements NetworkConnection
 {
@@ -59,7 +60,7 @@ public class IoNetworkConnection implements NetworkConnection
 
         _ioSender = new IoSender(_socket, 2 * sendBufferSize, _timeout);
 
-        _ioSender.registerCloseListener(_ioReceiver);
+        _ioSender.setReceiver(_ioReceiver);
 
     }
 

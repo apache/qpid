@@ -32,6 +32,8 @@ import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -59,12 +61,13 @@ public class VirtualHostCreationTest extends TestCase
 
         EventLogger eventLogger = mock(EventLogger.class);
         SecurityManager securityManager = mock(SecurityManager.class);
-
+        TaskExecutor executor = CurrentThreadTaskExecutor.newStartedInstance();
         SystemContext systemContext = mock(SystemContext.class);
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         when(systemContext.getObjectFactory()).thenReturn(objectFactory);
         when(systemContext.getModel()).thenReturn(objectFactory.getModel());
         when(systemContext.getEventLogger()).thenReturn(eventLogger);
+        when(systemContext.getTaskExecutor()).thenReturn(executor);
 
         Broker broker = mock(Broker.class);
         when(broker.getObjectFactory()).thenReturn(objectFactory);
@@ -72,6 +75,7 @@ public class VirtualHostCreationTest extends TestCase
         when(broker.getSecurityManager()).thenReturn(securityManager);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
+        when(broker.getTaskExecutor()).thenReturn(executor);
 
         _virtualHostNode = mock(VirtualHostNode.class);
         when(_virtualHostNode.getParent(Broker.class)).thenReturn(broker);
@@ -79,6 +83,7 @@ public class VirtualHostCreationTest extends TestCase
         when(_virtualHostNode.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(_virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
+        when(_virtualHostNode.getTaskExecutor()).thenReturn(executor);
     }
 
     public void testCreateVirtualHostFromStoreConfigAttributes()

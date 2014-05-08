@@ -36,18 +36,17 @@ import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.Task;
-import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
-import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -75,8 +74,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     //private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
 
-    private final Map<Port, Integer> _stillInUsePortNumbers = new HashMap<Port, Integer>();
-
     private final SecurityManager _securityManager;
 
     private final Collection<String> _supportedVirtualHostStoreTypes;
@@ -99,6 +96,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private int _statisticsReportingPeriod;
     @ManagedAttributeField
     private boolean _statisticsReportingResetEnabled;
+
+    private State _state = State.UNINITIALIZED;
 
     @ManagedObjectFactoryConstructor
     public BrokerAdapter(Map<String, Object> attributes,
@@ -173,31 +172,39 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             throw new IllegalConfigurationException("Cannot change the model version");
         }
 
-        String defaultVirtualHost = updated.getDefaultVirtualHost();
-        if (defaultVirtualHost != null)
+        if(changedAttributes.contains(DEFAULT_VIRTUAL_HOST))
         {
-            VirtualHost foundHost = findVirtualHostByName(defaultVirtualHost);
-            if (foundHost == null)
+            String defaultVirtualHost = updated.getDefaultVirtualHost();
+            if (defaultVirtualHost != null)
             {
-                throw new IllegalConfigurationException("Virtual host with name " + defaultVirtualHost
-                                                        + " cannot be set as a default as it does not exist");
+                VirtualHost foundHost = findVirtualHostByName(defaultVirtualHost);
+                if (foundHost == null)
+                {
+                    throw new IllegalConfigurationException("Virtual host with name " + defaultVirtualHost
+                                                            + " cannot be set as a default as it does not exist");
+                }
             }
         }
 
         for (String attributeName : POSITIVE_NUMERIC_ATTRIBUTES)
         {
-            Number value = (Number) updated.getAttribute(attributeName);
-            if (value != null && value.longValue() < 0)
+            if(changedAttributes.contains(attributeName))
             {
-                throw new IllegalConfigurationException("Only positive integer value can be specified for the attribute "
-                                                        + attributeName);
+                Number value = (Number) updated.getAttribute(attributeName);
+
+                if (value != null && value.longValue() < 0)
+                {
+                    throw new IllegalConfigurationException(
+                            "Only positive integer value can be specified for the attribute "
+                            + attributeName);
+                }
             }
         }
     }
 
-    protected void onOpen()
+    @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
+    private void activate()
     {
-        super.onOpen();
         if(_brokerOptions.isManagementMode())
         {
             _managementModeAuthenticationProvider.open();
@@ -238,6 +245,15 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
 
         initialiseStatistics();
+
+        initialiseStatisticsReporting();
+       // changeChildState(State.ACTIVE, false);
+        if (isManagementMode())
+        {
+            _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
+                                                                _brokerOptions.getManagementModePassword()));
+        }
+        _state = State.ACTIVE;
     }
 
     private void initialiseStatisticsReporting()
@@ -412,7 +428,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                                 @Override
                                 public Object run()
                                 {
-                                    virtualHostNode.setDesiredState(State.ACTIVE);
+                                    virtualHostNode.start();
                                     return null;
                                 }
                             });
@@ -421,7 +437,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     public State getState()
     {
-        return null;  //TODO
+        return _state;
     }
 
     @Override
@@ -487,7 +503,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                 }
                 else
                 {
-                    throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
+                    return createChild(childClass, attributes);
                 }
             }
         });
@@ -501,39 +517,11 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     {
         Port<?> port = createChild(Port.class, attributes);
         addPort(port);
-        //1. AMQP ports are disabled during ManagementMode.
-        //2. The management plugins can currently only start ports at broker startup and
-        //   not when they are newly created via the management interfaces.
-        //3. When active ports are deleted, or their port numbers updated, the broker must be
-        //   restarted for it to take effect so we can't reuse port numbers until it is.
-        boolean quiesce = isManagementMode() || !(port instanceof AmqpPort) || isPreviouslyUsedPortNumber(port);
-
-        port.setDesiredState(quiesce ? State.QUIESCED : State.ACTIVE);
-
         return port;
     }
 
     private void addPort(final Port<?> port)
     {
-        int portNumber = port.getPort();
-        String portName = port.getName();
-
-        for (Port<?> p : getChildren(Port.class))
-        {
-            if(p != port)
-            {
-                if (portNumber == p.getPort())
-                {
-                    throw new IllegalConfigurationException("Can't add port "
-                                                            + portName
-                                                            + " because port number "
-                                                            + portNumber
-                                                            + " is already configured for port "
-                                                            + p.getName());
-                }
-            }
-        }
-
         port.addChangeListener(this);
 
     }
@@ -543,9 +531,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         AccessControlProvider<?> accessControlProvider = (AccessControlProvider<?>) createChild(AccessControlProvider.class, attributes);
         addAccessControlProvider(accessControlProvider);
 
-        boolean quiesce = isManagementMode();
-        accessControlProvider.setDesiredState(quiesce ? State.QUIESCED : State.ACTIVE);
-
         return accessControlProvider;
 
     }
@@ -554,13 +539,15 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     {
         accessControlProvider.addChangeListener(this);
         accessControlProvider.addChangeListener(_securityManager);
-
+        if(accessControlProvider.getState() == State.ACTIVE)
+        {
+            _securityManager.addPlugin(accessControlProvider.getAccessControl());
+        }
     }
 
     private boolean deleteAccessControlProvider(AccessControlProvider<?> accessControlProvider)
     {
         accessControlProvider.removeChangeListener(this);
-        accessControlProvider.removeChangeListener(_securityManager);
 
         return true;
     }
@@ -574,7 +561,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             {
                 AuthenticationProvider<?> authenticationProvider = createChild(AuthenticationProvider.class, attributes);
                 addAuthenticationProvider(authenticationProvider);
-                authenticationProvider.setDesiredState(State.ACTIVE);
+
                 return authenticationProvider;
             }
         });
@@ -609,7 +596,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             {
                 GroupProvider<?> groupProvider = createChild(GroupProvider.class, attributes);
                 addGroupProvider(groupProvider);
-                groupProvider.setDesiredState(State.ACTIVE);
+
                 return groupProvider;
             }
         });
@@ -665,30 +652,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     }
 
-    @Override
-    public Object getAttribute(String name)
-    {
-        if(STATE.equals(name))
-        {
-            return State.ACTIVE;
-        }
-        return super.getAttribute(name);
-    }
-
     private boolean deletePort(State oldState, Port port)
     {
         port.removeChangeListener(this);
-
-        // TODO - this seems suspicious, wouldn't it make more sense to not allow deletion from active
-        // (must be stopped first) or something?
-
-        if(oldState == State.ACTIVE)
-        {
-            //Record the originally used port numbers of previously-active ports being deleted, to ensure
-            //when creating new ports we don't try to re-bind a port number that we are currently still using
-            recordPreviouslyUsedPortNumberIfNecessary(port, port.getPort());
-        }
-
 
         return port != null;
     }
@@ -714,35 +680,40 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return true;
     }
 
-    @Override
-    public boolean setState(State desiredState)
+   /* @StateTransition(currentState = State.STOPPED, desiredState = State.ACTIVE)
+    private void restart()
     {
-        if (desiredState == State.ACTIVE)
+        initialiseStatisticsReporting();
+        changeChildState(State.ACTIVE, false);
+        if (isManagementMode())
         {
-            initialiseStatisticsReporting();
-            changeChildState(State.ACTIVE, false);
-            if (isManagementMode())
-            {
-                _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
-                                                                 _brokerOptions.getManagementModePassword()));
-            }
-            return true;
+            _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
+                                                                _brokerOptions.getManagementModePassword()));
         }
-        else if (desiredState == State.STOPPED)
-        {
-            //Stop Statistics Reporting
-            if (_reportingTimer != null)
-            {
-                _reportingTimer.cancel();
-            }
-
-            changeChildState(State.STOPPED, true);
-            return true;
-        }
-        return false;
+        _state = State.ACTIVE;
     }
+*/
+    @Override
+    protected void onClose()
+    {
+        if (_reportingTimer != null)
+        {
+            _reportingTimer.cancel();
+        }
 
-    private void changeChildState(final State desiredState,
+    }
+/*
+
+    @StateTransition(currentState = State.ACTIVE, desiredState = State.STOPPED)
+    private void doStop()
+    {
+        changeChildState(State.STOPPED, true);
+        close();
+        _state = State.STOPPED;
+    }
+*/
+
+   /* private void changeChildState(final State desiredState,
                                   final boolean swallowException)
     {
         runTask(new VoidTask()
@@ -783,7 +754,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         });
 
     }
-
+*/
     @Override
     public void stateChanged(ConfiguredObject object, State oldState, State newState)
     {
@@ -841,15 +812,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
-        if(object instanceof Port)
-        {
-            //Record all the originally used port numbers of active ports, to ensure that when
-            //creating new ports we don't try to re-bind a port number that we are still using
-            if(Port.PORT.equals(attributeName) && object.getState() == State.ACTIVE)
-            {
-                recordPreviouslyUsedPortNumberIfNecessary((Port) object, (Integer)oldAttributeValue);
-            }
-        }
     }
 
     private void addPlugin(ConfiguredObject<?> plugin)
@@ -964,20 +926,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     {
         Collection children = getChildren(AccessControlProvider.class);
         return children;
-    }
-
-    private void recordPreviouslyUsedPortNumberIfNecessary(Port port, Integer portNumber)
-    {
-        //If we haven't previously recorded its original port number, record it now
-        if(!_stillInUsePortNumbers.containsKey(port))
-        {
-            _stillInUsePortNumbers.put(port, portNumber);
-        }
-    }
-
-    private boolean isPreviouslyUsedPortNumber(Port port)
-    {
-        return _stillInUsePortNumbers.containsValue(port.getPort());
     }
 
     @Override

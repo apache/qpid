@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +35,7 @@ import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -48,6 +48,8 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
 
     private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
             new HashMap<AMQSessionModel, SessionAdapter>();
+
+    private State _state = State.ACTIVE;
 
     public ConnectionAdapter(final AMQConnectionModel conn)
     {
@@ -154,14 +156,17 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         }
     }
 
-    public void delete()
+    @StateTransition( currentState = State.ACTIVE, desiredState = State.DELETED)
+    private void doDelete()
     {
         _connection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        deleted();
+        _state = State.DELETED;
     }
 
     public State getState()
     {
-        return null;  //TODO
+        return _state;
     }
 
 
@@ -190,27 +195,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
             throw new IllegalArgumentException("Cannot create a child of class " + childClass.getSimpleName());
         }
 
-    }
-
-    @Override
-    protected boolean setState(State desiredState)
-    {
-        // TODO: add state management
-        return false;
-    }
-
-    @Override
-    public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
-            AccessControlException, IllegalArgumentException
-    {
-        throw new UnsupportedOperationException("Changing attributes on connection is not supported.");
-    }
-
-    @Override
-    public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException,
-            IllegalArgumentException
-    {
-        throw new UnsupportedOperationException("Changing attributes on connection is not supported.");
     }
 
     @Override

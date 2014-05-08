@@ -836,7 +836,7 @@ public class BrokerACLTest extends QpidRestTestCase
         assertAccessControlProviderExistence(accessControlProviderName, false);
     }
 
-    public void testSetAccessControlProviderAttributesAllowedButUnsupported() throws Exception
+    public void testSetAccessControlProviderAttributesAllowed() throws Exception
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
@@ -854,7 +854,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
         responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
-        assertEquals("Setting of access control provider attributes should be allowed but not supported", 409, responseCode);
+        assertEquals("Setting of access control provider attributes should be allowed", 200, responseCode);
     }
 
     public void testSetAccessControlProviderAttributesDenied() throws Exception

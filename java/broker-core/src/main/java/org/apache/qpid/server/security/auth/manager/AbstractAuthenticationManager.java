@@ -36,11 +36,11 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
@@ -55,7 +55,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
 
     private final Broker _broker;
     private PreferencesProvider _preferencesProvider;
-    private AtomicReference<State> _state = new AtomicReference<State>(State.INITIALISING);
+    private AtomicReference<State> _state = new AtomicReference<State>(State.UNINITIALIZED);
 
     protected AbstractAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
@@ -149,9 +149,9 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         {
             attributes = new HashMap<String, Object>(attributes);
             attributes.put(ConfiguredObject.ID, UUID.randomUUID());
-
+            attributes.put(ConfiguredObject.DESIRED_STATE, State.ACTIVE);
             PreferencesProvider pp = getObjectFactory().create(PreferencesProvider.class, attributes, this);
-            pp.setDesiredState(State.ACTIVE);
+
             _preferencesProvider = pp;
             return (C)pp;
         }
@@ -180,102 +180,67 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         }
     }
 
-    @Override
-    public boolean setState(State desiredState)
-            throws IllegalStateTransitionException, AccessControlException
+    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED, State.UNINITIALIZED } , desiredState = State.STOPPED )
+    protected void doStop()
     {
-        State state = _state.get();
-        if(desiredState == State.DELETED)
+        close();
+        _state.set(State.STOPPED);
+    }
+
+    @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED )
+    protected void startQuiesced()
+    {
+        _state.set(State.QUIESCED);
+    }
+
+    @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED, State.QUIESCED }, desiredState = State.ACTIVE )
+    protected void activate()
+    {
+        try
         {
-            String providerName = getName();
-
-            // verify that provider is not in use
-            Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
-            for (Port port : ports)
+            _state.set(State.ACTIVE);
+        }
+        catch(RuntimeException e)
+        {
+            _state.set(State.ERRORED);
+            if (_broker.isManagementMode())
             {
-                if(port instanceof AbstractPortWithAuthProvider
-                   && ((AbstractPortWithAuthProvider<?>)port).getAuthenticationProvider() == this)
-                {
-                    throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
-                }
-            }
-
-            if ((state == State.INITIALISING || state == State.ACTIVE || state == State.STOPPED || state == State.QUIESCED  || state == State.ERRORED)
-                && _state.compareAndSet(state, State.DELETED))
-            {
-                close();
-                delete();
-                if (_preferencesProvider != null)
-                {
-                    _preferencesProvider.setDesiredState(State.DELETED);
-                }
-                deleted();
-                return true;
+                LOGGER.warn("Failed to activate authentication provider: " + getName(), e);
             }
             else
             {
-                throw new IllegalStateException("Cannot delete authentication provider in state: " + state);
-            }
-        }
-        else if(desiredState == State.ACTIVE)
-        {
-            if ((state == State.INITIALISING || state == State.QUIESCED || state == State.STOPPED) && _state.compareAndSet(state, State.ACTIVE))
-            {
-                try
-                {
-                    if (_preferencesProvider != null)
-                    {
-                        _preferencesProvider.setDesiredState(State.ACTIVE);
-                    }
-                    return true;
-                }
-                catch(RuntimeException e)
-                {
-                    _state.compareAndSet(State.ACTIVE, State.ERRORED);
-                    if (_broker.isManagementMode())
-                    {
-                        LOGGER.warn("Failed to activate authentication provider: " + getName(), e);
-                    }
-                    else
-                    {
-                        throw e;
-                    }
-                }
-            }
-            if(state == State.ERRORED)
-            {
-                return false;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot activate authentication provider in state: " + state);
-            }
-        }
-        else if (desiredState == State.QUIESCED)
-        {
-            if (state == State.INITIALISING && _state.compareAndSet(state, State.QUIESCED))
-            {
-                return true;
-            }
-        }
-        else if(desiredState == State.STOPPED)
-        {
-            if (_state.compareAndSet(state, State.STOPPED))
-            {
-                close();
-                if (_preferencesProvider != null)
-                {
-                    _preferencesProvider.setDesiredState(State.STOPPED);
-                }
-                return true;
-            }
-            else
-            {
-                throw new IllegalStateException("Cannot stop authentication provider in state: " + state);
+                throw e;
             }
         }
 
-        return false;
+    }
+
+    @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
+    protected void doDelete()
+    {
+
+        String providerName = getName();
+
+        // verify that provider is not in use
+        Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
+        for (Port port : ports)
+        {
+            if(port instanceof AbstractPortWithAuthProvider
+               && ((AbstractPortWithAuthProvider<?>)port).getAuthenticationProvider() == this)
+            {
+                throw new IntegrityViolationException("Authentication provider '" + providerName + "' is set on port " + port.getName());
+            }
+        }
+
+        close();
+        if (_preferencesProvider != null)
+        {
+            _preferencesProvider.delete();
+        }
+        deleted();
+
+        _state.set(State.DELETED);
+
     }
 
 

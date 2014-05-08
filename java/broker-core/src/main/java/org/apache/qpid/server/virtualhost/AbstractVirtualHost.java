@@ -341,12 +341,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    protected void changeAttributes(Map<String, Object> attributes)
-    {
-        throw new UnsupportedOperationException("Changing attributes on virtualhosts is not supported.");
-    }
-
-    @Override
     protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
@@ -400,7 +394,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         switch(implementationState)
         {
             case INITIALISING:
-                return State.INITIALISING;
+                return State.UNINITIALIZED;
             case ACTIVE:
                 return State.ACTIVE;
             case PASSIVE:
@@ -586,7 +580,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public int removeQueue(AMQQueue<?> queue)
     {
-        int purged = queue.delete();
+        int purged = queue.deleteAndReturnCount();
 
         if (queue.isDurable() && !(queue.getLifetimePolicy()
                                    == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
@@ -700,7 +694,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public void removeExchange(ExchangeImpl exchange, boolean force)
             throws ExchangeIsAlternateException, RequiredExchangeException
     {
-        exchange.delete();
+        exchange.deleteWithChecks();
     }
 
     public SecurityManager getSecurityManager()
@@ -708,7 +702,14 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _broker.getSecurityManager();
     }
 
-    public void close()
+    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.STOPPED )
+    public void doStop()
+    {
+        close();
+        _state = VirtualHostState.STOPPED;
+    }
+
+    protected void onClose()
     {
         //Stop Connections
         _connectionRegistry.close();
@@ -716,12 +717,17 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         closeStorage();
         shutdownHouseKeeping();
 
-        _state = VirtualHostState.STOPPED;
-
         _eventLogger.message(VirtualHostMessages.CLOSED(getName()));
+    }
 
-        // TODO: The state work will replace this with closure of the virtualhost, rather than deleting it.
-        deleted();
+    @Override
+    protected void changeAttributes(final Map<String, Object> attributes)
+    {
+        super.changeAttributes(attributes);
+        if (isDurable() && getState() != State.DELETED)
+        {
+            getDurableConfigurationStore().update(false, asObjectRecord());
+        }
     }
 
     private void closeStorage()
@@ -1246,57 +1252,39 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _housekeepingThreadCount;
     }
 
-
-
-    @Override
-    protected boolean setState(State desiredState)
+    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED, State.STOPPED}, desiredState = State.DELETED )
+    private void doDelete()
     {
-        if (desiredState == State.ACTIVE)
+        if(_deleted.compareAndSet(false,true))
         {
-            activate();
-            return true;
-        }
-        else if (desiredState == State.STOPPED)
-        {
-            close();
-            return true;
-        }
-        else if (desiredState == State.DELETED)
-        {
-            if(_deleted.compareAndSet(false,true))
+            String hostName = getName();
+
+            if (hostName.equals(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)))
             {
-                String hostName = getName();
-
-                if (hostName.equals(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)))
-                {
-                    throw new IntegrityViolationException("Cannot delete default virtual host '" + hostName + "'");
-                }
-                if (getVirtualHostState() == VirtualHostState.ACTIVE
-                    || getVirtualHostState() == VirtualHostState.INITIALISING)
-                {
-                    setDesiredState(State.STOPPED);
-                }
-
-                MessageStore ms = getMessageStore();
-                if (ms != null)
-                {
-                    try
-                    {
-                        ms.onDelete();
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.warn("Exception occurred on message store deletion", e);
-                    }
-                }
-                setAttribute(VirtualHost.STATE, getState(), State.DELETED);
-                getDurableConfigurationStore().remove(asObjectRecord());
-                deleted();
+                throw new IntegrityViolationException("Cannot delete default virtual host '" + hostName + "'");
+            }
+            if (getVirtualHostState() == VirtualHostState.ACTIVE
+                || getVirtualHostState() == VirtualHostState.INITIALISING)
+            {
+                close();
             }
 
-            return true;
+            MessageStore ms = getMessageStore();
+            if (ms != null)
+            {
+                try
+                {
+                    ms.onDelete();
+                }
+                catch (Exception e)
+                {
+                    _logger.warn("Exception occurred on message store deletion", e);
+                }
+            }
+            setAttribute(VirtualHost.STATE, getState(), State.DELETED);
+            getDurableConfigurationStore().remove(asObjectRecord());
+            deleted();
         }
-        return false;
     }
 
     public Collection<VirtualHostAlias> getAliases()
@@ -1451,6 +1439,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         getDurableConfigurationStore().create(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes()));
     }
 
+    @StateTransition( currentState = {State.UNINITIALIZED, State.STOPPED, State.ERRORED, State.QUIESCED}, desiredState = State.ACTIVE )
     protected void activate()
     {
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());

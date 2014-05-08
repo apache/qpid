@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +33,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Publisher;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.ConsumerListener;
 
@@ -43,6 +43,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
 
     private AMQSessionModel _session;
+    private State _state = State.ACTIVE;
 
 
     public SessionAdapter(final ConnectionAdapter connectionAdapter,
@@ -103,7 +104,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 
     public State getState()
     {
-        return null;  //TODO
+        return _state;
     }
 
     @Override
@@ -164,31 +165,11 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
         return _session.getUnacknowledgedMessageCount();
     }
 
-    @Override
-    public void delete()
+    @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
+    private void doDelete()
     {
+        _state = State.DELETED;
         deleted();
     }
 
-
-    @Override
-    protected boolean setState(State desiredState)
-    {
-        // TODO : add state management
-        return false;
-    }
-
-    @Override
-    public Object setAttribute(final String name, final Object expected, final Object desired) throws IllegalStateException,
-            AccessControlException, IllegalArgumentException
-    {
-        throw new UnsupportedOperationException("Changing attributes on session is not supported.");
-    }
-
-    @Override
-    public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException,
-            IllegalArgumentException
-    {
-        throw new UnsupportedOperationException("Changing attributes on session is not supported.");
-    }
 }
