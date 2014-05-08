@@ -34,6 +34,7 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
   function (xhr, lang, connect, parser, json, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences, edit)
   {
+    var priorityNames = {'_0': 'Never', '_1': 'Default', '_2': 'Normal', '_3': 'High'};
     var nodeFields = ["storePath", "groupName", "role", "address", "coalescingSync", "designatedPrimary", "durability", "priority", "quorumOverride"];
 
     function findNode(nodeClass, containerNode)
@@ -79,9 +80,13 @@ define(["dojo/_base/xhr",
         {
             alert("Error:" + failureReason);
         }
+        return success;
     }
 
-    function BDBHA(containerNode) {
+    function BDBHA(data)
+    {
+      var containerNode = data.containerNode;
+      this.parent = data.parent;
       var that = this;
       xhr.get({url: "virtualhostnode/bdb_ha/show.html",
         sync: true,
@@ -186,8 +191,10 @@ define(["dojo/_base/xhr",
           {
             if (confirm("Deletion of virtual host node will delete both configuration and message data.\n\n Are you sure you want to delete virtual host node?"))
             {
-              sendRequest(that.data.name, that.data.name, "DELETE");
-              // TODO: close tab
+              if (sendRequest(that.data.name, that.data.name, "DELETE"))
+              {
+                that.parent.destroy();
+              }
             }
           }
       );
@@ -200,7 +207,18 @@ define(["dojo/_base/xhr",
       for(var i = 0; i < nodeFields.length; i++)
       {
         var name = nodeFields[i];
-        this[name].innerHTML = entities.encode(String(data[name]));
+        if (name == "priority")
+        {
+          this[name].innerHTML = priorityNames["_" + data[name]];
+        }
+        else if (name == "quorumOverride")
+        {
+          this[name].innerHTML = (data[name] == 0 ? "MAJORITY" : entities.encode(String(data[name])));
+        }
+        else
+        {
+          this[name].innerHTML = entities.encode(String(data[name]));
+        }
       }
 
       this._updateGrid(this._convertConfig(data.environmentConfiguration), this.environmentConfigurationPanel, this.environmentConfigurationGrid );
@@ -233,7 +251,6 @@ define(["dojo/_base/xhr",
         this.priorityContainer.style.display="block";
         this.quorumOverrideContainer.style.display="block";
       }
-      this.deleteNodeButton.set("disabled", data.role=="MASTER");
     };
 
     BDBHA.prototype._updateGrid=function(conf, panel, updatableGrid)

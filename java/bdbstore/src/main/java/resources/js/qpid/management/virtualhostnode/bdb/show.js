@@ -31,8 +31,10 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
   function (xhr, lang, connect, parser, json, entities, query, json, registry, UpdatableStore)
   {
-    function BdbNode(containerNode)
+    function BdbNode(data)
     {
+      var containerNode = data.containerNode;
+      this.parent = data.parent;
       var that = this;
       xhr.get({url: "virtualhostnode/bdb/show.html",
         sync: true,

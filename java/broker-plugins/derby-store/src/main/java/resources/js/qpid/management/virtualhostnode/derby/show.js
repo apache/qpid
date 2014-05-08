@@ -29,8 +29,10 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
   function (xhr, lang, connect, parser, json, entities, query, json)
   {
-    function DerbyNode(containerNode)
+    function DerbyNode(data)
     {
+      var containerNode = data.containerNode;
+      this.parent = data.parent;
       var that = this;
       xhr.get({url: "virtualhostnode/derby/show.html",
         sync: true,
