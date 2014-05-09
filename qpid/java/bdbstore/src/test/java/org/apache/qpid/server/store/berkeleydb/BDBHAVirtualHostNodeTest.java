@@ -403,16 +403,32 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         assertTrue("Replication nodes have not been seen during 5s", remoteNodeLatch.await(5, TimeUnit.SECONDS));
 
-        Collection<? extends RemoteReplicationNode> remoteNodes = node1.getRemoteReplicationNodes();
-        BDBHARemoteReplicationNodeImpl replicaRemoteNode = (BDBHARemoteReplicationNodeImpl)remoteNodes.iterator().next();
+        BDBHARemoteReplicationNodeImpl replicaRemoteNode = null;
 
         long awaitReplicaRoleCount = 0;
-        while(!"REPLICA".equals(replicaRemoteNode.getRole()))
+        while(replicaRemoteNode == null)
         {
+            Collection<? extends RemoteReplicationNode> remoteNodes = node1.getRemoteReplicationNodes();
+            if (remoteNodes != null)
+            {
+                for (RemoteReplicationNode node : remoteNodes)
+                {
+                    BDBHARemoteReplicationNodeImpl bdbNode = (BDBHARemoteReplicationNodeImpl)node;
+                    if ("REPLICA".equals(bdbNode.getRole()))
+                    {
+                        replicaRemoteNode = bdbNode;
+                        break;
+                    }
+                }
+                if (replicaRemoteNode != null)
+                {
+                    break;
+                }
+            }
             Thread.sleep(100);
             if (awaitReplicaRoleCount > 50)
             {
-                fail("Remote replication node is not in a REPLICA role");
+                fail("Remote replication node is not in a REPLICA role: " + remoteNodes);
             }
             awaitReplicaRoleCount++;
         }

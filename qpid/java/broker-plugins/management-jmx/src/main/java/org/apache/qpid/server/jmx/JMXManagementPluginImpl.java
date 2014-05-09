@@ -23,15 +23,16 @@ package org.apache.qpid.server.jmx;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.management.JMException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.jmx.mbeans.LoggingManagementMBean;
 import org.apache.qpid.server.jmx.mbeans.ServerInformationMBean;
@@ -81,7 +82,7 @@ public class JMXManagementPluginImpl
     private JMXManagedObjectRegistry _objectRegistry;
 
     private final Object _childrenLock = new Object();
-    private final Map<ConfiguredObject, AMQManagedObject> _children = new HashMap<ConfiguredObject, AMQManagedObject>();
+    private final Map<ConfiguredObject, List<ManagedObject>> _children = new HashMap<ConfiguredObject, List<ManagedObject>>();
 
     @ManagedAttributeField
     private boolean _usePlatformMBeanServer;
@@ -157,7 +158,7 @@ public class JMXManagementPluginImpl
                 if (host != null)
                 {
                     VirtualHostMBean mbean = new VirtualHostMBean(host, _objectRegistry);
-                    _children.put(host, mbean);
+                    addMBean(host, mbean);
                 }
                 createAdditionalMBeansFromProviders(virtualHostNode, _objectRegistry);
             }
@@ -170,7 +171,7 @@ public class JMXManagementPluginImpl
                     UserManagementMBean mbean = new UserManagementMBean(
                             (PasswordCredentialManagingAuthenticationProvider) authenticationProvider,
                             _objectRegistry);
-                    _children.put(authenticationProvider, mbean);
+                    addMBean(authenticationProvider, mbean);
                 }
                 createAdditionalMBeansFromProviders(authenticationProvider, _objectRegistry);
             }
@@ -184,6 +185,17 @@ public class JMXManagementPluginImpl
         _objectRegistry.start();
         setCurrentState(State.ACTIVE);
         _allowPortActivation = false;
+    }
+
+    private void addMBean(ConfiguredObject configuredObject, ManagedObject mbean)
+    {
+        List<ManagedObject> mbeanList = _children.get(configuredObject);
+        if (mbeanList == null)
+        {
+            mbeanList = new ArrayList<ManagedObject>();
+            _children.put(configuredObject, mbeanList);
+        }
+        mbeanList.add(mbean);
     }
 
     @Override
@@ -223,7 +235,21 @@ public class JMXManagementPluginImpl
         {
             for(ConfiguredObject object : _children.keySet())
             {
-                AMQManagedObject mbean = _children.get(object);
+                unregisterChildMBeans(object);
+            }
+            _children.clear();
+        }
+        getBroker().removeChangeListener(this);
+        closeObjectRegistry();
+    }
+
+    private void unregisterChildMBeans(ConfiguredObject object)
+    {
+        List<ManagedObject> mbeans = _children.get(object);
+        if (mbeans != null)
+        {
+            for (ManagedObject mbean : mbeans)
+            {
                 if (mbean instanceof ConfigurationChangeListener)
                 {
                     object.removeChangeListener((ConfigurationChangeListener)mbean);
@@ -237,10 +263,7 @@ public class JMXManagementPluginImpl
                     LOGGER.error("Exception while unregistering mbean for " + object.getClass().getSimpleName() + " " + object.getName(), e);
                 }
             }
-            _children.clear();
         }
-        getBroker().removeChangeListener(this);
-        closeObjectRegistry();
     }
 
     @Override
@@ -278,7 +301,7 @@ public class JMXManagementPluginImpl
 
                 if (mbean != null)
                 {
-                    _children.put(child, mbean);
+                    addMBean(child, mbean);
                 }
                 createAdditionalMBeansFromProviders(child, _objectRegistry);
             }
@@ -296,20 +319,8 @@ public class JMXManagementPluginImpl
         synchronized (_childrenLock)
         {
             child.removeChangeListener(this);
-
-            AMQManagedObject mbean = _children.remove(child);
-            if(mbean != null)
-            {
-                try
-                {
-                    mbean.unregister();
-                }
-                catch(Exception e)
-                {
-                    LOGGER.error("Exception while unregistering mbean for " + child.getClass().getSimpleName() + " " + child.getName(), e);
-                    //TODO - report error on removing child MBean
-                }
-            }
+            unregisterChildMBeans(child);
+            _children.remove(child);
         }
     }
 
@@ -337,8 +348,10 @@ public class JMXManagementPluginImpl
                     LOGGER.debug("Provider will create mbean");
                 }
                 mBean = provider.createMBean(child, registry);
-                // TODO track the mbeans that have been created on behalf of a child in a map, then
-                // if the child is ever removed, destroy these beans too.
+                if (mBean != null)
+                {
+                    addMBean(child, mBean);
+                }
             }
 
             if(LOGGER.isDebugEnabled())

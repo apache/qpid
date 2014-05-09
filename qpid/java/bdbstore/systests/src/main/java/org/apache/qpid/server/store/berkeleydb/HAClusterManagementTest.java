@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -144,11 +143,11 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
 
             CompositeData row = groupMembers.get(new Object[] {nodeName});
             assertNotNull("Table does not contain row for node name " + nodeName, row);
-            assertEquals(nodeHostPort, row.get(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT));
+            assertEquals(nodeHostPort, row.get(ManagedBDBHAMessageStore.GRP_MEM_COL_NODE_HOST_PORT));
         }
     }
 
-    public void testRemoveNodeFromGroup() throws Exception
+    public void testRemoveRemoteNodeFromGroup() throws Exception
     {
         final Iterator<Integer> brokerPortNumberIterator = getBrokerPortNumbers().iterator();
         final int brokerPortNumberToMakeObservation = brokerPortNumberIterator.next();
@@ -158,70 +157,17 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
 
         final String removedNodeName = _clusterCreator.getNodeNameForNodeAt(_clusterCreator.getBdbPortForBrokerPort(brokerPortNumberToBeRemoved));
         _clusterCreator.stopNode(brokerPortNumberToBeRemoved);
+
         storeBean.removeNodeFromGroup(removedNodeName);
 
-        final int numberOfDataRowsAfterRemoval = storeBean.getAllNodesInGroup().size();
-        assertEquals("Unexpected number of data rows before test", NUMBER_OF_NODES - 1,numberOfDataRowsAfterRemoval);
-    }
-
-    /**
-     * Updates the address of a node.
-     *
-     * If the broker (node) can subsequently start without error then the update was a success, hence no need for an explicit
-     * assert.
-     *
-     * @see #testRestartNodeWithNewPortNumberWithoutFirstCallingUpdateAddressThrowsAnException() for converse case
-     */
-    public void testUpdateAddress() throws Exception
-    {
-        final Iterator<Integer> brokerPortNumberIterator = getBrokerPortNumbers().iterator();
-        final int brokerPortNumberToPerformUpdate = brokerPortNumberIterator.next();
-        final int brokerPortNumberToBeMoved = brokerPortNumberIterator.next();
-        final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(brokerPortNumberToPerformUpdate);
-
-        _clusterCreator.stopNode(brokerPortNumberToBeMoved);
-
-        final int oldBdbPort = _clusterCreator.getBdbPortForBrokerPort(brokerPortNumberToBeMoved);
-        final int newBdbPort = getNextAvailable(oldBdbPort + 1);
-
-        storeBean.updateAddress(_clusterCreator.getNodeNameForNodeAt(oldBdbPort), _clusterCreator.getIpAddressOfBrokerHost(), newBdbPort);
-
-        _clusterCreator.modifyClusterNodeBdbAddress(brokerPortNumberToBeMoved, newBdbPort);
-
-        _clusterCreator.startNode(brokerPortNumberToBeMoved);
-    }
-
-    /**
-     * @see #testUpdateAddress()
-     */
-    public void testRestartNodeWithNewPortNumberWithoutFirstCallingUpdateAddressThrowsAnException() throws Exception
-    {
-        final Iterator<Integer> brokerPortNumberIterator = getBrokerPortNumbers().iterator();
-        final int brokerPortNumberToBeMoved = brokerPortNumberIterator.next();
-
-        _clusterCreator.stopNode(brokerPortNumberToBeMoved);
-
-        final int oldBdbPort = _clusterCreator.getBdbPortForBrokerPort(brokerPortNumberToBeMoved);
-        final int newBdbPort = getNextAvailable(oldBdbPort + 1);
-
-        // now deliberately don't call updateAddress
-
-        _clusterCreator.modifyClusterNodeBdbAddress(brokerPortNumberToBeMoved, newBdbPort);
-
-        try
+        long limitTime = System.currentTimeMillis() + 5000;
+        while((NUMBER_OF_NODES == storeBean.getAllNodesInGroup().size()) && System.currentTimeMillis() < limitTime)
         {
-            _clusterCreator.startNode(brokerPortNumberToBeMoved);
-            fail("Exception not thrown");
+            Thread.sleep(100l);
         }
-        catch(RuntimeException rte)
-        {
-            //check cause was BDBs EnvironmentFailureException
-            assertTrue("Message '"+rte.getMessage()+"' does not contain '"
-                       + EnvironmentFailureException.class.getName()
-                       + "'.",
-                       rte.getMessage().contains(EnvironmentFailureException.class.getName()));
-            // PASS
-        }
+
+        int numberOfDataRowsAfterRemoval = storeBean.getAllNodesInGroup().size();
+        assertEquals("Unexpected number of data rows after test", NUMBER_OF_NODES - 1, numberOfDataRowsAfterRemoval);
     }
 
     public void testVirtualHostOperationsDeniedForNonMasterNode() throws Exception
@@ -252,6 +198,20 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
             String message = e.getMessage();
             assertEquals("The virtual hosts state of PASSIVE does not permit this operation.", message);
         }
+    }
+
+    public void testSetDesignatedPrimary() throws Exception
+    {
+        int brokerPort = _clusterCreator.getBrokerPortNumbersForNodes().iterator().next();
+        final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(brokerPort);
+        assertFalse("Unexpected designated primary before change", storeBean.getDesignatedPrimary());
+        storeBean.setDesignatedPrimary(true);
+        long limit = System.currentTimeMillis() + 5000;
+        while(!storeBean.getDesignatedPrimary() && System.currentTimeMillis() < limit)
+        {
+            Thread.sleep(100l);
+        }
+        assertTrue("Unexpected designated primary after change", storeBean.getDesignatedPrimary());
     }
 
     private ManagedBDBHAMessageStore getStoreBeanForNodeAtBrokerPort(final int brokerPortNumber) throws Exception

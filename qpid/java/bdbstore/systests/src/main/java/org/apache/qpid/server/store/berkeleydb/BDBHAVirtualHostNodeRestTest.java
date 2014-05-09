@@ -123,26 +123,24 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
     private void assertNode(String nodeName, int nodePort, int nodeHelperPort, String masterNode) throws Exception
     {
         boolean isMaster = nodeName.equals(masterNode);
-        waitForAttributeChanged(_baseNodeRestUrl + nodeName + "?depth=0", BDBHAVirtualHostNode.ROLE, isMaster? "MASTER" : "REPLICA");
+        String expectedRole = isMaster? "MASTER" : "REPLICA";
+        waitForAttributeChanged(_baseNodeRestUrl + nodeName + "?depth=0", BDBHAVirtualHostNode.ROLE, expectedRole);
 
-        Map<String, Object> nodeData = getRestTestHelper().getJsonAsSingletonList(_baseNodeRestUrl + nodeName);
+        Map<String, Object> nodeData = getRestTestHelper().getJsonAsSingletonList(_baseNodeRestUrl + nodeName + "?depth=0");
         assertEquals("Unexpected name", nodeName, nodeData.get(BDBHAVirtualHostNode.NAME));
         assertEquals("Unexpected type", "BDB_HA", nodeData.get(BDBHAVirtualHostNode.TYPE));
         assertEquals("Unexpected path", new File(_storeBaseDir, nodeName).getPath(), nodeData.get(BDBHAVirtualHostNode.STORE_PATH));
         assertEquals("Unexpected address", "localhost:" + nodePort, nodeData.get(BDBHAVirtualHostNode.ADDRESS));
         assertEquals("Unexpected helper address", "localhost:" + nodeHelperPort, nodeData.get(BDBHAVirtualHostNode.HELPER_ADDRESS));
         assertEquals("Unexpected group name", _hostName, nodeData.get(BDBHAVirtualHostNode.GROUP_NAME));;
+        assertEquals("Unexpected role", expectedRole, nodeData.get(BDBHAVirtualHostNode.ROLE));
 
         if (isMaster)
         {
-            assertEquals("Unexpected role", "MASTER", nodeData.get(BDBHAVirtualHostNode.ROLE));
             Map<String, Object> hostData = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + masterNode + "/" + _hostName + "?depth=0");
             assertEquals("Unexpected host name", _hostName, hostData.get(VirtualHost.NAME));
         }
-        else
-        {
-            assertEquals("Unexpected role", "REPLICA", nodeData.get(BDBHAVirtualHostNode.ROLE));
-        }
+
     }
 
     private void assertRemoteNodes(String masterNode, String... replicaNodes) throws Exception

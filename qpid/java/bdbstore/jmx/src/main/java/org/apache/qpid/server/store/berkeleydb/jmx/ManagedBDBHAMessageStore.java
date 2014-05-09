@@ -41,6 +41,9 @@ public interface ManagedBDBHAMessageStore
     public static final String ATTR_DESIGNATED_PRIMARY = "DesignatedPrimary";
     public static final String ATTR_COALESCING_SYNC = "CoalescingSync";
 
+    public static final String GRP_MEM_COL_NODE_HOST_PORT = "NodeHostPort";
+    public static final String GRP_MEM_COL_NODE_NAME = "NodeName";
+
     @MBeanAttribute(name=ATTR_GROUP_NAME, description="Name identifying the group")
     String getGroupName() throws IOException, JMException;
 
