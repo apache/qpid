@@ -180,13 +180,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         }
     }
 
-    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED, State.UNINITIALIZED } , desiredState = State.STOPPED )
-    protected void doStop()
-    {
-        close();
-        _state.set(State.STOPPED);
-    }
-
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED )
     protected void startQuiesced()
     {
@@ -215,7 +208,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
 
     }
 
-    @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
+    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
     protected void doDelete()
     {
 

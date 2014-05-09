@@ -136,13 +136,6 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         setCurrentState(State.ACTIVE);
     }
 
-    @StateTransition(currentState = State.ACTIVE, desiredState = State.STOPPED)
-    private void doStop()
-    {
-        close();
-        setCurrentState(State.STOPPED);
-    }
-
     @Override
     protected void onClose()
     {

@@ -293,21 +293,14 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         return super.getAttribute(name);
     }
 
-    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
+    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED )
     private void doDelete()
     {
         close();
         _state = State.DELETED;
     }
 
-    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED,  State.ERRORED}, desiredState = State.STOPPED )
-    private void doStop()
-    {
-        close();
-        _state = State.STOPPED;
-    }
-
-    @StateTransition( currentState = {State.UNINITIALIZED, State.QUIESCED, State.STOPPED}, desiredState = State.ACTIVE )
+    @StateTransition( currentState = {State.UNINITIALIZED, State.QUIESCED}, desiredState = State.ACTIVE )
     protected void activate()
     {
         try
@@ -321,6 +314,13 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
                          e);
         }
     }
+
+    @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
+    private void startQuiesced()
+    {
+        _state = State.QUIESCED;
+    }
+
 
     protected State onActivate()
     {

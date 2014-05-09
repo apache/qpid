@@ -270,7 +270,7 @@ public class FileBasedGroupProviderImpl
         return _broker.getSecurityManager();
     }
 
-    @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED, State.STOPPED }, desiredState = State.ACTIVE )
+    @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED }, desiredState = State.ACTIVE )
     private void activate()
     {
         try
@@ -288,7 +288,7 @@ public class FileBasedGroupProviderImpl
         }
     }
 
-    @StateTransition( currentState = { State.QUIESCED, State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
+    @StateTransition( currentState = { State.QUIESCED, State.ACTIVE, State.ERRORED}, desiredState = State.DELETED )
     private void doDelete()
     {
         File file = new File(getPath());
@@ -302,14 +302,6 @@ public class FileBasedGroupProviderImpl
 
         deleted();
         _state.set(State.DELETED);
-    }
-
-
-    @StateTransition( currentState = { State.UNINITIALIZED, State.ACTIVE, State.QUIESCED}, desiredState = State.STOPPED )
-    private void doStop()
-    {
-        // TODO - this seem inadequate :-)
-        _state.set(State.STOPPED);
     }
 
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)

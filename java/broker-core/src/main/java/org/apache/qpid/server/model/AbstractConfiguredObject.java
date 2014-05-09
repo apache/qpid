@@ -1097,11 +1097,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     }
 
-    public final void quiesce()
-    {
-        setDesiredState(State.QUIESCED);
-    }
-
     public final void stop()
     {
         setDesiredState(State.STOPPED);
