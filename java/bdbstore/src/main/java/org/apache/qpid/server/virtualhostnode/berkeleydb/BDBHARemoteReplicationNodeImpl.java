@@ -21,14 +21,15 @@
 
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.je.rep.MasterStateException;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
-import org.apache.log4j.Logger;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -53,7 +54,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
     private final AtomicReference<State> _state;
 
-    public BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNodeImpl virtualHostNode, Map<String, Object> attributes, ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
+    public BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNode<?> virtualHostNode, Map<String, Object> attributes, ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
     {
         super(parentsMap(virtualHostNode), attributes);
         _address = (String)attributes.get(ADDRESS);
@@ -97,10 +98,30 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         return _lastTransactionId;
     }
 
-    @StateTransition(currentState = {State.ACTIVE, State.QUIESCED, State.STOPPED, State.ERRORED}, desiredState = State.DELETED)
+    @StateTransition(currentState = {State.ACTIVE, State.STOPPED}, desiredState = State.DELETED)
     private void doDelete()
     {
-        this.deleted();
+        String nodeName = getName();
+
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Deleting node '"  + nodeName + "' from group '" + getGroupName() + "'");
+        }
+
+        try
+        {
+            _replicatedEnvironmentFacade.removeNodeFromGroup(nodeName);
+            _state.set(State.DELETED);
+            deleted();
+        }
+        catch(MasterStateException e)
+        {
+            throw new IllegalStateTransitionException("Node '" + nodeName + "' cannot be deleted when role is a master");
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateTransitionException("Unexpected exception on node '" + nodeName + "' deletion", e);
+        }
     }
 
     protected void afterSetRole()
@@ -124,37 +145,6 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         {
             throw new IllegalConfigurationException("Cannot transfer mastership to " + getName(), e);
         }
-    }
-
-    @Override
-    protected boolean setState(State desiredState)
-    {
-        if (desiredState == State.DELETED)
-        {
-            String nodeName = getName();
-
-            if (LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("Deleting node '"  + nodeName + "' from group '" + getGroupName() + "'");
-            }
-
-            try
-            {
-                _replicatedEnvironmentFacade.removeNodeFromGroup(nodeName);
-                _state.set(State.DELETED);
-                delete();
-                return true;
-            }
-            catch(MasterStateException e)
-            {
-                throw new IllegalStateTransitionException("Node '" + nodeName + "' cannot be deleted when role is a master");
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateTransitionException("Unexpected exception on node '" + nodeName + "' deletion", e);
-            }
-        }
-        return false;
     }
 
     @Override

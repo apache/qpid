@@ -21,17 +21,12 @@
 package org.apache.qpid.server.store.berkeleydb.jmx;
 
 import javax.management.JMException;
-import javax.management.StandardMBean;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.jmx.MBeanProvider;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.berkeleydb.BDBHAVirtualHost;
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
@@ -58,17 +53,12 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
     @Override
     public ManagedObject createMBean(ConfiguredObject child, ManagedObjectRegistry registry) throws JMException
     {
-        BDBHAVirtualHostNode<?> virtualHostNode = (BDBHAVirtualHostNode<?>) child;
-
-        BDBMessageStore messageStore = (BDBMessageStore) virtualHostNode.getConfigurationStore();
-
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Creating mBean for child " + child);
         }
 
-        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = (ReplicatedEnvironmentFacade)messageStore.getEnvironmentFacade();
-        return new BDBHAMessageStoreManagerMBean(virtualHostNode.getGroupName(), replicatedEnvironmentFacade, registry);
+        return new BDBHAMessageStoreManagerMBean((BDBHAVirtualHostNode<?>) child, registry);
     }
 
     @Override

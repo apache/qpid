@@ -135,10 +135,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     public static final String TYPE = "BDB-HA";
 
-    // TODO: JMX will change to observe the model, at that point these names will disappear
-    public static final String GRP_MEM_COL_NODE_HOST_PORT = "NodeHostPort";
-    public static final String GRP_MEM_COL_NODE_NAME = "NodeName";
-
     private final ReplicatedEnvironmentConfiguration _configuration;
     private final Durability _durability;
     private final Boolean _coalescingSync;
@@ -716,21 +712,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             return -1L;
         }
-    }
-
-    public List<Map<String, String>> getGroupMembers()
-    {
-        List<Map<String, String>> members = new ArrayList<Map<String, String>>();
-
-        for (ReplicationNode node : _environment.getGroup().getNodes())
-        {
-            Map<String, String> nodeMap = new HashMap<String, String>();
-            nodeMap.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, node.getName());
-            nodeMap.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT, node.getHostName() + ":" + node.getPort());
-            members.add(nodeMap);
-        }
-
-        return members;
     }
 
     private ReplicationGroupAdmin createReplicationGroupAdmin()

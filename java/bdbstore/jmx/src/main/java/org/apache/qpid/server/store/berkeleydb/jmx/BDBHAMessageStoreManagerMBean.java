@@ -20,7 +20,9 @@
 package org.apache.qpid.server.store.berkeleydb.jmx;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.management.JMException;
@@ -39,7 +41,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.RemoteReplicationNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
 /**
  * Management mbean for BDB HA.
@@ -57,7 +62,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
         try
         {
             GROUP_MEMBER_ATTRIBUTE_TYPES = new OpenType<?>[] {SimpleType.STRING, SimpleType.STRING};
-            final String[] itemNames = new String[] {ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT};
+            final String[] itemNames = new String[] {GRP_MEM_COL_NODE_NAME, GRP_MEM_COL_NODE_HOST_PORT};
             final String[] itemDescriptions = new String[] {"Unique node name", "Node host / port "};
             GROUP_MEMBER_ROW = new CompositeType("GroupMember", "Replication group member",
                                                 itemNames,
@@ -65,7 +70,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
                                                 GROUP_MEMBER_ATTRIBUTE_TYPES );
             GROUP_MEMBERS_TABLE = new TabularType("GroupMembers", "Replication group memebers",
                                                 GROUP_MEMBER_ROW,
-                                                new String[] {ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME});
+                                                new String[] {GRP_MEM_COL_NODE_NAME});
         }
         catch (final OpenDataException ode)
         {
@@ -73,15 +78,15 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
         }
     }
 
-    private final ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
+    private final BDBHAVirtualHostNode<?> _virtualHostNode;
     private final String _objectName;
 
-    protected BDBHAMessageStoreManagerMBean(String virtualHostName, ReplicatedEnvironmentFacade replicatedEnvironmentFacade, ManagedObjectRegistry registry) throws JMException
+    protected BDBHAMessageStoreManagerMBean(BDBHAVirtualHostNode<?> virtualHostNode, ManagedObjectRegistry registry) throws JMException
     {
         super(ManagedBDBHAMessageStore.class, ManagedBDBHAMessageStore.TYPE, registry);
-        LOGGER.debug("Creating BDBHAMessageStoreManagerMBean for " + virtualHostName);
-        _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
-        _objectName = ObjectName.quote(virtualHostName);
+        LOGGER.debug("Creating BDBHAMessageStoreManagerMBean for " + virtualHostNode.getName());
+        _virtualHostNode = virtualHostNode;
+        _objectName = ObjectName.quote( virtualHostNode.getGroupName());
         register();
     }
 
@@ -94,46 +99,38 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public String getGroupName()
     {
-        return _replicatedEnvironmentFacade.getGroupName();
+        return _virtualHostNode.getGroupName();
     }
 
     @Override
     public String getNodeName()
     {
-        return _replicatedEnvironmentFacade.getNodeName();
+        return _virtualHostNode.getName();
     }
 
     @Override
     public String getNodeHostPort()
     {
-        return _replicatedEnvironmentFacade.getHostPort();
+        return _virtualHostNode.getAddress();
     }
 
     @Override
     public String getHelperHostPort()
     {
-        return _replicatedEnvironmentFacade.getHelperHostPort();
+        return _virtualHostNode.getHelperAddress();
     }
 
     @Override
     public String getDurability() throws IOException, JMException
     {
-        try
-        {
-            return _replicatedEnvironmentFacade.getDurability();
-        }
-        catch (RuntimeException e)
-        {
-            LOGGER.debug("Failed query replication policy", e);
-            throw new JMException(e.getMessage());
-        }
+        return _virtualHostNode.getDurability();
     }
 
 
     @Override
     public boolean getCoalescingSync() throws IOException, JMException
     {
-        return _replicatedEnvironmentFacade.isCoalescingSync();
+        return _virtualHostNode.isCoalescingSync();
     }
 
     @Override
@@ -141,11 +138,11 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     {
         try
         {
-            return _replicatedEnvironmentFacade.getNodeState();
+            return _virtualHostNode.getRole();
         }
         catch (RuntimeException e)
         {
-            LOGGER.debug("Failed query node state", e);
+            LOGGER.debug("Failed query node role", e);
             throw new JMException(e.getMessage());
         }
     }
@@ -153,26 +150,30 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public boolean getDesignatedPrimary() throws IOException, JMException
     {
-        try
-        {
-            return _replicatedEnvironmentFacade.isDesignatedPrimary();
-        }
-        catch (RuntimeException e)
-        {
-            LOGGER.debug("Failed query designated primary", e);
-            throw new JMException(e.getMessage());
-        }
+        return _virtualHostNode.isDesignatedPrimary();
     }
 
     @Override
     public TabularData getAllNodesInGroup() throws IOException, JMException
     {
         final TabularDataSupport data = new TabularDataSupport(GROUP_MEMBERS_TABLE);
-        final List<Map<String, String>> members = _replicatedEnvironmentFacade.getGroupMembers();
 
-        for (Map<String, String> map : members)
+        Map<String, String> localNodeMap = new HashMap<String, String>();
+        localNodeMap.put(GRP_MEM_COL_NODE_NAME, _virtualHostNode.getName());
+        localNodeMap.put(GRP_MEM_COL_NODE_HOST_PORT, _virtualHostNode.getAddress());
+        CompositeData localNodeData = new CompositeDataSupport(GROUP_MEMBER_ROW, localNodeMap);
+        data.put(localNodeData);
+
+        @SuppressWarnings("rawtypes")
+        final Collection<? extends RemoteReplicationNode> members = _virtualHostNode.getRemoteReplicationNodes();
+        for (RemoteReplicationNode<?> remoteNode : members)
         {
-            CompositeData memberData = new CompositeDataSupport(GROUP_MEMBER_ROW, map);
+            BDBHARemoteReplicationNode<?> haReplicationNode = (BDBHARemoteReplicationNode<?>)remoteNode;
+            Map<String, String> nodeMap = new HashMap<String, String>();
+            nodeMap.put(GRP_MEM_COL_NODE_NAME, haReplicationNode.getName());
+            nodeMap.put(GRP_MEM_COL_NODE_HOST_PORT, haReplicationNode.getAddress());
+
+            CompositeData memberData = new CompositeDataSupport(GROUP_MEMBER_ROW, nodeMap);
             data.put(memberData);
         }
         return data;
@@ -181,14 +182,32 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public void removeNodeFromGroup(String nodeName) throws JMException
     {
-        try
+        if (getNodeName().equals(nodeName))
         {
-            _replicatedEnvironmentFacade.removeNodeFromGroup(nodeName);
+            _virtualHostNode.delete();
         }
-        catch (RuntimeException e)
+        else
         {
-            LOGGER.error("Failed to remove node " + nodeName + " from group", e);
-            throw new JMException(e.getMessage());
+            @SuppressWarnings("rawtypes")
+            Collection<? extends RemoteReplicationNode> remoteNodes = _virtualHostNode.getRemoteReplicationNodes();
+            for (RemoteReplicationNode<?> remoteNode : remoteNodes)
+            {
+                if (remoteNode.getName().equals(nodeName))
+                {
+                    try
+                    {
+                        remoteNode.delete();
+                        return;
+                    }
+                    catch(IllegalStateTransitionException e)
+                    {
+                        LOGGER.error("Cannot remove node '" + nodeName + "' from the group", e);
+                        throw new JMException("Cannot remove node '" + nodeName + "' from the group:" + e.getMessage());
+                    }
+                }
+            }
+
+            throw new JMException("Failed to find replication node with name '" + nodeName + "'.");
         }
     }
 
@@ -197,11 +216,11 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     {
         try
         {
-            _replicatedEnvironmentFacade.setDesignatedPrimary(primary);
+            _virtualHostNode.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, primary));
         }
         catch (RuntimeException e)
         {
-            LOGGER.error("Failed to set node " + _replicatedEnvironmentFacade.getNodeName() + " as designated primary", e);
+            LOGGER.error("Failed to set node " + _virtualHostNode.getName() + " as designated primary", e);
             throw new JMException(e.getMessage());
         }
     }
@@ -209,15 +228,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public void updateAddress(String nodeName, String newHostName, int newPort) throws JMException
     {
-        try
-        {
-            _replicatedEnvironmentFacade.updateAddress(nodeName, newHostName, newPort);
-        }
-        catch(RuntimeException e)
-        {
-            LOGGER.error("Failed to update address for node " + nodeName + " to " + newHostName + ":" + newPort, e);
-            throw new JMException(e.getMessage());
-        }
+        throw new UnsupportedOperationException("Unsupported operation.  Delete the node then add a new node in its place.");
     }
 
     @Override

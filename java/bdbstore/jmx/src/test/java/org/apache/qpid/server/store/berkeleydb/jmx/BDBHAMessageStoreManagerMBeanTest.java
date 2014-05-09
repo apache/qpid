@@ -19,15 +19,16 @@
  */
 package org.apache.qpid.server.store.berkeleydb.jmx;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Iterator;
 
 import javax.management.JMException;
 import javax.management.ObjectName;
@@ -37,22 +38,24 @@ import javax.management.openmbean.TabularData;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.RemoteReplicationNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 {
-    private static final String TEST_GROUP_NAME = "testGroupName";
+    private static final String TEST_VHOST_NAME = "test";
+    private static final String TEST_GROUP_NAME = TEST_VHOST_NAME;
     private static final String TEST_NODE_NAME = "testNodeName";
     private static final String TEST_NODE_HOST_PORT = "host:1234";
     private static final String TEST_HELPER_HOST_PORT = "host:5678";
     private static final String TEST_DURABILITY = "sync,sync,all";
     private static final String TEST_NODE_STATE = "MASTER";
-    private static final String TEST_STORE_NAME = "testStoreName";
     private static final boolean TEST_DESIGNATED_PRIMARY_FLAG = false;
 
-    private ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
+    private BDBHAVirtualHostNode<?> _virtualHostNode;
     private BDBHAMessageStoreManagerMBean _mBean;
 
     @Override
@@ -60,9 +63,13 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     {
         super.setUp();
 
-        _replicatedEnvironmentFacade = mock(ReplicatedEnvironmentFacade.class);
+        _virtualHostNode = mock(BDBHAVirtualHostNode.class);
+        when(_virtualHostNode.getName()).thenReturn(TEST_NODE_NAME);
+        when(_virtualHostNode.getGroupName()).thenReturn(TEST_GROUP_NAME);
+        when(_virtualHostNode.getAddress()).thenReturn(TEST_NODE_HOST_PORT);
+
         ManagedObjectRegistry registry = mock(ManagedObjectRegistry.class);
-        _mBean = new BDBHAMessageStoreManagerMBean(TEST_STORE_NAME, _replicatedEnvironmentFacade, registry);
+        _mBean = new BDBHAMessageStoreManagerMBean(_virtualHostNode, registry);
     }
 
     @Override
@@ -73,101 +80,110 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testObjectName() throws Exception
     {
-        String expectedObjectName = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(TEST_STORE_NAME);
+        String expectedObjectName = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(TEST_VHOST_NAME);
         assertEquals(expectedObjectName, _mBean.getObjectName().toString());
     }
 
     public void testGroupName() throws Exception
     {
-        when(_replicatedEnvironmentFacade.getGroupName()).thenReturn(TEST_GROUP_NAME);
+        when(_virtualHostNode.getGroupName()).thenReturn(TEST_GROUP_NAME);
 
         assertEquals(TEST_GROUP_NAME, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_GROUP_NAME));
     }
 
     public void testNodeName() throws Exception
     {
-        when(_replicatedEnvironmentFacade.getNodeName()).thenReturn(TEST_NODE_NAME);
+        when(_virtualHostNode.getName()).thenReturn(TEST_NODE_NAME);
 
         assertEquals(TEST_NODE_NAME, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_NAME));
     }
 
     public void testNodeHostPort() throws Exception
     {
-        when(_replicatedEnvironmentFacade.getHostPort()).thenReturn(TEST_NODE_HOST_PORT);
+        when(_virtualHostNode.getAddress()).thenReturn(TEST_NODE_HOST_PORT);
 
         assertEquals(TEST_NODE_HOST_PORT, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_HOST_PORT));
     }
 
     public void testHelperHostPort() throws Exception
     {
-        when(_replicatedEnvironmentFacade.getHelperHostPort()).thenReturn(TEST_HELPER_HOST_PORT);
+        when(_virtualHostNode.getHelperAddress()).thenReturn(TEST_HELPER_HOST_PORT);
 
         assertEquals(TEST_HELPER_HOST_PORT, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_HELPER_HOST_PORT));
     }
 
     public void testDurability() throws Exception
     {
-        when(_replicatedEnvironmentFacade.getDurability()).thenReturn(TEST_DURABILITY);
+        when(_virtualHostNode.getDurability()).thenReturn(TEST_DURABILITY);
 
         assertEquals(TEST_DURABILITY, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_DURABILITY));
     }
 
     public void testCoalescingSync() throws Exception
     {
-        when(_replicatedEnvironmentFacade.isCoalescingSync()).thenReturn(true);
+        when(_virtualHostNode.isCoalescingSync()).thenReturn(true);
 
         assertEquals(true, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_COALESCING_SYNC));
     }
 
     public void testNodeState() throws Exception
     {
-        when(_replicatedEnvironmentFacade.getNodeState()).thenReturn(TEST_NODE_STATE);
+        when(_virtualHostNode.getRole()).thenReturn(TEST_NODE_STATE);
 
         assertEquals(TEST_NODE_STATE, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_STATE));
     }
 
     public void testDesignatedPrimaryFlag() throws Exception
     {
-        when(_replicatedEnvironmentFacade.isDesignatedPrimary()).thenReturn(TEST_DESIGNATED_PRIMARY_FLAG);
+        when(_virtualHostNode.isDesignatedPrimary()).thenReturn(TEST_DESIGNATED_PRIMARY_FLAG);
 
         assertEquals(TEST_DESIGNATED_PRIMARY_FLAG, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_DESIGNATED_PRIMARY));
     }
 
     public void testGroupMembersForGroupWithOneNode() throws Exception
     {
-        List<Map<String, String>> members = Collections.singletonList(createTestNodeResult());
-        when(_replicatedEnvironmentFacade.getGroupMembers()).thenReturn(members);
+        BDBHARemoteReplicationNode<?> node = mockRemoteNode();
 
         final TabularData resultsTable = _mBean.getAllNodesInGroup();
 
-        assertTableHasHeadingsNamed(resultsTable, ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT);
+        assertTableHasHeadingsNamed(resultsTable, BDBHAMessageStoreManagerMBean.GRP_MEM_COL_NODE_NAME,
+                BDBHAMessageStoreManagerMBean.GRP_MEM_COL_NODE_HOST_PORT);
 
         final int numberOfDataRows = resultsTable.size();
-        assertEquals("Unexpected number of data rows", 1 ,numberOfDataRows);
-        final CompositeData row = (CompositeData) resultsTable.values().iterator().next();
-        assertEquals(TEST_NODE_NAME, row.get(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME));
-        assertEquals(TEST_NODE_HOST_PORT, row.get(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT));
+        assertEquals("Unexpected number of data rows", 2, numberOfDataRows);
+        Iterator<?> iterator = resultsTable.values().iterator();
+
+        final CompositeData firstRow = (CompositeData) iterator.next();
+        assertEquals(TEST_NODE_NAME, firstRow.get(BDBHAMessageStoreManagerMBean.GRP_MEM_COL_NODE_NAME));
+        assertEquals(TEST_NODE_HOST_PORT, firstRow.get(BDBHAMessageStoreManagerMBean.GRP_MEM_COL_NODE_HOST_PORT));
+
+        final CompositeData secondRow = (CompositeData) iterator.next();
+        assertEquals(node.getName(), secondRow.get(BDBHAMessageStoreManagerMBean.GRP_MEM_COL_NODE_NAME));
+        assertEquals(node.getAddress(), secondRow.get(BDBHAMessageStoreManagerMBean.GRP_MEM_COL_NODE_HOST_PORT));
     }
 
     public void testRemoveNodeFromReplicationGroup() throws Exception
     {
-        _mBean.removeNodeFromGroup(TEST_NODE_NAME);
+        BDBHARemoteReplicationNode<?> node = mockRemoteNode();
 
-        verify(_replicatedEnvironmentFacade).removeNodeFromGroup(TEST_NODE_NAME);
+        _mBean.removeNodeFromGroup(node.getName());
+
+        verify(node).delete();
     }
 
-    public void testRemoveNodeFromReplicationGroupWithError() throws Exception
+    public void testRemoveNodeFromReplicationGroupOnIllegalStateTransitionException() throws Exception
     {
-        doThrow(new RuntimeException("mocked exception")).when(_replicatedEnvironmentFacade).removeNodeFromGroup(TEST_NODE_NAME);
+        BDBHARemoteReplicationNode<?> node = mockRemoteNode();
+         doThrow(new IllegalStateTransitionException("test")).when(node).delete();
 
-        try
+         try
         {
-            _mBean.removeNodeFromGroup(TEST_NODE_NAME);
+            _mBean.removeNodeFromGroup("remotenode");
             fail("Exception not thrown");
         }
         catch (JMException je)
         {
-            // PASS
+            // PASS#
         }
     }
 
@@ -175,32 +191,8 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     {
         _mBean.setDesignatedPrimary(true);
 
-        verify(_replicatedEnvironmentFacade).setDesignatedPrimary(true);
-    }
-
-    public void testSetAsDesignatedPrimaryWithError() throws Exception
-    {
-        doThrow(new RuntimeException("mocked exception")).when(_replicatedEnvironmentFacade).setDesignatedPrimary(true);
-
-        try
-        {
-            _mBean.setDesignatedPrimary(true);
-            fail("Exception not thrown");
-        }
-        catch (JMException je)
-        {
-            // PASS
-        }
-    }
-
-    public void testUpdateAddress() throws Exception
-    {
-        String newHostName = "newHostName";
-        int newPort = 1967;
-
-        _mBean.updateAddress(TEST_NODE_NAME, newHostName, newPort);
-
-        verify(_replicatedEnvironmentFacade).updateAddress(TEST_NODE_NAME, newHostName, newPort);
+        verify(_virtualHostNode).setAttributes(
+                eq(Collections.<String, Object> singletonMap(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true)));
     }
 
     private void assertTableHasHeadingsNamed(final TabularData resultsTable, String... headingNames)
@@ -212,11 +204,16 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
         }
     }
 
-    private Map<String, String> createTestNodeResult()
+    private BDBHARemoteReplicationNode<?> mockRemoteNode()
     {
-        Map<String, String> items = new HashMap<String, String>();
-        items.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_NAME, TEST_NODE_NAME);
-        items.put(ReplicatedEnvironmentFacade.GRP_MEM_COL_NODE_HOST_PORT, TEST_NODE_HOST_PORT);
-        return items;
+        BDBHARemoteReplicationNode<?> remoteNode = mock(BDBHARemoteReplicationNode.class);
+        when(remoteNode.getName()).thenReturn("remotenode");
+        when(remoteNode.getAddress()).thenReturn("remotehost:port");
+
+        @SuppressWarnings("rawtypes")
+        Collection<? extends RemoteReplicationNode> remoteNodes = Collections.singletonList(remoteNode);
+        doReturn(remoteNodes).when(_virtualHostNode).getRemoteReplicationNodes();
+
+        return remoteNode;
     }
 }
