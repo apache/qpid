@@ -221,13 +221,6 @@ public class JMXManagementPluginImpl
         return port.getAvailableProtocols().contains(Protocol.RMI);
     }
 
-    @StateTransition( currentState = State.ACTIVE, desiredState = State.STOPPED )
-    private void doStop()
-    {
-        close();
-        setCurrentState(State.STOPPED);
-    }
-
     @Override
     protected void onClose()
     {

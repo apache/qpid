@@ -702,13 +702,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _broker.getSecurityManager();
     }
 
-    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.STOPPED )
-    public void doStop()
-    {
-        close();
-        _state = VirtualHostState.STOPPED;
-    }
-
     protected void onClose()
     {
         //Stop Connections
@@ -1252,7 +1245,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _housekeepingThreadCount;
     }
 
-    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED, State.STOPPED}, desiredState = State.DELETED )
+    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED }, desiredState = State.DELETED )
     private void doDelete()
     {
         if(_deleted.compareAndSet(false,true))
@@ -1439,7 +1432,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         getDurableConfigurationStore().create(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes()));
     }
 
-    @StateTransition( currentState = {State.UNINITIALIZED, State.STOPPED, State.ERRORED, State.QUIESCED}, desiredState = State.ACTIVE )
+    @StateTransition( currentState = {State.UNINITIALIZED, State.ERRORED, State.QUIESCED}, desiredState = State.ACTIVE )
     protected void activate()
     {
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());

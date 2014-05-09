@@ -140,13 +140,6 @@ public class ACLFileAccessControlProviderImpl
         }
     }
 
-    @StateTransition(currentState = {State.ACTIVE, State.QUIESCED}, desiredState = State.STOPPED)
-    private void doStop()
-    {
-        close();
-        _state.set(State.STOPPED);
-    }
-
     @Override
     protected void onClose()
     {
@@ -160,7 +153,7 @@ public class ACLFileAccessControlProviderImpl
         _state.set(State.QUIESCED);
     }
 
-    @StateTransition(currentState = {State.ACTIVE, State.QUIESCED, State.STOPPED, State.ERRORED}, desiredState = State.DELETED)
+    @StateTransition(currentState = {State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
     private void doDelete()
     {
         close();

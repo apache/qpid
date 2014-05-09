@@ -132,13 +132,6 @@ public class FileSystemPreferencesProviderImpl
         return super.getAttribute(name);
     }
 
-    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED }, desiredState = State.STOPPED)
-    private void doStop()
-    {
-        close();
-        _state = State.STOPPED;
-    }
-
     protected void onClose()
     {
         if(_store != null)
@@ -157,7 +150,7 @@ public class FileSystemPreferencesProviderImpl
         _state = State.QUIESCED;
     }
 
-    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.STOPPED, State.ERRORED }, desiredState = State.DELETED )
+    @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED }, desiredState = State.DELETED )
     private void doDelete()
     {
         close();
@@ -172,7 +165,7 @@ public class FileSystemPreferencesProviderImpl
         _state = State.DELETED;
     }
 
-    @StateTransition(currentState = { State.QUIESCED, State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
+    @StateTransition(currentState = { State.QUIESCED, State.ERRORED }, desiredState = State.ACTIVE )
     private void restart()
     {
         _store.open();
