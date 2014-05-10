@@ -31,6 +31,6 @@ public interface QmfManagementPlugin<X extends QmfManagementPlugin<X>> extends P
     // attributes
     String CONNECTION_URL = "connectionURL";
 
-    @ManagedAttribute( automate = true , defaultValue = "amqp://guest:guest@/?brokerlist='tcp://0.0.0.0:5672'")
+    @ManagedAttribute(defaultValue = "amqp://guest:guest@/?brokerlist='tcp://0.0.0.0:5672'")
     String getConnectionURL();
 }
