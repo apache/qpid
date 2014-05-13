@@ -109,8 +109,7 @@
     The Java components are transitioning to using a Maven based
     build process, this build process will be removed in the 0.30
     release. A preview of the new Maven build is available
-    alongside this one, simply requiring -Denable=true be specified
-    in any Maven commands used.
+    alongside this one.
     ---------------------------------------------------------------
     </echo>
 
@@ -187,8 +186,7 @@
     The Java components are transitioning to using a Maven based
     build process, this build process will be removed in the 0.30
     release. A preview of the new Maven build is available
-    alongside this one, simply requiring -Denable=true be specified
-    in any Maven commands used.
+    alongside this one.
     ---------------------------------------------------------------
     </echo>
   </target>
