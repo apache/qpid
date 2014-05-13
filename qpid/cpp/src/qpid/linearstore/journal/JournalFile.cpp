@@ -170,6 +170,11 @@ void JournalFile::asyncFileHeaderWrite(io_context_t ioContextPtr,
                     queueName_.data());
     const std::size_t wr_size = QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB * 1024;
     aio::prep_pwrite(aioControlBlockPtr_, fileHandle_, (void*)fileHeaderBasePtr_, wr_size, 0UL);
+    if (!aio::is_aligned(aioControlBlockPtr_->u.c.buf, QLS_AIO_ALIGN_BOUNDARY_BYTES)) {
+        std::ostringstream oss;
+        oss << "AIO operation on misaligned buffer: iocb->u.c.buf=" << aioControlBlockPtr_->u.c.buf << std::endl;
+        throw jexception(jerrno::JERR__AIO, oss.str(), "JournalFile", "asyncFileHeaderWrite");
+    }
     if (aio::submit(ioContextPtr, 1, &aioControlBlockPtr_) < 0) {
         std::ostringstream oss;
         oss << "queue=\"" << queueName_ << "\" fid=0x" << std::hex <<  fileSeqNum_ << " wr_size=0x" << wr_size << " foffs=0x0";
@@ -186,6 +191,11 @@ void JournalFile::asyncPageWrite(io_context_t ioContextPtr,
     const std::size_t wr_size = dataSize_dblks * QLS_DBLK_SIZE_BYTES;
     const uint64_t foffs = submittedDblkCount_.get() * QLS_DBLK_SIZE_BYTES;
     aio::prep_pwrite_2(aioControlBlockPtr, fileHandle_, data, wr_size, foffs);
+    if (!aio::is_aligned(aioControlBlockPtr->u.c.buf, QLS_AIO_ALIGN_BOUNDARY_BYTES)) {
+        std::ostringstream oss;
+        oss << "AIO operation on misaligned buffer: iocb->u.c.buf=" << aioControlBlockPtr->u.c.buf << std::endl;
+        throw jexception(jerrno::JERR__AIO, oss.str(), "JournalFile", "asyncPageWrite");
+    }
     pmgr::page_cb* pcbp = (pmgr::page_cb*)(aioControlBlockPtr->data); // This page's control block (pcb)
     pcbp->_wdblks = dataSize_dblks;
     pcbp->_jfp = this;

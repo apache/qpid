@@ -66,7 +66,6 @@ public:
         page_state _state;          ///< Status of page
         uint64_t _frid;             ///< First rid in page (used for fhdr init)
         uint32_t _wdblks;           ///< Total number of dblks in page so far
-        uint32_t _rdblks;           ///< Total number of dblks in page
         std::deque<data_tok*>* _pdtokl; ///< Page message tokens list
         JournalFile* _jfp;          ///< Journal file for incrementing compl counts
         void* _pbuff;               ///< Page buffer

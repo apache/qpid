@@ -85,6 +85,7 @@ const uint32_t jerrno::JERR_WMGR_ENQDISCONT      = 0x0803;
 const uint32_t jerrno::JERR_WMGR_DEQDISCONT      = 0x0804;
 const uint32_t jerrno::JERR_WMGR_DEQRIDNOTENQ    = 0x0805;
 const uint32_t jerrno::JERR_WMGR_BADFH           = 0x0806;
+const uint32_t jerrno::JERR_WMGR_NOTSBLKALIGNED  = 0x0807;
 
 // class RecoveryManager
 const uint32_t jerrno::JERR_RCVM_OPENRD          = 0x0900;
@@ -93,8 +94,7 @@ const uint32_t jerrno::JERR_RCVM_READ            = 0x0902;
 const uint32_t jerrno::JERR_RCVM_WRITE           = 0x0903;
 const uint32_t jerrno::JERR_RCVM_NULLXID         = 0x0904;
 const uint32_t jerrno::JERR_RCVM_NOTDBLKALIGNED  = 0x0905;
-const uint32_t jerrno::JERR_RCVM_NULLFID         = 0x0906;
-
+const uint32_t jerrno::JERR_RCVM_NULLFID         = 0x0907;
 
 // class data_tok
 const uint32_t jerrno::JERR_DTOK_ILLEGALSTATE    = 0x0a00;
@@ -178,6 +178,7 @@ jerrno::__init()
     _err_map[JERR_WMGR_DEQDISCONT] = "JERR_WMGR_DEQDISCONT: Dequeued new dtok when previous dequeue returned partly completed (state DEQ_PART).";
     _err_map[JERR_WMGR_DEQRIDNOTENQ] = "JERR_WMGR_DEQRIDNOTENQ: Dequeue rid is not enqueued.";
     _err_map[JERR_WMGR_BADFH] = "JERR_WMGR_BADFH: Bad file handle.";
+    _err_map[JERR_WMGR_NOTSBLKALIGNED] = "JERR_WMGR_NOTSBLKALIGNED: Offset is not soft block (sblk)-aligned";
 
     // class RecoveryManager
     _err_map[JERR_RCVM_OPENRD] = "JERR_RCVM_OPENRD: Unable to open file for read";

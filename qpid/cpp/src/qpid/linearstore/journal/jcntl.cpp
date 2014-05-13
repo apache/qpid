@@ -92,7 +92,7 @@ jcntl::initialize(EmptyFilePool* efpp,
     _jdir.clear_dir(); // Clear any existing journal files
     _linearFileController.initialize(_jdir.dirname(), efpp, 0ULL);
     _linearFileController.getNextJournalFile();
-    _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, QLS_WMGR_MAXDTOKPP, QLS_WMGR_MAXWAITUS);
+    _wmgr.initialize(cbp, wcache_pgsize_sblks, wcache_num_pages, QLS_WMGR_MAXDTOKPP, QLS_WMGR_MAXWAITUS, 0);
     _init_flag = true;
 }
 
