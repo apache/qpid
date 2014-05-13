@@ -103,6 +103,7 @@ namespace journal {
         static const uint32_t JERR_WMGR_DEQDISCONT;     ///< Deq. new dtok when previous part compl.
         static const uint32_t JERR_WMGR_DEQRIDNOTENQ;   ///< Deq. rid not enqueued
         static const uint32_t JERR_WMGR_BADFH;          ///< Bad file handle
+        static const uint32_t JERR_WMGR_NOTSBLKALIGNED; ///< Offset is not soft block (sblk)-aligned
 
         // class RecoveryManager
         static const uint32_t JERR_RCVM_OPENRD;         ///< Unable to open file for read

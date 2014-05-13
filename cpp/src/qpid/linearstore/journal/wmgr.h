@@ -96,7 +96,7 @@ public:
                     const uint16_t wcache_num_pages,
                     const uint32_t max_dtokpp,
                     const uint32_t max_iowait_us,
-                    std::size_t eo = 0);
+                    std::size_t end_offset);
     iores enqueue(const void* const data_buff,
                   const std::size_t tot_data_len,
                   const std::size_t this_data_len,

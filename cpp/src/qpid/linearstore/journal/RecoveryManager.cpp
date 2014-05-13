@@ -593,7 +593,18 @@ bool RecoveryManager::getNextRecordHeader()
 
     bool hdr_ok = false;
     uint64_t file_id = currentJournalFileItr_->second->journalFilePtr_->getFileSeqNum();
-    std::streampos file_pos = inFileStream_.tellg();
+    std::streampos file_pos = 0;
+    if (inFileStream_.is_open()) {
+        inFileStream_.clear();
+        file_pos = inFileStream_.tellg();
+    }
+    if (file_pos == std::streampos(-1)) {
+        std::ostringstream oss;
+        oss << "tellg() failure: fail=" << (inFileStream_.fail()?"T":"F") << " bad=" << (inFileStream_.bad()?"T":"F");
+        oss << " eof=" << (inFileStream_.eof()?"T":"F") << " good=" << (inFileStream_.good()?"T":"F");
+        oss << " rdstate=0x" << std::hex << inFileStream_.rdstate() << std::dec;
+        throw jexception(jerrno::JERR_RCVM_STREAMBAD, oss.str(), "RecoveryManager", "getNextRecordHeader");
+    }
     while (!hdr_ok) {
         if (needNextFile()) {
             if (!getNextFile(true)) {
@@ -606,6 +617,8 @@ bool RecoveryManager::getNextRecordHeader()
         if (file_pos == std::streampos(-1)) {
             std::ostringstream oss;
             oss << "tellg() failure: fail=" << (inFileStream_.fail()?"T":"F") << " bad=" << (inFileStream_.bad()?"T":"F");
+            oss << " eof=" << (inFileStream_.eof()?"T":"F") << " good=" << (inFileStream_.good()?"T":"F");
+            oss << " rdstate=0x" << std::hex << inFileStream_.rdstate() << std::dec;
             throw jexception(jerrno::JERR_RCVM_STREAMBAD, oss.str(), "RecoveryManager", "getNextRecordHeader");
         }
         inFileStream_.read((char*)&h, sizeof(rec_hdr_t));
@@ -627,7 +640,7 @@ bool RecoveryManager::getNextRecordHeader()
             {
 //std::cout << " 0x" << std::hex << file_pos << ".e.0x" << h._rid << std::dec << std::flush; // DEBUG
                 if (::rec_hdr_check(&h, QLS_ENQ_MAGIC, QLS_JRNL_VERSION, currentSerial_) != 0) {
-                    lastRecord(file_id, file_pos);
+                    checkJournalAlignment(file_id, file_pos);
                     return false;
                 }
                 enq_rec er;
@@ -663,7 +676,7 @@ bool RecoveryManager::getNextRecordHeader()
             {
 //std::cout << " 0x" << std::hex << file_pos << ".d.0x" << h._rid << std::dec << std::flush; // DEBUG
                 if (::rec_hdr_check(&h, QLS_DEQ_MAGIC, QLS_JRNL_VERSION, currentSerial_) != 0) {
-                    lastRecord(file_id, file_pos);
+                    checkJournalAlignment(file_id, file_pos);
                     return false;
                 }
                 deq_rec dr;
@@ -697,7 +710,7 @@ bool RecoveryManager::getNextRecordHeader()
             {
 //std::cout << " 0x" << std::hex << file_pos << ".a.0x" << h._rid << std::dec << std::flush; // DEBUG
                 if (::rec_hdr_check(&h, QLS_TXA_MAGIC, QLS_JRNL_VERSION, currentSerial_) != 0) {
-                    lastRecord(file_id, file_pos);
+                    checkJournalAlignment(file_id, file_pos);
                     return false;
                 }
                 txn_rec ar;
@@ -724,7 +737,7 @@ bool RecoveryManager::getNextRecordHeader()
             {
 //std::cout << " 0x" << std::hex << file_pos << ".c.0x" << h._rid << std::dec << std::flush; // DEBUG
                 if (::rec_hdr_check(&h, QLS_TXC_MAGIC, QLS_JRNL_VERSION, currentSerial_) != 0) {
-                    lastRecord(file_id, file_pos);
+                    checkJournalAlignment(file_id, file_pos);
                     return false;
                 }
                 txn_rec cr;

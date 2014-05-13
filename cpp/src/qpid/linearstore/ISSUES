@@ -45,8 +45,9 @@ Current/pending:
                    * Recovery/reading of message content
                    * Empty file pool status and management
    5464 -        [linearstore] Incompletely created journal files accumulate in EFP
-#  -    1078142  [linearstore] qpidd closes connection with (distributed) transactional client while checking previous transaction, broker signals error (closed by error: Queue Ve0-2: async_dequeue() failed: exception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error)
+#  5750 1078142  [linearstore] qpidd closes connection with (distributed) transactional client while checking previous transaction, broker signals error (closed by error: Queue Ve0-2: async_dequeue() failed: exception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error)
                    * jexception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error. (AIO write operation failed: Invalid argument (-22) [pg=0 size=8192 offset=4096 fh=22])
+   -    1088944  [Linearstore] store does not return all files to EFP after purging big queue
    -    1078937  [linearstore] Installation and tests for new store analysis tool qpid-qls-analyze
 
 Fixed/closed (in commit order):
@@ -115,6 +116,9 @@ NO-JIRA -        Added missing Apache copyright/license text
    5651       -  [C++ broker] segfault in qpid::linearstore::journal::jdir::clear_dir when declaring durable queue
                    svn r.1582730 2014-03-28 Proposed fix by Pavel Moravec
                    * Bug introduced by r.1578899.
+   5661       -  [linearstore] Set default cmake build to exclude linearstore
+                   svn r.1584379 2014-04-03 Proposed solution.
+                   * Run ccmake, select BUILD_LINEARSTORE to change its value to ON to build.
 
 Ordered checkin list:
 =====================
@@ -147,6 +151,7 @@ no.   svn r  Q-JIRA     RHBZ       Date
 23. 1578899    5362        - 2014-03-18
 24. 1582730    5651        - 2014-03-28
 25. 1583778    5362        - 2014-04-01
+26. 1584379    5661        - 2014-04-03
 
 See above sections for details on these checkins.
 

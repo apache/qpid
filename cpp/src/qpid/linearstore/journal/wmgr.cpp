@@ -79,7 +79,7 @@ wmgr::initialize(aio_callback* const cbp,
                  const uint16_t wcache_num_pages,
                  const uint32_t max_dtokpp,
                  const uint32_t max_iowait_us,
-                 std::size_t eo)
+                 std::size_t end_offset)
 {
     _enq_busy = false;
     _deq_busy = false;
@@ -90,11 +90,16 @@ wmgr::initialize(aio_callback* const cbp,
 
     initialize(cbp, wcache_pgsize_sblks, wcache_num_pages);
 
-    if (eo)
+    if (end_offset)
     {
+        if(!aio::is_aligned((const void*)end_offset, QLS_AIO_ALIGN_BOUNDARY_BYTES)) {
+            std::ostringstream oss;
+            oss << "Recovery using misaligned end_offset (0x" << std::hex << end_offset << std::dec << ")" << std::endl;
+            throw jexception(jerrno::JERR_WMGR_NOTSBLKALIGNED, oss.str(), "wmgr", "initialize");
+        }
         const uint32_t wr_pg_size_dblks = _cache_pgsize_sblks * QLS_SBLK_SIZE_DBLKS;
-        uint32_t data_dblks = (eo / QLS_DBLK_SIZE_BYTES) - (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_DBLKS); // exclude file header
-        _pg_cntr = data_dblks / wr_pg_size_dblks;
+        uint32_t data_dblks = (end_offset / QLS_DBLK_SIZE_BYTES) - (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_DBLKS); // exclude file header
+        _pg_cntr = data_dblks / wr_pg_size_dblks; // Must be set to get file rotation synchronized (this is determined by value of _pg_cntr)
         _pg_offset_dblks = data_dblks - (_pg_cntr * wr_pg_size_dblks);
     }
 }
@@ -727,7 +732,8 @@ wmgr::get_events(timespec* const timeout,
         if (ret == -EINTR) // Interrupted by signal
             return 0;
         std::ostringstream oss;
-        oss << "io_getevents() failed: " << std::strerror(-ret) << " (" << ret << ")";
+        oss << "io_getevents() failed: " << std::strerror(-ret) << " (" << ret << ") ctx_id=" << _ioctx;
+        oss << " min_nr=" << (flush ? _aio_evt_rem : 1) << " nr=" << _aio_evt_rem;
         throw jexception(jerrno::JERR__AIO, oss.str(), "wmgr", "get_events");
     }
 
@@ -750,16 +756,36 @@ wmgr::get_events(timespec* const timeout,
         long aioret = (long)_aio_event_arr[i].res;
         if (aioret < 0) {
             std::ostringstream oss;
-            oss << "AIO write operation failed: " << std::strerror(-aioret) << " (" << aioret << ") [";
+            oss << "AIO write operation failed: " << std::strerror(-aioret) << " (" << aioret << ")" << std::endl;
+            oss << "  data=" << _aio_event_arr[i].data << std::endl;
+            oss << "  obj=" << _aio_event_arr[i].obj << std::endl;
+            oss << "  res=" << _aio_event_arr[i].res << std::endl;
+            oss << "  res2=" << _aio_event_arr[i].res2 << std::endl;
+            oss << "  iocb->data=" << aiocbp->data << std::endl;
+            oss << "  iocb->key=" << aiocbp->key << std::endl;
+            oss << "  iocb->aio_lio_opcode=" << aiocbp->aio_lio_opcode << std::endl;
+            oss << "  iocb->aio_reqprio=" << aiocbp->aio_reqprio << std::endl;
+            oss << "  iocb->aio_fildes=" << aiocbp->aio_fildes << std::endl;
+            oss << "  iocb->u.c.buf=" << aiocbp->u.c.buf << std::endl;
+            oss << "  iocb->u.c.nbytes=0x" << std::hex <<  aiocbp->u.c.nbytes << std::dec << " (" << aiocbp->u.c.nbytes << ")" << std::endl;
+            oss << "  iocb->u.c.offset=0x" << std::hex << aiocbp->u.c.offset << std::dec << " (" << aiocbp->u.c.offset << ")" << std::endl;
+            oss << "  iocb->u.c.flags=0x" << std::hex << aiocbp->u.c.flags << std::dec << " (" << aiocbp->u.c.flags << ")" << std::endl;
+            oss << "  iocb->u.c.resfd=" << aiocbp->u.c.resfd << std::endl;
             if (pcbp) {
-                oss << "pg=" << pcbp->_index;
+                oss << "  Page Control Block: (iocb->data):" << std::endl;
+                oss << "    pcb.index=" << pcbp->_index << std::endl;
+                oss << "    pcb.state=" << pcbp->_state << " (" << pmgr::page_state_str(pcbp->_state) << ")" << std::endl;
+                oss << "    pcb.frid=0x" << std::hex << pcbp->_frid << std::dec << std::endl;
+                oss << "    pcb.wdblks=0x" << std::hex << pcbp->_wdblks << std::dec << std::endl;
+                oss << "    pcb.pdtokl.size=" << pcbp->_pdtokl->size() << std::endl;
+                oss << "    pcb.pbuff=" << pcbp->_pbuff << std::endl;
+                oss << "    JournalFile (pcb.jfp):" << std::endl;
+                oss << pcbp->_jfp->status_str(6) << std::endl;
             } else {
                 file_hdr_t* fhp = (file_hdr_t*)aiocbp->u.c.buf;
                 oss << "fnum=" << fhp->_file_number;
                 oss << " qname=" << std::string((char*)fhp + sizeof(file_hdr_t), fhp->_queue_name_len);
             }
-            oss << " size=" << aiocbp->u.c.nbytes;
-            oss << " offset=" << aiocbp->u.c.offset << " fh=" << aiocbp->aio_fildes << "]";
             throw jexception(jerrno::JERR__AIO, oss.str(), "wmgr", "get_events");
         }
         if (pcbp) // Page writes have pcb

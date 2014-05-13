@@ -30,7 +30,6 @@ pmgr::page_cb::page_cb(uint16_t index):
         _state(UNUSED),
         _frid(0),
         _wdblks(0),
-        _rdblks(0),
         _pdtokl(0),
         _jfp(0),
         _pbuff(0)
