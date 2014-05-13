@@ -48,10 +48,15 @@ namespace {
         fireFunction();
     }
 }
-QueueCleaner::QueueCleaner(QueueRegistry& q, sys::Timer* t) : queues(q), timer(t) {}
+QueueCleaner::QueueCleaner(QueueRegistry& q, boost::shared_ptr<sys::Poller> p, sys::Timer* t)
+    : queues(q), timer(t), purging(boost::bind(&QueueCleaner::purge, this, _1), p)
+{
+    purging.start();
+}
 
 QueueCleaner::~QueueCleaner()
 {
+    purging.stop();
     if (task) task->cancel();
 }
 
@@ -66,28 +71,19 @@ void QueueCleaner::setTimer(qpid::sys::Timer* timer) {
     this->timer = timer;
 }
 
-namespace {
-struct CollectQueues
-{
-    std::vector<Queue::shared_ptr>* queues;
-    CollectQueues(std::vector<Queue::shared_ptr>* q) : queues(q) {}
-    void operator()(Queue::shared_ptr q)
-    {
-        queues->push_back(q);
-    }
-};
-}
-
 void QueueCleaner::fired()
 {
-    //collect copy of list of queues to avoid holding registry lock while we perform purge
-    std::vector<Queue::shared_ptr> copy;
-    CollectQueues collect(&copy);
-    queues.eachQueue(collect);
-    std::for_each(copy.begin(), copy.end(), boost::bind(&Queue::purgeExpired, _1, period));
-    task->setupNextFire();
-    timer->add(task);
+    queues.eachQueue(boost::bind(&PurgeSet::push, &purging, _1));
 }
 
+QueueCleaner::QueuePtrs::const_iterator QueueCleaner::purge(const QueueCleaner::QueuePtrs& batch)
+{
+    for (QueuePtrs::const_iterator i = batch.begin(); i != batch.end(); ++i) {
+        (*i)->purgeExpired(period);
+    }
+    task->restart();
+    timer->add(task);
+    return batch.end();
+}
 
 }} // namespace qpid::broker

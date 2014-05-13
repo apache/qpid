@@ -23,9 +23,11 @@
  */
 
 #include "qpid/broker/BrokerImportExport.h"
+#include "qpid/sys/PollableQueue.h"
 #include "qpid/sys/Time.h"
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 
@@ -36,6 +38,7 @@ namespace sys {
 
 namespace broker {
 
+class Queue;
 class QueueRegistry;
 /**
  * TimerTask to purge expired messages from queues
@@ -43,18 +46,24 @@ class QueueRegistry;
 class QueueCleaner
 {
   public:
-    QPID_BROKER_EXTERN QueueCleaner(QueueRegistry& queues, sys::Timer* timer);
+    QPID_BROKER_EXTERN QueueCleaner(QueueRegistry& queues, boost::shared_ptr<sys::Poller>, sys::Timer* timer);
     QPID_BROKER_EXTERN ~QueueCleaner();
     QPID_BROKER_EXTERN void start(sys::Duration period);
     QPID_BROKER_EXTERN void setTimer(sys::Timer* timer);
 
   private:
+    typedef boost::shared_ptr<Queue> QueuePtr;
+    typedef std::deque< QueuePtr > QueuePtrs;
+    typedef qpid::sys::PollableQueue< QueuePtr > PurgeSet;
     boost::intrusive_ptr<sys::TimerTask> task;
     QueueRegistry& queues;
     sys::Timer* timer;
     sys::Duration period;
+    PurgeSet purging;
 
     void fired();
+    QueuePtrs::const_iterator purge(const QueuePtrs&);
+
 };
 }} // namespace qpid::broker
 

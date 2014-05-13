@@ -40,6 +40,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/QueueSettings.h"
+#include "qpid/sys/Thread.h"
 #include "qpid/sys/Timer.h"
 
 #include <iostream>
@@ -202,18 +203,22 @@ QPID_AUTO_TEST_CASE(testPurgeExpired) {
 }
 
 QPID_AUTO_TEST_CASE(testQueueCleaner) {
+    boost::shared_ptr<Poller> poller(new Poller);
+    Thread runner(poller.get());
     Timer timer;
     QueueRegistry queues;
     Queue::shared_ptr queue = queues.declare("my-queue", QueueSettings()).first;
     addMessagesToQueue(10, *queue, 200, 400);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 10u);
 
-    QueueCleaner cleaner(queues, &timer);
+    QueueCleaner cleaner(queues, poller, &timer);
     cleaner.start(100 * qpid::sys::TIME_MSEC);
     ::usleep(300*1000);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 5u);
     ::usleep(300*1000);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 0u);
+    poller->shutdown();
+    runner.join();
 }
 namespace {
 int getIntProperty(const Message& message, const std::string& key)
