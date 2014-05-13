@@ -94,6 +94,9 @@ div .messages {
   font-weight: bold;
 }
 
+.formLabel-controlCell {
+  padding: 1px;
+}
 .columnDefDialogButtonIcon {
   background: url("../dojo/dojox/grid/enhanced/resources/images/sprite_icons.png") no-repeat;
     background-position: -260px 2px;

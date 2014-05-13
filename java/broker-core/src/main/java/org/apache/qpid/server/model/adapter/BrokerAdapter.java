@@ -305,6 +305,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
+    public Collection<String> getSupportedVirtualHostNodeTypes()
+    {
+        return getObjectFactory().getSupportedTypes(VirtualHostNode.class);
+    }
+
+    @Override
     public Collection<String> getSupportedVirtualHostStoreTypes()
     {
         return _supportedVirtualHostStoreTypes;
