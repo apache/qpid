@@ -58,7 +58,8 @@ AsynchIOHandler::AsynchIOHandler(const std::string& id, ConnectionCodec::Factory
     codec(0),
     readError(false),
     isClient(isClient0),
-    nodict(nodict0)
+    nodict(nodict0),
+    headerSent(false)
 {}
 
 AsynchIOHandler::~AsynchIOHandler() {
@@ -67,6 +68,15 @@ AsynchIOHandler::~AsynchIOHandler() {
     if (timeoutTimerTask)
         timeoutTimerTask->cancel();
     delete codec;
+}
+
+namespace {
+    SecuritySettings getSecuritySettings(AsynchIO* aio, bool nodict)
+    {
+        SecuritySettings settings = aio->getSecuritySettings();
+        settings.nodict = nodict;
+        return settings;
+    }
 }
 
 void AsynchIOHandler::init(qpid::sys::AsynchIO* a, qpid::sys::Timer& timer, uint32_t maxTime) {
@@ -78,6 +88,10 @@ void AsynchIOHandler::init(qpid::sys::AsynchIO* a, qpid::sys::Timer& timer, uint
 
     // Give connection some buffers to use
     aio->createBuffers();
+
+    if (isClient) {
+        codec = factory->create(*this, identifier, getSecuritySettings(aio, nodict));
+    }
 }
 
 void AsynchIOHandler::write(const framing::ProtocolInitiation& data)
@@ -108,15 +122,6 @@ void AsynchIOHandler::connectionEstablished() {
 
 void AsynchIOHandler::activateOutput() {
     aio->notifyPendingWrite();
-}
-
-namespace {
-    SecuritySettings getSecuritySettings(AsynchIO* aio, bool nodict)
-    {
-        SecuritySettings settings = aio->getSecuritySettings();
-        settings.nodict = nodict;
-        return settings;
-    }
 }
 
 void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
@@ -198,9 +203,9 @@ void AsynchIOHandler::nobuffs(AsynchIO&) {
 }
 
 void AsynchIOHandler::idle(AsynchIO&){
-    if (isClient && codec == 0) {
-        codec = factory->create(*this, identifier, getSecuritySettings(aio, nodict));
+    if (isClient && !headerSent) {
         write(framing::ProtocolInitiation(codec->getVersion()));
+        headerSent = true;
         return;
     }
     if (codec == 0) return;
