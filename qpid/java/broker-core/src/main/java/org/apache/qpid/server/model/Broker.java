@@ -90,6 +90,9 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String getProductVersion();
 
     @DerivedAttribute
+    Collection<String> getSupportedVirtualHostNodeTypes();
+
+    @DerivedAttribute
     Collection<String> getSupportedVirtualHostStoreTypes();
 
     @DerivedAttribute
