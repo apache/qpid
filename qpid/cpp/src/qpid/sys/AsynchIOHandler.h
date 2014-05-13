@@ -51,6 +51,7 @@ class AsynchIOHandler : public OutputControl {
     bool readError;
     bool isClient;
     bool nodict;
+    bool headerSent;
     boost::intrusive_ptr<sys::TimerTask> timeoutTimerTask;
 
     void write(const framing::ProtocolInitiation&);
