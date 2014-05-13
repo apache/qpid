@@ -383,6 +383,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
         root.addServlet(new ServletHolder(name, new RestServlet(hierarchy)), "/api/latest/" + name + "/*");
+        root.addServlet(new ServletHolder(name, new RestServlet(hierarchy)), "/api/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name + "/*");
     }
 
     private void logOperationalListenMessages(Server server)
