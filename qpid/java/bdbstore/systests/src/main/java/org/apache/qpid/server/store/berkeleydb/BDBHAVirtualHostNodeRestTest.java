@@ -136,6 +136,14 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertEquals("Unexpected group name", _hostName, nodeData.get(BDBHAVirtualHostNode.GROUP_NAME));
         assertEquals("Unexpected role", expectedRole, nodeData.get(BDBHAVirtualHostNode.ROLE));
 
+        Integer lastKnownTransactionId = (Integer) nodeData.get(BDBHAVirtualHostNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID);
+        assertNotNull("Unexpected lastKnownReplicationId", lastKnownTransactionId);
+        assertTrue("Unexpected lastKnownReplicationId " + lastKnownTransactionId, lastKnownTransactionId > 0);
+
+        Long joinTime = (Long) nodeData.get(BDBHAVirtualHostNode.JOIN_TIME);
+        assertNotNull("Unexpected joinTime", joinTime);
+        assertTrue("Unexpected joinTime " + joinTime, joinTime > 0);
+
         if (isMaster)
         {
             waitForAttributeChanged("virtualhost/" + masterNode + "/" + _hostName + "?depth=0", VirtualHost.STATE, State.ACTIVE.name());
@@ -155,12 +163,13 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
             for (String remote : remotes)
             {
                 String remoteUrl = "replicationnode/" + clusterNodeName + "/" + remote;
-                waitForAttributeChanged(remoteUrl, BDBHARemoteReplicationNode.ROLE, remote.equals(masterNode) ? "MASTER" : "REPLICA");
+                Map<String, Object> nodeData = waitForAttributeChanged(remoteUrl, BDBHARemoteReplicationNode.ROLE, remote.equals(masterNode) ? "MASTER" : "REPLICA");
+                assertRemoteNodeData(remote, nodeData);
             }
         }
     }
 
-    private void waitForAttributeChanged(String url, String attributeName, Object newValue) throws Exception
+    private Map<String, Object> waitForAttributeChanged(String url, String attributeName, Object newValue) throws Exception
     {
         List<Map<String, Object>> nodeAttributes = getRestTestHelper().getJsonAsList(url);
         long limit = System.currentTimeMillis() + 5000;
@@ -169,6 +178,21 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
             Thread.sleep(100l);
             nodeAttributes = getRestTestHelper().getJsonAsList(url);
         }
-        assertEquals("Unexpected attribute " + attributeName, newValue, nodeAttributes.get(0).get(attributeName));
+        Map<String, Object> nodeData = nodeAttributes.get(0);
+        assertEquals("Unexpected attribute " + attributeName, newValue, nodeData.get(attributeName));
+        return nodeData;
     }
+
+    private void assertRemoteNodeData(String name, Map<String, Object> nodeData)
+    {
+        assertEquals("Remote node " + name + " has unexpected name", name, nodeData.get(BDBHAVirtualHostNode.NAME));
+
+        Integer lastKnownTransactionId = (Integer) nodeData.get(BDBHAVirtualHostNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID);
+        assertNotNull("Node " + name + " has unexpected lastKnownReplicationId", lastKnownTransactionId);
+        assertTrue("Node " + name + " has unexpected lastKnownReplicationId " + lastKnownTransactionId, lastKnownTransactionId > 0);
+
+        Long joinTime = (Long) nodeData.get(BDBHAVirtualHostNode.JOIN_TIME);
+        assertNotNull("Node " + name + " has unexpected joinTime", joinTime);
+        assertTrue("Node " + name + " has unexpected joinTime " + joinTime, joinTime > 0);
+     }
 }
