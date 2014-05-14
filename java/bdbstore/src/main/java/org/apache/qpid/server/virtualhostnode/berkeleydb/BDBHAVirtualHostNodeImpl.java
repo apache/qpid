@@ -642,7 +642,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 {
                     remoteNode.setRole(nodeState.getNodeState().name());
                     remoteNode.setJoinTime(nodeState.getJoinTime());
-                    remoteNode.setLastTransactionId(nodeState.getKnownMasterTxnEndVLSN());
+                    remoteNode.setLastTransactionId(nodeState.getCurrentTxnEndVLSN());
                 }
             }
         }
