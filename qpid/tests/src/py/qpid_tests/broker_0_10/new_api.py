@@ -149,6 +149,35 @@ class GeneralTests(Base):
             expected.remove(c)
         self.ssn.acknowledge()
 
+    def test_nolocal_rerouted(self):
+        conn2 = Connection.establish(self.broker, **self.connection_options())
+        ssn2 = conn2.session()
+
+        s1 = self.ssn.sender("holding_q; {create:always, delete:always, node:{x-declare:{alternate-exchange:'amq.fanout'}}}");
+        s2 = ssn2.sender("holding_q");
+
+        s2.send(Message("a"));
+        s1.send(Message("b"));
+        s2.send(Message("c"));
+
+        r = self.ssn.receiver("amq.fanout; {link:{x-declare:{arguments:{'no-local':True}}}}")
+
+        # close connection of one of the publishers
+        conn2.close()
+
+        # close sender which should cause the orphaned messages on
+        # holding_q to be rerouted through alternate exchange onto the
+        # subscription queue of the receiver above
+        s1.close()
+
+        received = []
+        try:
+            while True:
+                received.append(r.fetch(0).content)
+        except Empty: pass
+        self.assertEqual(received, ["a", "c"])
+
+
 class SequenceNumberTests(Base):
     """
     Tests of ring queue sequence number

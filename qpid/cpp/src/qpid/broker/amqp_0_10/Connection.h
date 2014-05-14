@@ -68,7 +68,7 @@ namespace amqp_0_10 {
 struct ConnectionTimeoutTask;
 
 class Connection : public sys::ConnectionInputHandler, public qpid::broker::Connection,
-                   public OwnershipToken, public management::Manageable,
+                   public management::Manageable,
                    public RefCounted
 {
   public:
@@ -81,7 +81,6 @@ class Connection : public sys::ConnectionInputHandler, public qpid::broker::Conn
     void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
 
 
-    const OwnershipToken* getOwnership() const { return this; };
     const management::ObjectId getObjectId() const { return GetManagementObject()->getObjectId(); };
     const std::string& getUserId() const { return userId; }
 

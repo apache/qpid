@@ -203,7 +203,7 @@ void Message::setIsManagementMessage(bool b) { isManagementMessage = b; }
 
 const Connection* Message::getPublisher() const { return publisher; }
 void Message::setPublisher(const Connection& p) { publisher = &p; }
-bool Message::isLocalTo(const OwnershipToken* token) const { return token && publisher && token->isLocal(publisher->getOwnership()); }
+bool Message::isLocalTo(const OwnershipToken* token) const { return token && publisher && token->isLocal(publisher); }
 
 
 qpid::framing::SequenceNumber Message::getSequence() const

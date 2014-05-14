@@ -148,10 +148,6 @@ qpid::management::ManagementObject::shared_ptr ManagedConnection::GetManagementO
 
 std::string ManagedConnection::getId() const { return id; }
 
-const OwnershipToken* ManagedConnection::getOwnership() const
-{
-    return this;
-}
 const management::ObjectId ManagedConnection::getObjectId() const
 {
     return GetManagementObject()->getObjectId();
