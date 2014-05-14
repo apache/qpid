@@ -23,7 +23,6 @@
  */
 #include "qpid/management/Manageable.h"
 #include "qpid/broker/Connection.h"
-#include "qpid/broker/OwnershipToken.h"
 #include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/broker/Connection.h"
 
@@ -36,7 +35,7 @@ namespace broker {
 class Broker;
 namespace amqp {
 
-class ManagedConnection : public qpid::management::Manageable, public OwnershipToken, public qpid::broker::Connection
+class ManagedConnection : public qpid::management::Manageable, public qpid::broker::Connection
 {
   public:
     ManagedConnection(Broker& broker, const std::string id, bool brokerInitiated);
@@ -56,7 +55,6 @@ class ManagedConnection : public qpid::management::Manageable, public OwnershipT
     void outgoingMessageSent();
 
     //ConnectionIdentity
-    const OwnershipToken* getOwnership() const;
     const management::ObjectId getObjectId() const;
     const std::string& getUserId() const;
     const std::string& getMgmtId() const;

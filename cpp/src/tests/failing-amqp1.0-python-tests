@@ -19,3 +19,4 @@
 
 qpid_tests.broker_0_10.new_api.GeneralTests.test_qpid_3481_acquired_to_alt_exchange_2_consumers
 qpid_tests.broker_0_10.new_api.GeneralTests.test_qpid_3481_acquired_to_alt_exchange
+qpid_tests.broker_0_10.new_api.GeneralTests.test_nolocal_rerouted

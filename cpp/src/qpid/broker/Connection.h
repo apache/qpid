@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "OwnershipToken.h"
 #include <map>
 #include <string>
 
@@ -34,15 +35,12 @@ class Variant;
 
 namespace broker {
 
-class OwnershipToken;
-
 /**
  * Protocol independent connection abstraction.
  */
-class Connection {
+class Connection : public OwnershipToken {
 public:
     virtual ~Connection() {}
-    virtual const OwnershipToken* getOwnership() const = 0;
     virtual const management::ObjectId getObjectId() const = 0;
     virtual const std::string& getUserId() const = 0;
     virtual const std::string& getMgmtId() const = 0;
