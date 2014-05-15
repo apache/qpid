@@ -20,8 +20,10 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -42,11 +44,17 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.model.Plugin;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.systest.rest.RestTestHelper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
+import org.junit.Assert;
 
 import com.sleepycat.je.rep.ReplicationConfig;
 
@@ -119,6 +127,9 @@ public class HATestClusterCreator
 
             TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
             brokerConfiguration.addJmxManagementConfiguration();
+            brokerConfiguration.addHttpManagementConfiguration();
+            brokerConfiguration.setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
+            brokerConfiguration.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _testcase.getHttpManagementPort(brokerPort));
             brokerConfiguration.setObjectAttributes(VirtualHostNode.class, _virtualHostName, virtualHostNodeAttributes);
 
             brokerPort = _testcase.getNextAvailable(bdbPort + 1);
@@ -273,8 +284,7 @@ public class HATestClusterCreator
         return new AMQConnectionURL(String.format(MANY_BROKER_URL_FORMAT, _virtualHostName, brokerList, FAILOVER_CYCLECOUNT));
     }
 
-    public AMQConnectionURL getConnectionUrlForSingleNodeWithoutRetry(final int brokerPortNumber) throws
-                                                                                                  URLSyntaxException
+    public AMQConnectionURL getConnectionUrlForSingleNodeWithoutRetry(final int brokerPortNumber) throws URLSyntaxException
     {
         return getConnectionUrlForSingleNode(brokerPortNumber, false);
     }
@@ -380,4 +390,97 @@ public class HATestClusterCreator
         config.setSaved(false);
     }
 
+    public String getNodeNameForBrokerPort(final int brokerPort)
+    {
+        return getNodeNameForNodeAt(_brokerPortToBdbPortMap.get(brokerPort));
+    }
+
+    public void setNodeAttributes(int brokerPort, Map<String, Object> attributeMap)
+            throws Exception
+    {
+        setNodeAttributes(brokerPort, brokerPort, attributeMap);
+    }
+
+    public void setNodeAttributes(int localNodePort, int remoteNodePort, Map<String, Object> attributeMap)
+            throws Exception
+    {
+        RestTestHelper restHelper = createRestTestHelper(localNodePort);
+        String url = getNodeRestUrl(localNodePort, remoteNodePort);
+        int status = restHelper.submitRequest(url, "PUT", attributeMap);
+        if (status != 200)
+        {
+            throw new Exception("Unexpected http status when updating " + getNodeNameForBrokerPort(remoteNodePort) + " attribute's : " + status);
+        }
+    }
+
+    private String getNodeRestUrl(int localNodePort, int remoteNodePort)
+    {
+        String remoteNodeName = getNodeNameForBrokerPort(remoteNodePort);
+        String localNodeName = getNodeNameForBrokerPort(localNodePort);
+        String url = null;
+        if (localNodePort == remoteNodePort)
+        {
+            url = "/api/latest/virtualhostnode/" + localNodeName;
+        }
+        else
+        {
+            url = "/api/latest/replicationnode/" + localNodeName + "/" + remoteNodeName;
+        }
+        return url;
+    }
+
+    public Map<String, Object> getNodeAttributes(int brokerPort) throws IOException
+    {
+        return getNodeAttributes(brokerPort, brokerPort);
+    }
+
+    public Map<String, Object> getNodeAttributes(int localNodePort, int remoteNodePort) throws IOException
+    {
+        RestTestHelper restHelper = createRestTestHelper(localNodePort);
+        List<Map<String, Object>> results= restHelper.getJsonAsList(getNodeRestUrl(localNodePort, remoteNodePort));
+        int size = results.size();
+        if (size == 0)
+        {
+            return Collections.emptyMap();
+        }
+        else if (size == 1)
+        {
+            return results.get(0);
+        }
+        else
+        {
+            throw new RuntimeException("Unexpected number of nodes " + size);
+        }
+    }
+
+    public void awaitNodeToAttainRole(int brokerPort, String desiredRole) throws Exception
+    {
+        awaitNodeToAttainRole(brokerPort, brokerPort, desiredRole);
+    }
+
+    public void awaitNodeToAttainRole(int localNodePort, int remoteNodePort, String desiredRole) throws Exception
+    {
+        final long startTime = System.currentTimeMillis();
+        Map<String, Object> data = Collections.emptyMap();
+
+        while(!desiredRole.equals(data.get(BDBHARemoteReplicationNode.ROLE)) && (System.currentTimeMillis() - startTime) < 30000)
+        {
+            LOGGER.debug("Awaiting node '" + getNodeNameForBrokerPort(remoteNodePort) + "' to transit into " + desiredRole + " role");
+            data = getNodeAttributes(localNodePort, remoteNodePort);
+            if (!desiredRole.equals(data.get(BDBHARemoteReplicationNode.ROLE)))
+            {
+                Thread.sleep(1000);
+            }
+        }
+        LOGGER.debug("Node '" + getNodeNameForBrokerPort(remoteNodePort) + "' role is " + data.get(BDBHARemoteReplicationNode.ROLE));
+        Assert.assertEquals("Node is in unexpected role", desiredRole, data.get(BDBHARemoteReplicationNode.ROLE));
+    }
+
+    public RestTestHelper createRestTestHelper(int brokerPort)
+    {
+        int httpPort = _testcase.getHttpManagementPort(brokerPort);
+        RestTestHelper helper = new RestTestHelper(httpPort);
+        helper.setUsernameAndPassword("webadmin", "webadmin");
+        return helper;
+    }
 }

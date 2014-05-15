@@ -196,17 +196,4 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         return storeBean;
     }
 
-    private void assertProducingConsuming(final Connection connection) throws JMSException, Exception
-    {
-        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Destination destination = session.createQueue(getTestQueueName());
-        MessageConsumer consumer = session.createConsumer(destination);
-        sendMessage(session, destination, 1);
-        connection.start();
-        Message m1 = consumer.receive(RECEIVE_TIMEOUT);
-        assertNotNull("Message 1 is not received", m1);
-        assertEquals("Unexpected first message received", 0, m1.getIntProperty(INDEX));
-        session.commit();
-    }
-
 }

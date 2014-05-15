@@ -20,6 +20,10 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +34,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestUtils;
 
@@ -113,6 +118,129 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
 
         // any op to ensure connection remains
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+    }
+
+    public void testTransferMasterFromLocalNode() throws Exception
+    {
+        final Connection connection = getConnection(_brokerFailoverUrl);
+
+        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+
+        final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
+        LOGGER.info("Active connection port " + activeBrokerPort);
+
+        final int inactiveBrokerPort = _clusterCreator.getPortNumberOfAnInactiveBroker(connection);
+        LOGGER.info("Update role attribute on inactive broker on port " + inactiveBrokerPort);
+
+        Map<String, Object> attributes = _clusterCreator.getNodeAttributes(inactiveBrokerPort);
+        assertEquals("Inactive broker has unexpeced role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
+        _clusterCreator.setNodeAttributes(inactiveBrokerPort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.ROLE, "MASTER"));
+
+        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        LOGGER.info("Listener has finished");
+
+        attributes = _clusterCreator.getNodeAttributes(inactiveBrokerPort);
+        assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
+
+        assertProducingConsuming(connection);
+
+        _clusterCreator.awaitNodeToAttainRole(activeBrokerPort, "REPLICA");
+    }
+
+    public void testTransferMasterFromRemoteNode() throws Exception
+    {
+        final Connection connection = getConnection(_brokerFailoverUrl);
+
+        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+
+        final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
+        LOGGER.info("Active connection port " + activeBrokerPort);
+
+        final int inactiveBrokerPort = _clusterCreator.getPortNumberOfAnInactiveBroker(connection);
+        LOGGER.info("Update role attribute on inactive broker on port " + inactiveBrokerPort);
+
+        _clusterCreator.awaitNodeToAttainRole(activeBrokerPort, inactiveBrokerPort, "REPLICA");
+        Map<String, Object> attributes = _clusterCreator.getNodeAttributes(activeBrokerPort, inactiveBrokerPort);
+        assertEquals("Inactive broker has unexpeced role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
+
+        _clusterCreator.setNodeAttributes(activeBrokerPort, inactiveBrokerPort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.ROLE, "MASTER"));
+
+        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        LOGGER.info("Listener has finished");
+
+        attributes = _clusterCreator.getNodeAttributes(inactiveBrokerPort);
+        assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
+
+        assertProducingConsuming(connection);
+
+        _clusterCreator.awaitNodeToAttainRole(activeBrokerPort, "REPLICA");
+    }
+
+    public void testQuorumOverride() throws Exception
+    {
+        final Connection connection = getConnection(_brokerFailoverUrl);
+
+        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+
+        Set<Integer> ports = _clusterCreator.getBrokerPortNumbersForNodes();
+        Iterator<Integer> iterator = ports.iterator();
+        Integer quorumOverridePort = iterator.next();
+        iterator.remove();
+
+        for (Integer p : ports)
+        {
+            _clusterCreator.stopNode(p);
+        }
+
+        Map<String, Object> attributes = _clusterCreator.getNodeAttributes(quorumOverridePort);
+        assertEquals("Broker has unexpeced quorum override", new Integer(0), attributes.get(BDBHAVirtualHostNode.QUORUM_OVERRIDE));
+        _clusterCreator.setNodeAttributes(quorumOverridePort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.QUORUM_OVERRIDE, 1));
+
+        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        LOGGER.info("Listener has finished");
+
+        attributes = _clusterCreator.getNodeAttributes(quorumOverridePort);
+        assertEquals("Broker has unexpeced quorum override", new Integer(1), attributes.get(BDBHAVirtualHostNode.QUORUM_OVERRIDE));
+
+        assertProducingConsuming(connection);
+    }
+
+    public void testPriority() throws Exception
+    {
+        final Connection connection = getConnection(_brokerFailoverUrl);
+
+        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+
+        final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
+        LOGGER.info("Active connection port " + activeBrokerPort);
+
+        int priority = 1;
+        Integer highestPriorityBrokerPort = null;
+        Set<Integer> ports = _clusterCreator.getBrokerPortNumbersForNodes();
+        for (Integer port : ports)
+        {
+            if (activeBrokerPort != port.intValue())
+            {
+                priority = priority + 1;
+                highestPriorityBrokerPort = port;
+                _clusterCreator.setNodeAttributes(port, port, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PRIORITY, priority));
+                Map<String, Object> attributes = _clusterCreator.getNodeAttributes(port, port);
+                assertEquals("Broker has unexpeced priority", priority, attributes.get(BDBHAVirtualHostNode.PRIORITY));
+            }
+        }
+
+        LOGGER.info("Broker on port " + highestPriorityBrokerPort + " has the highest priority of " + priority);
+
+        LOGGER.info("Shutting down the MASTER");
+        _clusterCreator.stopNode(activeBrokerPort);
+
+        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        LOGGER.info("Listener has finished");
+
+        Map<String, Object> attributes = _clusterCreator.getNodeAttributes(highestPriorityBrokerPort, highestPriorityBrokerPort);
+        assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
+
+        assertProducingConsuming(connection);
     }
 
     private final class FailoverAwaitingListener implements ConnectionListener

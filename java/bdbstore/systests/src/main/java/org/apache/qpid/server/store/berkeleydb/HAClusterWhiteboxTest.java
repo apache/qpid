@@ -235,22 +235,6 @@ public class HAClusterWhiteboxTest extends QpidBrokerTestCase
         killBroker(initialPortNumber); // kill awaits the death of the child
     }
 
-    private void assertProducingConsuming(final Connection connection) throws JMSException, Exception
-    {
-        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Destination destination = session.createQueue(getTestQueueName());
-        MessageConsumer consumer = session.createConsumer(destination);
-        sendMessage(session, destination, 2);
-        connection.start();
-        Message m1 = consumer.receive(RECEIVE_TIMEOUT);
-        assertNotNull("Message 1 is not received", m1);
-        assertEquals("Unexpected first message received", 0, m1.getIntProperty(INDEX));
-        Message m2 = consumer.receive(RECEIVE_TIMEOUT);
-        assertNotNull("Message 2 is not received", m2);
-        assertEquals("Unexpected second message received", 1, m2.getIntProperty(INDEX));
-        session.commit();
-    }
-
     private void closeConnection(final Connection initialConnection)
     {
         try

@@ -34,11 +34,12 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
  */
 public interface MBeanProvider extends Pluggable
 {
+
     /**
      * Tests whether a <code>child</code> can be managed by the mbean
      * provided by this provider.
      */
-    boolean isChildManageableByMBean(ConfiguredObject child);
+    boolean isChildManageableByMBean(ConfiguredObject<?> child);
 
     /**
      * Creates a mbean for this child.  This method should only be called if
@@ -47,6 +48,6 @@ public interface MBeanProvider extends Pluggable
      *
      * @return newly created mbean
      */
-    ManagedObject createMBean(ConfiguredObject child, ManagedObjectRegistry registry) throws JMException;
+    ManagedObject createMBean(ConfiguredObject<?> child, ManagedObjectRegistry registry) throws JMException;
 
 }

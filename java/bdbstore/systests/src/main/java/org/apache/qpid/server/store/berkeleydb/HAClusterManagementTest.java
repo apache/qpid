@@ -25,8 +25,11 @@ import static com.sleepycat.je.rep.ReplicatedEnvironment.State.REPLICA;
 import static com.sleepycat.je.rep.ReplicatedEnvironment.State.UNKNOWN;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.jms.Connection;
@@ -37,11 +40,14 @@ import javax.management.openmbean.TabularData;
 import org.apache.log4j.Logger;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.systest.rest.RestTestHelper;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
-import com.sleepycat.je.EnvironmentFailureException;
+import org.junit.Assert;
 
 /**
  * System test verifying the ability to control a cluster via the Management API.
@@ -212,6 +218,68 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
             Thread.sleep(100l);
         }
         assertTrue("Unexpected designated primary after change", storeBean.getDesignatedPrimary());
+    }
+
+    public void testVirtualHostMbeanOnMasterTransfer() throws Exception
+    {
+        Connection connection = getConnection(_brokerFailoverUrl);
+        int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
+        LOGGER.info("Active connection port " + activeBrokerPort);
+        connection.close();
+
+        Set<Integer> ports = _clusterCreator.getBrokerPortNumbersForNodes();
+        ports.remove(activeBrokerPort);
+
+        int inactiveBrokerPort = ports.iterator().next();
+        LOGGER.info("Update role attribute on inactive broker on port " + inactiveBrokerPort);
+
+        ManagedBroker inactiveVirtualHostMBean = getManagedBrokerBeanForNodeAtBrokerPort(inactiveBrokerPort);
+
+        try
+        {
+            inactiveVirtualHostMBean.createNewQueue(getTestQueueName(), null, true);
+            fail("Exception not thrown");
+        }
+        catch (Exception e)
+        {
+            String message = e.getMessage();
+            assertEquals("The virtual hosts state of PASSIVE does not permit this operation.", message);
+        }
+
+        Map<String, Object> attributes = _clusterCreator.getNodeAttributes(inactiveBrokerPort);
+        assertEquals("Inactive broker has unexpeced role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
+        _clusterCreator.setNodeAttributes(inactiveBrokerPort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.ROLE, "MASTER"));
+
+        _clusterCreator.awaitNodeToAttainRole(inactiveBrokerPort, "MASTER");
+
+        awaitVirtualHostAtNode(inactiveBrokerPort);
+
+        ManagedBroker activeVirtualHostMBean = getManagedBrokerBeanForNodeAtBrokerPort(inactiveBrokerPort);
+        activeVirtualHostMBean.createNewQueue(getTestQueueName() + inactiveBrokerPort, null, true);
+    }
+
+    public void awaitVirtualHostAtNode(int brokerPort) throws Exception
+    {
+        final long startTime = System.currentTimeMillis();
+        Map<String, Object> data = Collections.emptyMap();
+        String nodeName = _clusterCreator.getNodeNameForBrokerPort(brokerPort);
+        RestTestHelper restHelper = _clusterCreator.createRestTestHelper(brokerPort);
+        while(!State.ACTIVE.name().equals(data.get(VirtualHost.STATE)) && (System.currentTimeMillis() - startTime) < 30000)
+        {
+            LOGGER.debug("Awaiting virtual host '" + nodeName + "' to transit into active state");
+            List<Map<String, Object>> results= restHelper.getJsonAsList("virtualhost/" + nodeName + "/" + VIRTUAL_HOST);
+            if (results.size()== 1)
+            {
+                data = results.get(0);
+            }
+
+            if (!State.ACTIVE.name().equals(data.get(VirtualHost.STATE)))
+            {
+                Thread.sleep(1000);
+            }
+        }
+        Assert.assertEquals("Virtual host is not active", State.ACTIVE.name(), data.get(VirtualHost.STATE));
+        LOGGER.debug("Virtual host '" + nodeName + "' is in active state");
     }
 
     private ManagedBDBHAMessageStore getStoreBeanForNodeAtBrokerPort(final int brokerPortNumber) throws Exception
