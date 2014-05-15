@@ -22,11 +22,9 @@
 package org.apache.qpid.server.jmx;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,9 +58,7 @@ import org.apache.qpid.server.model.port.RmiPort;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 public class JMXManagementPluginImpl
-        extends AbstractPluginAdapter<JMXManagementPluginImpl> implements ConfigurationChangeListener,
-                                                                          JMXManagementPlugin<JMXManagementPluginImpl>,
-                                                                          PortManager
+        extends AbstractPluginAdapter<JMXManagementPluginImpl> implements JMXManagementPlugin<JMXManagementPluginImpl>, PortManager
 {
     private static final Logger LOGGER = Logger.getLogger(JMXManagementPluginImpl.class);
 
@@ -71,28 +67,38 @@ public class JMXManagementPluginImpl
     // default values
     public static final String DEFAULT_NAME = "JMXManagement";
 
-    @SuppressWarnings("serial")
-    private static final Map<String, Type> ATTRIBUTE_TYPES = new HashMap<String, Type>(){{
-        put(USE_PLATFORM_MBEAN_SERVER, Boolean.class);
-        put(NAME, String.class);
-        put(TYPE, String.class);
-        put(TYPE, String.class);
-    }};
-
     private JMXManagedObjectRegistry _objectRegistry;
 
     private final Object _childrenLock = new Object();
-    private final Map<ConfiguredObject, List<ManagedObject>> _children = new HashMap<ConfiguredObject, List<ManagedObject>>();
+    private final Map<ConfiguredObject<?>, Map<MBeanProvider, ManagedObject>> _children = new HashMap<ConfiguredObject<?>, Map<MBeanProvider,ManagedObject>>();
 
     @ManagedAttributeField
     private boolean _usePlatformMBeanServer;
 
     private boolean _allowPortActivation;
 
+    private final Set<MBeanProvider> _mBeanProviders;
+    private final ChangeListener _changeListener;
+    private final PluginMBeansProvider _pluginMBeanProvider;
+
     @ManagedObjectFactoryConstructor
-    public JMXManagementPluginImpl(Map<String, Object> attributes, Broker broker)
+    public JMXManagementPluginImpl(Map<String, Object> attributes, Broker<?> broker)
     {
         super(attributes, broker);
+        _changeListener = new ChangeListener();
+        _pluginMBeanProvider = new PluginMBeansProvider();
+        _mBeanProviders = new HashSet<MBeanProvider>();
+        QpidServiceLoader<MBeanProvider> qpidServiceLoader = new QpidServiceLoader<MBeanProvider>();
+        for (MBeanProvider provider : qpidServiceLoader.instancesOf(MBeanProvider.class))
+        {
+            _mBeanProviders.add(provider);
+        }
+    }
+
+    @Override
+    public boolean getUsePlatformMBeanServer()
+    {
+        return _usePlatformMBeanServer;
     }
 
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
@@ -103,7 +109,7 @@ public class JMXManagementPluginImpl
         JmxPort<?> connectorPort = null;
         RmiPort registryPort = null;
         Collection<Port<?>> ports = broker.getPorts();
-        for (Port port : ports)
+        for (Port<?> port : ports)
         {
             if (port.getDesiredState() != State.ACTIVE)
             {
@@ -142,38 +148,19 @@ public class JMXManagementPluginImpl
 
         _objectRegistry = new JMXManagedObjectRegistry(broker, connectorPort, registryPort, this);
 
-        broker.addChangeListener(this);
+        broker.addChangeListener(_changeListener);
 
         synchronized (_childrenLock)
         {
             for(VirtualHostNode<?> virtualHostNode : broker.getVirtualHostNodes())
             {
-                virtualHostNode.addChangeListener(this);
-
-                // Virtualhostnodes may or may not have a virtualhost at this point.  In the HA
-                // case, JE may spontaneously make the node a master causing it to create a virtualhost.
-                // Creation of the vhost uses the task executor (same thread that executes this code
-                // so there is no potential for a race here).
-                VirtualHost host = virtualHostNode.getVirtualHost();
-                if (host != null)
-                {
-                    VirtualHostMBean mbean = new VirtualHostMBean(host, _objectRegistry);
-                    addMBean(host, mbean);
-                }
-                createAdditionalMBeansFromProviders(virtualHostNode, _objectRegistry);
+                createObjectMBeans(virtualHostNode);
             }
 
             Collection<AuthenticationProvider<?>> authenticationProviders = broker.getAuthenticationProviders();
             for (AuthenticationProvider<?> authenticationProvider : authenticationProviders)
             {
-                if(authenticationProvider instanceof PasswordCredentialManagingAuthenticationProvider)
-                {
-                    UserManagementMBean mbean = new UserManagementMBean(
-                            (PasswordCredentialManagingAuthenticationProvider) authenticationProvider,
-                            _objectRegistry);
-                    addMBean(authenticationProvider, mbean);
-                }
-                createAdditionalMBeansFromProviders(authenticationProvider, _objectRegistry);
+                createObjectMBeans(authenticationProvider);
             }
         }
         new Shutdown(_objectRegistry);
@@ -187,36 +174,18 @@ public class JMXManagementPluginImpl
         _allowPortActivation = false;
     }
 
-    private void addMBean(ConfiguredObject configuredObject, ManagedObject mbean)
-    {
-        List<ManagedObject> mbeanList = _children.get(configuredObject);
-        if (mbeanList == null)
-        {
-            mbeanList = new ArrayList<ManagedObject>();
-            _children.put(configuredObject, mbeanList);
-        }
-        mbeanList.add(mbean);
-    }
-
     @Override
     public boolean isActivationAllowed(final Port<?> port)
     {
         return _allowPortActivation;
     }
 
-    @Override
-    protected void onOpen()
-    {
-        super.onOpen();
-
-    }
-
-    private boolean isConnectorPort(Port port)
+    private boolean isConnectorPort(Port<?> port)
     {
         return port.getAvailableProtocols().contains(Protocol.JMX_RMI);
     }
 
-    private boolean isRegistryPort(Port port)
+    private boolean isRegistryPort(Port<?> port)
     {
         return port.getAvailableProtocols().contains(Protocol.RMI);
     }
@@ -226,27 +195,42 @@ public class JMXManagementPluginImpl
     {
         synchronized (_childrenLock)
         {
-            for(ConfiguredObject object : _children.keySet())
+            for(ConfiguredObject<?> object : _children.keySet())
             {
-                unregisterChildMBeans(object);
+                unregisterObjectMBeans(object);
             }
             _children.clear();
         }
-        getBroker().removeChangeListener(this);
+        getBroker().removeChangeListener(_changeListener);
         closeObjectRegistry();
     }
 
-    private void unregisterChildMBeans(ConfiguredObject object)
+    private void unregisterObjectMBeans(ConfiguredObject<?> object)
     {
-        List<ManagedObject> mbeans = _children.get(object);
+        Map<?, ManagedObject> mbeans = _children.get(object);
         if (mbeans != null)
         {
-            for (ManagedObject mbean : mbeans)
+            for (ManagedObject mbean : mbeans.values())
             {
                 if (mbean instanceof ConfigurationChangeListener)
                 {
                     object.removeChangeListener((ConfigurationChangeListener)mbean);
                 }
+
+                if (LOGGER.isDebugEnabled())
+                {
+                    String mbeanName = null;
+                    try
+                    {
+                        mbeanName = mbean.getObjectName().toString();
+                    }
+                    catch(Exception e)
+                    {
+                        // ignore
+                    }
+                    LOGGER.debug("Unregistering MBean " + mbeanName + " for configured object " + object);
+                }
+
                 try
                 {
                     mbean.unregister();
@@ -259,74 +243,9 @@ public class JMXManagementPluginImpl
         }
     }
 
-    @Override
-    public void stateChanged(ConfiguredObject object, State oldState, State newState)
+    private void createAdditionalMBeansFromProvidersIfNecessary(ConfiguredObject<?> child, ManagedObjectRegistry registry) throws JMException
     {
-        // no-op
-    }
-
-    @Override
-    public void childAdded(ConfiguredObject object, ConfiguredObject child)
-    {
-
-        synchronized (_childrenLock)
-        {
-            try
-            {
-                AMQManagedObject mbean;
-                if (child instanceof VirtualHostNode)
-                {
-                    child.addChangeListener(this);
-                }
-                if(child instanceof VirtualHost)
-                {
-                    VirtualHost vhostChild = (VirtualHost)child;
-                    mbean = new VirtualHostMBean(vhostChild, _objectRegistry);
-                }
-                else if(child instanceof PasswordCredentialManagingAuthenticationProvider)
-                {
-                    mbean = new UserManagementMBean((PasswordCredentialManagingAuthenticationProvider) child, _objectRegistry);
-                }
-                else
-                {
-                    mbean = null;
-                }
-
-                if (mbean != null)
-                {
-                    addMBean(child, mbean);
-                }
-                createAdditionalMBeansFromProviders(child, _objectRegistry);
-            }
-            catch(Exception e)
-            {
-                LOGGER.error("Exception while creating mbean for " + child.getClass().getSimpleName() + " " + child.getName(), e);
-                // TODO - Implement error reporting on mbean creation
-            }
-        }
-    }
-
-    @Override
-    public void childRemoved(ConfiguredObject object, ConfiguredObject child)
-    {
-        synchronized (_childrenLock)
-        {
-            child.removeChangeListener(this);
-            unregisterChildMBeans(child);
-            _children.remove(child);
-        }
-    }
-
-    @Override
-    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
-    {
-        // no-op
-    }
-
-    private void createAdditionalMBeansFromProviders(ConfiguredObject child, ManagedObjectRegistry registry) throws JMException
-    {
-        QpidServiceLoader<MBeanProvider> qpidServiceLoader = new QpidServiceLoader<MBeanProvider>();
-        for (MBeanProvider provider : qpidServiceLoader.instancesOf(MBeanProvider.class))
+        for (MBeanProvider provider : _mBeanProviders)
         {
             if(LOGGER.isDebugEnabled())
             {
@@ -334,16 +253,17 @@ public class JMXManagementPluginImpl
             }
 
             ManagedObject mBean = null;
-            if (provider.isChildManageableByMBean(child))
+            if (provider.isChildManageableByMBean(child) && !providerMBeanExists(child, provider))
             {
                 if(LOGGER.isDebugEnabled())
                 {
-                    LOGGER.debug("Provider will create mbean");
+                    LOGGER.debug("Provider of type " + provider.getType() + " will create mbean for " + child);
                 }
+
                 mBean = provider.createMBean(child, registry);
                 if (mBean != null)
                 {
-                    addMBean(child, mBean);
+                    registerMBean(child, provider, mBean);
                 }
             }
 
@@ -383,9 +303,170 @@ public class JMXManagementPluginImpl
         }
     }
 
-    @Override
-    public boolean getUsePlatformMBeanServer()
+    private ManagedObject createObjectMBeansIfNecessary(ConfiguredObject<?> object) throws JMException
     {
-        return _usePlatformMBeanServer;
+        ManagedObject mbean = null;
+        if (supportedConfiguredObject(object))
+        {
+            synchronized (_childrenLock)
+            {
+                if (!providerMBeanExists(object, _pluginMBeanProvider))
+                {
+                    if (object instanceof VirtualHostNode)
+                    {
+                        object.addChangeListener(_changeListener);
+                        VirtualHostNode<?> virtualHostNode = (VirtualHostNode<?>) object;
+
+                        // Virtual host nodes may or may not have a virtual host at this point.
+                        // In the HA case, JE may spontaneously make the node a master causing it to create a virtual host.
+                        // Creation of the virtual host uses the task executor (same thread that executes this code
+                        // so there is no potential for a race here).
+                        VirtualHost<?, ?, ?> host = virtualHostNode.getVirtualHost();
+                        if (host != null)
+                        {
+                            createVirtualHostMBeanIfNecessary(host, _objectRegistry);
+                        }
+                    }
+                    else if (object instanceof VirtualHost)
+                    {
+                        mbean = createVirtualHostMBeanIfNecessary((VirtualHost<?, ?, ?>) object, _objectRegistry);
+                    }
+                    else if (object instanceof PasswordCredentialManagingAuthenticationProvider)
+                    {
+                        object.addChangeListener(_changeListener);
+                        mbean = new UserManagementMBean((PasswordCredentialManagingAuthenticationProvider<?>) object, _objectRegistry);
+                        registerMBean(object, _pluginMBeanProvider, mbean);
+                    }
+                    createAdditionalMBeansFromProvidersIfNecessary(object, _objectRegistry);
+                }
+            }
+        }
+        return mbean;
     }
+
+    private VirtualHostMBean createVirtualHostMBeanIfNecessary(VirtualHost<?, ?, ?> host, ManagedObjectRegistry _objectRegistry) throws JMException
+    {
+        if (!providerMBeanExists(host, _pluginMBeanProvider))
+        {
+            VirtualHostMBean mbean = new VirtualHostMBean(host, _objectRegistry);
+            registerMBean(host, _pluginMBeanProvider, mbean);
+            host.addChangeListener(_changeListener);
+            return mbean;
+        }
+        return null;
+    }
+
+    private void registerMBean(ConfiguredObject<?> configuredObject, MBeanProvider mBeanProvider, ManagedObject mbean)
+    {
+        Map<MBeanProvider, ManagedObject> mbeans = _children.get(configuredObject);
+        if (mbeans == null)
+        {
+            mbeans = new HashMap<MBeanProvider, ManagedObject>();
+            _children.put(configuredObject, mbeans);
+        }
+        mbeans.put(mBeanProvider, mbean);
+    }
+
+    private boolean providerMBeanExists(ConfiguredObject<?> configuredObject, MBeanProvider mBeanProvider)
+    {
+        Map<MBeanProvider, ManagedObject> mbeans = _children.get(configuredObject);
+        if (mbeans == null)
+        {
+            return false;
+        }
+        return mbeans.containsKey(mBeanProvider);
+    }
+
+    private void destroyObjectMBeans(ConfiguredObject<?> child, boolean removeListener)
+    {
+        if (supportedConfiguredObject(child))
+        {
+            synchronized (_childrenLock)
+            {
+                if (removeListener)
+                {
+                    child.removeChangeListener(_changeListener);
+                }
+                unregisterObjectMBeans(child);
+                _children.remove(child);
+            }
+        }
+    }
+
+    private void createObjectMBeans(ConfiguredObject<?> object)
+    {
+        try
+        {
+            createObjectMBeansIfNecessary(object);
+        }
+        catch (JMException e)
+        {
+            LOGGER.error("Cannot create MBean for " + object, e);
+        }
+    }
+
+    private boolean supportedConfiguredObject(ConfiguredObject<?> object)
+    {
+        return object instanceof VirtualHostNode || object instanceof VirtualHost || object instanceof PasswordCredentialManagingAuthenticationProvider;
+    }
+
+    private class PluginMBeansProvider implements MBeanProvider
+    {
+        @Override
+        public boolean isChildManageableByMBean(ConfiguredObject<?> object)
+        {
+            return supportedConfiguredObject(object);
+        }
+
+        @Override
+        public ManagedObject createMBean(ConfiguredObject<?> object, ManagedObjectRegistry registry) throws JMException
+        {
+            return createObjectMBeansIfNecessary(object);
+        }
+
+        @Override
+        public String getType()
+        {
+            return "INTERNAL";
+        }
+    }
+
+    private class ChangeListener implements ConfigurationChangeListener
+    {
+        @Override
+        public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+        {
+            if (newState == State.DELETED || newState == State.STOPPED)
+            {
+                destroyObjectMBeans(object, newState == State.DELETED);
+            }
+            else if (newState == State.ACTIVE)
+            {
+                createObjectMBeans(object);
+            }
+        }
+
+        @Override
+        public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
+        {
+            createObjectMBeans(child);
+        }
+
+        @Override
+        public void childRemoved(ConfiguredObject<?> object, ConfiguredObject<?> child)
+        {
+            destroyObjectMBeans(child, true);
+        }
+
+        @Override
+        public void attributeSet(ConfiguredObject<?> object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
+        {
+            // VH can be created after attribute change,
+            // for instance, on role change in BDB HA VHN a VH could is recovered/created.
+            // A call to createObjectMBeans is safe as it checks the existence of MBean before its creation.
+
+            createObjectMBeans(object);
+        }
+    }
+
 }

@@ -29,11 +29,11 @@ public interface ConfigurationChangeListener
      * @param oldState the state prior to the change
      * @param newState the state after the change
      */
-    void stateChanged(ConfiguredObject object, State oldState, State newState);
+    void stateChanged(ConfiguredObject<?> object, State oldState, State newState);
 
-    void childAdded(ConfiguredObject object, ConfiguredObject child);
+    void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child);
 
-    void childRemoved(ConfiguredObject object, ConfiguredObject child);
+    void childRemoved(ConfiguredObject<?> object, ConfiguredObject<?> child);
 
-    void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue);
+    void attributeSet(ConfiguredObject<?> object, String attributeName, Object oldAttributeValue, Object newAttributeValue);
 }

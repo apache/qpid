@@ -439,6 +439,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         if (virtualHost!= null)
         {
             virtualHost.close();
+            childRemoved(virtualHost);
         }
     }
 
@@ -473,6 +474,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 LOGGER.error("Unexpected state change: " + state);
                 throw new IllegalStateException("Unexpected state change: " + state);
             }
+
+            attributeSet(ROLE, _role, state.name());
         }
     }
 

@@ -1411,4 +1411,23 @@ public class QpidBrokerTestCase extends QpidTestCase
         return FAILING_PORT;
     }
 
+    public int getHttpManagementPort(int mainPort)
+    {
+        return mainPort + (DEFAULT_HTTP_MANAGEMENT_PORT - DEFAULT_PORT);
+    }
+
+    public void assertProducingConsuming(final Connection connection) throws Exception
+    {
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Destination destination = session.createQueue(getTestQueueName());
+        MessageConsumer consumer = session.createConsumer(destination);
+        sendMessage(session, destination, 1);
+        session.commit();
+        connection.start();
+        Message m1 = consumer.receive(RECEIVE_TIMEOUT);
+        assertNotNull("Message 1 is not received", m1);
+        assertEquals("Unexpected first message received", 0, m1.getIntProperty(INDEX));
+        session.commit();
+        session.close();
+    }
 }
