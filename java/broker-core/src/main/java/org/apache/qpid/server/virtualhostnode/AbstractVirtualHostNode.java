@@ -211,9 +211,10 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         }
     }
 
-    @StateTransition( currentState = { State.ACTIVE, State.ERRORED }, desiredState = State.STOPPED )
+    @StateTransition( currentState = { State.ACTIVE, State.ERRORED, State.UNINITIALIZED }, desiredState = State.STOPPED )
     protected void doStop()
     {
+        closeConfigurationStore();
         closeChildren();
         _state.set(State.STOPPED);
     }
@@ -221,12 +222,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     @Override
     protected void onClose()
     {
-        DurableConfigurationStore configurationStore = getConfigurationStore();
-        if (configurationStore != null)
-        {
-            configurationStore.closeConfigurationStore();
-            getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CLOSE());
-        }
+        closeConfigurationStore();
     }
 
     @Override
@@ -247,6 +243,16 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), VirtualHostNode.class, Operation.UPDATE))
         {
             throw new AccessControlException("Setting of virtual host node attributes is denied");
+        }
+    }
+
+    private void closeConfigurationStore()
+    {
+        DurableConfigurationStore configurationStore = getConfigurationStore();
+        if (configurationStore != null)
+        {
+            configurationStore.closeConfigurationStore();
+            getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CLOSE());
         }
     }
 

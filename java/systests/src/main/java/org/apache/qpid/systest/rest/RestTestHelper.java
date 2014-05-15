@@ -515,6 +515,17 @@ public class RestTestHelper
         return submitRequest(url, method, (byte[])null);
     }
 
+    public void submitRequest(String url, String method, Map<String, Object> attributes, int expectedResponseCode) throws IOException
+    {
+        int responseCode = submitRequest(url, method, attributes);
+        Assert.assertEquals("Unexpected response code from " + method + " " + url , expectedResponseCode, responseCode);
+    }
+
+    public void submitRequest(String url, String method, int expectedResponseCode) throws IOException
+    {
+        submitRequest(url, method, null, expectedResponseCode);
+    }
+
     public int submitRequest(String url, String method, byte[] parameters) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(url, method);

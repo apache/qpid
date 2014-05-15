@@ -52,3 +52,6 @@ org.apache.qpid.systest.management.jmx.QueueManagementTest#testCopyMessageBetwee
 org.apache.qpid.test.unit.client.MaxDeliveryCountTest#testWhenBrokerIsRestartedAfterEnqeuingMessages
 
 org.apache.qpid.systest.rest.VirtualHostRestTest#testUpdateActiveHost
+org.apache.qpid.systest.rest.VirtualHostNodeRestTest#testCreateAndDeleteNodeWithTestProfileStore
+org.apache.qpid.systest.rest.VirtualHostNodeRestTest#testCreateAndDeleteNodeWithJsonStore
+
