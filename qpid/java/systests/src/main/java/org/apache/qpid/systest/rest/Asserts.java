@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.queue.LastValueQueue;
 import org.apache.qpid.server.queue.PriorityQueue;
@@ -52,6 +53,14 @@ import org.apache.qpid.test.utils.TestBrokerConfiguration;
 public class Asserts
 {
     public static final String STATISTICS_ATTRIBUTE = "statistics";
+
+    public static void assertVirtualHostNode(final String nodeName, final Map<String, Object> node)
+    {
+        assertNotNull("Virtualhostnode " + nodeName + " data is not found", node);
+        assertEquals("Unexpected value of attribute " + VirtualHostNode.NAME,
+                     nodeName,
+                     node.get(VirtualHostNode.NAME));
+    }
 
     public static void assertVirtualHost(String virtualHostName, Map<String, Object> virtualHost)
     {
