@@ -43,6 +43,8 @@ org.apache.qpid.server.store.VirtualHostMessageStoreTest#testExchangePersistence
 org.apache.qpid.server.store.VirtualHostMessageStoreTest#testDurableExchangeRemoval
 
 org.apache.qpid.server.store.berkeleydb.*
+org.apache.qpid.server.store.berkeleydb.replication.*
+org.apache.qpid.server.store.berkeleydb.upgrade.*
 
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testAlternateExchangeSurvivesRestart
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testQueueDescriptionSurvivesRestart
