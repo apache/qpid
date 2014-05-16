@@ -80,6 +80,7 @@ define(["dojo/_base/xhr",
       show: function()
       {
         this.form.reset();
+        this.type.set("value", null);
         this.dialog.show();
       },
       destroy: function()
@@ -98,12 +99,12 @@ define(["dojo/_base/xhr",
       },
       _typeChanged: function(type)
       {
+          var widgets = registry.findWidgets(this.typeFieldsContainer);
+          array.forEach(widgets, function(item) { item.destroyRecursive();});
+          domConstruct.empty(this.typeFieldsContainer);
+
           if (type)
           {
-            var widgets = registry.findWidgets(this.typeFieldsContainer);
-            array.forEach(widgets, function(item) { item.destroyRecursive();});
-            domConstruct.empty(this.typeFieldsContainer);
-
             var that = this;
             require(["qpid/management/virtualhostnode/" + type.toLowerCase() + "/add"],
               function(TypeUI)
