@@ -23,7 +23,6 @@
 <chapter id="Java-Broker-Runtime">
   <title>Runtime</title>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Log-Files.xml"/>
-        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Alerts.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Disk-Space-Management.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Producer-Transaction-Timeout.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Handling-Undeliverable-Messages.xml"/>

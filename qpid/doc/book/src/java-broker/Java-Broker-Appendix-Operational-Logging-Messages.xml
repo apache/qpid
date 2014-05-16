@@ -867,7 +867,8 @@
         </row>
         <row>
           <entry>
-            <para>Indicates that a message store has been created.</para>
+            <para>Indicates that a message store has been created.  The message store is responsible for the storage
+             of the messages themselves, including the message body and any headers.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1002">
@@ -953,4 +954,134 @@
     </tgroup>
   </table>
 
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-TransactionStore">
+    <title>Transaction Store Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-TXN-1001">
+          <entry morerows="1">TXN-1001</entry>
+          <entry>Created</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a transaction store has been created.  The transaction store is responsible for the storage
+              of messages instances, that is, the presence of a message on a queue.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-TXN-1002">
+          <entry morerows="1">TXN-1002</entry>
+          <entry>Store location : <replaceable>path</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the transaction store is using <replaceable>path</replaceable> for the
+              location of the store.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-TXN-1003">
+          <entry morerows="1">TXN-1003</entry>
+          <entry>Closed</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the transaction store has been closed.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-TXN-1004">
+          <entry morerows="1">TXN-1004</entry>
+          <entry>Recovery Start</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that transaction recovery has begun.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-TXN">
+          <entry morerows="1">TXN-1005</entry>
+          <entry>Recovered <replaceable>number</replaceable> messages for queue <replaceable>name</replaceable>.</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that recovery recovered the given number of message instances for the given queue.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-TXN-1006">
+          <entry morerows="1">TXN-1006</entry>
+          <entry>Recovered Complete</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the message recovery is concluded.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-ConfigurationStore">
+    <title>Configuration Store Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CFG-1001">
+          <entry morerows="1">CFG-1001</entry>
+          <entry>Created</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a configuration store has been created.  The configuration store is responsible
+              for the storage of the definition of objects such as queues, exchanges, and bindings.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CFG-1002">
+          <entry morerows="1">CFG-1002</entry>
+          <entry>Store location : <replaceable>path</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the configuration store is using <replaceable>path</replaceable> for the
+              location of the store.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CFG-1003">
+          <entry morerows="1">CFG-1003</entry>
+          <entry>Closed</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the configuration store has been closed.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CFG-1004">
+          <entry morerows="1">CFG-1004</entry>
+          <entry>Recovery Start</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that configuration recovery has begun.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CFG-1005">
+          <entry morerows="1">CFG-1005</entry>
+          <entry>Recovered Complete</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the configuration recovery is concluded.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
 </appendix>
