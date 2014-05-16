@@ -569,11 +569,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
         return null;
     }
 
-    public void initialiseStatistics()
-    {
-
-    }
-
     public void registerMessageDelivered(long messageSize)
     {
 

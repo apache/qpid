@@ -154,7 +154,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private long _maxFrameSize;
     private final AtomicBoolean _closing = new AtomicBoolean(false);
 
-    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
@@ -201,12 +201,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
                 _closeWhenNoRoute = _broker.getConnection_closeWhenNoRoute();
 
-                initialiseStatistics();
-
                 return null;
             }
         });
 
+        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getSessionID());
+        _dataDelivered = new StatisticsCounter("data-delivered-" + getSessionID());
+        _messagesReceived = new StatisticsCounter("messages-received-" + getSessionID());
+        _dataReceived = new StatisticsCounter("data-received-" + getSessionID());
     }
 
     private <T> T runAsSubject(PrivilegedAction<T> action)
@@ -1498,14 +1500,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _dataDelivered.reset();
         _messagesReceived.reset();
         _dataReceived.reset();
-    }
-
-    public void initialiseStatistics()
-    {
-        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getSessionID());
-        _dataDelivered = new StatisticsCounter("data-delivered-" + getSessionID());
-        _messagesReceived = new StatisticsCounter("messages-received-" + getSessionID());
-        _dataReceived = new StatisticsCounter("data-received-" + getSessionID());
     }
 
     public boolean isSessionNameUnique(byte[] name)

@@ -414,10 +414,6 @@ public class MockConsumer implements ConsumerTarget
 
     private static class MockConnectionModel implements AMQConnectionModel
     {
-        @Override
-        public void initialiseStatistics()
-        {
-        }
 
         @Override
         public void registerMessageReceived(long messageSize, long timestamp)

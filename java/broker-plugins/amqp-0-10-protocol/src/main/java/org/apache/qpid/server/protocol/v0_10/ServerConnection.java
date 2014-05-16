@@ -71,7 +71,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
     private final Subject _authorizedSubject = new Subject();
     private Principal _authorizedPrincipal = null;
-    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     private final long _connectionId;
     private final Object _reference = new Object();
     private VirtualHostImpl _virtualHost;
@@ -93,6 +93,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         _connectionId = connectionId;
         _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
         _broker = broker;
+
+        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getConnectionId());
+        _dataDelivered = new StatisticsCounter("data-delivered-" + getConnectionId());
+        _messagesReceived = new StatisticsCounter("messages-received-" + getConnectionId());
+        _dataReceived = new StatisticsCounter("data-received-" + getConnectionId());
     }
 
     public Object getReference()
@@ -175,8 +180,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public void setVirtualHost(VirtualHostImpl virtualHost)
     {
         _virtualHost = virtualHost;
-
-        initialiseStatistics();
     }
 
     @Override
@@ -453,14 +456,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         _dataDelivered.reset();
         _messagesReceived.reset();
         _dataReceived.reset();
-    }
-
-    public void initialiseStatistics()
-    {
-        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getConnectionId());
-        _dataDelivered = new StatisticsCounter("data-delivered-" + getConnectionId());
-        _messagesReceived = new StatisticsCounter("messages-received-" + getConnectionId());
-        _dataReceived = new StatisticsCounter("data-received-" + getConnectionId());
     }
 
     /**

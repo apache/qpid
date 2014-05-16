@@ -43,9 +43,13 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSLTest extends QpidBrokerTestCase
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SSLTest.class);
+
     private static final String CERT_ALIAS_APP1 = "app1";
     private static final String CERT_ALIAS_APP2 = "app2";
 
@@ -209,6 +213,7 @@ public class SSLTest extends QpidBrokerTestCase
 
     private void verifyExceptionCausesContains(Exception e, String expectedString)
     {
+        LOGGER.debug("verifying that the following exception contains " + expectedString, e);
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         e.printStackTrace(new PrintStream(bout));
         String strace = bout.toString();

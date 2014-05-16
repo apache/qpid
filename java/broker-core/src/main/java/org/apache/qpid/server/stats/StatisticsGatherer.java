@@ -36,17 +36,6 @@ package org.apache.qpid.server.stats;
 public interface StatisticsGatherer
 {
     /**
-     * Initialise the statistics gathering for this object.
-     * 
-     * This method is responsible for creating any {@link StatisticsCounter}
-     * objects and for determining whether statistics generation should be
-     * enabled, by checking broker and system configuration.
-     * 
-     * @see StatisticsCounter#DISABLE_STATISTICS
-     */
-    void initialiseStatistics();
-    
-    /**
      * This method is responsible for registering the receipt of a message
      * with the counters, and also for passing this notification to any parent
      * {@link StatisticsGatherer}s. If statistics generation is not enabled,
