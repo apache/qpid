@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<!DOCTYPE entities [
+<!ENTITY %  entities SYSTEM  "commonEntities.xml">
+%entities;
+]>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<appendix id="Java-Broker-Appendix-Queue-Alerts">
+  <title>Queue Alerts</title>
+  <para>The Broker supports a variety of queue alerting thresholds. Once configured on a queue,
+    these limits will be periodically written to the log if these limits are breached, until the
+    condition is rectified.</para>
+  <para>For example, if queue <literal>myqueue</literal> is configured with a message count alert of
+    1000, and then owing to a failure of a downstream system messages begin to accumulate on the
+    queue, the following alerts will be written periodically to the log. </para>
+  <screen>
+INFO [default:VirtualHostHouseKeepingTask] (queue.NotificationCheck) - MESSAGE_COUNT_ALERT
+           On Queue myqueue - 1272: Maximum count on queue threshold (1000) breached.
+  </screen>
+  <para>Note that queue alerts are <emphasis>soft</emphasis> in nature; breaching the limit will
+    merely cause the alerts to be generated but messages will still be accepted to the queue.</para>
+  <table pgwide="1" id="Java-Broker-Appendix-Queue-Alerts-Alerting-Messages">
+    <title>Queue Alerts</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Alert Name</entry>
+          <entry>Alert Format and Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry morerows="1">MESSAGE_COUNT_ALERT</entry>
+          <entry> MESSAGE_COUNT_ALERT On Queue <replaceable>queuename</replaceable> -
+              <replaceable>number of messages</replaceable>: Maximum count on queue threshold
+              (<replaceable>limit</replaceable>) breached. </entry>
+        </row>
+        <row>
+          <entry>
+            <para>The number of messages on the given queue has breached its configured
+              limit.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">MESSAGE_SIZE_ALERT</entry>
+          <entry> MESSAGE_SIZE_ALERT On Queue <replaceable>queuename</replaceable>
+              -<replaceable>message size</replaceable> : Maximum message size threshold
+              (<replaceable>limit</replaceable>) breached. [Message ID=<replaceable>message
+              id</replaceable>]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>The size of an individual messages has breached its configured limit.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">QUEUE_DEPTH_ALERT</entry>
+          <entry> QUEUE_DEPTH_ALERT On Queue <replaceable>queuename</replaceable> -
+              <replaceable>total size of all messages on queue</replaceable> : Maximum queue depth
+            threshold (<replaceable>limit</replaceable>) breached.</entry>
+        </row>
+        <row>
+          <entry>
+            <para>The total size of all messages on the queue has breached its configured
+              limit.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">MESSAGE_AGE_ALERT</entry>
+          <entry>MESSAGE_AGE_ALERT On Queue <replaceable>queuename</replaceable> - <replaceable>age
+              of message</replaceable> : Maximum age on queue threshold
+              (<replaceable>limit</replaceable>) breached. </entry>
+        </row>
+        <row>
+          <entry>
+            <para>The age of a message on the given queue has breached its configured limit.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+</appendix>

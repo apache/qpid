@@ -21,6 +21,55 @@
 -->
 
 <section id="Java-Broker-Runtime-Log-Files">
-<title>Log Files</title>
-
+ <title>Log Files</title>
+ <para> The Broker uses the <ulink href="http://logging.apache.org/log4j/1.2/">Apache Log4J</ulink>
+  Logging Framework for all logging activity. </para>
+ <para> In the Broker's shipped configuration, all logging is directed to log file <literal><link
+    linkend="Java-Broker-Appendix-Environment-Variables-Qpid-Work"
+   >${QPID_WORK}</link>/log/qpid.log</literal>. The log file is not rotated and will be overwritten
+  when the Broker restarts. Logging levels are configured in such a way that the log will comprise
+  of:</para>
+ <itemizedlist>
+  <listitem>
+   <para>Opertional Log Events. These report key events in the lifecycle of objects (Broker
+    start-up, Queue creation, Queue deletion etc) within the Broker. See <xref
+     linkend="Java-Broker-Appendix-Operation-Logging"/> for details of the formation of these
+    messages.</para>
+  </listitem>
+  <listitem>
+   <para>Queue Alert Events. These report when the queue thresholds have been breached. See <xref
+    linkend="Java-Broker-Appendix-Queue-Alerts"/> for details.</para>
+  </listitem>
+  <listitem>
+   <para>Any Error and Warning conditions.</para>
+  </listitem>
+ </itemizedlist>
+ <para>Logging can be reconfigured either by changing the logging configuration file <literal><link
+    linkend="Java-Broker-Appendix-Environment-Variables-Qpid-Home"
+   >${QPID_HOME}</link>/etc/log4j.xml</literal> or at runtime using the Logging Management MBean,
+  see <xref linkend="Java-Broker-Configuring-And-Managing-JMX-Management-MBeans"/> for
+  details.</para>
+ <section id="Java-Broker-Runtime-Log-Files-Enable-Debug">
+  <title>Enabling Debug</title>
+  <para>It can be helpful to enable debug within the Broker in order to understand a problem more
+   clearly. If this is required, debug can be enabled at runtime (without restarting the Broker)
+   using the Logging Management MBean. The change can also be made by changing the log configuration
+   file and restarting the Broker. Whichever mechanism is chosen, change the appender assoicated
+   with <literal>org.apache.qpid</literal> from <literal>WARN</literal> to
+   <literal>DEBUG</literal>.</para>
+  <example>
+   <title>Changing the log4j.xml configuration file to enable debug</title>
+   <screen><![CDATA[
+...
+<logger additivity="true" name="org.apache.qpid">
+    <level value="debug"/> <!-- change the level value from warn to debug -->
+</logger>
+...]]></screen>
+  </example>
+  <important>
+   <para>Running a production system at <literal>DEBUG</literal> level can have performance
+    implications by slowing the Broker down. It can also generate large log files. Take care to
+    revert the logging level back to <literal>WARN</literal> after the analysis is performed.</para>
+  </important>
+ </section>
 </section>
