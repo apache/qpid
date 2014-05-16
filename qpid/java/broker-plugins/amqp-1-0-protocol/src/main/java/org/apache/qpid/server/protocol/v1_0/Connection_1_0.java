@@ -76,10 +76,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     private final CopyOnWriteArrayList<SessionModelListener> _sessionListeners =
             new CopyOnWriteArrayList<SessionModelListener>();
 
-    private StatisticsCounter _messageDeliveryStatistics = new StatisticsCounter();
-    private StatisticsCounter _messageReceiptStatistics = new StatisticsCounter();
-    private StatisticsCounter _dataDeliveryStatistics = new StatisticsCounter();
-    private StatisticsCounter _dataReceiptStatistics = new StatisticsCounter();
+    private final StatisticsCounter _messageDeliveryStatistics, _messageReceiptStatistics, _dataDeliveryStatistics, _dataReceiptStatistics;
 
     private final LogSubject _logSubject = new LogSubject()
     {
@@ -118,7 +115,10 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         _connectionId = connectionId;
         _subject.getPrincipals().add(new ConnectionPrincipal(this));
         _subjectCreator = subjectCreator;
-
+        _messageDeliveryStatistics = new StatisticsCounter("messages-delivered-" + getConnectionId());
+        _dataDeliveryStatistics = new StatisticsCounter("data-delivered-" + getConnectionId());
+        _messageReceiptStatistics = new StatisticsCounter("messages-received-" + getConnectionId());
+        _dataReceiptStatistics = new StatisticsCounter("data-received-" + getConnectionId());
     }
 
     public Object getReference()
@@ -365,15 +365,6 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     public boolean isStopped()
     {
         return _stopped;
-    }
-
-    @Override
-    public void initialiseStatistics()
-    {
-        _messageDeliveryStatistics = new StatisticsCounter("messages-delivered-" + getConnectionId());
-        _dataDeliveryStatistics = new StatisticsCounter("data-delivered-" + getConnectionId());
-        _messageReceiptStatistics = new StatisticsCounter("messages-received-" + getConnectionId());
-        _dataReceiptStatistics = new StatisticsCounter("data-received-" + getConnectionId());
     }
 
     @Override

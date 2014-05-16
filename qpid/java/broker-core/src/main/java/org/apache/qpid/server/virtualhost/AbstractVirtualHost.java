@@ -110,7 +110,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private volatile VirtualHostState _state = VirtualHostState.INITIALISING;
 
-    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
     private boolean _blocked;
@@ -173,6 +173,10 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _defaultDestination = new DefaultDestination(this);
 
+        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getName());
+        _dataDelivered = new StatisticsCounter("bytes-delivered-" + getName());
+        _messagesReceived = new StatisticsCounter("messages-received-" + getName());
+        _dataReceived = new StatisticsCounter("bytes-received-" + getName());
     }
 
     public void onValidate()
@@ -244,8 +248,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         super.onOpen();
 
         registerSystemNodes();
-
-        initialiseStatistics();
 
         Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
         {
@@ -788,14 +790,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             connection.resetStatistics();
         }
-    }
-
-    public void initialiseStatistics()
-    {
-        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getName());
-        _dataDelivered = new StatisticsCounter("bytes-delivered-" + getName());
-        _messagesReceived = new StatisticsCounter("messages-received-" + getName());
-        _dataReceived = new StatisticsCounter("bytes-received-" + getName());
     }
 
     public synchronized LinkRegistry getLinkRegistry(String remoteContainerId)

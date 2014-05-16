@@ -82,7 +82,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private BrokerOptions _brokerOptions;
 
     private Timer _reportingTimer;
-    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     @ManagedAttributeField
     private String _defaultVirtualHost;
@@ -119,7 +119,10 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             authManager.addUser(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
             _managementModeAuthenticationProvider = authManager;
         }
-        initialiseStatistics();
+        _messagesDelivered = new StatisticsCounter("messages-delivered");
+        _dataDelivered = new StatisticsCounter("bytes-delivered");
+        _messagesReceived = new StatisticsCounter("messages-received");
+        _dataReceived = new StatisticsCounter("bytes-received");
     }
 
     public void onValidate()
@@ -242,9 +245,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         {
             addVirtualHostNode(virtualHostNode);
         }
-
-
-        initialiseStatistics();
 
         initialiseStatisticsReporting();
        // changeChildState(State.ACTIVE, false);
@@ -993,14 +993,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                 ((VirtualHostImpl) virtualHost).resetStatistics();
             }
         }
-    }
-
-    public void initialiseStatistics()
-    {
-        _messagesDelivered = new StatisticsCounter("messages-delivered");
-        _dataDelivered = new StatisticsCounter("bytes-delivered");
-        _messagesReceived = new StatisticsCounter("messages-received");
-        _dataReceived = new StatisticsCounter("bytes-received");
     }
 
     private class StatisticsReportingTask extends TimerTask
