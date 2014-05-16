@@ -31,6 +31,20 @@
         </div>
     </div>
     <div style="clear:both">
+      <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Node Name*:</div>
+      <div class="formLabel-controlCell tableContainer-valueCell" style="float:left;">
+          <input type="text" id="addVirtualHostNode.nodeName"
+                          data-dojo-type="dijit/form/ValidationTextBox"
+                          data-dojo-props="
+                              name: 'name',
+                              placeHolder: 'unique node name per broker',
+                              required: true,
+                              missingMessage: 'A node name must be supplied',
+                              title: 'Enter a unique node name per broker',
+                              pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
+      </div>
+    </div>
+    <div style="clear:both">
       <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Virtual Host Name*:</div>
       <div class="formLabel-controlCell tableContainer-valueCell" style="float:left;">
           <input type="text" id="addVirtualHostNode.groupName"
@@ -41,20 +55,6 @@
                               required: true,
                               missingMessage: 'A virtual host name must be supplied',
                               title: 'Enter virtual host name',
-                              pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
-      </div>
-    </div>
-    <div style="clear:both">
-      <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Node Name*:</div>
-      <div class="formLabel-controlCell tableContainer-valueCell" style="float:left;">
-          <input type="text" id="addVirtualHostNode.nodeName"
-                          data-dojo-type="dijit/form/ValidationTextBox"
-                          data-dojo-props="
-                              name: 'name',
-                              placeHolder: 'node name',
-                              required: true,
-                              missingMessage: 'A node name must be supplied',
-                              title: 'Enter node name',
                               pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
       </div>
     </div>
