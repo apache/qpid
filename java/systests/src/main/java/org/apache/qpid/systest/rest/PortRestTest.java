@@ -123,7 +123,8 @@ public class PortRestTest extends QpidRestTestCase
         String portNameJMX = "test-port-jmx";
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portNameJMX);
-        attributes.put(Port.PORT, getNextAvailable(rmiPort + 1));
+        int jmxPort = getNextAvailable(rmiPort + 1);
+        attributes.put(Port.PORT, jmxPort);
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.JMX_RMI));
         attributes.put(JmxPort.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
 
@@ -144,9 +145,17 @@ public class PortRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code", 201, responseCode);
 
 
-
         // make sure that port is there after broker restart
-        restartBroker();
+        stopBroker();
+
+        // Temporary code to investigate sporadic test failure.
+        boolean rmiIsFree = getNextAvailable(rmiPort) == rmiPort;
+        boolean jmxIsFree = getNextAvailable(jmxPort) == jmxPort;
+
+        assertTrue("Expecting rmiPort to be free after broker stop", rmiIsFree);
+        assertTrue("Expecting jmxPort to be free after broker stop", jmxIsFree);
+
+        startBroker();
 
         portDetails = getRestTestHelper().getJsonAsList("port/" + portNameRMI);
         assertNotNull("Port details cannot be null", portDetails);
