@@ -38,8 +38,6 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.FileUtils;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
 
 public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
 {
@@ -97,7 +95,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         config.removeObjectConfiguration(VirtualHostNode.class, TEST3_VIRTUALHOST);
     }
 
-    public void testCreate3NodesCluster() throws Exception
+    public void testCreate3NodeGroup() throws Exception
     {
         createHANode(NODE1, _node1HaPort, _node1HaPort);
         assertNode(NODE1, _node1HaPort, _node1HaPort, NODE1);
@@ -173,7 +171,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of remote nodes on " + NODE2, 1, data.size());
     }
 
-    private void createHANode(String nodeName, int nodePort, int helperPort) throws IOException, JsonGenerationException, JsonMappingException
+    private void createHANode(String nodeName, int nodePort, int helperPort) throws Exception
     {
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(BDBHAVirtualHostNode.NAME, nodeName);

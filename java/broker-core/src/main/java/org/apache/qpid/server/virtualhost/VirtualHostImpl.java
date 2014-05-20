@@ -104,8 +104,6 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
 
     ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask);
 
-    VirtualHostState getVirtualHostState();
-
     public void block();
 
     public void unblock();

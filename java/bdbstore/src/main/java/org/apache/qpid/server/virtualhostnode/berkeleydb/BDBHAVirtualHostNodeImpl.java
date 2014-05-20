@@ -44,6 +44,8 @@ import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
 
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -57,6 +59,7 @@ import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
@@ -66,7 +69,6 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironment
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicationGroupListener;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.VirtualHostState;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 
 @ManagedObject( category = false, type = "BDB_HA" )
@@ -702,12 +704,41 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         ReplicaVirtualHost(Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
         {
             super(attributes, virtualHostNode);
-            setState(VirtualHostState.PASSIVE);
         }
 
         @Override
-        public void onCreate()
+        protected <C extends ConfiguredObject> C addChild(final Class<C> childClass,
+                                                          final Map<String, Object> attributes,
+                                                          final ConfiguredObject... otherParents)
         {
+            throwUnsupportedForReplica();
+            return null;
+        }
+
+        @Override
+        public ExchangeImpl createExchange(final Map<String, Object> attributes)
+        {
+            throwUnsupportedForReplica();
+            return null;
+        }
+
+        @Override
+        public AMQQueue<?> createQueue(final Map<String, Object> attributes)
+        {
+            throwUnsupportedForReplica();
+            return null;
+        }
+
+        @Override
+        public State getState()
+        {
+            return State.UNAVAILABLE;
+        }
+
+        private void throwUnsupportedForReplica()
+        {
+            throw new IllegalStateException("The virtual host state of " + getState()
+                                            + " does not permit this operation.");
         }
 
     }

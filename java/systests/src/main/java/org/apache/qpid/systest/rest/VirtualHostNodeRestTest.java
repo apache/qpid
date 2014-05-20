@@ -85,20 +85,20 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         startBroker();
 
         String restUrl = "virtualhostnode/" + TEST3_VIRTUALHOST;
-        assertVirtualHostStates(restUrl, "STOPPED", "STOPPED");
+        assertActualAndDesireStates(restUrl, "STOPPED", "STOPPED");
     }
 
     public void testMutateState() throws Exception
     {
         String restUrl = "virtualhostnode/" + TEST3_VIRTUALHOST;
 
-        assertVirtualHostStates(restUrl, "ACTIVE", "ACTIVE");
+        assertActualAndDesireStates(restUrl, "ACTIVE", "ACTIVE");
 
         mutateVirtualHostDesiredState(restUrl, "STOPPED");
-        assertVirtualHostStates(restUrl, "STOPPED", "STOPPED");
+        assertActualAndDesireStates(restUrl, "STOPPED", "STOPPED");
 
         mutateVirtualHostDesiredState(restUrl, "ACTIVE");
-        assertVirtualHostStates(restUrl, "ACTIVE", "ACTIVE");
+        assertActualAndDesireStates(restUrl, "ACTIVE", "ACTIVE");
     }
 
     public void testMutateAttributes() throws Exception
@@ -137,16 +137,12 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         assertEquals("Host should be deleted", 0, virtualHostNodes.size());
     }
 
-    private void assertVirtualHostStates(final String restUrl,
-                                         final String expectedDesiredState,
-                                         final String expectedActualState) throws IOException
+    private void assertActualAndDesireStates(final String restUrl,
+                                             final String expectedDesiredState,
+                                             final String expectedActualState) throws IOException
     {
         Map<String, Object> virtualhostNode = getRestTestHelper().getJsonAsSingletonList(restUrl);
-        assertEquals("Virtualhostnode has unexpected desired state",
-                     expectedDesiredState,
-                     virtualhostNode.get(VirtualHostNode.DESIRED_STATE));
-        assertEquals("Virtualhostnode has unexpected actual state",
-                     expectedActualState, virtualhostNode.get(VirtualHostNode.STATE));
+        Asserts.assertActualAndDesiredState(expectedDesiredState, expectedActualState, virtualhostNode);
     }
 
     private void mutateVirtualHostDesiredState(final String restUrl, final String newState) throws IOException

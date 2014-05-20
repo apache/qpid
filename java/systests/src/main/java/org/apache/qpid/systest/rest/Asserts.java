@@ -30,6 +30,8 @@ import java.util.Map;
 
 import javax.jms.JMSException;
 
+import junit.framework.TestCase;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
@@ -399,4 +401,15 @@ public class Asserts
         assertBinding(queueName, queueName, exchange, binding);
     }
 
+    public static void assertActualAndDesiredState(final String expectedDesiredState,
+                                             final String expectedActualState,
+                                             final Map<String, Object> data)
+    {
+        String name = (String) data.get(ConfiguredObject.NAME);
+        TestCase.assertEquals("Object with name " + name + " has unexpected desired state",
+                              expectedDesiredState,
+                              data.get(ConfiguredObject.DESIRED_STATE));
+        TestCase.assertEquals("Object with name " + name + " has unexpected actual state",
+                              expectedActualState, data.get(ConfiguredObject.STATE));
+    }
 }

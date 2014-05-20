@@ -191,7 +191,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         catch  (Exception e)
         {
             String message = e.getMessage();
-            assertEquals("The virtual hosts state of PASSIVE does not permit this operation.", message);
+            assertEquals("The virtual host state of UNAVAILABLE does not permit this operation.", message);
         }
 
         try
@@ -202,7 +202,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         catch  (Exception e)
         {
             String message = e.getMessage();
-            assertEquals("The virtual hosts state of PASSIVE does not permit this operation.", message);
+            assertEquals("The virtual host state of UNAVAILABLE does not permit this operation.", message);
         }
     }
 
@@ -243,11 +243,11 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
         catch (Exception e)
         {
             String message = e.getMessage();
-            assertEquals("The virtual hosts state of PASSIVE does not permit this operation.", message);
+            assertEquals("The virtual host state of UNAVAILABLE does not permit this operation.", message);
         }
 
         Map<String, Object> attributes = _clusterCreator.getNodeAttributes(inactiveBrokerPort);
-        assertEquals("Inactive broker has unexpeced role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
+        assertEquals("Inactive broker has unexpected role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
         _clusterCreator.setNodeAttributes(inactiveBrokerPort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.ROLE, "MASTER"));
 
         _clusterCreator.awaitNodeToAttainRole(inactiveBrokerPort, "MASTER");

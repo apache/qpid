@@ -22,6 +22,7 @@ package org.apache.qpid.systest.rest;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,8 +130,9 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
     public void testDeleteHost() throws Exception
     {
-        int responseCode = getRestTestHelper().submitRequest("virtualhost/" + TEST3_VIRTUALHOST + "/" + TEST3_VIRTUALHOST, "DELETE");
-        assertEquals("Unexpected response code", 200, responseCode);
+        getRestTestHelper().submitRequest("virtualhost/" + TEST3_VIRTUALHOST + "/" + TEST3_VIRTUALHOST,
+                                          "DELETE",
+                                          HttpServletResponse.SC_OK);
 
         List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("virtualhost/" + TEST3_VIRTUALHOST);
         assertEquals("Host should be deleted", 0, hosts.size());
@@ -138,34 +140,64 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
     public void testDeleteDefaultHostFails() throws Exception
     {
-        int responseCode = getRestTestHelper().submitRequest("virtualhost/" + TEST1_VIRTUALHOST, "DELETE");
-        assertEquals("Unexpected response code", 409, responseCode);
-
-        restartBroker();
-
-        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("virtualhost/" + TEST1_VIRTUALHOST);
-        assertEquals("Host should be deleted", 1, hosts.size());
+        getRestTestHelper().submitRequest("virtualhost/" + TEST1_VIRTUALHOST, "DELETE", HttpServletResponse.SC_CONFLICT);
     }
 
-    public void testUpdateActiveHost() throws Exception
+    public void testMutateAttributes() throws Exception
     {
         String hostToUpdate = TEST3_VIRTUALHOST;
         String restHostUrl = "virtualhost/" + hostToUpdate + "/" + hostToUpdate;
+
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList(restHostUrl);
         Asserts.assertVirtualHost(hostToUpdate, hostDetails);
 
-        Map<String, Object> newAttributes = new HashMap<String, Object>();
-        newAttributes.put(VirtualHost.NAME, hostToUpdate);
-        newAttributes.put(VirtualHost.DESCRIPTION, "This is a virtual host");
-
-        int response = getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes);
-        assertEquals("Unexpected response code", 200, response);
-
-        restartBroker();
+        Map<String, Object> newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESCRIPTION, "This is a virtual host");
+        getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
 
         Map<String, Object> rereadHostDetails = getRestTestHelper().getJsonAsSingletonList(restHostUrl);
         Asserts.assertVirtualHost(hostToUpdate, rereadHostDetails);
         assertEquals("This is a virtual host", rereadHostDetails.get(VirtualHost.DESCRIPTION));
+    }
+
+    public void testMutateState() throws Exception
+    {
+        String hostToUpdate = TEST3_VIRTUALHOST;
+        String restHostUrl = "virtualhost/" + hostToUpdate + "/" + hostToUpdate;
+
+        assertActualAndDesireStates(restHostUrl, "ACTIVE", "ACTIVE");
+
+        Map<String, Object> newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, "STOPPED");
+        getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
+
+        assertActualAndDesireStates(restHostUrl, "STOPPED", "STOPPED");
+
+        newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, "ACTIVE");
+        getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
+
+        assertActualAndDesireStates(restHostUrl, "ACTIVE", "ACTIVE");
+    }
+
+    public void testRecoverVirtualHostInDesiredStateStoppedWithDescription() throws Exception
+    {
+        String hostToUpdate = TEST3_VIRTUALHOST;
+        String restUrl = "virtualhost/" + hostToUpdate + "/" + hostToUpdate;
+
+        assertActualAndDesireStates(restUrl, "ACTIVE", "ACTIVE");
+
+        Map<String, Object> newAttributes = new HashMap<>();
+        newAttributes.put(VirtualHost.DESIRED_STATE, "STOPPED");
+        newAttributes.put(VirtualHost.DESCRIPTION, "My description");
+
+        getRestTestHelper().submitRequest(restUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
+
+        assertActualAndDesireStates(restUrl, "STOPPED", "STOPPED");
+
+        restartBroker();
+
+        Map<String, Object> rereadVirtualhost = getRestTestHelper().getJsonAsSingletonList(restUrl);
+        Asserts.assertActualAndDesiredState("STOPPED", "STOPPED", rereadVirtualhost);
+
+        assertEquals("Unexpected description after restart", "My description", rereadVirtualhost.get(VirtualHost.DESCRIPTION));
     }
 
     public void testPutCreateQueue() throws Exception
@@ -497,7 +529,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
             JsonMappingException
     {
         String storePath = getStoreLocation(hostName);
-        int responseCode = tryCreateVirtualHost(hostName, storeType, storePath, configPath);
+        int responseCode = tryCreateVirtualHostNode(hostName, storeType, storePath, configPath);
         assertEquals("Unexpected response code", 201, responseCode);
         return storePath;
     }
@@ -507,7 +539,10 @@ public class VirtualHostRestTest extends QpidRestTestCase
         return new File(TMP_FOLDER, "store-" + hostName + "-" + System.currentTimeMillis()).getAbsolutePath();
     }
 
-    private int tryCreateVirtualHost(String hostName, String virtualHostNodeType, String storePath, String configPath) throws IOException,
+    private int tryCreateVirtualHostNode(String hostName,
+                                         String virtualHostNodeType,
+                                         String storePath,
+                                         String configPath) throws IOException,
             JsonGenerationException, JsonMappingException
     {
 
@@ -540,6 +575,14 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         assertNull("Unexpected queues", hostDetails.get(VIRTUALHOST_QUEUES_ATTRIBUTE));
         assertNull("Unexpected connections", hostDetails.get(VIRTUALHOST_CONNECTIONS_ATTRIBUTE));
+    }
+
+    private void assertActualAndDesireStates(final String restUrl,
+                                                            final String expectedDesiredState,
+                                                            final String expectedActualState) throws IOException
+    {
+        Map<String, Object> virtualhost = getRestTestHelper().getJsonAsSingletonList(restUrl);
+        Asserts.assertActualAndDesiredState(expectedDesiredState, expectedActualState, virtualhost);
     }
 
 }

@@ -30,13 +30,13 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionOpenBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhost.VirtualHostState;
 
 public class ConnectionOpenMethodHandler implements StateAwareMethodListener<ConnectionOpenBody>
 {
@@ -93,7 +93,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
             }
 
-             if (virtualHost.getVirtualHostState() != VirtualHostState.ACTIVE)
+             if (virtualHost.getState() != State.ACTIVE)
             {
                 throw body.getConnectionException(AMQConstant.CONNECTION_FORCED, "Virtual host '" + virtualHost.getName() + "' is not active");
             }

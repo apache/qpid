@@ -584,11 +584,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
 
     }
 
-    public VirtualHostState getVirtualHostState()
-    {
-        return VirtualHostState.ACTIVE;
-    }
-
     public void block()
     {
     }

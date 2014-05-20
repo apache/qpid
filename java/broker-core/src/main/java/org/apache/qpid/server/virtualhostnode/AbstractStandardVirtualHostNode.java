@@ -122,7 +122,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
         {
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Creating new virtualhost with name : " +  getName());
+                LOGGER.debug("Creating new virtualhost with name : " + getName());
             }
             Map<String, Object> hostAttributes = new HashMap<String, Object>();
             hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
@@ -147,8 +147,6 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
                 }
             });
         }
-
-        host.start();
     }
 
     @Override
