@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import atexit, time, errno
+import atexit, time, errno, os
 from compat import select, set, selectable_waiter
 from threading import Thread, Lock
 
@@ -43,16 +43,18 @@ class Selector:
 
   lock = Lock()
   DEFAULT = None
+  _current_pid = None
 
   @staticmethod
   def default():
     Selector.lock.acquire()
     try:
-      if Selector.DEFAULT is None:
+      if Selector.DEFAULT is None or Selector._current_pid != os.getpid():
         sel = Selector()
         atexit.register(sel.stop)
         sel.start()
         Selector.DEFAULT = sel
+        Selector._current_pid = os.getpid()
       return Selector.DEFAULT
     finally:
       Selector.lock.release()
