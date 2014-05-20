@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +106,71 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         createHANode(NODE3, _node3HaPort, _node1HaPort);
         assertNode(NODE3, _node3HaPort, _node1HaPort, NODE1);
         assertRemoteNodes(NODE1, NODE2, NODE3);
+    }
+
+    public void testDeleteReplicaNode() throws Exception
+    {
+        createHANode(NODE1, _node1HaPort, _node1HaPort);
+        createHANode(NODE2, _node2HaPort, _node1HaPort);
+        createHANode(NODE3, _node3HaPort, _node1HaPort);
+
+        assertRemoteNodes(NODE1, NODE2, NODE3);
+
+        List<Map<String,Object>> data = getRestTestHelper().getJsonAsList("replicationnode/" + NODE1);
+        assertEquals("Unexpected number of remote nodes on " + NODE1, 2, data.size());
+
+        int responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "DELETE");
+        assertEquals("Unexpected response code on deletion of virtual host node " + NODE2, 200, responseCode);
+
+        int counter = 0;
+        while (data.size() != 1 && counter<50)
+        {
+            data = getRestTestHelper().getJsonAsList("replicationnode/" + NODE1);
+            if (data.size() != 1)
+            {
+                Thread.sleep(100l);
+            }
+        }
+        assertEquals("Unexpected number of remote nodes on " + NODE1, 1, data.size());
+    }
+
+    public void testDeleteMasterNode() throws Exception
+    {
+        createHANode(NODE1, _node1HaPort, _node1HaPort);
+        createHANode(NODE2, _node2HaPort, _node1HaPort);
+        createHANode(NODE3, _node3HaPort, _node1HaPort);
+
+        assertNode(NODE1, _node1HaPort, _node1HaPort, NODE1);
+        assertRemoteNodes(NODE1, NODE2, NODE3);
+
+        // change priority to make Node2 a master
+        int responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "PUT", Collections.<String,Object>singletonMap(BDBHAVirtualHostNode.PRIORITY, 100));
+        assertEquals("Unexpected response code on priority update of virtual host node " + NODE2, 200, responseCode);
+
+        List<Map<String,Object>> data = getRestTestHelper().getJsonAsList("replicationnode/" + NODE2);
+        assertEquals("Unexpected number of remote nodes on " + NODE2, 2, data.size());
+
+        // delete master
+        responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE1, "DELETE");
+        assertEquals("Unexpected response code on deletion of virtual host node " + NODE1, 200, responseCode);
+
+        // wait for new master
+        waitForAttributeChanged(_baseNodeRestUrl + NODE2 + "?depth=0", BDBHAVirtualHostNode.ROLE, "MASTER");
+
+        // delete remote node
+        responseCode = getRestTestHelper().submitRequest("replicationnode/" + NODE2 + "/" + NODE1, "DELETE");
+        assertEquals("Unexpected response code on deletion of remote node " + NODE1, 200, responseCode);
+
+        int counter = 0;
+        while (data.size() != 1 && counter<50)
+        {
+            data = getRestTestHelper().getJsonAsList("replicationnode/" + NODE2);
+            if (data.size() != 1)
+            {
+                Thread.sleep(100l);
+            }
+        }
+        assertEquals("Unexpected number of remote nodes on " + NODE2, 1, data.size());
     }
 
     private void createHANode(String nodeName, int nodePort, int helperPort) throws IOException, JsonGenerationException, JsonMappingException

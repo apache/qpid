@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
+import java.net.InetSocketAddress;
 import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -32,11 +34,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
+import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
+import com.sleepycat.je.rep.utilint.HostPortPair;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -340,6 +345,39 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
     }
 
+    @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
+    protected void doDelete()
+    {
+        Set<InetSocketAddress> helpers = getRemoteNodeAddresses();
+        super.doDelete();
+        if (getState() == State.DELETED && !helpers.isEmpty())
+        {
+            try
+            {
+                new ReplicationGroupAdmin(_groupName, helpers).removeMember(getName());
+            }
+            catch(DatabaseException e)
+            {
+                LOGGER.warn("The deletion of node " + this + " on remote nodes failed due to: " + e.getMessage()
+                        + ". To finish deletion a removal of the node from any of remote nodes (" + helpers + ") is required.");
+            }
+        }
+    }
+
+    private Set<InetSocketAddress> getRemoteNodeAddresses()
+    {
+        Set<InetSocketAddress> helpers = new HashSet<InetSocketAddress>();
+        @SuppressWarnings("rawtypes")
+        Collection<? extends RemoteReplicationNode> remoteNodes = getRemoteReplicationNodes();
+        for (RemoteReplicationNode<?> node : remoteNodes)
+        {
+            BDBHARemoteReplicationNode<?> bdbHaRemoteReplicationNode = (BDBHARemoteReplicationNode<?>)node;
+            String remoteNodeAddress = bdbHaRemoteReplicationNode.getAddress();
+            helpers.add(HostPortPair.getSocket(remoteNodeAddress));
+        }
+        return helpers;
+    }
+
     protected void onClose()
     {
         try
@@ -626,8 +664,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             BDBHARemoteReplicationNodeImpl remoteNode = getChildByName(BDBHARemoteReplicationNodeImpl.class, node.getName());
             if (remoteNode != null)
             {
-                remoteNode.delete();
-                childRemoved(remoteNode);
+                remoteNode.deleted();
             }
         }
 

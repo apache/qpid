@@ -23,12 +23,10 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -75,6 +73,7 @@ import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.DbPing;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
+import com.sleepycat.je.rep.utilint.HostPortPair;
 import com.sleepycat.je.rep.utilint.ServiceDispatcher.ServiceConnectFailedException;
 import com.sleepycat.je.rep.vlsn.VLSNRange;
 import com.sleepycat.je.utilint.PropUtil;
@@ -720,7 +719,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         helpers.addAll(_environment.getRepConfig().getHelperSockets());
 
         final ReplicationConfig repConfig = _environment.getRepConfig();
-        helpers.add(InetSocketAddress.createUnresolved(repConfig.getNodeHostname(), repConfig.getNodePort()));
+        helpers.add(HostPortPair.getSocket(HostPortPair.getString(repConfig.getNodeHostname(), repConfig.getNodePort())));
 
         return new ReplicationGroupAdmin(_configuration.getGroupName(), helpers);
     }

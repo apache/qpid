@@ -21,7 +21,6 @@
 
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
-import java.io.File;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -96,6 +95,12 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     public long getLastKnownReplicationTransactionId()
     {
         return _lastTransactionId;
+    }
+
+    @Override
+    public void deleted()
+    {
+        super.deleted();
     }
 
     @StateTransition(currentState = {State.ACTIVE, State.STOPPED}, desiredState = State.DELETED)
