@@ -27,7 +27,8 @@ public enum State
     STOPPED,
     ACTIVE,
     DELETED,
-    ERRORED(false);
+    ERRORED(false),
+    UNAVAILABLE;
 
     private final boolean _valid;
 

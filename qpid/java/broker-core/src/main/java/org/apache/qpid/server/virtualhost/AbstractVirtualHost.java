@@ -23,7 +23,6 @@ package org.apache.qpid.server.virtualhost;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +36,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
@@ -108,7 +108,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private final SystemNodeRegistry _systemNodeRegistry = new SystemNodeRegistry();
 
-    private volatile VirtualHostState _state = VirtualHostState.INITIALISING;
+    private final AtomicReference<State> _state = new AtomicReference<>(State.UNINITIALIZED);
 
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
@@ -273,18 +273,15 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 }
             }
         }
+
+        addChangeListener(new StoreUpdatingChangeListener());
     }
 
     private void checkVHostStateIsActive()
     {
-        checkVHostState(VirtualHostState.ACTIVE);
-    }
-
-    private void checkVHostState(VirtualHostState... states)
-    {
-        if (!Arrays.asList(states).contains(getVirtualHostState()))
+        if (_state.get() != State.ACTIVE)
         {
-            throw new IllegalStateException("The virtual hosts state of " + getVirtualHostState()
+            throw new IllegalStateException("The virtual host state of " + _state.get()
                                             + " does not permit this operation.");
         }
     }
@@ -392,24 +389,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             return State.DELETED;
         }
-        VirtualHostState implementationState = getVirtualHostState();
-        switch(implementationState)
-        {
-            case INITIALISING:
-                return State.UNINITIALIZED;
-            case ACTIVE:
-                return State.ACTIVE;
-            case PASSIVE:
-                // TODO
-                return State.ACTIVE;
-            case STOPPED:
-                return State.STOPPED;
-            case ERRORED:
-                return State.ERRORED;
-            default:
-                throw new IllegalStateException("Unsupported state:" + implementationState);
-        }
-
+        return _state.get();
     }
 
     @Override
@@ -709,7 +689,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         //Stop Connections
         _connectionRegistry.close();
         _dtxRegistry.close();
-        closeStorage();
+        closeMessageStore();
         shutdownHouseKeeping();
 
         _eventLogger.message(VirtualHostMessages.CLOSED(getName()));
@@ -725,7 +705,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
     }
 
-    private void closeStorage()
+    private void closeMessageStore()
     {
         if (getMessageStore() != null)
         {
@@ -806,11 +786,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public DtxRegistry getDtxRegistry()
     {
         return _dtxRegistry;
-    }
-
-    public VirtualHostState getVirtualHostState()
-    {
-        return _state;
     }
 
     public void block()
@@ -902,14 +877,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
     }
 
-    protected void setState(VirtualHostState state)
+    protected void reportIfError(State state)
     {
-        _state = state;
-    }
-
-    protected void reportIfError(VirtualHostState state)
-    {
-        if (state == VirtualHostState.ERRORED)
+        if (state == State.ERRORED)
         {
             _eventLogger.message(VirtualHostMessages.ERRORED(getName()));
         }
@@ -1239,6 +1209,16 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _housekeepingThreadCount;
     }
 
+    @StateTransition( currentState = { State.ACTIVE, State.ERRORED, State.UNINITIALIZED }, desiredState = State.STOPPED )
+    protected void doStop()
+    {
+        closeChildren();
+        shutdownHouseKeeping();
+        closeMessageStore();
+        _state.set(State.STOPPED);
+
+    }
+
     @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED }, desiredState = State.DELETED )
     private void doDelete()
     {
@@ -1250,11 +1230,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             {
                 throw new IntegrityViolationException("Cannot delete default virtual host '" + hostName + "'");
             }
-            if (getVirtualHostState() == VirtualHostState.ACTIVE
-                || getVirtualHostState() == VirtualHostState.INITIALISING)
-            {
-                close();
-            }
+            close();
 
             MessageStore ms = getMessageStore();
             if (ms != null)
@@ -1268,8 +1244,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                     _logger.warn("Exception occurred on message store deletion", e);
                 }
             }
-            setAttribute(VirtualHost.STATE, getState(), State.DELETED);
-            getDurableConfigurationStore().remove(asObjectRecord());
             deleted();
         }
     }
@@ -1426,8 +1400,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         getDurableConfigurationStore().create(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes()));
     }
 
-    @StateTransition( currentState = {State.UNINITIALIZED, State.ERRORED, State.QUIESCED}, desiredState = State.ACTIVE )
-    protected void activate()
+    @StateTransition( currentState = {State.UNINITIALIZED, State.ERRORED, State.QUIESCED, State.STOPPED}, desiredState = State.ACTIVE )
+    private void onActivate()
     {
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());
 
@@ -1454,17 +1428,53 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         new MessageStoreRecoverer(this, getMessageStoreLogSubject()).recover();
 
-        VirtualHostState finalState = VirtualHostState.ERRORED;
+        State finalState = State.ERRORED;
         try
         {
             initialiseHouseKeeping(getHousekeepingCheckPeriod());
-            finalState = VirtualHostState.ACTIVE;
+            finalState = State.ACTIVE;
         }
         finally
         {
-            _state = finalState;
-            reportIfError(_state);
+            _state.set(finalState);
+            reportIfError(_state.get());
+        }
+
+    }
+
+    private class StoreUpdatingChangeListener implements ConfigurationChangeListener
+    {
+        @Override
+        public void stateChanged(final ConfiguredObject<?> object, final State oldState, final State newState)
+        {
+            if (newState == State.DELETED)
+            {
+                getDurableConfigurationStore().remove(asObjectRecord());
+                object.removeChangeListener(this);
+            }
+        }
+
+        @Override
+        public void childAdded(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
+        {
+
+        }
+
+        @Override
+        public void childRemoved(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
+        {
+
+        }
+
+        @Override
+        public void attributeSet(final ConfiguredObject<?> object,
+                                 final String attributeName,
+                                 final Object oldAttributeValue,
+                                 final Object newAttributeValue)
+        {
+            getDurableConfigurationStore().update(false, asObjectRecord());
         }
     }
+
 
 }
