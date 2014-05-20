@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -42,6 +43,8 @@ import org.apache.qpid.util.Strings;
 
 public class ConfiguredObjectTypeRegistry
 {
+    private static final Logger LOGGER = Logger.getLogger(ConfiguredObjectTypeRegistry.class);
+
     private static final Comparator<ConfiguredObjectAttributeOrStatistic<?,?>> NAME_COMPARATOR = new Comparator<ConfiguredObjectAttributeOrStatistic<?, ?>>()
     {
         @Override
@@ -88,15 +91,22 @@ public class ConfiguredObjectTypeRegistry
         {
             for (Class<? extends ConfiguredObject> configuredObjectClass : registration.getConfiguredObjectClasses())
             {
-                process(configuredObjectClass);
-                ManagedObject annotation = configuredObjectClass.getAnnotation(ManagedObject.class);
-                if (annotation.category())
+                try
                 {
-                    categories.add(configuredObjectClass);
+                    process(configuredObjectClass);
+                    ManagedObject annotation = configuredObjectClass.getAnnotation(ManagedObject.class);
+                    if (annotation.category())
+                    {
+                        categories.add(configuredObjectClass);
+                    }
+                    if (!"".equals(annotation.type()))
+                    {
+                        types.add(configuredObjectClass);
+                    }
                 }
-                if (!"".equals(annotation.type()))
+                catch(NoClassDefFoundError ncdfe)
                 {
-                    types.add(configuredObjectClass);
+                    LOGGER.warn("A class definition could not be found while processing the model for '" + configuredObjectClass.getName() + "': " + ncdfe.getMessage());
                 }
             }
         }
