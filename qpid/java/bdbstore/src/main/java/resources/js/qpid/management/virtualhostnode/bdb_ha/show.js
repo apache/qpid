@@ -148,7 +148,7 @@ define(["dojo/_base/xhr",
       {
         var data = that.membersGrid.grid.selection.getSelected();
         that.transferMasterButton.set("disabled", data.length != 1|| data[0].role != "REPLICA");
-        that.removeNodeButton.set("disabled", data.length != 1 || data[0].role == "MASTER" || data[0].name ==  that.data.name);
+        that.removeNodeButton.set("disabled", data.length != 1 || data[0].role == "MASTER");
       };
       connect.connect(this.membersGrid.grid.selection, 'onSelected',  nodeControlsToggler);
       connect.connect(this.membersGrid.grid.selection, 'onDeselected',  nodeControlsToggler);
@@ -170,8 +170,14 @@ define(["dojo/_base/xhr",
             var data = that.membersGrid.grid.selection.getSelected();
             if (data.length == 1 && confirm("Are you sure you would like to delete node '" + data[0].name + "'?"))
             {
-                sendRequest(that.data.name, data[0].name, "DELETE");
-                that.membersGrid.grid.selection.clear();
+                if (sendRequest(that.data.name, data[0].name, "DELETE"))
+                {
+                  that.membersGrid.grid.selection.clear();
+                  if (data[0].name == that.data.name)
+                  {
+                    that.parent.destroy();
+                  }
+                }
             }
           }
       );

@@ -471,6 +471,129 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
     }
 
 
+    public void testRemoveReplicaNode() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+
+        Map<String, Object> node1Attributes = new HashMap<String, Object>();
+        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
+        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
+
+        BDBHAVirtualHostNode<?> node1 = createHaVHN(node1Attributes);
+        node1.start();
+        assertEquals("Failed to activate node", State.ACTIVE, node1.getState());
+
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
+
+        Map<String, Object> node2Attributes = new HashMap<String, Object>();
+        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
+        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
+
+        BDBHAVirtualHostNode<?> node2 = createHaVHN(node2Attributes);
+        node2.start();
+        assertEquals("Failed to activate node2", State.ACTIVE, node2.getState());
+
+        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+        Map<String, Object> node3Attributes = new HashMap<String, Object>();
+        node3Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node3Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node3Attributes.put(BDBHAVirtualHostNode.NAME, "node3");
+        node3Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
+        node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
+        BDBHAVirtualHostNode<?> node3 = createHaVHN(node3Attributes);
+        node3.start();
+        assertEquals("Failed to activate node3", State.ACTIVE, node3.getState());
+
+        BDBHAVirtualHostNode<?> master = awaitAndFindNodeInRole("MASTER");
+        awaitRemoteNodes(master, 2);
+
+        BDBHAVirtualHostNode<?> replica = awaitAndFindNodeInRole("REPLICA");
+
+        assertNotNull("Remote node " + replica.getName() + " is not found", findRemoteNode( master, replica.getName()));
+        replica.delete();
+
+        awaitRemoteNodes(master, 1);
+
+        assertNull("Remote node " + replica.getName() + " is not found", findRemoteNode( master, replica.getName()));
+    }
+
+    private BDBHARemoteReplicationNode<?> findRemoteNode(BDBHAVirtualHostNode<?> node, String name)
+    {
+        for (RemoteReplicationNode<?> remoteNode : node.getRemoteReplicationNodes())
+        {
+            if (remoteNode.getName().equals(name))
+            {
+                return (BDBHARemoteReplicationNode<?>)remoteNode;
+            }
+        }
+        return null;
+    }
+
+    private void awaitRemoteNodes(BDBHAVirtualHostNode<?> node, int expectedNodeNumber) throws InterruptedException
+    {
+        int counter = 0;
+
+        @SuppressWarnings("rawtypes")
+        Collection<? extends RemoteReplicationNode> remoteNodes = null;
+        do
+        {
+            remoteNodes = node.getRemoteReplicationNodes();
+            if (counter > 0)
+            {
+                Thread.sleep(100);
+            }
+            counter++;
+        }
+        while(remoteNodes.size() != expectedNodeNumber && counter<50);
+        assertEquals("Unexpected node number", expectedNodeNumber, node.getRemoteReplicationNodes().size());
+    }
+
+    private BDBHAVirtualHostNode<?> awaitAndFindNodeInRole(String role) throws InterruptedException
+    {
+        BDBHAVirtualHostNode<?> replica = null;
+        int findReplicaCount = 0;
+        while(replica == null)
+        {
+            replica = findNodeInRole(role);
+            if (replica == null)
+            {
+                Thread.sleep(100);
+            }
+            if (findReplicaCount > 50)
+            {
+                fail("Could not find a node in replica role");
+            }
+            findReplicaCount++;
+        }
+        return replica;
+    }
+
+    private BDBHAVirtualHostNode<?> findNodeInRole(String role)
+    {
+        for (BDBHAVirtualHostNode<?> node : _nodes)
+        {
+            if (role.equals(node.getRole()))
+            {
+                return node;
+            }
+        }
+        return null;
+    }
+
     private BDBHAVirtualHostNode<?> createHaVHN(Map<String, Object> attributes)
     {
         BDBHAVirtualHostNode<?> node = (BDBHAVirtualHostNode<?>) _objectFactory.create(VirtualHostNode.class, attributes, _broker);
