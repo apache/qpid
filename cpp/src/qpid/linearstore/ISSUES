@@ -45,8 +45,6 @@ Current/pending:
                    * Recovery/reading of message content
                    * Empty file pool status and management
    5464 -        [linearstore] Incompletely created journal files accumulate in EFP
-#  5750 1078142  [linearstore] qpidd closes connection with (distributed) transactional client while checking previous transaction, broker signals error (closed by error: Queue Ve0-2: async_dequeue() failed: exception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error)
-                   * jexception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error. (AIO write operation failed: Invalid argument (-22) [pg=0 size=8192 offset=4096 fh=22])
    -    1088944  [Linearstore] store does not return all files to EFP after purging big queue
    -    1078937  [linearstore] Installation and tests for new store analysis tool qpid-qls-analyze
 
@@ -119,18 +117,23 @@ NO-JIRA -        Added missing Apache copyright/license text
    5661       -  [linearstore] Set default cmake build to exclude linearstore
                    svn r.1584379 2014-04-03 Proposed solution.
                    * Run ccmake, select BUILD_LINEARSTORE to change its value to ON to build.
+   5750 1078142  [linearstore] qpidd closes connection with (distributed) transactional client while checking previous transaction, broker signals error (closed by error: Queue Ve0-2: async_dequeue() failed: exception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error)
+                   svn r.1594215 2014-05-13 Proposed solution.
+                   * jexception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error. (AIO write operation failed: Invalid argument (-22) [pg=0 size=8192 offset=4096 fh=22])
+   5767 1098118  [linearstore] broker segfaults when recovering journal file with damaged header
+                   svn r.1596509 2014-05-21 Proposed solution (committed by pmoravec)
 
 Ordered checkin list:
 =====================
 In order to port the linearstore changes from trunk to a branch, the following svn checkins need to be ported in order:
 
-no.   svn r  Q-JIRA     RHBZ       Date
---- ------- ------- -------- ----------
+no.   svn r  Q-JIRA     RHBZ       Date Alt Committer
+--- ------- ------- -------- ---------- -------------
  1. 1545563    5357  1052518 2013-11-26
  2. 1547601    5358  1052727 2013-12-03
  3. 1547641    5387  1036071 2013-12-03
  4. 1547921    5388  1035802 2013-12-04
- 5. 1551304 NO-JIRA        - 2013-12-16
+ 5. 1551304 NO-JIRA        - 2013-12-16 (aconway)
  6. 1551361    5425  1052445 2013-12-16
  7. 1552772    5442  1039949 2013-12-20
  8. 1553148    5444  1052775 2013-12-23
@@ -149,9 +152,11 @@ no.   svn r  Q-JIRA     RHBZ       Date
 21. 1574513    5603  1063700 2014-03-05
 22. 1575009    5607  1064181 2014-03-06
 23. 1578899    5362        - 2014-03-18
-24. 1582730    5651        - 2014-03-28
+24. 1582730    5651        - 2014-03-28 (pmoravec)
 25. 1583778    5362        - 2014-04-01
 26. 1584379    5661        - 2014-04-03
+27. 1594215    5750  1078142 2014-05-13
+28. 1596509    5767  1098118 2014-05-21 (pmoravec)
 
 See above sections for details on these checkins.
 

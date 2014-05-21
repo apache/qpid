@@ -18,13 +18,13 @@
 #
 
 """
-Module: qls.utils
+Module: qlslibs.utils
 
 Contains helper functions for qpid_qls_analyze.
 """
 
 import os
-import qls.jrnl
+import qlslibs.jrnl
 import stat
 import string
 import struct
@@ -43,18 +43,18 @@ def adler32(data):
 
 def create_record(magic, uflags, journal_file, record_id, dequeue_record_id, xid, data):
     """Helper function to construct a record with xid, data (where applicable) and consistent tail with checksum"""
-    record_class = qls.jrnl.CLASSES.get(magic[-1])
+    record_class = qlslibs.jrnl.CLASSES.get(magic[-1])
     record = record_class(0, magic, DEFAULT_RECORD_VERSION, uflags, journal_file.file_header.serial, record_id)
     xid_length = len(xid) if xid is not None else 0
-    if isinstance(record, qls.jrnl.EnqueueRecord):
+    if isinstance(record, qlslibs.jrnl.EnqueueRecord):
         data_length = len(data) if data is not None else 0
         record.init(None, xid_length, data_length)
-    elif isinstance(record, qls.jrnl.DequeueRecord):
+    elif isinstance(record, qlslibs.jrnl.DequeueRecord):
         record.init(None, dequeue_record_id, xid_length)
-    elif isinstance(record, qls.jrnl.TransactionRecord):
+    elif isinstance(record, qlslibs.jrnl.TransactionRecord):
         record.init(None, xid_length)
     else:
-        raise qls.err.InvalidClassError(record.__class__.__name__)
+        raise qlslibs.err.InvalidClassError(record.__class__.__name__)
     if xid is not None:
         record.xid = xid
         record.xid_complete = True
@@ -75,11 +75,11 @@ def efp_directory_size(directory_name):
 
 def format_data(data, data_size=None, show_data_flag=True):
     """Format binary data for printing"""
-    return _format_binary(data, data_size, show_data_flag, 'data', qls.err.DataSizeError, False)
+    return _format_binary(data, data_size, show_data_flag, 'data', qlslibs.err.DataSizeError, False)
 
 def format_xid(xid, xid_size=None, show_xid_flag=True):
     """Format binary XID for printing"""
-    return _format_binary(xid, xid_size, show_xid_flag, 'xid', qls.err.XidSizeError, True)
+    return _format_binary(xid, xid_size, show_xid_flag, 'xid', qlslibs.err.XidSizeError, True)
 
 def get_avail_disk_space(path):
     df_proc = subprocess.Popen(["df", path], stdout=subprocess.PIPE)
@@ -112,7 +112,7 @@ def load_args(file_handle, klass):
     foffs = file_handle.tell(),
     fbin = file_handle.read(size)
     if len(fbin) != size:
-        raise qls.err.UnexpectedEndOfFileError(len(fbin), size, foffs, file_handle.name)
+        raise qlslibs.err.UnexpectedEndOfFileError(len(fbin), size, foffs, file_handle.name)
     return foffs + struct.unpack(klass.FORMAT, fbin)
 
 def load_data(file_handle, element, element_size):
@@ -179,7 +179,7 @@ def _is_printable(in_str):
     return True
 
 def _mk_record_tail(record):
-    record_tail = qls.jrnl.RecordTail(None)
+    record_tail = qlslibs.jrnl.RecordTail(None)
     record_tail.xmagic = inv_str(record.magic)
     record_tail.checksum = adler32(record.checksum_encode())
     record_tail.serial = record.serial

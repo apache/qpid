@@ -18,13 +18,13 @@
 #
 
 """
-Module: qls.jrnl
+Module: qlslibs.jrnl
 
 Contains journal record classes.
 """
 
-import qls.err
-import qls.utils
+import qlslibs.err
+import qlslibs.utils
 import string
 import struct
 import time
@@ -58,8 +58,8 @@ class RecordHeader(object):
         if self.magic[:3] != 'QLS' or self.magic[3] not in ['a', 'c', 'd', 'e', 'f', 'x']:
             return False
         if self.magic[-1] != 'x':
-            if self.version != qls.utils.DEFAULT_RECORD_VERSION:
-                raise qls.err.InvalidRecordVersionError(file_header, self, qls.utils.DEFAULT_RECORD_VERSION)
+            if self.version != qlslibs.utils.DEFAULT_RECORD_VERSION:
+                raise qlslibs.err.InvalidRecordVersionError(file_header, self, qlslibs.utils.DEFAULT_RECORD_VERSION)
             if self.serial != file_header.serial:
                 return False
         return True
@@ -106,17 +106,17 @@ class RecordTail(object):
         if self.valid_flag is None:
             if not self.complete:
                 return False
-            self.valid_flag = qls.utils.inv_str(self.xmagic) == record.magic and \
+            self.valid_flag = qlslibs.utils.inv_str(self.xmagic) == record.magic and \
                               self.serial == record.serial and \
                               self.record_id == record.record_id and \
-                              qls.utils.adler32(record.checksum_encode()) == self.checksum
+                              qlslibs.utils.adler32(record.checksum_encode()) == self.checksum
         return self.valid_flag
     def to_string(self):
         """Return a string representation of the this RecordTail instance"""
         if self.valid_flag is not None:
             if not self.valid_flag:
                 return '[INVALID RECORD TAIL]'
-        magic = qls.utils.inv_str(self.xmagic)
+        magic = qlslibs.utils.inv_str(self.xmagic)
         magic_char = magic[-1].upper() if magic[-1] in string.printable else '?'
         return '[%c cs=0x%08x rid=0x%x]' % (magic_char, self.checksum, self.record_id)
     def __str__(self):
@@ -150,7 +150,7 @@ class FileHeader(RecordHeader):
                                                        self.queue_name_len) + self.queue_name
     def get_file_size(self):
         """Sum of file header size and data size"""
-        return (self.file_header_size_sblks * qls.utils.DEFAULT_SBLK_SIZE) + (self.efp_data_size_kb * 1024)
+        return (self.file_header_size_sblks * qlslibs.utils.DEFAULT_SBLK_SIZE) + (self.efp_data_size_kb * 1024)
     def load(self, file_handle):
         self.queue_name = file_handle.read(self.queue_name_len)
     def is_end_of_file(self):
@@ -225,13 +225,13 @@ class EnqueueRecord(RecordHeader):
         return True
     def load(self, file_handle):
         """Return True when load is incomplete and must be called again with new file handle"""
-        self.xid, self.xid_complete = qls.utils.load_data(file_handle, self.xid, self.xid_size)
+        self.xid, self.xid_complete = qlslibs.utils.load_data(file_handle, self.xid, self.xid_size)
         if not self.xid_complete:
             return True
         if self.is_external():
             self.data_complete = True
         else:
-            self.data, self.data_complete = qls.utils.load_data(file_handle, self.data, self.data_size)
+            self.data, self.data_complete = qlslibs.utils.load_data(file_handle, self.data, self.data_size)
             if not self.data_complete:
                 return True
         if self.xid_size > 0 or self.data_size > 0:
@@ -254,8 +254,8 @@ class EnqueueRecord(RecordHeader):
         else:
             record_tail_str = self.record_tail.to_string()
         return '%s %s %s %s %s %s' % (self.to_rh_string(),
-                                      qls.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
-                                      qls.utils.format_data(self.data, self.data_size, show_data_flag),
+                                      qlslibs.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
+                                      qlslibs.utils.format_data(self.data, self.data_size, show_data_flag),
                                       record_tail_str, self._print_flags(), self._get_warnings())
     def _print_flags(self):
         """Utility function to decode the flags field in the header and print a string representation"""
@@ -305,7 +305,7 @@ class DequeueRecord(RecordHeader):
         return True
     def load(self, file_handle):
         """Return True when load is incomplete and must be called again with new file handle"""
-        self.xid, self.xid_complete = qls.utils.load_data(file_handle, self.xid, self.xid_size)
+        self.xid, self.xid_complete = qlslibs.utils.load_data(file_handle, self.xid, self.xid_size)
         if not self.xid_complete:
             return True
         if self.xid_size > 0:
@@ -329,7 +329,7 @@ class DequeueRecord(RecordHeader):
         else:
             record_tail_str = self.record_tail.to_string()
         return '%s drid=0x%x %s %s %s %s' % (self.to_rh_string(), self.dequeue_record_id,
-                                             qls.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
+                                             qlslibs.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
                                              record_tail_str, self._print_flags(), self._get_warnings())
     def _print_flags(self):
         """Utility function to decode the flags field in the header and print a string representation"""
@@ -366,7 +366,7 @@ class TransactionRecord(RecordHeader):
         return True
     def load(self, file_handle):
         """Return True when load is incomplete and must be called again with new file handle"""
-        self.xid, self.xid_complete = qls.utils.load_data(file_handle, self.xid, self.xid_size)
+        self.xid, self.xid_complete = qlslibs.utils.load_data(file_handle, self.xid, self.xid_size)
         if not self.xid_complete:
             return True
         if self.xid_size > 0:
@@ -388,7 +388,7 @@ class TransactionRecord(RecordHeader):
         else:
             record_tail_str = self.record_tail.to_string()
         return '%s %s %s %s' % (self.to_rh_string(),
-                                qls.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
+                                qlslibs.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
                                 record_tail_str, self._get_warnings())
     def __str__(self):
         """Return a string representation of the this TransactionRecord instance"""

@@ -18,15 +18,15 @@
 #
 
 """
-Module: qls.anal
+Module: qlslibs.anal
 
 Classes for recovery and analysis of a Qpid Linear Store (QLS).
 """
 
 import os.path
-import qls.err
-import qls.jrnl
-import qls.utils
+import qlslibs.err
+import qlslibs.jrnl
+import qlslibs.utils
 
 class HighCounter(object):
     def __init__(self):
@@ -45,7 +45,7 @@ class JournalRecoveryManager(object):
     JRNL_DIR_NAME = 'jrnl'
     def __init__(self, directory, args):
         if not os.path.exists(directory):
-            raise qls.err.InvalidQlsDirectoryNameError(directory)
+            raise qlslibs.err.InvalidQlsDirectoryNameError(directory)
         self.directory = directory
         self.args = args
         self.tpl = None
@@ -86,14 +86,14 @@ class JournalRecoveryManager(object):
                 status = '[Prepared, but interrupted during commit phase]'
             else:
                 status = '[Prepared, but interrupted during abort phase]'
-            print ' ', qls.utils.format_xid(xid), status
+            print ' ', qlslibs.utils.format_xid(xid), status
             if prepared_list[xid] is None: # Prepared, but not committed or aborted
                 enqueue_record = self.tpl.get_txn_map_record(xid)[0][1]
-                dequeue_record = qls.utils.create_record(qls.jrnl.DequeueRecord.MAGIC, \
-                                                         qls.jrnl.DequeueRecord.TXN_COMPLETE_COMMIT_FLAG, \
-                                                         self.tpl.current_journal_file, \
-                                                         self.high_rid_counter.get_next(), \
-                                                         enqueue_record.record_id, xid, None)
+                dequeue_record = qlslibs.utils.create_record(qlslibs.jrnl.DequeueRecord.MAGIC, \
+                                                             qlslibs.jrnl.DequeueRecord.TXN_COMPLETE_COMMIT_FLAG, \
+                                                             self.tpl.current_journal_file, \
+                                                             self.high_rid_counter.get_next(), \
+                                                             enqueue_record.record_id, xid, None)
                 if txn_flag:
                     self.tpl.add_record(dequeue_record)
         for queue_name in sorted(self.journals.keys()):
@@ -101,10 +101,10 @@ class JournalRecoveryManager(object):
         if len(prepared_list) > 0:
             print 'Completing prepared transactions in prepared transaction list:'
         for xid in prepared_list.keys():
-            print ' ', qls.utils.format_xid(xid)
-            transaction_record = qls.utils.create_record(qls.jrnl.TransactionRecord.MAGIC_COMMIT, 0, \
-                                                         self.tpl.current_journal_file, \
-                                                         self.high_rid_counter.get_next(), None, xid, None)
+            print ' ', qlslibs.utils.format_xid(xid)
+            transaction_record = qlslibs.utils.create_record(qlslibs.jrnl.TransactionRecord.MAGIC_COMMIT, 0, \
+                                                             self.tpl.current_journal_file, \
+                                                             self.high_rid_counter.get_next(), None, xid, None)
             if txn_flag:
                 self.tpl.add_record(transaction_record)
         print
@@ -118,7 +118,7 @@ class EnqueueMap(object):
         self.enq_map = {}
     def add(self, journal_file, enq_record, locked_flag):
         if enq_record.record_id in self.enq_map:
-            raise qls.err.DuplicateRecordIdError(self.journal.current_file_header, enq_record)
+            raise qlslibs.err.DuplicateRecordIdError(self.journal.current_file_header, enq_record)
         self.enq_map[enq_record.record_id] = [journal_file, enq_record, locked_flag]
     def contains(self, rid):
         """Return True if the map contains the given rid"""
@@ -129,14 +129,14 @@ class EnqueueMap(object):
             del self.enq_map[deq_record.dequeue_record_id]
             return enq_list
         else:
-            raise qls.err.RecordIdNotFoundError(journal_file.file_header, deq_record)
+            raise qlslibs.err.RecordIdNotFoundError(journal_file.file_header, deq_record)
     def get(self, record_id):
         if record_id in self.enq_map:
             return self.enq_map[record_id]
         return None
     def lock(self, journal_file, dequeue_record):
         if dequeue_record.dequeue_record_id not in self.enq_map:
-            raise qls.err.RecordIdNotFoundError(journal_file.file_header, dequeue_record)
+            raise qlslibs.err.RecordIdNotFoundError(journal_file.file_header, dequeue_record)
         self.enq_map[dequeue_record.dequeue_record_id][2] = True
     def report_str(self, _, show_records):
         """Return a string containing a text report for all records in the map"""
@@ -163,9 +163,9 @@ class EnqueueMap(object):
             if self.enq_map[dequeue_record.dequeue_record_id][2]:
                 self.enq_map[dequeue_record.dequeue_record_id][2] = False
             else:
-                raise qls.err.RecordNotLockedError(journal_file.file_header, dequeue_record)
+                raise qlslibs.err.RecordNotLockedError(journal_file.file_header, dequeue_record)
         else:
-            raise qls.err.RecordIdNotFoundError(journal_file.file_header, dequeue_record)
+            raise qlslibs.err.RecordIdNotFoundError(journal_file.file_header, dequeue_record)
 
 class TransactionMap(object):
     """
@@ -177,7 +177,7 @@ class TransactionMap(object):
     def abort(self, xid):
         """Perform an abort operation for the given xid record"""
         for journal_file, record, _ in self.txn_map[xid]:
-            if isinstance(record, qls.jrnl.DequeueRecord):
+            if isinstance(record, qlslibs.jrnl.DequeueRecord):
                 if self.enq_map.contains(record.dequeue_record_id):
                     self.enq_map.unlock(journal_file, record)
             else:
@@ -185,16 +185,16 @@ class TransactionMap(object):
         del self.txn_map[xid]
     def add(self, journal_file, record):
         if record.xid is None:
-            raise qls.err.NonTransactionalRecordError(journal_file.file_header, record, 'TransactionMap.add()')
-        if isinstance(record, qls.jrnl.DequeueRecord):
+            raise qlslibs.err.NonTransactionalRecordError(journal_file.file_header, record, 'TransactionMap.add()')
+        if isinstance(record, qlslibs.jrnl.DequeueRecord):
             try:
                 self.enq_map.lock(journal_file, record)
-            except qls.err.RecordIdNotFoundError:
+            except qlslibs.err.RecordIdNotFoundError:
                 # Not in emap, look for rid in tmap - should not happen in practice
                 txn_op = self._find_record_id(record.xid, record.dequeue_record_id)
                 if txn_op != None:
                     if txn_op[2]:
-                        raise qls.err.AlreadyLockedError(journal_file.file_header, record)
+                        raise qlslibs.err.AlreadyLockedError(journal_file.file_header, record)
                     txn_op[2] = True
         if record.xid in self.txn_map:
             self.txn_map[record.xid].append([journal_file, record, False]) # append to existing list
@@ -204,7 +204,7 @@ class TransactionMap(object):
         """Perform a commit operation for the given xid record"""
         mismatch_list = []
         for journal_file, record, lock in self.txn_map[xid]:
-            if isinstance(record, qls.jrnl.EnqueueRecord):
+            if isinstance(record, qlslibs.jrnl.EnqueueRecord):
                 self.enq_map.add(journal_file, record, lock) # Transfer enq to emap
             else:
                 if self.enq_map.contains(record.dequeue_record_id):
@@ -224,8 +224,8 @@ class TransactionMap(object):
         if transaction_record.magic[-1] == 'a':
             self.abort(transaction_record.xid)
         else:
-            raise qls.err.InvalidRecordTypeError(journal_file.file_header, transaction_record,
-                                                 'delete from Transaction Map')
+            raise qlslibs.err.InvalidRecordTypeError(journal_file.file_header, transaction_record,
+                                                     'delete from Transaction Map')
     def get(self, xid):
         if xid in self.txn_map:
             return self.txn_map[xid]
@@ -240,7 +240,7 @@ class TransactionMap(object):
         prepared_list = {}
         for xid in self.get_xid_list():
             for _, record, _ in self.txn_map[xid]:
-                if isinstance(record, qls.jrnl.EnqueueRecord):
+                if isinstance(record, qlslibs.jrnl.EnqueueRecord):
                     prepared_list[xid] = None
                 else:
                     prepared_list[xid] = record.is_transaction_complete_commit()
@@ -255,7 +255,7 @@ class TransactionMap(object):
         if show_records:
             rstr += ':'
             for xid, op_list in self.txn_map.iteritems():
-                rstr += '\n  %s containing %d operations:' % (qls.utils.format_xid(xid), len(op_list))
+                rstr += '\n  %s containing %d operations:' % (qlslibs.utils.format_xid(xid), len(op_list))
                 for journal_file, record, _ in op_list:
                     rstr += '\n    0x%x:%s' % (journal_file.file_header.file_num, record)
         else:
@@ -332,15 +332,15 @@ class Journal(object):
         self.num_filler_records_required = None # TODO: Move into JournalFile
         self.fill_to_offset = None
     def add_record(self, record):
-        if isinstance(record, qls.jrnl.EnqueueRecord) or isinstance(record, qls.jrnl.DequeueRecord):
+        if isinstance(record, qlslibs.jrnl.EnqueueRecord) or isinstance(record, qlslibs.jrnl.DequeueRecord):
             if record.xid_size > 0:
                 self.txn_map.add(self.current_journal_file, record)
             else:
                 self.enq_map.add(self.current_journal_file, record, False)
-        elif isinstance(record, qls.jrnl.TransactionRecord):
+        elif isinstance(record, qlslibs.jrnl.TransactionRecord):
             self.txn_map.delete(self.current_journal_file, record)
         else:
-            raise qls.err.InvalidRecordTypeError(self.current_journal_file, record, 'add to Journal')
+            raise qlslibs.err.InvalidRecordTypeError(self.current_journal_file, record, 'add to Journal')
     def get_enq_map_record(self, rid):
         return self.enq_map.get(rid)
     def get_txn_map_record(self, xid):
@@ -356,9 +356,9 @@ class Journal(object):
             while self._get_next_record(high_rid_counter):
                 pass
             self._check_alignment()
-        except qls.err.NoMoreFilesInJournalError:
+        except qlslibs.err.NoMoreFilesInJournalError:
             print 'No more files in journal'
-        except qls.err.FirstRecordOffsetMismatchError as err:
+        except qlslibs.err.FirstRecordOffsetMismatchError as err:
             print '0x%08x: **** FRO ERROR: queue=\"%s\" fid=0x%x fro actual=0x%08x expected=0x%08x' % \
             (err.get_expected_fro(), err.get_queue_name(), err.get_file_number(), err.get_record_offset(),
              err.get_expected_fro())
@@ -370,19 +370,19 @@ class Journal(object):
             if xid in prepared_list.keys():
                 commit_flag = prepared_list[xid]
                 if commit_flag is None:
-                    print ' ', qls.utils.format_xid(xid), '- Assuming commit after prepare'
+                    print ' ', qlslibs.utils.format_xid(xid), '- Assuming commit after prepare'
                     if txn_flag:
                         self.txn_map.commit(xid)
                 elif commit_flag:
-                    print ' ', qls.utils.format_xid(xid), '- Completing interrupted commit operation'
+                    print ' ', qlslibs.utils.format_xid(xid), '- Completing interrupted commit operation'
                     if txn_flag:
                         self.txn_map.commit(xid)
                 else:
-                    print ' ', qls.utils.format_xid(xid), '- Completing interrupted abort operation'
+                    print ' ', qlslibs.utils.format_xid(xid), '- Completing interrupted abort operation'
                     if txn_flag:
                         self.txn_map.abort(xid)
             else:
-                print '  ', qls.utils.format_xid(xid), '- Ignoring, not in prepared transaction list'
+                print '  ', qlslibs.utils.format_xid(xid), '- Ignoring, not in prepared transaction list'
                 if txn_flag:
                     self.txn_map.abort(xid)
     def report(self, print_stats_flag):
@@ -408,25 +408,26 @@ class Journal(object):
             if len(dir_entry_bits) == 2 and dir_entry_bits[1] == JournalRecoveryManager.JRNL_DIR_NAME:
                 fq_file_name = os.path.join(self.directory, dir_entry)
                 file_handle = open(fq_file_name)
-                args = qls.utils.load_args(file_handle, qls.jrnl.RecordHeader)
-                file_hdr = qls.jrnl.FileHeader(*args)
-                file_hdr.init(file_handle, *qls.utils.load_args(file_handle, qls.jrnl.FileHeader))
+                args = qlslibs.utils.load_args(file_handle, qlslibs.jrnl.RecordHeader)
+                file_hdr = qlslibs.jrnl.FileHeader(*args)
+                file_hdr.init(file_handle, *qlslibs.utils.load_args(file_handle, qlslibs.jrnl.FileHeader))
                 if file_hdr.is_header_valid(file_hdr):
                     file_hdr.load(file_handle)
                     if file_hdr.is_valid():
-                        qls.utils.skip(file_handle, file_hdr.file_header_size_sblks * qls.utils.DEFAULT_SBLK_SIZE)
+                        qlslibs.utils.skip(file_handle,
+                                           file_hdr.file_header_size_sblks * qlslibs.utils.DEFAULT_SBLK_SIZE)
                         self.files[file_hdr.file_num] = JournalFile(file_hdr)
         self.file_num_list = sorted(self.files.keys())
         self.file_num_itr = iter(self.file_num_list)
     def _check_alignment(self): # TODO: Move into JournalFile
-        remaining_sblks = self.last_record_offset % qls.utils.DEFAULT_SBLK_SIZE
+        remaining_sblks = self.last_record_offset % qlslibs.utils.DEFAULT_SBLK_SIZE
         if remaining_sblks == 0:
             self.num_filler_records_required = 0
         else:
-            self.num_filler_records_required = (qls.utils.DEFAULT_SBLK_SIZE - remaining_sblks) / \
-                                               qls.utils.DEFAULT_DBLK_SIZE
+            self.num_filler_records_required = (qlslibs.utils.DEFAULT_SBLK_SIZE - remaining_sblks) / \
+                                               qlslibs.utils.DEFAULT_DBLK_SIZE
             self.fill_to_offset = self.last_record_offset + \
-                                  (self.num_filler_records_required * qls.utils.DEFAULT_DBLK_SIZE)
+                                  (self.num_filler_records_required * qlslibs.utils.DEFAULT_DBLK_SIZE)
             if self.args.show_recs or self.args.show_all_recs:
                 print '0x%x:0x%08x: %d filler records required for DBLK alignment to 0x%08x' % \
                       (self.current_journal_file.file_header.file_num, self.last_record_offset,
@@ -465,27 +466,27 @@ class Journal(object):
         if not self._check_file():
             return False
         self.last_record_offset = self.current_journal_file.file_header.file_handle.tell()
-        this_record = qls.utils.load(self.current_journal_file.file_header.file_handle, qls.jrnl.RecordHeader)
+        this_record = qlslibs.utils.load(self.current_journal_file.file_header.file_handle, qlslibs.jrnl.RecordHeader)
         if not this_record.is_header_valid(self.current_journal_file.file_header):
             return False
         if self.first_rec_flag:
             if this_record.file_offset != self.current_journal_file.file_header.first_record_offset:
-                raise qls.err.FirstRecordOffsetMismatchError(self.current_journal_file.file_header, this_record)
+                raise qlslibs.err.FirstRecordOffsetMismatchError(self.current_journal_file.file_header, this_record)
             self.first_rec_flag = False
         self.statistics.total_record_count += 1
         start_journal_file = self.current_journal_file
-        if isinstance(this_record, qls.jrnl.EnqueueRecord):
+        if isinstance(this_record, qlslibs.jrnl.EnqueueRecord):
             ok_flag = self._handle_enqueue_record(this_record, start_journal_file)
             high_rid_counter.check(this_record.record_id)
             if self.args.show_recs or self.args.show_all_recs:
                 print '0x%x:%s' % (start_journal_file.file_header.file_num, \
                                    this_record.to_string(self.args.show_xids, self.args.show_data))
-        elif isinstance(this_record, qls.jrnl.DequeueRecord):
+        elif isinstance(this_record, qlslibs.jrnl.DequeueRecord):
             ok_flag = self._handle_dequeue_record(this_record, start_journal_file)
             high_rid_counter.check(this_record.record_id)
             if self.args.show_recs or self.args.show_all_recs:
                 print '0x%x:%s' % (start_journal_file.file_header.file_num, this_record.to_string(self.args.show_xids))
-        elif isinstance(this_record, qls.jrnl.TransactionRecord):
+        elif isinstance(this_record, qlslibs.jrnl.TransactionRecord):
             ok_flag = self._handle_transaction_record(this_record, start_journal_file)
             high_rid_counter.check(this_record.record_id)
             if self.args.show_recs or self.args.show_all_recs:
@@ -495,7 +496,7 @@ class Journal(object):
             ok_flag = True
             if self.args.show_all_recs:
                 print '0x%x:%s' % (start_journal_file.file_header.file_num, this_record)
-        qls.utils.skip(self.current_journal_file.file_header.file_handle, qls.utils.DEFAULT_DBLK_SIZE)
+        qlslibs.utils.skip(self.current_journal_file.file_header.file_handle, qlslibs.utils.DEFAULT_DBLK_SIZE)
         return ok_flag
     def _handle_enqueue_record(self, enqueue_record, start_journal_file):
         while enqueue_record.load(self.current_journal_file.file_header.file_handle):
@@ -505,7 +506,7 @@ class Journal(object):
         if not enqueue_record.is_valid(start_journal_file):
             return False
         if enqueue_record.is_external() and enqueue_record.data != None:
-            raise qls.err.ExternalDataError(self.current_journal_file.file_header, enqueue_record)
+            raise qlslibs.err.ExternalDataError(self.current_journal_file.file_header, enqueue_record)
         if enqueue_record.is_transient():
             self.statistics.transient_record_count += 1
             return True
@@ -538,7 +539,7 @@ class Journal(object):
         else:
             try:
                 self.enq_map.delete(start_journal_file, dequeue_record)[0].decr_enq_cnt(dequeue_record)
-            except qls.err.RecordIdNotFoundError:
+            except qlslibs.err.RecordIdNotFoundError:
                 dequeue_record.warnings.append('NOT IN EMAP')
         self.statistics.dequeue_count += 1
         return True
@@ -575,7 +576,7 @@ class JournalFile(object):
         self.enq_cnt += 1
     def decr_enq_cnt(self, record):
         if self.enq_cnt <= self.deq_cnt:
-            raise qls.err.EnqueueCountUnderflowError(self.file_header, record)
+            raise qlslibs.err.EnqueueCountUnderflowError(self.file_header, record)
         self.deq_cnt += 1
     def get_enq_cnt(self):
         return self.enq_cnt - self.deq_cnt
