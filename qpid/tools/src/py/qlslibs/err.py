@@ -18,7 +18,7 @@
 #
 
 """
-Module: qls.err
+Module: qlslibs.err
 
 Contains error classes.
 """

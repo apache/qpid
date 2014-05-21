@@ -23,15 +23,24 @@ qpid-qls-analyze
 Reads and analyzes a Qpid Linear Store (QLS) store directory.
 """
 
+import os.path
+import sys
+
+default = os.path.normpath('/usr/share/qpid-tools')
+home = os.environ.get('QPID_TOOLS_HOME', default)
+sys.path.append(os.path.join(home,'python'))
+
 import argparse
 import os
-import os.path
-import qls.anal
-import qls.efp
+import qlslibs.anal
+import qlslibs.efp
 
 class QlsAnalyzerArgParser(argparse.ArgumentParser):
+    """
+    Class to handle command-line arguments.
+    """
     def __init__(self):
-        argparse.ArgumentParser.__init__(self, description = 'Qpid Linear Store Analyzer', prog = 'qpid-qls-analyze')
+        argparse.ArgumentParser.__init__(self, description='Qpid Linear Store Analyzer', prog='qpid-qls-analyze')
         self.add_argument('qls_dir', metavar='DIR',
                           help='Qpid Linear Store (QLS) directory to be analyzed')
         self.add_argument('--efp', action='store_true',
@@ -68,18 +77,21 @@ class QqpdLinearStoreAnalyzer(object):
         self.args = None
         self._process_args()
         self.qls_dir = os.path.abspath(self.args.qls_dir)
-        self.efp_manager = qls.efp.EfpManager(self.qls_dir, None)
-        self.jrnl_recovery_mgr = qls.anal.JournalRecoveryManager(self.qls_dir, self.args)
+        self.efp_manager = qlslibs.efp.EfpManager(self.qls_dir, None)
+        self.jrnl_recovery_mgr = qlslibs.anal.JournalRecoveryManager(self.qls_dir, self.args)
     def _process_args(self):
+        """ Create arg parser and process args """
         parser = QlsAnalyzerArgParser()
         self.args = parser.parse_args()
         if not os.path.exists(self.args.qls_dir):
             parser.error('Journal path "%s" does not exist' % self.args.qls_dir)
     def report(self):
+        """ Create a report on the linear store previously analyzed using analyze() """
         if self.args.efp:
             self.efp_manager.report()
         self.jrnl_recovery_mgr.report(self.args.stats)
     def run(self):
+        """ Run the analyzer, which reads and analyzes the linear store """
         if self.args.efp:
             self.efp_manager.run(None)
         self.jrnl_recovery_mgr.run()

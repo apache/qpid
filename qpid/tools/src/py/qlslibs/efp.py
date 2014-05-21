@@ -18,14 +18,14 @@
 #
 
 """
-Module: qls.efp
+Module: qlslibs.efp
 
 Contains empty file pool (EFP) classes.
 """
 
 import os
 import os.path
-import qls.err
+import qlslibs.err
 import shutil
 import uuid
 
@@ -36,7 +36,7 @@ class EfpManager(object):
     """
     def __init__(self, directory, disk_space_required_kb):
         if not os.path.exists(directory):
-            raise qls.err.InvalidQlsDirectoryNameError(directory)
+            raise qlslibs.err.InvalidQlsDirectoryNameError(directory)
         self.directory = directory
         self.disk_space_required_kb = disk_space_required_kb
         self.efp_partitions = []
@@ -72,7 +72,7 @@ class EfpManager(object):
                 efp = self.current_efp_partition.efp_pools[file_size]
                 num_files_needed = num_files - efp.get_tot_file_count()
                 if num_files_needed > 0:
-                    self.current_efp_partition.create_new_efp_files(qls.utils.efp_directory_size(file_size),
+                    self.current_efp_partition.create_new_efp_files(qlslibs.utils.efp_directory_size(file_size),
                                                                     num_files_needed)
                 else:
                     print '  WARNING: Pool %s in partition %s already contains %d files: no action taken' % \
@@ -120,7 +120,7 @@ class EfpManager(object):
                     self.efp_pools[efpl].append(efp_partition.efp_pools[efpl])
                 self.total_num_files += efp_partition.tot_file_count
                 self.total_cum_file_size_kb += efp_partition.tot_file_size_kb
-            except qls.err.InvalidPartitionDirectoryNameError:
+            except qlslibs.err.InvalidPartitionDirectoryNameError:
                 pass
     def _check_args(self, arg_tup):
         """ Value check of args. The names of partitions and pools are validated against the discovered instances """
@@ -138,16 +138,16 @@ class EfpManager(object):
                         found = True
                         break
                 if not found:
-                    raise qls.err.PartitionDoesNotExistError(arg_partition)
+                    raise qlslibs.err.PartitionDoesNotExistError(arg_partition)
             except ValueError:
-                raise qls.err.InvalidPartitionDirectoryNameError(arg_partition)
+                raise qlslibs.err.InvalidPartitionDirectoryNameError(arg_partition)
         if self.current_efp_partition is not None:
             pool_list = self.current_efp_partition.efp_pools.keys()
             efp_directory_name = EmptyFilePool.get_directory_name(int(arg_file_size))
             if arg_add and efp_directory_name in pool_list:
-                raise qls.err.PoolDirectoryAlreadyExistsError(efp_directory_name)
+                raise qlslibs.err.PoolDirectoryAlreadyExistsError(efp_directory_name)
             if (arg_remove or arg_freshen) and efp_directory_name not in pool_list:
-                raise qls.err.PoolDirectoryDoesNotExistError(efp_directory_name)
+                raise qlslibs.err.PoolDirectoryDoesNotExistError(efp_directory_name)
 
 class EfpPartition(object):
     """
@@ -197,17 +197,18 @@ class EfpPartition(object):
                 self.efp_pools[dir_entry] = efp
     def _validate_partition_directory(self, disk_space_required_kb):
         if os.path.basename(self.directory)[0] is not EfpPartition.PTN_DIR_PREFIX:
-            raise qls.err.InvalidPartitionDirectoryNameError(self.directory)
+            raise qlslibs.err.InvalidPartitionDirectoryNameError(self.directory)
         try:
             self.partition_number = int(os.path.basename(self.directory)[1:])
         except ValueError:
-            raise qls.err.InvalidPartitionDirectoryNameError(self.directory)
-        if not qls.utils.has_write_permission(self.directory):
-            raise qls.err.WritePermissionError(self.directory)
+            raise qlslibs.err.InvalidPartitionDirectoryNameError(self.directory)
+        if not qlslibs.utils.has_write_permission(self.directory):
+            raise qlslibs.err.WritePermissionError(self.directory)
         if disk_space_required_kb is not None:
-            space_avail = qls.utils.get_avail_disk_space(self.directory)
+            space_avail = qlslibs.utils.get_avail_disk_space(self.directory)
             if space_avail < (disk_space_required_kb * 1024):
-                raise qls.err.InsufficientSpaceOnDiskError(self.directory, space_avail, disk_space_required_kb * 1024)
+                raise qlslibs.err.InsufficientSpaceOnDiskError(self.directory, space_avail,
+                                                               disk_space_required_kb * 1024)
 
 class EmptyFilePool(object):
     """
@@ -258,14 +259,15 @@ class EmptyFilePool(object):
     def _create_new_efp_file(self):
         """ Create a single new empty journal file of the prescribed size for this EFP """
         file_name = str(uuid.uuid4()) + EmptyFilePool.EFP_JRNL_EXTENTION
-        file_header = qls.jrnl.FileHeader(0, qls.jrnl.FileHeader.MAGIC, qls.utils.DEFAULT_RECORD_VERSION, 0, 0, 0)
-        file_header.init(None, None, qls.utils.DEFAULT_HEADER_SIZE_SBLKS, self.partition_number, self.data_size_kb,
+        file_header = qlslibs.jrnl.FileHeader(0, qlslibs.jrnl.FileHeader.MAGIC, qlslibs.utils.DEFAULT_RECORD_VERSION,
+                                              0, 0, 0)
+        file_header.init(None, None, qlslibs.utils.DEFAULT_HEADER_SIZE_SBLKS, self.partition_number, self.data_size_kb,
                          0, 0, 0, 0, 0)
         efh = file_header.encode()
         efh_bytes = len(efh)
         file_handle = open(os.path.join(self.directory, file_name), 'wb')
         file_handle.write(efh)
-        file_handle.write('\xff' * (qls.utils.DEFAULT_SBLK_SIZE - efh_bytes))
+        file_handle.write('\xff' * (qlslibs.utils.DEFAULT_SBLK_SIZE - efh_bytes))
         file_handle.write('\x00' * (int(self.data_size_kb) * 1024))
         file_handle.close()
         fqfn = os.path.join(self.directory, file_name)
@@ -273,22 +275,22 @@ class EmptyFilePool(object):
         return os.path.getsize(fqfn)
     def _validate_efp_directory(self):
         if self.base_dir_name[-1] is not EmptyFilePool.EFP_DIR_SUFFIX:
-            raise qls.err.InvalidEfpDirectoryNameError(self.directory)
+            raise qlslibs.err.InvalidEfpDirectoryNameError(self.directory)
         try:
             self.data_size_kb = int(os.path.basename(self.base_dir_name)[:-1])
         except ValueError:
-            raise qls.err.InvalidEfpDirectoryNameError(self.directory)
+            raise qlslibs.err.InvalidEfpDirectoryNameError(self.directory)
     def _validate_efp_file(self, efp_file):
         file_size = os.path.getsize(efp_file)
-        expected_file_size = (self.data_size_kb * 1024) + qls.utils.DEFAULT_SBLK_SIZE
+        expected_file_size = (self.data_size_kb * 1024) + qlslibs.utils.DEFAULT_SBLK_SIZE
         if file_size != expected_file_size:
             print 'WARNING: File %s not of correct size (size=%d, expected=%d): Ignoring' % (efp_file, file_size,
                                                                                              expected_file_size)
             return False
         file_handle = open(efp_file)
-        args = qls.utils.load_args(file_handle, qls.jrnl.RecordHeader)
-        file_hdr = qls.jrnl.FileHeader(*args)
-        file_hdr.init(file_handle, *qls.utils.load_args(file_handle, qls.jrnl.FileHeader))
+        args = qlslibs.utils.load_args(file_handle, qlslibs.jrnl.RecordHeader)
+        file_hdr = qlslibs.jrnl.FileHeader(*args)
+        file_hdr.init(file_handle, *qlslibs.utils.load_args(file_handle, qlslibs.jrnl.FileHeader))
         if not file_hdr.is_header_valid(file_hdr):
             file_handle.close()
             return False
