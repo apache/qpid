@@ -259,8 +259,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private Registry createRmiRegistry(int jmxPortRegistryServer, boolean useCustomRmiRegistry)
             throws RemoteException
     {
-        final RMIServerSocketFactory ssf;
-        ssf = getRmiServerSocketFactory(useCustomRmiRegistry);
+        final RMIServerSocketFactory ssf = getRmiServerSocketFactory(useCustomRmiRegistry);
         Registry rmiRegistry = LocateRegistry.createRegistry(jmxPortRegistryServer, null, ssf);
 
         getEventLogger().message(ManagementConsoleMessages.LISTENING("RMI Registry", jmxPortRegistryServer));

@@ -19,6 +19,8 @@
  */
 package org.apache.qpid.server.jmx;
 
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -36,6 +38,8 @@ import java.rmi.server.RMIServerSocketFactory;
  */
 class RegistryProtectingRMIServerSocketFactory implements RMIServerSocketFactory
 {
+    private static final Logger LOGGER = Logger.getLogger(RegistryProtectingRMIServerSocketFactory.class);
+
 
     @Override
     public ServerSocket createServerSocket(int port) throws IOException
@@ -43,6 +47,10 @@ class RegistryProtectingRMIServerSocketFactory implements RMIServerSocketFactory
         NoLocalAddressServerSocket serverSocket = new NoLocalAddressServerSocket();
         serverSocket.setReuseAddress(true);
         serverSocket.bind(new InetSocketAddress(port));
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Binding server socket : " + port);
+        }
         return serverSocket;
     }
 
@@ -64,6 +72,22 @@ class RegistryProtectingRMIServerSocketFactory implements RMIServerSocketFactory
         NoLocalAddressServerSocket() throws IOException
         {
             super();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            try
+            {
+                super.close();
+            }
+            finally
+            {
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Closed server socket : " + getInetAddress());
+                }
+            }
         }
 
         @Override
