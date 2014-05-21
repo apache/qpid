@@ -19,21 +19,20 @@
 package org.apache.qpid.server.jmx;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.rmi.server.RMIServerSocketFactory;
 
 import javax.net.ServerSocketFactory;
-import javax.net.SocketFactory;
 
 class QpidRMIServerSocketFactory implements RMIServerSocketFactory
 {
     @Override
-    public ServerSocket createServerSocket(int port) throws IOException
+    public ServerSocket createServerSocket(final int port) throws IOException
     {
-        ServerSocket serverSocket = ServerSocketFactory.getDefault().createServerSocket(port);
+        ServerSocket serverSocket = ServerSocketFactory.getDefault().createServerSocket();
         serverSocket.setReuseAddress(true);
+        serverSocket.bind(new InetSocketAddress(port));
         return serverSocket;
     }
 

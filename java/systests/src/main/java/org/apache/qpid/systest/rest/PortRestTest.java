@@ -152,8 +152,8 @@ public class PortRestTest extends QpidRestTestCase
         boolean rmiIsFree = getNextAvailable(rmiPort) == rmiPort;
         boolean jmxIsFree = getNextAvailable(jmxPort) == jmxPort;
 
-        assertTrue("Expecting rmiPort to be free after broker stop", rmiIsFree);
-        assertTrue("Expecting jmxPort to be free after broker stop", jmxIsFree);
+        assertTrue("Expecting rmiPort " + rmiPort + " to be free after broker stop", rmiIsFree);
+        assertTrue("Expecting jmxPort " + jmxPort + " to be free after broker stop", jmxIsFree);
 
         startBroker();
 

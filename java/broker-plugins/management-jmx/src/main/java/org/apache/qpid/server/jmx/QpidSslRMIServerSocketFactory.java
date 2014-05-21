@@ -21,6 +21,7 @@
 package org.apache.qpid.server.jmx;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -61,7 +62,7 @@ public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
     {
         final SSLSocketFactory factory = _sslContext.getSocketFactory();
 
-        ServerSocket serverSocket = new ServerSocket(port)
+        ServerSocket serverSocket = new ServerSocket()
         {
             public Socket accept() throws IOException
             {
@@ -78,6 +79,7 @@ public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
             }
         };
         serverSocket.setReuseAddress(true);
+        serverSocket.bind(new InetSocketAddress(port));
         return serverSocket;
     }
 
