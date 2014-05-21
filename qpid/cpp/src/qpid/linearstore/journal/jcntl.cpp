@@ -116,6 +116,7 @@ jcntl::recover(EmptyFilePoolManager* efpmp,
     // Verify journal dir and journal files
     _jdir.verify_dir();
     _recoveryManager.analyzeJournals(prep_txn_list_ptr, efpmp, &_emptyFilePoolPtr);
+    assert(_emptyFilePoolPtr != 0);
 
     highest_rid = _recoveryManager.getHighestRecordId();
     _jrnl_log.log(/*LOG_DEBUG*/JournalLog::LOG_INFO, _jid, _recoveryManager.toLog(_jid, 5));

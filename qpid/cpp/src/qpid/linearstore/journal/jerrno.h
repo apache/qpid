@@ -113,6 +113,7 @@ namespace journal {
         static const uint32_t JERR_RCVM_NULLXID;        ///< Null XID when XID length non-null in header
         static const uint32_t JERR_RCVM_NOTDBLKALIGNED; ///< Offset is not data block (dblk)-aligned
         static const uint32_t JERR_RCVM_NULLFID;        ///< Null file ID (FID)
+        static const uint32_t JERR_RCVM_INVALIDEFPID;   ///< Invalid EFP identity (partition/size)
 
         // class data_tok
         static const uint32_t JERR_DTOK_ILLEGALSTATE;   ///< Attempted to change to illegal state

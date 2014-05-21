@@ -102,6 +102,7 @@ void LinearFileController::removeFileToEfp(const std::string& fileName) {
 }
 
 void LinearFileController::restoreEmptyFile(const std::string& fileName) {
+    // TODO: Add checks that this file is of a valid size; if not, delete this and get one from the EFP
     addJournalFile(fileName, emptyFilePoolPtr_->getIdentity(), getNextFileSeqNum(), 0);
 }
 
