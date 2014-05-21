@@ -94,10 +94,10 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
 
         assertActualAndDesireStates(restUrl, "ACTIVE", "ACTIVE");
 
-        mutateVirtualHostDesiredState(restUrl, "STOPPED");
+        mutateVirtualHostNodeDesiredState(restUrl, "STOPPED");
         assertActualAndDesireStates(restUrl, "STOPPED", "STOPPED");
 
-        mutateVirtualHostDesiredState(restUrl, "ACTIVE");
+        mutateVirtualHostNodeDesiredState(restUrl, "ACTIVE");
         assertActualAndDesireStates(restUrl, "ACTIVE", "ACTIVE");
     }
 
@@ -145,7 +145,7 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         Asserts.assertActualAndDesiredState(expectedDesiredState, expectedActualState, virtualhostNode);
     }
 
-    private void mutateVirtualHostDesiredState(final String restUrl, final String newState) throws IOException
+    private void mutateVirtualHostNodeDesiredState(final String restUrl, final String newState) throws IOException
     {
         Map<String, Object> newAttributes = new HashMap<String, Object>();
         newAttributes.put(VirtualHostNode.DESIRED_STATE, newState);

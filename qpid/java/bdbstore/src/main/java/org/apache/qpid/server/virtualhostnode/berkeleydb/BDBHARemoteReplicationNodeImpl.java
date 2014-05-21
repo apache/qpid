@@ -21,12 +21,14 @@
 
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
+import static com.sleepycat.je.rep.ReplicatedEnvironment.State.MASTER;
+import static com.sleepycat.je.rep.ReplicatedEnvironment.State.REPLICA;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.je.rep.MasterStateException;
-import com.sleepycat.je.rep.ReplicatedEnvironment;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -103,7 +105,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         super.deleted();
     }
 
-    @StateTransition(currentState = {State.ACTIVE, State.STOPPED}, desiredState = State.DELETED)
+    @StateTransition(currentState = {State.ACTIVE, State.UNAVAILABLE}, desiredState = State.DELETED)
     private void doDelete()
     {
         String nodeName = getName();
@@ -159,13 +161,13 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         if (changedAttributes.contains(ROLE))
         {
             String currentRole = getRole();
-            if (!ReplicatedEnvironment.State.REPLICA.name().equals(currentRole))
+            if (!REPLICA.name().equals(currentRole))
             {
                 throw new IllegalArgumentException("Cannot transfer mastership when not a replica");
             }
-            if (!ReplicatedEnvironment.State.MASTER.name().equals(((BDBHARemoteReplicationNode<?>)proxyForValidation).getRole()))
+            if (!MASTER.name().equals(((BDBHARemoteReplicationNode<?>)proxyForValidation).getRole()))
             {
-                throw new IllegalArgumentException("Changing role to other value then " + ReplicatedEnvironment.State.MASTER.name() + " is unsupported");
+                throw new IllegalArgumentException("Changing role to other value then " + MASTER.name() + " is unsupported");
             }
         }
 
@@ -183,6 +185,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     void setRole(String role)
     {
         _role = role;
+        updateModelStateFromRole(role);
     }
 
     void setJoinTime(long joinTime)
@@ -195,4 +198,15 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         _lastTransactionId = lastTransactionId;
     }
 
+    private void updateModelStateFromRole(final String role)
+    {
+        State currentState = _state.get();
+        if (currentState == State.DELETED)
+        {
+            return;
+        }
+
+        boolean isActive = MASTER.name().equals(role) || REPLICA.name().equals(role);
+        _state.compareAndSet(currentState, isActive ? State.ACTIVE : State.UNAVAILABLE);
+    }
 }

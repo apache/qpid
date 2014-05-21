@@ -143,16 +143,11 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         VirtualHostNode<?> node = createHaVHN(attributes);
 
         final CountDownLatch virtualHostAddedLatch = new CountDownLatch(1);
-        final CountDownLatch virtualHostStateChangeLatch = new CountDownLatch(1);
         node.addChangeListener(new ConfigurationChangeListener()
         {
             @Override
             public void stateChanged(ConfiguredObject object, State oldState, State newState)
             {
-                if (object instanceof VirtualHost)
-                {
-                    virtualHostStateChangeLatch.countDown();
-                }
             }
 
             @Override
@@ -195,7 +190,6 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertEquals("Unexpected JE replication stream timeout", repStreamTimeout, replicationConfig.getConfigParam(ReplicationConfig.REP_STREAM_TIMEOUT));
 
         assertTrue("Virtual host child has not been added", virtualHostAddedLatch.await(30, TimeUnit.SECONDS));
-        assertTrue("Virtual host child has not had a state change", virtualHostStateChangeLatch.await(30, TimeUnit.SECONDS));
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
         assertNotNull("Virtual host child was not added", virtualHost);
         assertEquals("Unexpected virtual host name", groupName, virtualHost.getName());

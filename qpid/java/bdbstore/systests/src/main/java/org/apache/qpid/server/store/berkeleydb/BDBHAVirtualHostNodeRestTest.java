@@ -29,12 +29,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.systest.rest.Asserts;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.FileUtils;
@@ -106,6 +110,69 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertRemoteNodes(NODE1, NODE2, NODE3);
     }
 
+    public void testMutateStateOfOneNode() throws Exception
+    {
+        createHANode(NODE1, _node1HaPort, _node1HaPort);
+        createHANode(NODE2, _node2HaPort, _node1HaPort);
+        createHANode(NODE3, _node3HaPort, _node1HaPort);
+
+        String node1Url = _baseNodeRestUrl + NODE1;
+        String node2Url = _baseNodeRestUrl + NODE2;
+        String node3Url = _baseNodeRestUrl + NODE3;
+
+        assertActualAndDesiredStates(node1Url, "ACTIVE", "ACTIVE");
+        assertActualAndDesiredStates(node2Url, "ACTIVE", "ACTIVE");
+        assertActualAndDesiredStates(node3Url, "ACTIVE", "ACTIVE");
+
+        mutateDesiredState(node1Url, "STOPPED");
+
+        assertActualAndDesiredStates(node1Url, "STOPPED", "STOPPED");
+        assertActualAndDesiredStates(node2Url, "ACTIVE", "ACTIVE");
+        assertActualAndDesiredStates(node3Url, "ACTIVE", "ACTIVE");
+
+        List<Map<String, Object>> remoteNodes = getRestTestHelper().getJsonAsList("replicationnode/" + NODE2);
+        assertEquals("Unexpected number of remote nodes on " + NODE2, 2, remoteNodes.size());
+
+        Map<String, Object> remoteNode1 = findRemoteNodeByName(remoteNodes, NODE1);
+
+        assertEquals("Node 1 observed from node 2 is in the wrong state",
+                     "UNAVAILABLE", remoteNode1.get(BDBHARemoteReplicationNode.STATE));
+        assertEquals("Node 1 observed from node 2 has the wrong role",
+                     "UNKNOWN", remoteNode1.get(BDBHARemoteReplicationNode.ROLE));
+
+    }
+
+    public void testNewMasterElectedWhenVirtualHostIsStopped() throws Exception
+    {
+        createHANode(NODE1, _node1HaPort, _node1HaPort);
+        createHANode(NODE2, _node2HaPort, _node1HaPort);
+        createHANode(NODE3, _node3HaPort, _node1HaPort);
+
+        String node1Url = _baseNodeRestUrl + NODE1;
+        String node2Url = _baseNodeRestUrl + NODE2;
+        String node3Url = _baseNodeRestUrl + NODE3;
+
+        assertActualAndDesiredStates(node1Url, "ACTIVE", "ACTIVE");
+        assertActualAndDesiredStates(node2Url, "ACTIVE", "ACTIVE");
+        assertActualAndDesiredStates(node3Url, "ACTIVE", "ACTIVE");
+
+        // Put virtualhost in STOPPED state
+        String virtualHostRestUrl = "virtualhost/" + NODE1 + "/" + _hostName;
+        assertActualAndDesiredStates(virtualHostRestUrl, "ACTIVE", "ACTIVE");
+        mutateDesiredState(virtualHostRestUrl, "STOPPED");
+        assertActualAndDesiredStates(virtualHostRestUrl, "STOPPED", "STOPPED");
+
+        // Now stop node 1 to cause an election between nodes 2 & 3
+        mutateDesiredState(node1Url, "STOPPED");
+        assertActualAndDesiredStates(node1Url, "STOPPED", "STOPPED");
+
+        Map<String, Object> newMasterData = awaitNewMaster(node2Url, node3Url);
+
+        //Check the virtual host of the new master is in the stopped state
+        String newMasterVirtualHostRestUrl = "virtualhost/" + newMasterData.get(BDBHAVirtualHostNode.NAME) + "/" + _hostName;
+        assertActualAndDesiredStates(newMasterVirtualHostRestUrl, "STOPPED", "STOPPED");
+    }
+
     public void testDeleteReplicaNode() throws Exception
     {
         createHANode(NODE1, _node1HaPort, _node1HaPort);
@@ -128,6 +195,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
             {
                 Thread.sleep(100l);
             }
+            counter++;
         }
         assertEquals("Unexpected number of remote nodes on " + NODE1, 1, data.size());
     }
@@ -167,6 +235,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
             {
                 Thread.sleep(100l);
             }
+            counter++;
         }
         assertEquals("Unexpected number of remote nodes on " + NODE2, 1, data.size());
     }
@@ -259,4 +328,61 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertNotNull("Node " + name + " has unexpected joinTime", joinTime);
         assertTrue("Node " + name + " has unexpected joinTime " + joinTime, joinTime > 0);
      }
+
+    private void assertActualAndDesiredStates(final String restUrl,
+                                              final String expectedDesiredState,
+                                              final String expectedActualState) throws IOException
+    {
+        Map<String, Object> objectData = getRestTestHelper().getJsonAsSingletonList(restUrl);
+        Asserts.assertActualAndDesiredState(expectedDesiredState, expectedActualState, objectData);
+    }
+
+    private void mutateDesiredState(final String restUrl, final String newState) throws IOException
+    {
+        Map<String, Object> newAttributes = new HashMap<String, Object>();
+        newAttributes.put(VirtualHostNode.DESIRED_STATE, newState);
+
+        getRestTestHelper().submitRequest(restUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
+    }
+
+    private Map<String, Object> findRemoteNodeByName(final List<Map<String, Object>> remoteNodes, final String nodeName)
+    {
+        Map<String, Object> foundNode = null;
+        for (Map<String, Object> remoteNode : remoteNodes)
+        {
+            if (nodeName.equals(remoteNode.get(RemoteReplicationNode.NAME)))
+            {
+                foundNode = remoteNode;
+                break;
+            }
+        }
+        assertNotNull("Could not find node with name " + nodeName + " amongst remote nodes.");
+        return foundNode;
+    }
+
+    private Map<String, Object> awaitNewMaster(final String... nodeUrls)
+            throws IOException, InterruptedException
+    {
+        Map<String, Object> newMasterData = null;
+        int counter = 0;
+        while (newMasterData == null && counter < 50)
+        {
+            for(String nodeUrl: nodeUrls)
+            {
+                Map<String, Object> nodeData = getRestTestHelper().getJsonAsSingletonList(nodeUrl);
+                if ("MASTER".equals(nodeData.get(BDBHAVirtualHostNode.ROLE)))
+                {
+                    newMasterData = nodeData;
+                    break;
+                }
+            }
+            if (newMasterData == null)
+            {
+                Thread.sleep(100l);
+                counter++;
+            }
+        }
+        assertNotNull("Could not find new master", newMasterData);
+        return newMasterData;
+    }
 }

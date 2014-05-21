@@ -330,7 +330,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
     }
 
-    @StateTransition( currentState = { State.ACTIVE, State.ERRORED }, desiredState = State.STOPPED )
+    @StateTransition( currentState = { State.UNINITIALIZED, State.ACTIVE, State.ERRORED }, desiredState = State.STOPPED )
     protected void doStop()
     {
         try
@@ -441,7 +441,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     }
                 });
             }
-            host.start();
 
         }
         catch (Exception e)
@@ -704,6 +703,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         ReplicaVirtualHost(Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
         {
             super(attributes, virtualHostNode);
+        }
+
+        @Override
+        protected void onCreate()
+        {
+            // Do not persist replica virtualhost
         }
 
         @Override
