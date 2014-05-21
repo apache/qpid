@@ -21,6 +21,7 @@ package org.apache.qpid.server.jmx;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.server.RMIServerSocketFactory;
@@ -39,8 +40,9 @@ class RegistryProtectingRMIServerSocketFactory implements RMIServerSocketFactory
     @Override
     public ServerSocket createServerSocket(int port) throws IOException
     {
-        NoLocalAddressServerSocket serverSocket = new NoLocalAddressServerSocket(port);
+        NoLocalAddressServerSocket serverSocket = new NoLocalAddressServerSocket();
         serverSocket.setReuseAddress(true);
+        serverSocket.bind(new InetSocketAddress(port));
         return serverSocket;
     }
 
@@ -59,9 +61,9 @@ class RegistryProtectingRMIServerSocketFactory implements RMIServerSocketFactory
 
     private static class NoLocalAddressServerSocket extends ServerSocket
     {
-        NoLocalAddressServerSocket(int port) throws IOException
+        NoLocalAddressServerSocket() throws IOException
         {
-            super(port);
+            super();
         }
 
         @Override
