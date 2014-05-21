@@ -61,22 +61,24 @@ public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
     {
         final SSLSocketFactory factory = _sslContext.getSocketFactory();
 
-        return new ServerSocket(port)
+        ServerSocket serverSocket = new ServerSocket(port)
         {
             public Socket accept() throws IOException
             {
                 Socket socket = super.accept();
 
                 SSLSocket sslSocket =
-                    (SSLSocket) factory.createSocket(socket,
-                                                     socket.getInetAddress().getHostName(),
-                                                     socket.getPort(),
-                                                     true);
+                        (SSLSocket) factory.createSocket(socket,
+                                                         socket.getInetAddress().getHostName(),
+                                                         socket.getPort(),
+                                                         true);
                 sslSocket.setUseClientMode(false);
 
                 return sslSocket;
             }
         };
+        serverSocket.setReuseAddress(true);
+        return serverSocket;
     }
 
     /**

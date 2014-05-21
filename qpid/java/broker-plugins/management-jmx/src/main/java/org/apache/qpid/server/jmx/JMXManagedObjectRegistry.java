@@ -149,9 +149,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         }
         else
         {
-            //Do not specify any specific RMI socket factories, resulting in use of the defaults.
-            csf = null;
-            ssf = null;
+            csf = null; // signifies the default
+            ssf = new QpidRMIServerSocketFactory();
         }
 
         int jmxPortRegistryServer = _registryPort.getPort();
@@ -260,17 +259,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private Registry createRmiRegistry(int jmxPortRegistryServer, boolean useCustomRmiRegistry)
             throws RemoteException
     {
-        Registry rmiRegistry;
-        if(useCustomRmiRegistry)
-        {
-            _log.debug("Using custom RMIServerSocketFactory");
-            rmiRegistry = LocateRegistry.createRegistry(jmxPortRegistryServer, null, new CustomRMIServerSocketFactory());
-        }
-        else
-        {
-            _log.debug("Using default RMIServerSocketFactory");
-            rmiRegistry = LocateRegistry.createRegistry(jmxPortRegistryServer, null, null);
-        }
+        final RMIServerSocketFactory ssf;
+        ssf = getRmiServerSocketFactory(useCustomRmiRegistry);
+        Registry rmiRegistry = LocateRegistry.createRegistry(jmxPortRegistryServer, null, ssf);
 
         getEventLogger().message(ManagementConsoleMessages.LISTENING("RMI Registry", jmxPortRegistryServer));
         return rmiRegistry;
@@ -407,6 +398,24 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 _log.error("Exception unregistering MBean '"+ name +"': " + e.getMessage());
             }
         }
+    }
+
+    private RMIServerSocketFactory getRmiServerSocketFactory(final boolean useCustomRmiRegistry)
+    {
+        final RMIServerSocketFactory ssf;
+        if(useCustomRmiRegistry)
+        {
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Using registry-protecting RMIServerSocketFactory");
+            }
+            ssf = new RegistryProtectingRMIServerSocketFactory();
+        }
+        else
+        {
+            ssf = new QpidRMIServerSocketFactory();
+        }
+        return ssf;
     }
 
 }

@@ -26,19 +26,35 @@ import java.net.Socket;
 import java.rmi.server.RMIServerSocketFactory;
 
 /**
- * Custom RMIServerSocketFactory class, used to prevent updates to the RMI registry.
+ * A custom RMIServerSocketFactory class, used to prevent updates to the RMI registry.
  * Supplied to the registry at creation, this will prevent RMI-based operations on the
  * registry such as attempting to bind a new object, thereby securing it from tampering.
  * This is accomplished by always returning null when attempting to determine the address
  * of the caller, thus ensuring the registry will refuse the attempt. Calls to bind etc
  * made using the object reference will not be affected and continue to operate normally.
  */
-class CustomRMIServerSocketFactory implements RMIServerSocketFactory
+class RegistryProtectingRMIServerSocketFactory implements RMIServerSocketFactory
 {
 
+    @Override
     public ServerSocket createServerSocket(int port) throws IOException
     {
-        return new NoLocalAddressServerSocket(port);
+        NoLocalAddressServerSocket serverSocket = new NoLocalAddressServerSocket(port);
+        serverSocket.setReuseAddress(true);
+        return serverSocket;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        return prime * RegistryProtectingRMIServerSocketFactory.class.getName().hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object obj)
+    {
+        return getClass() == obj.getClass();
     }
 
     private static class NoLocalAddressServerSocket extends ServerSocket
