@@ -39,6 +39,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.JmxPort;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
+import org.apache.qpid.test.utils.PortHelper;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class PortRestTest extends QpidRestTestCase
@@ -148,12 +149,9 @@ public class PortRestTest extends QpidRestTestCase
         // make sure that port is there after broker restart
         stopBroker();
 
-        // Temporary code to investigate sporadic test failure.
-        boolean rmiIsFree = getNextAvailable(rmiPort) == rmiPort;
-        boolean jmxIsFree = getNextAvailable(jmxPort) == jmxPort;
-
-        assertTrue("Expecting rmiPort " + rmiPort + " to be free after broker stop", rmiIsFree);
-        assertTrue("Expecting jmxPort " + jmxPort + " to be free after broker stop", jmxIsFree);
+        // We shouldn't need to await the ports to be free, but it seems sometimes an RMI TCP Accept
+        // thread is seen to close the socket *after* the broker has finished stopping.
+        new PortHelper().waitUntilPortsAreFree(new HashSet<Integer>(Arrays.asList(jmxPort, rmiPort)));
 
         startBroker();
 

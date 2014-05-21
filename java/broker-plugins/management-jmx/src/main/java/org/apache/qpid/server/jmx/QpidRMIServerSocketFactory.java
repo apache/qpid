@@ -71,6 +71,6 @@ class QpidRMIServerSocketFactory implements RMIServerSocketFactory
     @Override
     public boolean equals(final Object obj)
     {
-        return getClass() == obj.getClass();
+        return obj != null && getClass() == obj.getClass();
     }
 }
