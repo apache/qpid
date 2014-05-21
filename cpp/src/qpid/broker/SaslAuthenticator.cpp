@@ -138,7 +138,7 @@ void SaslAuthenticator::init(const std::string& saslName, std::string const & sa
     if (code != SASL_OK) {
         // TODO: Figure out who owns the char* returned by
         // sasl_errstring, though it probably does not matter much
-        throw Exception(sasl_errstring(code, NULL, NULL));
+        throw Exception(QPID_MSG("SASL: failed to parse SASL configuration file, error: " << sasl_errstring(code, NULL, NULL)));
     }
 }
 
