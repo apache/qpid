@@ -95,6 +95,7 @@ const uint32_t jerrno::JERR_RCVM_WRITE           = 0x0903;
 const uint32_t jerrno::JERR_RCVM_NULLXID         = 0x0904;
 const uint32_t jerrno::JERR_RCVM_NOTDBLKALIGNED  = 0x0905;
 const uint32_t jerrno::JERR_RCVM_NULLFID         = 0x0907;
+const uint32_t jerrno::JERR_RCVM_INVALIDEFPID    = 0x0908;
 
 // class data_tok
 const uint32_t jerrno::JERR_DTOK_ILLEGALSTATE    = 0x0a00;
@@ -188,6 +189,7 @@ jerrno::__init()
     _err_map[JERR_RCVM_NULLXID] = "JERR_RCVM_NULLXID: Null XID when XID length non-null in header";
     _err_map[JERR_RCVM_NOTDBLKALIGNED] = "JERR_RCVM_NOTDBLKALIGNED: Offset is not data block (dblk)-aligned";
     _err_map[JERR_RCVM_NULLFID] = "JERR_RCVM_NULLFID: Null file id (FID)";
+    _err_map[JERR_RCVM_INVALIDEFPID] = "JERR_RCVM_INVALIDEFPID: Invalid EFP identity (partition/size)";
 
     // class data_tok
     _err_map[JERR_DTOK_ILLEGALSTATE] = "JERR_MTOK_ILLEGALSTATE: Attempted to change to illegal state.";

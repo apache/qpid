@@ -99,10 +99,22 @@ void RecoveryManager::analyzeJournals(const std::vector<std::string>* preparedTr
     // Analyze file headers of existing journal files
     efpIdentity_t efpIdentity;
     analyzeJournalFileHeaders(efpIdentity);
-    *emptyFilePoolPtrPtr = emptyFilePoolManager->getEmptyFilePool(efpIdentity);
-    efpFileSize_kib_ = (*emptyFilePoolPtrPtr)->fileSize_kib();
 
-    if (!journalEmptyFlag_) {
+    if (journalEmptyFlag_) {
+        *emptyFilePoolPtrPtr = emptyFilePoolManager->getEmptyFilePool(0, 0); // Use default EFP
+    } else {
+        *emptyFilePoolPtrPtr = emptyFilePoolManager->getEmptyFilePool(efpIdentity);
+        if (! *emptyFilePoolPtrPtr) {
+            // TODO: At a later time, this could be used to establish a new pool size provided the partition exists.
+            // If the partition does not exist, this is always an error. For now, throw an exception, as this should
+            // not occur in any practical application. Once multiple partitions and mixed EFPs are supported, this
+            // needs to be resolved. Note that EFP size is always a multiple of QLS_SBLK_SIZE_BYTES (currently 4096
+            // bytes, any other value cannot be used and should be rejected as an error.
+            std::ostringstream oss;
+            oss << "Invalid EFP identity: Partition=" << efpIdentity.pn_ << " Size=" << efpIdentity.ds_ << "k";
+            throw jexception(jerrno::JERR_RCVM_INVALIDEFPID, oss.str(), "RecoveryManager", "analyzeJournals");
+        }
+        efpFileSize_kib_ = (*emptyFilePoolPtrPtr)->fileSize_kib();
 
         // Read all records, establish remaining enqueued records
         if (inFileStream_.is_open()) {
@@ -409,14 +421,13 @@ void RecoveryManager::analyzeJournalFileHeaders(efpIdentity_t& efpIdentity) {
             if (fileHeader._file_number > highestFileNumber_) {
                 highestFileNumber_ = fileHeader._file_number;
             }
+            // TODO: Logic weak here for detecting error conditions in journal, specifically when no
+            // valid files exist, or files from mixed EFPs. Currently last read file header determines
+            // efpIdentity.
+            efpIdentity.pn_ = fileHeader._efp_partition;
+            efpIdentity.ds_ = fileHeader._data_size_kib;
         }
     }
-
-    // TODO: Logic weak here for detecting error conditions in journal, specifically when no
-    // valid files exist, or files from mixed EFPs. Currently last read file header determines
-    // efpIdentity.
-    efpIdentity.pn_ = fileHeader._efp_partition;
-    efpIdentity.ds_ = fileHeader._data_size_kib;
 
     if (fileNumberMap_.empty()) {
         journalEmptyFlag_ = true;

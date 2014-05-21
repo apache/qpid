@@ -184,9 +184,9 @@ EmptyFilePool* EmptyFilePoolManager::getEmptyFilePool(const efpIdentity_t efpIde
 
 EmptyFilePool* EmptyFilePoolManager::getEmptyFilePool(const efpPartitionNumber_t partitionNumber,
                                                       const efpDataSize_kib_t efpDataSize_kib) {
-    EmptyFilePoolPartition* efppp = getEfpPartition(partitionNumber);
+    EmptyFilePoolPartition* efppp = getEfpPartition(partitionNumber > 0 ? partitionNumber : defaultPartitionNumber_);
     if (efppp != 0)
-        return efppp->getEmptyFilePool(efpDataSize_kib);
+	return efppp->getEmptyFilePool(efpDataSize_kib > 0 ? efpDataSize_kib : defaultEfpDataSize_kib_);
     return 0;
 }
 
