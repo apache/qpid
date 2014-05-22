@@ -34,7 +34,6 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
 import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
@@ -433,10 +432,16 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         try
         {
             // todo
-            _endpoint.inputClosed();
-            if (_endpoint != null && _endpoint.getConnectionEventListener() != null)
+            try
             {
-                ((Connection_1_0) _endpoint.getConnectionEventListener()).closed();
+                _endpoint.inputClosed();
+            }
+            finally
+            {
+                if (_endpoint != null && _endpoint.getConnectionEventListener() != null)
+                {
+                    ((Connection_1_0) _endpoint.getConnectionEventListener()).closed();
+                }
             }
         }
         catch(RuntimeException e)
