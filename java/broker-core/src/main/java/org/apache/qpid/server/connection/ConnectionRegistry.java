@@ -65,19 +65,18 @@ public class ConnectionRegistry implements IConnectionRegistry
         while (!_registry.isEmpty())
         {
             AMQConnectionModel connection = _registry.get(0);
-            closeConnection(connection, AMQConstant.CONNECTION_FORCED, replyText);
-        }
-    }
 
-    private void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message)
-    {
-        try
-        {
-            connection.close(cause, message);
-        }
-        catch (Exception e)
-        {
-            _logger.warn("Exception closing connection", e);
+            try
+            {
+                connection.close(AMQConstant.CONNECTION_FORCED, replyText);
+            }
+            catch (Exception e)
+            {
+                //remove this connection to ensure that we don't loop forever if it fails to close
+                _registry.remove(connection);
+
+                _logger.warn("Exception closing connection " + connection.getConnectionId() + " from " + connection.getRemoteAddressString(), e);
+            }
         }
     }
 
