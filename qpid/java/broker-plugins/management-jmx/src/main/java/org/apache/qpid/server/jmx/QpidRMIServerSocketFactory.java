@@ -23,40 +23,13 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.rmi.server.RMIServerSocketFactory;
 
-import javax.net.ServerSocketFactory;
-
-import org.apache.log4j.Logger;
-
 class QpidRMIServerSocketFactory implements RMIServerSocketFactory
 {
-    private static final Logger LOGGER = Logger.getLogger(QpidRMIServerSocketFactory.class);
-
     @Override
     public ServerSocket createServerSocket(final int port) throws IOException
     {
-        ServerSocket serverSocket = new ServerSocket()
-        {
-            @Override
-            public void close() throws IOException
-            {
-                try
-                {
-                    super.close();
-                }
-                finally
-                {
-                    if (LOGGER.isDebugEnabled())
-                    {
-                        LOGGER.debug("Closed server socket : " + getInetAddress());
-                    }
-                }
-            }
-        };
+        ServerSocket serverSocket = new ServerSocket();
         serverSocket.setReuseAddress(true);
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("Binding server socket : " + port);
-        }
         serverSocket.bind(new InetSocketAddress(port));
         return serverSocket;
     }
