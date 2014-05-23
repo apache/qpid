@@ -5,7 +5,7 @@
   <formats>
     <format>tar.gz</format>
   </formats>
-  <baseDirectory>qpid-perftests-${project.version}</baseDirectory>
+  <baseDirectory>qpid-perftests/${project.version}</baseDirectory>
   <fileSets>
     <fileSet>
       <directory>${project.basedir}</directory>
@@ -35,6 +35,14 @@
         <exclude>org.apache.qpid:qpid-client</exclude>
         <exclude>org.apache.qpid:qpid-common</exclude>
       </excludes>
+    </dependencySet>
+    <dependencySet>
+      <outputDirectory>/lib</outputDirectory>
+      <useProjectArtifact>false</useProjectArtifact>
+      <scope>provided</scope>
+      <includes>
+        <include>org.apache.geronimo.specs:geronimo-jms_1.1_spec</include>
+      </includes>
     </dependencySet>
   </dependencySets>
 </assembly>
