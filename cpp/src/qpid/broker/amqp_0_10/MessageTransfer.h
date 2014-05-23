@@ -35,7 +35,7 @@ namespace amqp_0_10 {
 /**
  *
  */
-class MessageTransfer : public qpid::broker::Message::Encoding, public qpid::broker::PersistableMessage
+class MessageTransfer : public qpid::broker::Message::SharedStateImpl, public qpid::broker::PersistableMessage
 {
   public:
     QPID_BROKER_EXTERN MessageTransfer();
@@ -116,7 +116,7 @@ class MessageTransfer : public qpid::broker::Message::Encoding, public qpid::bro
 
     static bool isImmediateDeliveryRequired(const qpid::broker::Message& message);
     static MessageTransfer& get(qpid::broker::Message& message) {
-        return *dynamic_cast<MessageTransfer*>(&message.getEncoding());
+        return *dynamic_cast<MessageTransfer*>(&message.getSharedState());
     }
     static const MessageTransfer& get(const qpid::broker::Message& message) {
         return *dynamic_cast<const MessageTransfer*>(&message.getEncoding());

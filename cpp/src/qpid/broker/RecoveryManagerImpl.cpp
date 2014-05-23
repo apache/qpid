@@ -185,7 +185,7 @@ void RecoverableMessageImpl::setRedelivered()
 
 void RecoverableMessageImpl::computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& ep)
 {
-    msg.computeExpiration(ep);
+    msg.getSharedState().computeExpiration(ep);
 }
 
 Message RecoverableMessageImpl::getMessage()

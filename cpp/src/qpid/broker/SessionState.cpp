@@ -219,7 +219,8 @@ void SessionState::handleContent(AMQFrame& frame)
         DeliverableMessage deliverable(Message(msg, msg), semanticState.getTxBuffer());
         if (broker.isTimestamping())
             msg->setTimestamp();
-        deliverable.getMessage().setPublisher(getConnection());
+        msg->setPublisher(&(getConnection()));
+        msg->computeExpiration(getBroker().getExpiryPolicy());
 
 
         IncompleteIngressMsgXfer xfer(this, msg);

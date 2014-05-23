@@ -188,7 +188,6 @@ void addMessagesToQueue(uint count, Queue& queue, uint oddTtl = 200, uint evenTt
 {
     for (uint i = 0; i < count; i++) {
         Message m = MessageUtils::createMessage("exchange", "key", i % 2 ? oddTtl : evenTtl);
-        m.computeExpiration(new broker::ExpiryPolicy);
         queue.deliver(m);
     }
 }

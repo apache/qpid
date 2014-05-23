@@ -78,8 +78,8 @@ size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_
     msg.getPersistentContext()->setPersistenceId(persistenceId);
     if (t) {
         sys::AbsTime expiration(EPOCH, t);
-        msg.setExpiryPolicy(expiryPolicy);
-        msg.setExpiration(expiration);
+        msg.getSharedState().setExpiryPolicy(expiryPolicy);
+        msg.getSharedState().setExpiration(expiration);
     }
     return encoded + metadata.getPosition();
 }

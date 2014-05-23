@@ -134,11 +134,11 @@ void DecodingIncoming::readable(pn_delivery_t* delivery)
 
         received->scan();
         pn_link_advance(link);
+        received->setPublisher(&session->getParent());
+        received->computeExpiration(expiryPolicy);
 
         qpid::broker::Message message(received, received);
-        message.setPublisher(session->getParent());
         userid.verify(message.getUserId());
-        message.computeExpiration(expiryPolicy);
         handle(message);
         --window;
         received->begin();
