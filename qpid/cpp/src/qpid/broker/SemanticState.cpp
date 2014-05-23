@@ -482,8 +482,6 @@ TxBuffer* SemanticState::getTxBuffer()
 }
 
 void SemanticState::route(Message& msg, Deliverable& strategy) {
-    msg.computeExpiration(getSession().getBroker().getExpiryPolicy());
-
     std::string exchangeName = qpid::broker::amqp_0_10::MessageTransfer::get(msg).getExchangeName();
     if (!cacheExchange || cacheExchange->getName() != exchangeName || cacheExchange->isDestroyed())
         cacheExchange = session.getBroker().getExchanges().get(exchangeName);

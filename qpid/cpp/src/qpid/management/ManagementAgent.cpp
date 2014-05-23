@@ -565,8 +565,8 @@ void ManagementAgent::sendBuffer(Buffer&  buf,
     dp->setRoutingKey(routingKey);
 
     transfer->getFrames().append(content);
+    transfer->setIsManagementMessage(true);
     Message msg(transfer, transfer);
-    msg.setIsManagementMessage(true);
     sendQueue->push(make_pair(exchange, msg));
     buf.reset();
 }
@@ -632,9 +632,9 @@ void ManagementAgent::sendBuffer(const string& data,
     }
     transfer->getFrames().append(content);
     transfer->computeRequiredCredit();
+    transfer->setIsManagementMessage(true);
+    transfer->computeExpiration(broker->getExpiryPolicy());
     Message msg(transfer, transfer);
-    msg.setIsManagementMessage(true);
-    msg.computeExpiration(broker->getExpiryPolicy());
 
     sendQueue->push(make_pair(exchange, msg));
 }

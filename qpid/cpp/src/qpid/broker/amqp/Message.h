@@ -37,7 +37,7 @@ namespace amqp {
 /**
  * Represents an AMQP 1.0 format message
  */
-class Message : public qpid::broker::Message::Encoding, private qpid::amqp::MessageReader, public qpid::broker::PersistableMessage
+class Message : public qpid::broker::Message::SharedStateImpl, private qpid::amqp::MessageReader, public qpid::broker::PersistableMessage
 {
   public:
     //Encoding interface:
