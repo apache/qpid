@@ -24,6 +24,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.StoreFuture;
 
@@ -242,6 +243,10 @@ public class CoalescingCommiter implements Committer
                 for(int i = 0; i < size; i++)
                 {
                     BDBCommitFuture commit = _jobQueue.poll();
+                    if (commit == null)
+                    {
+                        break;
+                    }
                     commit.complete();
                 }
 
@@ -255,6 +260,10 @@ public class CoalescingCommiter implements Committer
                     for(int i = 0; i < size; i++)
                     {
                         BDBCommitFuture commit = _jobQueue.poll();
+                        if (commit == null)
+                        {
+                            break;
+                        }
                         commit.abort(e);
                     }
                 }
@@ -302,9 +311,15 @@ public class CoalescingCommiter implements Committer
             {
                 _stopped.set(true);
                 BDBCommitFuture commit = null;
+                int abortedCommits = 0;
                 while ((commit = _jobQueue.poll()) != null)
                 {
+                    abortedCommits++;
                     commit.abort(e);
+                }
+                if (LOGGER.isDebugEnabled() && abortedCommits > 0)
+                {
+                    LOGGER.debug(abortedCommits + " commit(s) were aborted during close.");
                 }
                 _lock.notifyAll();
             }
