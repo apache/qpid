@@ -15,10 +15,10 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>${project.build.outputDirectory}/META-INF/</directory>
+      <directory>${basedir}/src/main/assembly/</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
-        <include>README</include>
+        <include>README.txt</include>
         <include>NOTICE</include>
         <include>LICENSE</include>
       </includes>
