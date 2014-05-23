@@ -27,7 +27,6 @@ import java.util.List;
 public interface IConnectionRegistry
 {
     public static final String BROKER_SHUTDOWN_REPLY_TEXT = "Broker is shutting down";
-    public static final String VHOST_PASSIVATE_REPLY_TEXT = "Virtual host is being passivated";
 
     public void initialise();
 
