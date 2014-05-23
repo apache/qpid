@@ -81,9 +81,13 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         }
         else
         {
-            session.setVirtualHost(virtualHost);
-
             // Check virtualhost access
+            if (virtualHost.getState() != State.ACTIVE)
+            {
+                throw body.getConnectionException(AMQConstant.CONNECTION_FORCED, "Virtual host '" + virtualHost.getName() + "' is not active");
+            }
+
+            session.setVirtualHost(virtualHost);
             try
             {
                 virtualHost.getSecurityManager().authoriseCreateConnection(session);
@@ -92,12 +96,6 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             {
                 throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
             }
-
-             if (virtualHost.getState() != State.ACTIVE)
-            {
-                throw body.getConnectionException(AMQConstant.CONNECTION_FORCED, "Virtual host '" + virtualHost.getName() + "' is not active");
-            }
-
 
             // See Spec (0.8.2). Section  3.1.2 Virtual Hosts
             if (session.getContextKey() == null)

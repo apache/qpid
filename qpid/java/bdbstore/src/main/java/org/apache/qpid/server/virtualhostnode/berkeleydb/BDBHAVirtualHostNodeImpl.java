@@ -45,7 +45,6 @@ import com.sleepycat.je.rep.utilint.HostPortPair;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -57,13 +56,9 @@ import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
-import org.apache.qpid.server.store.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
@@ -84,6 +79,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     private static final Logger LOGGER = Logger.getLogger(BDBHAVirtualHostNodeImpl.class);
 
     private final AtomicReference<ReplicatedEnvironmentFacade> _environmentFacade = new AtomicReference<>();
+
+    private final AtomicReference<ReplicatedEnvironment.State> _lastReplicatedEnvironmentState = new AtomicReference<>(ReplicatedEnvironment.State.UNKNOWN);
 
     @ManagedAttributeField
     private Map<String, String> _environmentConfiguration;
@@ -216,12 +213,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @Override
     public String getRole()
     {
-        ReplicatedEnvironmentFacade environmentFacade = getReplicatedEnvironmentFacade();
-        if (environmentFacade != null)
-        {
-            return environmentFacade.getNodeState();
-        }
-        return "UNKNOWN";
+        return _lastReplicatedEnvironmentState.get().name();
     }
 
     @Override
@@ -264,7 +256,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     public String toString()
     {
         return "BDBHAVirtualHostNodeImpl [id=" + getId() + ", name=" + getName() + ", storePath=" + _storePath + ", groupName=" + _groupName + ", address=" + _address
-                + ", state=" + getState() + ", priority=" + _priority + ", designatedPrimary=" + _designatedPrimary + ", designatedPrimary=" + _quorumOverride + "]";
+                + ", state=" + getState() + ", priority=" + _priority + ", designatedPrimary=" + _designatedPrimary + ", quorumOverride=" + _quorumOverride + "]";
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -274,18 +266,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     {
         if(childClass == VirtualHost.class)
         {
-            if ("MASTER".equals(((ReplicatedEnvironmentFacade)getConfigurationStore().getEnvironmentFacade()).getNodeState()))
-            {
-                ConfiguredObjectTypeFactory<? extends ConfiguredObject> factory =
-                        getObjectFactory().getConfiguredObjectTypeFactory(VirtualHost.class.getSimpleName(), "BDB_HA");
-                return (C) factory.create(getObjectFactory(), attributes, this);
-            }
-            else
-            {
-                ReplicaVirtualHost host = new ReplicaVirtualHost(attributes, this);
-                host.create();
-                return (C) host;
-            }
+            return (C) getObjectFactory().create(VirtualHost.class, attributes, this);
         }
         return super.addChild(childClass, attributes, otherParents);
     }
@@ -458,12 +439,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             Map<String, Object> hostAttributes = new HashMap<String, Object>();
             hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
             hostAttributes.put(VirtualHost.NAME, getGroupName());
-            hostAttributes.put(VirtualHost.TYPE, "BDB_HA");
+            hostAttributes.put(VirtualHost.TYPE, "BDB_HA_REPLICA");
             createChild(VirtualHost.class, hostAttributes);
         }
         catch (Exception e)
         {
-            LOGGER.error("Failed to create a replica host", e);
+            LOGGER.error("Failed to create a replica virtualhost", e);
         }
     }
 
@@ -513,7 +494,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 LOGGER.error("Unexpected state change: " + state);
                 throw new IllegalStateException("Unexpected state change: " + state);
             }
-
+            _lastReplicatedEnvironmentState.set(state);
             attributeSet(ROLE, _role, state.name());
         }
     }
@@ -696,56 +677,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             attributes.put(BDBHARemoteReplicationNode.ADDRESS, replicationNode.getHostName() + ":" + replicationNode.getPort());
             return attributes;
         }
-    }
-
-    private class ReplicaVirtualHost extends BDBHAVirtualHost
-    {
-        ReplicaVirtualHost(Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
-        {
-            super(attributes, virtualHostNode);
-        }
-
-        @Override
-        protected void onCreate()
-        {
-            // Do not persist replica virtualhost
-        }
-
-        @Override
-        protected <C extends ConfiguredObject> C addChild(final Class<C> childClass,
-                                                          final Map<String, Object> attributes,
-                                                          final ConfiguredObject... otherParents)
-        {
-            throwUnsupportedForReplica();
-            return null;
-        }
-
-        @Override
-        public ExchangeImpl createExchange(final Map<String, Object> attributes)
-        {
-            throwUnsupportedForReplica();
-            return null;
-        }
-
-        @Override
-        public AMQQueue<?> createQueue(final Map<String, Object> attributes)
-        {
-            throwUnsupportedForReplica();
-            return null;
-        }
-
-        @Override
-        public State getState()
-        {
-            return State.UNAVAILABLE;
-        }
-
-        private void throwUnsupportedForReplica()
-        {
-            throw new IllegalStateException("The virtual host state of " + getState()
-                                            + " does not permit this operation.");
-        }
-
     }
 
 }

@@ -211,8 +211,14 @@ public class ServerConnectionDelegate extends ServerDelegate
 
         if(vhost != null)
         {
-            sconn.setVirtualHost(vhost);
+            if (vhost.getState() != State.ACTIVE)
+            {
+                sconn.setState(Connection.State.CLOSING);
+                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Virtual host '"+vhostName+"' is not active"));
+                return;
+            }
 
+            sconn.setVirtualHost(vhost);
             try
             {
                 vhost.getSecurityManager().authoriseCreateConnection(sconn);
@@ -224,16 +230,8 @@ public class ServerConnectionDelegate extends ServerDelegate
                 return;
             }
 
-            if (vhost.getState() != State.ACTIVE)
-            {
-                sconn.setState(Connection.State.CLOSING);
-                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Virtual host '"+vhostName+"' is not active"));
-            }
-            else
-            {
-                sconn.setState(Connection.State.OPEN);
-                sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
-            }
+            sconn.setState(Connection.State.OPEN);
+            sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
         }
         else
         {
