@@ -28,6 +28,10 @@
   <name>Qpid Performance Tests</name>
   <description>Performance testing configuration, code and tests</description>
 
+  <properties>
+    <dependency-change-verification>true</dependency-change-verification>
+  </properties>
+
   <dependencies>
     <!-- client deps -->
     <dependency>
@@ -48,6 +52,13 @@
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>${log4j-version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>${slf4j-version}</version>
+      <scope>runtime</scope>
     </dependency>
 
     <dependency>
@@ -119,8 +130,28 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <!--version specified in qpid-parent pluginManagement -->
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/qpid-perftests-bin.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
-        <!--version specified in parent pluginManagement -->
+        <!--version specified in qpid-parent pluginManagement -->
         <configuration>
           <skip>true</skip>
         </configuration>
