@@ -695,16 +695,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         _eventLogger.message(VirtualHostMessages.CLOSED(getName()));
     }
 
-    @Override
-    protected void changeAttributes(final Map<String, Object> attributes)
-    {
-        super.changeAttributes(attributes);
-        if (isDurable() && getState() != State.DELETED)
-        {
-            getDurableConfigurationStore().update(false, asObjectRecord());
-        }
-    }
-
     private void closeMessageStore()
     {
         if (getMessageStore() != null)
@@ -1447,7 +1437,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         @Override
         public void stateChanged(final ConfiguredObject<?> object, final State oldState, final State newState)
         {
-            if (newState == State.DELETED)
+            if (object == AbstractVirtualHost.this && isDurable() && newState == State.DELETED)
             {
                 getDurableConfigurationStore().remove(asObjectRecord());
                 object.removeChangeListener(this);
@@ -1472,7 +1462,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                                  final Object oldAttributeValue,
                                  final Object newAttributeValue)
         {
-            getDurableConfigurationStore().update(false, asObjectRecord());
+            if (object == AbstractVirtualHost.this && isDurable() && getState() != State.DELETED && isAttributePersisted(attributeName)
+                    && !(attributeName.equals(VirtualHost.DESIRED_STATE) && newAttributeValue.equals(State.DELETED)))
+            {
+                getDurableConfigurationStore().update(false, asObjectRecord());
+            }
         }
     }
 

@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
@@ -140,23 +142,13 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         attributes.put(BDBHAVirtualHostNode.REPLICATED_ENVIRONMENT_CONFIGURATION,
                 Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
 
-        VirtualHostNode<?> node = createHaVHN(attributes);
+        BDBHAVirtualHostNode<?> node = createHaVHN(attributes);
 
         final CountDownLatch virtualHostAddedLatch = new CountDownLatch(1);
-        node.addChangeListener(new ConfigurationChangeListener()
+        node.addChangeListener(new NoopConfigurationChangeListener()
         {
             @Override
-            public void stateChanged(ConfiguredObject object, State oldState, State newState)
-            {
-            }
-
-            @Override
-            public void childRemoved(ConfiguredObject object, ConfiguredObject child)
-            {
-            }
-
-            @Override
-            public void childAdded(ConfiguredObject object, ConfiguredObject child)
+            public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
             {
                 if (child instanceof VirtualHost)
                 {
@@ -164,15 +156,11 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
                     virtualHostAddedLatch.countDown();
                 }
             }
-
-            @Override
-            public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
-            {
-            }
         });
 
         node.start();
-        assertEquals(State.ACTIVE, node.getState());
+        assertNodeRole(node, "MASTER", "REPLICA");
+        assertEquals("Unexpected node state", State.ACTIVE, node.getState());
 
         DurableConfigurationStore store = node.getConfigurationStore();
         assertNotNull(store);
@@ -222,10 +210,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, address);
         attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath);
 
-        BDBHAVirtualHostNode<?> node = createHaVHN(attributes);
-
-        node.start();
-        assertEquals("Failed to activate node", State.ACTIVE, node.getState());
+        BDBHAVirtualHostNode<?> node = createAndStartHaVHN(attributes);
 
         BDBMessageStore bdbMessageStore = (BDBMessageStore) node.getConfigurationStore();
         ReplicatedEnvironment environment = (ReplicatedEnvironment) bdbMessageStore.getEnvironmentFacade().getEnvironment();
@@ -260,10 +245,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
-
-        BDBHAVirtualHostNode<?> node1 = createHaVHN(node1Attributes);
-        node1.start();
-        assertEquals("Failed to activate node", State.ACTIVE, node1.getState());
+        createAndStartHaVHN(node1Attributes);
 
         int node2PortNumber = getNextAvailable(node1PortNumber+1);
 
@@ -275,10 +257,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
         node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
-
-        BDBHAVirtualHostNode<?> node2 = createHaVHN(node2Attributes);
-        node2.start();
-        assertEquals("Failed to activate node2", State.ACTIVE, node2.getState());
+        createAndStartHaVHN(node2Attributes);
 
         int node3PortNumber = getNextAvailable(node2PortNumber+1);
         Map<String, Object> node3Attributes = new HashMap<String, Object>();
@@ -289,30 +268,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
         node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
-        BDBHAVirtualHostNode<?> node3 = createHaVHN(node3Attributes);
-        node3.start();
-        assertEquals("Failed to activate node3", State.ACTIVE, node3.getState());
+        createAndStartHaVHN(node3Attributes);
 
-        BDBHAVirtualHostNode<?> replica = null;
-        int findReplicaCount = 0;
-        while(replica == null)
-        {
-            for (BDBHAVirtualHostNode<?> node : _nodes)
-            {
-                if ("REPLICA".equals(node.getRole()))
-                {
-                    replica = node;
-                    break;
-                }
-            }
-
-            Thread.sleep(100);
-            if (findReplicaCount > 20)
-            {
-                fail("Could not find a node is replica role");
-            }
-            findReplicaCount++;
-        }
+        BDBHAVirtualHostNode<?> replica = awaitAndFindNodeInRole("REPLICA");
 
         replica.setAttribute(BDBHAVirtualHostNode.ROLE, "REPLICA", "MASTER");
 
@@ -334,36 +292,20 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
 
-        BDBHAVirtualHostNode<?> node1 = createHaVHN(node1Attributes);
-        node1.start();
-        assertEquals("Failed to activate node", State.ACTIVE, node1.getState());
+        BDBHAVirtualHostNode<?> node1 = createAndStartHaVHN(node1Attributes);
 
+        final AtomicReference<RemoteReplicationNode<?>> lastSeenReplica = new AtomicReference<>();
         final CountDownLatch remoteNodeLatch = new CountDownLatch(2);
-        node1.addChangeListener(new ConfigurationChangeListener()
+        node1.addChangeListener(new NoopConfigurationChangeListener()
         {
             @Override
-            public void stateChanged(ConfiguredObject object, State oldState, State newState)
-            {
-            }
-
-            @Override
-            public void childRemoved(ConfiguredObject object, ConfiguredObject child)
-            {
-            }
-
-            @Override
-            public void childAdded(ConfiguredObject object, ConfiguredObject child)
+            public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
             {
                 if (child instanceof RemoteReplicationNode)
                 {
                     remoteNodeLatch.countDown();
+                    lastSeenReplica.set((RemoteReplicationNode<?>)child);
                 }
-            }
-
-            @Override
-            public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue,
-                    Object newAttributeValue)
-            {
             }
         });
 
@@ -378,9 +320,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
 
-        BDBHAVirtualHostNode<?> node2 = createHaVHN(node2Attributes);
-        node2.start();
-        assertEquals("Failed to activate node2", State.ACTIVE, node2.getState());
+        BDBHAVirtualHostNode<?> node2 = createAndStartHaVHN(node2Attributes);
 
         int node3PortNumber = getNextAvailable(node2PortNumber+1);
         Map<String, Object> node3Attributes = new HashMap<String, Object>();
@@ -391,41 +331,11 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
         node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
-        BDBHAVirtualHostNode<?> node3 = createHaVHN(node3Attributes);
-        node3.start();
-        assertEquals("Failed to activate node3", State.ACTIVE, node3.getState());
+        BDBHAVirtualHostNode<?> node3 = createAndStartHaVHN(node3Attributes);
 
         assertTrue("Replication nodes have not been seen during 5s", remoteNodeLatch.await(5, TimeUnit.SECONDS));
 
-        BDBHARemoteReplicationNodeImpl replicaRemoteNode = null;
-
-        long awaitReplicaRoleCount = 0;
-        while(replicaRemoteNode == null)
-        {
-            Collection<? extends RemoteReplicationNode> remoteNodes = node1.getRemoteReplicationNodes();
-            if (remoteNodes != null)
-            {
-                for (RemoteReplicationNode node : remoteNodes)
-                {
-                    BDBHARemoteReplicationNodeImpl bdbNode = (BDBHARemoteReplicationNodeImpl)node;
-                    if ("REPLICA".equals(bdbNode.getRole()))
-                    {
-                        replicaRemoteNode = bdbNode;
-                        break;
-                    }
-                }
-                if (replicaRemoteNode != null)
-                {
-                    break;
-                }
-            }
-            Thread.sleep(100);
-            if (awaitReplicaRoleCount > 50)
-            {
-                fail("Remote replication node is not in a REPLICA role: " + remoteNodes);
-            }
-            awaitReplicaRoleCount++;
-        }
+        BDBHARemoteReplicationNodeImpl replicaRemoteNode = (BDBHARemoteReplicationNodeImpl)lastSeenReplica.get();
         replicaRemoteNode.setAttributes(Collections.<String,Object>singletonMap(BDBHARemoteReplicationNode.ROLE, "MASTER"));
 
         BDBHAVirtualHostNode<?> replica = replicaRemoteNode.getName().equals(node2.getName())? node2 : node3;
@@ -447,10 +357,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
 
-        BDBHAVirtualHostNode<?> node = createHaVHN(node1Attributes);
-        node.start();
-        assertEquals("Failed to activate node", State.ACTIVE, node.getState());
-
+        BDBHAVirtualHostNode<?> node = createAndStartHaVHN(node1Attributes);
         assertNodeRole(node, "MASTER");
 
         try
@@ -479,10 +386,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
-
-        BDBHAVirtualHostNode<?> node1 = createHaVHN(node1Attributes);
-        node1.start();
-        assertEquals("Failed to activate node", State.ACTIVE, node1.getState());
+        createAndStartHaVHN(node1Attributes);
 
         int node2PortNumber = getNextAvailable(node1PortNumber+1);
 
@@ -494,10 +398,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
         node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
-
-        BDBHAVirtualHostNode<?> node2 = createHaVHN(node2Attributes);
-        node2.start();
-        assertEquals("Failed to activate node2", State.ACTIVE, node2.getState());
+        createAndStartHaVHN(node2Attributes);
 
         int node3PortNumber = getNextAvailable(node2PortNumber+1);
         Map<String, Object> node3Attributes = new HashMap<String, Object>();
@@ -508,9 +409,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
         node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
-        BDBHAVirtualHostNode<?> node3 = createHaVHN(node3Attributes);
-        node3.start();
-        assertEquals("Failed to activate node3", State.ACTIVE, node3.getState());
+        createAndStartHaVHN(node3Attributes);
 
         BDBHAVirtualHostNode<?> master = awaitAndFindNodeInRole("MASTER");
         awaitRemoteNodes(master, 2);
@@ -552,7 +451,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
             }
             counter++;
         }
-        while(remoteNodes.size() != expectedNodeNumber && counter<50);
+        while(remoteNodes.size() != expectedNodeNumber && counter<100);
         assertEquals("Unexpected node number", expectedNodeNumber, node.getRemoteReplicationNodes().size());
     }
 
@@ -590,22 +489,67 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     private BDBHAVirtualHostNode<?> createHaVHN(Map<String, Object> attributes)
     {
+        @SuppressWarnings("unchecked")
         BDBHAVirtualHostNode<?> node = (BDBHAVirtualHostNode<?>) _objectFactory.create(VirtualHostNode.class, attributes, _broker);
         _nodes.add(node);
         return node;
     }
 
-    private void assertNodeRole(BDBHAVirtualHostNode<?> node, String roleName) throws InterruptedException
+    private void assertNodeRole(BDBHAVirtualHostNode<?> node, String... roleName) throws InterruptedException
     {
-        int awaitMastershipCount = 0;
-        while(!roleName.equals(node.getRole()))
+        int iterationCounter = 0;
+        boolean inRole =false;
+        do
         {
-            Thread.sleep(100);
-            if (awaitMastershipCount > 50)
+            for (String role : roleName)
             {
-                fail("Node " + node.getName() + " did not transit into role " + roleName);
+                if (role.equals(node.getRole()))
+                {
+                    inRole = true;
+                    break;
+                }
             }
-            awaitMastershipCount++;
+            if (!inRole)
+            {
+                Thread.sleep(100);
+            }
+            iterationCounter++;
+        }
+        while(!inRole && iterationCounter<50);
+        assertTrue("Node " + node.getName() + " did not transit into role " + Arrays.toString(roleName), inRole);
+    }
+
+    private BDBHAVirtualHostNode<?> createAndStartHaVHN(Map<String, Object> attributes)  throws InterruptedException
+    {
+        BDBHAVirtualHostNode<?> node = createHaVHN(attributes);
+        node.start();
+        assertNodeRole(node, "MASTER", "REPLICA");
+        assertEquals("Unexpected node state", State.ACTIVE, node.getState());
+        return node;
+    }
+
+    class NoopConfigurationChangeListener implements ConfigurationChangeListener
+    {
+
+        @Override
+        public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+        {
+        }
+
+        @Override
+        public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
+        {
+        }
+
+        @Override
+        public void childRemoved(ConfiguredObject<?> object, ConfiguredObject<?> child)
+        {
+        }
+
+        @Override
+        public void attributeSet(ConfiguredObject<?> object, String attributeName, Object oldAttributeValue,
+                Object newAttributeValue)
+        {
         }
     }
 }
