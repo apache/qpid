@@ -1324,6 +1324,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _attributeResolver;
     }
 
+    protected boolean isAttributePersisted(String name)
+    {
+        ConfiguredObjectAttribute<X,?> attr = (ConfiguredObjectAttribute<X, ?>) _attributeTypes.get(name);
+        if(attr != null)
+        {
+            return attr.isPersisted();
+        }
+        return false;
+    }
+
     //=========================================================================================
 
     static String interpolate(ConfiguredObject<?> object, String value)

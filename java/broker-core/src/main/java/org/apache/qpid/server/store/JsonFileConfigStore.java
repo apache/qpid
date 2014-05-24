@@ -378,7 +378,11 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         List<UUID> ids = _idsByType.get(_rootClass.getSimpleName());
         if (ids == null)
         {
-            throw new IllegalStateException("Root entry of type " + _rootClass.getSimpleName() + " does not exist in the store.");
+            return null;
+        }
+        if (ids.size() == 0)
+        {
+            return null;
         }
         return ids.get(0);
     }
@@ -386,7 +390,16 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     private void save()
     {
         UUID rootId = getRootId();
-        Map<String, Object> data = build(_rootClass, rootId);
+        Map<String, Object> data = null;
+
+        if (rootId == null)
+        {
+            data = Collections.emptyMap();
+        }
+        else
+        {
+            data = build(_rootClass, rootId);
+        }
 
         try
         {

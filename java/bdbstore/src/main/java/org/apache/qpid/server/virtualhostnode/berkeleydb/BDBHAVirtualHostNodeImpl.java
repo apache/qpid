@@ -347,6 +347,21 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
     }
 
+    @Override
+    protected void deleteVirtualHostIfExists()
+    {
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = getReplicatedEnvironmentFacade();
+        if (replicatedEnvironmentFacade != null && replicatedEnvironmentFacade.isMaster()
+                && replicatedEnvironmentFacade.getNumberOfElectableGroupMembers() == 1)
+        {
+            super.deleteVirtualHostIfExists();
+        }
+        else
+        {
+            closeVirtualHostIfExist();
+        }
+    }
+
     private Set<InetSocketAddress> getRemoteNodeAddresses()
     {
         Set<InetSocketAddress> helpers = new HashSet<InetSocketAddress>();
@@ -381,7 +396,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     {
         try
         {
-            destroyVirtualHostIfExist();
+            closeVirtualHostIfExist();
             getConfigurationStore().getEnvironmentFacade().getEnvironment().flushLog(true);
 
             getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.RECOVERY_START());
@@ -434,7 +449,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     {
         try
         {
-            destroyVirtualHostIfExist();
+            closeVirtualHostIfExist();
 
             Map<String, Object> hostAttributes = new HashMap<String, Object>();
             hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
@@ -450,10 +465,10 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private void onDetached()
     {
-        destroyVirtualHostIfExist();
+        closeVirtualHostIfExist();
     }
 
-    protected void destroyVirtualHostIfExist()
+    protected void closeVirtualHostIfExist()
     {
         VirtualHost<?,?,?> virtualHost = getVirtualHost();
         if (virtualHost!= null)

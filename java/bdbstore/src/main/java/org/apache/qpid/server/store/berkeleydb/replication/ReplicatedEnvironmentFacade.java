@@ -1034,14 +1034,18 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return new DbPing(repNode, (String)_configuration.getGroupName(), DB_PING_SOCKET_TIMEOUT).getNodeState();
     }
 
-    // For testing only
-    int getNumberOfElectableGroupMembers()
+    public int getNumberOfElectableGroupMembers()
     {
         if (_state.get() != State.OPEN)
         {
             throw new IllegalStateException("Environment facade is not opened");
         }
         return _environment.getGroup().getElectableNodes().size();
+    }
+
+    public boolean isMaster()
+    {
+        return ReplicatedEnvironment.State.MASTER.name().equals(getNodeState());
     }
 
     public void setReplicationGroupListener(ReplicationGroupListener replicationGroupListener)
@@ -1308,5 +1312,4 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
 
     }
-
 }

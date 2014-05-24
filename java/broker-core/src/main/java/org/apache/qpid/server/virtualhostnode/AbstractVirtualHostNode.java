@@ -194,20 +194,22 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
     protected void doDelete()
     {
-
-        close();
         _state.set(State.DELETED);
+        deleteVirtualHostIfExists();
+        close();
+        deleted();
+        if (getConfigurationStore() instanceof MessageStore)
+        {
+            ((MessageStore)getConfigurationStore()).onDelete();
+        }
+    }
+
+    protected void deleteVirtualHostIfExists()
+    {
         VirtualHost<?, ?, ?> virtualHost = getVirtualHost();
         if (virtualHost != null)
         {
             virtualHost.delete();
-        }
-
-        deleted();
-
-        if (getConfigurationStore() instanceof MessageStore)
-        {
-            ((MessageStore)getConfigurationStore()).onDelete();
         }
     }
 
