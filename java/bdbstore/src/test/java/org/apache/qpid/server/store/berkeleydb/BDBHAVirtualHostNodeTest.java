@@ -336,6 +336,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertTrue("Replication nodes have not been seen during 5s", remoteNodeLatch.await(5, TimeUnit.SECONDS));
 
         BDBHARemoteReplicationNodeImpl replicaRemoteNode = (BDBHARemoteReplicationNodeImpl)lastSeenReplica.get();
+        awaitForAttributeChange(replicaRemoteNode, BDBHARemoteReplicationNodeImpl.ROLE, "REPLICA");
+
         replicaRemoteNode.setAttributes(Collections.<String,Object>singletonMap(BDBHARemoteReplicationNode.ROLE, "MASTER"));
 
         BDBHAVirtualHostNode<?> replica = replicaRemoteNode.getName().equals(node2.getName())? node2 : node3;
@@ -453,6 +455,17 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         }
         while(remoteNodes.size() != expectedNodeNumber && counter<100);
         assertEquals("Unexpected node number", expectedNodeNumber, node.getRemoteReplicationNodes().size());
+    }
+
+    private void awaitForAttributeChange(ConfiguredObject<?> object, String name, Object expectedValue) throws InterruptedException
+    {
+        int awaitCounter = 0;
+        while(!object.equals(object.getAttribute(name)) && awaitCounter < 50)
+        {
+            Thread.sleep(100);
+            awaitCounter++;
+        }
+        assertEquals("Unexpected attribute " + name + " on " + object, expectedValue, object.getAttribute(name) );
     }
 
     private BDBHAVirtualHostNode<?> awaitAndFindNodeInRole(String role) throws InterruptedException
