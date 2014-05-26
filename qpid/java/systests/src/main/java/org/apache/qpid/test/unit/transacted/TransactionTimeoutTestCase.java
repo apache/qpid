@@ -63,17 +63,19 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
     protected Queue _queue;
     protected MessageConsumer _consumer;
     protected MessageProducer _producer;
-    private CountDownLatch _exceptionLatch = new CountDownLatch(1);
-    protected AtomicInteger _exceptionCount = new AtomicInteger(0);
-    protected String _message;
     protected Exception _exception;
-    protected AMQConstant _code;
+
+    private final CountDownLatch _exceptionListenerLatch = new CountDownLatch(1);
+    private final AtomicInteger _exceptionCount = new AtomicInteger(0);
+    private volatile AMQConstant _linkedExceptionCode;
+    private volatile String _linkedExceptionMessage;
 
     /**
      * Subclasses must implement this to configure transaction timeout parameters.
      */
     protected abstract void configure() throws Exception;
-        
+
+    @Override
     protected void setUp() throws Exception
     {
         // Configure timeouts
@@ -99,18 +101,6 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
         // Create producer and consumer
         producer();
         consumer();
-    }
-    
-    protected void tearDown() throws Exception
-    {
-        try
-        {
-            _con.close();
-        }
-        finally
-        {
-            super.tearDown();
-        }
     }
 
     /**
@@ -218,26 +208,33 @@ public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase impl
      * Checks that the correct exception was thrown and was received
      * by the listener with a 506 error code.
      */
-    protected void check(String reason)throws InterruptedException
+    protected void check(String reason) throws InterruptedException
     {
-        assertTrue("Should have caught exception in listener", _exceptionLatch.await(1, TimeUnit.SECONDS));
         assertNotNull("Should have thrown exception to client", _exception);
-        assertTrue("Exception message should contain '" + reason + "': " + _message, _message.contains(reason + " transaction timed out"));
-        assertNotNull("Exception should have an error code", _code);
-        assertEquals("Error code should be 506", AMQConstant.RESOURCE_ERROR, _code);
+
+        assertTrue("Should have caught exception in listener", _exceptionListenerLatch.await(1, TimeUnit.SECONDS));
+        assertNotNull("Linked exception message should not be null", _linkedExceptionMessage);
+        assertTrue("Linked exception message '" + _linkedExceptionMessage + "' should contain '" + reason + "'",
+                   _linkedExceptionMessage.contains(reason + " transaction timed out"));
+        assertNotNull("Linked exception should have an error code", _linkedExceptionCode);
+        assertEquals("Linked exception error code should be 506", AMQConstant.RESOURCE_ERROR, _linkedExceptionCode);
     }
 
     /** @see javax.jms.ExceptionListener#onException(javax.jms.JMSException) */
+    @Override
     public void onException(JMSException jmse)
     {
-        _exceptionLatch.countDown();
-        _exceptionCount.incrementAndGet();
+        if (jmse.getLinkedException() != null)
+        {
+            _linkedExceptionMessage = jmse.getLinkedException().getMessage();
+        }
 
-        _message = jmse.getLinkedException().getMessage();
         if (jmse.getLinkedException() instanceof AMQException)
         {
-            _code = ((AMQException) jmse.getLinkedException()).getErrorCode();
+            _linkedExceptionCode = ((AMQException) jmse.getLinkedException()).getErrorCode();
         }
+        _exceptionCount.incrementAndGet();
+        _exceptionListenerLatch.countDown();
     }
 
     protected int getNumberOfDeliveredExceptions()
