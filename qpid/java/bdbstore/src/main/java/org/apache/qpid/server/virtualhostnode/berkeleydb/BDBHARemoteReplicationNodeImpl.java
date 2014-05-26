@@ -105,6 +105,13 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         super.deleted();
     }
 
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + "[id=" + getId() + ", name=" + getName() + ", address=" + getAddress()
+               + ", state=" + getState() + ", role=" + getRole() + "]";
+    }
+
     @StateTransition(currentState = {State.ACTIVE, State.UNAVAILABLE}, desiredState = State.DELETED)
     private void doDelete()
     {
@@ -138,19 +145,19 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
             String nodeName = getName();
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Trying to transfer master to " + nodeName);
+                LOGGER.debug("Trying to transfer master to '" + nodeName + "'");
             }
 
             _replicatedEnvironmentFacade.transferMasterAsynchronously(nodeName);
 
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("The mastership has been transferred to " + nodeName);
+                LOGGER.debug("The transfer of mastership to node '" + nodeName + "' has been initiated.");
             }
         }
         catch(Exception e)
         {
-            throw new IllegalConfigurationException("Cannot transfer mastership to " + getName(), e);
+            throw new IllegalConfigurationException("Cannot transfer mastership to '" + getName() + "'", e);
         }
     }
 
@@ -163,7 +170,8 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
             String currentRole = getRole();
             if (!REPLICA.name().equals(currentRole))
             {
-                throw new IllegalArgumentException("Cannot transfer mastership when not a replica");
+                throw new IllegalArgumentException("Cannot transfer mastership when not in replica role."
+                                                 + " Current role " + currentRole);
             }
             if (!MASTER.name().equals(((BDBHARemoteReplicationNode<?>)proxyForValidation).getRole()))
             {
@@ -184,6 +192,10 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
     void setRole(String role)
     {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug(this + " updating role to : " + role);
+        }
         _role = role;
         updateModelStateFromRole(role);
     }

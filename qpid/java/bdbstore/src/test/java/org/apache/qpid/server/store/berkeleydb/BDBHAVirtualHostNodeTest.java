@@ -277,7 +277,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertNodeRole(replica, "MASTER");
     }
 
-    public void testTransferMasterToReplica() throws Exception
+    public void testTransferMasterToRemoteReplica() throws Exception
     {
         int node1PortNumber = findFreePort();
         String helperAddress = "localhost:" + node1PortNumber;
