@@ -125,7 +125,7 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     public void removeExchange(final ExchangeImpl<?> exchange, final boolean force)
             throws ExchangeIsAlternateException, RequiredExchangeException
     {
-
+        throwUnsupportedForReplica();
     }
 
     @Override
@@ -312,6 +312,7 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     @Override
     public int removeQueue(final AMQQueue<?> queue)
     {
+        throwUnsupportedForReplica();
         return 0;
     }
 
@@ -400,17 +401,20 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     @Override
     public ScheduledFuture<?> scheduleTask(final long delay, final Runnable timeoutTask)
     {
+        throwUnsupportedForReplica();
         return null;
     }
 
     @Override
     public void block()
     {
+        throwUnsupportedForReplica();
     }
 
     @Override
     public void unblock()
     {
+        throwUnsupportedForReplica();
     }
 
     @Override
@@ -428,11 +432,13 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     @Override
     public void registerMessageReceived(final long messageSize, final long timestamp)
     {
+        throwUnsupportedForReplica();
     }
 
     @Override
     public void registerMessageDelivered(final long messageSize)
     {
+        throwUnsupportedForReplica();
     }
 
     @Override
