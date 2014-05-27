@@ -43,8 +43,8 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
   function (xhr, array, event, lang, win, dom, domConstruct, registry, parser, json, query, Memory, ObjectStore, template)
   {
-    var fields = [ "storePath", "name", "groupName", "address", "durability",
-                   "coalescingSync", "designatedPrimary", "priority",  "quorumOverride"];
+    var fields = [ "storePath", "name", "groupName", "address",
+                   "designatedPrimary", "priority",  "quorumOverride"];
 
     var bdbHaNodeEditor =
     {

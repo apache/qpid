@@ -51,6 +51,8 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNodeImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
@@ -127,7 +129,6 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         String groupName = "group";
         String nodeHostPort = "localhost:" + findFreePort();
         String helperHostPort = nodeHostPort;
-        String durability = "NO_SYNC,SYNC,NONE";
         UUID id = UUID.randomUUID();
 
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -137,7 +138,6 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
         attributes.put(BDBHAVirtualHostNode.ADDRESS, nodeHostPort);
         attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperHostPort);
-        attributes.put(BDBHAVirtualHostNode.DURABILITY, durability);
         attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath);
         attributes.put(BDBHAVirtualHostNode.REPLICATED_ENVIRONMENT_CONFIGURATION,
                 Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
@@ -174,7 +174,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertEquals(nodeHostPort, replicationConfig.getNodeHostPort());
         assertEquals(helperHostPort, replicationConfig.getHelperHosts());
 
-        assertEquals(durability, environment.getConfig().getDurability().toString());
+        assertEquals("NO_SYNC,NO_SYNC,SIMPLE_MAJORITY", environment.getConfig().getDurability().toString());
         assertEquals("Unexpected JE replication stream timeout", repStreamTimeout, replicationConfig.getConfigParam(ReplicationConfig.REP_STREAM_TIMEOUT));
 
         assertTrue("Virtual host child has not been added", virtualHostAddedLatch.await(30, TimeUnit.SECONDS));
@@ -424,6 +424,78 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         awaitRemoteNodes(master, 1);
 
         assertNull("Remote node " + replica.getName() + " is not found", findRemoteNode( master, replica.getName()));
+    }
+
+
+    public void testSetSynchronizationPolicyAttributesOnVirtualHost() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+
+        Map<String, Object> nodeAttributes = new HashMap<String, Object>();
+        nodeAttributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        nodeAttributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        nodeAttributes.put(BDBHAVirtualHostNode.NAME, "node1");
+        nodeAttributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        nodeAttributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
+        nodeAttributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        nodeAttributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
+        BDBHAVirtualHostNode<?> node = createHaVHN(nodeAttributes);
+
+        final CountDownLatch virtualHostAddedLatch = new CountDownLatch(1);
+        node.addChangeListener(new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
+            {
+                if (child instanceof VirtualHost)
+                {
+                    child.addChangeListener(this);
+                    virtualHostAddedLatch.countDown();
+                }
+            }
+        });
+
+        node.start();
+        assertNodeRole(node, "MASTER", "REPLICA");
+        assertEquals("Unexpected node state", State.ACTIVE, node.getState());
+
+        assertTrue("Virtual host child has not been added", virtualHostAddedLatch.await(30, TimeUnit.SECONDS));
+        BDBHAVirtualHostImpl virtualHost = (BDBHAVirtualHostImpl)node.getVirtualHost();
+        assertNotNull("Virtual host is not created", virtualHost);
+
+        assertEquals("Unexpected local transaction synchronization policy", "NO_SYNC", virtualHost.getLocalTransactionSyncronizationPolicy());
+        assertEquals("Unexpected remote transaction synchronization policy", "NO_SYNC", virtualHost.getRemoteTransactionSyncronizationPolicy());
+
+        Map<String, Object> virtualHostAttributes = new HashMap<String,Object>();
+        virtualHostAttributes.put(BDBHAVirtualHost.LOCAL_TRANSACTION_SYNCRONIZATION_POLICY, "WRITE_NO_SYNC");
+        virtualHostAttributes.put(BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCRONIZATION_POLICY, "SYNC");
+        virtualHost.setAttributes(virtualHostAttributes);
+
+        assertEquals("Unexpected local transaction synchronization policy", "WRITE_NO_SYNC", virtualHost.getLocalTransactionSyncronizationPolicy());
+        assertEquals("Unexpected remote transaction synchronization policy", "SYNC", virtualHost.getRemoteTransactionSyncronizationPolicy());
+
+        try
+        {
+            virtualHost.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.LOCAL_TRANSACTION_SYNCRONIZATION_POLICY, "INVALID"));
+            fail("Invalid syncronization policy is set");
+        }
+        catch(IllegalArgumentException e)
+        {
+            //pass
+        }
+
+        try
+        {
+            virtualHost.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCRONIZATION_POLICY, "INVALID"));
+            fail("Invalid syncronization policy is set");
+        }
+        catch(IllegalArgumentException e)
+        {
+            //pass
+        }
+
     }
 
     private BDBHARemoteReplicationNode<?> findRemoteNode(BDBHAVirtualHostNode<?> node, String name)

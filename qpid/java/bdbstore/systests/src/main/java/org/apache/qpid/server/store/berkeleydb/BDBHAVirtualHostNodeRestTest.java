@@ -302,20 +302,6 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         }
     }
 
-    private Map<String, Object> waitForAttributeChanged(String url, String attributeName, Object newValue) throws Exception
-    {
-        List<Map<String, Object>> nodeAttributes = getRestTestHelper().getJsonAsList(url);
-        long limit = System.currentTimeMillis() + 5000;
-        while(System.currentTimeMillis() < limit && (nodeAttributes.size() == 0 || !newValue.equals(nodeAttributes.get(0).get(attributeName))))
-        {
-            Thread.sleep(100l);
-            nodeAttributes = getRestTestHelper().getJsonAsList(url);
-        }
-        Map<String, Object> nodeData = nodeAttributes.get(0);
-        assertEquals("Unexpected attribute " + attributeName, newValue, nodeData.get(attributeName));
-        return nodeData;
-    }
-
     private void assertRemoteNodeData(String name, Map<String, Object> nodeData)
     {
         assertEquals("Remote node " + name + " has unexpected name", name, nodeData.get(BDBHAVirtualHostNode.NAME));

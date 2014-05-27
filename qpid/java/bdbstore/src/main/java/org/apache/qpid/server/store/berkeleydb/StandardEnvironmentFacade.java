@@ -32,6 +32,7 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.Transaction;
 
 public class StandardEnvironmentFacade implements EnvironmentFacade
 {
@@ -82,6 +83,13 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
                 task.execute(this);
             }
         }
+    }
+
+
+    @Override
+    public Transaction beginTransaction()
+    {
+        return _environment.beginTransaction(null, null);
     }
 
     @Override

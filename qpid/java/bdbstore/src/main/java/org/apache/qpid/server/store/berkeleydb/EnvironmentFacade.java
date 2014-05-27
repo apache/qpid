@@ -29,6 +29,7 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.Transaction;
 
 public interface EnvironmentFacade
 {
@@ -47,6 +48,8 @@ public interface EnvironmentFacade
     void openDatabases(DatabaseConfig dbConfig, String... databaseNames);
 
     Database getOpenDatabase(String name);
+
+    Transaction beginTransaction();
 
     void commit(com.sleepycat.je.Transaction tx);
 

@@ -119,13 +119,6 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
         assertEquals(TEST_DURABILITY, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_DURABILITY));
     }
 
-    public void testCoalescingSync() throws Exception
-    {
-        when(_virtualHostNode.isCoalescingSync()).thenReturn(true);
-
-        assertEquals(true, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_COALESCING_SYNC));
-    }
-
     public void testNodeState() throws Exception
     {
         when(_virtualHostNode.getRole()).thenReturn(TEST_NODE_STATE);

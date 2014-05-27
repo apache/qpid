@@ -97,12 +97,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @ManagedAttributeField
     private String _address;
 
-    @ManagedAttributeField
-    private String _durability;
-
-    @ManagedAttributeField
-    private boolean _coalescingSync;
-
     @ManagedAttributeField(afterSet="postSetDesignatedPrimary")
     private boolean _designatedPrimary;
 
@@ -183,13 +177,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @Override
     public String getDurability()
     {
-        return _durability;
-    }
-
-    @Override
-    public boolean isCoalescingSync()
-    {
-        return _coalescingSync;
+        ReplicatedEnvironmentFacade environmentFacade = getReplicatedEnvironmentFacade();
+        if (environmentFacade != null)
+        {
+            return environmentFacade.getDurability().toString();
+        }
+        return null;
     }
 
     @Override
@@ -591,7 +584,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             }
             catch (TimeoutException e)
             {
-                LOGGER.warn("Change quorum override did not complete within " + MUTATE_JE_TIMEOUT_MS + "ms. New value " + _durability + " will become effective once the JE task thread is free.");
+                LOGGER.warn("Change quorum override did not complete within " + MUTATE_JE_TIMEOUT_MS + "ms. New value " + _quorumOverride + " will become effective once the JE task thread is free.");
             }
             catch (InterruptedException e)
             {

@@ -49,11 +49,8 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     @ManagedAttribute(mandatory=true)
     String getHelperAddress();
 
-    @ManagedAttribute(defaultValue = "NO_SYNC,NO_SYNC,SIMPLE_MAJORITY")
+    @DerivedAttribute
     String getDurability();
-
-    @ManagedAttribute(defaultValue = "true")
-    boolean isCoalescingSync();
 
     @ManagedAttribute(defaultValue = "false")
     boolean isDesignatedPrimary();

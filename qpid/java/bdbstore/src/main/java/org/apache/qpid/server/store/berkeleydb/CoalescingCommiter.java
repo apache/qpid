@@ -24,7 +24,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.StoreFuture;
 
