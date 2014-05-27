@@ -41,7 +41,9 @@ import org.apache.qpid.util.FileUtils;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.Durability;
+import com.sleepycat.je.Durability.SyncPolicy;
 import com.sleepycat.je.Environment;
+import com.sleepycat.je.Transaction;
 import com.sleepycat.je.rep.InsufficientReplicasException;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
@@ -183,7 +185,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testGetDurability() throws Exception
     {
-        assertEquals("Unexpected durability", TEST_DURABILITY.toString(), createMaster().getDurability());
+        assertEquals("Unexpected durability", TEST_DURABILITY.toString(), createMaster().getDurability().toString());
     }
 
     public void testIsCoalescingSync() throws Exception
@@ -195,7 +197,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     {
         assertEquals("Unexpected state", State.MASTER.name(), createMaster().getNodeState());
     }
-
 
     public void testPriority() throws Exception
     {
@@ -683,6 +684,46 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertTrue("Environment did not become a master", masterStateLatch.await(10, TimeUnit.SECONDS));
         assertTrue("First node environment did not become a replica", firstNodeReplicaStateLatch.await(10, TimeUnit.SECONDS));
         assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), firstNode.getNodeState());
+    }
+
+    public void testSetLocalTransactionSyncronizationPolicy() throws Exception
+    {
+        ReplicatedEnvironmentFacade facade = createMaster();
+        assertEquals("Unexpected local transaction synchronization policy before change",
+                ReplicatedEnvironmentFacade.LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY, facade.getLocalTransactionSyncronizationPolicy());
+        facade.setLocalTransactionSyncronizationPolicy(SyncPolicy.WRITE_NO_SYNC);
+        assertEquals("Unexpected local transaction synchronization policy after change",
+                SyncPolicy.WRITE_NO_SYNC, facade.getLocalTransactionSyncronizationPolicy());
+    }
+
+    public void testSetRemoteTransactionSyncronizationPolicy() throws Exception
+    {
+        ReplicatedEnvironmentFacade facade = createMaster();
+        assertEquals("Unexpected remote transaction synchronization policy before change",
+                ReplicatedEnvironmentFacade.REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY, facade.getRemoteTransactionSyncronizationPolicy());
+        facade.setRemoteTransactionSyncronizationPolicy(SyncPolicy.WRITE_NO_SYNC);
+        assertEquals("Unexpected remote transaction synchronization policy after change",
+                SyncPolicy.WRITE_NO_SYNC, facade.getRemoteTransactionSyncronizationPolicy());
+    }
+
+    public void testBeginTransaction() throws Exception
+    {
+        ReplicatedEnvironmentFacade facade = createMaster();
+        Transaction txn = null;
+        try
+        {
+            txn = facade.beginTransaction();
+            assertNotNull("Transaction is not created", txn);
+            txn.commit();
+            txn = null;
+        }
+        finally
+        {
+            if (txn != null)
+            {
+                txn.abort();
+            }
+        }
     }
 
     private ReplicatedEnvironmentFacade createMaster() throws Exception

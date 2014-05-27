@@ -22,6 +22,7 @@ package org.apache.qpid.systest.rest;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.management.plugin.HttpManagement;
@@ -101,5 +102,19 @@ public class QpidRestTestCase extends QpidBrokerTestCase
     public RestTestHelper getRestTestHelper()
     {
         return _restTestHelper;
+    }
+
+    public Map<String, Object> waitForAttributeChanged(String url, String attributeName, Object newValue) throws Exception
+    {
+        List<Map<String, Object>> nodeAttributes = getRestTestHelper().getJsonAsList(url);
+        long limit = System.currentTimeMillis() + 5000;
+        while(System.currentTimeMillis() < limit && (nodeAttributes.size() == 0 || !newValue.equals(nodeAttributes.get(0).get(attributeName))))
+        {
+            Thread.sleep(100l);
+            nodeAttributes = getRestTestHelper().getJsonAsList(url);
+        }
+        Map<String, Object> nodeData = nodeAttributes.get(0);
+        assertEquals("Unexpected attribute " + attributeName, newValue, nodeData.get(attributeName));
+        return nodeData;
     }
 }

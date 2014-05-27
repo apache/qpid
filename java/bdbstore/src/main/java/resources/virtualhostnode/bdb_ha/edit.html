@@ -79,32 +79,6 @@
                 </td>
             </tr>
             <tr>
-                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Durability: </strong></td>
-                <td class="tableContainer-valueCell">
-                    <input type="text" id="editBDBHANode.durability"
-                        data-dojo-type="dijit/form/ValidationTextBox"
-                        data-dojo-props="
-                            name: 'durability',
-                            disabled: true,
-                            required: false,
-                            placeHolder: 'NO_SYNC,NO_SYNC,SIMPLE_MAJORITY',
-                            title: 'Enter node durability settings',
-                            pattern: '^(SYN|NO_SYNC|WRITE_NO_SYNC),(SYN|NO_SYNC|WRITE_NO_SYNC),(SIMPLE_MAJORITY|ALL|NONE)*$'" />
-                </td>
-            </tr>
-            <tr>
-                <td class="tableContainer-labelCell" style="width: 200px;"><strong>Coalescing sync: </strong></td>
-                <td class="tableContainer-valueCell">
-                    <input type="checkbox" id="editBDBHANode.coalescingSync" checked="checked"
-                        data-dojo-type="dijit/form/CheckBox"
-                        data-dojo-props="
-                            name: 'coalescingSync',
-                            required: false,
-                            disabled: true,
-                            title: 'Enable coalescing sync mode for a better performance: when many transactions are synced to disk at the same time'" />
-                </td>
-            </tr>
-            <tr>
                 <td class="tableContainer-labelCell" style="width: 200px;"><strong>Allow this node to operate solo: </strong></td>
                 <td class="tableContainer-valueCell">
                     <input type="checkbox" id="editBDBHANode.designatedPrimary" checked="checked"

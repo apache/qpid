@@ -48,7 +48,7 @@ public class DatabasePinger
             Transaction txn = null;
             try
             {
-                txn = facade.getEnvironment().beginTransaction(null, null);
+                txn = facade.beginTransaction();
                 db.put(txn, key, value);
                 txn.commit();
                 txn = null;

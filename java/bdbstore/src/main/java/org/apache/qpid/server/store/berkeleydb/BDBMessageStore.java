@@ -398,7 +398,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 tx = null;
                 try
                 {
-                    tx = _environmentFacade.getEnvironment().beginTransaction(null, null);
+                    tx = _environmentFacade.beginTransaction();
 
                     //remove the message meta data from the store
                     DatabaseEntry key = new DatabaseEntry();
@@ -542,7 +542,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         com.sleepycat.je.Transaction txn = null;
         try
         {
-            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
+            txn = _environmentFacade.beginTransaction();
             storeConfiguredObjectEntry(txn, configuredObject);
             txn.commit();
             txn = null;
@@ -569,7 +569,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         com.sleepycat.je.Transaction txn = null;
         try
         {
-            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
+            txn = _environmentFacade.beginTransaction();
 
             Collection<UUID> removed = new ArrayList<UUID>(objects.length);
             for(ConfiguredObjectRecord record : objects)
@@ -606,7 +606,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         com.sleepycat.je.Transaction txn = null;
         try
         {
-            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
+            txn = _environmentFacade.beginTransaction();
             for(ConfiguredObjectRecord record : records)
             {
                 update(createIfNecessary, record, txn);
@@ -1290,8 +1290,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                 com.sleepycat.je.Transaction txn;
                 try
                 {
-                    txn = _environmentFacade.getEnvironment().beginTransaction(
-                            null, null);
+                    txn = _environmentFacade.beginTransaction();
                 }
                 catch (DatabaseException e)
                 {
@@ -1329,14 +1328,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
         private BDBTransaction() throws StoreException
         {
-            try
-            {
-                _txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
-            }
-            catch(DatabaseException e)
-            {
-                throw _environmentFacade.handleDatabaseException("Cannot create store transaction", e);
-            }
+            _txn = _environmentFacade.beginTransaction();
         }
 
         @Override

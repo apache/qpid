@@ -130,7 +130,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public boolean getCoalescingSync() throws IOException, JMException
     {
-        return _virtualHostNode.isCoalescingSync();
+        return true;
     }
 
     @Override

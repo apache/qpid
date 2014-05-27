@@ -54,9 +54,12 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Durability;
+import com.sleepycat.je.Durability.ReplicaAckPolicy;
+import com.sleepycat.je.Durability.SyncPolicy;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.Transaction;
+import com.sleepycat.je.TransactionConfig;
 import com.sleepycat.je.rep.InsufficientLogException;
 import com.sleepycat.je.rep.InsufficientReplicasException;
 import com.sleepycat.je.rep.NetworkRestore;
@@ -95,6 +98,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private static final int DB_PING_SOCKET_TIMEOUT = Integer.getInteger(DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME, DEFAULT_DB_PING_SOCKET_TIMEOUT);
     private static final int REMOTE_NODE_MONITOR_INTERVAL = Integer.getInteger(REMOTE_NODE_MONITOR_INTERVAL_PROPERTY_NAME, DEFAULT_REMOTE_NODE_MONITOR_INTERVAL);
     private static final int RESTART_TRY_LIMIT = 3;
+
+    static final SyncPolicy LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY = SyncPolicy.NO_SYNC;
+    static final SyncPolicy REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY = SyncPolicy.NO_SYNC;
 
     @SuppressWarnings("serial")
     private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
@@ -135,8 +141,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     public static final String TYPE = "BDB-HA";
 
     private final ReplicatedEnvironmentConfiguration _configuration;
-    private final Durability _durability;
-    private final Boolean _coalescingSync;
     private final String _prettyGroupNodeName;
     private final File _environmentDirectory;
 
@@ -153,6 +157,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private volatile ReplicatedEnvironment _environment;
     private volatile long _joinTime;
     private volatile ReplicatedEnvironment.State _lastKnownEnvironmentState;
+    private volatile SyncPolicy _localTransactionSyncronizationPolicy = LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY;
+    private volatile SyncPolicy _remoteTransactionSyncronizationPolicy = REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY;
 
     public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration, EnvironmentFacadeTask[] initialisationTasks)
     {
@@ -170,8 +176,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _initialisationTasks = initialisationTasks;
         _configuration = configuration;
 
-        _durability = Durability.parse(_configuration.getDurability());
-        _coalescingSync = _configuration.isCoalescingSync();
         _prettyGroupNodeName = _configuration.getGroupName() + ":" + _configuration.getName();
 
         // we relay on this executor being single-threaded as we need to restart and mutate the environment in one thread
@@ -182,6 +186,22 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _environment = createEnvironment(true);
         populateExistingRemoteReplicationNodes();
         _groupChangeExecutor.submit(new RemoteNodeStateLearner());
+    }
+
+    @Override
+    public Transaction beginTransaction()
+    {
+        try
+        {
+            Durability durability = getDurability();
+            TransactionConfig transactionConfig = new TransactionConfig();
+            transactionConfig.setDurability(durability);
+            return _environment.beginTransaction(null, transactionConfig);
+        }
+        catch(DatabaseException e)
+        {
+            throw handleDatabaseException("Failure to start transaction", e);
+        }
     }
 
     @Override
@@ -491,14 +511,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return (String)_configuration.getHelperHostPort();
     }
 
-    public String getDurability()
+    public Durability getDurability()
     {
-        return _durability.toString();
+        SyncPolicy localSync = getLocalTransactionSyncronizationPolicy();
+        SyncPolicy replicaSync = getRemoteTransactionSyncronizationPolicy();
+        return new Durability(localSync, replicaSync, ReplicaAckPolicy.SIMPLE_MAJORITY);
     }
 
     public boolean isCoalescingSync()
     {
-        return _coalescingSync;
+        return true;
     }
 
     public String getNodeState()
@@ -883,6 +905,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         boolean designatedPrimary = _configuration.isDesignatedPrimary();
         int priority = _configuration.getPriority();
         int quorumOverride = _configuration.getQuorumOverride();
+        Durability durability = getDurability();
 
         if (LOGGER.isInfoEnabled())
         {
@@ -892,8 +915,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             LOGGER.info("Node name " + _configuration.getName());
             LOGGER.info("Node host port " + hostPort);
             LOGGER.info("Helper host port " + helperHostPort);
-            LOGGER.info("Durability " + _durability);
-            LOGGER.info("Coalescing sync " + _coalescingSync);
+            LOGGER.info("Durability " + durability);
             LOGGER.info("Designated primary (applicable to 2 node case only) " + designatedPrimary);
             LOGGER.info("Node priority " + priority);
             LOGGER.info("Quorum override " + quorumOverride);
@@ -929,7 +951,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
-        envConfig.setDurability(_durability);
+        envConfig.setDurability(durability);
 
         for (Map.Entry<String, String> configItem : environmentSettings.entrySet())
         {
@@ -1015,14 +1037,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public Committer createCommitter(String name)
     {
-        if (_coalescingSync)
-        {
-            return new CoalescingCommiter(name, this);
-        }
-        else
-        {
-            return Committer.IMMEDIATE_FUTURE_COMMITTER;
-        }
+        return new CoalescingCommiter(name, this);
     }
 
     NodeState getRemoteNodeState(ReplicationNode repNode) throws IOException, ServiceConnectFailedException
@@ -1058,6 +1073,26 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             throw new IllegalStateException("ReplicationGroupListener is already set on " + _prettyGroupNodeName);
         }
+    }
+
+    public SyncPolicy getLocalTransactionSyncronizationPolicy()
+    {
+        return _localTransactionSyncronizationPolicy;
+    }
+
+    public SyncPolicy getRemoteTransactionSyncronizationPolicy()
+    {
+        return _remoteTransactionSyncronizationPolicy;
+    }
+
+    public void setLocalTransactionSyncronizationPolicy(SyncPolicy localTransactionSyncronizationPolicy)
+    {
+        _localTransactionSyncronizationPolicy = localTransactionSyncronizationPolicy;
+    }
+
+    public void setRemoteTransactionSyncronizationPolicy(SyncPolicy remoteTransactionSyncronizationPolicy)
+    {
+        _remoteTransactionSyncronizationPolicy = remoteTransactionSyncronizationPolicy;
     }
 
     private void populateExistingRemoteReplicationNodes()
