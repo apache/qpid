@@ -30,7 +30,6 @@
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/NullMessageStore.h"
-#include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/MessageTransferBody.h"

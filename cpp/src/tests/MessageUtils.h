@@ -107,7 +107,7 @@ struct MessageUtils
             AMQFrame data((AMQContentBody(content)));
             msg->getFrames().append(data);
         }
-        if (ttl) msg->computeExpiration(new broker::ExpiryPolicy);
+        if (ttl) msg->computeExpiration();
         return Message(msg, msg);
     }
 };

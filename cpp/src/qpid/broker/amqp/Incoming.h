@@ -77,7 +77,6 @@ class DecodingIncoming : public Incoming
     virtual void handle(qpid::broker::Message&) = 0;
   private:
     boost::shared_ptr<Session> session;
-    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     boost::intrusive_ptr<Message> partial;
 };
 

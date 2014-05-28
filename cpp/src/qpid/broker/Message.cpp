@@ -164,11 +164,6 @@ void Message::annotationsChanged()
     }
 }
 
-bool Message::hasExpired() const
-{
-    return sharedState->hasExpired(*this);
-}
-
 uint8_t Message::getPriority() const
 {
     return getEncoding().getPriority();
@@ -335,34 +330,20 @@ void Message::SharedStateImpl::setExpiration(sys::AbsTime e)
 
 sys::Duration Message::SharedStateImpl::getTimeToExpiration() const
 {
-    sys::AbsTime current(expiryPolicy ? expiryPolicy->getCurrentTime() : sys::AbsTime::now());
-    return sys::Duration(current, expiration);
+    return sys::Duration(sys::AbsTime::now(), expiration);
 }
 
-void Message::SharedStateImpl::computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& e)
+void Message::SharedStateImpl::computeExpiration()
 {
     //TODO: this is still quite 0-10 specific...
     uint64_t ttl;
     if (getTtl(ttl)) {
-        if (e) {
-            // Use higher resolution time for the internal expiry calculation.
-            // Prevent overflow as a signed int64_t
-            Duration duration(std::min(ttl * TIME_MSEC,
-                                       (uint64_t) std::numeric_limits<int64_t>::max()));
-            expiration = AbsTime(e->getCurrentTime(), duration);
-            expiryPolicy = e;
-        }
+        // Use higher resolution time for the internal expiry calculation.
+        // Prevent overflow as a signed int64_t
+        Duration duration(std::min(ttl * TIME_MSEC,
+                                   (uint64_t) std::numeric_limits<int64_t>::max()));
+        expiration = AbsTime(sys::AbsTime::now(), duration);
     }
-}
-
-bool Message::SharedStateImpl::hasExpired(const Message& m) const
-{
-    return expiryPolicy && expiryPolicy->hasExpired(m);
-}
-
-void Message::SharedStateImpl::setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e)
-{
-    expiryPolicy = e;
 }
 
 bool Message::SharedStateImpl::getIsManagementMessage() const

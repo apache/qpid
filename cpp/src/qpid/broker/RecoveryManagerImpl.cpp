@@ -183,9 +183,9 @@ void RecoverableMessageImpl::setRedelivered()
     msg.deliver();//increment delivery count (but at present that isn't recorded durably)
 }
 
-void RecoverableMessageImpl::computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& ep)
+void RecoverableMessageImpl::computeExpiration()
 {
-    msg.getSharedState().computeExpiration(ep);
+    msg.getSharedState().computeExpiration();
 }
 
 Message RecoverableMessageImpl::getMessage()

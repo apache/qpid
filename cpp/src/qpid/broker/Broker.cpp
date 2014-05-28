@@ -34,7 +34,6 @@
 #include "qpid/broker/SecureConnectionFactory.h"
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/Link.h"
-#include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/PersistableObject.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/QueueSettings.h"
@@ -236,7 +235,6 @@ Broker::Broker(const Broker::Options& conf) :
         *this),
     queueCleaner(queues, poller, timer.get()),
     recoveryInProgress(false),
-    expiryPolicy(new ExpiryPolicy),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if (!dataDir.isEnabled()) {

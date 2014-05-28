@@ -633,7 +633,7 @@ void ManagementAgent::sendBuffer(const string& data,
     transfer->getFrames().append(content);
     transfer->computeRequiredCredit();
     transfer->setIsManagementMessage(true);
-    transfer->computeExpiration(broker->getExpiryPolicy());
+    transfer->computeExpiration();
     Message msg(transfer, transfer);
 
     sendQueue->push(make_pair(exchange, msg));

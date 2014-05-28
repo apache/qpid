@@ -62,8 +62,7 @@ size_t encode(const Message& msg, char* data, size_t size)
     return required;
 }
 
-size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_t size,
-              boost::intrusive_ptr<ExpiryPolicy> expiryPolicy)
+size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_t size)
 {
     qpid::framing::Buffer metadata(const_cast<char*>(data), size);
     uint32_t encoded = metadata.getLong();
@@ -78,7 +77,6 @@ size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_
     msg.getPersistentContext()->setPersistenceId(persistenceId);
     if (t) {
         sys::AbsTime expiration(EPOCH, t);
-        msg.getSharedState().setExpiryPolicy(expiryPolicy);
         msg.getSharedState().setExpiration(expiration);
     }
     return encoded + metadata.getPosition();
@@ -86,10 +84,8 @@ size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_
 
 }
 
-PagedQueue::PagedQueue(const std::string& name_, const std::string& directory, uint m, uint factor, ProtocolRegistry& p,
-                       boost::intrusive_ptr<ExpiryPolicy> e)
-    : name(name_), pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0), loaded(0), version(0),
-      expiryPolicy(e)
+PagedQueue::PagedQueue(const std::string& name_, const std::string& directory, uint m, uint factor, ProtocolRegistry& p)
+    : name(name_), pageSize(file.getPageSize()*factor), maxLoaded(m), protocols(p), offset(0), loaded(0), version(0)
 {
     if (directory.empty()) {
         throw qpid::Exception(QPID_MSG("Cannot create paged queue: No paged queue directory specified"));
@@ -322,7 +318,7 @@ Message* PagedQueue::Page::find(qpid::framing::SequenceNumber position)
     //if it is the last in the page, decrement the hint count of the page
 }
 
-void PagedQueue::Page::load(MemoryMappedFile& file, ProtocolRegistry& protocols, boost::intrusive_ptr<ExpiryPolicy> expiryPolicy)
+void PagedQueue::Page::load(MemoryMappedFile& file, ProtocolRegistry& protocols)
 {
     QPID_LOG(debug, "Page[" << offset << "]::load" << " used=" << used << ", size=" << size);
     assert(region == 0);
@@ -336,7 +332,7 @@ void PagedQueue::Page::load(MemoryMappedFile& file, ProtocolRegistry& protocols,
         //decode messages into Page::messages
         for (size_t i = 0; i < count; ++i) {
             Message message;
-            used += decode(protocols, message, region + used, size - used, expiryPolicy);
+            used += decode(protocols, message, region + used, size - used);
             if (!contents.contains(message.getSequence())) {
                 message.setState(DELETED);
                 QPID_LOG(debug, "Setting state to deleted for message loaded at " << message.getSequence());
@@ -389,7 +385,7 @@ void PagedQueue::load(Page& page)
         assert(i != used.rend());
         unload(i->second);
     }
-    page.load(file, protocols, expiryPolicy);
+    page.load(file, protocols);
     ++loaded;
     QPID_LOG(debug, "PagedQueue[" << name << "] loaded page, " << loaded << " pages now loaded");
 }

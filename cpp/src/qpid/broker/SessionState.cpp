@@ -220,7 +220,7 @@ void SessionState::handleContent(AMQFrame& frame)
         if (broker.isTimestamping())
             msg->setTimestamp();
         msg->setPublisher(&(getConnection()));
-        msg->computeExpiration(getBroker().getExpiryPolicy());
+        msg->computeExpiration();
 
 
         IncompleteIngressMsgXfer xfer(this, msg);
