@@ -413,7 +413,7 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
         QueueCursor cursor = c->getCursor(); // Save current position.
         Message* msg = messages->next(*c);   // Advances c.
         if (msg) {
-            if (msg->hasExpired()) {
+            if (msg->getExpiration() < sys::AbsTime::now()) {
                 QPID_LOG(debug, "Message expired from queue '" << name << "'");
                 observeDequeue(*msg, locker, settings.autodelete ? &autodelete : 0);
                 //ERROR: don't hold lock across call to store!!
@@ -616,6 +616,13 @@ void Queue::cancel(Consumer::shared_ptr c, const std::string& connectionId, cons
     }
 }
 
+namespace{
+bool hasExpired(const Message& m, AbsTime now)
+{
+    return m.getExpiration() < now;
+}
+}
+
 /**
  *@param lapse: time since the last purgeExpired
  */
@@ -627,7 +634,8 @@ void Queue::purgeExpired(sys::Duration lapse) {
     dequeueSincePurge -= count;
     int seconds = int64_t(lapse)/qpid::sys::TIME_SEC;
     if (seconds == 0 || count / seconds < 1) {
-        uint32_t count = remove(0, boost::bind(&Message::hasExpired, _1), 0, CONSUMER, settings.autodelete);
+        sys::AbsTime time = sys::AbsTime::now();
+        uint32_t count = remove(0, boost::bind(&hasExpired, _1, time), 0, CONSUMER, settings.autodelete);
         QPID_LOG(debug, "Purged " << count << " expired messages from " << getName());
         //
         // Report the count of discarded-by-ttl messages

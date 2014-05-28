@@ -921,7 +921,7 @@ void MessageStoreImpl::recoverMessages(TxnCtxt& /*txn*/,
                 // become optional depending on that information.
                 msg->setRedelivered();
                 // Reset the TTL for the recovered message
-                msg->computeExpiration(broker->getExpiryPolicy());
+                msg->computeExpiration();
 
                 uint32_t contentOffset = headerSize + preambleLength;
                 uint64_t contentSize = dbuffSize - contentOffset;

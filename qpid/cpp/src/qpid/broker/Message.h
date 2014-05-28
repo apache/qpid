@@ -23,7 +23,6 @@
  */
 
 #include "qpid/RefCounted.h"
-#include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/PersistableMessage.h"
 //TODO: move the following out of framing or replace it
 #include "qpid/framing/SequenceNumber.h"
@@ -91,9 +90,7 @@ public:
         virtual void setExpiration(sys::AbsTime e) = 0;
         virtual sys::AbsTime getExpiration() const = 0;
         virtual sys::Duration getTimeToExpiration() const = 0;
-        virtual void computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>&) = 0;
-        virtual bool hasExpired(const Message& m) const = 0;
-        virtual void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) = 0;
+        virtual void computeExpiration() = 0;
 
         virtual bool getIsManagementMessage() const = 0;
         virtual void setIsManagementMessage(bool b) = 0;
@@ -103,7 +100,6 @@ public:
     {
         const Connection* publisher;
         qpid::sys::AbsTime expiration;
-        boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
         bool isManagementMessage;
       public:
         SharedStateImpl();
@@ -113,9 +109,7 @@ public:
         QPID_BROKER_EXTERN void setExpiration(sys::AbsTime e);
         QPID_BROKER_EXTERN sys::AbsTime getExpiration() const;
         QPID_BROKER_EXTERN sys::Duration getTimeToExpiration() const;
-        QPID_BROKER_EXTERN void computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& e);
-        QPID_BROKER_EXTERN bool hasExpired(const Message& m) const;
-        QPID_BROKER_EXTERN void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e);
+        QPID_BROKER_EXTERN void computeExpiration();
         QPID_BROKER_EXTERN bool getIsManagementMessage() const;
         QPID_BROKER_EXTERN void setIsManagementMessage(bool b);
     };
@@ -137,7 +131,6 @@ public:
     QPID_BROKER_EXTERN std::string getRoutingKey() const;
     QPID_BROKER_EXTERN bool isPersistent() const;
 
-    bool hasExpired() const;
     QPID_BROKER_EXTERN sys::AbsTime getExpiration() const;
     uint64_t getTtl() const;
     QPID_BROKER_EXTERN bool getTtl(uint64_t&) const;

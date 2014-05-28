@@ -107,7 +107,7 @@ namespace {
 }
 
 DecodingIncoming::DecodingIncoming(pn_link_t* link, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name)
-    : Incoming(link, broker, parent, source, target, name), session(parent.shared_from_this()), expiryPolicy(broker.getExpiryPolicy()) {}
+    : Incoming(link, broker, parent, source, target, name), session(parent.shared_from_this()) {}
 DecodingIncoming::~DecodingIncoming() {}
 
 void DecodingIncoming::readable(pn_delivery_t* delivery)
@@ -135,7 +135,7 @@ void DecodingIncoming::readable(pn_delivery_t* delivery)
         received->scan();
         pn_link_advance(link);
         received->setPublisher(&session->getParent());
-        received->computeExpiration(expiryPolicy);
+        received->computeExpiration();
 
         qpid::broker::Message message(received, received);
         userid.verify(message.getUserId());

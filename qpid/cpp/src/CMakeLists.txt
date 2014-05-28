@@ -1134,7 +1134,6 @@ set (qpidbroker_SOURCES
      qpid/broker/Broker.cpp
      qpid/broker/Credit.cpp
      qpid/broker/Exchange.cpp
-     qpid/broker/ExpiryPolicy.cpp
      qpid/broker/Fairshare.cpp
      qpid/broker/MessageDeque.cpp
      qpid/broker/MessageMap.cpp

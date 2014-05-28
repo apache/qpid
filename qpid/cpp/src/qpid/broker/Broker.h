@@ -63,7 +63,6 @@ struct Url;
 namespace broker {
 
 class AclModule;
-class ExpiryPolicy;
 class Message;
 struct QueueSettings;
 
@@ -201,7 +200,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
                            const Message& msg);
     std::string federationTag;
     bool recoveryInProgress;
-    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConsumerFactories consumerFactories;
     ProtocolRegistry protocolRegistry;
     ObjectFactoryRegistry objectFactory;
@@ -247,9 +245,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Options& getOptions() { return config; }
     ProtocolRegistry& getProtocolRegistry() { return protocolRegistry; }
     ObjectFactoryRegistry& getObjectFactoryRegistry() { return objectFactory; }
-
-    void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
-    boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }
 
     SessionManager& getSessionManager() { return sessionManager; }
     const std::string& getFederationTag() const { return federationTag; }
