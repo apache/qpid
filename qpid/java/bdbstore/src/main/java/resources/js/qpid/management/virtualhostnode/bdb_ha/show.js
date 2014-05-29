@@ -181,30 +181,13 @@ define(["dojo/_base/xhr",
             }
           }
       );
-
-      this.stopNodeButton = registry.byNode(findNode("stopNodeButton", containerNode));
-      this.startNodeButton = registry.byNode(findNode("startNodeButton", containerNode));
-      this.editNodeButton = registry.byNode(findNode("editNodeButton", containerNode));
-      this.editNodeButton.on("click",
+      this.parent.editNodeButton.set("disabled", false);
+      this.parent.editNodeButton.on("click",
           function(e)
           {
             edit.show(that.data.name);
           }
       );
-      this.deleteNodeButton = registry.byNode(query(".deleteNodeButton", containerNode)[0]);
-      this.deleteNodeButton.on("click",
-          function(e)
-          {
-            if (confirm("Deletion of virtual host node will delete both configuration and message data.\n\n Are you sure you want to delete virtual host node?"))
-            {
-              if (sendRequest(that.data.name, that.data.name, "DELETE"))
-              {
-                that.parent.destroy();
-              }
-            }
-          }
-      );
-
     }
 
     BDBHA.prototype.update=function(data)
