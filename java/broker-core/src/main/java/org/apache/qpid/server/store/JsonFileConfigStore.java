@@ -500,7 +500,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
 
     @Override
-    public void update(final boolean createIfNecessary, final ConfiguredObjectRecord... records)
+    public synchronized void update(final boolean createIfNecessary, final ConfiguredObjectRecord... records)
             throws StoreException
     {
         if (records.length == 0)
