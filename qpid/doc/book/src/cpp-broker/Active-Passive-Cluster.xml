@@ -219,6 +219,12 @@ under the License.
       The broker must load the <filename>ha</filename> module, it is loaded by
       default. The following broker options are available for the HA module.
     </para>
+    <note>
+      <para>
+	Incorrect security settings are a common cause of problems when
+	getting started, see <xref linkend="ha-security"/>.	
+      </para>
+    </note>
     <table frame="all" id="ha-broker-options">
       <title>Broker Options for High Availability Messaging Cluster</title>
       <tgroup align="left" cols="2" colsep="1" rowsep="1">
@@ -822,8 +828,22 @@ connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconn
       Please see <xref linkend="chap-Messaging_User_Guide-Security"/> for
       more details on enabling authentication and setting up Access Control Lists.
     </para>
+    <note>
+      <para>
+	Unless you disable authentication with <literal>auth=no</literal> in
+	your configuration, you <emphasis>must</emphasis> set the options below
+	and you <emphasis>must</emphasis> have an ACL file with at least the
+	entry described below.
+      </para>
+      <para>
+	Backups will be <emphasis>unable to connect to the primary</emphasis> if
+	the security configuration is incorrect. See also <xref
+	linkend="ha-troubleshoot-security"/>
+      </para>
+    </note>
     <para>
-      When authentication is enabled, HA brokers use the credentials set by the following options:
+      When authentication is enabled you must set the credentials used by HA
+      brokers with following options:
     </para>
     <table frame="all" id="ha-security-options">
       <title>HA Security Options</title>
@@ -848,7 +868,13 @@ connection = qpid.messaging.Connection.establish("node1", reconnect=True, reconn
 	  </row>
 	  <row>
 	    <entry><para><literal>ha-mechanism</literal> <replaceable>MECHANISM</replaceable></para></entry>
-	    <entry><para>Mechanism for HA brokers.</para></entry>
+	    <entry>
+	      <para>
+		Mechanism for HA brokers. Any mechanism you enable for
+		broker-to-broker communication can also be used by a client, so
+		do not use ha-mechanism=ANONYMOUS in a secure environment.
+	      </para>
+	    </entry>
 	  </row>
 	</tbody>
       </tgroup>
@@ -922,27 +948,41 @@ qpid-ha -b <replaceable>broker-address</replaceable> promote
       This section applies to clusters that are using rgmanager as the
       cluster manager.
     </para>
-    <section id="authentication-failures">
-      <title>Authentication failures</title>
+    <section id="ha-troubleshoot-no-primary">
+      <title>No primary broker</title>
       <para>
-	If a broker is unable to establish a connection to another broker
-	in the cluster due to authentication problems, the log will
-	contain SASL errors, for example:
+	When you initially start a HA cluster, all brokers are in
+	<literal>joining</literal> mode. The brokers do not automatically select
+	a primary, they rely on the cluster manager <literal>rgmanager</literal>
+	to do so. If <literal>rgmanager</literal> is not running or is not
+	configured correctly, brokers will remain in the
+	<literal>joining</literal> state. See <xref linkend="ha-rm-config"/>
+      </para>
+    </section>
+    <section id="ha-troubleshoot-security">
+      <title>Authentication and ACL failures</title>
+      <para>
+	If a broker is unable to establish a connection to another broker in the
+	cluster due to authentication or ACL problems the logs may contain
+	errors like the following:
 	<programlisting>
-2012-aug-04 10:17:37 info SASL: Authentication failed: SASL(-13): user not found: Password verification failed
+info SASL: Authentication failed: SASL(-13): user not found: Password verification failed
+	</programlisting>
+	<programlisting>
+warning Client closed connection with 320: User anonymous@QPID federation connection denied. Systems with authentication enabled must specify ACL create link rules.
+	</programlisting>
+	<programlisting>
+warning Client closed connection with 320: ACL denied anonymous@QPID creating a federation link.
 	</programlisting>
       </para>
       <para>
-	Set the SASL user name and password used to connect to other
-	brokers using the ha-username and ha-password properties when you
-	start the broker. Set the SASL mode using ha-mechanism. Any
-	mechanism you enable for broker-to-broker communication can also
-	be used by a client, so do not enable ha-mechanism=ANONYMOUS in a
-	secure environment. Once the cluster is running, run qpid-ha to
-	make sure that the brokers are running as one cluster.
+	Set the HA security configuration and ACL file as described in <xref
+	linkend="ha-security"/>.  Once the cluster is running and the primary is
+	promoted , run <literal>qpid-ha</literal> to make sure that the brokers
+	are running as one cluster.
       </para>
     </section>
-    <section id="slow-recovery-times">
+    <section id="ha-troubleshoot-slow-recovery">
       <title>Slow recovery times</title>
       <para>
 	The following configuration settings affect recovery time. The
@@ -950,7 +990,7 @@ qpid-ha -b <replaceable>broker-address</replaceable> promote
 	loaded system. You should run tests to determine if the values are
 	appropriate for your system and load conditions.
       </para>
-      <section id="cluster.conf">
+      <section id="ha-troubleshoot-cluster.conf">
 	<title>cluster.conf:</title>
 	<programlisting>
 &lt;rm status_poll_interval=1&gt;
@@ -970,7 +1010,7 @@ qpid-ha -b <replaceable>broker-address</replaceable> promote
 	  failing over the VIP to a new address.
 	</para>
       </section>
-      <section id="qpidd.conf">
+      <section id="ha-troubleshoot-qpidd.conf">
 	<title>qpidd.conf</title>
 	<programlisting>
 link-maintenance-interval=0.1
@@ -1006,7 +1046,7 @@ link-heartbeat-interval=5
 	</para>
       </section>
     </section>
-    <section id="total-cluster-failure">
+    <section id="ha-troubleshoot-total-cluster-failure">
       <title>Total cluster failure</title>
       <para>
 	The cluster can only guarantee availability as long as there is at
@@ -1047,7 +1087,7 @@ link-heartbeat-interval=5
 	If the surviving broker fails before that the cluster will fail in
 	one of two modes (depending on the exact timing of failures)
       </para>
-      <section id="the-cluster-hangs">
+      <section id="ha-troubleshoot-the-cluster-hangs">
 	<title>1. The cluster hangs</title>
 	<para>
 	  All brokers are in joining or catch-up mode. rgmanager tries to
@@ -1080,7 +1120,7 @@ service:qpidd-primary-service  (20.0.10.33)                   stopped
 	  with clusvcadm, then restart (primary last)
 	</para>
       </section>
-      <section id="the-cluster-reboots">
+      <section id="ha-troubleshoot-the-cluster-reboots">
 	<title>2. The cluster reboots</title>
 	<para>
 	  A new primary is promoted and the cluster is functional but all
@@ -1088,7 +1128,7 @@ service:qpidd-primary-service  (20.0.10.33)                   stopped
 	</para>
       </section>
     </section>
-    <section id="fencing-and-network-partitions">
+    <section id="ha-troubleshoot-fencing-and-network-partitions">
       <title>Fencing and network partitions</title>
       <para>
 	A network partition is a a network failure that divides the
