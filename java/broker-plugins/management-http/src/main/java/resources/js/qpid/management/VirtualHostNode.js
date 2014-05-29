@@ -56,14 +56,56 @@ define(["dojo/_base/xhr",
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
-
-                            that.vhostNodeUpdater = new Updater(contentPane.containerNode, that.modelObj, that);
-                            that.vhostNodeUpdater.update();
-
-                            updater.add( that.vhostNodeUpdater );
+                            that.onOpen(contentPane.containerNode)
                        }});
 
            };
+
+           VirtualHostNode.prototype.onOpen = function(containerNode)
+           {
+             var that = this;
+             this.stopNodeButton = registry.byNode(query(".stopNodeButton", containerNode)[0]);
+             this.startNodeButton = registry.byNode(query(".startNodeButton", containerNode)[0]);
+             this.editNodeButton = registry.byNode(query(".editNodeButton", containerNode)[0]);
+             this.deleteNodeButton = registry.byNode(query(".deleteNodeButton", containerNode)[0]);
+             this.deleteNodeButton.on("click",
+                 function(e)
+                 {
+                   if (confirm("Deletion of virtual host node will delete both configuration and message data.\n\n"
+                           + "Are you sure you want to delete virtual host node '" + entities.encode(String(that.name)) + "'?"))
+                   {
+                     if (util.sendRequest("api/latest/virtualhostnode/" + encodeURIComponent( that.name) , "DELETE"))
+                     {
+                       that.destroy();
+                     }
+                   }
+                 }
+             );
+             this.startNodeButton.on("click",
+               function(event)
+               {
+                 that.startNodeButton.set("disabled", true);
+                 util.sendRequest("api/latest/virtualhostnode/" + encodeURIComponent(that.name),
+                         "PUT", {desiredState: "ACTIVE"});
+               });
+
+             this.stopNodeButton.on("click",
+               function(event)
+               {
+                 if (confirm("Stopping the node will also shutdown the virtual host. "
+                         + "Are you sure you want to stop virtual host node '"
+                         + entities.encode(String(that.name)) +"'?"))
+                 {
+                     that.stopNodeButton.set("disabled", true);
+                     util.sendRequest("api/latest/virtualhostnode/" + encodeURIComponent(that.name),
+                             "PUT", {desiredState: "STOPPED"});
+                 }
+               });
+             this.vhostNodeUpdater = new Updater(containerNode, this.modelObj, this);
+             this.vhostNodeUpdater.update();
+
+             updater.add( this.vhostNodeUpdater );
+           }
 
            VirtualHostNode.prototype.close = function()
            {
@@ -115,6 +157,9 @@ define(["dojo/_base/xhr",
 
            Updater.prototype.updateUI = function(data)
            {
+             this.virtualHostNode.startNodeButton.set("disabled", data.state != "STOPPED");
+             this.virtualHostNode.stopNodeButton.set("disabled", data.state != "ACTIVE");
+
              this.name.innerHTML = entities.encode(String(data[ "name" ]));
              this.state.innerHTML = entities.encode(String(data[ "state" ]));
              this.type.innerHTML = entities.encode(String(data[ "type" ]));
