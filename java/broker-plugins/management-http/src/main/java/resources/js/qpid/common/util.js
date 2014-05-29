@@ -21,7 +21,7 @@
 
 define(["dojo/_base/xhr",
         "dojo/_base/event",
-        "dojo/_base/json",
+        "dojo/json",
         "dojo/_base/lang",
         "dojo/dom-construct",
         "dojo/dom-geometry",
@@ -266,7 +266,7 @@ define(["dojo/_base/xhr",
                      }
                      xhr.put({url: url , sync: true, handleAs: "json",
                               headers: { "Content-Type": "application/json"},
-                              putData: json.toJson(values),
+                              putData: json.stringify(values),
                               load: function(x) {that.success = true; },
                               error: function(error) {that.success = false; that.failureReason = error;}});
                      if(this.success === true)
@@ -369,6 +369,126 @@ define(["dojo/_base/xhr",
                {
                    alert(error);
                }
+           }
+
+           util.sendRequest = function (url, method, attributes, sync)
+           {
+               var success = false;
+               var failureReason = "";
+               var syncRequired = sync == undefined ? true : sync;
+               if (method == "POST" || method == "PUT")
+               {
+                 xhr.put({
+                   url: url,
+                   sync: syncRequired,
+                   handleAs: "json",
+                   headers: { "Content-Type": "application/json"},
+                   putData: json.stringify(attributes),
+                   load: function(x) {success = true; },
+                   error: function(error) {success = false; failureReason = error;}
+                 });
+               }
+               else if (method == "DELETE")
+               {
+                 xhr.del({url: url, sync: syncRequired, handleAs: "json"}).then(
+                       function(data) { success = true; },
+                       function(error) {success = false; failureReason = error;}
+                 );
+               }
+
+               if (syncRequired && !success)
+               {
+                   alert("Error:" + failureReason);
+               }
+               return success;
+           }
+
+           util.equals = function(object1, object2)
+           {
+             if (object1 && object2)
+             {
+               if (typeof object1 != typeof object2)
+               {
+                 return false;
+               }
+               else
+               {
+                 if (object1 instanceof Array || typeof object1 == "array")
+                 {
+                   if (object1.length != object2.length)
+                   {
+                     return false;
+                   }
+
+                   for (var i = 0, l=object1.length; i < l; i++)
+                   {
+                     var item = object1[i];
+                     if (item && (item instanceof Array  || typeof item == "array" || item instanceof Object))
+                     {
+                       if (!this.equals(item, object2[i]))
+                       {
+                         return false;
+                       }
+                     }
+                     else if (item != object2[i])
+                     {
+                         return false;
+                     }
+                   }
+
+                   return true;
+                 }
+                 else if (object1 instanceof Object)
+                 {
+                   for (propName in object1)
+                   {
+                       if (object1.hasOwnProperty(propName) != object2.hasOwnProperty(propName))
+                       {
+                           return false;
+                       }
+                       else if (typeof object1[propName] != typeof object2[propName])
+                       {
+                           return false;
+                       }
+                   }
+
+                   for(propName in object2)
+                   {
+                       var object1Prop = object1[propName];
+                       var object2Prop = object2[propName];
+
+                       if (object2.hasOwnProperty(propName) != object1.hasOwnProperty(propName))
+                       {
+                           return false;
+                       }
+                       else if (typeof object1Prop != typeof object2Prop)
+                       {
+                           return false;
+                       }
+
+                       if(!object2.hasOwnProperty(propName))
+                       {
+                         // skip functions
+                         continue;
+                       }
+
+                       if (object1Prop && (object1Prop instanceof Array || typeof object1Prop == "array" || object1Prop instanceof Object))
+                       {
+                         if (!this.equals(object1Prop, object2Prop))
+                         {
+                           return false;
+                         }
+                       }
+                       else if(object1Prop != object2Prop)
+                       {
+                          return false;
+                       }
+                   }
+                   return true;
+                 }
+               }
+             }
+             return object1 === object2;
            }
 
            return util;

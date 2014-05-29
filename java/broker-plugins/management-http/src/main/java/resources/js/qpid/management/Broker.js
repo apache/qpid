@@ -21,6 +21,7 @@
 define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/query",
+        "dojo/json",
         "dojo/_base/connect",
         "qpid/common/properties",
         "qpid/common/updater",
@@ -48,7 +49,7 @@ define(["dojo/_base/xhr",
         "dijit/Menu",
         "dijit/MenuItem",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities, addAuthenticationProvider, addVirtualHostNode, addPort, addKeystore, addGroupProvider, addAccessControlProvider) {
+       function (xhr, parser, query, json, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities, addAuthenticationProvider, addVirtualHostNode, addPort, addKeystore, addGroupProvider, addAccessControlProvider) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -330,7 +331,7 @@ define(["dojo/_base/xhr",
                                      selectionMode: "single",
                                      plugins: {
                                               pagination: {
-                                                  pageSizes: ["10", "25", "50", "100"],
+                                                  pageSizes: [10, 25, 50, 100],
                                                   description: true,
                                                   sizeSwitch: true,
                                                   pageStepper: true,
@@ -382,24 +383,31 @@ define(["dojo/_base/xhr",
                                                         function(evt){
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
-                                                            that.showVirtualHost(theItem, brokerObj);
+                                                            if (theItem.virtualhosts)
+                                                            {
+                                                                that.showVirtualHost(theItem, brokerObj);
+                                                            }
                                                         });
-                                                }, gridProperties, EnhancedGrid);
+                                                }, gridProperties, EnhancedGrid, true);
 
-                             var virtualHostNodeMenuButton = registry.byNode(query(".virtualHostNodeMenuButton", node)[0]);
-                             var virtualHostMenuButton = registry.byNode(query(".virtualHostMenuButton", node)[0]);
+                             that.virtualHostNodeMenuButton = registry.byNode(query(".virtualHostNodeMenuButton", node)[0]);
+                             that.virtualHostMenuButton = registry.byNode(query(".virtualHostMenuButton", node)[0]);
 
-                             var toggleVirtualHostNodeNodeMenus = function(rowIndex){
-                               var data = that.vhostsGrid.grid.selection.getSelected();
-                               virtualHostNodeMenuButton.set("disabled",data.length!=1);
-                               virtualHostMenuButton.set("disabled",data.length!=1 );
-                             };
-
-                             connect.connect(that.vhostsGrid.grid.selection, 'onSelected',  toggleVirtualHostNodeNodeMenus);
-                             connect.connect(that.vhostsGrid.grid.selection, 'onDeselected',  toggleVirtualHostNodeNodeMenus);
-
-                             var hostMenuItems = virtualHostMenuButton.dropDown.getChildren();
+                             var hostMenuItems = that.virtualHostMenuButton.dropDown.getChildren();
                              var viewVirtualHostItem = hostMenuItems[0];
+                             var startVirtualHostItem = hostMenuItems[1];
+                             var stopVirtualHostItem = hostMenuItems[2];
+
+                             var nodeMenuItems = that.virtualHostNodeMenuButton.dropDown.getChildren();
+                             var viewNodeItem = nodeMenuItems[0];
+                             var deleteNodeItem = nodeMenuItems[1];
+                             var startNodeItem = nodeMenuItems[2];
+                             var stopNodeItem = nodeMenuItems[3];
+
+                             var toggler =  function(index){ that.toggleVirtualHostNodeNodeMenus(index);}
+                             connect.connect(that.vhostsGrid.grid.selection, 'onSelected', toggler);
+                             connect.connect(that.vhostsGrid.grid.selection, 'onDeselected', toggler);
+
                              viewVirtualHostItem.on("click", function(){
                                var data = that.vhostsGrid.grid.selection.getSelected();
                                if (data.length == 1)
@@ -408,9 +416,7 @@ define(["dojo/_base/xhr",
                                }
                              });
 
-                             var nodeMenuItems = virtualHostNodeMenuButton.dropDown.getChildren();
-                             var viewNodeButton = nodeMenuItems[0];
-                             viewNodeButton.on("click",
+                             viewNodeItem.on("click",
                                      function(evt){
                                        var data = that.vhostsGrid.grid.selection.getSelected();
                                        if (data.length == 1)
@@ -420,8 +426,8 @@ define(["dojo/_base/xhr",
                                        }
                                  }
                              );
-                             var deleteNodeButton = nodeMenuItems[1];
-                             deleteNodeButton.on("click",
+
+                             deleteNodeItem.on("click",
                                      function(evt){
                                          util.deleteGridSelections(
                                                  that,
@@ -430,6 +436,63 @@ define(["dojo/_base/xhr",
                                                  "Deletion of virtual host node will delete both configuration and message data.\n\n Are you sure you want to delete virtual host node");
                                  }
                              );
+
+                             startNodeItem.on("click",
+                               function(event)
+                               {
+                                 var data = that.vhostsGrid.grid.selection.getSelected();
+                                 if (data.length == 1)
+                                 {
+                                   var item = data[0];
+                                   util.sendRequest("api/latest/virtualhostnode/" + encodeURIComponent(item.name),
+                                           "PUT", {desiredState: "ACTIVE"});
+                                 }
+                               });
+
+                             stopNodeItem.on("click",
+                               function(event)
+                               {
+                                 var data = that.vhostsGrid.grid.selection.getSelected();
+                                 if (data.length == 1)
+                                 {
+                                   var item = data[0];
+                                   if (confirm("Stopping the node will also shutdown the virtual host. "
+                                           + "Are you sure you want to stop virtual host node '"
+                                           + entities.encode(String(item.name)) +"'?"))
+                                   {
+                                       util.sendRequest("api/latest/virtualhostnode/" + encodeURIComponent(item.name),
+                                               "PUT", {desiredState: "STOPPED"});
+                                   }
+                                 }
+                               });
+
+                             startVirtualHostItem.on("click", function(event)
+                               {
+                                 var data = that.vhostsGrid.grid.selection.getSelected();
+                                 if (data.length == 1 && data[0].virtualhosts)
+                                 {
+                                   var item = data[0];
+                                   var host = item.virtualhosts[0];
+                                   util.sendRequest("api/latest/virtualhost/" + encodeURIComponent(item.name) + "/" + encodeURIComponent(host.name),
+                                           "PUT", {desiredState: "ACTIVE"});
+                                 }
+                               });
+
+                             stopVirtualHostItem.on("click", function(event)
+                               {
+                                 var data = that.vhostsGrid.grid.selection.getSelected();
+                                 if (data.length == 1 && data[0].virtualhosts)
+                                 {
+                                   var item = data[0];
+                                   var host = item.virtualhosts[0];
+                                   if (confirm("Are you sure you want to stop virtual host '"
+                                           + entities.encode(String(host.name)) +"'?"))
+                                   {
+                                       util.sendRequest("api/latest/virtualhost/" + encodeURIComponent(item.name) + "/" + encodeURIComponent(host.name),
+                                               "PUT", {desiredState: "STOPPED"});
+                                   }
+                                 }
+                               });
 
                              gridProperties.selectionMode="extended";
 
@@ -633,7 +696,11 @@ define(["dojo/_base/xhr",
 
                                                                                        that.updateHeader();
 
-                                                                                       that.vhostsGrid.update(that.brokerData.virtualhostnodes);
+                                                                                       if (that.vhostsGrid.update(that.brokerData.virtualhostnodes))
+                                                                                       {
+                                                                                           that.vhostsGrid.grid._refresh();
+                                                                                           that.toggleVirtualHostNodeNodeMenus();
+                                                                                       }
 
                                                                                        that.portsGrid.update(that.brokerData.ports);
 
@@ -670,5 +737,43 @@ define(["dojo/_base/xhr",
                dojo.byId("brokerAttribute.modelVersion").innerHTML = entities.encode(String(brokerData.modelVersion));
            }
 
+           BrokerUpdater.prototype.toggleVirtualHostNodeNodeMenus = function(rowIndex)
+           {
+             var data = this.vhostsGrid.grid.selection.getSelected();
+             var selected = data.length==1;
+             this.virtualHostNodeMenuButton.set("disabled", !selected);
+             this.virtualHostMenuButton.set("disabled", !selected || !data[0].virtualhosts);
+             if (selected)
+             {
+                 var nodeMenuItems = this.virtualHostNodeMenuButton.dropDown.getChildren();
+                 var hostMenuItems = this.virtualHostMenuButton.dropDown.getChildren();
+
+                 var startNodeItem = nodeMenuItems[2];
+                 var stopNodeItem = nodeMenuItems[3];
+
+                 var viewVirtualHostItem = hostMenuItems[0];
+                 var startVirtualHostItem = hostMenuItems[1];
+                 var stopVirtualHostItem = hostMenuItems[2];
+
+                 var node = data[0];
+                 startNodeItem.set("disabled", node.state != "STOPPED");
+                 stopNodeItem.set("disabled", node.state != "ACTIVE");
+
+                 if (node.virtualhosts)
+                 {
+                     viewVirtualHostItem.set("disabled", false);
+
+                     var host = node.virtualhosts[0];
+                     startVirtualHostItem.set("disabled", host.state != "STOPPED");
+                     stopVirtualHostItem.set("disabled", host.state != "ACTIVE");
+                 }
+                 else
+                 {
+                     viewVirtualHostItem.set("disabled", true);
+                     startVirtualHostItem.set("disabled", true);
+                     stopVirtualHostItem.set("disabled", true);
+                 }
+             }
+           };
            return Broker;
        });
