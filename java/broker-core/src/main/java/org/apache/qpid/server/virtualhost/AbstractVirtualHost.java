@@ -915,19 +915,23 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             for (AMQQueue<?> q : getQueues())
             {
-                if (_logger.isDebugEnabled())
+                if (q.getState() == State.ACTIVE)
                 {
-                    _logger.debug("Checking message status for queue: "
-                            + q.getName());
-                }
-                try
-                {
-                    q.checkMessageStatus();
-                } catch (Exception e)
-                {
-                    _logger.error("Exception in housekeeping for queue: " + q.getName(), e);
-                    //Don't throw exceptions as this will stop the
-                    // house keeping task from running.
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Checking message status for queue: "
+                                      + q.getName());
+                    }
+                    try
+                    {
+                        q.checkMessageStatus();
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.error("Exception in housekeeping for queue: " + q.getName(), e);
+                        //Don't throw exceptions as this will stop the
+                        // house keeping task from running.
+                    }
                 }
             }
             for (AMQConnectionModel<?,?> connection : getConnectionRegistry().getConnections())
