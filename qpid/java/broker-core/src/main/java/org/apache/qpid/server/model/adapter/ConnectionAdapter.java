@@ -21,9 +21,7 @@
 package org.apache.qpid.server.model.adapter;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -40,14 +38,12 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.SessionModelListener;
+import org.apache.qpid.server.util.Action;
 
 public final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter> implements Connection<ConnectionAdapter>,
                                                                                              SessionModelListener
 {
     private AMQConnectionModel _connection;
-
-    private final Map<AMQSessionModel, SessionAdapter> _sessionAdapters =
-            new HashMap<AMQSessionModel, SessionAdapter>();
 
     private State _state = State.ACTIVE;
 
@@ -55,7 +51,18 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     {
         super(parentsMap(conn.getVirtualHost()),createAttributes(conn));
         _connection = conn;
+
+        conn.addDeleteTask(new Action()
+        {
+            @Override
+            public void performAction(final Object object)
+            {
+                conn.removeDeleteTask(this);
+                deleted();
+            }
+        });
         open();
+
         conn.addSessionListener(this);
     }
 
@@ -137,23 +144,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
 
     public Collection<Session> getSessions()
     {
-        synchronized (_sessionAdapters)
-        {
-            return new ArrayList<Session>(_sessionAdapters.values());
-        }
-    }
-
-    /**
-     * Retrieve the SessionAdapter instance keyed by the AMQSessionModel from this Connection.
-     * @param session the AMQSessionModel used to index the SessionAdapter.
-     * @return the requested SessionAdapter.
-     */
-    SessionAdapter getSessionAdapter(AMQSessionModel session)
-    {
-        synchronized (_sessionAdapters)
-        {
-            return _sessionAdapters.get(session);
-        }
+        return getChildren(Session.class);
     }
 
     @StateTransition( currentState = State.ACTIVE, desiredState = State.DELETED)
@@ -169,19 +160,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         return _state;
     }
 
-
-    @Override
-    public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
-    {
-        if(clazz == Session.class)
-        {
-            return (Collection<C>) getSessions();
-        }
-        else
-        {
-            return Collections.emptySet();
-        }
-    }
 
     @Override
     public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
@@ -236,27 +214,13 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public void sessionAdded(final AMQSessionModel<?, ?> session)
     {
-        synchronized (_sessionAdapters)
-        {
-            if(!_sessionAdapters.containsKey(session))
-            {
-                SessionAdapter adapter = new SessionAdapter(this, session);
-                _sessionAdapters.put(session, adapter);
-                childAdded(adapter);
-            }
-        }
+        SessionAdapter adapter = new SessionAdapter(this, session);
+        childAdded(adapter);
     }
 
     @Override
     public void sessionRemoved(final AMQSessionModel<?, ?> session)
     {
-        synchronized (_sessionAdapters)
-        {
-            SessionAdapter adapter = _sessionAdapters.remove(session);
-            if(adapter != null)
-            {
-                childRemoved(adapter);
-            }
-        }
+        // SessionAdapter installs delete task to cause session model object to delete
     }
 }

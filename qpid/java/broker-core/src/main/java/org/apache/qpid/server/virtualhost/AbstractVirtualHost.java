@@ -123,9 +123,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private final EventLogger _eventLogger;
 
-    private final Map<AMQConnectionModel, ConnectionAdapter> _connectionAdapters =
-            new HashMap<AMQConnectionModel, ConnectionAdapter>();
-
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private final AtomicBoolean _deleted = new AtomicBoolean();
     private final VirtualHostNode<?> _virtualHostNode;
@@ -362,24 +359,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     public Collection<Connection> getConnections()
     {
-        synchronized(_connectionAdapters)
-        {
-            return new ArrayList<Connection>(_connectionAdapters.values());
-        }
+        return getChildren(Connection.class);
 
-    }
-
-    /**
-     * Retrieve the ConnectionAdapter instance keyed by the AMQConnectionModel from this VirtualHost.
-     * @param connection the AMQConnectionModel used to index the ConnectionAdapter.
-     * @return the requested ConnectionAdapter.
-     */
-    ConnectionAdapter getConnectionAdapter(AMQConnectionModel connection)
-    {
-        synchronized (_connectionAdapters)
-        {
-            return _connectionAdapters.get(connection);
-        }
     }
 
     @Override
@@ -395,11 +376,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
-        if(clazz == Connection.class)
-        {
-            return (Collection<C>) getConnections();
-        }
-        else if(clazz == VirtualHostAlias.class)
+        if(clazz == VirtualHostAlias.class)
         {
             return (Collection<C>) getAliases();
         }
@@ -815,41 +792,15 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             connection.block();
         }
-        ConnectionAdapter adapter = null;
-        synchronized (_connectionAdapters)
-        {
-            if(!_connectionAdapters.containsKey(connection))
-            {
-                adapter = new ConnectionAdapter(connection);
-                _connectionAdapters.put(connection, adapter);
 
-            }
-
-        }
-        if(adapter != null)
-        {
-            childAdded(adapter);
-        }
+        Connection c = new ConnectionAdapter(connection);
+        childAdded(c);
 
     }
 
     public void connectionUnregistered(final AMQConnectionModel connection)
     {
-        ConnectionAdapter adapter;
-        synchronized (_connectionAdapters)
-        {
-            adapter = _connectionAdapters.remove(connection);
-
-        }
-
-        if(adapter != null)
-        {
-            // Call getSessions() first to ensure that any SessionAdapter children are cleanly removed and any
-            // corresponding ConfigurationChangeListener childRemoved() callback is called for child SessionAdapters.
-            adapter.getSessions();
-
-            childRemoved(adapter);
-        }
+        // ConnectionAdapter installs delete task to cause connection model object to delete
     }
 
     public void event(final Event event)

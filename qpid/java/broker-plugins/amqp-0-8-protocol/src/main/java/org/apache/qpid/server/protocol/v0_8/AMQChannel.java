@@ -739,10 +739,6 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
 
         _transaction.rollback();
-        if(_modelObject != null)
-        {
-            _modelObject.delete();
-        }
 
         try
         {
