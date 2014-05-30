@@ -109,9 +109,9 @@ options[:address] = ARGV[0] unless ARGV[0].nil?
 
 # process the connection options
 unless options[:connection_options].nil?
-  fields = options[:connection_options].gsub(/^{(.*)}$/, '\1')
+  fields = options[:connection_options].gsub(/^\{(.*)\}$/, '\1')
   # remove any surrounding braces
-  if /{.*}/ =~ fields
+  if /\{.*\}/ =~ fields
     fields = fields[1..-2]
   end
   # break up the options separated by commas
