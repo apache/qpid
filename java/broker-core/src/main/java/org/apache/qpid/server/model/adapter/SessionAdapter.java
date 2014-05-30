@@ -36,6 +36,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.ConsumerListener;
+import org.apache.qpid.server.util.Action;
 
 final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> implements Session<SessionAdapter>
 {
@@ -67,6 +68,16 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
             }
         });
         session.setModelObject(this);
+        session.addDeleteTask(new Action()
+        {
+            @Override
+            public void performAction(final Object object)
+            {
+                session.removeDeleteTask(this);
+                deleted();
+            }
+        });
+
         open();
     }
 
