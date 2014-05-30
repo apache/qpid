@@ -40,10 +40,18 @@ except ImportError:
   def format_exc():
     return "".join(traceback.format_exception(*sys.exc_info()))
 
-# prefer poll() to select(), as it performs better at scale:
+# QPID-5588: prefer poll() to select(), as it allows file descriptors with
+# values > FD_SETSIZE
 import select as _select_mod
-if hasattr(_select_mod, "poll"):
+try:
+  # QPID-5790: unless eventlet/greenthreads have monkey-patched the select
+  # module, as to date poll() is not properly supported by eventlet
+  import eventlet
+  _is_patched = eventlet.patcher.is_monkey_patched("select")
+except ImportError:
+  _is_patched = False
 
+if hasattr(_select_mod, "poll") and not _is_patched:
   from select import error as SelectError
   def select(rlist, wlist, xlist, timeout=None):
     fd_count = 0
