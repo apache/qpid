@@ -102,7 +102,7 @@ public:
         qpid::sys::AbsTime expiration;
         bool isManagementMessage;
       public:
-        SharedStateImpl();
+        QPID_BROKER_EXTERN SharedStateImpl();
         virtual ~SharedStateImpl() {}
         QPID_BROKER_EXTERN const Connection* getPublisher() const;
         QPID_BROKER_EXTERN void setPublisher(const Connection* p);
