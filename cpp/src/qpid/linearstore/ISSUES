@@ -47,6 +47,7 @@ Current/pending:
    5464 -        [linearstore] Incompletely created journal files accumulate in EFP
    -    1088944  [Linearstore] store does not return all files to EFP after purging big queue
    -    1078937  [linearstore] Installation and tests for new store analysis tool qpid-qls-analyze
+                   svn r.1596633 2014-05-21: Modified to run from installed location
 
 Fixed/closed (in commit order):
 ===============================
@@ -157,6 +158,7 @@ no.   svn r  Q-JIRA     RHBZ       Date Alt Committer
 26. 1584379    5661        - 2014-04-03
 27. 1594215    5750  1078142 2014-05-13
 28. 1596509    5767  1098118 2014-05-21 (pmoravec)
+29. 1596633  NO-JIRA 1078937 2014-05-21
 
 See above sections for details on these checkins.
 

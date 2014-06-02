@@ -147,7 +147,7 @@ protected:
     void readJournalData(char* target, const std::streamsize size);
     void removeEmptyFiles(EmptyFilePool* emptyFilePoolPtr);
 
-    static void readJournalFileHeader(const std::string& journalFileName,
+    static bool readJournalFileHeader(const std::string& journalFileName,
                                       ::file_hdr_t& fileHeaderRef,
                                       std::string& queueName);
 };

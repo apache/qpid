@@ -399,10 +399,10 @@ void RecoveryManager::analyzeJournalFileHeaders(efpIdentity_t& efpIdentity) {
     stringList_t directoryList;
     jdir::read_dir(journalDirectory_, directoryList, false, true, false, true);
     for (stringListConstItr_t i = directoryList.begin(); i != directoryList.end(); ++i) {
-        readJournalFileHeader(*i, fileHeader, headerQueueName);
-        if (headerQueueName.empty()) {
+        bool hdrOk = readJournalFileHeader(*i, fileHeader, headerQueueName);
+        if (!hdrOk || headerQueueName.empty()) {
             std::ostringstream oss;
-            oss << "Journal file " << (*i) << " is uninitialized";
+            oss << "Journal file " << (*i) << " is uninitialized or corrupted";
             journalLogRef_.log(JournalLog::LOG_WARN, queueName_, oss.str());
             uninitFileList_.push_back(*i);
         } else if (headerQueueName.compare(queueName_) != 0) {
@@ -893,7 +893,7 @@ bool RecoveryManager::readFileHeader() {
     file_hdr_t fhdr;
     inFileStream_.read((char*)&fhdr, sizeof(fhdr));
     checkFileStreamOk(true);
-    if (::file_hdr_check(&fhdr, QLS_FILE_MAGIC, QLS_JRNL_VERSION, efpFileSize_kib_) != 0) {
+    if (::file_hdr_check(&fhdr, QLS_FILE_MAGIC, QLS_JRNL_VERSION, efpFileSize_kib_, QLS_MAX_QUEUE_NAME_LEN) != 0) {
         firstRecordOffset_ = fhdr._fro;
         currentSerial_ = fhdr._rhdr._serial;
     } else {
@@ -907,7 +907,7 @@ bool RecoveryManager::readFileHeader() {
 }
 
 // static private
-void RecoveryManager::readJournalFileHeader(const std::string& journalFileName,
+bool RecoveryManager::readJournalFileHeader(const std::string& journalFileName,
                                             ::file_hdr_t& fileHeaderRef,
                                             std::string& queueName) {
     const std::size_t headerBlockSize = QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB * 1024;
@@ -928,8 +928,9 @@ void RecoveryManager::readJournalFileHeader(const std::string& journalFileName,
     }
     ifs.close();
     ::memcpy(&fileHeaderRef, buffer, sizeof(::file_hdr_t));
+    if (::file_hdr_check(&fileHeaderRef, QLS_FILE_MAGIC, QLS_JRNL_VERSION, 0, QLS_MAX_QUEUE_NAME_LEN)) return false;
     queueName.assign(buffer + sizeof(::file_hdr_t), fileHeaderRef._queue_name_len);
-
+    return true;
 }
 
 void RecoveryManager::removeEmptyFiles(EmptyFilePool* emptyFilePoolPtr) {
