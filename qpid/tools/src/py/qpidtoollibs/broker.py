@@ -210,23 +210,35 @@ class BrokerAgent(object):
 
   def queueMoveMessages(self, srcQueue, destQueue, qty):
     """Move messages from one queue to another"""
-    pass
+    self._method("queueMoveMessages", {'srcQueue':srcQueue,'destQueue':destQueue,'qty':qty})
+
+  def queueRedirect(self, sourceQueue, targetQueue):
+    """Enable/disable delivery redirect for indicated queues"""
+    self._method("queueRedirect", {'sourceQueue':sourceQueue,'targetQueue':targetQueue})
 
   def setLogLevel(self, level):
     """Set the log level"""
-    pass
+    self._method("setLogLevel", {'level':level})
 
   def getLogLevel(self):
     """Get the log level"""
-    pass
+    return self._method('getLogLevel')
 
   def setTimestampConfig(self, receive):
     """Set the message timestamping configuration"""
-    pass
+    self._method("setTimestampConfig", {'receive':receive})
 
   def getTimestampConfig(self):
     """Get the message timestamping configuration"""
-    pass
+    return self._method('getTimestampConfig')
+
+  def setLogHiresTimestamp(self, logHires):
+    """Set the high resolution timestamp in logs"""
+    self._method("setLogHiresTimestamp", {'logHires':logHires})
+
+  def getLogHiresTimestamp(self):
+    """Get the high resolution timestamp in logs"""
+    return self._method('getLogHiresTimestamp')
 
   def addExchange(self, exchange_type, name, options={}, **kwargs):
     properties = {}
