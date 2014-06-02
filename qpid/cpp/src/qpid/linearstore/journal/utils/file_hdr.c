@@ -55,11 +55,11 @@ int file_hdr_init(void* dest, const uint64_t dest_len, const uint16_t uflag, con
     return set_time_now(dest);
 }
 
-int file_hdr_check(file_hdr_t* hdr, const uint32_t magic, const uint16_t version, const uint64_t data_size_kib) {
-    int res = rec_hdr_check_base(&hdr->_rhdr, magic, version);
-    if (res != 0) return res;
-    if (hdr->_data_size_kib != data_size_kib) return 3;
-    return 0;
+int file_hdr_check(file_hdr_t* hdr, const uint32_t magic, const uint16_t version, const uint64_t data_size_kib, const uint16_t max_queue_name_len) {
+    int err = rec_hdr_check_base(&hdr->_rhdr, magic, version);
+    if (data_size_kib && hdr->_data_size_kib != data_size_kib) err |= 0x1000;
+    if (hdr->_queue_name_len > max_queue_name_len) err |= 0x10000;
+    return err;
 }
 
 void file_hdr_copy(file_hdr_t* dest, const file_hdr_t* src) {

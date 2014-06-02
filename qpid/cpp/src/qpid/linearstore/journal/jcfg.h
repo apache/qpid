@@ -54,6 +54,7 @@
 #define QLS_EMPTY_MAGIC                 0x78534c51  /**< ("QLSx" in little endian) Magic for empty dblk */
 #define QLS_JRNL_VERSION                2           /**< Version (of file layout) */
 #define QLS_JRNL_FHDR_RES_SIZE_SBLKS    1           /**< Journal file header reserved size in sblks (as defined by QLS_SBLK_SIZE_BYTES) */
+#define QLS_MAX_QUEUE_NAME_LEN          (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_BYTES) - sizeof(file_hdr_t)
 
 #define QLS_CLEAN                                   /**< If defined, writes QLS_CLEAN_CHAR to all filled areas on disk */
 #define QLS_CLEAN_CHAR                  0xff        /**< Char used to clear empty space on disk */

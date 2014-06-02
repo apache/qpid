@@ -38,14 +38,14 @@ void rec_hdr_copy(rec_hdr_t* dest, const rec_hdr_t* src) {
 }
 
 int rec_hdr_check_base(rec_hdr_t* header, const uint32_t magic, const uint16_t version) {
-    if (header->_magic != magic) return 1;
-    if (header->_version != version) return 2;
-    return 0;
+    int err = 0;
+    if (header->_magic != magic) err |= 0x1;
+    if (header->_version != version) err |= 0x10;
+    return err;
 }
 
 int rec_hdr_check(rec_hdr_t* header, const uint32_t magic, const uint16_t version, const uint64_t serial) {
-    int res = rec_hdr_check_base(header, magic, version);
-    if (res != 0) return res;
-    if (header->_serial != serial) return 3;
-    return 0;
+    int err = rec_hdr_check_base(header, magic, version);
+    if (header->_serial != serial) err |= 0x100;
+    return err;
 }
