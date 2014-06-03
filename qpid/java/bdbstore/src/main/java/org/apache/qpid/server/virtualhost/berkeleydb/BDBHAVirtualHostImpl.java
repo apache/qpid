@@ -45,11 +45,11 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     private final BDBMessageStore _messageStore;
     private MessageStoreLogSubject _messageStoreLogSubject;
 
-    @ManagedAttributeField(afterSet="setLocalTransactionSyncronizationPolicyOnEnvironment")
-    private String _localTransactionSyncronizationPolicy;
+    @ManagedAttributeField(afterSet="setLocalTransactionSynchronizationPolicyOnEnvironment")
+    private String _localTransactionSynchronizationPolicy;
 
-    @ManagedAttributeField(afterSet="setRemoteTransactionSyncronizationPolicyOnEnvironment")
-    private String _remoteTransactionSyncronizationPolicy;
+    @ManagedAttributeField(afterSet="setRemoteTransactionSynchronizationPolicyOnEnvironment")
+    private String _remoteTransactionSynchronizationPolicy;
 
     @ManagedObjectFactoryConstructor
     public BDBHAVirtualHostImpl(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
@@ -84,23 +84,46 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     }
 
     @Override
-    public String getLocalTransactionSyncronizationPolicy()
+    public String getLocalTransactionSynchronizationPolicy()
     {
-        return _localTransactionSyncronizationPolicy;
+        return _localTransactionSynchronizationPolicy;
     }
 
     @Override
-    public String getRemoteTransactionSyncronizationPolicy()
+    public String getRemoteTransactionSynchronizationPolicy()
     {
-        return _remoteTransactionSyncronizationPolicy;
+        return _remoteTransactionSynchronizationPolicy;
+    }
+
+
+    @Override
+    public String getReplicaAcknowledgmentPolicy()
+    {
+        ReplicatedEnvironmentFacade facade = getReplicatedEnvironmentFacade();
+        if (facade != null)
+        {
+            return facade.getReplicaAcknowledgmentPolicy().name();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isCoalescingSync()
+    {
+        ReplicatedEnvironmentFacade facade = getReplicatedEnvironmentFacade();
+        if (facade != null)
+        {
+            return facade.isCoalescingSync();
+        }
+        return false;
     }
 
     @Override
     public void onOpen()
     {
         super.onOpen();
-        setRemoteTransactionSyncronizationPolicyOnEnvironment();
-        setLocalTransactionSyncronizationPolicyOnEnvironment();
+        setRemoteTransactionSynchronizationPolicyOnEnvironment();
+        setLocalTransactionSynchronizationPolicyOnEnvironment();
     }
 
     @Override
@@ -110,13 +133,13 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
 
         if(changedAttributes.contains(LOCAL_TRANSACTION_SYNCRONIZATION_POLICY))
         {
-            String policy = ((BDBHAVirtualHost<?>)proxyForValidation).getLocalTransactionSyncronizationPolicy();
+            String policy = ((BDBHAVirtualHost<?>)proxyForValidation).getLocalTransactionSynchronizationPolicy();
             validateTransactionSynchronizationPolicy(policy);
         }
 
         if(changedAttributes.contains(REMOTE_TRANSACTION_SYNCRONIZATION_POLICY))
         {
-            String policy = ((BDBHAVirtualHost<?>)proxyForValidation).getRemoteTransactionSyncronizationPolicy();
+            String policy = ((BDBHAVirtualHost<?>)proxyForValidation).getRemoteTransactionSynchronizationPolicy();
             validateTransactionSynchronizationPolicy(policy);
         }
     }
@@ -133,21 +156,21 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
         }
     }
 
-    protected void setLocalTransactionSyncronizationPolicyOnEnvironment()
+    protected void setLocalTransactionSynchronizationPolicyOnEnvironment()
     {
         ReplicatedEnvironmentFacade facade = getReplicatedEnvironmentFacade();
         if (facade != null)
         {
-            facade.setLocalTransactionSyncronizationPolicy(SyncPolicy.valueOf(getLocalTransactionSyncronizationPolicy()));
+            facade.setMessageStoreLocalTransactionSynchronizationPolicy(SyncPolicy.valueOf(getLocalTransactionSynchronizationPolicy()));
         }
     }
 
-    protected void setRemoteTransactionSyncronizationPolicyOnEnvironment()
+    protected void setRemoteTransactionSynchronizationPolicyOnEnvironment()
     {
         ReplicatedEnvironmentFacade facade = getReplicatedEnvironmentFacade();
         if (facade != null)
         {
-            facade.setRemoteTransactionSyncronizationPolicy(SyncPolicy.valueOf(getRemoteTransactionSyncronizationPolicy()));
+            facade.setMessageStoreRemoteTransactionSyncrhonizationPolicy(SyncPolicy.valueOf(getRemoteTransactionSynchronizationPolicy()));
         }
     }
 
@@ -155,4 +178,5 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     {
         return (ReplicatedEnvironmentFacade)_messageStore.getEnvironmentFacade();
     }
+
 }

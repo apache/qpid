@@ -31,7 +31,6 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     public static final String ADDRESS = "address";
     public static final String HELPER_ADDRESS = "helperAddress";
     public static final String DURABILITY = "durability";
-    public static final String COALESCING_SYNC = "coalescingSync";
     public static final String DESIGNATED_PRIMARY = "designatedPrimary";
     public static final String PRIORITY = "priority";
     public static final String QUORUM_OVERRIDE = "quorumOverride";

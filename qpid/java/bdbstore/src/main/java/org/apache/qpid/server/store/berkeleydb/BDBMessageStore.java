@@ -317,7 +317,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             {
                 if (_committer != null)
                 {
-                    _committer.stop();
+                    _committer.close();
                 }
             }
             finally
@@ -335,19 +335,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     {
         if (_configurationStoreOpen.compareAndSet(true, false))
         {
-            try
+            if (!_messageStoreOpen.get())
             {
-                if (_committer != null)
-                {
-                    _committer.stop();
-                }
-            }
-            finally
-            {
-                if (!_messageStoreOpen.get())
-                {
-                    closeEnvironment();
-                }
+                closeEnvironment();
             }
         }
     }
@@ -542,7 +532,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         com.sleepycat.je.Transaction txn = null;
         try
         {
-            txn = _environmentFacade.beginTransaction();
+            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
             storeConfiguredObjectEntry(txn, configuredObject);
             txn.commit();
             txn = null;
@@ -569,7 +559,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         com.sleepycat.je.Transaction txn = null;
         try
         {
-            txn = _environmentFacade.beginTransaction();
+            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
 
             Collection<UUID> removed = new ArrayList<UUID>(objects.length);
             for(ConfiguredObjectRecord record : objects)
@@ -606,7 +596,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         com.sleepycat.je.Transaction txn = null;
         try
         {
-            txn = _environmentFacade.beginTransaction();
+            txn = _environmentFacade.getEnvironment().beginTransaction(null, null);
             for(ConfiguredObjectRecord record : records)
             {
                 update(createIfNecessary, record, txn);

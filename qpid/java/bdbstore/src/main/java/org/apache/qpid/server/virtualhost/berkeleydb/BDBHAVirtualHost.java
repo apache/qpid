@@ -21,18 +21,27 @@
 package org.apache.qpid.server.virtualhost.berkeleydb;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>
 {
-    String REMOTE_TRANSACTION_SYNCRONIZATION_POLICY = "remoteTransactionSyncronizationPolicy";
-    String LOCAL_TRANSACTION_SYNCRONIZATION_POLICY = "localTransactionSyncronizationPolicy";
+    String REMOTE_TRANSACTION_SYNCRONIZATION_POLICY = "remoteTransactionSynchronizationPolicy";
+    String LOCAL_TRANSACTION_SYNCRONIZATION_POLICY = "localTransactionSynchronizationPolicy";
+    String COALESCING_SYNC = "coalescingSync";
+    String REPLICA_ACKNOWLEDGMENT_POLICY = "replicaAcknowledgmentPolicy";
+
+    @ManagedAttribute( defaultValue = "SYNC")
+    String getLocalTransactionSynchronizationPolicy();
 
     @ManagedAttribute( defaultValue = "NO_SYNC")
-    String getLocalTransactionSyncronizationPolicy();
+    String getRemoteTransactionSynchronizationPolicy();
 
-    @ManagedAttribute( defaultValue = "NO_SYNC")
-    String getRemoteTransactionSyncronizationPolicy();
+    @DerivedAttribute
+    String getReplicaAcknowledgmentPolicy();
+
+    @DerivedAttribute
+    boolean isCoalescingSync();
 }

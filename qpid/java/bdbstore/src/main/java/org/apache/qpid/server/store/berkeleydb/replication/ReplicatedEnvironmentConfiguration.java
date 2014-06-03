@@ -29,8 +29,6 @@ public interface ReplicatedEnvironmentConfiguration
     String getGroupName();
     String getHostPort();
     String getHelperHostPort();
-    String getDurability();
-    boolean isCoalescingSync();
     boolean isDesignatedPrimary();
     int getPriority();
     int getQuorumOverride();

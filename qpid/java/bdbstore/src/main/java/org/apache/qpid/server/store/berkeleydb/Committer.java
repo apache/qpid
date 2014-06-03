@@ -32,6 +32,10 @@ public interface Committer
 
     void stop();
 
+    void close();
+
+    boolean isStarted();
+
     Committer IMMEDIATE_FUTURE_COMMITTER = new Committer()
     {
 
@@ -49,6 +53,17 @@ public interface Committer
         @Override
         public void stop()
         {
+        }
+
+        @Override
+        public void close()
+        {
+        }
+
+        @Override
+        public boolean isStarted()
+        {
+            return true;
         }
     };
 
