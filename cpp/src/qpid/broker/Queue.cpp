@@ -540,6 +540,7 @@ void Queue::consume(Consumer::shared_ptr c, bool requestExclusive,
                     const framing::FieldTable& arguments,
                     const std::string& connectionId, const std::string& userId)
 {
+    boost::intrusive_ptr<qpid::sys::TimerTask> t;
     {
         Mutex::ScopedLock locker(messageLock);
         if (c->preAcquires()) {
@@ -568,12 +569,13 @@ void Queue::consume(Consumer::shared_ptr c, bool requestExclusive,
         if(c->isCounted()) {
             //reset auto deletion timer if necessary
             if (settings.autoDeleteDelay && autoDeleteTask) {
-                autoDeleteTask->cancel();
+                t = autoDeleteTask;
             }
 
             observeConsumerAdd(*c, locker);
         }
     }
+    if (t) t->cancel();
     if (mgmtObject != 0 && c->isCounted()) {
         mgmtObject->inc_consumerCount();
     }
