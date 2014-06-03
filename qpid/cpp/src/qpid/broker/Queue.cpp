@@ -1127,10 +1127,10 @@ void Queue::destroyed()
         store->destroy(*this);
         store = 0;//ensure we make no more calls to the store for this queue
     }
-    if (autoDeleteTask) autoDeleteTask = boost::intrusive_ptr<TimerTask>();
     notifyDeleted();
     {
         Mutex::ScopedLock l(messageLock);
+        if (autoDeleteTask) autoDeleteTask = boost::intrusive_ptr<TimerTask>();
         observers.destroy(l);
     }
     if (mgmtObject != 0) {
@@ -1278,7 +1278,17 @@ void Queue::scheduleAutoDelete()
 
 void Queue::tryAutoDelete()
 {
-    if (broker->getQueues().destroyIf(name, boost::bind(boost::mem_fn(&Queue::canAutoDelete), shared_from_this()))) {
+    bool proceed(false);
+    {
+        Mutex::ScopedLock locker(messageLock);
+        if (!deleted && checkAutoDelete(locker)) {
+            proceed = true;
+            deleted = true;
+        }
+    }
+
+    if (proceed) {
+        broker->getQueues().destroy(name);
         if (broker->getAcl())
             broker->getAcl()->recordDestroyQueue(name);
 
@@ -1536,7 +1546,7 @@ void Queue::flush()
 bool Queue::bind(boost::shared_ptr<Exchange> exchange, const std::string& key,
                  const qpid::framing::FieldTable& arguments)
 {
-    if (exchange->bind(shared_from_this(), key, &arguments)) {
+    if (!isDeleted() && exchange->bind(shared_from_this(), key, &arguments)) {
         bound(exchange->getName(), key, arguments);
         if (exchange->isDurable() && isDurable()) {
             store->bind(*exchange, *this, key, arguments);
