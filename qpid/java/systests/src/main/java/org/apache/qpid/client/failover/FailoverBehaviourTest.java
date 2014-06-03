@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.client.failover;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQDestination;
@@ -1347,7 +1348,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
      * @return queue browser
      * @throws JMSException
      */
-    private QueueBrowser prepareQueueBrowser(int acknowledgeMode) throws JMSException
+    private QueueBrowser prepareQueueBrowser(int acknowledgeMode) throws JMSException, AMQException
     {
         init(acknowledgeMode, false);
         _consumer.close();
@@ -1357,6 +1358,10 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         if (acknowledgeMode == Session.SESSION_TRANSACTED)
         {
             _producerSession.commit();
+        }
+        else
+        {
+            ((AMQSession)_producerSession).sync();
         }
 
         QueueBrowser browser = _consumerSession.createBrowser((Queue) _destination);
