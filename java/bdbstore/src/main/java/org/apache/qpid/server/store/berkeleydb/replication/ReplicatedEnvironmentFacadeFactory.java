@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
-import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeImpl;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
@@ -36,76 +36,64 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             @Override
             public boolean isDesignatedPrimary()
             {
-                return (Boolean)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.DESIGNATED_PRIMARY);
-            }
-
-            @Override
-            public boolean isCoalescingSync()
-            {
-                return (Boolean)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.COALESCING_SYNC);
+                return (Boolean)messageStoreSettings.get(BDBHAVirtualHostNode.DESIGNATED_PRIMARY);
             }
 
             @Override
             public String getStorePath()
             {
-                return (String) messageStoreSettings.get(BDBHAVirtualHostNodeImpl.STORE_PATH);
+                return (String) messageStoreSettings.get(BDBHAVirtualHostNode.STORE_PATH);
             }
 
             @SuppressWarnings("unchecked")
             @Override
             public Map<String, String> getParameters()
             {
-                return (Map<String, String>) messageStoreSettings.get(BDBHAVirtualHostNodeImpl.ENVIRONMENT_CONFIGURATION);
+                return (Map<String, String>) messageStoreSettings.get(BDBHAVirtualHostNode.ENVIRONMENT_CONFIGURATION);
             }
 
             @SuppressWarnings("unchecked")
             @Override
             public Map<String, String> getReplicationParameters()
             {
-                return (Map<String, String>) messageStoreSettings.get(BDBHAVirtualHostNodeImpl.REPLICATED_ENVIRONMENT_CONFIGURATION);
+                return (Map<String, String>) messageStoreSettings.get(BDBHAVirtualHostNode.REPLICATED_ENVIRONMENT_CONFIGURATION);
             }
 
             @Override
             public int getQuorumOverride()
             {
-                return (Integer)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.QUORUM_OVERRIDE);
+                return (Integer)messageStoreSettings.get(BDBHAVirtualHostNode.QUORUM_OVERRIDE);
             }
 
             @Override
             public int getPriority()
             {
-                return (Integer)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.PRIORITY);
+                return (Integer)messageStoreSettings.get(BDBHAVirtualHostNode.PRIORITY);
             }
 
             @Override
             public String getName()
             {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.NAME);
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNode.NAME);
             }
 
             @Override
             public String getHostPort()
             {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.ADDRESS);
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNode.ADDRESS);
             }
 
             @Override
             public String getHelperHostPort()
             {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.HELPER_ADDRESS);
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNode.HELPER_ADDRESS);
             }
 
             @Override
             public String getGroupName()
             {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.GROUP_NAME);
+                return (String)messageStoreSettings.get(BDBHAVirtualHostNode.GROUP_NAME);
             }
-
-            @Override
-            public String getDurability()
-            {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNodeImpl.DURABILITY);
-             }
         };
         return new ReplicatedEnvironmentFacade(configuration, initialisationTasks);
 
