@@ -37,6 +37,7 @@
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/SecuritySettings.h"
 #include "qpid/Msg.h"
+#include "qpid/types/Exception.h"
 
 #include <iostream>
 #include <boost/bind.hpp>
@@ -114,30 +115,50 @@ public:
 
 // Static constructor which registers connector here
 namespace {
-    Connector* create(Poller::shared_ptr p, framing::ProtocolVersion v, const ConnectionSettings& s, ConnectionImpl* c) {
-        return new SslConnector(p, v, s, c);
-    }
+    Connector* create(Poller::shared_ptr p, framing::ProtocolVersion v, const ConnectionSettings& s, ConnectionImpl* c);
 
     struct StaticInit {
+        static bool initialised;
+
         StaticInit() {
-            try {
+            Connector::registerFactory("ssl", &create);
+        };
+        ~StaticInit() {
+            if (initialised) shutdownNSS();
+        }
+
+        void checkInitialised() {
+            static qpid::sys::Mutex lock;
+            qpid::sys::Mutex::ScopedLock l(lock);
+            if (!initialised) {
                 CommonOptions common("", "", QPIDC_CONF_FILE);
                 SslOptions options;
-                common.parse(0, 0, common.clientConfig, true);
-                options.parse (0, 0, common.clientConfig, true);
-                if (options.certDbPath.empty()) {
-                    QPID_LOG(info, "SSL connector not enabled, you must set QPID_SSL_CERT_DB to enable it.");
-                } else {
-                    initNSS(options);
-                    Connector::registerFactory("ssl", &create);
+                try {
+                    common.parse(0, 0, common.clientConfig, true);
+                    options.parse (0, 0, common.clientConfig, true);
+                } catch (const std::exception& e) {
+                    throw qpid::types::Exception(QPID_MSG("Failed to parse options while initialising SSL connector: " << e.what()));
                 }
-            } catch (const std::exception& e) {
-                QPID_LOG(error, "Failed to initialise SSL connector: " << e.what());
+                if (options.certDbPath.empty()) {
+                    throw qpid::types::Exception(QPID_MSG("SSL connector not enabled, you must set QPID_SSL_CERT_DB to enable it."));
+                } else {
+                    try {
+                        initNSS(options);
+                        initialised = true;
+                    } catch (const std::exception& e) {
+                        throw qpid::types::Exception(QPID_MSG("Failed to initialise SSL: " << e.what()));
+                    }
+                }
             }
-        };
+        }
 
-        ~StaticInit() { shutdownNSS(); }
     } init;
+    bool StaticInit::initialised = false;
+
+    Connector* create(Poller::shared_ptr p, framing::ProtocolVersion v, const ConnectionSettings& s, ConnectionImpl* c) {
+        init.checkInitialised();
+        return new SslConnector(p, v, s, c);
+    }
 }
 
 SslConnector::SslConnector(Poller::shared_ptr p,
