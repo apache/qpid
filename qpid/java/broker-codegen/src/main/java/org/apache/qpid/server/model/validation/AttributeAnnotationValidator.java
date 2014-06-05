@@ -310,6 +310,10 @@ public class AttributeAnnotationValidator extends AbstractProcessor
         if(typeUtils.isSameType(erasedType, getErasure("java.util.Map")))
         {
             List<? extends TypeMirror> args = ((DeclaredType) type).getTypeArguments();
+            if (args.size() != 2)
+            {
+                throw new IllegalArgumentException("Map types " + type + " must have exactly two type arguments");
+            }
             return isValidType(args.get(0)) && (isValidType(args.get(1)) || typeUtils.isSameType(args.get(1), getErasure("java.lang.Object")));
         }
 

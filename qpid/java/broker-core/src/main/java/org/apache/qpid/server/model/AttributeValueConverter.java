@@ -204,7 +204,7 @@ abstract class AttributeValueConverter<T>
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalArgumentException("Cannot convert String " + value + " to a List");
+                    throw new IllegalArgumentException("Cannot convert String " + interpolated + " to a List");
                 }
             }
             else if(value == null)
@@ -241,7 +241,7 @@ abstract class AttributeValueConverter<T>
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalArgumentException("Cannot convert String " + value + " to a List");
+                    throw new IllegalArgumentException("Cannot convert String " + interpolated + " to a List");
                 }
             }
             else if(value == null)
@@ -278,7 +278,7 @@ abstract class AttributeValueConverter<T>
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalArgumentException("Cannot convert String " + value + " to a Collection");
+                    throw new IllegalArgumentException("Cannot convert String " + interpolated + " to a Collection");
                 }
             }
             else if(value == null)
@@ -324,7 +324,7 @@ abstract class AttributeValueConverter<T>
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalArgumentException("Cannot convert String " + value + " to a Map");
+                    throw new IllegalArgumentException("Cannot convert String " + interpolated + " to a Map");
                 }
             }
             else
