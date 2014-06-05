@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.model.testmodel;
 
+import java.util.Map;
+
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
@@ -29,10 +31,24 @@ public interface TestRootCategory<X extends TestRootCategory<X>> extends Configu
 {
     String AUTOMATED_PERSISTED_VALUE = "automatedPersistedValue";
     String AUTOMATED_NONPERSISTED_VALUE = "automatedNonPersistedValue";
+    String DEFAULTED_VALUE = "defaultedValue";
+    String STRING_VALUE = "stringValue";
+    String MAP_VALUE = "mapValue";
 
     @ManagedAttribute
     String getAutomatedPersistedValue();
 
     @ManagedAttribute( persist = false )
     String getAutomatedNonPersistedValue();
+
+    String DEFAULTED_VALUE_DEFAULT = "myDefaultVar";
+    @ManagedAttribute( defaultValue = DEFAULTED_VALUE_DEFAULT)
+    String getDefaultedValue();
+
+    @ManagedAttribute
+    String getStringValue();
+
+    @ManagedAttribute
+    Map<String,String> getMapValue();
+
 }

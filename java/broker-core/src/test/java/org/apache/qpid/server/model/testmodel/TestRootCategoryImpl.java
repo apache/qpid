@@ -40,6 +40,15 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
     @ManagedAttributeField
     private String _automatedNonPersistedValue;
 
+    @ManagedAttributeField
+    private String _defaultedValue;
+
+    @ManagedAttributeField
+    private String _stringValue;
+
+    @ManagedAttributeField
+    private Map<String,String> _mapValue;
+
     @ManagedObjectFactoryConstructor
     public TestRootCategoryImpl(final Map<String, Object> attributes)
     {
@@ -75,6 +84,24 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
     public String getAutomatedNonPersistedValue()
     {
         return _automatedNonPersistedValue;
+    }
+
+    @Override
+    public String getDefaultedValue()
+    {
+        return _defaultedValue;
+    }
+
+    @Override
+    public String getStringValue()
+    {
+        return _stringValue;
+    }
+
+    @Override
+    public Map<String, String> getMapValue()
+    {
+        return _mapValue;
     }
 
     @Override

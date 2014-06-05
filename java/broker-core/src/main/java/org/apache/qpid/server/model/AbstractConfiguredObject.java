@@ -586,22 +586,33 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected void onResolve()
     {
+        // If there is a context attribute, resolve it first, so that other attribute values
+        // may support values containing references to context keys.
+        ConfiguredObjectAttribute<?, ?> contextAttribute = _attributeTypes.get("context");
+        if (contextAttribute != null && contextAttribute.isAutomated())
+        {
+            resolveAutomatedAttribute((ConfiguredAutomatedAttribute<?, ?>) contextAttribute);
+        }
+
         for (ConfiguredObjectAttribute<?, ?> attr : _attributeTypes.values())
         {
-            String attrName = attr.getName();
-            if (attr.isAutomated())
+            if (attr != contextAttribute && attr.isAutomated())
             {
-                ConfiguredAutomatedAttribute<?,?> autoAttr = (ConfiguredAutomatedAttribute<?,?>)attr;
-                if (_attributes.containsKey(attrName))
-                {
-                    automatedSetValue(attrName, _attributes.get(attrName));
-                }
-                else if (!"".equals(autoAttr.defaultValue()))
-                {
-                    automatedSetValue(attrName, autoAttr.defaultValue());
-                }
-
+                resolveAutomatedAttribute((ConfiguredAutomatedAttribute<?, ?>) attr);
             }
+        }
+    }
+
+    private void resolveAutomatedAttribute(final ConfiguredAutomatedAttribute<?, ?> autoAttr)
+    {
+        String attrName = autoAttr.getName();
+        if (_attributes.containsKey(attrName))
+        {
+            automatedSetValue(attrName, _attributes.get(attrName));
+        }
+        else if (!"".equals(autoAttr.defaultValue()))
+        {
+            automatedSetValue(attrName, autoAttr.defaultValue());
         }
     }
 
@@ -1316,7 +1327,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public final <T> T getContextValue(Class<T> clazz, String propertyName)
     {
         AttributeValueConverter<T> converter = AttributeValueConverter.getConverter(clazz, clazz);
-        return converter.convert("${"+propertyName+"}", this);
+        return converter.convert("${" + propertyName + "}", this);
     }
 
     private OwnAttributeResolver getOwnAttributeResolver()
