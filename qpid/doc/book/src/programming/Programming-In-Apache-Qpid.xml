@@ -1891,13 +1891,13 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 	      </row>
 	      <row>
 		<entry>
-		  <literal>protocol</literal>
+		  <literal>transport</literal>
 		</entry>
 		<entry>
 		  string
 		</entry>
 		<entry>
-		  Sets the underlying protocol used. The default option is 'tcp'. To enable ssl, set to 'ssl'. The C++ client additionally supports 'rdma'.
+		  Sets the underlying transport protocol used. The default option is 'tcp'. To enable ssl, set to 'ssl'. The C++ client additionally supports 'rdma'.
 		</entry>
 	      </row>
 	      <row>
@@ -1909,6 +1909,17 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 		</entry>
 		<entry>
 		  Set tcp no-delay, i.e. disable Nagle algorithm. [C++ only]
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <literal>protocol</literal>
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  Sets the application protocol used. The default option is 'amqp0-10'. To enable AMQP 1.0, set to 'amqp1.0'.
 		</entry>
 	      </row>
 	    </tbody>
