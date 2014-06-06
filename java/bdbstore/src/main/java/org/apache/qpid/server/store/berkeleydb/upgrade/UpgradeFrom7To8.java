@@ -53,6 +53,15 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 {
     private static final TypeReference<HashMap<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<HashMap<String,Object>>(){};
 
+    @SuppressWarnings("serial")
+    private Map<String, String> _defaultExchanges = new HashMap<String, String>()
+    {{
+        put("amq.direct", "direct");
+        put("amq.topic", "topic");
+        put("amq.fanout", "fanout");
+        put("amq.match", "headers");
+    }};
+
     @Override
     public void performUpgrade(Environment environment, UpgradeInteractionHandler handler, ConfiguredObject<?> parent)
     {
@@ -76,10 +85,10 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
         }
         configVersionDb.close();
 
+        String virtualHostName = parent.getName();
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put("modelVersion", stringifiedConfigVersion);
-        virtualHostAttributes.put("name", parent.getName());
-        String virtualHostName = parent.getName();
+        virtualHostAttributes.put("name", virtualHostName);
         UUID virtualHostId = UUIDGenerator.generateVhostUUID(virtualHostName);
         ConfiguredObjectRecord virtualHostRecord = new org.apache.qpid.server.store.ConfiguredObjectRecordImpl(virtualHostId, "VirtualHost", virtualHostAttributes);
 
@@ -90,33 +99,41 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
             objectsCursor = configuredObjectsDb.openCursor(txn, null);
             DatabaseEntry key = new DatabaseEntry();
             DatabaseEntry value = new DatabaseEntry();
+            ObjectMapper mapper = new ObjectMapper();
 
             while (objectsCursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
             {
                 UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
                 TupleInput input = TupleBinding.entryToInput(value);
                 String type = input.readString();
+                String json = input.readString();
+                Map<String,Object> attributes = null;
+                try
+                {
+                    attributes = mapper.readValue(json, MAP_TYPE_REFERENCE);
+                }
+                catch (Exception e)
+                {
+                    throw new StoreException(e);
+                }
+                String name = (String)attributes.get("name");
+
+                if (type.equals("Exchange"))
+                {
+                    _defaultExchanges.remove(name);
+                }
 
                 if(!type.endsWith("Binding"))
                 {
-                    UUIDTupleBinding.getInstance().objectToEntry(virtualHostId, value);
-                    TupleOutput tupleOutput = new TupleOutput();
-                    tupleOutput.writeLong(id.getMostSignificantBits());
-                    tupleOutput.writeLong(id.getLeastSignificantBits());
-                    tupleOutput.writeString("VirtualHost");
-                    TupleBinding.outputToEntry(tupleOutput, key);
-                    hierarchyDb.put(txn, key, value);
+                    storeVirtualHostHierarchyRecord(hierarchyDb, txn, id, virtualHostId);
                 }
                 else
                 {
-                    String json = input.readString();
-                    ObjectMapper mapper = new ObjectMapper();
                     try
                     {
                         DatabaseEntry hierarchyKey = new DatabaseEntry();
                         DatabaseEntry hierarchyValue = new DatabaseEntry();
 
-                        Map<String,Object> attributes = mapper.readValue(json, MAP_TYPE_REFERENCE);
                         Object queueIdString = attributes.remove("queue");
                         if(queueIdString instanceof String)
                         {
@@ -165,12 +182,36 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
         }
 
         storeConfiguredObjectEntry(configuredObjectsDb, txn, virtualHostRecord);
+        for (Map.Entry<String, String> defaultExchangeEntry : _defaultExchanges.entrySet())
+        {
+            UUID id = UUIDGenerator.generateExchangeUUID(defaultExchangeEntry.getKey(), virtualHostName);
+            Map<String, Object> exchangeAttributes = new HashMap<String, Object>();
+            exchangeAttributes.put("name", defaultExchangeEntry.getKey());
+            exchangeAttributes.put("type", defaultExchangeEntry.getValue());
+            exchangeAttributes.put("lifetimePolicy", "PERMANENT");
+            ConfiguredObjectRecord exchangeRecord = new org.apache.qpid.server.store.ConfiguredObjectRecordImpl(id, "Exchange", exchangeAttributes);
+            storeConfiguredObjectEntry(configuredObjectsDb, txn, exchangeRecord);
+            storeVirtualHostHierarchyRecord(hierarchyDb, txn, id, virtualHostId);
+        }
         txn.commit();
 
         hierarchyDb.close();
         configuredObjectsDb.close();
 
         reportFinished(environment, 8);
+    }
+
+    void storeVirtualHostHierarchyRecord(Database hierarchyDb, Transaction txn, UUID id, UUID virtualHostId)
+    {
+        DatabaseEntry key = new DatabaseEntry();
+        DatabaseEntry value = new DatabaseEntry();
+        UUIDTupleBinding.getInstance().objectToEntry(virtualHostId, value);
+        TupleOutput tupleOutput = new TupleOutput();
+        tupleOutput.writeLong(id.getMostSignificantBits());
+        tupleOutput.writeLong(id.getLeastSignificantBits());
+        tupleOutput.writeString("VirtualHost");
+        TupleBinding.outputToEntry(tupleOutput, key);
+        hierarchyDb.put(txn, key, value);
     }
 
     private int getConfigVersion(Database configVersionDb)

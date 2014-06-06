@@ -306,11 +306,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                         {
                             child.addParent(parentType, parent);
                         }
-                        else if(child != null && child.getType().endsWith("Binding") && parentType.equals("Exchange"))
-                        {
-                            // TODO - remove this hack for amq. exchanges
-                            child.addParent(parentType, new ConfiguredObjectRecordImpl(parentId, parentType, Collections.<String,Object>emptyMap()));
-                        }
                     }
                 }
                 finally
@@ -460,10 +455,20 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     private void upgradeFromV7(ConfiguredObject<?> parent) throws SQLException
     {
+        @SuppressWarnings("serial")
+        Map<String, String> defaultExchanges = new HashMap<String, String>()
+        {{
+            put("amq.direct", "direct");
+            put("amq.topic", "topic");
+            put("amq.fanout", "fanout");
+            put("amq.match", "headers");
+        }};
+
         Connection connection = newConnection();
         try
         {
-            UUID virtualHostId = UUIDGenerator.generateVhostUUID(parent.getName());
+            String virtualHostName = parent.getName();
+            UUID virtualHostId = UUIDGenerator.generateVhostUUID(virtualHostName);
 
             String stringifiedConfigVersion = BrokerModel.MODEL_VERSION;
             boolean tableExists = tableExists(CONFIGURATION_VERSION_TABLE_NAME, connection);
@@ -480,9 +485,10 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
             Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
             virtualHostAttributes.put("modelVersion", stringifiedConfigVersion);
+            virtualHostAttributes.put("name", virtualHostName);
 
-            ConfiguredObjectRecord configuredObject = new ConfiguredObjectRecordImpl(virtualHostId, "VirtualHost", virtualHostAttributes);
-            insertConfiguredObject(configuredObject, connection);
+            ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(virtualHostId, "VirtualHost", virtualHostAttributes);
+            insertConfiguredObject(virtualHostRecord, connection);
 
             if (getLogger().isDebugEnabled())
             {
@@ -504,13 +510,22 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
                     {
                         UUID id = UUID.fromString(rs.getString(1));
                         String objectType = rs.getString(2);
+                        if ("VirtualHost".equals(objectType))
+                        {
+                            continue;
+                        }
                         Map<String,Object> attributes = objectMapper.readValue(getBlobAsString(rs, 3),Map.class);
+
                         if(objectType.endsWith("Binding"))
                         {
                             bindingsToUpdate.put(id,attributes);
                         }
                         else
                         {
+                            if (objectType.equals("Exchange"))
+                            {
+                                defaultExchanges.remove((String)attributes.get("name"));
+                            }
                             others.add(id);
                         }
                     }
@@ -564,6 +579,19 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             {
                 stmt.close();
             }
+
+            for (Map.Entry<String, String> defaultExchangeEntry : defaultExchanges.entrySet())
+            {
+                UUID id = UUIDGenerator.generateExchangeUUID(defaultExchangeEntry.getKey(), virtualHostName);
+                Map<String, Object> exchangeAttributes = new HashMap<String, Object>();
+                exchangeAttributes.put("name", defaultExchangeEntry.getKey());
+                exchangeAttributes.put("type", defaultExchangeEntry.getValue());
+                exchangeAttributes.put("lifetimePolicy", "PERMANENT");
+                Map<String, ConfiguredObjectRecord> parents = Collections.singletonMap("VirtualHost", virtualHostRecord);
+                ConfiguredObjectRecord exchangeRecord = new org.apache.qpid.server.store.ConfiguredObjectRecordImpl(id, "Exchange", exchangeAttributes, parents);
+                insertConfiguredObject(exchangeRecord, connection);
+            }
+
             stmt = connection.prepareStatement(UPDATE_CONFIGURED_OBJECTS);
             try
             {
@@ -604,12 +632,24 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
             {
                 stmt.close();
             }
-            connection.commit();
 
             if (tableExists)
             {
                 dropConfigVersionTable(connection);
             }
+
+            connection.commit();
+        }
+        catch(SQLException e)
+        {
+            try
+            {
+                connection.rollback();
+            }
+            catch(SQLException re)
+            {
+            }
+            throw e;
         }
         finally
         {

@@ -70,8 +70,8 @@ public class UpgradeFrom7To8Test extends AbstractUpgradeTestCase
         UpgradeFrom7To8 upgrade = new UpgradeFrom7To8();
         upgrade.performUpgrade(_environment, UpgradeInteractionHandler.DEFAULT_HANDLER, getVirtualHost());
 
-        assertDatabaseRecordCount(CONFIGURED_OBJECTS_DB_NAME, 7);
-        assertDatabaseRecordCount(CONFIGURED_OBJECT_HIERARCHY_DB_NAME, 9);
+        assertDatabaseRecordCount(CONFIGURED_OBJECTS_DB_NAME, 11);
+        assertDatabaseRecordCount(CONFIGURED_OBJECT_HIERARCHY_DB_NAME, 13);
 
         assertConfiguredObjects();
         assertConfiguredObjectHierarchy();
@@ -81,7 +81,7 @@ public class UpgradeFrom7To8Test extends AbstractUpgradeTestCase
     private void assertConfiguredObjectHierarchy()
     {
         Map<UpgradeHierarchyKey, UUID> hierarchy = loadConfiguredObjectHierarchy();
-        assertEquals("Unexpected number of configured objects", 9, hierarchy.size());
+        assertEquals("Unexpected number of configured objects", 13, hierarchy.size());
 
         UUID vhUuid = UUIDGenerator.generateVhostUUID(getVirtualHost().getName());
         UUID myExchUuid = UUIDGenerator.generateExchangeUUID("myexch", getVirtualHost().getName());
@@ -97,16 +97,21 @@ public class UpgradeFrom7To8Test extends AbstractUpgradeTestCase
         UpgradeHierarchyKey queue1ToVhParent = new UpgradeHierarchyKey(queue1Uuid, VirtualHost.class.getSimpleName());
         assertExpectedHierarchyEntry(hierarchy, queue1ToVhParent, vhUuid);
 
-        // ! amq.direct -> virtualhost  (This will change when the upgrader is changed to create the default exchanges)
-        UpgradeHierarchyKey amqDirectToVhParent = new UpgradeHierarchyKey(amqDirectUuid, VirtualHost.class.getSimpleName());
-        assertFalse("amq.direct should not have a binding to virtualhost", hierarchy.containsKey(amqDirectToVhParent));
-
         // queue1binding -> amq.direct
         // queue1binding -> queue1
         UpgradeHierarchyKey queue1BindingToAmqDirect = new UpgradeHierarchyKey(queue1ToAmqDirectBindingUuid, Exchange.class.getSimpleName());
         UpgradeHierarchyKey queue1BindingToQueue1 = new UpgradeHierarchyKey(queue1ToAmqDirectBindingUuid, Queue.class.getSimpleName());
         assertExpectedHierarchyEntry(hierarchy, queue1BindingToAmqDirect, amqDirectUuid);
         assertExpectedHierarchyEntry(hierarchy, queue1BindingToQueue1, queue1Uuid);
+
+        String[] defaultExchanges = {"amq.topic", "amq.fanout", "amq.direct", "amq.match"};
+        for (String exchangeName : defaultExchanges)
+        {
+            UUID id = UUIDGenerator.generateExchangeUUID(exchangeName, getVirtualHost().getName());
+            UpgradeHierarchyKey exchangeParent = new UpgradeHierarchyKey(id, VirtualHost.class.getSimpleName());
+            assertExpectedHierarchyEntry(hierarchy, exchangeParent, vhUuid);
+        }
+
     }
 
     private void assertExpectedHierarchyEntry(
@@ -121,7 +126,7 @@ public class UpgradeFrom7To8Test extends AbstractUpgradeTestCase
     private void assertConfiguredObjects()
     {
         Map<UUID, UpgradeConfiguredObjectRecord> configuredObjects = loadConfiguredObjects();
-        assertEquals("Unexpected number of configured objects", 7, configuredObjects.size());
+        assertEquals("Unexpected number of configured objects", 11, configuredObjects.size());
 
         Map<UUID, Map<String, Object>> expected = new HashMap<UUID, Map<String, Object>>();
 
@@ -136,6 +141,11 @@ public class UpgradeFrom7To8Test extends AbstractUpgradeTestCase
         expected.putAll(createExpectedBindingMap("queue1", "queue1", "amq.direct", null));
         expected.putAll(createExpectedBindingMap("queue1", "queue1", "myexch", null));
         expected.putAll(createExpectedBindingMap("queue2", "queue2", "amq.fanout", null));
+
+        expected.putAll(createExpectedExchangeMap("amq.direct", "direct"));
+        expected.putAll(createExpectedExchangeMap("amq.fanout", "fanout"));
+        expected.putAll(createExpectedExchangeMap("amq.match", "headers"));
+        expected.putAll(createExpectedExchangeMap("amq.topic", "topic"));
 
         MapJsonSerializer jsonSerializer = new MapJsonSerializer();
         for (Entry<UUID, UpgradeConfiguredObjectRecord> entry : configuredObjects.entrySet())
