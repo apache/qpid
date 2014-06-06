@@ -25,7 +25,6 @@ import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -232,11 +231,6 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
                     if(parent != null)
                     {
                         child.addParent(hk.getParentType(), parent);
-                    }
-                    else if(hk.getParentType().equals("Exchange"))
-                    {
-                        // TODO - remove this hack for the pre-defined exchanges
-                        child.addParent(hk.getParentType(), new BDBConfiguredObjectRecord(parentId, "Exchange", Collections.<String,Object>emptyMap()));
                     }
                 }
             }

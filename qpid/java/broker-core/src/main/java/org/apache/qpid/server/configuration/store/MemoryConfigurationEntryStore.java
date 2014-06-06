@@ -632,8 +632,8 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     {
         Map<String, Class<? extends ConfiguredObject>> relationships = new HashMap<String, Class<? extends ConfiguredObject>>();
 
-        Collection<Class<? extends ConfiguredObject>> children = _parent.getModel().getChildTypes(Broker.class);
-        for (Class<? extends ConfiguredObject> childClass : children)
+        Collection<Class<? extends ConfiguredObject>> categories = _parent.getModel().getSupportedCategories();
+        for (Class<? extends ConfiguredObject> childClass : categories)
         {
             String name = childClass.getSimpleName().toLowerCase();
             String relationshipName = name + (name.endsWith("s") ? "es" : "s");
@@ -812,29 +812,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     private Class<? extends ConfiguredObject> findExpectedChildConfiguredObjectClass(String parentFieldName,
             Class<? extends ConfiguredObject> parentConfiguredObjectClass)
     {
-        if (parentConfiguredObjectClass == Broker.class)
-        {
-            return _brokerChildrenRelationshipMap.get(parentFieldName);
-        }
-
-        // for non-broker parent classes
-        // try to determine the child class from the model by iterating through the children classes
-        // for the parent configured object class
-        if (parentConfiguredObjectClass != null)
-        {
-            Collection<Class<? extends ConfiguredObject>> childTypes = _parent.getModel().getChildTypes(parentConfiguredObjectClass);
-            for (Class<? extends ConfiguredObject> childType : childTypes)
-            {
-                String relationship = childType.getSimpleName().toLowerCase();
-                relationship += relationship.endsWith("s") ? "es": "s";
-                if (parentFieldName.equals(relationship))
-                {
-                    return childType;
-                }
-            }
-        }
-
-        return null;
+        return _brokerChildrenRelationshipMap.get(parentFieldName);
     }
 
     private Object toObject(JsonNode node)

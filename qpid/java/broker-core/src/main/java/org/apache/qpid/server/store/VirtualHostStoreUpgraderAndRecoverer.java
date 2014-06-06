@@ -60,7 +60,7 @@ public class VirtualHostStoreUpgraderAndRecoverer
         register(new Upgrader_0_1_to_0_2());
         register(new Upgrader_0_2_to_0_3());
         register(new Upgrader_0_3_to_0_4());
-        register(new Upgrader_0_4_to_0_5());
+        register(new Upgrader_0_4_to_2_0());
 
         Map<String, UUID> defaultExchangeIds = new HashMap<String, UUID>();
         for (String exchangeName : DEFAULT_EXCHANGES.keySet())
@@ -344,15 +344,12 @@ public class VirtualHostStoreUpgraderAndRecoverer
 
     }
 
-    private class Upgrader_0_4_to_0_5 extends StoreUpgraderPhase
+    private class Upgrader_0_4_to_2_0 extends StoreUpgraderPhase
     {
         private Map<String, String> _missingAmqpExchanges = new HashMap<String, String>(DEFAULT_EXCHANGES);
-        private static final String EXCHANGE_NAME = "name";
-        private static final String EXCHANGE_TYPE = "type";
-        private static final String EXCHANGE_DURABLE = "durable";
         private ConfiguredObjectRecord _virtualHostRecord;
 
-        public Upgrader_0_4_to_0_5()
+        public Upgrader_0_4_to_2_0()
         {
             super("modelVersion", "0.4", "2.0");
         }
@@ -372,7 +369,7 @@ public class VirtualHostStoreUpgraderAndRecoverer
             else if("Exchange".equals(record.getType()))
             {
                 Map<String, Object> attributes = record.getAttributes();
-                String name = (String)attributes.get(EXCHANGE_NAME);
+                String name = (String)attributes.get("name");
                 _missingAmqpExchanges.remove(name);
             }
             getNextUpgrader().configuredObject(record);
@@ -388,9 +385,9 @@ public class VirtualHostStoreUpgraderAndRecoverer
                 UUID id = _defaultExchangeIds.get(name);
 
                 Map<String, Object> attributes = new HashMap<String, Object>();
-                attributes.put(EXCHANGE_NAME, name);
-                attributes.put(EXCHANGE_TYPE, type);
-                attributes.put(EXCHANGE_DURABLE, true);
+                attributes.put("name", name);
+                attributes.put("type", type);
+                attributes.put("lifetimePolicy", "PERMANENT");
 
                 ConfiguredObjectRecord record = new ConfiguredObjectRecordImpl(id, Exchange.class.getSimpleName(), attributes, Collections.singletonMap(_virtualHostRecord.getType(), _virtualHostRecord));
                 getUpdateMap().put(id, record);

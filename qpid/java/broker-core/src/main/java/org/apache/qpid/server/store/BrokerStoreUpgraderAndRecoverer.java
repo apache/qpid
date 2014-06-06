@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
@@ -48,7 +47,7 @@ public class BrokerStoreUpgraderAndRecoverer
         register(new Upgrader_1_0_to_1_1());
         register(new Upgrader_1_1_to_1_2());
         register(new Upgrader_1_2_to_1_3());
-        register(new Upgrader_1_3_to_1_4());
+        register(new Upgrader_1_3_to_2_0());
     }
 
     private void register(StoreUpgraderPhase upgrader)
@@ -159,19 +158,15 @@ public class BrokerStoreUpgraderAndRecoverer
 
     }
 
-    private static final class Upgrader_1_3_to_1_4 extends StoreUpgraderPhase
+    private static final class Upgrader_1_3_to_2_0 extends StoreUpgraderPhase
     {
-        private Upgrader_1_3_to_1_4()
-        {
-            super("modelVersion", "1.3", "1.4");
-        }
+        private final VirtualHostEntryUpgrader _virtualHostUpgrader;
 
-        @SuppressWarnings("serial")
-        private Map<String, VirtualHostEntryUpgrader> _vhostUpgraderMap = new HashMap<String, VirtualHostEntryUpgrader>()
-        {{
-            put("BDB_HA", new BdbHaVirtualHostUpgrader());
-            put("STANDARD", new StandardVirtualHostUpgrader());
-        }};
+        private Upgrader_1_3_to_2_0()
+        {
+            super("modelVersion", "1.3", "2.0");
+            _virtualHostUpgrader = new VirtualHostEntryUpgrader();
+        }
 
         @Override
         public void configuredObject(ConfiguredObjectRecord record)
@@ -184,13 +179,7 @@ public class BrokerStoreUpgraderAndRecoverer
                     throw new IllegalConfigurationException("Auto-upgrade of virtual host " + attributes.get("name") + " having XML configuration is not supported. Virtual host configuration file is " + attributes.get("configPath"));
                 }
 
-                String type = (String) attributes.get("type");
-                VirtualHostEntryUpgrader vhostUpgrader = _vhostUpgraderMap.get(type);
-                if (vhostUpgrader == null)
-                {
-                    throw new IllegalConfigurationException("Don't know how to perform an upgrade from version for virtualhost type " + type);
-                }
-                record = vhostUpgrader.upgrade(record);
+                record = _virtualHostUpgrader.upgrade(record);
                 getUpdateMap().put(record.getId(), record);
             }
             else if (record.getType().equals("Plugin") && record.getAttributes().containsKey("pluginType"))
@@ -218,143 +207,119 @@ public class BrokerStoreUpgraderAndRecoverer
 
     }
 
-    private static interface VirtualHostEntryUpgrader
-    {
-        ConfiguredObjectRecord upgrade(ConfiguredObjectRecord vhost);
-    }
-
-    private static class StandardVirtualHostUpgrader implements VirtualHostEntryUpgrader
+    private static class VirtualHostEntryUpgrader
     {
         @SuppressWarnings("serial")
-        Map<String, AttributesTransformer> _messageStoreAttributeTransformers = new HashMap<String, AttributesTransformer>()
+        Map<String, AttributesTransformer> _messageStoreToNodeTransformers = new HashMap<String, AttributesTransformer>()
         {{
                 put("DERBY", new AttributesTransformer().
+                        addAttributeTransformer("id", copyAttribute()).
+                        addAttributeTransformer("name", copyAttribute()).
+                        addAttributeTransformer("createdTime", copyAttribute()).
+                        addAttributeTransformer("createdBy", copyAttribute()).
                         addAttributeTransformer("storePath", copyAttribute()).
                         addAttributeTransformer("storeUnderfullSize", copyAttribute()).
-                        addAttributeTransformer("storeOverfullSize", copyAttribute()).
-                        addAttributeTransformer("storeType", mutateAttributeValue("DERBY")));
-                put("MEMORY",  new AttributesTransformer().
-                        addAttributeTransformer("storeType", mutateAttributeValue("Memory")));
+                        addAttributeTransformer("storeOverfullSize", copyAttribute()));
+                put("Memory",  new AttributesTransformer().
+                        addAttributeTransformer("id", copyAttribute()).
+                        addAttributeTransformer("name", copyAttribute()).
+                        addAttributeTransformer("createdTime", copyAttribute()).
+                        addAttributeTransformer("createdBy", copyAttribute()));
                 put("BDB", new AttributesTransformer().
+                        addAttributeTransformer("id", copyAttribute()).
+                        addAttributeTransformer("name", copyAttribute()).
+                        addAttributeTransformer("createdTime", copyAttribute()).
+                        addAttributeTransformer("createdBy", copyAttribute()).
                         addAttributeTransformer("storePath", copyAttribute()).
                         addAttributeTransformer("storeUnderfullSize", copyAttribute()).
                         addAttributeTransformer("storeOverfullSize", copyAttribute()).
-                        addAttributeTransformer("bdbEnvironmentConfig", copyAttribute()).
-                        addAttributeTransformer("storeType", mutateAttributeValue("BDB")));
+                        addAttributeTransformer("bdbEnvironmentConfig", mutateAttributeName("environmentConfiguration")));
                 put("JDBC", new AttributesTransformer().
+                        addAttributeTransformer("id", copyAttribute()).
+                        addAttributeTransformer("name", copyAttribute()).
+                        addAttributeTransformer("createdTime", copyAttribute()).
+                        addAttributeTransformer("createdBy", copyAttribute()).
                         addAttributeTransformer("storePath", mutateAttributeName("connectionURL")).
-                        addAttributeTransformer("connectionURL", copyAttribute()).
-                        addAttributeTransformer("connectionPool", copyAttribute()).
-                        addAttributeTransformer("jdbcBigIntType", copyAttribute()).
-                        addAttributeTransformer("jdbcBytesForBlob", copyAttribute()).
-                        addAttributeTransformer("jdbcBlobType", copyAttribute()).
-                        addAttributeTransformer("jdbcVarbinaryType", copyAttribute()).
+                        addAttributeTransformer("connectionURL", mutateAttributeName("connectionUrl")).
+                        addAttributeTransformer("connectionPool", mutateAttributeName("connectionPoolType")).
+                        addAttributeTransformer("jdbcBigIntType", mutateAttributeName("bigIntType")).
+                        addAttributeTransformer("jdbcBytesForBlob", mutateAttributeName("bytesForBlob")).
+                        addAttributeTransformer("jdbcBlobType", mutateAttributeName("blobType")).
+                        addAttributeTransformer("jdbcVarbinaryType", mutateAttributeName("varbinaryType")).
                         addAttributeTransformer("partitionCount", copyAttribute()).
                         addAttributeTransformer("maxConnectionsPerPartition", copyAttribute()).
-                        addAttributeTransformer("minConnectionsPerPartition", copyAttribute()).
-                        addAttributeTransformer("storeType", mutateAttributeValue("JDBC")));
+                        addAttributeTransformer("minConnectionsPerPartition", copyAttribute()));
+                put("BDB_HA", new AttributesTransformer().
+                        addAttributeTransformer("id", copyAttribute()).
+                        addAttributeTransformer("createdTime", copyAttribute()).
+                        addAttributeTransformer("createdBy", copyAttribute()).
+                        addAttributeTransformer("storePath", copyAttribute()).
+                        addAttributeTransformer("storeUnderfullSize", copyAttribute()).
+                        addAttributeTransformer("storeOverfullSize", copyAttribute()).
+                        addAttributeTransformer("haNodeName", mutateAttributeName("name")).
+                        addAttributeTransformer("haGroupName", mutateAttributeName("groupName")).
+                        addAttributeTransformer("haHelperAddress", mutateAttributeName("helperAddress")).
+                        addAttributeTransformer("haNodeAddress", mutateAttributeName("address")).
+                        addAttributeTransformer("haDesignatedPrimary", mutateAttributeName("designatedPrimary")).
+                        addAttributeTransformer("haReplicationConfig", mutateAttributeName("replicatedEnvironmentConfiguration")).
+                        addAttributeTransformer("bdbEnvironmentConfig", mutateAttributeName("environmentConfiguration")));
             }};
 
-        @SuppressWarnings("serial")
-        Map<String, AttributesTransformer> _configurationStoreAttributeTransformers = new HashMap<String, AttributesTransformer>()
-        {{
-                put("DERBY", new AttributesTransformer().
-                        addAttributeTransformer("configStorePath", mutateAttributeName("storePath")).
-                        addAttributeTransformer("configStoreType", mutateAttributeName("storeType"), mutateAttributeValue("DERBY")));
-                put("MEMORY",  new AttributesTransformer().
-                        addAttributeTransformer("configStoreType", mutateAttributeValue("Memory")));
-                put("JSON", new AttributesTransformer().
-                        addAttributeTransformer("configStorePath", mutateAttributeName("storePath")).
-                        addAttributeTransformer("configStoreType", mutateAttributeName("storeType"), mutateAttributeValue("JSON")));
-                put("BDB", new AttributesTransformer().
-                        addAttributeTransformer("configStorePath", mutateAttributeName("storePath")).
-                        addAttributeTransformer("bdbEnvironmentConfig", copyAttribute()).
-                        addAttributeTransformer("configStoreType", mutateAttributeName("storeType"), mutateAttributeValue("BDB")));
-                put("JDBC", new AttributesTransformer().
-                        addAttributeTransformer("configStorePath", mutateAttributeName("connectionURL")).
-                        addAttributeTransformer("configConnectionURL", mutateAttributeName("connectionURL")).
-                        addAttributeTransformer("connectionPool", copyAttribute()).
-                        addAttributeTransformer("jdbcBigIntType", copyAttribute()).
-                        addAttributeTransformer("jdbcBytesForBlob", copyAttribute()).
-                        addAttributeTransformer("jdbcBlobType", copyAttribute()).
-                        addAttributeTransformer("jdbcVarbinaryType", copyAttribute()).
-                        addAttributeTransformer("partitionCount", copyAttribute()).
-                        addAttributeTransformer("maxConnectionsPerPartition", copyAttribute()).
-                        addAttributeTransformer("minConnectionsPerPartition", copyAttribute()).
-                        addAttributeTransformer("configStoreType", mutateAttributeName("storeType"), mutateAttributeValue("JDBC")));
-            }};
-
-        @Override
         public ConfiguredObjectRecord upgrade(ConfiguredObjectRecord vhost)
         {
             Map<String, Object> attributes = vhost.getAttributes();
-            Map<String, Object> newAttributes = new HashMap<String, Object>(attributes);
-
-            String capitalisedStoreType = String.valueOf(attributes.get("storeType")).toUpperCase();
-            AttributesTransformer vhAttrsToMessageStoreSettings = _messageStoreAttributeTransformers.get(capitalisedStoreType);
-            Map<String, Object> messageStoreSettings = null;
-            if (vhAttrsToMessageStoreSettings != null)
+            String type = (String) attributes.get("type");
+            AttributesTransformer nodeAttributeTransformer = null;
+            if ("STANDARD".equalsIgnoreCase(type))
             {
-                messageStoreSettings = vhAttrsToMessageStoreSettings.upgrade(attributes);
+                if (attributes.containsKey("configStoreType"))
+                {
+                    throw new IllegalConfigurationException("Auto-upgrade of virtual host " + attributes.get("name")
+                            + " with split configuration and message store is not supported."
+                            + " Configuration store type is " + attributes.get("configStoreType") + " and message store type is "
+                            + attributes.get("storeType"));
+                }
+                else
+                {
+                    type = (String) attributes.get("storeType");
+                }
             }
 
-            if (attributes.containsKey("configStoreType"))
+            if (type == null)
             {
-                String capitaliseConfigStoreType = ((String) attributes.get("configStoreType")).toUpperCase();
-                AttributesTransformer vhAttrsToConfigurationStoreSettings = _configurationStoreAttributeTransformers
-                        .get(capitaliseConfigStoreType);
-                Map<String, Object> configurationStoreSettings = vhAttrsToConfigurationStoreSettings.upgrade(attributes);
-                newAttributes.keySet().removeAll(vhAttrsToConfigurationStoreSettings.getNamesToBeDeleted());
-                newAttributes.put("configurationStoreSettings", configurationStoreSettings);
+                throw new IllegalConfigurationException("Cannot auto-upgrade virtual host with attributes: " + attributes);
             }
 
-            if (vhAttrsToMessageStoreSettings != null)
+            type = getVirtualHostNodeType(type);
+            nodeAttributeTransformer = _messageStoreToNodeTransformers.get(type);
+
+            if (nodeAttributeTransformer == null)
             {
-                newAttributes.keySet().removeAll(vhAttrsToMessageStoreSettings.getNamesToBeDeleted());
-                newAttributes.put("messageStoreSettings", messageStoreSettings);
+                throw new IllegalConfigurationException("Don't know how to perform an upgrade from version for virtualhost type " + type);
             }
 
-            return new ConfiguredObjectRecordImpl(vhost.getId(), vhost.getType(), newAttributes, vhost.getParents());
+            Map<String, Object> nodeAttributes = nodeAttributeTransformer.upgrade(attributes);
+            nodeAttributes.put("type", type);
+            nodeAttributes.put("messageStoreProvider", true);
+            return new ConfiguredObjectRecordImpl(vhost.getId(), "VirtualHostNode", nodeAttributes, vhost.getParents());
         }
-    }
 
-    private static class BdbHaVirtualHostUpgrader implements VirtualHostEntryUpgrader
-    {
-
-        private final AttributesTransformer haAttributesTransformer =  new AttributesTransformer().
-                addAttributeTransformer("storePath", copyAttribute()).
-                addAttributeTransformer("storeUnderfullSize", copyAttribute()).
-                addAttributeTransformer("storeOverfullSize", copyAttribute()).
-                addAttributeTransformer("haNodeName", copyAttribute()).
-                addAttributeTransformer("haGroupName", copyAttribute()).
-                addAttributeTransformer("haHelperAddress", copyAttribute()).
-                addAttributeTransformer("haCoalescingSync", copyAttribute()).
-                addAttributeTransformer("haNodeAddress", copyAttribute()).
-                addAttributeTransformer("haDurability", copyAttribute()).
-                addAttributeTransformer("haDesignatedPrimary", copyAttribute()).
-                addAttributeTransformer("haReplicationConfig", copyAttribute()).
-                addAttributeTransformer("bdbEnvironmentConfig", copyAttribute()).
-                addAttributeTransformer("storeType", removeAttribute());
-
-        @Override
-        public ConfiguredObjectRecord upgrade(ConfiguredObjectRecord vhost)
+        private String getVirtualHostNodeType(String type)
         {
-            Map<String, Object> attributes = vhost.getAttributes();
-
-            Map<String, Object> messageStoreSettings = haAttributesTransformer.upgrade(attributes);
-
-            Map<String, Object> newAttributes = new HashMap<String, Object>(attributes);
-            newAttributes.keySet().removeAll(haAttributesTransformer.getNamesToBeDeleted());
-            newAttributes.put("messageStoreSettings", messageStoreSettings);
-
-            return new ConfiguredObjectRecordImpl(vhost.getId(), vhost.getType(), newAttributes, vhost.getParents());
+            for (String t : _messageStoreToNodeTransformers.keySet())
+            {
+                if (type.equalsIgnoreCase(t))
+                {
+                    return t;
+                }
+            }
+            return null;
         }
     }
 
     private static class AttributesTransformer
     {
         private final Map<String, List<AttributeTransformer>> _transformers = new HashMap<String, List<AttributeTransformer>>();
-        private Set<String> _namesToBeDeleted = new HashSet<String>();
 
         public AttributesTransformer addAttributeTransformer(String string, AttributeTransformer... attributeTransformers)
         {
@@ -386,32 +351,15 @@ public class BrokerStoreUpgraderAndRecoverer
                     {
                         settings.put(newEntry.getKey(), newEntry.getValue());
                     }
-
-                    _namesToBeDeleted.add(attributeName);
                 }
             }
             return settings;
-        }
-
-        public Set<String> getNamesToBeDeleted()
-        {
-            return _namesToBeDeleted;
         }
     }
 
     private static AttributeTransformer copyAttribute()
     {
         return CopyAttribute.INSTANCE;
-    }
-
-    private static AttributeTransformer removeAttribute()
-    {
-        return RemoveAttribute.INSTANCE;
-    }
-
-    private static AttributeTransformer mutateAttributeValue(Object newValue)
-    {
-        return new MutateAttributeValue(newValue);
     }
 
     private static AttributeTransformer mutateAttributeName(String newName)
@@ -438,22 +386,6 @@ public class BrokerStoreUpgraderAndRecoverer
             return entry;
         }
     }
-
-    private static class RemoveAttribute implements AttributeTransformer
-    {
-        private static final RemoveAttribute INSTANCE = new RemoveAttribute();
-
-        private RemoveAttribute()
-        {
-        }
-
-        @Override
-        public MutableEntry transform(MutableEntry entry)
-        {
-            return null;
-        }
-    }
-
     private static class MutateAttributeName implements AttributeTransformer
     {
         private final String _newName;
@@ -467,23 +399,6 @@ public class BrokerStoreUpgraderAndRecoverer
         public MutableEntry transform(MutableEntry entry)
         {
             entry.setKey(_newName);
-            return entry;
-        }
-    }
-
-    private static class MutateAttributeValue implements AttributeTransformer
-    {
-        private final Object _newValue;
-
-        public MutateAttributeValue(Object newValue)
-        {
-            _newValue = newValue;
-        }
-
-        @Override
-        public MutableEntry transform(MutableEntry entry)
-        {
-            entry.setValue(_newValue);
             return entry;
         }
     }
@@ -513,20 +428,12 @@ public class BrokerStoreUpgraderAndRecoverer
         {
             return _value;
         }
-
-        public void setValue(Object value)
-        {
-            _value = value;
-        }
     }
 
     public Broker<?> perform(final DurableConfigurationStore store)
     {
-        final String brokerCategory = Broker.class.getSimpleName();
-        final GenericStoreUpgrader upgrader = new GenericStoreUpgrader(brokerCategory, Broker.MODEL_VERSION, store, _upgraders);
-        upgrader.upgrade();
-
-        new GenericRecoverer(_systemContext, brokerCategory).recover(upgrader.getRecords());
+        List<ConfiguredObjectRecord> upgradedRecords = upgrade(store);
+        new GenericRecoverer(_systemContext, Broker.class.getSimpleName()).recover(upgradedRecords);
 
         final StoreConfigurationChangeListener configChangeListener = new StoreConfigurationChangeListener(store);
         applyRecursively(_systemContext.getBroker(), new Action<ConfiguredObject<?>>()
@@ -539,6 +446,13 @@ public class BrokerStoreUpgraderAndRecoverer
         });
 
         return _systemContext.getBroker();
+    }
+
+    List<ConfiguredObjectRecord> upgrade(final DurableConfigurationStore store)
+    {
+        GenericStoreUpgrader upgrader = new GenericStoreUpgrader(Broker.class.getSimpleName(), Broker.MODEL_VERSION, store, _upgraders);
+        upgrader.upgrade();
+        return upgrader.getRecords();
     }
 
     private void applyRecursively(final ConfiguredObject<?> object, final Action<ConfiguredObject<?>> action)
