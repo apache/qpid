@@ -2439,6 +2439,7 @@ abstract public class AbstractJDBCMessageStore implements MessageStoreProvider, 
 
     protected abstract void storedSizeChange(int storeSizeIncrease);
 
+    @Override
     public void onDelete()
     {
         // TODO should probably check we are closed

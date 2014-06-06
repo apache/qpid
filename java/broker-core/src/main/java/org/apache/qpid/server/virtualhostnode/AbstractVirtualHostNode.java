@@ -199,10 +199,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         deleteVirtualHostIfExists();
         close();
         deleted();
-        if (getConfigurationStore() instanceof MessageStoreProvider)
-        {
-            ((MessageStoreProvider)getConfigurationStore()).getMessageStore().onDelete();
-        }
+        getConfigurationStore().onDelete();
     }
 
     protected void deleteVirtualHostIfExists()

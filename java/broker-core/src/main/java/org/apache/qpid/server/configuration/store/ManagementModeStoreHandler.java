@@ -242,6 +242,10 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     {
     }
 
+    @Override
+    public void onDelete()
+    {
+    }
 
     @Override
     public synchronized UUID[] remove(final ConfiguredObjectRecord... records)

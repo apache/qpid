@@ -277,6 +277,11 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         }
 
         @Override
+        public void onDelete()
+        {
+        }
+
+        @Override
         public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException
         {
             handler.begin();

@@ -41,6 +41,14 @@ public interface DurableConfigurationStore
     void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings) throws StoreException;
 
     /**
+     * Visit all configured object records with given handler.
+     *
+     * @param handler a handler to invoke on each configured object record
+     * @throws StoreException
+     */
+    void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException;
+
+    /**
      * Makes the specified object persistent.
      *
      * @param object The object to persist.
@@ -48,16 +56,6 @@ public interface DurableConfigurationStore
      * @throws StoreException If the operation fails for any reason.
      */
     void create(ConfiguredObjectRecord object) throws StoreException;
-
-    /**
-     * Removes the specified persistent configured objects.
-     *
-     * @param objects The objects to remove.
-     *
-     * @throws StoreException If the operation fails for any reason.
-     */
-    public UUID[] remove(ConfiguredObjectRecord... objects) throws StoreException;
-
 
     /**
      * Updates the specified objects in the persistent store, IF it is already present. If the object
@@ -71,13 +69,21 @@ public interface DurableConfigurationStore
      */
     void update(boolean createIfNecessary, ConfiguredObjectRecord... records) throws StoreException;
 
+    /**
+     * Removes the specified persistent configured objects.
+     *
+     * @param objects The objects to remove.
+     *
+     * @throws StoreException If the operation fails for any reason.
+     */
+    public UUID[] remove(ConfiguredObjectRecord... objects) throws StoreException;
+
     void closeConfigurationStore() throws StoreException;
 
     /**
-     * Visit all configured object records with given handler.
-     *
-     * @param handler a handler to invoke on each configured object record
-     * @throws StoreException
+     * Deletes the configuration store from its underlying storage.  If the store
+     * has not be opened, then this call will be ignored.  The store should be closed
+     * before making this call.
      */
-    void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException;
+    void onDelete();
 }
