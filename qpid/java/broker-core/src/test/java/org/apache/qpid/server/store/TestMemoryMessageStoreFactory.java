@@ -49,7 +49,9 @@ public class TestMemoryMessageStoreFactory implements MessageStoreFactory, Durab
     @Override
     public DurableConfigurationStore createDurableConfigurationStore()
     {
-        return new TestMemoryMessageStore();
+        return new AbstractMemoryStore()
+        {
+        };
     }
 
     @Override

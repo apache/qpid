@@ -42,7 +42,7 @@ public class JDBCMessageStoreFactory implements MessageStoreFactory, DurableConf
     @Override
     public MessageStore createMessageStore()
     {
-        return new JDBCMessageStore();
+        return (new JDBCMessageStore()).getMessageStore();
     }
 
     @Override

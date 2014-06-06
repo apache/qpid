@@ -42,13 +42,13 @@ public class BDBMessageStoreFactory implements MessageStoreFactory, DurableConfi
     @Override
     public DurableConfigurationStore createDurableConfigurationStore()
     {
-        return new BDBMessageStore();
+        return new BDBConfigurationStore();
     }
 
     @Override
     public MessageStore createMessageStore()
     {
-        return new BDBMessageStore();
+        return (new BDBConfigurationStore()).getMessageStore();
     }
 
     @Override

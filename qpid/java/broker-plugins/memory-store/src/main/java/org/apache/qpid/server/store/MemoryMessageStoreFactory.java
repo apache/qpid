@@ -33,7 +33,7 @@ public class MemoryMessageStoreFactory implements MessageStoreFactory, DurableCo
     @Override
     public String getType()
     {
-        return MemoryMessageStore.TYPE;
+        return MemoryConfigurationStore.TYPE;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class MemoryMessageStoreFactory implements MessageStoreFactory, DurableCo
     @Override
     public DurableConfigurationStore createDurableConfigurationStore()
     {
-        return new MemoryMessageStore();
+        return new MemoryConfigurationStore();
     }
 
     @Override

@@ -18,16 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.virtualhostnode;
 
-import org.apache.qpid.server.store.AbstractDurableConfigurationStoreTestCase;
-import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.store.MessageStore;
 
-public class BDBMessageStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
+@ManagedObject( category = false )
+public interface MessageStoreProvidingVirtualHostNode<X extends MessageStoreProvidingVirtualHostNode<X>>
+        extends VirtualHostNode<X>
 {
-    @Override
-    protected DurableConfigurationStore createConfigStore() throws Exception
-    {
-        return new BDBConfigurationStore();
-    }
+    MessageStore getProvidedMessageStore();
 }

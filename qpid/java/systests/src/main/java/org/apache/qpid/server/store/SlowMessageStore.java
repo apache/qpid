@@ -146,7 +146,7 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
             _defaultDelay = Long.parseLong(String.valueOf(delays.get(DEFAULT_DELAY)));
         }
 
-        final Object realStoreAttr = messageStoreSettings.get(REAL_STORE) == null ? MemoryMessageStore.TYPE : messageStoreSettings.get(REAL_STORE);
+        final Object realStoreAttr = messageStoreSettings.get(REAL_STORE) == null ? MemoryConfigurationStore.TYPE : messageStoreSettings.get(REAL_STORE);
         final String realStore = (String) realStoreAttr;
         _realMessageStore = MessageStoreFactory.FACTORY_LOADER.get(realStore).createMessageStore();
 

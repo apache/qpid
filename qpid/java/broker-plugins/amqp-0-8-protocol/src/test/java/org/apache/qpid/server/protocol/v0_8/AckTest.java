@@ -21,6 +21,10 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Set;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -38,10 +42,6 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -90,8 +90,6 @@ public class AckTest extends QpidTestCase
     {
         for (int i = 1; i <= count; i++)
         {
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Establish some way to determine the version for the test.
             MessagePublishInfo publishBody = new MessagePublishInfo()
             {
 
@@ -130,13 +128,15 @@ public class AckTest extends QpidTestCase
                 b.setDeliveryMode((byte) 2);
             }
 
-            // we increment the reference here since we are not delivering the messaging to any queues, which is where
-            // the reference is normally incremented. The test is easier to construct if we have direct access to the
-            // subscription
+            // The test is easier to construct if we have direct access to the subscription
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
-            MessageMetaData mmd = new MessageMetaData(publishBody,cb, System.currentTimeMillis());
-            final StoredMessage storedMessage = _messageStore.addMessage(mmd);
+
+            final MessageMetaData mmd = new MessageMetaData(publishBody,cb, System.currentTimeMillis());
+
+            final StoredMessage<MessageMetaData> result =_messageStore.addMessage(mmd);
+
+            final StoredMessage storedMessage = result;
             final AMQMessage message = new AMQMessage(storedMessage);
             ServerTransaction txn = new AutoCommitTransaction(_messageStore);
             txn.enqueue(_queue, message,

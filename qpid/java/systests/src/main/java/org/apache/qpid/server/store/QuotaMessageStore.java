@@ -27,12 +27,12 @@ import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.ConfiguredObject;
 
-public class QuotaMessageStore extends AbstractMemoryMessageStore
+public class QuotaMessageStore extends MemoryMessageStore
 {
     public static final String TYPE = "QuotaMessageStore";
     private final AtomicLong _messageId = new AtomicLong(1);
 
-    private long _totalStoreSize;;
+    private long _totalStoreSize;
     private boolean _limitBusted;
     private long _persistentSizeLowThreshold;
     private long _persistentSizeHighThreshold;
@@ -66,12 +66,11 @@ public class QuotaMessageStore extends AbstractMemoryMessageStore
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
-    public StoredMessage<StorableMessageMetaData> addMessage(StorableMessageMetaData metaData)
+    public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
     {
         final long id = _messageId.getAndIncrement();
-        return new StoredMemoryMessage(id, metaData);
+        return new StoredMemoryMessage<T>(id, metaData);
     }
 
     @Override

@@ -23,13 +23,13 @@ package org.apache.qpid.server.store;
 
 import java.nio.ByteBuffer;
 
-public class StoredMemoryMessage implements StoredMessage
+public class StoredMemoryMessage<T extends StorableMessageMetaData> implements StoredMessage<T>
 {
     private final long _messageNumber;
     private ByteBuffer _content;
-    private final StorableMessageMetaData _metaData;
+    private final T _metaData;
 
-    public StoredMemoryMessage(long messageNumber, StorableMessageMetaData metaData)
+    public StoredMemoryMessage(long messageNumber, T metaData)
     {
         _messageNumber = messageNumber;
         _metaData = metaData;
@@ -128,7 +128,7 @@ public class StoredMemoryMessage implements StoredMessage
     }
 
 
-    public StorableMessageMetaData getMetaData()
+    public T getMetaData()
     {
         return _metaData;
     }

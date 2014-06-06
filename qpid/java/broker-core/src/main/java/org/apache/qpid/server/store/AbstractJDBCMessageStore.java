@@ -46,15 +46,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.plugin.MessageMetaDataType;
-import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
-import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
-import org.apache.qpid.server.store.handler.MessageHandler;
-import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
@@ -67,7 +58,17 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializerProvider;
 import org.codehaus.jackson.map.module.SimpleModule;
 
-abstract public class AbstractJDBCMessageStore implements MessageStore, DurableConfigurationStore
+import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.plugin.MessageMetaDataType;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
+import org.apache.qpid.server.store.handler.MessageHandler;
+import org.apache.qpid.server.store.handler.MessageInstanceHandler;
+
+abstract public class AbstractJDBCMessageStore implements MessageStoreProvider, DurableConfigurationStore
 {
     private static final String DB_VERSION_TABLE_NAME = "QPID_DB_VERSION";
     private static final String CONFIGURATION_VERSION_TABLE_NAME = "QPID_CONFIG_VERSION";
@@ -369,7 +370,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    @Override
     public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings)
     {
         if (_messageStoreOpen.compareAndSet(false,  true))
@@ -952,7 +952,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    @Override
     public void closeMessageStore()
     {
         if (_messageStoreOpen.compareAndSet(true, false))
@@ -978,7 +977,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     protected abstract void doClose();
 
-    @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
     {
         checkMessageStoreOpen();
@@ -1132,7 +1130,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     protected abstract Connection getConnection() throws SQLException;
 
-    @Override
     public Transaction newTransaction()
     {
         checkMessageStoreOpen();
@@ -1665,7 +1662,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     }
 
-    @Override
     public boolean isPersistent()
     {
         return true;
@@ -1975,7 +1971,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    @Override
     public void addEventListener(EventListener eventListener, Event... events)
     {
         _eventManager.addEventListener(eventListener, events);
@@ -2250,7 +2245,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    @Override
     public void visitMessages(MessageHandler handler) throws StoreException
     {
         checkMessageStoreOpen();
@@ -2301,7 +2295,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    @Override
     public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
     {
         checkMessageStoreOpen();
@@ -2346,7 +2339,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
         }
     }
 
-    @Override
     public void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException
     {
         checkMessageStoreOpen();
@@ -2447,8 +2439,6 @@ abstract public class AbstractJDBCMessageStore implements MessageStore, DurableC
 
     protected abstract void storedSizeChange(int storeSizeIncrease);
 
-
-    @Override
     public void onDelete()
     {
         // TODO should probably check we are closed

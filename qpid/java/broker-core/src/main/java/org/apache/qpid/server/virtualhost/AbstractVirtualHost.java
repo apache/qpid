@@ -77,6 +77,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreProvider;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.txn.DtxRegistry;
@@ -196,13 +197,14 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         DurableConfigurationStore durableConfigurationStore = _virtualHostNode.getConfigurationStore();
 
+        // TODO attribute messageStoreProvider is to be removed
         boolean nodeIsMessageStoreProvider = _virtualHostNode.isMessageStoreProvider();
         if (nodeIsMessageStoreProvider)
         {
-            if (!(durableConfigurationStore instanceof MessageStore))
+            if (!(durableConfigurationStore instanceof MessageStoreProvider))
             {
                 throw new IllegalConfigurationException("Virtual host node " + _virtualHostNode.getName()
-                        + " is configured as a provider of message store but the MessageStore interface is not implemented on a configuration store of type "
+                        + " is configured as a provider of message store but the MessageStoreProvider interface is not implemented on a configuration store of type "
                         + durableConfigurationStore.getClass().getName());
             }
         }
@@ -215,7 +217,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                         + ". You can either configure the message store setting on the host or "
                         + (durableConfigurationStore instanceof MessageStore ?
                                 " configure VirtualHostNode " + _virtualHostNode.getName() + " as a provider of message store" :
-                                " change the node type to one having configuration store implementing the MessageStore inteface") );
+                                " change the node type to one having configuration store implementing the MessageStore interface") );
             }
             String storeType = (String) messageStoreSettings.get(MessageStore.STORE_TYPE);
             if (storeType == null)
