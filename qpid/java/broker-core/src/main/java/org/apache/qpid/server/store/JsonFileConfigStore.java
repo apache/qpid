@@ -571,6 +571,17 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
     }
 
+    @Override
+    public void onDelete()
+    {
+        if (_configFileName != null && _backupFileName != null)
+        {
+            renameFile(_configFileName,_backupFileName);
+            _configFileName = null;
+            _backupFileName = null;
+        }
+    }
+
     private void releaseFileLock() throws IOException
     {
         _fileLock.release();

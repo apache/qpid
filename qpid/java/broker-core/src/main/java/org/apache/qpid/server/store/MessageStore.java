@@ -38,6 +38,10 @@ public interface MessageStore
     String UNDERFULL_SIZE                       = "storeUnderfullSize";
     String OVERFULL_SIZE                        = "storeOverfullSize";
 
+    String getStoreLocation();
+
+    void addEventListener(EventListener eventListener, Event... events);
+
     /**
      * Called after instantiation in order to open and initialize the message store. A particular implementation can define
      * whatever parameters it wants.
@@ -46,8 +50,13 @@ public interface MessageStore
      */
     void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings);
 
-    public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
+    void visitMessages(MessageHandler handler) throws StoreException;
 
+    void visitMessageInstances(MessageInstanceHandler handler) throws StoreException;
+
+    void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException;
+
+    <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
 
     /**
      * Is this store capable of persisting the data
@@ -63,15 +72,5 @@ public interface MessageStore
      */
     void closeMessageStore();
 
-    void addEventListener(EventListener eventListener, Event... events);
-
-    String getStoreLocation();
-
-    // TODO change to have separate delete methods for configuration and message store.
     void onDelete();
-
-    void visitMessages(MessageHandler handler) throws StoreException;
-    void visitMessageInstances(MessageInstanceHandler handler) throws StoreException;
-    void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException;
-
 }

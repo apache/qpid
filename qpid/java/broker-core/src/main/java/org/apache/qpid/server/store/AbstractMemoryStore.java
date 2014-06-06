@@ -36,8 +36,6 @@ abstract class AbstractMemoryStore implements DurableConfigurationStore, Message
 
     private final ConcurrentHashMap<UUID, ConfiguredObjectRecord> _configuredObjectRecords = new ConcurrentHashMap<UUID, ConfiguredObjectRecord>();
 
-
-
     @Override
     public void create(ConfiguredObjectRecord record)
     {
@@ -105,5 +103,9 @@ abstract class AbstractMemoryStore implements DurableConfigurationStore, Message
         return _messageStore;
     }
 
+    @Override
+    public void onDelete()
+    {
+    }
 
 }
