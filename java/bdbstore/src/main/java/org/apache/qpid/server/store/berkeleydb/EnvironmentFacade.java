@@ -43,11 +43,9 @@ public interface EnvironmentFacade
 
     Environment getEnvironment();
 
+    Database openDatabase(String name, DatabaseConfig databaseConfig);
+
     Committer createCommitter(String name);
-
-    void openDatabases(DatabaseConfig dbConfig, String... databaseNames);
-
-    Database getOpenDatabase(String name);
 
     Transaction beginTransaction();
 
@@ -57,5 +55,6 @@ public interface EnvironmentFacade
 
     String getStoreLocation();
 
+    void closeDatabase(String name);
     void close();
 }

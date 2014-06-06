@@ -256,6 +256,12 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         }
 
         @Override
+        public void upgradeStoreStructure() throws StoreException
+        {
+
+        }
+
+        @Override
         public void create(ConfiguredObjectRecord object) throws StoreException
         {
         }

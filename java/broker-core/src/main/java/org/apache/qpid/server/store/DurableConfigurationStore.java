@@ -32,13 +32,22 @@ public interface DurableConfigurationStore
     String STORE_PATH                    = "storePath";
 
     /**
-     * Called after instantiation in order to configure the message store. A particular implementation can define
-     * whatever parameters it wants.
+     * Initializes and opens the configuration store.
      *
      * @param parent
      * @param storeSettings store settings
      */
     void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings) throws StoreException;
+
+    /**
+     * Requests that the store performs any upgrade work on the store's structure. If there is no
+     * upgrade work to be done, this method should return without doing anything.
+     *
+     * @throws StoreException signals that a problem was encountered trying to upgrade the store.
+     * Implementations, on encountering a problem, should endeavour to leave the store in its
+     * original state.
+     */
+    void upgradeStoreStructure() throws StoreException;
 
     /**
      * Visit all configured object records with given handler.

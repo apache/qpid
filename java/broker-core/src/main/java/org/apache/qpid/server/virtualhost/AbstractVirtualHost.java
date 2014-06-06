@@ -1368,6 +1368,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.STORE_LOCATION(messageStore.getStoreLocation()));
         }
 
+        messageStore.upgradeStoreStructure();
+
         if (isStoreEmpty())
         {
             createDefaultExchanges();

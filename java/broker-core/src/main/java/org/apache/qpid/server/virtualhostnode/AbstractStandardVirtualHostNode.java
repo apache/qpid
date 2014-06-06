@@ -99,6 +99,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
         Map<String, Object> attributes = buildAttributesForStore();
 
         getConfigurationStore().openConfigurationStore(this, attributes);
+        getConfigurationStore().upgradeStoreStructure();
 
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CREATED());
 

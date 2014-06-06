@@ -106,6 +106,12 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
+    public void upgradeStoreStructure() throws StoreException
+    {
+        // No-op for Json
+    }
+
+    @Override
     public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
     {
         _parent = parent;

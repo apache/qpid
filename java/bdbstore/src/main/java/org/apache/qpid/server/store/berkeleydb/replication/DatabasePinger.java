@@ -25,6 +25,7 @@ import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Transaction;
@@ -32,13 +33,16 @@ import com.sleepycat.je.Transaction;
 public class DatabasePinger
 {
     public static final String PING_DATABASE_NAME = "PINGDB";
+    private static final DatabaseConfig DATABASE_CONFIG =
+            DatabaseConfig.DEFAULT.setAllowCreate(true).setTransactional(true);
     private static final int ID = 0;
 
     public void pingDb(EnvironmentFacade facade)
     {
         try
         {
-            final Database db = facade.getOpenDatabase(PING_DATABASE_NAME);
+            final Database db = facade.openDatabase(PING_DATABASE_NAME,
+                                                    DATABASE_CONFIG);
 
             DatabaseEntry key = new DatabaseEntry();
             IntegerBinding.intToEntry(ID, key);
@@ -55,16 +59,9 @@ public class DatabasePinger
             }
             finally
             {
-                try
+                if (txn != null)
                 {
-                    if (txn != null)
-                    {
-                        txn.abort();
-                    }
-                }
-                finally
-                {
-                    db.close();
+                    txn.abort();
                 }
             }
         }

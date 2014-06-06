@@ -42,6 +42,8 @@ import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import org.hamcrest.Description;
 import org.mockito.ArgumentMatcher;
 
 public abstract class MessageStoreTestCase extends QpidTestCase
@@ -163,7 +165,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         StoreFuture flushFuture = message.flushToStore();
         flushFuture.waitForCompletion();
 
-        assertEquals("Unexpected message id", 4, message.getMessageNumber());
+        assertTrue("Unexpected message id " + message.getMessageNumber(), message.getMessageNumber() >= 4);
     }
 
     public void testVisitMessageInstances() throws Exception
@@ -412,6 +414,14 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         {
             return obj instanceof StoredMessage && ((StoredMessage<?>)obj).getMessageNumber() == _messageNumber;
         }
+
+        @Override
+        public void describeTo(final Description description)
+        {
+            description.appendText("Expected messageNumber:");
+            description.appendValue(_messageNumber);
+        }
+
     }
 
     private class QueueFilteringMessageInstanceHandler implements MessageInstanceHandler

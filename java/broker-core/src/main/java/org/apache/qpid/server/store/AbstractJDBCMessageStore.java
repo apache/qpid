@@ -690,6 +690,13 @@ abstract public class AbstractJDBCMessageStore implements MessageStoreProvider, 
 
     abstract protected String getSqlBigIntType();
 
+    @Override
+    public void upgradeStoreStructure() throws StoreException
+    {
+        // TODO acquire connection to the database using the attribute of the parents,
+        // run the upgrader in a transaction, close the connection.
+    }
+
     protected void createOrOpenMessageStoreDatabase() throws SQLException
     {
         Connection conn = newAutoCommitConnection();

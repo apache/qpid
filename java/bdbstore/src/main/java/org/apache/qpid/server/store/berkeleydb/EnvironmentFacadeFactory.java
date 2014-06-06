@@ -26,12 +26,7 @@ public interface EnvironmentFacadeFactory
 {
     public static final String ENVIRONMENT_CONFIGURATION = "environmentConfiguration";
 
-    EnvironmentFacade createEnvironmentFacade(Map<String, Object> storeSettings, EnvironmentFacadeTask... initialisationTasks);
+    EnvironmentFacade createEnvironmentFacade(Map<String, Object> storeSettings);
 
     String getType();
-
-    public static interface EnvironmentFacadeTask
-    {
-        void execute(EnvironmentFacade facade);
-    }
 }
