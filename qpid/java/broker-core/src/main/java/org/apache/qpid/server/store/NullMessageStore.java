@@ -63,6 +63,12 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
+    public void upgradeStoreStructure() throws StoreException
+    {
+
+    }
+
+    @Override
     public void closeMessageStore()
     {
     }

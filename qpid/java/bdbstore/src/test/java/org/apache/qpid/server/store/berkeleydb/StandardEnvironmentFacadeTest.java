@@ -77,38 +77,21 @@ public class StandardEnvironmentFacadeTest extends QpidTestCase
         assertNull("Environment should be null after facade close", e);
     }
 
-    public void testOpenDatabases() throws Exception
+    public void testOpenDatabaseReusesCachedHandle() throws Exception
     {
-        EnvironmentFacade ef = getEnvironmentFacade();
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        dbConfig.setAllowCreate(true);
-        ef.openDatabases(dbConfig, "test1", "test2");
-        Database test1 = ef.getOpenDatabase("test1");
-        Database test2 = ef.getOpenDatabase("test2");
+        DatabaseConfig createIfAbsentDbConfig = DatabaseConfig.DEFAULT.setAllowCreate(true);
 
-        assertEquals("Unexpected name for open database test1", "test1" , test1.getDatabaseName());
-        assertEquals("Unexpected name for open database test2", "test2" , test2.getDatabaseName());
-    }
-
-    public void testGetOpenDatabaseForNonExistingDatabase() throws Exception
-    {
         EnvironmentFacade ef = getEnvironmentFacade();
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        dbConfig.setAllowCreate(true);
-        ef.openDatabases(dbConfig, "test1");
-        Database test1 = ef.getOpenDatabase("test1");
-        assertEquals("Unexpected name for open database test1", "test1" , test1.getDatabaseName());
-        try
-        {
-            ef.getOpenDatabase("test2");
-            fail("An exception should be thrown for the non existing database");
-        }
-        catch(IllegalArgumentException e)
-        {
-            assertEquals("Unexpected exception message", "Database with name 'test2' has not been opened", e.getMessage());
-        }
+        Database handle1 = ef.openDatabase("myDatabase", createIfAbsentDbConfig);
+        assertNotNull(handle1);
+
+        Database handle2 = ef.openDatabase("myDatabase", createIfAbsentDbConfig);
+        assertSame("Database handle should be cached", handle1, handle2);
+
+        ef.closeDatabase("myDatabase");
+
+        Database handle3 = ef.openDatabase("myDatabase", createIfAbsentDbConfig);
+        assertNotSame("Expecting a new handle after database closure", handle1, handle3);
     }
 
     EnvironmentFacade getEnvironmentFacade() throws Exception
@@ -122,7 +105,7 @@ public class StandardEnvironmentFacadeTest extends QpidTestCase
 
     EnvironmentFacade createEnvironmentFacade()
     {
-        return new StandardEnvironmentFacade(_storePath.getAbsolutePath(), Collections.<String, String>emptyMap(), null);
+        return new StandardEnvironmentFacade(_storePath.getAbsolutePath(), Collections.<String, String>emptyMap());
     }
 
 }

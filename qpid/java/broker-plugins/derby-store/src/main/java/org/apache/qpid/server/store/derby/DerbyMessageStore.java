@@ -504,6 +504,11 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         }
 
         @Override
+        public void upgradeStoreStructure() throws StoreException
+        {
+        }
+
+        @Override
         public String getStoreLocation()
         {
             return DerbyMessageStore.this.getStoreLocation();

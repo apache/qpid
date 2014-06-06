@@ -22,6 +22,7 @@ package org.apache.qpid.server.store.berkeleydb.upgrade;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +33,12 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.berkeleydb.tuple.ConfiguredObjectBinding;
+import org.apache.qpid.server.store.berkeleydb.tuple.MessageMetaDataBinding;
 import org.apache.qpid.server.store.berkeleydb.tuple.UUIDTupleBinding;
+
+import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.je.Sequence;
+import com.sleepycat.je.SequenceConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
@@ -62,6 +68,12 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
         put("amq.match", "headers");
     }};
 
+    private static final DatabaseEntry MESSAGE_METADATA_SEQ_KEY = new DatabaseEntry("MESSAGE_METADATA_SEQ_KEY".getBytes(Charset.forName("UTF-8")));
+    private static SequenceConfig MESSAGE_METADATA_SEQ_CONFIG = SequenceConfig.DEFAULT.
+                setAllowCreate(true).
+                setWrap(true).
+                setCacheSize(100000);
+
     @Override
     public void performUpgrade(Environment environment, UpgradeInteractionHandler handler, ConfiguredObject<?> parent)
     {
@@ -74,6 +86,11 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
         Database hierarchyDb = environment.openDatabase(null, "CONFIGURED_OBJECT_HIERARCHY", dbConfig);
         Database configuredObjectsDb = environment.openDatabase(null, "CONFIGURED_OBJECTS", dbConfig);
         Database configVersionDb = environment.openDatabase(null, "CONFIG_VERSION", dbConfig);
+        Database messageMetadataDb = environment.openDatabase(null, "MESSAGE_METADATA", dbConfig);
+        Database messageMetadataSeqDb = environment.openDatabase(null, "MESSAGE_METADATA.SEQ", dbConfig);
+
+        long maxMessageId = getMaximumMessageId(messageMetadataDb);
+        createMessageMetadataSequence(messageMetadataSeqDb, maxMessageId);
 
         Cursor objectsCursor = null;
 
@@ -197,6 +214,8 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
 
         hierarchyDb.close();
         configuredObjectsDb.close();
+        messageMetadataDb.close();
+        messageMetadataSeqDb.close();
 
         reportFinished(environment, 8);
     }
@@ -212,6 +231,15 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
         tupleOutput.writeString("VirtualHost");
         TupleBinding.outputToEntry(tupleOutput, key);
         hierarchyDb.put(txn, key, value);
+    }
+
+    private void createMessageMetadataSequence(final Database messageMetadataSeqDb,
+                                               final long maximumMessageId)
+    {
+        SequenceConfig sequenceConfig = MESSAGE_METADATA_SEQ_CONFIG.setInitialValue(maximumMessageId + 1);
+
+        Sequence messageMetadataSeq = messageMetadataSeqDb.openSequence(null, MESSAGE_METADATA_SEQ_KEY, sequenceConfig);
+        messageMetadataSeq.close();
     }
 
     private int getConfigVersion(Database configVersionDb)
@@ -251,4 +279,33 @@ public class UpgradeFrom7To8 extends AbstractStoreUpgrade
                     + status);
         }
     }
+
+    private long getMaximumMessageId(Database messageMetaDataDb)
+    {
+        Cursor cursor = null;
+        long maximumMessageId = 0;  // Our hand-rolled sequences value always began at zero
+        try
+        {
+            cursor = messageMetaDataDb.openCursor(null, null);
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+            MessageMetaDataBinding valueBinding = MessageMetaDataBinding.getInstance();
+
+            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                long messageId = LongBinding.entryToLong(key);
+                maximumMessageId = Math.max(messageId, maximumMessageId);
+            }
+        }
+        finally
+        {
+            if (cursor != null)
+            {
+                cursor.close();
+            }
+        }
+
+        return maximumMessageId;
+    }
+
 }

@@ -30,7 +30,7 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
 
     @SuppressWarnings("unchecked")
     @Override
-    public EnvironmentFacade createEnvironmentFacade(Map<String, Object> messageStoreSettings, EnvironmentFacadeTask... initialisationTasks)
+    public EnvironmentFacade createEnvironmentFacade(Map<String, Object> messageStoreSettings)
     {
         Map<String, String> envConfigMap = new HashMap<String, String>();
         envConfigMap.putAll(EnvironmentFacade.ENVCONFIG_DEFAULTS);
@@ -41,7 +41,7 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
             envConfigMap.putAll((Map<String, String>) environmentConfigurationAttributes);
         }
         String storeLocation = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
-        return new StandardEnvironmentFacade(storeLocation, envConfigMap, initialisationTasks);
+        return new StandardEnvironmentFacade(storeLocation, envConfigMap);
     }
 
     @Override

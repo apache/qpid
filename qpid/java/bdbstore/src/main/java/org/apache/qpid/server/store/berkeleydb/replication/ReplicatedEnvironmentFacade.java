@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -39,14 +40,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
 import org.apache.qpid.server.store.berkeleydb.Committer;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
-import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory.EnvironmentFacadeTask;
 import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
 import org.apache.qpid.server.util.DaemonThreadFactory;
 
@@ -148,12 +147,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final ExecutorService _environmentJobExecutor;
     private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.OPENING);
-    private final ConcurrentMap<String, DatabaseHolder> _databases = new ConcurrentHashMap<String, DatabaseHolder>();
     private final ConcurrentMap<String, ReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, ReplicationNode>();
     private final AtomicReference<ReplicationGroupListener> _replicationGroupListener = new AtomicReference<ReplicationGroupListener>();
     private final AtomicReference<StateChangeListener> _stateChangeListener = new AtomicReference<StateChangeListener>();
-    private final AtomicBoolean _initialised;
-    private final EnvironmentFacadeTask[] _initialisationTasks;
     private final Durability _defaultDurability;
     private final CoalescingCommiter _coalescingCommiter;
 
@@ -163,7 +159,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private volatile SyncPolicy _messageStoreLocalTransactionSyncronizationPolicy = LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY;
     private volatile SyncPolicy _messageStoreRemoteTransactionSyncronizationPolicy = REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY;
 
-    public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration, EnvironmentFacadeTask[] initialisationTasks)
+    private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
+
+    public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration)
     {
         _environmentDirectory = new File(configuration.getStorePath());
         if (!_environmentDirectory.exists())
@@ -174,9 +172,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                                                    + "Ensure the path is correct and that the permissions are correct.");
             }
         }
+        else
+        {
+            LOGGER.debug("Environment at path " + _environmentDirectory + " already exists.");
+        }
 
-        _initialised = new AtomicBoolean();
-        _initialisationTasks = initialisationTasks;
         _configuration = configuration;
         _defaultDurability = new Durability(LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY, REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY, REPLICA_REPLICA_ACKNOWLEDGMENT_POLICY);
         _prettyGroupNodeName = _configuration.getGroupName() + ":" + _configuration.getName();
@@ -327,8 +327,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }
 
     @Override
-    public void openDatabases(DatabaseConfig dbConfig, String... databaseNames)
+    public Database openDatabase(String name, DatabaseConfig databaseConfig)
     {
+        LOGGER.debug("openDatabase " + name + " for " + _prettyGroupNodeName);
         if (_state.get() != State.OPEN)
         {
             throw new IllegalStateException("Environment facade is not in opened state");
@@ -339,54 +340,42 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             throw new IllegalStateException("Environment is not valid");
         }
 
-        if (_environment.getState() != ReplicatedEnvironment.State.MASTER)
+        Database cachedHandle = _cachedDatabases.get(name);
+        if (cachedHandle == null)
         {
-            throw new IllegalStateException("Databases can only be opened on Master node");
-        }
+            Database handle = _environment.openDatabase(null, name, databaseConfig);
+            Database existingHandle = _cachedDatabases.putIfAbsent(name, handle);
+            if (existingHandle == null)
+            {
+                LOGGER.debug("openDatabase " + name + " new handle");
 
-        for (String databaseName : databaseNames)
-        {
-            _databases.put(databaseName, new DatabaseHolder(dbConfig));
+                cachedHandle = handle;
+            }
+            else
+            {
+                LOGGER.debug("openDatabase " + name + " existing handle");
+                cachedHandle = existingHandle;
+                handle.close();
+            }
         }
-        for (String databaseName : databaseNames)
-        {
-            DatabaseHolder holder = _databases.get(databaseName);
-            openDatabaseInternally(databaseName, holder);
-        }
-    }
-
-    private void openDatabaseInternally(String databaseName, DatabaseHolder holder)
-    {
-        if (_state.get() == State.OPEN)
-        {
-            Database database = _environment.openDatabase(null, databaseName, holder.getConfig());
-            holder.setDatabase(database);
-        }
+        return cachedHandle;
     }
 
     @Override
-    public Database getOpenDatabase(String name)
+    public void closeDatabase(final String databaseName)
     {
-        if (_state.get() != State.OPEN)
+        Database cachedHandle = _cachedDatabases.remove(databaseName);
+        if (cachedHandle != null)
         {
-            throw new IllegalStateException("Environment facade is not in opened state");
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Closing " + databaseName + " on " + _prettyGroupNodeName);
+            }
+            if (cachedHandle.getEnvironment().isValid())
+            {
+                cachedHandle.close();
+            }
         }
-
-        if (!_environment.isValid())
-        {
-            throw new IllegalStateException("Environment is not valid");
-        }
-        DatabaseHolder databaseHolder = _databases.get(name);
-        if (databaseHolder == null)
-        {
-            throw new IllegalArgumentException("Database with name '" + name + "' has never been requested to be opened");
-        }
-        Database database = databaseHolder.getDatabase();
-        if (database == null)
-        {
-            throw new IllegalArgumentException("Database with name '" + name + "' has not been opened");
-        }
-        return database;
     }
 
     @Override
@@ -441,11 +430,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     LOGGER.info("The environment facade is in open state for node " + _prettyGroupNodeName);
                     _joinTime = System.currentTimeMillis();
                 }
-
-                if (state == ReplicatedEnvironment.State.MASTER)
-                {
-                    onMasterStateChange();
-                }
             }
 
             StateChangeListener listener = _stateChangeListener.get();
@@ -460,39 +444,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             }
         }
         _lastKnownEnvironmentState = state;
-    }
-
-    private void onMasterStateChange()
-    {
-        reopenDatabases();
-
-        if (_initialised.compareAndSet(false, true))
-        {
-            if (_initialisationTasks != null)
-            {
-                for (EnvironmentFacadeTask task : _initialisationTasks)
-                {
-                    task.execute(ReplicatedEnvironmentFacade.this);
-                }
-            }
-        }
-    }
-
-    private void reopenDatabases()
-    {
-        if (_state.get() == State.OPEN)
-        {
-            DatabaseConfig pingDbConfig = new DatabaseConfig();
-            pingDbConfig.setTransactional(true);
-            pingDbConfig.setAllowCreate(true);
-
-            _databases.putIfAbsent(DatabasePinger.PING_DATABASE_NAME, new DatabaseHolder(pingDbConfig));
-
-            for (Map.Entry<String, DatabaseHolder> entry : _databases.entrySet())
-            {
-                openDatabaseInternally(entry.getKey(), entry.getValue());
-            }
-        }
     }
 
     public String getGroupName()
@@ -833,36 +784,24 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         {
                             if (LOGGER.isInfoEnabled())
                             {
-                                LOGGER.debug("When restarting a state change event is recieved on NOOP listener for state:" + stateChangeEvent.getState());
+                                LOGGER.debug(
+                                        "When restarting a state change event is received on NOOP listener for state:"
+                                        + stateChangeEvent.getState());
                             }
                         }
                     });
-                    try
-                    {
-                        closeDatabases();
-                    }
-                    catch(Exception e)
-                    {
-                        LOGGER.warn("Ignoring an exception whilst closing databases", e);
-                    }
-                }
-                else
-                {
-                    // reset database holders for invalid environments
-                    for (Map.Entry<String, DatabaseHolder> entry : _databases.entrySet())
-                    {
-                        DatabaseHolder databaseHolder = entry.getValue();
-                        Database database = databaseHolder.getDatabase();
-                        if (database != null)
-                        {
-                            databaseHolder.setDatabase(null);
-                        }
-                    }
                 }
 
-                LOGGER.debug("Closing environent");
+                try
+                {
+                    closeDatabases();
+                }
+                catch(Exception e)
+                {
+                    LOGGER.warn("Ignoring an exception whilst closing databases", e);
+                }
+
                 environment.close();
-                LOGGER.debug("Environent is closed");
             }
             catch (EnvironmentFailureException efe)
             {
@@ -874,35 +813,29 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private void closeDatabases()
     {
         RuntimeException firstThrownException = null;
-        for (Map.Entry<String, DatabaseHolder> entry : _databases.entrySet())
+
+        Iterator<String> itr = _cachedDatabases.keySet().iterator();
+        while (itr.hasNext())
         {
-            DatabaseHolder databaseHolder = entry.getValue();
-            Database database = databaseHolder.getDatabase();
-            if (database != null)
+            String databaseName = itr.next();
+
+            if (databaseName != null)
             {
                 try
                 {
-                    if (LOGGER.isDebugEnabled())
-                    {
-                        LOGGER.debug("Closing database " + entry.getKey() + " on " + _prettyGroupNodeName);
-                    }
-
-                    database.close();
+                    closeDatabase(databaseName);
                 }
                 catch(RuntimeException e)
                 {
-                    LOGGER.error("Failed to close database on " + _prettyGroupNodeName, e);
+                    LOGGER.error("Failed to close database " + databaseName + " on " + _prettyGroupNodeName, e);
                     if (firstThrownException == null)
                     {
                         firstThrownException = e;
                     }
                 }
-                finally
-                {
-                    databaseHolder.setDatabase(null);
-                }
             }
         }
+
         if (firstThrownException != null)
         {
             throw firstThrownException;
@@ -1339,38 +1272,5 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         RESTARTING,
         CLOSING,
         CLOSED
-    }
-
-    private static class DatabaseHolder
-    {
-        private final DatabaseConfig _config;
-        private Database _database;
-
-        public DatabaseHolder(DatabaseConfig config)
-        {
-            _config = config;
-        }
-
-        public Database getDatabase()
-        {
-            return _database;
-        }
-
-        public void setDatabase(Database database)
-        {
-            _database = database;
-        }
-
-        public DatabaseConfig getConfig()
-        {
-            return _config;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "DatabaseHolder [_config=" + _config + ", _database=" + _database + "]";
-        }
-
     }
 }

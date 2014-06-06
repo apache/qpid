@@ -73,15 +73,22 @@ abstract class AbstractMemoryStore implements DurableConfigurationStore, Message
     }
 
     @Override
+    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    {
+    }
+
+    @Override
+    public void upgradeStoreStructure() throws StoreException
+    {
+
+    }
+
+    @Override
     public void closeConfigurationStore()
     {
         _configuredObjectRecords.clear();
     }
 
-    @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
-    {
-    }
 
     @Override
     public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException

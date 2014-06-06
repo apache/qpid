@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -45,7 +44,6 @@ import com.sleepycat.je.Durability;
 import com.sleepycat.je.Durability.SyncPolicy;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
-import com.sleepycat.je.rep.InsufficientReplicasException;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicatedEnvironment.State;
@@ -122,38 +120,21 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertNull("Environment should be null after facade close", e);
     }
 
-    public void testOpenDatabases() throws Exception
+    public void testOpenDatabaseReusesCachedHandle() throws Exception
     {
-        EnvironmentFacade ef = createMaster();
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        dbConfig.setAllowCreate(true);
-        ef.openDatabases(dbConfig, "test1", "test2");
-        Database test1 = ef.getOpenDatabase("test1");
-        Database test2 = ef.getOpenDatabase("test2");
+        DatabaseConfig createIfAbsentDbConfig = DatabaseConfig.DEFAULT.setAllowCreate(true);
 
-        assertEquals("Unexpected name for open database test1", "test1" , test1.getDatabaseName());
-        assertEquals("Unexpected name for open database test2", "test2" , test2.getDatabaseName());
-    }
-
-    public void testGetOpenDatabaseForNonExistingDatabase() throws Exception
-    {
         EnvironmentFacade ef = createMaster();
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        dbConfig.setAllowCreate(true);
-        ef.openDatabases(dbConfig, "test1");
-        Database test1 = ef.getOpenDatabase("test1");
-        assertEquals("Unexpected name for open database test1", "test1" , test1.getDatabaseName());
-        try
-        {
-            ef.getOpenDatabase("test2");
-            fail("An exception should be thrown for the non existing database");
-        }
-        catch(IllegalArgumentException e)
-        {
-            assertEquals("Unexpected exception message", "Database with name 'test2' has never been requested to be opened", e.getMessage());
-        }
+        Database handle1 = ef.openDatabase("myDatabase", createIfAbsentDbConfig);
+        assertNotNull(handle1);
+
+        Database handle2 = ef.openDatabase("myDatabase", createIfAbsentDbConfig);
+        assertSame("Database handle should be cached", handle1, handle2);
+
+        ef.closeDatabase("myDatabase");
+
+        Database handle3 = ef.openDatabase("myDatabase", createIfAbsentDbConfig);
+        assertNotSame("Expecting a new handle after database closure", handle1, handle3);
     }
 
     public void testGetGroupName() throws Exception
@@ -490,59 +471,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Unexpected state " + replicatedEnvironmentFacade.getFacadeState(), ReplicatedEnvironmentFacade.State.CLOSED, replicatedEnvironmentFacade.getFacadeState());
     }
 
-    public void testEnvironmentRestartOnInsufficientReplicas() throws Exception
-    {
-
-        ReplicatedEnvironmentFacade master = createMaster();
-
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
-        String replica1NodeName = TEST_NODE_NAME + "_1";
-        String replica1NodeHostPort = "localhost:" + replica1Port;
-        ReplicatedEnvironmentFacade replica1 = createReplica(replica1NodeName, replica1NodeHostPort, new NoopReplicationGroupListener());
-
-        int replica2Port = getNextAvailable(replica1Port + 1);
-        String replica2NodeName = TEST_NODE_NAME + "_2";
-        String replica2NodeHostPort = "localhost:" + replica2Port;
-        ReplicatedEnvironmentFacade replica2 = createReplica(replica2NodeName, replica2NodeHostPort, new NoopReplicationGroupListener());
-
-        String databaseName = "test";
-
-        DatabaseConfig dbConfig = createDatabase(master, databaseName);
-
-        // close replicas
-        replica1.close();
-        replica2.close();
-
-        Environment e = master.getEnvironment();
-        master.getOpenDatabase(databaseName);
-        try
-        {
-            master.openDatabases(dbConfig, "test2");
-            fail("Opening of new database without quorum should fail");
-        }
-        catch(InsufficientReplicasException ex)
-        {
-            master.handleDatabaseException(null, ex);
-        }
-
-        EnumSet<State> states = EnumSet.of(State.MASTER, State.REPLICA);
-        replica1 = createReplica(replica1NodeName, replica1NodeHostPort, new TestStateChangeListener(states), new NoopReplicationGroupListener());
-        replica2 = createReplica(replica2NodeName, replica2NodeHostPort, new TestStateChangeListener(states), new NoopReplicationGroupListener());
-
-        // Need to poll to await the remote node updating itself
-        long timeout = System.currentTimeMillis() + 5000;
-        while(!(State.REPLICA.name().equals(master.getNodeState()) || State.MASTER.name().equals(master.getNodeState()) ) && System.currentTimeMillis() < timeout)
-        {
-            Thread.sleep(200);
-        }
-
-        assertTrue("The node could not rejoin the cluster. State is " + master.getNodeState(),
-                State.REPLICA.name().equals(master.getNodeState()) || State.MASTER.name().equals(master.getNodeState()) );
-
-        Environment e2 = master.getEnvironment();
-        assertNotSame("Environment has not been restarted", e2, e);
-    }
-
     public void testEnvironmentAutomaticallyRestartsAndBecomesUnknownOnInsufficientReplicas() throws Exception
     {
         final CountDownLatch masterLatch = new CountDownLatch(1);
@@ -779,7 +707,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
             State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
         ReplicatedEnvironmentConfiguration config = createReplicatedEnvironmentConfiguration(nodeName, nodeHostPort, designatedPrimary);
-        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(config, null);
+        ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(config);
         ref.setStateChangeListener(stateChangeListener);
         ref.setReplicationGroupListener(replicationGroupListener);
         _nodes.put(nodeName, ref);
@@ -789,15 +717,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private ReplicatedEnvironmentFacade addNode(State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
         return addNode(TEST_NODE_NAME, TEST_NODE_HOST_PORT, TEST_DESIGNATED_PRIMARY, desiredState, stateChangeListener, replicationGroupListener);
-    }
-
-    private DatabaseConfig createDatabase(ReplicatedEnvironmentFacade environmentFacade, String databaseName)
-    {
-        DatabaseConfig dbConfig = new DatabaseConfig();
-        dbConfig.setTransactional(true);
-        dbConfig.setAllowCreate(true);
-        environmentFacade.openDatabases(dbConfig,  databaseName);
-        return dbConfig;
     }
 
     private void waitForCommitter(Committer committer, boolean expected) throws InterruptedException

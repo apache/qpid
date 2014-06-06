@@ -180,6 +180,12 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     }
 
     @Override
+    public void upgradeStoreStructure() throws StoreException
+    {
+        _store.upgradeStoreStructure();
+    }
+
+    @Override
     public void visitConfiguredObjectRecords(final ConfiguredObjectRecordHandler recoveryHandler) throws StoreException
     {
 

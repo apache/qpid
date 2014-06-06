@@ -29,7 +29,7 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
     @Override
-    public EnvironmentFacade createEnvironmentFacade(final Map<String, Object> messageStoreSettings, EnvironmentFacadeTask... initialisationTasks)
+    public EnvironmentFacade createEnvironmentFacade(final Map<String, Object> messageStoreSettings)
     {
         ReplicatedEnvironmentConfiguration configuration = new ReplicatedEnvironmentConfiguration()
         {
@@ -95,7 +95,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
                 return (String)messageStoreSettings.get(BDBHAVirtualHostNode.GROUP_NAME);
             }
         };
-        return new ReplicatedEnvironmentFacade(configuration, initialisationTasks);
+        return new ReplicatedEnvironmentFacade(configuration);
 
     }
 

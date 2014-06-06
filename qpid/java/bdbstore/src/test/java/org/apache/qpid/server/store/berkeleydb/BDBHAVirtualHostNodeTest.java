@@ -193,7 +193,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node.delete();
         assertEquals("Unexpected state returned after delete", State.DELETED, node.getState());
         assertEquals("Unexpected state", State.DELETED, node.getState());
-        assertFalse("Store still exists", _bdbStorePath.exists());
+        assertFalse("Store still exists " + _bdbStorePath, _bdbStorePath.exists());
     }
 
     public void testMutableAttributes() throws Exception

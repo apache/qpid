@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.io.File;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,7 +33,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import com.sleepycat.bind.tuple.ByteBinding;
 import com.sleepycat.bind.tuple.LongBinding;
@@ -46,12 +46,13 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.LockConflictException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
+import com.sleepycat.je.Sequence;
+import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
@@ -66,7 +67,6 @@ import org.apache.qpid.server.store.StoredMemoryMessage;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.Xid;
-import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory.EnvironmentFacadeTask;
 import org.apache.qpid.server.store.berkeleydb.entry.HierarchyKey;
 import org.apache.qpid.server.store.berkeleydb.entry.PreparedTransaction;
 import org.apache.qpid.server.store.berkeleydb.entry.QueueEntryKey;
@@ -83,7 +83,6 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
-import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.util.FileUtils;
 
 /**
@@ -96,6 +95,8 @@ import org.apache.qpid.util.FileUtils;
  */
 public class BDBConfigurationStore implements MessageStoreProvider, DurableConfigurationStore
 {
+    public static final DatabaseConfig DEFAULT_DATABASE_CONFIG = new DatabaseConfig().setTransactional(true).setAllowCreate(true);
+
     private static final Logger LOGGER = Logger.getLogger(BDBConfigurationStore.class);
 
     public static final int VERSION = 8;
@@ -103,6 +104,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     private static String CONFIGURED_OBJECT_HIERARCHY_DB_NAME = "CONFIGURED_OBJECT_HIERARCHY";
 
     private static String MESSAGE_META_DATA_DB_NAME = "MESSAGE_METADATA";
+    private static String MESSAGE_META_DATA_SEQ_DB_NAME = "MESSAGE_METADATA.SEQ";
     private static String MESSAGE_CONTENT_DB_NAME = "MESSAGE_CONTENT";
     private static String DELIVERY_DB_NAME = "QUEUE_ENTRIES";
 
@@ -110,15 +112,19 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     private static String BRIDGEDB_NAME = "BRIDGES";
     private static String LINKDB_NAME = "LINKS";
     private static String XID_DB_NAME = "XIDS";
-    private static final String[] CONFIGURATION_STORE_DATABASE_NAMES = new String[] { CONFIGURED_OBJECTS_DB_NAME, CONFIGURED_OBJECT_HIERARCHY_DB_NAME};
-    private static final String[] MESSAGE_STORE_DATABASE_NAMES = new String[] { MESSAGE_META_DATA_DB_NAME, MESSAGE_CONTENT_DB_NAME, DELIVERY_DB_NAME, BRIDGEDB_NAME, LINKDB_NAME, XID_DB_NAME };
     private EnvironmentFacade _environmentFacade;
-    private final AtomicLong _messageId = new AtomicLong(0);
+
+    private static final DatabaseEntry MESSAGE_METADATA_SEQ_KEY = new DatabaseEntry("MESSAGE_METADATA_SEQ_KEY".getBytes(
+            Charset.forName("UTF-8")));
+
+    private static final SequenceConfig MESSAGE_METADATA_SEQ_CONFIG = SequenceConfig.DEFAULT.
+            setAllowCreate(true).
+            setInitialValue(1).
+            setWrap(true).
+            setCacheSize(100000);
 
     private final AtomicBoolean _messageStoreOpen = new AtomicBoolean();
     private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
-
-    private long _totalStoreSize;
 
     private final EnvironmentFacadeFactory _environmentFacadeFactory;
 
@@ -128,6 +134,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
     private String _storeLocation;
     private final BDBMessageStore _messageStoreFacade = new BDBMessageStore();
+    private ConfiguredObject<?> _parent;
 
     public BDBConfigurationStore()
     {
@@ -144,22 +151,11 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
         {
+            _parent = parent;
+
             if (_environmentFacade == null)
             {
-                EnvironmentFacadeTask[] initialisationTasks = null;
-                _isMessageStoreProvider = MapValueConverter.getBooleanAttribute(VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, storeSettings, false);
-                if (_isMessageStoreProvider)
-                {
-                    String[] databaseNames = new String[CONFIGURATION_STORE_DATABASE_NAMES.length + MESSAGE_STORE_DATABASE_NAMES.length];
-                    System.arraycopy(CONFIGURATION_STORE_DATABASE_NAMES, 0, databaseNames, 0, CONFIGURATION_STORE_DATABASE_NAMES.length);
-                    System.arraycopy(MESSAGE_STORE_DATABASE_NAMES, 0, databaseNames, CONFIGURATION_STORE_DATABASE_NAMES.length, MESSAGE_STORE_DATABASE_NAMES.length);
-                    initialisationTasks = new EnvironmentFacadeTask[]{new UpgradeTask(parent), new OpenDatabasesTask(databaseNames), new DiskSpaceTask(), new MaxMessageIdTask()};
-                }
-                else
-                {
-                    initialisationTasks = new EnvironmentFacadeTask[]{new UpgradeTask(parent), new OpenDatabasesTask(CONFIGURATION_STORE_DATABASE_NAMES)};
-                }
-                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(storeSettings, initialisationTasks);
+                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(storeSettings);
                 _storeLocation = _environmentFacade.getStoreLocation();
             }
             else
@@ -169,6 +165,18 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         }
     }
 
+    @Override
+    public void upgradeStoreStructure() throws StoreException
+    {
+        try
+        {
+            new Upgrader(_environmentFacade.getEnvironment(), _parent).upgradeIfNecessary();
+        }
+        catch(DatabaseException e)
+        {
+            throw _environmentFacade.handleDatabaseException("Cannot upgrade store", e);
+        }
+    }
     @Override
     public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler)
     {
@@ -564,123 +572,37 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
     private Database getConfiguredObjectsDb()
     {
-        return _environmentFacade.getOpenDatabase(CONFIGURED_OBJECTS_DB_NAME);
+        return _environmentFacade.openDatabase(CONFIGURED_OBJECTS_DB_NAME, DEFAULT_DATABASE_CONFIG);
     }
 
     private Database getConfiguredObjectHierarchyDb()
     {
-        return _environmentFacade.getOpenDatabase(CONFIGURED_OBJECT_HIERARCHY_DB_NAME);
+        return _environmentFacade.openDatabase(CONFIGURED_OBJECT_HIERARCHY_DB_NAME, DEFAULT_DATABASE_CONFIG);
     }
 
     private Database getMessageContentDb()
     {
-        return _environmentFacade.getOpenDatabase(MESSAGE_CONTENT_DB_NAME);
+        return _environmentFacade.openDatabase(MESSAGE_CONTENT_DB_NAME, DEFAULT_DATABASE_CONFIG);
     }
 
     private Database getMessageMetaDataDb()
     {
-        return _environmentFacade.getOpenDatabase(MESSAGE_META_DATA_DB_NAME);
+        return _environmentFacade.openDatabase(MESSAGE_META_DATA_DB_NAME, DEFAULT_DATABASE_CONFIG);
+    }
+
+    private Database getMessageMetaDataSeqDb()
+    {
+        return _environmentFacade.openDatabase(MESSAGE_META_DATA_SEQ_DB_NAME, DEFAULT_DATABASE_CONFIG);
     }
 
     private Database getDeliveryDb()
     {
-        return _environmentFacade.getOpenDatabase(DELIVERY_DB_NAME);
+        return _environmentFacade.openDatabase(DELIVERY_DB_NAME, DEFAULT_DATABASE_CONFIG);
     }
 
     private Database getXidDb()
     {
-        return _environmentFacade.getOpenDatabase(XID_DB_NAME);
-    }
-
-    class UpgradeTask implements EnvironmentFacadeTask
-    {
-        private final ConfiguredObject<?> _parent;
-
-        public UpgradeTask(ConfiguredObject<?> parent)
-        {
-            _parent = parent;
-        }
-
-        @Override
-        public void execute(EnvironmentFacade facade)
-        {
-            try
-            {
-                new Upgrader(facade.getEnvironment(), _parent).upgradeIfNecessary();
-            }
-            catch(DatabaseException e)
-            {
-                throw facade.handleDatabaseException("Cannot upgrade store", e);
-            }
-        }
-    }
-
-    class OpenDatabasesTask implements EnvironmentFacadeTask
-    {
-        private String[] _names;
-
-        public OpenDatabasesTask(String[] names)
-        {
-            _names = names;
-        }
-
-        @Override
-        public void execute(EnvironmentFacade facade)
-        {
-            try
-            {
-                DatabaseConfig dbConfig = new DatabaseConfig();
-                dbConfig.setTransactional(true);
-                dbConfig.setAllowCreate(true);
-                facade.openDatabases(dbConfig, _names);
-            }
-            catch(DatabaseException e)
-            {
-                throw facade.handleDatabaseException("Cannot open databases", e);
-            }
-        }
-
-    }
-
-    class DiskSpaceTask implements EnvironmentFacadeTask
-    {
-
-        @Override
-        public void execute(EnvironmentFacade facade)
-        {
-            try
-            {
-                _totalStoreSize = facade.getEnvironment().getStats(null).getTotalLogSize();
-            }
-            catch(DatabaseException e)
-            {
-                throw facade.handleDatabaseException("Cannot evaluate disk store size", e);
-            }
-        }
-
-    }
-
-    public class MaxMessageIdTask implements EnvironmentFacadeTask, MessageHandler
-    {
-        private long _maxId;
-
-        @Override
-        public void execute(EnvironmentFacade facade)
-        {
-            ((BDBMessageStore)getMessageStore()).visitMessagesInternal(this, facade);
-            _messageId.set(_maxId);
-        }
-
-        @Override
-        public boolean handle(StoredMessage<?> storedMessage)
-        {
-            long id = storedMessage.getMessageNumber();
-            if (_maxId<id)
-            {
-                _maxId = id;
-            }
-            return true;
-        }
+        return _environmentFacade.openDatabase(XID_DB_NAME, DEFAULT_DATABASE_CONFIG);
     }
 
     class BDBMessageStore implements MessageStore
@@ -692,12 +614,14 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         private boolean _limitBusted;
         private long _persistentSizeLowThreshold;
         private long _persistentSizeHighThreshold;
+        private ConfiguredObject<?> _parent;
 
         @Override
         public void openMessageStore(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
         {
             if (_messageStoreOpen.compareAndSet(false, true))
             {
+                _parent = parent;
 
                 Object overfullAttr = messageStoreSettings.get(OVERFULL_SIZE);
                 Object underfullAttr = messageStoreSettings.get(UNDERFULL_SIZE);
@@ -714,8 +638,8 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
                 if (_environmentFacade == null)
                 {
-                    _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(messageStoreSettings,
-                            new UpgradeTask(parent), new OpenDatabasesTask(MESSAGE_STORE_DATABASE_NAMES), new DiskSpaceTask(), new MaxMessageIdTask());
+                    _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(messageStoreSettings
+                                                                                          );
                     _storeLocation = _environmentFacade.getStoreLocation();
                 }
 
@@ -725,26 +649,44 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         }
 
         @Override
-        public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
+        public void upgradeStoreStructure() throws StoreException
         {
-            if (metaData.isPersistent())
+            try
             {
-                return (StoredMessage<T>) new StoredBDBMessage(getNewMessageId(), metaData);
+                new Upgrader(_environmentFacade.getEnvironment(), _parent).upgradeIfNecessary();
             }
-            else
+            catch(DatabaseException e)
             {
-                return new StoredMemoryMessage<T>(getNewMessageId(), metaData);
+                throw _environmentFacade.handleDatabaseException("Cannot upgrade store", e);
             }
         }
 
-        /**
-         * Return a valid, currently unused message id.
-         *
-         * @return A fresh message id.
-         */
-        private long getNewMessageId()
+        @Override
+        public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
         {
-            return _messageId.incrementAndGet();
+
+            Sequence mmdSeq = null;
+            try
+            {
+                mmdSeq = getMessageMetaDataSeqDb().openSequence(null, MESSAGE_METADATA_SEQ_KEY, MESSAGE_METADATA_SEQ_CONFIG);
+                long newMessageId = mmdSeq.get(null, 1);
+
+                if (metaData.isPersistent())
+                {
+                    return (StoredMessage<T>) new StoredBDBMessage(newMessageId, metaData);
+                }
+                else
+                {
+                    return new StoredMemoryMessage<T>(newMessageId, metaData);
+                }
+            }
+            finally
+            {
+                if (mmdSeq != null)
+                {
+                    mmdSeq.close();
+                }
+            }
         }
 
         @Override
@@ -1116,7 +1058,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             Cursor cursor = null;
             try
             {
-                cursor = environmentFacade.getOpenDatabase(MESSAGE_META_DATA_DB_NAME).openCursor(null, null);
+                cursor = getMessageMetaDataDb().openCursor(null, null);
                 DatabaseEntry key = new DatabaseEntry();
                 DatabaseEntry value = new DatabaseEntry();
                 MessageMetaDataBinding valueBinding = MessageMetaDataBinding.getInstance();
@@ -1461,42 +1403,23 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             {
                 synchronized (this)
                 {
-                    // the delta supplied is an approximation of a store size change. we don;t want to check the statistic every
-                    // time, so we do so only when there's been enough change that it is worth looking again. We do this by
-                    // assuming the total size will change by less than twice the amount of the message data change.
-                    long newSize = _totalStoreSize += 2*delta;
+                    // TODO KW I think we should simplify matters here. The MessageStore should
+                    // expose merely method #getStoreSizeEstimate().  The virtualhost (housekeeper)
+                    // should periodically call this method and it be the one responsible for
+                    // the generation of alerts.
 
-                    if(!_limitBusted &&  newSize > getPersistentSizeHighThreshold())
+                    long newSize = getSizeOnDisk();
+                    reduceSizeOnDisk();
+
+                    if(!_limitBusted && newSize > getPersistentSizeHighThreshold())
                     {
-                        _totalStoreSize = getSizeOnDisk();
-
-                        if(_totalStoreSize > getPersistentSizeHighThreshold())
-                        {
-                            _limitBusted = true;
-                            _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
-                        }
+                        _limitBusted = true;
+                        _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
                     }
                     else if(_limitBusted && newSize < getPersistentSizeLowThreshold())
                     {
-                        long oldSize = _totalStoreSize;
-                        _totalStoreSize = getSizeOnDisk();
-
-                        if(oldSize <= _totalStoreSize)
-                        {
-
-                            reduceSizeOnDisk();
-
-                            _totalStoreSize = getSizeOnDisk();
-
-                        }
-
-                        if(_totalStoreSize < getPersistentSizeLowThreshold())
-                        {
-                            _limitBusted = false;
-                            _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
-                        }
-
-
+                        _limitBusted = false;
+                        _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
                     }
                 }
             }
@@ -1512,6 +1435,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             return _persistentSizeHighThreshold;
         }
 
+        // TODO remove altogether or perhaps expose as public method: requestStoreCleanup
         private void reduceSizeOnDisk()
         {
             _environmentFacade.getEnvironment().getConfig().setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");

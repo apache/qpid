@@ -344,6 +344,18 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     }
 
     @Override
+    public void openConfigurationStore(final ConfiguredObject<?> parent, final Map<String, Object> storeSettings)
+            throws StoreException
+    {
+        _parent = parent;
+    }
+
+    @Override
+    public void upgradeStoreStructure() throws StoreException
+    {
+    }
+
+    @Override
     public void closeConfigurationStore() throws StoreException
     {
     }
@@ -351,13 +363,6 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     @Override
     public void onDelete()
     {
-    }
-
-    @Override
-    public void openConfigurationStore(final ConfiguredObject<?> parent, final Map<String, Object> storeSettings)
-            throws StoreException
-    {
-        _parent = parent;
     }
 
     @Override

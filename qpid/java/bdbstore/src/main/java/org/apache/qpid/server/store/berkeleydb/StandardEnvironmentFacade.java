@@ -21,11 +21,10 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory.EnvironmentFacadeTask;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -40,11 +39,12 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     public static final String TYPE = "BDB";
 
     private final String _storePath;
-    private final Map<String, Database> _databases = new HashMap<String, Database>();
+    private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
 
     private Environment _environment;
 
-    public StandardEnvironmentFacade(String storePath, Map<String, String> attributes, EnvironmentFacadeTask[] initialisationTasks)
+    public StandardEnvironmentFacade(String storePath,
+                                     Map<String, String> attributes)
     {
         _storePath = storePath;
 
@@ -76,13 +76,6 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
 
         _environment = new Environment(environmentPath, envConfig);
-        if (initialisationTasks != null)
-        {
-            for (EnvironmentFacadeTask task : initialisationTasks)
-            {
-                task.execute(this);
-            }
-        }
     }
 
 
@@ -119,7 +112,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     private void closeDatabases()
     {
         RuntimeException firstThrownException = null;
-        for (Database database : _databases.values())
+        for (Database database : _cachedDatabases.values())
         {
             try
             {
@@ -209,24 +202,34 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     }
 
     @Override
-    public void openDatabases(DatabaseConfig dbConfig, String... databaseNames)
+    public Database openDatabase(String name, DatabaseConfig databaseConfig)
     {
-        for (String databaseName : databaseNames)
+        Database cachedHandle = _cachedDatabases.get(name);
+        if (cachedHandle == null)
         {
-            Database database = _environment.openDatabase(null, databaseName, dbConfig);
-            _databases .put(databaseName, database);
+            Database handle = _environment.openDatabase(null, name, databaseConfig);
+            Database existingHandle = _cachedDatabases.putIfAbsent(name, handle);
+            if (existingHandle == null)
+            {
+                cachedHandle = handle;
+            }
+            else
+            {
+                cachedHandle = existingHandle;
+                handle.close();
+            }
         }
+        return cachedHandle;
     }
 
     @Override
-    public Database getOpenDatabase(String name)
+    public void closeDatabase(final String name)
     {
-        Database database = _databases.get(name);
-        if (database == null)
+        Database cachedHandle = _cachedDatabases.remove(name);
+        if (cachedHandle != null)
         {
-            throw new IllegalArgumentException("Database with name '" + name + "' has not been opened");
+            cachedHandle.close();
         }
-        return database;
     }
 
     @Override

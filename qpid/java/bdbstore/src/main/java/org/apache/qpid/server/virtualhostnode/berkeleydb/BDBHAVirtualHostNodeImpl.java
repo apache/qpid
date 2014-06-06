@@ -389,7 +389,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         try
         {
             closeVirtualHostIfExist();
-            getConfigurationStore().getEnvironmentFacade().getEnvironment().flushLog(true);
+
+            getConfigurationStore().upgradeStoreStructure();
 
             getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.RECOVERY_START());
             VirtualHostStoreUpgraderAndRecoverer upgraderAndRecoverer = new VirtualHostStoreUpgraderAndRecoverer(this);

@@ -43,12 +43,22 @@ public interface MessageStore
     void addEventListener(EventListener eventListener, Event... events);
 
     /**
-     * Called after instantiation in order to open and initialize the message store. A particular implementation can define
-     * whatever parameters it wants.
-     * @param parent virtual host name
+     * Initializes and opens the message store.
+     *
+     * @param parent parent object
      * @param messageStoreSettings store settings
      */
     void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings);
+
+    /**
+     * Requests that the store performs any upgrade work on the store's structure. If there is no
+     * upgrade work to be done, this method should return without doing anything.
+     *
+     * @throws StoreException signals that a problem was encountered trying to upgrade the store.
+     * Implementations, on encountering a problem, should endeavour to leave the store in its
+     * original state.
+     */
+    void upgradeStoreStructure() throws StoreException;
 
     void visitMessages(MessageHandler handler) throws StoreException;
 

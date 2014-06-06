@@ -184,6 +184,12 @@ public class MemoryMessageStore implements MessageStore
     }
 
     @Override
+    public void upgradeStoreStructure() throws StoreException
+    {
+
+    }
+
+    @Override
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(final T metaData)
     {
         long id = _messageId.getAndIncrement();

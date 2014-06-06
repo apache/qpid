@@ -484,6 +484,11 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
         }
 
         @Override
+        public void upgradeStoreStructure() throws StoreException
+        {
+        }
+
+        @Override
         public String getStoreLocation()
         {
             return JDBCMessageStore.this.getStoreLocation();
