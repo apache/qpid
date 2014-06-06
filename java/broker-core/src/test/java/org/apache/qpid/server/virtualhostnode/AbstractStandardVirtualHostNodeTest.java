@@ -46,7 +46,7 @@ import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
@@ -114,7 +114,6 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
 
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
         assertNotNull("Virtual host was not recovered", virtualHost);
-        assertTrue("Unexpected virtual host type", virtualHost instanceof StandardVirtualHost);
         assertEquals("Unexpected virtual host name", TEST_VIRTUAL_HOST_NAME, virtualHost.getName());
         assertEquals("Unexpected virtual host state", State.ACTIVE, virtualHost.getState());
         assertEquals("Unexpected virtual host id", virtualHostId, virtualHost.getId());
@@ -143,8 +142,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         node.start();
 
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
-        assertNotNull("Virtual host was not recovered", virtualHost);
-        assertTrue("Unexpected virtual host type", virtualHost instanceof StandardVirtualHost);
+        assertNotNull("Virtual host was not created", virtualHost);
 
         // Virtualhost name taken from VHN and ID is random.
         assertEquals("Unexpected virtual host name", TEST_VIRTUAL_HOST_NODE_NAME, virtualHost.getName());
@@ -156,7 +154,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
     {
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, TEST_VIRTUAL_HOST_NAME);
-        virtualHostAttributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
+        virtualHostAttributes.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
         virtualHostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
         Map<String,Object> messageStoreSettings = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);

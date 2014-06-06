@@ -60,7 +60,6 @@
   "virtualhostnodes" : [ {
     "name" : "test",
     "type" : "${messagestore.type}",
-    "messageStoreProvider": true,
     "storePath" : "${QPID_WORK}/test/${test.port}"
   } ]
 }

@@ -863,7 +863,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHostNode.NAME, virtualHostNodeName);
         attributes.put(VirtualHostNode.TYPE, storeType);
-        attributes.put(VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, true);
         if (storeDir != null)
         {
             attributes.put(DurableConfigurationStore.STORE_PATH, storeDir);

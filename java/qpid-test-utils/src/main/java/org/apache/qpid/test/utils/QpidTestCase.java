@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.test.utils;
 
-import junit.framework.TestCase;
-import junit.framework.TestResult;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -35,6 +29,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 
 public class QpidTestCase extends TestCase
@@ -154,7 +153,7 @@ public class QpidTestCase extends TestCase
         final String storeType = System.getProperty(MESSAGE_STORE_TYPE);
         _logger.debug(MESSAGE_STORE_TYPE + "=" + storeType);
 
-        return storeType != null ? storeType : "TestableMemory";
+        return storeType != null ? storeType : "TestMemory";
     }
 
     public String getTestProfileVirtualHostNodeType()

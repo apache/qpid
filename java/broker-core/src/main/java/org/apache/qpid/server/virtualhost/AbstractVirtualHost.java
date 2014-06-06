@@ -61,7 +61,6 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
 import org.apache.qpid.server.model.adapter.VirtualHostAliasAdapter;
-import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -194,42 +193,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
-
-        DurableConfigurationStore durableConfigurationStore = _virtualHostNode.getConfigurationStore();
-
-        // TODO attribute messageStoreProvider is to be removed
-        boolean nodeIsMessageStoreProvider = _virtualHostNode.isMessageStoreProvider();
-        if (nodeIsMessageStoreProvider)
-        {
-            if (!(durableConfigurationStore instanceof MessageStoreProvider))
-            {
-                throw new IllegalConfigurationException("Virtual host node " + _virtualHostNode.getName()
-                        + " is configured as a provider of message store but the MessageStoreProvider interface is not implemented on a configuration store of type "
-                        + durableConfigurationStore.getClass().getName());
-            }
-        }
-        else
-        {
-            Map<String, Object> messageStoreSettings = getMessageStoreSettings();
-            if (messageStoreSettings == null)
-            {
-                throw new IllegalConfigurationException("Message store settings are missed for VirtualHost " + getName()
-                        + ". You can either configure the message store setting on the host or "
-                        + (durableConfigurationStore instanceof MessageStore ?
-                                " configure VirtualHostNode " + _virtualHostNode.getName() + " as a provider of message store" :
-                                " change the node type to one having configuration store implementing the MessageStore interface") );
-            }
-            String storeType = (String) messageStoreSettings.get(MessageStore.STORE_TYPE);
-            if (storeType == null)
-            {
-                throw new IllegalConfigurationException("Message store  type  setting is not set");
-            }
-            MessageStoreFactory  factory = MessageStoreFactory.FACTORY_LOADER.get(storeType);
-            if (factory == null)
-            {
-                throw new IllegalConfigurationException("Message store  factory is not found for type " + storeType + " for VirtualHost " + getName());
-            }
-        }
     }
 
     @Override
@@ -242,6 +205,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
     }
 
+    @Override
     protected void onOpen()
     {
         super.onOpen();
@@ -688,7 +652,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             }
         }
 
-        if (!_virtualHostNode.isMessageStoreProvider())
+        if (!(_virtualHostNode.getConfigurationStore() instanceof MessageStoreProvider))
         {
             getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CLOSED());
         }
@@ -1352,8 +1316,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());
 
-        boolean nodeIsMessageStoreProvider = _virtualHostNode.isMessageStoreProvider();
-
         MessageStore messageStore = getMessageStore();
         Map<String, Object> messageStoreSettings = getMessageStoreSettings();
         if (messageStoreSettings == null)
@@ -1362,7 +1324,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
         messageStore.openMessageStore(this, messageStoreSettings);
 
-        if (!nodeIsMessageStoreProvider)
+        if (!(_virtualHostNode.getConfigurationStore() instanceof MessageStoreProvider))
         {
             getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CREATED());
             getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.STORE_LOCATION(messageStore.getStoreLocation()));

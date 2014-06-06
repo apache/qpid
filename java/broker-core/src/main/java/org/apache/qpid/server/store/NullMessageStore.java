@@ -28,8 +28,13 @@ import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 
-public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore
+public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore, MessageStoreProvider
 {
+    @Override
+    public MessageStore getMessageStore()
+    {
+        return this;
+    }
 
     @Override
     public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)

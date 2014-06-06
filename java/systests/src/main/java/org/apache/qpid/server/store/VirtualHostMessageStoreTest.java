@@ -134,7 +134,6 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         Map<String, Object> nodeAttributes = new HashMap<String, Object>();
         nodeAttributes.put(ConfiguredObject.TYPE, getTestProfileVirtualHostNodeType());
         nodeAttributes.put(FileBasedVirtualHostNode.STORE_PATH, _storePath);
-        nodeAttributes.put(VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, true);
         nodeAttributes.put(VirtualHostNode.NAME, hostName);
         nodeAttributes.put(VirtualHostNode.ID, UUID.randomUUID());
         _node = factory.create(VirtualHostNode.class, nodeAttributes, broker);
