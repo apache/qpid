@@ -24,7 +24,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -45,10 +44,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
-import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
 
 public class VirtualHostCreationTest extends TestCase
 {
@@ -90,12 +86,10 @@ public class VirtualHostCreationTest extends TestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
+        attributes.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
         attributes.put(VirtualHost.ID, UUID.randomUUID());
 
-        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE));
-
-        VirtualHost<?,?,?> host = new StandardVirtualHost(attributes, _virtualHostNode);
+        VirtualHost<?,?,?> host = new TestMemoryVirtualHost(attributes, _virtualHostNode);
         host.open();
 
         assertNotNull("Null is returned", host);
@@ -106,10 +100,8 @@ public class VirtualHostCreationTest extends TestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
-        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE,
-                                                                                    TestMemoryMessageStore.TYPE));
-        String[] mandatoryAttributes = {VirtualHost.NAME, VirtualHost.MESSAGE_STORE_SETTINGS};
+        attributes.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
+        String[] mandatoryAttributes = {VirtualHost.NAME};
 
         checkMandatoryAttributesAreValidated(mandatoryAttributes, attributes);
     }
@@ -123,7 +115,7 @@ public class VirtualHostCreationTest extends TestCase
             copy.put(ConfiguredObject.ID, UUID.randomUUID());
             try
             {
-                AbstractVirtualHost<StandardVirtualHost> host = new StandardVirtualHost(copy,_virtualHostNode);
+                VirtualHost<?,?,?> host = new TestMemoryVirtualHost(copy,_virtualHostNode);
                 host.open();
                 fail("Cannot create a virtual host without a mandatory attribute " + name);
             }

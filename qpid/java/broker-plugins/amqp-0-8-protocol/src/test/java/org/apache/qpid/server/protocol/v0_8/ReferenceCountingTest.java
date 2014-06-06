@@ -26,6 +26,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.store.MessageCounter;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -90,11 +91,18 @@ public class ReferenceCountingTest extends QpidTestCase
 
         MessageReference ref = message.newReference();
 
-        assertEquals(1, _store.getMessageCount());
+        assertEquals(1, getStoreMessageCount());
 
         ref.release();
 
-        assertEquals(0, _store.getMessageCount());
+        assertEquals(0, getStoreMessageCount());
+    }
+
+    private int getStoreMessageCount()
+    {
+        MessageCounter counter = new MessageCounter();
+        _store.visitMessages(counter);
+        return counter.getCount();
     }
 
     private ContentHeaderBody createPersistentContentHeader()
@@ -152,10 +160,10 @@ public class ReferenceCountingTest extends QpidTestCase
         // we call routing complete to set up the handle
      //   message.routingComplete(_store, _storeContext, new MessageHandleFactory());
 
-        assertEquals(1, _store.getMessageCount());
+        assertEquals(1, getStoreMessageCount());
         MessageReference ref2 = message.newReference();
         ref.release();
-        assertEquals(1, _store.getMessageCount());
+        assertEquals(1, getStoreMessageCount());
     }
 
     public static junit.framework.Test suite()

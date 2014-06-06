@@ -85,7 +85,6 @@ public class MBeanLifeCycleTest extends QpidRestTestCase
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(VirtualHostNode.NAME, nodeName);
         nodeData.put(VirtualHostNode.TYPE, "Memory");
-        nodeData.put(VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, true);
         int status = getRestTestHelper().submitRequest("virtualhostnode/" + nodeName, "PUT", nodeData);
         assertEquals("Unexpected code", 201, status);
 

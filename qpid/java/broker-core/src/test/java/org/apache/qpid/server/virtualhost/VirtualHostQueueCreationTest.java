@@ -25,7 +25,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -53,8 +52,6 @@ import org.apache.qpid.server.queue.StandardQueueImpl;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class VirtualHostQueueCreationTest extends QpidTestCase
@@ -114,13 +111,11 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
     {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.NAME, getName());
-        attributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
-        attributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, Collections.singletonMap(MessageStore.STORE_TYPE,
-                                                                                    TestMemoryMessageStore.TYPE));
+        attributes.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
 
         attributes = new HashMap<String, Object>(attributes);
         attributes.put(VirtualHost.ID, UUID.randomUUID());
-        StandardVirtualHost host = new StandardVirtualHost(attributes, _virtualHostNode);
+        TestMemoryVirtualHost host = new TestMemoryVirtualHost(attributes, _virtualHostNode);
         host.create();
         host.start();
         return host;

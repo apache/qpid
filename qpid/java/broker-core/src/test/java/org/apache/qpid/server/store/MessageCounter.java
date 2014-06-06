@@ -18,23 +18,30 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.server.store;
 
-import java.util.Collection;
+import org.apache.qpid.server.store.handler.MessageHandler;
 
-import org.apache.qpid.server.store.DurableConfigurationStore;
-
-@ManagedObject(category=true, managesChildren=false)
-public interface VirtualHostNode<X extends VirtualHostNode<X>> extends ConfiguredObject<X>
+public class MessageCounter implements MessageHandler
 {
-    VirtualHost<?,?,?> getVirtualHost();
 
-    DurableConfigurationStore getConfigurationStore();
+    private int _count;
 
-    @SuppressWarnings("rawtypes")
-    Collection<? extends RemoteReplicationNode> getRemoteReplicationNodes();
 
-    void stop();
+    @Override
+    public boolean handle(StoredMessage<?> storedMessage)
+    {
+        _count++;
+        return true;
+    }
 
-    void start();
+    public int getCount()
+    {
+        return _count;
+    }
+
+    public void reset()
+    {
+        _count = 0;
+    }
 }

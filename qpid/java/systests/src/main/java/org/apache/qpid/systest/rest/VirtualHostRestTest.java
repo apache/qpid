@@ -549,7 +549,6 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Map<String, Object> hostData = new HashMap<String, Object>();
         hostData.put(VirtualHostNode.NAME, hostName);
         hostData.put(VirtualHostNode.TYPE, virtualHostNodeType);
-        hostData.put(VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, true);
         hostData.put(DurableConfigurationStore.STORE_PATH, storePath);
 
         return getRestTestHelper().submitRequest("virtualhostnode/" + hostName, "PUT", hostData);

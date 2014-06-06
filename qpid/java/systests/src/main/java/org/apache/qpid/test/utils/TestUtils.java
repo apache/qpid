@@ -39,7 +39,8 @@ import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.JsonFileConfigStore;
 import org.apache.qpid.server.store.MemoryConfigurationStore;
-import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.Strings;
 
@@ -77,11 +78,10 @@ public class TestUtils
         Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
         virtualHostAttributes.put(VirtualHost.NAME, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST);
         virtualHostAttributes.put(VirtualHost.ID, virtualHostId);
-        virtualHostAttributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
+        virtualHostAttributes.put(VirtualHost.TYPE, MemoryMessageStore.TYPE.equals(configStoreType) ? configStoreType : ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
         virtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
         virtualHostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
 
-        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, false);
         // If using MMS, switch to split store with JSON config store.
         if (MemoryConfigurationStore.TYPE.equals(configStoreType))
         {

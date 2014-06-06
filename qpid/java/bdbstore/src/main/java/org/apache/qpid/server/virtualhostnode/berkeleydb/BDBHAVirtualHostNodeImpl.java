@@ -150,12 +150,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     }
 
     @Override
-    public boolean isMessageStoreProvider()
-    {
-        return true;
-    }
-
-    @Override
     public String getGroupName()
     {
         return _groupName;

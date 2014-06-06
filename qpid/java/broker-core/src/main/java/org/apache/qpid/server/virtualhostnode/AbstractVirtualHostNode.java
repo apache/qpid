@@ -65,9 +65,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
 
     private MessageStoreLogSubject _configurationStoreLogSubject;
 
-    @ManagedAttributeField
-    private boolean _messageStoreProvider;
-
     public AbstractVirtualHostNode(Broker<?> parent, Map<String, Object> attributes)
     {
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, parent),
@@ -120,12 +117,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
                 throw e;
             }
         }
-    }
-
-    @Override
-    public boolean isMessageStoreProvider()
-    {
-        return _messageStoreProvider;
     }
 
     @Override

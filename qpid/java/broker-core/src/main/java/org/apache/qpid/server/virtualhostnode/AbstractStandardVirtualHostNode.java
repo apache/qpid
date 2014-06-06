@@ -42,8 +42,9 @@ import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreProvider;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
-import org.apache.qpid.server.virtualhost.StandardVirtualHost;
+import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
 
 public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandardVirtualHostNode<X>> extends AbstractVirtualHostNode<X>
                 implements VirtualHostNode<X>
@@ -121,6 +122,8 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
 
         if (host == null)
         {
+            // TODO normal case - we should not create VH,
+            // TODO out if box case - if blueprint vh context variable is set, use it to create a VH
             if (LOGGER.isDebugEnabled())
             {
                 LOGGER.debug("Creating new virtualhost with name : " + getName());
@@ -128,9 +131,13 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
             Map<String, Object> hostAttributes = new HashMap<String, Object>();
             hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
             hostAttributes.put(VirtualHost.NAME, getName());
-            hostAttributes.put(VirtualHost.TYPE, StandardVirtualHost.TYPE);
-            if (!isMessageStoreProvider())
+            if (getConfigurationStore() instanceof MessageStoreProvider)
             {
+                hostAttributes.put(VirtualHost.TYPE, ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
+            }
+            else
+            {
+                hostAttributes.put(VirtualHost.TYPE, "DERBY");
                 hostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, getDefaultMessageStoreSettings());
             }
             host = createChild(VirtualHost.class, hostAttributes);

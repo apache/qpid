@@ -37,6 +37,8 @@ import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
 public class MemoryMessageStore implements MessageStore
 {
+    public static final String TYPE = "Memory";
+
     private final AtomicLong _messageId = new AtomicLong(1);
 
     private final ConcurrentHashMap<Long, StoredMemoryMessage> _messages = new ConcurrentHashMap<Long, StoredMemoryMessage>();
