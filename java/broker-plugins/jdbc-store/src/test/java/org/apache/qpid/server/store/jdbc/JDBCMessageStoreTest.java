@@ -73,7 +73,7 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
     @Override
     protected MessageStore createMessageStore()
     {
-        return new JDBCMessageStore();
+        return (new JDBCMessageStore()).getMessageStore();
     }
 
     private void assertTablesExist(Set<String> expectedTables, boolean exists) throws SQLException

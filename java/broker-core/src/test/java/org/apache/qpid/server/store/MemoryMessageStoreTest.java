@@ -20,31 +20,28 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Collections;
+import java.util.Map;
 
-import org.apache.qpid.server.store.handler.MessageHandler;
-
-
-/**
- * A simple message store that stores the messages in a thread-safe structure in memory.
- */
-public class TestMemoryMessageStore extends MemoryMessageStore
+public class MemoryMessageStoreTest extends MessageStoreTestCase
 {
-    public static final String TYPE = "TestMemory";
 
-    public int getMessageCount()
+    @Override
+    protected Map<String, Object> getStoreSettings() throws Exception
     {
-        final AtomicInteger counter = new AtomicInteger();
-        visitMessages(new MessageHandler()
-                        {
-                            @Override
-                            public boolean handle(StoredMessage<?> storedMessage)
-                            {
-                                counter.incrementAndGet();
-                                return true;
-                            }
-                        });
-        return counter.get();
+        return Collections.<String, Object>emptyMap();
+    }
+
+    @Override
+    protected MessageStore createMessageStore()
+    {
+        return new MemoryMessageStore();
+    }
+
+    @Override
+    protected void reopenStore() throws Exception
+    {
+        // cannot re-open memory message store as it is not persistent
     }
 
 }

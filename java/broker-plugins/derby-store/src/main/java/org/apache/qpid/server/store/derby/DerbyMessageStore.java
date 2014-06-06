@@ -35,11 +35,21 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
+import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreProvider;
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
+import org.apache.qpid.server.store.handler.MessageHandler;
+import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 import org.apache.qpid.util.FileUtils;
 
 /**
@@ -47,7 +57,8 @@ import org.apache.qpid.util.FileUtils;
  * mechanism.
  *
  */
-public class DerbyMessageStore extends AbstractJDBCMessageStore implements MessageStore, DurableConfigurationStore
+public class DerbyMessageStore extends AbstractJDBCMessageStore implements MessageStoreProvider,
+                                                                           DurableConfigurationStore
 {
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);
@@ -71,6 +82,8 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
 
     private String _storeLocation;
     private Class<Driver> _driverClass;
+
+    private final MessageStore _messageStoreFacade = new MessageStoreWrapper();
 
     public DerbyMessageStore()
     {
@@ -239,8 +252,6 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
         }
     }
 
-
-    @Override
     public String getStoreLocation()
     {
         return _storeLocation;
@@ -446,4 +457,81 @@ public class DerbyMessageStore extends AbstractJDBCMessageStore implements Messa
     {
         return DriverManager.getConnection(_connectionURL);
     }
+
+    @Override
+    public MessageStore getMessageStore()
+    {
+        return _messageStoreFacade;
+    }
+
+    private class MessageStoreWrapper implements MessageStore
+    {
+
+        @Override
+        public void openMessageStore(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+        {
+            DerbyMessageStore.this.openMessageStore(parent, messageStoreSettings);
+        }
+
+        @Override
+        public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(final T metaData)
+        {
+            return DerbyMessageStore.this.addMessage(metaData);
+        }
+
+        @Override
+        public boolean isPersistent()
+        {
+            return DerbyMessageStore.this.isPersistent();
+        }
+
+        @Override
+        public Transaction newTransaction()
+        {
+            return DerbyMessageStore.this.newTransaction();
+        }
+
+        @Override
+        public void closeMessageStore()
+        {
+            DerbyMessageStore.this.closeMessageStore();
+        }
+
+        @Override
+        public void addEventListener(final EventListener eventListener, final Event... events)
+        {
+            DerbyMessageStore.this.addEventListener(eventListener, events);
+        }
+
+        @Override
+        public String getStoreLocation()
+        {
+            return DerbyMessageStore.this.getStoreLocation();
+        }
+
+        @Override
+        public void onDelete()
+        {
+            DerbyMessageStore.this.onDelete();
+        }
+
+        @Override
+        public void visitMessages(final MessageHandler handler) throws StoreException
+        {
+            DerbyMessageStore.this.visitMessages(handler);
+        }
+
+        @Override
+        public void visitMessageInstances(final MessageInstanceHandler handler) throws StoreException
+        {
+            DerbyMessageStore.this.visitMessageInstances(handler);
+        }
+
+        @Override
+        public void visitDistributedTransactions(final DistributedTransactionHandler handler) throws StoreException
+        {
+            DerbyMessageStore.this.visitDistributedTransactions(handler);
+        }
+    }
+
 }

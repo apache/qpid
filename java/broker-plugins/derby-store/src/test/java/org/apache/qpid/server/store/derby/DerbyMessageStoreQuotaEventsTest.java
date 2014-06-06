@@ -50,7 +50,7 @@ public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTes
     @Override
     protected MessageStore createStore() throws Exception
     {
-        return new DerbyMessageStore();
+        return (new DerbyMessageStore()).getMessageStore();
     }
 
     @Override

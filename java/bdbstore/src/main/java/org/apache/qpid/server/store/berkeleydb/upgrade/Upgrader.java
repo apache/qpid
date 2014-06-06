@@ -27,9 +27,8 @@ import java.lang.reflect.InvocationTargetException;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 
 import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
@@ -70,7 +69,7 @@ public class Upgrader
             if(versionDb.count() == 0L)
             {
 
-                int sourceVersion = isEmpty ? BDBMessageStore.VERSION: identifyOldStoreVersion();
+                int sourceVersion = isEmpty ? BDBConfigurationStore.VERSION: identifyOldStoreVersion();
                 DatabaseEntry key = new DatabaseEntry();
                 IntegerBinding.intToEntry(sourceVersion, key);
                 DatabaseEntry value = new DatabaseEntry();
@@ -86,11 +85,11 @@ public class Upgrader
                 LOGGER.debug("Source message store version is " + version);
             }
 
-            if(version > BDBMessageStore.VERSION)
+            if(version > BDBConfigurationStore.VERSION)
             {
                 throw new StoreException("Database version " + version
                                             + " is higher than the most recent known version: "
-                                            + BDBMessageStore.VERSION);
+                                            + BDBConfigurationStore.VERSION);
             }
             performUpgradeFromVersion(version, versionDb);
         }
@@ -139,7 +138,7 @@ public class Upgrader
     void performUpgradeFromVersion(int sourceVersion, Database versionDb)
             throws StoreException
     {
-        while(sourceVersion != BDBMessageStore.VERSION)
+        while(sourceVersion != BDBConfigurationStore.VERSION)
         {
             upgrade(sourceVersion, ++sourceVersion);
             DatabaseEntry key = new DatabaseEntry();
@@ -191,7 +190,7 @@ public class Upgrader
 
     private int identifyOldStoreVersion() throws DatabaseException
     {
-        int version = BDBMessageStore.VERSION;
+        int version = BDBConfigurationStore.VERSION;
         for (String databaseName : _environment.getDatabaseNames())
         {
             if (databaseName.contains("_v"))

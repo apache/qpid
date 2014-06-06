@@ -31,7 +31,7 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
@@ -42,7 +42,7 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
 {
     public static final String TYPE = "BDB_HA";
 
-    private final BDBMessageStore _messageStore;
+    private final BDBConfigurationStore _configurationStore;
     private MessageStoreLogSubject _messageStoreLogSubject;
 
     @ManagedAttributeField(afterSet="setLocalTransactionSynchronizationPolicyOnEnvironment")
@@ -56,8 +56,8 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     {
         super(attributes, virtualHostNode);
 
-        _messageStore = (BDBMessageStore) virtualHostNode.getConfigurationStore();
-        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
+        _configurationStore = (BDBConfigurationStore) virtualHostNode.getConfigurationStore();
+        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _configurationStore.getMessageStore().getClass().getSimpleName());
     }
 
     @Override
@@ -68,13 +68,13 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     @Override
     public DurableConfigurationStore getDurableConfigurationStore()
     {
-        return _messageStore;
+        return _configurationStore;
     }
 
     @Override
     public MessageStore getMessageStore()
     {
-        return _messageStore;
+        return _configurationStore.getMessageStore();
     }
 
     @Override
@@ -176,7 +176,7 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
 
     private ReplicatedEnvironmentFacade getReplicatedEnvironmentFacade()
     {
-        return (ReplicatedEnvironmentFacade)_messageStore.getEnvironmentFacade();
+        return (ReplicatedEnvironmentFacade) _configurationStore.getEnvironmentFacade();
     }
 
 }

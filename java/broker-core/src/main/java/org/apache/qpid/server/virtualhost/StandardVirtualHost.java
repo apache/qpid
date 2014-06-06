@@ -29,6 +29,7 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreProvider;
 
 @ManagedObject( category = false, type = "STANDARD")
 public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost>
@@ -96,7 +97,7 @@ public class StandardVirtualHost extends AbstractVirtualHost<StandardVirtualHost
         VirtualHostNode<?> virtualHostNode = getParent(VirtualHostNode.class);
         if (virtualHostNode.isMessageStoreProvider())
         {
-            _messageStore = (MessageStore)virtualHostNode.getConfigurationStore();
+            _messageStore = ((MessageStoreProvider)virtualHostNode.getConfigurationStore()).getMessageStore();
         }
         else
         {

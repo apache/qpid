@@ -67,7 +67,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MemoryConfigurationStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.SystemUtils;
@@ -854,7 +854,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         {
             storeDir = ":memory:";
         }
-        else if (!MemoryMessageStore.TYPE.equals(storeType))
+        else if (!MemoryConfigurationStore.TYPE.equals(storeType))
         {
             storeDir = "${QPID_WORK}" + File.separator + virtualHostNodeName + File.separator + brokerPort;
         }

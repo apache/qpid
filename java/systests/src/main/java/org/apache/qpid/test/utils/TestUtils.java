@@ -32,14 +32,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.JsonFileConfigStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MemoryConfigurationStore;
 import org.apache.qpid.server.virtualhost.StandardVirtualHost;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.Strings;
@@ -84,7 +83,7 @@ public class TestUtils
 
         config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.IS_MESSAGE_STORE_PROVIDER, false);
         // If using MMS, switch to split store with JSON config store.
-        if (MemoryMessageStore.TYPE.equals(configStoreType))
+        if (MemoryConfigurationStore.TYPE.equals(configStoreType))
         {
             configStoreType =  JsonFileConfigStore.TYPE;
         }

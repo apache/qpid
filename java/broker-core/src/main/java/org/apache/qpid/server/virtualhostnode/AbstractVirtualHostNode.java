@@ -50,6 +50,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreProvider;
 
 public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<X>> extends AbstractConfiguredObject<X> implements VirtualHostNode<X>
 {
@@ -198,9 +199,9 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         deleteVirtualHostIfExists();
         close();
         deleted();
-        if (getConfigurationStore() instanceof MessageStore)
+        if (getConfigurationStore() instanceof MessageStoreProvider)
         {
-            ((MessageStore)getConfigurationStore()).onDelete();
+            ((MessageStoreProvider)getConfigurationStore()).getMessageStore().onDelete();
         }
     }
 

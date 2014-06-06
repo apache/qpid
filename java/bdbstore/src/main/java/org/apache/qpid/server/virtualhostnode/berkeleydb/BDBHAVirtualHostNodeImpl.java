@@ -42,7 +42,6 @@ import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -59,7 +58,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicationGroupListener;
@@ -265,9 +264,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     }
 
     @Override
-    public BDBMessageStore getConfigurationStore()
+    public BDBConfigurationStore getConfigurationStore()
     {
-        return (BDBMessageStore) super.getConfigurationStore();
+        return (BDBConfigurationStore) super.getConfigurationStore();
     }
 
     protected ReplicatedEnvironmentFacade getReplicatedEnvironmentFacade()
@@ -278,7 +277,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @Override
     protected DurableConfigurationStore createConfigurationStore()
     {
-        return new BDBMessageStore(new ReplicatedEnvironmentFacadeFactory());
+        return new BDBConfigurationStore(new ReplicatedEnvironmentFacadeFactory());
     }
 
     @Override

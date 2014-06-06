@@ -165,8 +165,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         DurableConfigurationStore store = node.getConfigurationStore();
         assertNotNull(store);
 
-        BDBMessageStore bdbMessageStore = (BDBMessageStore) store;
-        ReplicatedEnvironment environment = (ReplicatedEnvironment) bdbMessageStore.getEnvironmentFacade().getEnvironment();
+        BDBConfigurationStore bdbConfigurationStore = (BDBConfigurationStore) store;
+        ReplicatedEnvironment environment = (ReplicatedEnvironment) bdbConfigurationStore.getEnvironmentFacade().getEnvironment();
         ReplicationConfig replicationConfig = environment.getRepConfig();
 
         assertEquals(nodeName, environment.getNodeName());
@@ -181,7 +181,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
         assertNotNull("Virtual host child was not added", virtualHost);
         assertEquals("Unexpected virtual host name", groupName, virtualHost.getName());
-        assertEquals("Unexpected virtual host store", store, virtualHost.getMessageStore());
+        assertEquals("Unexpected virtual host store", bdbConfigurationStore.getMessageStore(), virtualHost.getMessageStore());
         assertEquals("Unexpected virtual host state", State.ACTIVE, virtualHost.getState());
 
         node.stop();
@@ -212,8 +212,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         BDBHAVirtualHostNode<?> node = createAndStartHaVHN(attributes);
 
-        BDBMessageStore bdbMessageStore = (BDBMessageStore) node.getConfigurationStore();
-        ReplicatedEnvironment environment = (ReplicatedEnvironment) bdbMessageStore.getEnvironmentFacade().getEnvironment();
+        BDBConfigurationStore bdbConfigurationStore = (BDBConfigurationStore) node.getConfigurationStore();
+        ReplicatedEnvironment environment = (ReplicatedEnvironment) bdbConfigurationStore.getEnvironmentFacade().getEnvironment();
 
         assertEquals("Unexpected node priority value before mutation", 1, environment.getRepMutableConfig().getNodePriority());
         assertFalse("Unexpected designated primary value before mutation", environment.getRepMutableConfig().getDesignatedPrimary());

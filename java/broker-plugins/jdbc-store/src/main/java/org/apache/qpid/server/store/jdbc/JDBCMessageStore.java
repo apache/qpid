@@ -31,12 +31,22 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.AbstractJDBCMessageStore;
+import org.apache.qpid.server.store.Event;
+import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreProvider;
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
+import org.apache.qpid.server.store.handler.MessageHandler;
+import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 import org.apache.qpid.server.util.MapValueConverter;
 
 /**
@@ -44,7 +54,7 @@ import org.apache.qpid.server.util.MapValueConverter;
  * mechanism.
  *
  */
-public class JDBCMessageStore extends AbstractJDBCMessageStore implements MessageStore
+public class JDBCMessageStore extends AbstractJDBCMessageStore implements MessageStoreProvider
 {
 
     private static final Logger _logger = Logger.getLogger(JDBCMessageStore.class);
@@ -60,6 +70,7 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
 
+    private final MessageStore _messageStoreFacade = new MessageStoreWrapper();
 
     private static class JDBCDetails
     {
@@ -331,7 +342,6 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
     {
     }
 
-    @Override
     public String getStoreLocation()
     {
         return _connectionURL;
@@ -425,6 +435,82 @@ public class JDBCMessageStore extends AbstractJDBCMessageStore implements Messag
             {
                 JDBCMessageStore.this._transactions.remove(this);
             }
+        }
+    }
+
+    @Override
+    public MessageStore getMessageStore()
+    {
+        return _messageStoreFacade;
+    }
+
+    private class MessageStoreWrapper implements MessageStore
+    {
+
+        @Override
+        public void openMessageStore(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+        {
+            JDBCMessageStore.this.openMessageStore(parent, messageStoreSettings);
+        }
+
+        @Override
+        public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(final T metaData)
+        {
+            return JDBCMessageStore.this.addMessage(metaData);
+        }
+
+        @Override
+        public boolean isPersistent()
+        {
+            return JDBCMessageStore.this.isPersistent();
+        }
+
+        @Override
+        public Transaction newTransaction()
+        {
+            return JDBCMessageStore.this.newTransaction();
+        }
+
+        @Override
+        public void closeMessageStore()
+        {
+            JDBCMessageStore.this.closeMessageStore();
+        }
+
+        @Override
+        public void addEventListener(final EventListener eventListener, final Event... events)
+        {
+            JDBCMessageStore.this.addEventListener(eventListener, events);
+        }
+
+        @Override
+        public String getStoreLocation()
+        {
+            return JDBCMessageStore.this.getStoreLocation();
+        }
+
+        @Override
+        public void onDelete()
+        {
+            JDBCMessageStore.this.onDelete();
+        }
+
+        @Override
+        public void visitMessages(final MessageHandler handler) throws StoreException
+        {
+            JDBCMessageStore.this.visitMessages(handler);
+        }
+
+        @Override
+        public void visitMessageInstances(final MessageInstanceHandler handler) throws StoreException
+        {
+            JDBCMessageStore.this.visitMessageInstances(handler);
+        }
+
+        @Override
+        public void visitDistributedTransactions(final DistributedTransactionHandler handler) throws StoreException
+        {
+            JDBCMessageStore.this.visitDistributedTransactions(handler);
         }
     }
 

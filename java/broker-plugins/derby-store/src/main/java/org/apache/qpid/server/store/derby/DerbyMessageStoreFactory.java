@@ -48,7 +48,7 @@ public class DerbyMessageStoreFactory implements MessageStoreFactory, DurableCon
     @Override
     public MessageStore createMessageStore()
     {
-        return new DerbyMessageStore();
+        return (new DerbyMessageStore()).getMessageStore();
     }
 
     @Override

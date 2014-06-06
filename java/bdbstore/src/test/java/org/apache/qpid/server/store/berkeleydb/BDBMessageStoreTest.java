@@ -50,6 +50,7 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.util.FileUtils;
+import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore.BDBMessageStore;
 
 /**
  * Subclass of MessageStoreTestCase which runs the standard tests from the superclass against
@@ -81,7 +82,7 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
      */
     public void testBDBMessagePersistence() throws Exception
     {
-        BDBMessageStore bdbStore = (BDBMessageStore)getStore();
+        MessageStore bdbStore = getStore();
 
         // Create content ByteBuffers.
         // Split the content into 2 chunks for the 0-8 message, as per broker behaviour.
@@ -342,7 +343,7 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
      */
     public void testMessageCreationAndRemoval() throws Exception
     {
-        BDBMessageStore bdbStore = (BDBMessageStore)getStore();
+        BDBMessageStore bdbStore = (BDBMessageStore) getStore();
 
         StoredMessage<MessageMetaData> storedMessage_0_8 = createAndStoreSingleChunkMessage_0_8(bdbStore);
         long messageid_0_8 = storedMessage_0_8.getMessageNumber();
@@ -430,7 +431,7 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
     @Override
     protected MessageStore createMessageStore()
     {
-        return new BDBMessageStore();
+        return new BDBConfigurationStore().getMessageStore();
     }
 
 }
