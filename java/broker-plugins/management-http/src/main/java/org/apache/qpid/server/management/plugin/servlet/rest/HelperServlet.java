@@ -56,7 +56,7 @@ public class HelperServlet extends AbstractServlet
 
         Action[] supportedActions = {
                 new ListAuthenticationProviderAttributes(),
-                new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_STORE_TYPES, "ListMessageStoreTypes"),
+                new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOSTNODE_TYPES, "ListVirtualHostNodeTypes"),
                 new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_TYPES, "ListVirtualHostTypes"),
                 new ListBrokerAttribute(Broker.SUPPORTED_PREFERENCES_PROVIDER_TYPES, "ListPreferencesProvidersTypes"),
                 new ListBrokerAttribute(Broker.PRODUCT_VERSION, "version"),

@@ -27,8 +27,8 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
-import org.apache.qpid.server.store.derby.DerbyMessageStoreFactory;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 
@@ -45,9 +45,9 @@ public class DerbyVirtualHostNode extends AbstractStandardVirtualHostNode<DerbyV
     }
 
     @Override
-    protected DurableConfigurationStoreFactory getDurableConfigurationStoreFactory()
+    protected DurableConfigurationStore createConfigurationStore()
     {
-        return new DerbyMessageStoreFactory();
+        return new DerbyMessageStore();
     }
 
     @Override

@@ -38,9 +38,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreProvider;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
@@ -57,16 +55,6 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
         super(parent, attributes);
     }
 
-    @Override
-    public void onValidate()
-    {
-        super.onValidate();
-        DurableConfigurationStoreFactory durableConfigurationStoreFactory = getDurableConfigurationStoreFactory();
-        Map<String, Object> storeSettings = new HashMap<String, Object>(getActualAttributes());
-        storeSettings.put(DurableConfigurationStore.STORE_TYPE, durableConfigurationStoreFactory.getType());
-        durableConfigurationStoreFactory.validateConfigurationStoreSettings(storeSettings);
-    }
-
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     protected <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes,
@@ -78,16 +66,6 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
         }
         return super.addChild(childClass, attributes, otherParents);
     }
-
-    @Override
-    protected DurableConfigurationStore createConfigurationStore()
-    {
-        DurableConfigurationStoreFactory durableConfigurationStoreFactory = getDurableConfigurationStoreFactory();
-        DurableConfigurationStore store = durableConfigurationStoreFactory.createDurableConfigurationStore();
-        return store;
-    }
-
-    protected abstract DurableConfigurationStoreFactory getDurableConfigurationStoreFactory();
 
     @Override
     protected void activate()

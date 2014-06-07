@@ -25,8 +25,8 @@ import java.util.Map;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
-import org.apache.qpid.server.store.MemoryMessageStoreFactory;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.MemoryConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
 @ManagedObject(type="Memory",category=false)
@@ -40,9 +40,8 @@ public class MemoryVirtualHostNode extends AbstractStandardVirtualHostNode<Memor
     }
 
     @Override
-    public DurableConfigurationStoreFactory getDurableConfigurationStoreFactory()
+    protected DurableConfigurationStore createConfigurationStore()
     {
-        return new MemoryMessageStoreFactory();
+        return new MemoryConfigurationStore();
     }
-
 }
