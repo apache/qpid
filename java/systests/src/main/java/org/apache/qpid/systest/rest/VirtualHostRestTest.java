@@ -41,8 +41,9 @@ import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.queue.LastValueQueue;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.SortedQueue;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
+import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
+import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.util.FileUtils;
 
 public class VirtualHostRestTest extends QpidRestTestCase
@@ -105,11 +106,11 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Asserts.assertConnection(connections.get(0), _connection);
     }
 
-    public void testPutCreateVirtualHostUsingStoreType() throws Exception
+    public void testPutCreateVirtualHostUsingProfileNodeType() throws Exception
     {
         String hostName = getTestName();
-        String storeType = getTestProfileVirtualHostNodeType();
-        String storeLocation = createHost(hostName, storeType, null);
+        String virtualhostNodeType = getTestProfileVirtualHostNodeType();
+        String storeLocation = createVirtualHostNodeAndVirtualHost(hostName, virtualhostNodeType);
         try
         {
             // make sure that the host is saved in the broker store
@@ -525,33 +526,34 @@ public class VirtualHostRestTest extends QpidRestTestCase
         return getRestTestHelper().submitRequest("queue/test/test/" + queueName, "PUT", queueData);
     }
 
-    private String createHost(String hostName, String storeType, String configPath) throws IOException, JsonGenerationException,
-            JsonMappingException
+    private String createVirtualHostNodeAndVirtualHost(String virtualHostName,
+                                                       String virtualHostNodeType) throws Exception
     {
-        String storePath = getStoreLocation(hostName);
-        int responseCode = tryCreateVirtualHostNode(hostName, storeType, storePath, configPath);
-        assertEquals("Unexpected response code", 201, responseCode);
+        String storePath = getStoreLocation(virtualHostName);
+
+        Map<String, Object> nodeData = new HashMap<>();
+        nodeData.put(VirtualHostNode.NAME, virtualHostName);
+        nodeData.put(VirtualHostNode.TYPE, virtualHostNodeType);
+        nodeData.put(FileBasedVirtualHostNode.STORE_PATH, storePath);
+
+        getRestTestHelper().submitRequest("virtualhostnode/" + virtualHostName, "PUT", nodeData, HttpServletResponse.SC_CREATED);
+
+        Map<String, Object> virtualhostData = new HashMap<>();
+        virtualhostData.put(VirtualHost.NAME, virtualHostName);
+        virtualhostData.put(VirtualHost.TYPE, ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
+
+        getRestTestHelper().submitRequest("virtualhost/" + virtualHostName + "/" + virtualHostName,
+                                          "PUT",
+                                          virtualhostData,
+                                          HttpServletResponse.SC_CREATED);
+
+
         return storePath;
     }
 
     private String getStoreLocation(String hostName)
     {
         return new File(TMP_FOLDER, "store-" + hostName + "-" + System.currentTimeMillis()).getAbsolutePath();
-    }
-
-    private int tryCreateVirtualHostNode(String hostName,
-                                         String virtualHostNodeType,
-                                         String storePath,
-                                         String configPath) throws IOException,
-            JsonGenerationException, JsonMappingException
-    {
-
-        Map<String, Object> hostData = new HashMap<String, Object>();
-        hostData.put(VirtualHostNode.NAME, hostName);
-        hostData.put(VirtualHostNode.TYPE, virtualHostNodeType);
-        hostData.put(DurableConfigurationStore.STORE_PATH, storePath);
-
-        return getRestTestHelper().submitRequest("virtualhostnode/" + hostName, "PUT", hostData);
     }
 
     private void assertNewVirtualHost(Map<String, Object> hostDetails)

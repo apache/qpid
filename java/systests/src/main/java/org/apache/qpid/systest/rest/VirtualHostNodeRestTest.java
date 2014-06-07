@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 /**
@@ -53,7 +53,7 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         }
     }
 
-    public void testCreateAndDeleteNodeWithTestProfileStore() throws Exception
+    public void testCreateAndDeleteVirtualHostNode() throws Exception
     {
         String storeType = getTestProfileVirtualHostNodeType();
         String nodeName = "virtualhostnode-" + getTestName();
@@ -61,17 +61,6 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
 
         createAndDeleteVirtualHostNode(storeType, nodeName, storePathAsFile);
         assertFalse("Store should not exist after deletion", storePathAsFile.exists());
-    }
-
-    public void testCreateAndDeleteNodeWithJsonStore() throws Exception
-    {
-        String storeType = "JSON";
-        String nodeName = "virtualhostnode-" + getTestName();
-        File storePathAsFile = new File(getStoreLocation(nodeName));
-
-        createAndDeleteVirtualHostNode(storeType, nodeName, storePathAsFile);
-        // TODO Defect: JSON store currently can't delete itself, uncomment once this is resolved
-        //assertFalse("Store should not exist after deletion", storePathAsFile.exists());
     }
 
     public void testRecoverVirtualHostNodeWithDesiredStateStopped() throws Exception
@@ -118,18 +107,20 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         assertEquals(newDescription, virtualhostNode.get(VirtualHostNode.DESCRIPTION));
     }
 
-    private void createAndDeleteVirtualHostNode(final String storeType,
+    private void createAndDeleteVirtualHostNode(final String virtualhostNodeType,
                                                 final String nodeName,
                                                 final File storePathAsFile) throws Exception
     {
         assertFalse("Store should not exist", storePathAsFile.exists());
 
-        createVirtualHostNode(nodeName, storePathAsFile.getAbsolutePath(), storeType);
+        createVirtualHostNode(nodeName, storePathAsFile.getAbsolutePath(), virtualhostNodeType);
         assertTrue("Store should exist after creation of node", storePathAsFile.exists());
 
         String restUrl = "virtualhostnode/" + nodeName;
         Map<String, Object> virtualhostNode = getRestTestHelper().getJsonAsSingletonList(restUrl);
         Asserts.assertVirtualHostNode(nodeName, virtualhostNode);
+        assertNull("Virtualhostnode should not automatically get a virtualhost child",
+                   virtualhostNode.get("virtualhosts"));
 
         getRestTestHelper().submitRequest(restUrl, "DELETE", HttpServletResponse.SC_OK);
 
@@ -158,7 +149,7 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(VirtualHostNode.NAME, nodeName);
         nodeData.put(VirtualHostNode.TYPE, storeType);
-        nodeData.put(DurableConfigurationStore.STORE_PATH, configStorePath);
+        nodeData.put(FileBasedVirtualHostNode.STORE_PATH, configStorePath);
 
         getRestTestHelper().submitRequest("virtualhostnode/" + nodeName,
                                           "PUT",

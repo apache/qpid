@@ -136,12 +136,8 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         node.start();
 
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
-        assertNotNull("Virtual host was not created", virtualHost);
+        assertNull("Virtual host should not be automatically created", virtualHost);
 
-        // Virtualhost name taken from VHN and ID is random.
-        assertEquals("Unexpected virtual host name", TEST_VIRTUAL_HOST_NODE_NAME, virtualHost.getName());
-        assertEquals("Unexpected virtual host state", State.ACTIVE, virtualHost.getState());
-        assertNotNull("Unexpected virtual host id", virtualHost.getId());
     }
 
     private ConfiguredObjectRecord createMockVirtualHostCOR(UUID virtualHostId)

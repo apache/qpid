@@ -49,7 +49,7 @@ import org.apache.qpid.server.security.access.FileAccessControlProviderConstants
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordDatabaseAuthenticationManager;
-import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -982,7 +982,7 @@ public class BrokerACLTest extends QpidRestTestCase
         Map<String, Object> data = new HashMap<String, Object>();
         data.put(VirtualHostNode.NAME, virtualHostNodeName);
         data.put(VirtualHostNode.TYPE, getTestProfileVirtualHostNodeType());
-        data.put(DurableConfigurationStore.STORE_PATH, getStoreLocation(virtualHostNodeName));
+        data.put(FileBasedVirtualHostNode.STORE_PATH, getStoreLocation(virtualHostNodeName));
 
         return getRestTestHelper().submitRequest("virtualhostnode/" + virtualHostNodeName, "PUT", data);
     }

@@ -277,7 +277,7 @@ public class RestTestHelper
         List<Map<String, Object>> response = getJsonAsList(path);
 
         Assert.assertNotNull("Response cannot be null", response);
-        Assert.assertEquals("Unexpected response", 1, response.size());
+        Assert.assertEquals("Unexpected response from " + path, 1, response.size());
         return response.get(0);
     }
 

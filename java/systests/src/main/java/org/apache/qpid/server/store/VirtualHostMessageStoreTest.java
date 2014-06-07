@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.security.auth.Subject;
 
@@ -57,6 +56,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -121,7 +121,8 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
     {
         super.setUp();
 
-        String hostName = getName();
+        String nodeName = "node" + getName();
+        String hostName = "host" + getName();
         _storePath = System.getProperty("QPID_WORK", TMP_FOLDER + File.separator + getTestName()) + File.separator + hostName;
         cleanup(new File(_storePath));
 
@@ -131,13 +132,17 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         when(broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
         ConfiguredObjectFactory factory = broker.getObjectFactory();
-        Map<String, Object> nodeAttributes = new HashMap<String, Object>();
+        Map<String, Object> nodeAttributes = new HashMap<>();
         nodeAttributes.put(ConfiguredObject.TYPE, getTestProfileVirtualHostNodeType());
         nodeAttributes.put(FileBasedVirtualHostNode.STORE_PATH, _storePath);
-        nodeAttributes.put(VirtualHostNode.NAME, hostName);
-        nodeAttributes.put(VirtualHostNode.ID, UUID.randomUUID());
+        nodeAttributes.put(VirtualHostNode.NAME, nodeName);
         _node = factory.create(VirtualHostNode.class, nodeAttributes, broker);
         _node.start();
+
+        final Map<String,Object> virtualHostAttributes = new HashMap<>();
+        virtualHostAttributes.put(VirtualHost.NAME, hostName);
+
+        _node.createChild(VirtualHost.class, virtualHostAttributes, _node);
 
         _virtualHost = (VirtualHostImpl<?,?,?>)_node.getVirtualHost();
 

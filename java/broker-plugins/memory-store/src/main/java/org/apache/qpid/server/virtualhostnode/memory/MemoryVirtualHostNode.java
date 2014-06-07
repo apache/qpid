@@ -29,9 +29,10 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MemoryConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
-@ManagedObject(type="Memory",category=false)
+@ManagedObject(type=MemoryVirtualHostNode.VIRTUAL_HOST_NODE_TYPE, category=false)
 public class MemoryVirtualHostNode extends AbstractStandardVirtualHostNode<MemoryVirtualHostNode>
 {
+   public static final String VIRTUAL_HOST_NODE_TYPE = "Memory";
 
     @ManagedObjectFactoryConstructor
     public MemoryVirtualHostNode(Map<String, Object> attributes, Broker<?> parent)
