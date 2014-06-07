@@ -26,8 +26,8 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStoreFactory;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
 @ManagedObject( category = false, type = "BDB" )
@@ -46,9 +46,9 @@ public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBV
     }
 
     @Override
-    protected DurableConfigurationStoreFactory getDurableConfigurationStoreFactory()
+    protected DurableConfigurationStore createConfigurationStore()
     {
-        return new BDBMessageStoreFactory();
+        return new BDBConfigurationStore();
     }
 
     @Override
@@ -56,7 +56,6 @@ public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBV
     {
         return _environmentConfiguration;
     }
-
     @Override
     public String getStorePath()
     {

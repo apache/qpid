@@ -25,11 +25,10 @@ import java.util.Map;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStoreFactory;
+
 @ManagedObject(type="TestMemory", category=false)
 public class TestVirtualHostNode extends AbstractStandardVirtualHostNode<TestVirtualHostNode>
 {
@@ -49,33 +48,9 @@ public class TestVirtualHostNode extends AbstractStandardVirtualHostNode<TestVir
     }
 
     @Override
-    protected DurableConfigurationStoreFactory getDurableConfigurationStoreFactory()
+    protected DurableConfigurationStore createConfigurationStore()
     {
-        if (_store != null)
-        {
-            return new DurableConfigurationStoreFactory()
-            {
-
-                @Override
-                public void validateConfigurationStoreSettings(Map<String, Object> attributes)
-                {
-                }
-
-                @Override
-                public String getType()
-                {
-                    return null;
-                }
-
-                @Override
-                public DurableConfigurationStore createDurableConfigurationStore()
-                {
-                    return _store;
-                }
-            };
-        }
-
-        return new TestMemoryMessageStoreFactory();
+        return _store;
     }
 
     @Override

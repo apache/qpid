@@ -47,7 +47,6 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
-import org.apache.qpid.server.plugin.MessageStoreFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
@@ -71,12 +70,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
 
     private EventLogger _eventLogger;
-    //private final VirtualHostRegistry _virtualHostRegistry;
     private final LogRecorder _logRecorder;
 
     private final SecurityManager _securityManager;
-
-    private final Collection<String> _supportedVirtualHostStoreTypes;
 
     private AuthenticationProvider<?> _managementModeAuthenticationProvider;
     private BrokerOptions _brokerOptions;
@@ -109,7 +105,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         _eventLogger = parent.getEventLogger();
         _brokerOptions = parent.getBrokerOptions();
         _securityManager = new SecurityManager(this, _brokerOptions.isManagementMode());
-        _supportedVirtualHostStoreTypes = MessageStoreFactory.FACTORY_LOADER.getSupportedTypes();
         if (_brokerOptions.isManagementMode())
         {
             Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
@@ -308,12 +303,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     public Collection<String> getSupportedVirtualHostNodeTypes()
     {
         return getObjectFactory().getSupportedTypes(VirtualHostNode.class);
-    }
-
-    @Override
-    public Collection<String> getSupportedVirtualHostStoreTypes()
-    {
-        return _supportedVirtualHostStoreTypes;
     }
 
     @Override

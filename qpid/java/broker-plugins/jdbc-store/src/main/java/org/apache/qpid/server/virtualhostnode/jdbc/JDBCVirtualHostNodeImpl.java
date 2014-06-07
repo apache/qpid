@@ -26,8 +26,8 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
-import org.apache.qpid.server.store.jdbc.JDBCMessageStoreFactory;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.jdbc.JDBCMessageStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
 @ManagedObject( category = false, type = "JDBC" )
@@ -58,9 +58,9 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
     }
 
     @Override
-    protected DurableConfigurationStoreFactory getDurableConfigurationStoreFactory()
+    protected DurableConfigurationStore createConfigurationStore()
     {
-        return new JDBCMessageStoreFactory();
+        return new JDBCMessageStore();
     }
 
     @Override
@@ -98,5 +98,4 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
     {
         return _blobType;
     }
-
 }

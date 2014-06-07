@@ -100,7 +100,12 @@ public class SplitStoreTest extends QpidBrokerTestCase
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
         messageStoreSettings.put(MessageStore.STORE_TYPE, getTestProfileMessageStoreType());
         messageStoreSettings.put(MessageStore.STORE_PATH, _messageStorePath);
-        TestUtils.createStoreWithVirtualHostEntry(messageStoreSettings, config, nodeType);
+
+        // TODO initialise the virtualhost with the required attributes using the virtualhost blueprint
+        // mechanism.
+
+        //TestUtils.createStoreWithVirtualHostEntry(messageStoreSettings, config, nodeType);
+
         super.startBroker();
     }
 

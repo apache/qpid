@@ -26,8 +26,8 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
-import org.apache.qpid.server.store.JsonFileConfigStoreFactory;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.JsonFileConfigStore;
 
 @ManagedObject(category=false, type="JSON")
 public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JsonVirtualHostNodeImpl> implements FileBasedVirtualHostNode<JsonVirtualHostNodeImpl>
@@ -42,9 +42,9 @@ public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<Jso
     }
 
     @Override
-    protected DurableConfigurationStoreFactory getDurableConfigurationStoreFactory()
+    protected DurableConfigurationStore createConfigurationStore()
     {
-        return new JsonFileConfigStoreFactory();
+        return new JsonFileConfigStore();
     }
 
     @Override
@@ -58,5 +58,4 @@ public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<Jso
     {
         return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", storePath=" + getStorePath() + "]";
     }
-
 }

@@ -37,13 +37,10 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.plugin.DurableConfigurationStoreFactory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.NullMessageStore;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
@@ -54,7 +51,6 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
     private static final String TEST_VIRTUAL_HOST_NODE_NAME = "testNode";
     private static final String TEST_VIRTUAL_HOST_NAME = "testVirtualHost";
 
-    private DurableConfigurationStoreFactory _configStoreFactory = mock(DurableConfigurationStoreFactory.class);
     private UUID _nodeId = UUID.randomUUID();
     private Broker<?> _broker;
     private DurableConfigurationStore _configStore;
@@ -102,7 +98,6 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
                 handler.end();
             }
         };
-        when(_configStoreFactory.createDurableConfigurationStore()).thenReturn(_configStore);
 
         Map<String, Object> nodeAttributes = new HashMap<String, Object>();
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
@@ -131,7 +126,6 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
                 handler.end();
             }
         };
-        when(_configStoreFactory.createDurableConfigurationStore()).thenReturn(_configStore);
 
         Map<String, Object> nodeAttributes = new HashMap<String, Object>();
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
@@ -156,9 +150,6 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         virtualHostAttributes.put(VirtualHost.NAME, TEST_VIRTUAL_HOST_NAME);
         virtualHostAttributes.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
         virtualHostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
-        Map<String,Object> messageStoreSettings = new HashMap<String, Object>();
-        virtualHostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, messageStoreSettings);
-        messageStoreSettings.put(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE);
 
         ConfiguredObjectRecord record = mock(ConfiguredObjectRecord.class);
         when(record.getId()).thenReturn(virtualHostId);

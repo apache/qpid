@@ -41,7 +41,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String PROCESS_PID = "processPid";
     String PRODUCT_VERSION = "productVersion";
     String SUPPORTED_VIRTUALHOST_TYPES = "supportedVirtualHostTypes";
-    String SUPPORTED_VIRTUALHOST_STORE_TYPES = "supportedVirtualHostStoreTypes";
+    String SUPPORTED_VIRTUALHOSTNODE_TYPES = "supportedVirtualHostNodeTypes";
     String SUPPORTED_AUTHENTICATION_PROVIDERS = "supportedAuthenticationProviders";
     String SUPPORTED_PREFERENCES_PROVIDER_TYPES = "supportedPreferencesProviderTypes";
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
@@ -91,9 +91,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
     @DerivedAttribute
     Collection<String> getSupportedVirtualHostNodeTypes();
-
-    @DerivedAttribute
-    Collection<String> getSupportedVirtualHostStoreTypes();
 
     @DerivedAttribute
     Collection<String> getSupportedAuthenticationProviders();
