@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,10 +33,11 @@ import javax.jms.Session;
 
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
-import org.apache.qpid.test.utils.TestUtils;
 import org.apache.qpid.util.FileUtils;
 
 public class SplitStoreTest extends QpidBrokerTestCase
@@ -72,39 +74,27 @@ public class SplitStoreTest extends QpidBrokerTestCase
         // Overridden to prevent QBTC starting the Broker.
     }
 
-    public void testPass()
+    public void testJsonConfigurationStoreWithPersistentMessageStore() throws Exception
     {
-
+        doTest(JsonFileConfigStore.TYPE, getTestProfileMessageStoreType());
     }
 
-    // TODO reenable once we can specify a virtualhost blueprint context variable with necessary message store location
-    public void xtestJsonConfigurationStoreWithPersistentMessageStore() throws Exception
+    public void testSeparateConfigurationAndMessageStoresOfTheSameType() throws Exception
     {
-
-        doTest(JsonFileConfigStore.TYPE, _configStorePath);
+        doTest(getTestProfileVirtualHostNodeType(), getTestProfileMessageStoreType());
     }
 
-    // TODO test will currently create a provided VH which will share config/message store
-    // TODO reenable once we can specify a virtualhost blueprint context variable
-    public void xtestSeparateConfigurationAndMessageStoresOfTheSameType() throws Exception
+    private void configureAndStartBroker(String virtualHostNodeType, String virtualHostType) throws Exception
     {
-        doTest(getTestProfileVirtualHostNodeType(), _configStorePath);
-    }
+        final String blueprint = String.format(
+           "{ \"type\" : \"%s\",  \"messageStoreSettings\" : { \"storePath\" : \"%s\" } }", virtualHostType, _messageStorePath);
+        final Map<String, String> contextMap = Collections.singletonMap(AbstractStandardVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
+                                                                        blueprint);
 
-    private void configureAndStartBroker(String nodeType, String storePath) throws Exception
-    {
         TestBrokerConfiguration config = getBrokerConfiguration();
-        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.TYPE, nodeType);
-        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, DurableConfigurationStore.STORE_PATH, storePath);
-
-        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-        messageStoreSettings.put(MessageStore.STORE_TYPE, getTestProfileMessageStoreType());
-        messageStoreSettings.put(MessageStore.STORE_PATH, _messageStorePath);
-
-        // TODO initialise the virtualhost with the required attributes using the virtualhost blueprint
-        // mechanism.
-
-        //TestUtils.createStoreWithVirtualHostEntry(messageStoreSettings, config, nodeType);
+        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.TYPE, virtualHostNodeType);
+        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.CONTEXT, contextMap);
+        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, FileBasedVirtualHostNode.STORE_PATH, _configStorePath);
 
         super.startBroker();
     }

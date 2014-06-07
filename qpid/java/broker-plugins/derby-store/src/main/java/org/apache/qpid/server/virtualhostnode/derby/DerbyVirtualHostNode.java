@@ -32,9 +32,11 @@ import org.apache.qpid.server.store.derby.DerbyMessageStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 
-@ManagedObject( category = false, type = "DERBY" )
+@ManagedObject( category = false, type = DerbyVirtualHostNode.VIRTUAL_HOST_NODE_TYPE )
 public class DerbyVirtualHostNode extends AbstractStandardVirtualHostNode<DerbyVirtualHostNode> implements FileBasedVirtualHostNode<DerbyVirtualHostNode>
 {
+    public static final String VIRTUAL_HOST_NODE_TYPE = "DERBY";
+
     @ManagedAttributeField
     private String _storePath;
 

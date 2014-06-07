@@ -25,14 +25,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.management.ObjectName;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
+import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
+import org.apache.qpid.server.virtualhostnode.memory.MemoryVirtualHostNode;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -81,14 +85,24 @@ public class MBeanLifeCycleTest extends QpidRestTestCase
 
     public void testVirtualHostMBeanIsRegisteredOnVirtualHostCreation() throws Exception
     {
-        String nodeName = "tmp";
-        Map<String, Object> nodeData = new HashMap<String, Object>();
-        nodeData.put(VirtualHostNode.NAME, nodeName);
-        nodeData.put(VirtualHostNode.TYPE, "Memory");
-        int status = getRestTestHelper().submitRequest("virtualhostnode/" + nodeName, "PUT", nodeData);
-        assertEquals("Unexpected code", 201, status);
+        String nodeName = "ntmp";
+        String hostName = "htmp";
 
-        ManagedBroker managedBroker = _jmxUtils.getManagedBroker(nodeName);
+        Map<String, Object> nodeData = new HashMap<>();
+        nodeData.put(VirtualHostNode.NAME, nodeName);
+        nodeData.put(VirtualHostNode.TYPE, MemoryVirtualHostNode.VIRTUAL_HOST_NODE_TYPE);
+        getRestTestHelper().submitRequest("virtualhostnode/" + nodeName, "PUT", nodeData, HttpServletResponse.SC_CREATED);
+
+        Map<String, Object> virtualhostData = new HashMap<>();
+        virtualhostData.put(VirtualHost.NAME, nodeName);
+        virtualhostData.put(VirtualHost.TYPE, ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
+        getRestTestHelper().submitRequest("virtualhost/" + nodeName + "/" + hostName,
+                                          "PUT",
+                                          virtualhostData,
+                                          HttpServletResponse.SC_CREATED);
+
+
+        ManagedBroker managedBroker = _jmxUtils.getManagedBroker(hostName);
         assertNotNull("Host mBean is not created", managedBroker);
     }
 
@@ -99,8 +113,7 @@ public class MBeanLifeCycleTest extends QpidRestTestCase
         boolean mBeanExists =_jmxUtils.doesManagedObjectExist(query);
         assertTrue("Host mBean is not registered", mBeanExists);
 
-        int status = getRestTestHelper().submitRequest("virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE");
-        assertEquals("Unexpected code", 200, status);
+        getRestTestHelper().submitRequest("virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE", HttpServletResponse.SC_OK);
 
         mBeanExists =_jmxUtils.doesManagedObjectExist(query);
         assertFalse("Host mBean is not unregistered", mBeanExists);

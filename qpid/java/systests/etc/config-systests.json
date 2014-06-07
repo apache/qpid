@@ -60,6 +60,9 @@
   "virtualhostnodes" : [ {
     "name" : "test",
     "type" : "${messagestore.type}",
-    "storePath" : "${QPID_WORK}/test/${test.port}"
+    "storePath" : "${QPID_WORK}/${test.port}/test/config",
+    "context" : {
+      "virtualhostBlueprint" : "{ \"type\" : \"ProvidedStore\" }"
+    }
   } ]
 }

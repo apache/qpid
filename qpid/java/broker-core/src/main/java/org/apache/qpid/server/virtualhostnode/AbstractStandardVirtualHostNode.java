@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.virtualhostnode;
 
-import java.io.File;
 import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,15 +38,13 @@ import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreProvider;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
-import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
 
 public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandardVirtualHostNode<X>> extends AbstractVirtualHostNode<X>
                 implements VirtualHostNode<X>
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractStandardVirtualHostNode.class);
+    public static final String VIRTUALHOST_BLUEPRINT_CONTEXT_VAR = "virtualhostBlueprint";
 
     public AbstractStandardVirtualHostNode(Map<String, Object> attributes,
                                            Broker<?> parent)
@@ -100,25 +97,32 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
 
         if (host == null)
         {
-            // TODO normal case - we should not create VH,
-            // TODO out if box case - if blueprint vh context variable is set, use it to create a VH
-            if (LOGGER.isDebugEnabled())
+            if (getContext() != null && getContext().containsKey(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR))
             {
-                LOGGER.debug("Creating new virtualhost with name : " + getName());
+                Map<String, Object> virtualhostBlueprint = getContextValue(Map.class, VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
+
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Using virtualhost blueprint " + virtualhostBlueprint);
+                }
+
+                Map<String, Object> virtualhostAttributes = new HashMap<>();
+                virtualhostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
+                virtualhostAttributes.put(VirtualHost.NAME, getName());
+                virtualhostAttributes.putAll(virtualhostBlueprint);
+
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Creating new virtualhost named " + virtualhostAttributes.get(VirtualHost.NAME));
+                }
+
+                host = createChild(VirtualHost.class, virtualhostAttributes);
+
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Created new virtualhost: " + host);
+                }
             }
-            Map<String, Object> hostAttributes = new HashMap<String, Object>();
-            hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
-            hostAttributes.put(VirtualHost.NAME, getName());
-            if (getConfigurationStore() instanceof MessageStoreProvider)
-            {
-                hostAttributes.put(VirtualHost.TYPE, ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
-            }
-            else
-            {
-                hostAttributes.put(VirtualHost.TYPE, "DERBY");
-                hostAttributes.put(VirtualHost.MESSAGE_STORE_SETTINGS, getDefaultMessageStoreSettings());
-            }
-            host = createChild(VirtualHost.class, hostAttributes);
         }
         else
         {
@@ -146,16 +150,4 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
     {
         return Collections.emptyList();
     }
-
-    // protected for unit testing purposes
-    protected Map<String, Object> getDefaultMessageStoreSettings()
-    {
-        // TODO perhaps look for the MS with the default annotation and associated default.
-        Map<String, Object> settings = new HashMap<String, Object>();
-        settings.put(MessageStore.STORE_TYPE, "DERBY");
-        settings.put(MessageStore.STORE_PATH, "${qpid.work_dir}" + File.separator + "derbystore" + File.separator + getName());
-        return settings;
-    }
-
-
 }

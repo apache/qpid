@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,11 +64,15 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MemoryConfigurationStore;
+import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
+import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.SystemUtils;
@@ -859,14 +864,18 @@ public class QpidBrokerTestCase extends QpidTestCase
             storeDir = "${QPID_WORK}" + File.separator + virtualHostNodeName + File.separator + brokerPort;
         }
 
-        // add new virtual host configuration to the broker store
+        // add new virtual host node with vhost blueprint configuration to the broker store
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHostNode.NAME, virtualHostNodeName);
         attributes.put(VirtualHostNode.TYPE, storeType);
         if (storeDir != null)
         {
-            attributes.put(DurableConfigurationStore.STORE_PATH, storeDir);
+            attributes.put(FileBasedVirtualHostNode.STORE_PATH, storeDir);
         }
+        final String blueprint = String.format("{ \"type\" : \"%s\"  } }", ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
+        attributes.put(ConfiguredObject.CONTEXT, Collections.singletonMap(AbstractStandardVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
+                                                                          blueprint));
+
         int port = getPort(brokerPort);
         getBrokerConfiguration(port).addObjectConfiguration(VirtualHostNode.class, attributes);
     }

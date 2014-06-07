@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.server.virtualhostnode;
 
-import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
 
-@ManagedObject(type="TestMemory", category=false)
+@ManagedObject(type=TestVirtualHostNode.VIRTUAL_HOST_NODE_TYPE, category=false)
 public class TestVirtualHostNode extends AbstractStandardVirtualHostNode<TestVirtualHostNode>
 {
+    public static final String VIRTUAL_HOST_NODE_TYPE = "TestMemory";
+
     private final DurableConfigurationStore _store;
 
     public TestVirtualHostNode(Broker<?> parent, Map<String, Object> attributes)
@@ -53,9 +52,4 @@ public class TestVirtualHostNode extends AbstractStandardVirtualHostNode<TestVir
         return _store;
     }
 
-    @Override
-    public Map<String, Object> getDefaultMessageStoreSettings()
-    {
-        return Collections.<String, Object>singletonMap(MessageStore.STORE_TYPE, TestMemoryMessageStore.TYPE);
-    }
 }

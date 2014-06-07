@@ -29,9 +29,11 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.JsonFileConfigStore;
 
-@ManagedObject(category=false, type="JSON")
+@ManagedObject(type=JsonVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category=false)
 public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JsonVirtualHostNodeImpl> implements FileBasedVirtualHostNode<JsonVirtualHostNodeImpl>
 {
+    public static final String VIRTUAL_HOST_NODE_TYPE = "JSON";
+
     @ManagedAttributeField
     private String _storePath;
 

@@ -30,9 +30,11 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.jdbc.JDBCMessageStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
-@ManagedObject( category = false, type = "JDBC" )
+@ManagedObject(type = JDBCVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false )
 public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDBCVirtualHostNodeImpl> implements JDBCVirtualHostNode<JDBCVirtualHostNodeImpl>
 {
+    public static final String VIRTUAL_HOST_NODE_TYPE = "JDBC";
+
     @ManagedAttributeField
     private String _connectionUrl;
 

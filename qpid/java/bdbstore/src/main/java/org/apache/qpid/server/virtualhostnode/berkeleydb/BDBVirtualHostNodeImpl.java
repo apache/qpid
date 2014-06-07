@@ -30,9 +30,11 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
-@ManagedObject( category = false, type = "BDB" )
+@ManagedObject(type = BDBVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false)
 public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBVirtualHostNodeImpl> implements BDBVirtualHostNode<BDBVirtualHostNodeImpl>
 {
+    public static final String VIRTUAL_HOST_NODE_TYPE = "BDB";
+
     @ManagedAttributeField
     private String _storePath;
 
