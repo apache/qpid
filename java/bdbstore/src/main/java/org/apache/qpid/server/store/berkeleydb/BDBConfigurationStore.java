@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -129,8 +128,6 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     private final EnvironmentFacadeFactory _environmentFacadeFactory;
 
     private volatile Committer _committer;
-
-    private boolean _isMessageStoreProvider;
 
     private String _storeLocation;
     private final BDBMessageStore _messageStoreFacade = new BDBMessageStore();
@@ -241,8 +238,8 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
         for (ConfiguredObjectRecord record : configuredObjects.values())
         {
-            boolean shoudlContinue = handler.handle(record);
-            if (!shoudlContinue)
+            boolean shouldContinue = handler.handle(record);
+            if (!shouldContinue)
             {
                 break;
             }
@@ -670,27 +667,18 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
         {
 
-            Sequence mmdSeq = null;
-            try
-            {
-                mmdSeq = getMessageMetaDataSeqDb().openSequence(null, MESSAGE_METADATA_SEQ_KEY, MESSAGE_METADATA_SEQ_CONFIG);
-                long newMessageId = mmdSeq.get(null, 1);
+            Sequence mmdSeq = _environmentFacade.openSequence(getMessageMetaDataSeqDb(),
+                                                              MESSAGE_METADATA_SEQ_KEY,
+                                                              MESSAGE_METADATA_SEQ_CONFIG);
+            long newMessageId = mmdSeq.get(null, 1);
 
-                if (metaData.isPersistent())
-                {
-                    return (StoredMessage<T>) new StoredBDBMessage(newMessageId, metaData);
-                }
-                else
-                {
-                    return new StoredMemoryMessage<T>(newMessageId, metaData);
-                }
-            }
-            finally
+            if (metaData.isPersistent())
             {
-                if (mmdSeq != null)
-                {
-                    mmdSeq.close();
-                }
+                return (StoredMessage<T>) new StoredBDBMessage(newMessageId, metaData);
+            }
+            else
+            {
+                return new StoredMemoryMessage<T>(newMessageId, metaData);
             }
         }
 

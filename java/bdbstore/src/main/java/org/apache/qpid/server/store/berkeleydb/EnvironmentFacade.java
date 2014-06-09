@@ -26,9 +26,12 @@ import java.util.Map;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
+import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.Sequence;
+import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
 
 public interface EnvironmentFacade
@@ -43,7 +46,9 @@ public interface EnvironmentFacade
 
     Environment getEnvironment();
 
-    Database openDatabase(String name, DatabaseConfig databaseConfig);
+    Database openDatabase(String databaseName, DatabaseConfig databaseConfig);
+
+    Sequence openSequence(Database database, DatabaseEntry sequenceKey, SequenceConfig sequenceConfig);
 
     Committer createCommitter(String name);
 
@@ -57,4 +62,5 @@ public interface EnvironmentFacade
 
     void closeDatabase(String name);
     void close();
+
 }
