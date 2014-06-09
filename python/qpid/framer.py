@@ -90,7 +90,9 @@ class Framer(Packer):
   def read(self, n):
     while len(self.rx_buf) < n:
       try:
-        s = self.sock.recv(n) # NOTE: instead of "n", arg should be "self.maxbufsize"
+        # QPID-5808: never consume more than n bytes from the socket,
+        # otherwise the extra bytes are discarded.
+        s = self.sock.recv(n - len(self.rx_buf))
         if self.security_layer_rx:
           try:
             s = self.security_layer_rx.decode(s)
