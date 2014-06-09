@@ -774,6 +774,9 @@ BoolExpression* specialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expressio
             if (e.val.size()>1) {
                 throwParseError(tokeniser, "single character string required after ESCAPE");
             }
+            if (e.val=="%" || e.val=="_") {
+                throwParseError(tokeniser, "'%' and '_' are not allowed as ESCAPE characters");
+            }
             return new LikeExpression(e1.release(), t.val, e.val);
         } else {
             tokeniser.returnTokens();
