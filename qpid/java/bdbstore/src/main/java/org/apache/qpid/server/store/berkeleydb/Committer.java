@@ -35,36 +35,4 @@ public interface Committer
     void close();
 
     boolean isStarted();
-
-    Committer IMMEDIATE_FUTURE_COMMITTER = new Committer()
-    {
-
-        @Override
-        public void start()
-        {
-        }
-
-        @Override
-        public StoreFuture commit(Transaction tx, boolean syncCommit)
-        {
-            return StoreFuture.IMMEDIATE_FUTURE;
-        }
-
-        @Override
-        public void stop()
-        {
-        }
-
-        @Override
-        public void close()
-        {
-        }
-
-        @Override
-        public boolean isStarted()
-        {
-            return true;
-        }
-    };
-
 }

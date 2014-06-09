@@ -28,8 +28,8 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>
 {
-    String REMOTE_TRANSACTION_SYNCRONIZATION_POLICY = "remoteTransactionSynchronizationPolicy";
-    String LOCAL_TRANSACTION_SYNCRONIZATION_POLICY = "localTransactionSynchronizationPolicy";
+    String REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY = "remoteTransactionSynchronizationPolicy";
+    String LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY = "localTransactionSynchronizationPolicy";
     String COALESCING_SYNC = "coalescingSync";
     String REPLICA_ACKNOWLEDGMENT_POLICY = "replicaAcknowledgmentPolicy";
 

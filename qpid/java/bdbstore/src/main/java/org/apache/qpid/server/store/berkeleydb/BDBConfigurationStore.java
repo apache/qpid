@@ -127,8 +127,6 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
     private final EnvironmentFacadeFactory _environmentFacadeFactory;
 
-    private volatile Committer _committer;
-
     private String _storeLocation;
     private final BDBMessageStore _messageStoreFacade = new BDBMessageStore();
     private ConfiguredObject<?> _parent;
@@ -641,9 +639,6 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
                                                                                           );
                     _storeLocation = _environmentFacade.getStoreLocation();
                 }
-
-                _committer = _environmentFacade.createCommitter(parent.getName());
-                _committer.start();
             }
         }
 
@@ -699,22 +694,9 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         @Override
         public void closeMessageStore()
         {
-            if (_messageStoreOpen.compareAndSet(true, false))
+            if (_messageStoreOpen.compareAndSet(true, false) && !_configurationStoreOpen.get())
             {
-                try
-                {
-                    if (_committer != null)
-                    {
-                        _committer.close();
-                    }
-                }
-                finally
-                {
-                    if (!_configurationStoreOpen.get())
-                    {
-                        closeEnvironment();
-                    }
-                }
+                closeEnvironment();
             }
         }
 
@@ -908,8 +890,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
                             LOGGER.debug("Deleted content for message " + messageId);
                         }
 
-                        _environmentFacade.commit(tx);
-                        _committer.commit(tx, sync);
+                        _environmentFacade.commit(tx, sync);
 
                         complete = true;
                         tx = null;
@@ -1334,8 +1315,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
                 throw new StoreException("Fatal internal error: transactional is null at commitTran");
             }
 
-            _environmentFacade.commit(tx);
-            StoreFuture result =  _committer.commit(tx, syncCommit);
+            StoreFuture result = _environmentFacade.commit(tx, syncCommit);
 
             if (LOGGER.isDebugEnabled())
             {
@@ -1617,8 +1597,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
                         throw _environmentFacade.handleDatabaseException("failed to begin transaction", e);
                     }
                     store(txn);
-                    _environmentFacade.commit(txn);
-                    _committer.commit(txn, true);
+                    _environmentFacade.commit(txn, true);
 
                     storedSizeChangeOccurred(getMetaData().getContentSize());
                 }

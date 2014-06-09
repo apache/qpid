@@ -472,8 +472,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertTrue("CoalescingSync is not ON", virtualHost.isCoalescingSync());
 
         Map<String, Object> virtualHostAttributes = new HashMap<String,Object>();
-        virtualHostAttributes.put(BDBHAVirtualHost.LOCAL_TRANSACTION_SYNCRONIZATION_POLICY, "WRITE_NO_SYNC");
-        virtualHostAttributes.put(BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCRONIZATION_POLICY, "SYNC");
+        virtualHostAttributes.put(BDBHAVirtualHost.LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY, "WRITE_NO_SYNC");
+        virtualHostAttributes.put(BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY, "SYNC");
         virtualHost.setAttributes(virtualHostAttributes);
 
         awaitForAttributeChange(virtualHost, BDBHAVirtualHostImpl.COALESCING_SYNC, false);
@@ -482,7 +482,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertFalse("CoalescingSync is not OFF", virtualHost.isCoalescingSync());
         try
         {
-            virtualHost.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.LOCAL_TRANSACTION_SYNCRONIZATION_POLICY, "INVALID"));
+            virtualHost.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY, "INVALID"));
             fail("Invalid syncronization policy is set");
         }
         catch(IllegalArgumentException e)
@@ -492,7 +492,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         try
         {
-            virtualHost.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCRONIZATION_POLICY, "INVALID"));
+            virtualHost.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY, "INVALID"));
             fail("Invalid syncronization policy is set");
         }
         catch(IllegalArgumentException e)

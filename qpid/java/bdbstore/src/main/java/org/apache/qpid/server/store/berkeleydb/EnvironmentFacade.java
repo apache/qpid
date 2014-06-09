@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpid.server.store.StoreFuture;
+
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
@@ -50,11 +52,9 @@ public interface EnvironmentFacade
 
     Sequence openSequence(Database database, DatabaseEntry sequenceKey, SequenceConfig sequenceConfig);
 
-    Committer createCommitter(String name);
-
     Transaction beginTransaction();
 
-    void commit(com.sleepycat.je.Transaction tx);
+    StoreFuture commit(com.sleepycat.je.Transaction tx, boolean sync);
 
     DatabaseException handleDatabaseException(String contextMessage, DatabaseException e);
 

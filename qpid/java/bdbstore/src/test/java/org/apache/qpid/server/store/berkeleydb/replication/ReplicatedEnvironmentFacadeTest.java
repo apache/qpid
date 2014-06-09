@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.qpid.server.store.berkeleydb.Committer;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -169,29 +168,13 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicatedEnvironmentFacade master = createMaster();
         assertEquals("Unexpected message store durability", TEST_DURABILITY, master.getMessageStoreTransactionDurability());
         assertEquals("Unexpected durability", TEST_DURABILITY, master.getDurability());
-        Committer committer = master.createCommitter(TEST_GROUP_NAME);
-        committer.start();
-
-        waitForCommitter(committer, true);
-
+        assertFalse("Coalescing syn before policy set to SYNC", master.isCoalescingSync());
+        master.setMessageStoreLocalTransactionSynchronizationPolicy(SyncPolicy.SYNC);
+        assertTrue("Coalescing syn after policy set to SYNC", master.isCoalescingSync());
         assertEquals("Unexpected message store durability after committer start", "NO_SYNC,NO_SYNC,SIMPLE_MAJORITY", master.getMessageStoreTransactionDurability().toString());
-
-        committer.stop();
-        waitForCommitter(committer, false);
-        assertEquals("Unexpected message store durability after committer stop", TEST_DURABILITY, master.getMessageStoreTransactionDurability());
-    }
-
-    public void testIsCoalescingSync() throws Exception
-    {
-        ReplicatedEnvironmentFacade master = createMaster();
-        assertEquals("Unexpected coalescing sync", false, master.isCoalescingSync());
-        Committer committer = master.createCommitter(TEST_GROUP_NAME);
-        committer.start();
-        waitForCommitter(committer, true);
-        assertEquals("Unexpected coalescing sync", true, master.isCoalescingSync());
-        committer.stop();
-        waitForCommitter(committer, false);
-        assertEquals("Unexpected coalescing sync", false, master.isCoalescingSync());
+        master.setMessageStoreLocalTransactionSynchronizationPolicy(SyncPolicy.WRITE_NO_SYNC);
+        assertEquals("Unexpected message store durability after committer stop", "WRITE_NO_SYNC,NO_SYNC,SIMPLE_MAJORITY", master.getMessageStoreTransactionDurability().toString());
+        assertFalse("Coalescing syn after policy set to WRITE_NO_SYNC", master.isCoalescingSync());
     }
 
     public void testGetNodeState() throws Exception
@@ -717,17 +700,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private ReplicatedEnvironmentFacade addNode(State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
         return addNode(TEST_NODE_NAME, TEST_NODE_HOST_PORT, TEST_DESIGNATED_PRIMARY, desiredState, stateChangeListener, replicationGroupListener);
-    }
-
-    private void waitForCommitter(Committer committer, boolean expected) throws InterruptedException
-    {
-        int counter = 0;
-        while(committer.isStarted() != expected && counter < 100)
-        {
-            Thread.sleep(20);
-            counter++;
-        }
-        assertEquals("Committer is not in expected state", expected, committer.isStarted());
     }
 
     private ReplicatedEnvironmentConfiguration createReplicatedEnvironmentConfiguration(String nodeName, String nodeHostPort, boolean designatedPrimary)
