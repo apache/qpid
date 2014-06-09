@@ -21,9 +21,14 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
+import java.net.ServerSocket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.Sequence;
+import com.sleepycat.je.SequenceConfig;
+import com.sun.org.apache.xerces.internal.dom.DeepNodeListImpl;
 import org.apache.log4j.Logger;
 
 import com.sleepycat.je.Database;
@@ -40,6 +45,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
 
     private final String _storePath;
     private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
 
     private Environment _environment;
 
@@ -105,20 +111,44 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     @Override
     public void close()
     {
+        closeSequences();
         closeDatabases();
         closeEnvironment();
+    }
+
+    private void closeSequences()
+    {
+        RuntimeException firstThrownException = null;
+        for (DatabaseEntry  sequenceKey : _cachedSequences.keySet())
+        {
+            try
+            {
+                closeSequence(sequenceKey);
+            }
+            catch(DatabaseException de)
+            {
+                if (firstThrownException == null)
+                {
+                    firstThrownException = de;
+                }
+            }
+        }
+        if (firstThrownException != null)
+        {
+            throw firstThrownException;
+        }
     }
 
     private void closeDatabases()
     {
         RuntimeException firstThrownException = null;
-        for (Database database : _cachedDatabases.values())
+        for (String databaseName : _cachedDatabases.keySet())
         {
             try
             {
-                database.close();
+                closeDatabase(databaseName);
             }
-            catch(RuntimeException e)
+            catch(DatabaseException e)
             {
                 if (firstThrownException == null)
                 {
@@ -220,6 +250,39 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
             }
         }
         return cachedHandle;
+    }
+
+    @Override
+    public Sequence openSequence(final Database database,
+                                 final DatabaseEntry sequenceKey,
+                                 final SequenceConfig sequenceConfig)
+    {
+        Sequence cachedSequence = _cachedSequences.get(sequenceKey);
+        if (cachedSequence == null)
+        {
+            Sequence handle = database.openSequence(null, sequenceKey, sequenceConfig);
+            Sequence existingHandle = _cachedSequences.putIfAbsent(sequenceKey, handle);
+            if (existingHandle == null)
+            {
+                cachedSequence = handle;
+            }
+            else
+            {
+                cachedSequence = existingHandle;
+                handle.close();
+            }
+        }
+        return cachedSequence;
+    }
+
+
+    private void closeSequence(final DatabaseEntry sequenceKey)
+    {
+        Sequence cachedHandle = _cachedSequences.remove(sequenceKey);
+        if (cachedHandle != null)
+        {
+            cachedHandle.close();
+        }
     }
 
     @Override

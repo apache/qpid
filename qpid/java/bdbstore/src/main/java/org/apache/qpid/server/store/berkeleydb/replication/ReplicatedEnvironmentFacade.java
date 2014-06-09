@@ -42,6 +42,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.Sequence;
+import com.sleepycat.je.SequenceConfig;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
 import org.apache.qpid.server.store.berkeleydb.Committer;
@@ -160,6 +163,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private volatile SyncPolicy _messageStoreRemoteTransactionSyncronizationPolicy = REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY;
 
     private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
 
     public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration)
     {
@@ -242,6 +246,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
                 try
                 {
+                    closeSequences();
                     closeDatabases();
                 }
                 finally
@@ -375,6 +380,38 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             {
                 cachedHandle.close();
             }
+        }
+    }
+    @Override
+    public Sequence openSequence(final Database database,
+                                 final DatabaseEntry sequenceKey,
+                                 final SequenceConfig sequenceConfig)
+    {
+        Sequence cachedSequence = _cachedSequences.get(sequenceKey);
+        if (cachedSequence == null)
+        {
+            Sequence handle = database.openSequence(null, sequenceKey, sequenceConfig);
+            Sequence existingHandle = _cachedSequences.putIfAbsent(sequenceKey, handle);
+            if (existingHandle == null)
+            {
+                cachedSequence = handle;
+            }
+            else
+            {
+                cachedSequence = existingHandle;
+                handle.close();
+            }
+        }
+        return cachedSequence;
+    }
+
+
+    private void closeSequence(final DatabaseEntry sequenceKey)
+    {
+        Sequence cachedHandle = _cachedSequences.remove(sequenceKey);
+        if (cachedHandle != null)
+        {
+            cachedHandle.close();
         }
     }
 
@@ -676,11 +713,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         createReplicationGroupAdmin().removeMember(nodeName);
     }
 
-    public void updateAddress(final String nodeName, final String newHostName, final int newPort)
-    {
-        createReplicationGroupAdmin().updateAddress(nodeName, newHostName, newPort);
-    }
-
     public long getJoinTime()
     {
         return _joinTime;
@@ -782,7 +814,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         @Override
                         public void stateChange(StateChangeEvent stateChangeEvent) throws RuntimeException
                         {
-                            if (LOGGER.isInfoEnabled())
+                            if (LOGGER.isDebugEnabled())
                             {
                                 LOGGER.debug(
                                         "When restarting a state change event is received on NOOP listener for state:"
@@ -794,6 +826,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
                 try
                 {
+                    closeSequences();
                     closeDatabases();
                 }
                 catch(Exception e)
@@ -807,6 +840,29 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             {
                 LOGGER.warn("Ignoring an exception whilst closing environment", efe);
             }
+        }
+    }
+
+    private void closeSequences()
+    {
+        RuntimeException firstThrownException = null;
+        for (DatabaseEntry  sequenceKey : _cachedSequences.keySet())
+        {
+            try
+            {
+                closeSequence(sequenceKey);
+            }
+            catch(DatabaseException de)
+            {
+                if (firstThrownException == null)
+                {
+                    firstThrownException = de;
+                }
+            }
+        }
+        if (firstThrownException != null)
+        {
+            throw firstThrownException;
         }
     }
 
