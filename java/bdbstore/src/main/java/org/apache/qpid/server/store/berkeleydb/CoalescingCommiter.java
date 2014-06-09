@@ -50,7 +50,9 @@ public class CoalescingCommiter implements Committer
             @Override
             public Thread newThread(Runnable r)
             {
-                return new Thread(r, "Commit-Thread-" + name);
+                Thread t = new Thread(r, "Commit-Thread-" + name);
+                t.setDaemon(true);
+                return t;
             }
         });
     }
