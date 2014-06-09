@@ -21,15 +21,16 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
-import java.net.ServerSocket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
-import com.sun.org.apache.xerces.internal.dom.DeepNodeListImpl;
+
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.StoreFuture;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -48,6 +49,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     private final ConcurrentHashMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
 
     private Environment _environment;
+    private final Committer _committer;
 
     public StandardEnvironmentFacade(String storePath,
                                      Map<String, String> attributes)
@@ -69,6 +71,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
             }
         }
 
+        String name = (String)attributes.get(ConfiguredObject.NAME);
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
@@ -82,6 +85,9 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
 
         _environment = new Environment(environmentPath, envConfig);
+
+        _committer =  new CoalescingCommiter(name, this);
+        _committer.start();
     }
 
 
@@ -92,7 +98,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     }
 
     @Override
-    public void commit(com.sleepycat.je.Transaction tx)
+    public StoreFuture commit(com.sleepycat.je.Transaction tx, boolean syncCommit)
     {
         try
         {
@@ -106,14 +112,26 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
 
             throw handleDatabaseException("Got DatabaseException on commit", de);
         }
+        return _committer.commit(tx, syncCommit);
     }
 
     @Override
     public void close()
     {
-        closeSequences();
-        closeDatabases();
-        closeEnvironment();
+        try
+        {
+            if (_committer != null)
+            {
+                _committer.close();
+            }
+
+            closeSequences();
+            closeDatabases();
+        }
+        finally
+        {
+            closeEnvironment();
+        }
     }
 
     private void closeSequences()
@@ -293,12 +311,6 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         {
             cachedHandle.close();
         }
-    }
-
-    @Override
-    public Committer createCommitter(String name)
-    {
-        return new CoalescingCommiter(name, this);
     }
 
     @Override

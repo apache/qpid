@@ -45,9 +45,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
+
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
-import org.apache.qpid.server.store.berkeleydb.Committer;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
 import org.apache.qpid.server.util.DaemonThreadFactory;
@@ -213,7 +214,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }
 
     @Override
-    public void commit(final Transaction tx)
+    public StoreFuture commit(final Transaction tx, boolean syncCommit)
     {
         try
         {
@@ -225,6 +226,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             throw handleDatabaseException("Got DatabaseException on commit, closing environment", de);
         }
+        return _coalescingCommiter.commit(tx, syncCommit);
     }
 
     @Override
@@ -246,6 +248,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
                 try
                 {
+                    _coalescingCommiter.close();
                     closeSequences();
                     closeDatabases();
                 }
@@ -1034,12 +1037,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             LOGGER.info("Environment is created for node " + _prettyGroupNodeName);
         }
         return environment;
-    }
-
-    @Override
-    public Committer createCommitter(String name)
-    {
-        return _coalescingCommiter;
     }
 
     NodeState getRemoteNodeState(ReplicationNode repNode) throws IOException, ServiceConnectFailedException

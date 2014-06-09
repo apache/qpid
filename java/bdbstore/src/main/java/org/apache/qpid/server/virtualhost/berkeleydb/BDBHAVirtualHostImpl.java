@@ -131,13 +131,13 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     {
         super.validateChange(proxyForValidation, changedAttributes);
 
-        if(changedAttributes.contains(LOCAL_TRANSACTION_SYNCRONIZATION_POLICY))
+        if(changedAttributes.contains(LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY))
         {
             String policy = ((BDBHAVirtualHost<?>)proxyForValidation).getLocalTransactionSynchronizationPolicy();
             validateTransactionSynchronizationPolicy(policy);
         }
 
-        if(changedAttributes.contains(REMOTE_TRANSACTION_SYNCRONIZATION_POLICY))
+        if(changedAttributes.contains(REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY))
         {
             String policy = ((BDBHAVirtualHost<?>)proxyForValidation).getRemoteTransactionSynchronizationPolicy();
             validateTransactionSynchronizationPolicy(policy);
