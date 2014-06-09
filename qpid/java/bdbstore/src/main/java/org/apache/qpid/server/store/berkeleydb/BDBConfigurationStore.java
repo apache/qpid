@@ -614,6 +614,8 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         private boolean _limitBusted;
         private long _persistentSizeLowThreshold;
         private long _persistentSizeHighThreshold;
+        private long _totalStoreSize;
+
         private ConfiguredObject<?> _parent;
 
         @Override
@@ -659,6 +661,9 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             {
                 throw _environmentFacade.handleDatabaseException("Cannot upgrade store", e);
             }
+
+            // TODO this relies on the fact that the VH will call upgrade just before putting the VH into service.
+            _totalStoreSize = getSizeOnDisk();
         }
 
         @Override
@@ -1403,23 +1408,42 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             {
                 synchronized (this)
                 {
-                    // TODO KW I think we should simplify matters here. The MessageStore should
-                    // expose merely method #getStoreSizeEstimate().  The virtualhost (housekeeper)
-                    // should periodically call this method and it be the one responsible for
-                    // the generation of alerts.
+                    // the delta supplied is an approximation of a store size change. we don;t want to check the statistic every
+                    // time, so we do so only when there's been enough change that it is worth looking again. We do this by
+                    // assuming the total size will change by less than twice the amount of the message data change.
+                    long newSize = _totalStoreSize += 2*delta;
 
-                    long newSize = getSizeOnDisk();
-                    reduceSizeOnDisk();
-
-                    if(!_limitBusted && newSize > getPersistentSizeHighThreshold())
+                    if(!_limitBusted &&  newSize > getPersistentSizeHighThreshold())
                     {
-                        _limitBusted = true;
-                        _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+                        _totalStoreSize = getSizeOnDisk();
+
+                        if(_totalStoreSize > getPersistentSizeHighThreshold())
+                        {
+                            _limitBusted = true;
+                            _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+                        }
                     }
                     else if(_limitBusted && newSize < getPersistentSizeLowThreshold())
                     {
-                        _limitBusted = false;
-                        _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+                        long oldSize = _totalStoreSize;
+                        _totalStoreSize = getSizeOnDisk();
+
+                        if(oldSize <= _totalStoreSize)
+                        {
+
+                            reduceSizeOnDisk();
+
+                            _totalStoreSize = getSizeOnDisk();
+
+                        }
+
+                        if(_totalStoreSize < getPersistentSizeLowThreshold())
+                        {
+                            _limitBusted = false;
+                            _eventManager.notifyEvent(Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+                        }
+
+
                     }
                 }
             }
@@ -1435,7 +1459,6 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             return _persistentSizeHighThreshold;
         }
 
-        // TODO remove altogether or perhaps expose as public method: requestStoreCleanup
         private void reduceSizeOnDisk()
         {
             _environmentFacade.getEnvironment().getConfig().setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
