@@ -303,6 +303,8 @@ QPID_AUTO_TEST_CASE(parseString)
     BOOST_CHECK_NO_THROW(qb::Selector e("(354.6)"));
     BOOST_CHECK_NO_THROW(qb::Selector e("A is null and 'hello out there'"));
     BOOST_CHECK_NO_THROW(qb::Selector e("17/4>4"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("17/4>+4"));
+    BOOST_CHECK_NO_THROW(qb::Selector e("17/4>-4"));
     BOOST_CHECK_NO_THROW(qb::Selector e("A IN ('hello', 'there', 1 , true, (1-17))"));
 }
 
