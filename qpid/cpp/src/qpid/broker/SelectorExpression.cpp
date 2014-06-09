@@ -950,10 +950,10 @@ Expression* unaryArithExpression(Tokeniser& tokeniser)
         return new UnaryArithExpression(&negate, e.release());
     }
     default:
+        tokeniser.returnTokens();
         break;
     }
 
-    tokeniser.returnTokens();
     std::auto_ptr<Expression> e(primaryExpression(tokeniser));
     return e.release();
 }
