@@ -262,6 +262,7 @@ QPID_AUTO_TEST_CASE(parseStringFail)
     BOOST_CHECK_THROW(qb::Selector e("A not 234 escape"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A not like 'eclecti_' escape 'happy'"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A not like 'eclecti_' escape happy"), std::range_error);
+    BOOST_CHECK_THROW(qb::Selector e("A not like 'eclecti_' escape '%'"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A BETWEEN AND 'true'"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A NOT BETWEEN 34 OR 3.9"), std::range_error);
     BOOST_CHECK_THROW(qb::Selector e("A IN ()"), std::range_error);
