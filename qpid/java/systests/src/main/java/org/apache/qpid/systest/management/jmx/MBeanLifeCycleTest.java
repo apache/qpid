@@ -33,6 +33,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
@@ -43,7 +44,8 @@ import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class MBeanLifeCycleTest extends QpidRestTestCase
 {
-
+    private final static String TEST_VIRTUAL_HOST_MBEAN_SEARCH_QUERY = "org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost="
+            + ObjectName.quote(TEST2_VIRTUALHOST);
     private JMXTestUtils _jmxUtils;
 
     @Override
@@ -108,14 +110,31 @@ public class MBeanLifeCycleTest extends QpidRestTestCase
 
     public void testVirtualHostMBeanIsUnregisteredOnVirtualHostDeletion() throws Exception
     {
-        String query = "org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost="
-                + ObjectName.quote(TEST2_VIRTUALHOST)  + ",*";
-        boolean mBeanExists =_jmxUtils.doesManagedObjectExist(query);
+        boolean mBeanExists =_jmxUtils.doesManagedObjectExist(TEST_VIRTUAL_HOST_MBEAN_SEARCH_QUERY);
         assertTrue("Host mBean is not registered", mBeanExists);
 
         getRestTestHelper().submitRequest("virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE", HttpServletResponse.SC_OK);
 
-        mBeanExists =_jmxUtils.doesManagedObjectExist(query);
+        mBeanExists =_jmxUtils.doesManagedObjectExist(TEST_VIRTUAL_HOST_MBEAN_SEARCH_QUERY);
+        assertFalse("Host mBean is not unregistered", mBeanExists);
+    }
+
+    public void testVirtualHostMBeanIsUnregisteredOnVirtualHostNodeStop() throws Exception
+    {
+        boolean mBeanExists =_jmxUtils.doesManagedObjectExist(TEST_VIRTUAL_HOST_MBEAN_SEARCH_QUERY);
+        assertTrue("Host mBean is not registered", mBeanExists);
+
+        ManagedBroker managedBroker = _jmxUtils.getManagedBroker(TEST2_VIRTUALHOST);
+        assertNotNull("Host mBean is not created", managedBroker);
+
+        Map<String, Object> nodeData = new HashMap<String, Object>();
+        nodeData.put(VirtualHostNode.NAME, TEST2_VIRTUALHOST);
+        nodeData.put(VirtualHostNode.DESIRED_STATE, State.STOPPED.name());
+
+        int status = getRestTestHelper().submitRequest("virtualhostnode/" + TEST2_VIRTUALHOST, "PUT", nodeData);
+        assertEquals("Unexpected code", 200, status);
+
+        mBeanExists =_jmxUtils.doesManagedObjectExist(TEST_VIRTUAL_HOST_MBEAN_SEARCH_QUERY);
         assertFalse("Host mBean is not unregistered", mBeanExists);
     }
 }

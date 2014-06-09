@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -269,7 +270,8 @@ public class JMXManagementPluginImpl
 
             if(LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Provider " + provider + " mBean for child " + child + " " + mBean);
+                LOGGER.debug("Provider " + provider + (mBean == null ? " did not create mBean" : " created mBean " + mBean)
+                        + " for child " + child);
             }
         }
     }
@@ -377,18 +379,37 @@ public class JMXManagementPluginImpl
         return mbeans.containsKey(mBeanProvider);
     }
 
-    private void destroyObjectMBeans(ConfiguredObject<?> child, boolean removeListener)
+    private void destroyObjectMBeans(ConfiguredObject<?> object, boolean removeListener)
     {
-        if (supportedConfiguredObject(child))
+        if (supportedConfiguredObject(object))
         {
             synchronized (_childrenLock)
             {
                 if (removeListener)
                 {
-                    child.removeChangeListener(_changeListener);
+                    object.removeChangeListener(_changeListener);
                 }
-                unregisterObjectMBeans(child);
-                _children.remove(child);
+                unregisterObjectMBeans(object);
+                _children.remove(object);
+                destroyChildrenMBeansIfVirtualHostNode(object);
+            }
+        }
+    }
+
+    private void destroyChildrenMBeansIfVirtualHostNode(ConfiguredObject<?> child)
+    {
+        if (child instanceof VirtualHostNode)
+        {
+            for (Iterator<ConfiguredObject<?>> iterator = _children.keySet().iterator(); iterator.hasNext();)
+            {
+                ConfiguredObject<?> registeredObject = iterator.next();
+                ConfiguredObject<?> parent = registeredObject.getParent(VirtualHostNode.class);
+                if (parent == child)
+                {
+                    registeredObject.removeChangeListener(_changeListener);
+                    unregisterObjectMBeans(registeredObject);
+                }
+                iterator.remove();
             }
         }
     }
@@ -429,6 +450,12 @@ public class JMXManagementPluginImpl
         {
             return "INTERNAL";
         }
+
+        @Override
+        public String toString()
+        {
+            return DEFAULT_NAME;
+        }
     }
 
     private class ChangeListener implements ConfigurationChangeListener
@@ -465,7 +492,14 @@ public class JMXManagementPluginImpl
             // for instance, on role change in BDB HA VHN a VH could is recovered/created.
             // A call to createObjectMBeans is safe as it checks the existence of MBean before its creation.
 
-            createObjectMBeans(object);
+            if (ConfiguredObject.DESIRED_STATE.equals(attributeName))
+            {
+                stateChanged(object, State.valueOf(String.valueOf(oldAttributeValue)), State.valueOf(String.valueOf(newAttributeValue)));
+            }
+            else
+            {
+                createObjectMBeans(object);
+            }
         }
     }
 

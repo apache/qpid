@@ -205,8 +205,8 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     @StateTransition( currentState = { State.ACTIVE, State.ERRORED, State.UNINITIALIZED }, desiredState = State.STOPPED )
     protected void doStop()
     {
-        closeConfigurationStore();
         closeChildren();
+        closeConfigurationStore();
         _state.set(State.STOPPED);
     }
 
