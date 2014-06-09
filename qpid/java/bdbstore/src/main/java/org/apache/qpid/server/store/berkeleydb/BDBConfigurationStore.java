@@ -712,7 +712,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
                 {
                     if (_committer != null)
                     {
-                        _committer.stop();
+                        _committer.close();
                     }
                 }
                 finally
