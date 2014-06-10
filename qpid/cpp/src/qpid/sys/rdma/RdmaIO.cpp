@@ -200,7 +200,11 @@ namespace Rdma {
             if (!buff) {
                 Buffer* ob = getSendBuffer();
                 // Have to send something as adapters hate it when you try to transfer 0 bytes
-                *reinterpret_cast< uint32_t* >(ob->bytes()) = htonl(credit);
+                char* bytes = ob->bytes();
+                bytes[0] = 0xFF & (credit >> 24);
+                bytes[1] = 0xFF & (credit >> 16);
+                bytes[2] = 0xFF & (credit >>  8);
+                bytes[3] = 0xFF & (credit      );
                 ob->dataCount(sizeof(uint32_t));
                 qp->postSend(credit | IgnoreData, ob);        
             } else if (credit > 0) {
