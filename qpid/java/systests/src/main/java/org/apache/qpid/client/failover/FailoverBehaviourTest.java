@@ -29,6 +29,8 @@ import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.test.utils.FailoverBaseCase;
 import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -61,6 +63,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class FailoverBehaviourTest extends FailoverBaseCase implements ConnectionListener, ExceptionListener
 {
+    protected static final Logger _LOGGER = LoggerFactory.getLogger(FailoverBehaviourTest.class);
+
     private static final String TEST_MESSAGE_FORMAT = "test message {0}";
 
     /** Indicates whether tests are run against clustered broker */
@@ -1092,6 +1096,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
             String text = MessageFormat.format(messagePattern, i);
             Message message = producerSession.createTextMessage(text);
             producer.send(message);
+            _LOGGER.debug("Test message number " + i + " produced with text = " + text + ", and JMSMessageID = " + message.getJMSMessageID());
         }
 
         if(standaloneProducer)
@@ -1132,7 +1137,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
      * @param messageIndex
      *            message index
      */
-    private void assertReceivedMessage(Message receivedMessage, String messagePattern, int messageIndex)
+    private void assertReceivedMessage(Message receivedMessage, String messagePattern, int messageIndex) throws JMSException
     {
         assertNotNull("Expected message [" + messageIndex + "] is not received!", receivedMessage);
         assertTrue("Failure to receive message [" + messageIndex + "], expected TextMessage but received "
@@ -1147,6 +1152,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         {
             fail("JMSException occured while getting message text:" + e.getMessage());
         }
+        _LOGGER.debug("Test message number " + messageIndex + " consumed with text = " + receivedText + ", and JMSMessageID = " + receivedMessage.getJMSMessageID());
         assertEquals("Failover is broken! Expected [" + expectedText + "] but got [" + receivedText + "]",
                 expectedText, receivedText);
     }
