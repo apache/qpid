@@ -19,10 +19,14 @@
 #include "Settings.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
+#include "qpid/OptionsTemplates.h"
 #include "qpid/broker/Broker.h"
 #include <boost/bind.hpp>
 
 namespace qpid {
+
+template po::value_semantic* create_value(ha::Enum<ha::ReplicateLevel>& val, const std::string& arg);
+
 namespace ha {
 
 using namespace std;

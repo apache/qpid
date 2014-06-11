@@ -35,8 +35,6 @@ include_directories( ${Boost_INCLUDE_DIR} )
 link_directories( ${Boost_LIBRARY_DIRS} )
 
 # Visual Studio needs some Windows-specific simplifications.
-# Linux needs to reference the boost libs, even though they should be
-# resolved via the Qpid libs.
 if (MSVC)
   add_definitions( /D "NOMINMAX" /D "WIN32_LEAN_AND_MEAN" /D "BOOST_ALL_DYN_LINK" )
   # On Windows, prevent the accidental inclusion of Boost headers from
@@ -44,9 +42,6 @@ if (MSVC)
   # Boost in the examples, and references via qpidclient/qpidcommon are
   # resolved in the Qpid libs.
   add_definitions( /D "BOOST_ALL_NO_LIB" )
-else (MSVC)
-  set(_boost_libs_needed ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                         ${Boost_FILESYSTEM_LIBRARY})
 endif (MSVC)
 
 # There are numerous duplicate names within the examples. Since all target

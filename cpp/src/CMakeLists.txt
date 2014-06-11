@@ -663,7 +663,7 @@ if (BUILD_HA)
     add_library (ha MODULE ${ha_SOURCES})
     target_link_libraries (ha
                            qpidtypes qpidcommon qpidbroker qpidmessaging
-                           "${Boost_PROGRAM_OPTIONS_LIBRARY}")
+                           ${Boost_PROGRAM_OPTIONS_LIBRARY})
     set_target_properties (ha PROPERTIES
                            PREFIX ""
                            COMPILE_DEFINITIONS _IN_QPID_BROKER
@@ -1021,7 +1021,6 @@ add_msvc_version (qpidclient library dll)
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
 
 target_link_libraries (qpidclient qpidcommon qpidtypes
-                       ${Boost_PROGRAM_OPTIONS_LIBRARY}
                        ${ssl_LIBS})
 
 set_target_properties (qpidclient PROPERTIES
@@ -1090,7 +1089,7 @@ set (qpidmessaging_SOURCES
 add_msvc_version (qpidmessaging library dll)
 
 add_library (qpidmessaging SHARED ${qpidmessaging_SOURCES})
-target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon "${Boost_PROGRAM_OPTIONS_LIBRARY}" ${Proton_LIBRARIES})
+target_link_libraries (qpidmessaging qpidtypes qpidclient qpidcommon ${Proton_LIBRARIES})
 set_target_properties (qpidmessaging PROPERTIES
                        LINK_FLAGS "${HIDE_SYMBOL_FLAGS} ${LINK_VERSION_SCRIPT_FLAG}"
                        COMPILE_FLAGS "${HIDE_SYMBOL_FLAGS}"
@@ -1224,7 +1223,6 @@ add_msvc_version (qpidbroker library dll)
 add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
 
 target_link_libraries (qpidbroker qpidcommon qpidtypes
-                       "${Boost_PROGRAM_OPTIONS_LIBRARY}"
                        "${sasl_LIB}"
                        ${ssl_server_LIBS})
 
@@ -1251,7 +1249,7 @@ set (qpidd_SOURCES
 )
 add_msvc_version (qpidd application exe)
 add_executable (qpidd ${qpidd_SOURCES})
-target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries (qpidd qpidbroker qpidcommon)
 set_target_properties (qpidd PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 install (TARGETS qpidd
          RUNTIME DESTINATION ${QPID_INSTALL_SBINDIR}

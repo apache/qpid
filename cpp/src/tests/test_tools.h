@@ -28,6 +28,7 @@
 #include <ostream>
 #include <sstream>
 #include <exception>
+#include <stdexcept>
 
 // Print a sequence
 template <class T> std::ostream& seqPrint(std::ostream& o, const T& seq) {

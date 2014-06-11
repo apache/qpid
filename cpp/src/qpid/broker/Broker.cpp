@@ -66,7 +66,6 @@
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
-#include "qpid/log/posix/SinkOptions.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/ProtocolInitiation.h"

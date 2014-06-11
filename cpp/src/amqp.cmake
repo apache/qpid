@@ -101,7 +101,7 @@ if (BUILD_AMQP)
     include_directories(${Proton_INCLUDE_DIRS})
 
     add_library (amqp MODULE ${amqp_SOURCES})
-    target_link_libraries (amqp qpidtypes qpidbroker qpidcommon ${Proton_LIBRARIES} ${Boost_PROGRAM_OPTIONS_LIBRARY})
+    target_link_libraries (amqp qpidtypes qpidbroker qpidcommon ${Proton_LIBRARIES})
     set_target_properties (amqp PROPERTIES
                            PREFIX ""
                            LINK_FLAGS "${CATCH_UNDEFINED}"
