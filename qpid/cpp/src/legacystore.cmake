@@ -160,7 +160,6 @@ if (BUILD_LEGACYSTORE)
         aio
         uuid
         qpidcommon qpidtypes qpidbroker
-        ${Boost_PROGRAM_OPTIONS_LIBRARY}
         ${DB_LIBRARY}
     )
 

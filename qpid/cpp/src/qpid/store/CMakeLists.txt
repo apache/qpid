@@ -26,13 +26,11 @@ include_directories( ${Boost_INCLUDE_DIR} )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories( ${CMAKE_HOME_DIRECTORY}/include )
 
-link_directories( ${Boost_LIBRARY_DIRS} )
-
 set (store_SOURCES
      MessageStorePlugin.cpp
     )
 add_library (store MODULE ${store_SOURCES})
-target_link_libraries (store qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries (store qpidbroker qpidcommon)
 if (CMAKE_COMPILER_IS_GNUCXX)
   set (GCC_CATCH_UNDEFINED "-Wl,--no-undefined")
   # gcc on SunOS uses native linker whose "-z defs" is too fussy
@@ -85,7 +83,7 @@ if (BUILD_MSSQL)
                ms-sql/TplRecordset.cpp
                ms-sql/VariantHelper.cpp)
   set_target_properties (mssql_store PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
-  target_link_libraries (mssql_store qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
+  target_link_libraries (mssql_store qpidbroker qpidcommon)
   install (TARGETS mssql_store # RUNTIME
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
@@ -115,7 +113,7 @@ if (BUILD_MSCLFS)
                ms-sql/VariantHelper.cpp)
   include_directories(ms-sql)
   set_target_properties (msclfs_store PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
-  target_link_libraries (msclfs_store qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY} clfsw32.lib)
+  target_link_libraries (msclfs_store qpidbroker qpidcommon clfsw32.lib)
   install (TARGETS msclfs_store # RUNTIME
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})

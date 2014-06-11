@@ -30,8 +30,8 @@
 #  pragma warning(disable : 4251 4275)
 #endif
 
-#include <boost/program_options.hpp>
-#include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/shared_ptr.hpp>
 
 #ifdef _MSC_VER
 #  pragma warning(pop)
@@ -41,7 +41,17 @@
 #include <iterator>
 #include <algorithm>
 #include <string>
+#include <vector>
+#include <iosfwd>
+
 #include "qpid/CommonImportExport.h"
+
+namespace boost {
+namespace program_options {
+class value_semantic;
+class option_description;
+class options_description;
+}}
 
 namespace qpid {
 namespace po=boost::program_options;
@@ -51,18 +61,9 @@ namespace po=boost::program_options;
 ///@internal
 QPID_COMMON_EXTERN std::string prettyArg(const std::string&, const std::string&);
 
-/** @internal Normally only constructed by optValue() */
+///@internal
 template <class T>
-class OptionValue : public po::typed_value<T> {
-  public:
-    OptionValue(T& value, const std::string& arg)
-        : po::typed_value<T>(&value), argName(arg) {}
-    std::string name() const { return argName; }
-
-  private:
-    std::string argName;
-};
-
+QPID_COMMON_EXTERN po::value_semantic* create_value(T& val, const std::string& arg);
 
 /** Create an option value.
  * name, value appear after the option name in help like this:
@@ -73,7 +74,7 @@ class OptionValue : public po::typed_value<T> {
 template<class T>
 po::value_semantic* optValue(T& value, const char* name) {
     std::string valstr(boost::lexical_cast<std::string>(value));
-    return new OptionValue<T>(value, prettyArg(name, valstr));
+    return create_value(value, prettyArg(name, valstr));
 }
 
 /** Create a vector value. Multiple occurences of the option are
@@ -86,21 +87,12 @@ po::value_semantic* optValue(std::vector<T>& value, const char* name) {
     std::string val=os.str();
     if (!val.empty())
         val.erase(val.end()-1); // Remove trailing " "
-    return (new OptionValue<std::vector<T> >(value, prettyArg(name, val)));
+    return create_value(value, prettyArg(name, val));
 }
 
 /** Create a boolean switch value. Presence of the option sets the value. */
-inline po::value_semantic* optValue(bool& value) {
-#if (BOOST_VERSION >= 103500)
-    return (new OptionValue<bool>(value, ""))->implicit_value(true);
-#else
-    return po::bool_switch(&value);
-#endif
-}
-
-inline po::value_semantic* pure_switch(bool& value) {
-    return po::bool_switch(&value);
-}
+QPID_COMMON_EXTERN po::value_semantic* optValue(bool& value);
+QPID_COMMON_EXTERN po::value_semantic* pure_switch(bool& value);
 
 /**
  * Base class for options.
@@ -140,9 +132,22 @@ inline po::value_semantic* pure_switch(bool& value) {
  */
 
 
+class options_description_easy_init {
+public:
+    QPID_COMMON_EXTERN options_description_easy_init(po::options_description* o);
+
+    QPID_COMMON_EXTERN options_description_easy_init&
+    operator()(const char* name,
+               const po::value_semantic* s,
+               const char* description);
+
+private:
+    po::options_description* owner;
+};
 
 
-struct Options : public po::options_description {
+struct Options {
+    friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const Options&);
 
     struct Exception : public qpid::Exception {
         Exception(const std::string& msg) : qpid::Exception(msg) {}
@@ -165,12 +170,17 @@ struct Options : public po::options_description {
     QPID_COMMON_EXTERN bool findArg(int argc, char const* const* argv,
                                        const std::string& theArg);
 
-  boost::program_options::options_description_easy_init addOptions() {
-      return add_options();
-  }
+    QPID_COMMON_EXTERN options_description_easy_init addOptions();
+    QPID_COMMON_EXTERN void add(Options&);
+    QPID_COMMON_EXTERN const std::vector< boost::shared_ptr<po::option_description> >& options() const;
+    QPID_COMMON_EXTERN bool find_nothrow(const std::string&, bool);
+    QPID_COMMON_EXTERN void print(std::ostream& os);
+
+private:
+    boost::shared_ptr<po::options_description> poOptions;
 };
 
-
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const Options&);
 
 /**
  * Standard options for configuration

@@ -16,9 +16,11 @@
  *
  */
 
-#include "qpid/log/Logger.h"
 #include "qpid/Options.h"
+#include "qpid/OptionsTemplates.h"
 #include "qpid/Exception.h"
+#include "qpid/log/Logger.h"
+#include "qpid/sys/Time.h"
 
 #include <boost/bind.hpp>
 
@@ -135,18 +137,43 @@ struct EnvOptMapper {
 };
 
 }
+
+template QPID_COMMON_EXTERN po::value_semantic* create_value(bool& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(int16_t& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(int32_t& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(int64_t& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(uint16_t& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(uint32_t& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(uint64_t& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(double& val, const std::string& arg);
+
+template QPID_COMMON_EXTERN po::value_semantic* create_value(string& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(vector<string>& val, const std::string& arg);
+template QPID_COMMON_EXTERN po::value_semantic* create_value(vector<int>& val, const std::string& arg);
+
+template QPID_COMMON_EXTERN po::value_semantic* create_value(sys::Duration& val, const std::string& arg);
+
+
+po::value_semantic* optValue(bool& value) {
+#if (BOOST_VERSION >= 103500)
+    return create_value(value, "", true);
+#else
+    return po::bool_switch(&value);
+#endif
+}
+
+po::value_semantic* pure_switch(bool& value) {
+    return po::bool_switch(&value);
+}
+
 std::string prettyArg(const std::string& name, const std::string& value) {
     return value.empty() ? name+" " : name+" ("+value+") ";
 }
 
 Options::Options(const string& name) :
-  po::options_description(name)
+  poOptions(new po::options_description(name))
 {
 }
-
-
-
-
 
 void Options::parse(int argc, char const* const* argv, const std::string& configFile, bool allowUnknown)
 {
@@ -160,7 +187,7 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
                 // This hideous workaround is required because boost 1.33 has a bug
                 // that causes 'allow_unregistered' to not work.
                 po::command_line_parser clp = po::command_line_parser(argc, const_cast<char**>(argv)).
-                    options(*this).allow_unregistered();
+                    options(*poOptions).allow_unregistered();
                 po::parsed_options opts     = clp.run();
                 po::parsed_options filtopts = clp.run();
                 filtopts.options.clear ();
@@ -172,10 +199,10 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
 
             }
             else
-                po::store(po::parse_command_line(argc, const_cast<char**>(argv), *this), vm);
+                po::store(po::parse_command_line(argc, const_cast<char**>(argv), *poOptions), vm);
         }
         parsing="environment variables";
-        po::store(po::parse_environment(*this, EnvOptMapper(*this)), vm);
+        po::store(po::parse_environment(*poOptions, EnvOptMapper(*this)), vm);
         po::notify(vm); // configFile may be updated from arg/env options.
         if (!configFile.empty()) {
             parsing="configuration file "+configFile;
@@ -193,7 +220,7 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
                     filtered << mapper.configFileLine (line, allowUnknown);
                 }
 
-                po::store(po::parse_config_file(filtered, *this), vm);
+                po::store(po::parse_config_file(filtered, *poOptions), vm);
                 // End of hack
             }
             else {
@@ -219,17 +246,29 @@ void Options::parse(int argc, char const* const* argv, const std::string& config
     }
 }
 
-CommonOptions::CommonOptions(const string& name, const string& configfile, const string& clientfile)
-    : Options(name), config(configfile), clientConfig(clientfile)
+options_description_easy_init::options_description_easy_init(po::options_description* o) :
+    owner(o)
+{}
+
+options_description_easy_init Options::addOptions()
 {
-    addOptions()
-        ("help,h", optValue(help), "Displays the help message")
-        ("version,v", optValue(version), "Displays version information")
-        ("config", optValue(config, "FILE"), "Reads configuration from FILE")
-        ("client-config", optValue(clientConfig, "FILE"), "Reads client configuration from FILE (for cluster interconnect)");
+    return options_description_easy_init(poOptions.get());
 }
 
+void Options::add(Options& o)
+{
+    poOptions->add(*o.poOptions);
+}
 
+const std::vector< boost::shared_ptr<po::option_description> >& Options::options() const
+{
+    return poOptions->options();
+}
+
+bool Options::find_nothrow(const std::string& s, bool b)
+{
+    return poOptions->find_nothrow(s, b);
+}
 
 bool Options::findArg(int argc, char const* const* argv, const std::string& theArg)
 {
@@ -238,7 +277,7 @@ bool Options::findArg(int argc, char const* const* argv, const std::string& theA
     try {
         if (argc > 0 && argv != 0) {
             po::command_line_parser clp = po::command_line_parser(argc, const_cast<char**>(argv)).
-            options(*this).allow_unregistered();
+            options(*poOptions).allow_unregistered();
             po::parsed_options opts     = clp.run();
 
             for (std::vector< po::basic_option<char> >::iterator
@@ -256,6 +295,36 @@ bool Options::findArg(int argc, char const* const* argv, const std::string& theA
         msg << "Error in " << parsing << ": " << e.what() << endl;
         throw Exception(msg.str());
     }
+}
+
+void Options::print(ostream& os)
+{
+    poOptions->print(os);
+}
+
+std::ostream& operator<<(std::ostream& os, const Options& options)
+{
+    return os << *(options.poOptions);
+}
+
+options_description_easy_init&
+options_description_easy_init::operator()(const char* name,
+           const po::value_semantic* s,
+           const char* description)
+{
+    owner->add(boost::shared_ptr<po::option_description>(new po::option_description(name, s, description)));
+    return *this;
+}
+
+
+CommonOptions::CommonOptions(const string& name, const string& configfile, const string& clientfile)
+: Options(name), config(configfile), clientConfig(clientfile)
+{
+    addOptions()
+    ("help,h", optValue(help), "Displays the help message")
+    ("version,v", optValue(version), "Displays version information")
+    ("config", optValue(config, "FILE"), "Reads configuration from FILE")
+    ("client-config", optValue(clientConfig, "FILE"), "Reads client configuration from FILE (for cluster interconnect)");
 }
 
 } // namespace qpid
