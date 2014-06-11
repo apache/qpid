@@ -97,8 +97,8 @@ void write(Rdma::AsynchIO& aio) {
         Rdma::Buffer* b = aio.getSendBuffer();
         if (!b) break;
         b->dataCount(msgsize);
-        uint32_t* ip = reinterpret_cast<uint32_t*>(b->bytes());
-        uint32_t* lip = ip + b->dataCount() / sizeof(uint32_t);
+        uint32_t* ip = b->words();
+        uint32_t* lip = ip + b->wordCount();
         while (ip != lip) {*ip++ = *output; ++output;}
         aio.queueWrite(b);
         ++smsgs;
@@ -116,8 +116,8 @@ void data(Poller::shared_ptr p, Rdma::AsynchIO& aio, Rdma::Buffer* b) {
     
     // Check message is unaltered
     bool match = true;
-    uint32_t* ip = reinterpret_cast<uint32_t*>(b->bytes());
-    uint32_t* lip = ip + b->dataCount() / sizeof(uint32_t);
+    uint32_t* ip = b->words();
+    uint32_t* lip = ip + b->wordCount();
     while (ip != lip) { if (*ip++ != *input) {match = false; break;} ++input;}
     if (!match) {
         cout << "Data doesn't match: at msg " << rmsgs << " byte " << rbytes-b->dataCount() << " (ish)\n";
