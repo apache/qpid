@@ -53,7 +53,9 @@ namespace Rdma {
         friend class QueuePairEvent;
 
         char* bytes() const;
+        uint32_t* words() const;
         int32_t byteCount() const;
+        int32_t wordCount() const;
         int32_t dataCount() const;
         void dataCount(int32_t);
 
@@ -68,9 +70,18 @@ namespace Rdma {
       return (char*) sge.addr;
     }
 
+    inline uint32_t* Buffer::words() const {
+        return (uint32_t*) sge.addr;
+    }
+
     /** return the number of bytes available for application data */
     inline int32_t Buffer::byteCount() const {
         return bufferSize - reserved;
+    }
+
+    /** return the number of words available for application data */
+    inline int32_t Buffer::wordCount() const {
+        return (bufferSize - reserved) / sizeof(uint32_t);
     }
 
     inline int32_t Buffer::dataCount() const {
