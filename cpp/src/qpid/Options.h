@@ -153,7 +153,7 @@ struct Options {
         Exception(const std::string& msg) : qpid::Exception(msg) {}
     };
 
-    QPID_COMMON_EXTERN Options(const std::string& name=std::string());
+    QPID_COMMON_EXTERN explicit Options(const std::string& name=std::string());
 
     /**
      * Parses options from argc/argv, environment variables and config file.
