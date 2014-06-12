@@ -196,16 +196,7 @@ abstract class AttributeValueConverter<T>
             }
             else if(value instanceof String)
             {
-                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
-                ObjectMapper objectMapper = new ObjectMapper();
-                try
-                {
-                    return objectMapper.readValue(interpolated, List.class);
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalArgumentException("Cannot convert String " + interpolated + " to a List");
-                }
+                return Collections.unmodifiableList(convertFromJson((String) value, object, List.class));
             }
             else if(value == null)
             {
@@ -217,6 +208,7 @@ abstract class AttributeValueConverter<T>
             }
         }
     };
+
     static final AttributeValueConverter<Set> SET_CONVERTER = new AttributeValueConverter<Set>()
     {
         @Override
@@ -233,16 +225,7 @@ abstract class AttributeValueConverter<T>
             }
             else if(value instanceof String)
             {
-                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
-                ObjectMapper objectMapper = new ObjectMapper();
-                try
-                {
-                    return objectMapper.readValue(interpolated, Set.class);
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalArgumentException("Cannot convert String " + interpolated + " to a List");
-                }
+                return Collections.unmodifiableSet(convertFromJson((String) value, object, Set.class));
             }
             else if(value == null)
             {
@@ -250,7 +233,7 @@ abstract class AttributeValueConverter<T>
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a List");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Set");
             }
         }
     };
@@ -270,16 +253,7 @@ abstract class AttributeValueConverter<T>
             }
             else if(value instanceof String)
             {
-                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
-                ObjectMapper objectMapper = new ObjectMapper();
-                try
-                {
-                    return objectMapper.readValue(interpolated, List.class);
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalArgumentException("Cannot convert String " + interpolated + " to a Collection");
-                }
+                return Collections.unmodifiableCollection(convertFromJson((String) value, object, Collection.class));
             }
             else if(value == null)
             {
@@ -287,7 +261,7 @@ abstract class AttributeValueConverter<T>
             }
             else
             {
-                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a List");
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Collection");
             }
         }
     };
@@ -316,23 +290,33 @@ abstract class AttributeValueConverter<T>
             }
             else if(value instanceof String)
             {
-                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
-                ObjectMapper objectMapper = new ObjectMapper();
-                try
-                {
-                    return objectMapper.readValue(interpolated, Map.class);
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalArgumentException("Cannot convert String " + interpolated + " to a Map");
-                }
+                return Collections.unmodifiableMap(convertFromJson((String) value, object, Map.class));
             }
             else
             {
                 throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Map");
             }
         }
+
     };
+
+    private static <T> T convertFromJson(final String value, final ConfiguredObject object, final Class<T> valueType)
+    {
+        String interpolated = AbstractConfiguredObject.interpolate(object, value);
+        ObjectMapper objectMapper = new ObjectMapper();
+        try
+        {
+            return objectMapper.readValue(interpolated, valueType);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException("Cannot convert String '"
+                  + value + "'"
+                  + (value.equals(interpolated)
+                               ? "" : (" (interpolated to '" + interpolated + "')"))
+                                       + " to a " + valueType.getSimpleName());
+        }
+    }
 
     static <X> AttributeValueConverter<X> getConverter(final Class<X> type, final Type returnType)
     {
@@ -408,7 +392,7 @@ abstract class AttributeValueConverter<T>
         {
             return (AttributeValueConverter<X>) new ConfiguredObjectConverter(type);
         }
-        throw new IllegalArgumentException("Cannot create attributes of type " + type.getName());
+        throw new IllegalArgumentException("Cannot create attribute converter of type " + type.getName());
     }
 
     abstract T convert(Object value, final ConfiguredObject object);

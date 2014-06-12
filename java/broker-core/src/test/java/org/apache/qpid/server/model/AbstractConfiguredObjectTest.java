@@ -174,7 +174,7 @@ public class AbstractConfiguredObjectTest extends TestCase
 
         Map<String, Object> attributes = new HashMap<>();
         attributes.put(ConfiguredObject.NAME, objectName);
-        attributes.put("context", Collections.singletonMap("myReplacement", "myValue"));
+        attributes.put(ConfiguredObject.CONTEXT, Collections.singletonMap("myReplacement", "myValue"));
         attributes.put(TestRootCategory.STRING_VALUE, contextToken);
 
         TestRootCategory object1 = _model.getObjectFactory().create(TestRootCategory.class,
