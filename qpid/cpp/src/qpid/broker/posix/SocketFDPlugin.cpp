@@ -21,6 +21,7 @@
 
 #include "qpid/sys/TransportFactory.h"
 
+#include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/log/Statement.h"

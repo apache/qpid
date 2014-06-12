@@ -29,8 +29,6 @@
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/framing/FieldTable.h"
 
-#include <qpid/Options.h>
-
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 

@@ -22,8 +22,9 @@
 #ifndef QPID_LINEARSTORE_MESSAGESTOREIMPL_H
 #define QPID_LINEARSTORE_MESSAGESTOREIMPL_H
 
-#include <iomanip>
 #include "qpid/broker/MessageStore.h"
+
+#include "qpid/Options.h"
 #include "qpid/linearstore/IdSequence.h"
 #include "qpid/linearstore/JournalLogImpl.h"
 #include "qpid/linearstore/journal/jcfg.h"
@@ -31,6 +32,8 @@
 #include "qpid/linearstore/PreparedTransaction.h"
 
 #include "qmf/org/apache/qpid/linearstore/Store.h"
+
+#include <iomanip>
 
 // Assume DB_VERSION_MAJOR == 4
 #if (DB_VERSION_MINOR == 2)

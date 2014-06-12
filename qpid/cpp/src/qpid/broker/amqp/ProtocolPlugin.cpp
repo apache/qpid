@@ -18,7 +18,10 @@
  * under the License.
  *
  */
+
 #include "qpid/Plugin.h"
+
+#include "qpid/Options.h"
 #include "qpid/SaslFactory.h"
 #include "qpid/NullSaslServer.h"
 #include "qpid/broker/Broker.h"

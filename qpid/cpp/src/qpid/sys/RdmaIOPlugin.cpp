@@ -32,6 +32,7 @@
 #include "qpid/sys/SecuritySettings.h"
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <memory>
 
 #include <netdb.h>
