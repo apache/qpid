@@ -25,6 +25,7 @@
 #include "qpid/broker/BrokerImportExport.h"
 
 #include "qpid/DataDir.h"
+#include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/broker/DtxManager.h"
 #include "qpid/broker/ExchangeRegistry.h"
