@@ -1039,7 +1039,7 @@ class Receiver(Endpoint, object):
       self.check_closed()
       self.draining = True
       self._wakeup()
-      self._ecwait(lambda: not self.draining)
+      self._ecwait(lambda: not self.draining, timeout=0)
       msg = self.session._get(self, timeout=0)
       self._grant()
       self._wakeup()
