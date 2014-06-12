@@ -50,8 +50,6 @@ public:
 
 NullMessageStore::NullMessageStore() : nextPersistenceId(1) {}
 
-bool NullMessageStore::init(const Options* /*options*/) {return true;}
-
 void NullMessageStore::create(PersistableQueue& queue, const framing::FieldTable& /*args*/)
 {
     queue.setPersistenceId(nextPersistenceId++);

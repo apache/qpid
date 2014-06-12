@@ -40,7 +40,6 @@ class MessageStoreModule : public MessageStore
   public:
     MessageStoreModule(const boost::shared_ptr<MessageStore>& store);
 
-    bool init(const Options* options);
     std::auto_ptr<TransactionContext> begin();
     std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     void prepare(TPCTransactionContext& txn);

@@ -40,8 +40,6 @@ MessageStoreModule::~MessageStoreModule()
 {
 }
 
-bool MessageStoreModule::init(const Options*) { return true; }
-
 void MessageStoreModule::create(PersistableQueue& queue, const FieldTable& args)
 {
     TRANSFER_EXCEPTION(store->create(queue, args));
