@@ -644,10 +644,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
         {
 
-            Sequence mmdSeq = _environmentFacade.openSequence(getMessageMetaDataSeqDb(),
-                                                              MESSAGE_METADATA_SEQ_KEY,
-                                                              MESSAGE_METADATA_SEQ_CONFIG);
-            long newMessageId = mmdSeq.get(null, 1);
+            long newMessageId = getNextMessageSequenceNumber();
 
             if (metaData.isPersistent())
             {
@@ -657,6 +654,26 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             {
                 return new StoredMemoryMessage<T>(newMessageId, metaData);
             }
+        }
+
+        private long getNextMessageSequenceNumber()
+        {
+            long newMessageId;
+            try
+            {
+                // The implementations of sequences mean that there is only a transaction
+                // after every n sequence values, where n is the MESSAGE_METADATA_SEQ_CONFIG.getCacheSize()
+
+                Sequence mmdSeq = _environmentFacade.openSequence(getMessageMetaDataSeqDb(),
+                                                                  MESSAGE_METADATA_SEQ_KEY,
+                                                                  MESSAGE_METADATA_SEQ_CONFIG);
+                newMessageId = mmdSeq.get(null, 1);
+            }
+            catch (DatabaseException de)
+            {
+                throw _environmentFacade.handleDatabaseException("Cannot get sequence value for new message", de);
+            }
+            return newMessageId;
         }
 
         @Override
