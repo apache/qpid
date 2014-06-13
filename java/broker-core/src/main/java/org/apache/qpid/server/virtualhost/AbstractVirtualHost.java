@@ -127,6 +127,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private final AtomicBoolean _deleted = new AtomicBoolean();
     private final VirtualHostNode<?> _virtualHostNode;
 
+    private MessageStoreLogSubject _messageStoreLogSubject;
+
     @ManagedAttributeField
     private Map<String, Object> _messageStoreSettings;
 
@@ -152,6 +154,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private int _housekeepingThreadCount;
 
     private MessageDestination _defaultDestination;
+
+    private MessageStore _messageStore;
 
     public AbstractVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
@@ -206,24 +210,24 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
+    public MessageStore getMessageStore()
+    {
+        return _messageStore;
+    }
+
+    @Override
     protected void onOpen()
     {
         super.onOpen();
 
         registerSystemNodes();
 
-        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
-        {
-            @Override
-            public Object run()
-            {
-                initialiseStorage();
-                return null;
-            }
-        });
+        _messageStore = createMessageStore();
 
-        getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
-        getMessageStore().addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
+        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
+
+        _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
+        _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
 
 
         synchronized(_aliases)
@@ -259,7 +263,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
     }
 
-    abstract protected void initialiseStorage();
+    protected abstract MessageStore createMessageStore();
 
     protected boolean isStoreEmpty()
     {
@@ -295,7 +299,10 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         });
     }
 
-    abstract protected MessageStoreLogSubject getMessageStoreLogSubject();
+    protected MessageStoreLogSubject getMessageStoreLogSubject()
+    {
+        return _messageStoreLogSubject;
+    }
 
     public IConnectionRegistry getConnectionRegistry()
     {

@@ -44,7 +44,6 @@ import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -63,11 +62,6 @@ public class MockVirtualHost implements VirtualHostImpl<MockVirtualHost, AMQQueu
     public void close()
     {
 
-    }
-
-    public AuthenticationManager getAuthenticationManager()
-    {
-        return null;
     }
 
     public DtxRegistry getDtxRegistry()

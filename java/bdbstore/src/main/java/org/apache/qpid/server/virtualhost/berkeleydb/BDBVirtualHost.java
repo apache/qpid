@@ -22,7 +22,6 @@ package org.apache.qpid.server.virtualhost.berkeleydb;
 
 import java.util.Map;
 
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -34,8 +33,6 @@ import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 public class BDBVirtualHost extends AbstractVirtualHost<BDBVirtualHost>
 {
     public static final String VIRTUAL_HOST_TYPE = "BDB";
-    private MessageStore _messageStore;
-    private MessageStoreLogSubject _messageStoreLogSubject;
 
     @ManagedObjectFactoryConstructor
     public BDBVirtualHost(final Map<String, Object> attributes,
@@ -46,23 +43,8 @@ public class BDBVirtualHost extends AbstractVirtualHost<BDBVirtualHost>
 
 
     @Override
-    protected void initialiseStorage()
+    protected MessageStore createMessageStore()
     {
-        _messageStore = new BDBConfigurationStore().getMessageStore();
-
-        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
-
-    }
-
-    @Override
-    protected MessageStoreLogSubject getMessageStoreLogSubject()
-    {
-        return _messageStoreLogSubject;
-    }
-
-    @Override
-    public MessageStore getMessageStore()
-    {
-        return _messageStore;
+        return new BDBConfigurationStore().getMessageStore();
     }
 }
