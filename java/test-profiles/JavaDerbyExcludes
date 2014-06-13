@@ -18,3 +18,4 @@
 //
 
 org.apache.qpid.server.store.berkeleydb.*
+org.apache.qpid.server.store.berkeleydb.replication.*
