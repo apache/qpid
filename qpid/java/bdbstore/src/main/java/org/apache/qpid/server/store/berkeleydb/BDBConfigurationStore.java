@@ -99,36 +99,17 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     private static final Logger LOGGER = Logger.getLogger(BDBConfigurationStore.class);
 
     public static final int VERSION = 8;
-    private static String CONFIGURED_OBJECTS_DB_NAME = "CONFIGURED_OBJECTS";
-    private static String CONFIGURED_OBJECT_HIERARCHY_DB_NAME = "CONFIGURED_OBJECT_HIERARCHY";
+    private static final String CONFIGURED_OBJECTS_DB_NAME = "CONFIGURED_OBJECTS";
+    private static final String CONFIGURED_OBJECT_HIERARCHY_DB_NAME = "CONFIGURED_OBJECT_HIERARCHY";
 
-    private static String MESSAGE_META_DATA_DB_NAME = "MESSAGE_METADATA";
-    private static String MESSAGE_META_DATA_SEQ_DB_NAME = "MESSAGE_METADATA.SEQ";
-    private static String MESSAGE_CONTENT_DB_NAME = "MESSAGE_CONTENT";
-    private static String DELIVERY_DB_NAME = "QUEUE_ENTRIES";
-
-    //TODO: Add upgrader to remove BRIDGES and LINKS
-    private static String BRIDGEDB_NAME = "BRIDGES";
-    private static String LINKDB_NAME = "LINKS";
-    private static String XID_DB_NAME = "XIDS";
     private EnvironmentFacade _environmentFacade;
 
-    private static final DatabaseEntry MESSAGE_METADATA_SEQ_KEY = new DatabaseEntry("MESSAGE_METADATA_SEQ_KEY".getBytes(
-            Charset.forName("UTF-8")));
-
-    private static final SequenceConfig MESSAGE_METADATA_SEQ_CONFIG = SequenceConfig.DEFAULT.
-            setAllowCreate(true).
-            setInitialValue(1).
-            setWrap(true).
-            setCacheSize(100000);
-
-    private final AtomicBoolean _messageStoreOpen = new AtomicBoolean();
     private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
 
     private final EnvironmentFacadeFactory _environmentFacadeFactory;
 
     private String _storeLocation;
-    private final BDBMessageStore _messageStoreFacade = new BDBMessageStore();
+    private final BDBMessageStore _messageStore = new BDBMessageStore();
     private ConfiguredObject<?> _parent;
 
     public BDBConfigurationStore()
@@ -260,7 +241,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     {
         if (_configurationStoreOpen.compareAndSet(true, false))
         {
-            if (!_messageStoreOpen.get())
+            if (!_messageStore.isMessageStoreOpen())
             {
                 closeEnvironment();
             }
@@ -531,12 +512,12 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     @Override
     public MessageStore getMessageStore()
     {
-        return _messageStoreFacade;
+        return _messageStore;
     }
 
     private void checkConfigurationStoreOpen()
     {
-        if (!_configurationStoreOpen.get())
+        if (!isConfigurationStoreOpen())
         {
             throw new IllegalStateException("Configuration store is not open");
         }
@@ -544,7 +525,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
     public void onDelete()
     {
-        if (!_configurationStoreOpen.get() && !_messageStoreOpen.get())
+        if (!isConfigurationStoreOpen() && !_messageStore.isMessageStoreOpen())
         {
             if (_storeLocation != null)
             {
@@ -565,6 +546,11 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         }
     }
 
+    private boolean isConfigurationStoreOpen()
+    {
+        return _configurationStoreOpen.get();
+    }
+
     private Database getConfiguredObjectsDb()
     {
         return _environmentFacade.openDatabase(CONFIGURED_OBJECTS_DB_NAME, DEFAULT_DATABASE_CONFIG);
@@ -575,36 +561,32 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         return _environmentFacade.openDatabase(CONFIGURED_OBJECT_HIERARCHY_DB_NAME, DEFAULT_DATABASE_CONFIG);
     }
 
-    private Database getMessageContentDb()
-    {
-        return _environmentFacade.openDatabase(MESSAGE_CONTENT_DB_NAME, DEFAULT_DATABASE_CONFIG);
-    }
-
-    private Database getMessageMetaDataDb()
-    {
-        return _environmentFacade.openDatabase(MESSAGE_META_DATA_DB_NAME, DEFAULT_DATABASE_CONFIG);
-    }
-
-    private Database getMessageMetaDataSeqDb()
-    {
-        return _environmentFacade.openDatabase(MESSAGE_META_DATA_SEQ_DB_NAME, DEFAULT_DATABASE_CONFIG);
-    }
-
-    private Database getDeliveryDb()
-    {
-        return _environmentFacade.openDatabase(DELIVERY_DB_NAME, DEFAULT_DATABASE_CONFIG);
-    }
-
-    private Database getXidDb()
-    {
-        return _environmentFacade.openDatabase(XID_DB_NAME, DEFAULT_DATABASE_CONFIG);
-    }
-
     class BDBMessageStore implements MessageStore
     {
         private static final int LOCK_RETRY_ATTEMPTS = 5;
 
+        private static final String MESSAGE_META_DATA_DB_NAME = "MESSAGE_METADATA";
+        private static final String MESSAGE_META_DATA_SEQ_DB_NAME = "MESSAGE_METADATA.SEQ";
+        private static final String MESSAGE_CONTENT_DB_NAME = "MESSAGE_CONTENT";
+        private static final String DELIVERY_DB_NAME = "QUEUE_ENTRIES";
+
+        //TODO: Add upgrader to remove BRIDGES and LINKS
+        private static final String BRIDGEDB_NAME = "BRIDGES";
+        private static final String LINKDB_NAME = "LINKS";
+        private static final String XID_DB_NAME = "XIDS";
+
         private final EventManager _eventManager = new EventManager();
+
+        private final AtomicBoolean _messageStoreOpen = new AtomicBoolean();
+
+        private final DatabaseEntry MESSAGE_METADATA_SEQ_KEY = new DatabaseEntry("MESSAGE_METADATA_SEQ_KEY".getBytes(
+                Charset.forName("UTF-8")));
+
+        private final SequenceConfig MESSAGE_METADATA_SEQ_CONFIG = SequenceConfig.DEFAULT.
+                setAllowCreate(true).
+                setInitialValue(1).
+                setWrap(true).
+                setCacheSize(100000);
 
         private boolean _limitBusted;
         private long _persistentSizeLowThreshold;
@@ -683,6 +665,11 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             return true;
         }
 
+        public boolean isMessageStoreOpen()
+        {
+            return _messageStoreOpen.get();
+        }
+
         @Override
         public org.apache.qpid.server.store.Transaction newTransaction()
         {
@@ -694,7 +681,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         @Override
         public void closeMessageStore()
         {
-            if (_messageStoreOpen.compareAndSet(true, false) && !_configurationStoreOpen.get())
+            if (_messageStoreOpen.compareAndSet(true, false) && !isConfigurationStoreOpen())
             {
                 closeEnvironment();
             }
@@ -1449,6 +1436,31 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         private long getSizeOnDisk()
         {
             return _environmentFacade.getEnvironment().getStats(null).getTotalLogSize();
+        }
+
+        private Database getMessageContentDb()
+        {
+            return _environmentFacade.openDatabase(MESSAGE_CONTENT_DB_NAME, DEFAULT_DATABASE_CONFIG);
+        }
+
+        private Database getMessageMetaDataDb()
+        {
+            return _environmentFacade.openDatabase(MESSAGE_META_DATA_DB_NAME, DEFAULT_DATABASE_CONFIG);
+        }
+
+        private Database getMessageMetaDataSeqDb()
+        {
+            return _environmentFacade.openDatabase(MESSAGE_META_DATA_SEQ_DB_NAME, DEFAULT_DATABASE_CONFIG);
+        }
+
+        private Database getDeliveryDb()
+        {
+            return _environmentFacade.openDatabase(DELIVERY_DB_NAME, DEFAULT_DATABASE_CONFIG);
+        }
+
+        private Database getXidDb()
+        {
+            return _environmentFacade.openDatabase(XID_DB_NAME, DEFAULT_DATABASE_CONFIG);
         }
 
         private class StoredBDBMessage<T extends StorableMessageMetaData> implements StoredMessage<T>
