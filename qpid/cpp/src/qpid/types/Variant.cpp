@@ -20,6 +20,7 @@
  */
 #include "qpid/types/Variant.h"
 #include "qpid/log/Statement.h"
+#include "encodings.h"
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
@@ -813,6 +814,7 @@ Variant& Variant::parse(const std::string& s)
     try {
         return operator=(asBool());
     } catch (const InvalidConversion&) {}
+    setEncoding(qpid::types::encodings::UTF8);
     return *this;
 }
 
