@@ -632,7 +632,7 @@
       </thead>
       <tbody>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-CON-1001">
-          <entry morerows="1">CHN-1001</entry>
+          <entry morerows="1">CON-1001</entry>
           <entry>Open : Client ID : <replaceable>clientid</replaceable> : Protocol Version :
               <replaceable>protocol version</replaceable> : Client Version : <replaceable>client
               version</replaceable> : Client Product :<replaceable>client
@@ -645,7 +645,7 @@
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-CON-1002">
-          <entry morerows="1">CHN-1002</entry>
+          <entry morerows="1">CON-1002</entry>
           <entry>Close</entry>
         </row>
         <row>
@@ -656,7 +656,7 @@
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-CON-1003">
-          <entry morerows="1">CHN-1003</entry>
+          <entry morerows="1">CON-1003</entry>
           <entry>Closed due to inactivity</entry>
         </row>
         <row>
