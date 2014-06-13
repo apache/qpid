@@ -23,13 +23,11 @@ package org.apache.qpid.server.virtualhost.berkeleydb;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
@@ -43,7 +41,6 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     public static final String TYPE = "BDB_HA";
 
     private final BDBConfigurationStore _configurationStore;
-    private MessageStoreLogSubject _messageStoreLogSubject;
 
     @ManagedAttributeField(afterSet="setLocalTransactionSynchronizationPolicyOnEnvironment")
     private String _localTransactionSynchronizationPolicy;
@@ -57,30 +54,12 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
         super(attributes, virtualHostNode);
 
         _configurationStore = (BDBConfigurationStore) virtualHostNode.getConfigurationStore();
-        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _configurationStore.getMessageStore().getClass().getSimpleName());
     }
 
     @Override
-    protected void initialiseStorage()
-    {
-    }
-
-    @Override
-    public DurableConfigurationStore getDurableConfigurationStore()
-    {
-        return _configurationStore;
-    }
-
-    @Override
-    public MessageStore getMessageStore()
+    protected MessageStore createMessageStore()
     {
         return _configurationStore.getMessageStore();
-    }
-
-    @Override
-    protected MessageStoreLogSubject getMessageStoreLogSubject()
-    {
-        return _messageStoreLogSubject;
     }
 
     @Override
@@ -152,7 +131,7 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
         }
         catch(Exception e)
         {
-            throw new IllegalArgumentException("Invalid transaction syncronization policy '" + policy + "'. " + e.getMessage());
+            throw new IllegalArgumentException("Invalid transaction synchronization policy '" + policy + "'. " + e.getMessage());
         }
     }
 

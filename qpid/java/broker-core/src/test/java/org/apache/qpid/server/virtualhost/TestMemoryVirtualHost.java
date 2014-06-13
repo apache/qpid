@@ -22,7 +22,6 @@ package org.apache.qpid.server.virtualhost;
 
 import java.util.Map;
 
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -33,8 +32,6 @@ import org.apache.qpid.server.store.TestMemoryMessageStore;
 public class TestMemoryVirtualHost extends AbstractVirtualHost<TestMemoryVirtualHost>
 {
     public static final String VIRTUAL_HOST_TYPE = "TestMemory";
-    private MessageStore _messageStore;
-    private MessageStoreLogSubject _messageStoreLogSubject;
 
     @ManagedObjectFactoryConstructor
     public TestMemoryVirtualHost(final Map<String, Object> attributes,
@@ -45,23 +42,9 @@ public class TestMemoryVirtualHost extends AbstractVirtualHost<TestMemoryVirtual
 
 
     @Override
-    protected void initialiseStorage()
+    protected MessageStore createMessageStore()
     {
-        _messageStore = new TestMemoryMessageStore();
-
-        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
-
+        return new TestMemoryMessageStore();
     }
 
-    @Override
-    protected MessageStoreLogSubject getMessageStoreLogSubject()
-    {
-        return _messageStoreLogSubject;
-    }
-
-    @Override
-    public MessageStore getMessageStore()
-    {
-        return _messageStore;
-    }
 }

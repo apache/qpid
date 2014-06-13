@@ -23,7 +23,6 @@ package org.apache.qpid.server.virtualhost;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -35,8 +34,6 @@ import org.apache.qpid.server.store.MessageStoreProvider;
 public class ProvidedStoreVirtualHost extends AbstractVirtualHost<ProvidedStoreVirtualHost>
 {
     public static final String VIRTUAL_HOST_TYPE = "ProvidedStore";
-    private MessageStore _messageStore;
-    private MessageStoreLogSubject _messageStoreLogSubject;
 
     @ManagedObjectFactoryConstructor
     public ProvidedStoreVirtualHost(final Map<String, Object> attributes,
@@ -62,26 +59,12 @@ public class ProvidedStoreVirtualHost extends AbstractVirtualHost<ProvidedStoreV
     }
 
     @Override
-    protected void initialiseStorage()
+    protected MessageStore createMessageStore()
     {
         VirtualHostNode<?> virtualHostNode = getParent(VirtualHostNode.class);
-
         MessageStoreProvider messageStoreProvider = (MessageStoreProvider) virtualHostNode.getConfigurationStore();
-        _messageStore = messageStoreProvider.getMessageStore();
-
-        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
-
-    }
-
-    @Override
-    protected MessageStoreLogSubject getMessageStoreLogSubject()
-    {
-        return _messageStoreLogSubject;
-    }
-
-    @Override
-    public MessageStore getMessageStore()
-    {
-        return _messageStore;
+        return messageStoreProvider.getMessageStore();
     }
 }
+
+

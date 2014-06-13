@@ -22,7 +22,6 @@ package org.apache.qpid.server.virtualhost.derby;
 
 import java.util.Map;
 
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -34,8 +33,6 @@ import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 public class DerbyVirtualHost extends AbstractVirtualHost<DerbyVirtualHost>
 {
     public static final String VIRTUAL_HOST_TYPE = "DERBY";
-    private MessageStore _messageStore;
-    private MessageStoreLogSubject _messageStoreLogSubject;
 
     @ManagedObjectFactoryConstructor
     public DerbyVirtualHost(final Map<String, Object> attributes,
@@ -46,23 +43,9 @@ public class DerbyVirtualHost extends AbstractVirtualHost<DerbyVirtualHost>
 
 
     @Override
-    protected void initialiseStorage()
+    protected MessageStore createMessageStore()
     {
-        _messageStore = new DerbyMessageStore().getMessageStore();
-
-        _messageStoreLogSubject = new MessageStoreLogSubject(getName(), _messageStore.getClass().getSimpleName());
-
+        return new DerbyMessageStore().getMessageStore();
     }
 
-    @Override
-    protected MessageStoreLogSubject getMessageStoreLogSubject()
-    {
-        return _messageStoreLogSubject;
-    }
-
-    @Override
-    public MessageStore getMessageStore()
-    {
-        return _messageStore;
-    }
 }
