@@ -596,6 +596,7 @@ class Session(Endpoint):
     @rtype: Sender
     @return: a new Sender for the specified target
     """
+    target = _mangle(target)
     sender = Sender(self, self.next_sender_id, target, options)
     self.next_sender_id += 1
     self.senders.append(sender)
@@ -619,6 +620,7 @@ class Session(Endpoint):
     @rtype: Receiver
     @return: a new Receiver for the specified source
     """
+    source = _mangle(source)
     receiver = Receiver(self, self.next_receiver_id, source, options)
     self.next_receiver_id += 1
     self.receivers.append(receiver)
@@ -763,6 +765,12 @@ class Session(Endpoint):
         raise Timeout("session close timed out")
     finally:
       self.connection._remove_session(self)
+
+def _mangle(addr):
+  if addr and addr.startswith("#"):
+    return str(uuid4()) + addr
+  else:
+    return addr
 
 class Sender(Endpoint):
 
