@@ -34,7 +34,6 @@ from qpid.selector import Selector
 from qpid.util import URL, default,get_client_properties_with_defaults
 from qpid.validator import And, Context, List, Map, Types, Values
 from threading import Condition, Thread
-from qpid.datatypes import uuid4
 
 log = getLogger("qpid.messaging")
 rawlog = getLogger("qpid.messaging.io.raw")
@@ -942,16 +941,6 @@ class Engine:
         # XXX: subject
         if lnk.options is None:
           lnk.options = {}
-        # if address starts with '#', create auxiliary queue with name preceded by uuid
-        if addr.startswith("#") and 'create' not in lnk.options:
-          lnk.name = str(uuid4()) + lnk.name
-          lnk.options['create'] = "always"
-          if 'node' not in lnk.options:
-            lnk.options['node'] = {}
-          if 'x-declare' not in lnk.options['node']:
-            lnk.options['node']['x-declare'] = {}
-          lnk.options['node']['x-declare']['auto-delete'] = "True"
-          lnk.options['node']['x-declare']['exclusive'] = "True"
       except address.LexError, e:
         return MalformedAddress(text=str(e))
       except address.ParseError, e:
