@@ -41,18 +41,11 @@ include_directories(${PERL_INCLUDE_PATH}
 ##----------------------------------
 ## install the Perl library separate, since we need to rename the film if
 # it's coming from a version of Cmake < 2.8
-if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid_perl.so
-        DESTINATION ${PERL_PFX_ARCHLIB}
-        COMPONENT ${QPID_COMPONENT_CLIENT}
-        )
-else()
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_perl.so
+install(TARGETS ${SWIG_MODULE_cqpid_perl_REAL_NAME}
         RENAME cqpid_perl.so
         DESTINATION ${PERL_PFX_ARCHLIB}
         COMPONENT ${QPID_COMPONENT_CLIENT}
-        )
-endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid_perl.pm
               ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
