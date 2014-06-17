@@ -53,19 +53,11 @@ set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_F
 ##----------------------------------
 ## Install the complete Ruby binding
 ##----------------------------------
-if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cqpid_ruby.so
-        RENAME cqpid.so
-        DESTINATION ${RUBY_PFX_ARCH_DIR}
-        COMPONENT ${QPID_COMPONENT_CLIENT}
-        )
-else()
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_ruby.so
-        RENAME cqpid.so
-        DESTINATION ${RUBY_PFX_ARCH_DIR}
-        COMPONENT ${QPID_COMPONENT_CLIENT}
-        )
-endif ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
+install(TARGETS ${SWIG_MODULE_cqpid_ruby_REAL_NAME}
+      RENAME cqpid.so
+      DESTINATION ${RUBY_PFX_ARCH_DIR}
+      COMPONENT ${QPID_COMPONENT_CLIENT}
+)
 
 add_custom_command(OUTPUT ${GEM_BINDINGS_SOURCE_FILE}
                    COMMAND cp ${swig_generated_file_fullname} ${GEM_BINDINGS_SOURCE_FILE}
