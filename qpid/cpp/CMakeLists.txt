@@ -208,7 +208,7 @@ if (MSVC)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src/sessionreceiver/Properties/sessionreceiver-AssemblyInfo-template.cs
                    ${CMAKE_CURRENT_BINARY_DIR}/src/windows/generated_src/sessionreceiver-AssemblyInfo.cs)
   endif (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src)
-endif (CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
+endif (MSVC)
 
 # Subdirectories
 add_subdirectory(managementgen)
