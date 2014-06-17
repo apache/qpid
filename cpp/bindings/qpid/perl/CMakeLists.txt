@@ -29,9 +29,9 @@ list(APPEND SWIG_MODULE_cqpid_perl_EXTRA_DEPS
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/qpid/swig_perl_typemaps.i
 )
 swig_add_module(cqpid_perl perl ${CMAKE_CURRENT_SOURCE_DIR}/perl.i)
-swig_link_libraries(cqpid_perl qpidmessaging qpidtypes qmf2 ${PERL_LIBRARY})
+swig_link_libraries(cqpid_perl qpidmessaging qpidtypes ${PERL_LIBRARY})
+set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "${NOSTRICT_ALIASING}")
 
-set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing")
 include_directories(${PERL_INCLUDE_PATH}
                     ${qpid-cpp_SOURCE_DIR}/include
                     ${qpid-cpp_SOURCE_DIR}/bindings)

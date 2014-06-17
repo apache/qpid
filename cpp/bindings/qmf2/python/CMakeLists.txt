@@ -33,9 +33,9 @@ list(APPEND SWIG_MODULE_cqmf2_EXTRA_DEPS
     ${CMAKE_SOURCE_DIR}/include/qpid/swig_python_typemaps.i
 )
 swig_add_module(cqmf2 python ${CMAKE_CURRENT_SOURCE_DIR}/cqmf2.i)
-swig_link_libraries(cqmf2 qmf2 ${PYTHON_LIBRARIES})
+swig_link_libraries(cqmf2 qmf2 qpidmessaging qpidtypes ${PYTHON_LIBRARIES})
 
-set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing")
+set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "${NOSTRICT_ALIASING}")
 include_directories(${PYTHON_INCLUDE_PATH}
                     ${qpid-cpp_SOURCE_DIR}/include
                     ${qpid-cpp_SOURCE_DIR}/bindings)

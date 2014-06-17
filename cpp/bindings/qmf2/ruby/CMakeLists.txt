@@ -37,7 +37,7 @@ list(APPEND SWIG_MODULE_cqmf2_ruby_EXTRA_DEPS
     ${CMAKE_SOURCE_DIR}/include/qpid/swig_ruby_typemaps.i
 )
 swig_add_module(cqmf2_ruby ruby ${CMAKE_CURRENT_SOURCE_DIR}/ruby.i)
-swig_link_libraries(cqmf2_ruby qmf2 ${RUBY_LIBRARY})
+swig_link_libraries(cqmf2_ruby qmf2 qpidmessaging qpidtypes ${RUBY_LIBRARY})
 
 ##----------------------------------
 ## Install the complete Ruby binding

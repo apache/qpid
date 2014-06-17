@@ -65,7 +65,6 @@ if (BUILD_RDMA)
   add_library (rdmawrap SHARED ${rdma_SOURCES})
   target_link_libraries (rdmawrap qpidcommon rdmacm ibverbs)
   set_target_properties (rdmawrap PROPERTIES
-                         LINK_FLAGS "${CATCH_UNDEFINED}"
                          VERSION ${rdmawrap_version} 
                          SOVERSION ${rdmawrap_version_major})
   if (CMAKE_COMPILER_IS_GNUCXX)
@@ -81,7 +80,6 @@ if (BUILD_RDMA)
   target_link_libraries (rdma qpidbroker qpidcommon rdmawrap)
   set_target_properties (rdma PROPERTIES
                          COMPILE_DEFINITIONS _IN_QPID_BROKER
-                         LINK_FLAGS "${CATCH_UNDEFINED}"
                          PREFIX "")
 
   if (CMAKE_COMPILER_IS_GNUCXX)
@@ -96,7 +94,6 @@ if (BUILD_RDMA)
   add_library (rdmaconnector MODULE qpid/client/RdmaConnector.cpp)
   target_link_libraries (rdmaconnector qpidclient qpidcommon rdmawrap)
   set_target_properties (rdmaconnector PROPERTIES
-                         LINK_FLAGS "${CATCH_UNDEFINED}"
                          PREFIX "")
 
   if (CMAKE_COMPILER_IS_GNUCXX)
