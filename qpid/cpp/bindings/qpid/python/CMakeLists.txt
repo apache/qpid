@@ -34,8 +34,8 @@ list(APPEND SWIG_MODULE_qpid_messaging_EXTRA_DEPS
 )
 swig_add_module(qpid_messaging python ${CMAKE_CURRENT_SOURCE_DIR}/qpid_messaging.i)
 swig_link_libraries(qpid_messaging qpidmessaging qpidtypes ${PYTHON_LIBRARIES})
+set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "${NOSTRICT_ALIASING}")
 
-set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing")
 include_directories(${PYTHON_INCLUDE_PATH}
                     ${qpid-cpp_SOURCE_DIR}/include
                     ${qpid-cpp_SOURCE_DIR}/bindings)

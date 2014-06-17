@@ -104,7 +104,6 @@ if (BUILD_AMQP)
     target_link_libraries (amqp qpidtypes qpidbroker qpidcommon ${Proton_LIBRARIES})
     set_target_properties (amqp PROPERTIES
                            PREFIX ""
-                           LINK_FLAGS "${CATCH_UNDEFINED}"
                            COMPILE_DEFINITIONS _IN_QPID_BROKER)
 
     install (TARGETS amqp
