@@ -179,7 +179,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   option(SET_WIN32_WINNT "In Windows-MSVC build: define _WIN32_WINNT=0x0502 to select target version: Windows XP with SP3" ${win32_winnt_default})
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
+if (MSVC)
   add_definitions(
     /D "_CRT_NONSTDC_NO_WARNINGS"
     /D "NOMINMAX"
