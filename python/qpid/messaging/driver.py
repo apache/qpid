@@ -959,7 +959,7 @@ class Engine:
       err = None
       if type is None:
         if declare:
-          err = self.declare(sst, lnk, action)
+          err = self.declare(sst, lnk, action, True)
         else:
           err = NotFound(text="no such %s: %s" % (requested_type or "queue", lnk.name))
       else:
@@ -967,9 +967,11 @@ class Engine:
           expected = lnk.options.get("node", {}).get("type")
           if expected and type != expected:
             if declare:
-              err = self.declare(sst, lnk, action)
+              err = self.declare(sst, lnk, action, True)
             else:
               err = AssertionFailed(text="expected %s, got %s" % (expected, type))
+        if "node" in lnk.options and "x-bindings" in lnk.options["node"]:
+          err = self.declare(sst, lnk, action, False)
         if err is None:
           action(type, subtype)
 
@@ -1015,7 +1017,7 @@ class Engine:
     sst.write_query(ExchangeQuery(name), do_result)
     sst.write_query(QueueQuery(name), do_action)
 
-  def declare(self, sst, lnk, action):
+  def declare(self, sst, lnk, action, create_node):
     name = lnk.name
     props = lnk.options.get("node", {})
     durable = props.get("durable", DURABLE_DEFAULT)
@@ -1023,29 +1025,32 @@ class Engine:
     declare = props.get("x-declare", {})
 
     if type == "topic":
-      cmd = ExchangeDeclare(exchange=name, durable=durable)
+      cmd = ExchangeDeclare(exchange=name, durable=durable) if create_node else None
       bindings = get_bindings(props, exchange=name)
     elif type == "queue":
-      cmd = QueueDeclare(queue=name, durable=durable)
+      cmd = QueueDeclare(queue=name, durable=durable) if create_node else None
       bindings = get_bindings(props, queue=name)
     else:
       raise ValueError(type)
 
-    sst.apply_overrides(cmd, declare)
-
-    if type == "topic":
-      if cmd.type is None:
-        cmd.type = "topic"
-      subtype = cmd.type
+    if cmd is not None:
+      sst.apply_overrides(cmd, declare)
+      if type == "topic":
+        if cmd.type is None:
+          cmd.type = "topic"
+        subtype = cmd.type
+      else:
+        subtype = None
+      cmds = [cmd]
     else:
-      subtype = None
+      cmds = []
 
-    cmds = [cmd]
     cmds.extend(bindings)
 
     def declared():
-      self.address_cache[name] = (type, subtype)
-      action(type, subtype)
+      if create_node:
+        self.address_cache[name] = (type, subtype)
+        action(type, subtype)
 
     sst.write_cmds(cmds, declared)
 
