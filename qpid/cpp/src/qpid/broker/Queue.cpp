@@ -21,6 +21,7 @@
 
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/broker/QueueCursor.h"
 #include "qpid/broker/QueueDepth.h"
@@ -73,6 +74,7 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+using qpid::management::getCurrentPublisher;
 using std::string;
 using std::for_each;
 using std::mem_fun;
@@ -1412,12 +1414,17 @@ ManagementObject::shared_ptr Queue::GetManagementObject(void) const
 Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, string& etext)
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+    AclModule* acl = broker->getAcl();
+    std::string _userId = (getCurrentPublisher()?getCurrentPublisher()->getUserId():"");
 
     QPID_LOG (debug, "Queue::ManagementMethod [id=" << methodId << "]");
 
     switch (methodId) {
     case _qmf::Queue::METHOD_PURGE :
         {
+            if ((acl)&&(!(acl->authorise(_userId, acl::ACT_PURGE, acl::OBJ_QUEUE, name, NULL)))) {
+                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied purge request from " << _userId));
+            }
             _qmf::ArgsQueuePurge& purgeArgs = (_qmf::ArgsQueuePurge&) args;
             purge(purgeArgs.i_request, boost::shared_ptr<Exchange>(), &purgeArgs.i_filter);
             status = Manageable::STATUS_OK;
@@ -1442,6 +1449,14 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, str
                     status = Manageable::STATUS_PARAMETER_INVALID;
                     etext = "Exchange not found";
                     break;
+                }
+            }
+
+            if (acl) {
+                std::map<acl::Property, std::string> params;
+                params.insert(make_pair(acl::PROP_EXCHANGENAME, dest->getName()));
+                if (!acl->authorise(_userId, acl::ACT_REROUTE, acl::OBJ_QUEUE, name, &params)) {
+                    throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied reroute request from " << _userId));
                 }
             }
 

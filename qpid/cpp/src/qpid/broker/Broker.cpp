@@ -541,7 +541,8 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
             dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
         QPID_LOG (debug, "Broker::queueMoveMessages()");
-        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, moveArgs.i_filter) >= 0)
+        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, 
+                              moveArgs.i_filter, getCurrentPublisher()) >=0)
             status = Manageable::STATUS_OK;
         else
             return Manageable::STATUS_PARAMETER_INVALID;
@@ -609,7 +610,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         string srcQueue(dynamic_cast<_qmf::ArgsBrokerQueueRedirect&>(args).i_sourceQueue);
         string tgtQueue(dynamic_cast<_qmf::ArgsBrokerQueueRedirect&>(args).i_targetQueue);
         QPID_LOG (debug, "Broker::queueRedirect source queue:" << srcQueue << " to target queue " << tgtQueue);
-        status =  queueRedirect(srcQueue, tgtQueue);
+        status =  queueRedirect(srcQueue, tgtQueue, getCurrentPublisher());
         break;
     }
     default:
@@ -1085,7 +1086,8 @@ bool Broker::getLogHiresTimestamp()
 
 
 Manageable::status_t Broker::queueRedirect(const std::string& srcQueue,
-                                           const std::string& tgtQueue)
+                                           const std::string& tgtQueue,
+                                           const Connection* context)
 {
     Queue::shared_ptr srcQ(queues.find(srcQueue));
     if (!srcQ) {
@@ -1133,6 +1135,13 @@ Manageable::status_t Broker::queueRedirect(const std::string& srcQueue,
             return Manageable::STATUS_USER;
         }
 
+        if (acl) {
+            std::map<acl::Property, std::string> params;
+            params.insert(make_pair(acl::PROP_QUEUENAME, tgtQ->getName()));
+            if (!acl->authorise((context)?context->getUserId():"", acl::ACT_REDIRECT, acl::OBJ_QUEUE, srcQ->getName(), &params))
+                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied redirect request from " << ((context)?context->getUserId():"(uknown)")));
+        }
+
         // Start the backup overflow partnership
         srcQ->setRedirectPeer(tgtQ, true);
         tgtQ->setRedirectPeer(srcQ, false);
@@ -1164,6 +1173,13 @@ Manageable::status_t Broker::queueRedirect(const std::string& srcQueue,
             return Manageable::STATUS_USER;
         }
 
+        if (acl) {
+            std::map<acl::Property, std::string> params;
+            params.insert(make_pair(acl::PROP_QUEUENAME, tgtQ->getName()));
+            if (!acl->authorise((context)?context->getUserId():"", acl::ACT_REDIRECT, acl::OBJ_QUEUE, srcQ->getName(), &params))
+                throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied redirect request from " << ((context)?context->getUserId():"(uknown)")));
+        }
+                                  
         queueRedirectDestroy(srcQ, tgtQ, true);
 
         return Manageable::STATUS_OK;
@@ -1261,7 +1277,8 @@ int32_t Broker::queueMoveMessages(
      const std::string& srcQueue,
      const std::string& destQueue,
      uint32_t  qty,
-     const Variant::Map& filter)
+     const Variant::Map& filter,
+     const Connection* context)
 {
     Queue::shared_ptr src_queue = queues.find(srcQueue);
     if (!src_queue)
@@ -1269,6 +1286,13 @@ int32_t Broker::queueMoveMessages(
     Queue::shared_ptr dest_queue = queues.find(destQueue);
     if (!dest_queue)
         return -1;
+
+    if (acl) {
+        std::map<acl::Property, std::string> params;
+        params.insert(make_pair(acl::PROP_QUEUENAME, dest_queue->getName()));
+        if (!acl->authorise((context)?context->getUserId():"", acl::ACT_MOVE, acl::OBJ_QUEUE, src_queue->getName(), &params))
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied move request from " << ((context)?context->getUserId():"(uknown)")));
+    }
 
     return (int32_t) src_queue->move(dest_queue, qty, &filter);
 }

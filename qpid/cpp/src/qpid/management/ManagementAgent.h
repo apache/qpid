@@ -363,9 +363,9 @@ private:
     void handleSchemaRequest  (framing::Buffer& inBuffer, const std::string& replyToEx, const std::string& replyToKey, uint32_t sequence);
     void handleSchemaResponse (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
     void handleAttachRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const ObjectId& objectId);
-    void handleGetQuery       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleGetQuery       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const std::string& userId);
     void handleMethodRequest  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const std::string& userId);
-    void handleGetQuery       (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, bool viaLocal);
+    void handleGetQuery       (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, const std::string& userId, bool viaLocal);
     void handleMethodRequest  (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, const std::string& userId, bool viaLocal);
     void handleLocateRequest  (const std::string& body, const std::string& replyToEx, const std::string &replyToKey, const std::string& cid);
 
