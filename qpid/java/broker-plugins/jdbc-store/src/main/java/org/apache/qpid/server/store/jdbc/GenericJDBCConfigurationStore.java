@@ -32,7 +32,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.*;
-import org.apache.qpid.server.util.MapValueConverter;
 
 /**
  * Implementation of a DurableConfigurationStore backed by Generic JDBC Database
@@ -46,15 +45,11 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
 
     public static final String CONNECTION_URL = "connectionUrl";
     public static final String CONNECTION_POOL_TYPE = "connectionPoolType";
-    public static final String JDBC_BIG_INT_TYPE = "bigIntType";
-    public static final String JDBC_BYTES_FOR_BLOB = "bytesForBlob";
-    public static final String JDBC_VARBINARY_TYPE = "varbinaryType";
-    public static final String JDBC_BLOB_TYPE = "blobType";
 
     private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
     private final MessageStore _providedMessageStore = new ProvidedMessageStore();
 
-    protected String _connectionURL;
+    private String _connectionURL;
     private ConnectionProvider _connectionProvider;
 
     private String _blobType;
@@ -74,20 +69,17 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
             _connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
             Object poolAttribute = storeSettings.get(CONNECTION_POOL_TYPE);
 
-            JDBCDetails details = null;
+            JDBCDetails details = JDBCDetails.getDetailsForJdbcUrl(_connectionURL, parent.getContext());
 
-            String[] components = _connectionURL.split(":", 3);
-            if(components.length >= 2)
+            if (!details.isKnownVendor() && getLogger().isInfoEnabled())
             {
-                String vendor = components[1];
-                details = JDBCDetails.getDetails(vendor);
+                getLogger().info("Do not recognize vendor from connection URL: " + _connectionURL
+                                + " Using fallback settings " + details);
             }
-
-            if(details == null)
+            if (details.isOverridden() && getLogger().isInfoEnabled())
             {
-                getLogger().info("Do not recognize vendor from connection URL: " + _connectionURL);
-
-                details = JDBCDetails.getDefaultDetails();
+                getLogger().info("One or more JDBC details were overridden from context. "
+                               +  " Using settings : " + details);
             }
 
             String connectionPoolType = poolAttribute == null ? DefaultConnectionProviderFactory.TYPE : String.valueOf(poolAttribute);
@@ -110,12 +102,10 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
             {
                 throw new StoreException("Failed to create connection provider for " + _connectionURL);
             }
-            _blobType = MapValueConverter.getStringAttribute(JDBC_BLOB_TYPE, storeSettings, details.getBlobType());
-            _varBinaryType = MapValueConverter.getStringAttribute(JDBC_VARBINARY_TYPE, storeSettings, details.getVarBinaryType());
-            _useBytesMethodsForBlob = MapValueConverter.getBooleanAttribute(JDBC_BYTES_FOR_BLOB, storeSettings, details.isUseBytesMethodsForBlob());
-            _bigIntType = MapValueConverter.getStringAttribute(JDBC_BIG_INT_TYPE,
-                                                               storeSettings,
-                                                               details.getBigintType());
+            _blobType = details.getBlobType();
+            _varBinaryType = details.getVarBinaryType();
+            _useBytesMethodsForBlob = details.isUseBytesMethodsForBlob();
+            _bigIntType = details.getBigintType();
 
             createOrOpenConfigurationStoreDatabase();
         }

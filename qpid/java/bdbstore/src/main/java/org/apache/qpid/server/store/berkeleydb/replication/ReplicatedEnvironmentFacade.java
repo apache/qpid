@@ -906,8 +906,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         String groupName = _configuration.getGroupName();
         String helperHostPort = _configuration.getHelperHostPort();
         String hostPort = _configuration.getHostPort();
-        Map<String, String> environmentParameters = _configuration.getParameters();
-        Map<String, String> replicationEnvironmentParameters = _configuration.getReplicationParameters();
         boolean designatedPrimary = _configuration.isDesignatedPrimary();
         int priority = _configuration.getPriority();
         int quorumOverride = _configuration.getQuorumOverride();
@@ -926,16 +924,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             LOGGER.info("Quorum override " + quorumOverride);
         }
 
-        Map<String, String> replicationEnvironmentSettings = new HashMap<String, String>(REPCONFIG_DEFAULTS);
-        if (replicationEnvironmentParameters != null && !replicationEnvironmentParameters.isEmpty())
-        {
-            replicationEnvironmentSettings.putAll(replicationEnvironmentParameters);
-        }
-        Map<String, String> environmentSettings = new HashMap<String, String>(EnvironmentFacade.ENVCONFIG_DEFAULTS);
-        if (environmentParameters != null && !environmentParameters.isEmpty())
-        {
-            environmentSettings.putAll(environmentParameters);
-        }
+        Map<String, String> replicationEnvironmentParameters = new HashMap<>(ReplicatedEnvironmentFacade.REPCONFIG_DEFAULTS);
+        replicationEnvironmentParameters.putAll(_configuration.getReplicationParameters());
 
         ReplicationConfig replicationConfig = new ReplicationConfig(groupName, _configuration.getName(), hostPort);
         replicationConfig.setHelperHosts(helperHostPort);
@@ -943,7 +933,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         replicationConfig.setNodePriority(priority);
         replicationConfig.setElectableGroupSizeOverride(quorumOverride);
 
-        for (Map.Entry<String, String> configItem : replicationEnvironmentSettings.entrySet())
+        for (Map.Entry<String, String> configItem : replicationEnvironmentParameters.entrySet())
         {
             if (LOGGER.isInfoEnabled())
             {
@@ -952,13 +942,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             replicationConfig.setConfigParam(configItem.getKey(), configItem.getValue());
         }
 
+        Map<String, String> environmentParameters = new HashMap<>(EnvironmentFacade.ENVCONFIG_DEFAULTS);
+        environmentParameters.putAll(_configuration.getParameters());
+
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
         envConfig.setDurability(_defaultDurability);
 
-        for (Map.Entry<String, String> configItem : environmentSettings.entrySet())
+        for (Map.Entry<String, String> configItem : environmentParameters.entrySet())
         {
             if (LOGGER.isInfoEnabled())
             {

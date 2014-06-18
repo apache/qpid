@@ -27,8 +27,4 @@ import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 
 public interface BDBVirtualHostNode<X extends BDBVirtualHostNode<X>> extends FileBasedVirtualHostNode<X>
 {
-    public static final String ENVIRONMENT_CONFIGURATION = "environmentConfiguration";
-
-    @ManagedAttribute(mandatory=false)
-    Map<String, String> getEnvironmentConfiguration();
 }

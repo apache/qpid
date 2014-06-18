@@ -252,7 +252,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         };
 
         TestStateChangeListener stateChangeListener = new TestStateChangeListener(State.MASTER);
-        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = addNode(State.MASTER, stateChangeListener, listener);
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = addNode(stateChangeListener, listener);
         assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
         assertEquals("Unexpected number of nodes at start of test", 1, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
@@ -296,7 +296,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         };
 
         TestStateChangeListener stateChangeListener = new TestStateChangeListener(State.MASTER);
-        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = addNode(State.MASTER, stateChangeListener, listener);
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = addNode(stateChangeListener, listener);
         assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
         String node2Name = TEST_NODE_NAME + "_2";
@@ -346,7 +346,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         };
 
         TestStateChangeListener stateChangeListener = new TestStateChangeListener(State.MASTER);
-        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = addNode(State.MASTER, stateChangeListener, listener);
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = addNode(stateChangeListener, listener);
         assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
         String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
@@ -357,10 +357,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertTrue("Node add not fired within timeout", nodeAddedLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
         ReplicationNode remoteNode = (ReplicationNode)nodeRef.get();
-        assertEquals("Unexpcted node name", node2Name, remoteNode.getName());
+        assertEquals("Unexpected node name", node2Name, remoteNode.getName());
 
         assertTrue("Node state not fired within timeout", stateLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
-        assertEquals("Unexpcted node state", State.REPLICA, stateRef.get().getNodeState());
+        assertEquals("Unexpected node state", State.REPLICA, stateRef.get().getNodeState());
     }
 
     public void testRemoveNodeFromGroup() throws Exception
@@ -419,7 +419,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         };
 
         TestStateChangeListener stateChangeListener = new TestStateChangeListener(State.MASTER);
-        final ReplicatedEnvironmentFacade masterEnvironment = addNode(State.MASTER, stateChangeListener, listener);
+        final ReplicatedEnvironmentFacade masterEnvironment = addNode(stateChangeListener, listener);
         assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
         masterEnvironment.setDesignatedPrimary(true);
@@ -434,7 +434,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicationNode node = addedNodeRef.get();
         assertEquals("Unexpected node name", replicaName, node.getName());
 
-        assertTrue("Node state was not heared", stateLatch.await(WAIT_STATE_CHANGE_TIMEOUT, TimeUnit.SECONDS));
+        assertTrue("Node state was not heard", stateLatch.await(WAIT_STATE_CHANGE_TIMEOUT, TimeUnit.SECONDS));
         assertEquals("Unexpected node role", State.REPLICA, stateRef.get().getNodeState());
         assertEquals("Unexpected node name", replicaName, stateRef.get().getNodeName());
 
@@ -478,7 +478,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
             }
         };
 
-        addNode(State.MASTER, stateChangeListener, new NoopReplicationGroupListener());
+        addNode(stateChangeListener, new NoopReplicationGroupListener());
         assertTrue("Master was not started", masterLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
         int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
@@ -520,7 +520,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                 }
             }
         };
-        ReplicatedEnvironmentFacade firstNode = addNode(State.MASTER, stateChangeListener, new NoopReplicationGroupListener());
+        ReplicatedEnvironmentFacade firstNode = addNode(stateChangeListener, new NoopReplicationGroupListener());
         assertTrue("Environment did not become a master", firstNodeMasterStateLatch.await(10, TimeUnit.SECONDS));
 
         int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
@@ -548,7 +548,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                 }
             }
         };
-        ReplicatedEnvironmentFacade thirdNode = addNode(TEST_NODE_NAME + "_2", node2NodeHostPort, TEST_DESIGNATED_PRIMARY, State.REPLICA, testStateChangeListener, new NoopReplicationGroupListener());
+        ReplicatedEnvironmentFacade thirdNode = addNode(TEST_NODE_NAME + "_2", node2NodeHostPort, TEST_DESIGNATED_PRIMARY,
+                                                        testStateChangeListener, new NoopReplicationGroupListener());
         assertTrue("Environment did not become a replica", replicaStateLatch.await(10, TimeUnit.SECONDS));
         assertEquals(3, thirdNode.getNumberOfElectableGroupMembers());
 
@@ -578,7 +579,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                 }
             }
         };
-        ReplicatedEnvironmentFacade firstNode = addNode(State.MASTER, stateChangeListener, new NoopReplicationGroupListener());
+        ReplicatedEnvironmentFacade firstNode = addNode(stateChangeListener, new NoopReplicationGroupListener());
         assertTrue("Environment did not become a master", firstNodeMasterStateLatch.await(10, TimeUnit.SECONDS));
 
         int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
@@ -607,7 +608,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
             }
         };
         String thirdNodeName = TEST_NODE_NAME + "_2";
-        ReplicatedEnvironmentFacade thirdNode = addNode(thirdNodeName, node2NodeHostPort, TEST_DESIGNATED_PRIMARY, State.REPLICA, testStateChangeListener, new NoopReplicationGroupListener());
+        ReplicatedEnvironmentFacade thirdNode = addNode(thirdNodeName, node2NodeHostPort, TEST_DESIGNATED_PRIMARY,
+                                                        testStateChangeListener, new NoopReplicationGroupListener());
         assertTrue("Environment did not become a replica", replicaStateLatch.await(10, TimeUnit.SECONDS));
         assertEquals(3, thirdNode.getNumberOfElectableGroupMembers());
 
@@ -665,7 +667,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     private ReplicatedEnvironmentFacade createMaster(ReplicationGroupListener replicationGroupListener) throws Exception
     {
         TestStateChangeListener stateChangeListener = new TestStateChangeListener(State.MASTER);
-        ReplicatedEnvironmentFacade env = addNode(State.MASTER, stateChangeListener, replicationGroupListener);
+        ReplicatedEnvironmentFacade env = addNode(stateChangeListener, replicationGroupListener);
         assertTrue("Environment was not created", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
         return env;
     }
@@ -680,14 +682,15 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
             TestStateChangeListener testStateChangeListener, ReplicationGroupListener replicationGroupListener)
             throws InterruptedException
     {
-        ReplicatedEnvironmentFacade replicaEnvironmentFacade = addNode(nodeName, nodeHostPort, TEST_DESIGNATED_PRIMARY, State.REPLICA, testStateChangeListener, replicationGroupListener);
+        ReplicatedEnvironmentFacade replicaEnvironmentFacade = addNode(nodeName, nodeHostPort, TEST_DESIGNATED_PRIMARY,
+                                                                       testStateChangeListener, replicationGroupListener);
         boolean awaitForStateChange = testStateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS);
         assertTrue("Replica " + nodeName + " did not go into desired state; current actual state is " + testStateChangeListener.getCurrentActualState(), awaitForStateChange);
         return replicaEnvironmentFacade;
     }
 
     private ReplicatedEnvironmentFacade addNode(String nodeName, String nodeHostPort, boolean designatedPrimary,
-            State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
+                                                StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
         ReplicatedEnvironmentConfiguration config = createReplicatedEnvironmentConfiguration(nodeName, nodeHostPort, designatedPrimary);
         ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(config);
@@ -697,9 +700,11 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         return ref;
     }
 
-    private ReplicatedEnvironmentFacade addNode(State desiredState, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
+    private ReplicatedEnvironmentFacade addNode(StateChangeListener stateChangeListener,
+                                                ReplicationGroupListener replicationGroupListener)
     {
-        return addNode(TEST_NODE_NAME, TEST_NODE_HOST_PORT, TEST_DESIGNATED_PRIMARY, desiredState, stateChangeListener, replicationGroupListener);
+        return addNode(TEST_NODE_NAME, TEST_NODE_HOST_PORT, TEST_DESIGNATED_PRIMARY,
+                       stateChangeListener, replicationGroupListener);
     }
 
     private ReplicatedEnvironmentConfiguration createReplicatedEnvironmentConfiguration(String nodeName, String nodeHostPort, boolean designatedPrimary)

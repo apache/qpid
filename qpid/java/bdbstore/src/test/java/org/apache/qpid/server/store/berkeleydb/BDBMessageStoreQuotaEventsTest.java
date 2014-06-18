@@ -66,9 +66,13 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
         messageStoreSettings.put(MessageStore.STORE_PATH, storeLocation);
         messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
         messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
-        Map<String,String> envMap = Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
-        messageStoreSettings.put(EnvironmentFacadeFactory.ENVIRONMENT_CONFIGURATION, envMap);
         return messageStoreSettings;
+    }
+
+    @Override
+    protected Map<String, String> createContextSettings()
+    {
+        return Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
     }
 
     @Override

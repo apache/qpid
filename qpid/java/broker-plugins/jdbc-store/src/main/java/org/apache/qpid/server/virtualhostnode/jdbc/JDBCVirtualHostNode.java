@@ -33,16 +33,4 @@ public interface JDBCVirtualHostNode<X extends JDBCVirtualHostNode<X>> extends V
     @ManagedAttribute(defaultValue=DefaultConnectionProviderFactory.TYPE)
     String getConnectionPoolType();
 
-    @ManagedAttribute
-    String getBigIntType();
-
-    @ManagedAttribute
-    boolean isBytesForBlob();
-
-    @ManagedAttribute
-    String getVarBinaryType();
-
-    @ManagedAttribute
-    String getBlobType();
-
 }

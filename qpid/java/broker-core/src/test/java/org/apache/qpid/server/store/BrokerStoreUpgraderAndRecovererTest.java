@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.mock;
 
 import java.util.Collections;
@@ -77,6 +78,11 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         hostAttributes.put("partitionCount", 2);
         hostAttributes.put("storeType", "jdbc");
         hostAttributes.put("type", "STANDARD");
+        hostAttributes.put("jdbcBigIntType", "mybigint");
+        hostAttributes.put("jdbcBlobType", "myblob");
+        hostAttributes.put("jdbcVarbinaryType", "myvarbinary");
+        hostAttributes.put("jdbcBytesForBlob", true);
+
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
                 hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
@@ -92,12 +98,20 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedAttributes.put("connectionUrl", "jdbc:derby://localhost:1527/tmp/vh/test;create=true");
         expectedAttributes.put("createdBy", "webadmin");
         expectedAttributes.put("createdTime", 1401385905260l);
-        expectedAttributes.put("maxConnectionsPerPartition", 7);
-        expectedAttributes.put("minConnectionsPerPartition", 6);
-        expectedAttributes.put("partitionCount", 2);
         expectedAttributes.put("name", "test");
         expectedAttributes.put("type", "JDBC");
-        expectedAttributes.put("messageStoreProvider", true);
+
+        final Map<String, Object> context = new HashMap<>();
+        context.put("qpid.jdbcstore.bigIntType", "mybigint");
+        context.put("qpid.jdbcstore.varBinaryType", "myvarbinary");
+        context.put("qpid.jdbcstore.blobType", "myblob");
+        context.put("qpid.jdbcstore.useBytesForBlob", true);
+
+        context.put("qpid.jdbcstore.bonecp.maxConnectionsPerPartition", 7);
+        context.put("qpid.jdbcstore.bonecp.minConnectionsPerPartition", 6);
+        context.put("qpid.jdbcstore.bonecp.partitionCount", 2);
+        expectedAttributes.put("context", context);
+
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
     }
 
@@ -127,7 +141,6 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedAttributes.put("createdTime", 1401385905260l);
         expectedAttributes.put("name", "test");
         expectedAttributes.put("type", "DERBY");
-        expectedAttributes.put("messageStoreProvider", true);
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
     }
 
@@ -141,6 +154,8 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         hostAttributes.put("createdBy", "webadmin");
         hostAttributes.put("createdTime", 1401385905260l);
         hostAttributes.put("type", "STANDARD");
+        hostAttributes.put("bdbEnvironmentConfig", Collections.singletonMap("je.stats.collect", "false"));
+
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
                 hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
@@ -157,7 +172,7 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedAttributes.put("createdTime", 1401385905260l);
         expectedAttributes.put("name", "test");
         expectedAttributes.put("type", "BDB");
-        expectedAttributes.put("messageStoreProvider", true);
+        expectedAttributes.put("context", Collections.singletonMap("je.stats.collect", "false"));
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
     }
 
@@ -176,6 +191,9 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         hostAttributes.put("haHelperAddress", "localhost:7000");
         hostAttributes.put("haNodeAddress", "localhost:7000");
         hostAttributes.put("haNodeName", "n1");
+        hostAttributes.put("haReplicationConfig", Collections.singletonMap("je.stats.collect", "false"));
+        hostAttributes.put("bdbEnvironmentConfig", Collections.singletonMap("je.rep.feederTimeout", "1 m"));
+
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
                 hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
@@ -186,6 +204,10 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
 
         ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
         assertEquals("Unexpected type", "VirtualHostNode", upgradedVirtualHostNodeRecord.getType());
+        Map<String,Object> expectedContext = new HashMap<>();
+        expectedContext.put("je.stats.collect", "false");
+        expectedContext.put("je.rep.feederTimeout", "1 m");
+
         Map<String,Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put("createdBy", "webadmin");
         expectedAttributes.put("createdTime", 1401385905260l);
@@ -196,7 +218,8 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedAttributes.put("address", "localhost:7000");
         expectedAttributes.put("helperAddress", "localhost:7000");
         expectedAttributes.put("name", "n1");
-        expectedAttributes.put("messageStoreProvider", true);
+        expectedAttributes.put("context", expectedContext);
+
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
     }
 
@@ -224,7 +247,6 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedAttributes.put("createdTime", 1401385905260l);
         expectedAttributes.put("name", "test");
         expectedAttributes.put("type", "Memory");
-        expectedAttributes.put("messageStoreProvider", true);
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
     }
 

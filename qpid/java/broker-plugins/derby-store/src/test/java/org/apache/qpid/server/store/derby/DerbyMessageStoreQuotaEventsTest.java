@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store.derby;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,6 +64,12 @@ public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTes
         messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
         messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
         return messageStoreSettings;
+    }
+
+    @Override
+    protected Map<String, String> createContextSettings()
+    {
+        return Collections.emptyMap();
     }
 
 }

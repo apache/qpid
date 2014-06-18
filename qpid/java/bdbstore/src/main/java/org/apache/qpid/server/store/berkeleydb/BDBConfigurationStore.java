@@ -131,7 +131,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
             if (_environmentFacade == null)
             {
-                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(storeSettings);
+                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent, storeSettings);
                 _storeLocation = _environmentFacade.getStoreLocation();
             }
             else
@@ -617,8 +617,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
                 if (_environmentFacade == null)
                 {
-                    _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(messageStoreSettings
-                                                                                          );
+                    _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent, messageStoreSettings);
                     _storeLocation = _environmentFacade.getStoreLocation();
                 }
             }
