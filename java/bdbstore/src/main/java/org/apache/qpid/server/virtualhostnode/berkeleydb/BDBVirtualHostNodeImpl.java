@@ -38,9 +38,6 @@ public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBV
     @ManagedAttributeField
     private String _storePath;
 
-    @ManagedAttributeField
-    private Map<String, String> _environmentConfiguration;
-
     @ManagedObjectFactoryConstructor
     public BDBVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
     {
@@ -53,11 +50,6 @@ public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBV
         return new BDBConfigurationStore();
     }
 
-    @Override
-    public Map<String, String> getEnvironmentConfiguration()
-    {
-        return _environmentConfiguration;
-    }
     @Override
     public String getStorePath()
     {

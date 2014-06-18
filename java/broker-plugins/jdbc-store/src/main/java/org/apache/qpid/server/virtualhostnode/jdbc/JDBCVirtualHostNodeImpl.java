@@ -41,18 +41,6 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
     @ManagedAttributeField
     private String _connectionPoolType;
 
-    @ManagedAttributeField
-    private String _bigIntType;
-
-    @ManagedAttributeField
-    private boolean _bytesForBlob;
-
-    @ManagedAttributeField
-    private String _varBinaryType;
-
-    @ManagedAttributeField
-    private String _blobType;
-
     @ManagedObjectFactoryConstructor
     public JDBCVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
     {
@@ -77,27 +65,4 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
         return _connectionPoolType;
     }
 
-    @Override
-    public String getBigIntType()
-    {
-        return _bigIntType;
-    }
-
-    @Override
-    public boolean isBytesForBlob()
-    {
-        return _bytesForBlob;
-    }
-
-    @Override
-    public String getVarBinaryType()
-    {
-        return _varBinaryType;
-    }
-
-    @Override
-    public String getBlobType()
-    {
-        return _blobType;
-    }
 }

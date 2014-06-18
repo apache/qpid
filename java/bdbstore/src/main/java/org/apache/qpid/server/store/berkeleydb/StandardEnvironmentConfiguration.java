@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,17 +15,15 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
+
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.util.Map;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-
-public interface EnvironmentFacadeFactory
+public interface StandardEnvironmentConfiguration
 {
-    EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent,
-                                              Map<String, Object> storeSettings);
-
+    String getName();
+    String getStorePath();
+    Map<String, String> getParameters();
 }

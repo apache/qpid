@@ -25,6 +25,7 @@ import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -42,13 +43,8 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
 
     private static final Logger _logger = Logger.getLogger(GenericJDBCMessageStore.class);
 
-    public static final String TYPE = "JDBC";
     public static final String CONNECTION_URL = "connectionUrl";
     public static final String CONNECTION_POOL_TYPE = "connectionPoolType";
-    public static final String JDBC_BIG_INT_TYPE = "bigIntType";
-    public static final String JDBC_BYTES_FOR_BLOB = "bytesForBlob";
-    public static final String JDBC_VARBINARY_TYPE = "varbinaryType";
-    public static final String JDBC_BLOB_TYPE = "blobType";
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
@@ -58,35 +54,29 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
     private String _bigIntType;
     private boolean _useBytesMethodsForBlob;
 
-
     @Override
     protected void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> storeSettings) throws StoreException
     {
         _connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
 
-        org.apache.qpid.server.store.jdbc.JDBCDetails details = null;
+        JDBCDetails details = JDBCDetails.getDetailsForJdbcUrl(_connectionURL, parent.getContext());
 
-        String[] components = _connectionURL.split(":", 3);
-        if(components.length >= 2)
+        if (!details.isKnownVendor() && getLogger().isInfoEnabled())
         {
-            String vendor = components[1];
-            details = org.apache.qpid.server.store.jdbc.JDBCDetails.getDetails(vendor);
+            getLogger().info("Do not recognize vendor from connection URL: " + _connectionURL
+                             + " Using fallback settings " + details);
+        }
+        if (details.isOverridden() && getLogger().isInfoEnabled())
+        {
+            getLogger().info("One or more JDBC details were overridden from context. "
+                             +  " Using settings : " + details);
         }
 
-        if(details == null)
-        {
-            getLogger().info("Do not recognize vendor from connection URL: " + _connectionURL);
+        _blobType = details.getBlobType();
+        _varBinaryType = details.getVarBinaryType();
+        _useBytesMethodsForBlob = details.isUseBytesMethodsForBlob();
+        _bigIntType = details.getBigintType();
 
-            details = org.apache.qpid.server.store.jdbc.JDBCDetails.getDefaultDetails();
-        }
-
-
-        _blobType = MapValueConverter.getStringAttribute(JDBC_BLOB_TYPE, storeSettings, details.getBlobType());
-        _varBinaryType = MapValueConverter.getStringAttribute(JDBC_VARBINARY_TYPE, storeSettings, details.getVarBinaryType());
-        _useBytesMethodsForBlob = MapValueConverter.getBooleanAttribute(JDBC_BYTES_FOR_BLOB, storeSettings, details.isUseBytesMethodsForBlob());
-        _bigIntType = MapValueConverter.getStringAttribute(JDBC_BIG_INT_TYPE,
-                                                           storeSettings,
-                                                           details.getBigintType());
 
         Object poolAttribute = storeSettings.get(CONNECTION_POOL_TYPE);
         String connectionPoolType = poolAttribute == null ? DefaultConnectionProviderFactory.TYPE : String.valueOf(poolAttribute);
@@ -95,12 +85,13 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
                 JDBCConnectionProviderFactory.FACTORIES.get(connectionPoolType);
         if(connectionProviderFactory == null)
         {
-            _logger.warn("Unknown connection pool type: " + connectionPoolType + ".  no connection pooling will be used");
+            _logger.warn("Unknown connection pool type: " + connectionPoolType + ".  No connection pooling will be used");
             connectionProviderFactory = new DefaultConnectionProviderFactory();
         }
 
         try
         {
+            // TODO: Pass parent to the connenction provider?
             _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL, storeSettings);
         }
         catch (SQLException e)

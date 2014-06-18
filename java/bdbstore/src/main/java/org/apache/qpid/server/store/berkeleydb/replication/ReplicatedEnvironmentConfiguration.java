@@ -23,16 +23,15 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.util.Map;
 
-public interface ReplicatedEnvironmentConfiguration
+import org.apache.qpid.server.store.berkeleydb.StandardEnvironmentConfiguration;
+
+public interface ReplicatedEnvironmentConfiguration extends StandardEnvironmentConfiguration
 {
-    String getName();
     String getGroupName();
     String getHostPort();
     String getHelperHostPort();
     boolean isDesignatedPrimary();
     int getPriority();
     int getQuorumOverride();
-    String getStorePath();
-    Map<String, String> getParameters();
     Map<String, String> getReplicationParameters();
 }

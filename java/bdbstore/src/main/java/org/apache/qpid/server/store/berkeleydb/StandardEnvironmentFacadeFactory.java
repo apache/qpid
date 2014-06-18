@@ -20,9 +20,14 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sleepycat.je.config.ConfigParam;
+import com.sleepycat.je.config.EnvironmentParams;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.MessageStore;
 
 public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactory
@@ -30,24 +35,49 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
 
     @SuppressWarnings("unchecked")
     @Override
-    public EnvironmentFacade createEnvironmentFacade(Map<String, Object> messageStoreSettings)
+    public EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent,
+                                                     final Map<String, Object> messageStoreSettings)
     {
-        Map<String, String> envConfigMap = new HashMap<String, String>();
-        envConfigMap.putAll(EnvironmentFacade.ENVCONFIG_DEFAULTS);
+        final String storeLocation = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
 
-        Object environmentConfigurationAttributes = messageStoreSettings.get(ENVIRONMENT_CONFIGURATION);
-        if (environmentConfigurationAttributes instanceof Map)
+        StandardEnvironmentConfiguration sec = new StandardEnvironmentConfiguration()
         {
-            envConfigMap.putAll((Map<String, String>) environmentConfigurationAttributes);
-        }
-        String storeLocation = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
-        return new StandardEnvironmentFacade(storeLocation, envConfigMap);
+            @Override
+            public String getName()
+            {
+                return parent.getName();
+            }
+
+            @Override
+            public String getStorePath()
+            {
+                return storeLocation;
+            }
+
+            @Override
+            public Map<String, String> getParameters()
+            {
+                return buildEnvironmentConfiguration(parent);
+            }
+        };
+
+        return new StandardEnvironmentFacade(sec);
     }
 
-    @Override
-    public String getType()
+    private Map<String, String> buildEnvironmentConfiguration(ConfiguredObject<?> parent)
     {
-        return StandardEnvironmentFacade.TYPE;
-    }
+        final Map<String, String> context = parent.getContext();
+        Map<String, String> envConfigMap = new HashMap<>();
 
+        for (ConfigParam cp : EnvironmentParams.SUPPORTED_PARAMS.values())
+        {
+            final String parameterName = cp.getName();
+            if (context.containsKey(parameterName) && !cp.isForReplication())
+            {
+                String contextValue = context.get(parameterName);
+                envConfigMap.put(parameterName, contextValue);
+            }
+        }
+        return Collections.unmodifiableMap(envConfigMap);
+    }
 }

@@ -56,6 +56,7 @@ import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNodeImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -132,14 +133,14 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         UUID id = UUID.randomUUID();
 
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        attributes.put(BDBHAVirtualHostNode.TYPE, BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE);
         attributes.put(BDBHAVirtualHostNode.ID, id);
         attributes.put(BDBHAVirtualHostNode.NAME, nodeName);
         attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
         attributes.put(BDBHAVirtualHostNode.ADDRESS, nodeHostPort);
         attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperHostPort);
         attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath);
-        attributes.put(BDBHAVirtualHostNode.REPLICATED_ENVIRONMENT_CONFIGURATION,
+        attributes.put(BDBHAVirtualHostNode.CONTEXT,
                 Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
 
         BDBHAVirtualHostNode<?> node = createHaVHN(attributes);

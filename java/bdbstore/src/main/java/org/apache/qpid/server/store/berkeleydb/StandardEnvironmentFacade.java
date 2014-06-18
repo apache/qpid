@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,7 +43,6 @@ import com.sleepycat.je.Transaction;
 public class StandardEnvironmentFacade implements EnvironmentFacade
 {
     private static final Logger LOGGER = Logger.getLogger(StandardEnvironmentFacade.class);
-    public static final String TYPE = "BDB";
 
     private final String _storePath;
     private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
@@ -51,17 +51,16 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     private Environment _environment;
     private final Committer _committer;
 
-    public StandardEnvironmentFacade(String storePath,
-                                     Map<String, String> attributes)
+    public StandardEnvironmentFacade(StandardEnvironmentConfiguration configuration)
     {
-        _storePath = storePath;
+        _storePath = configuration.getStorePath();
 
         if (LOGGER.isInfoEnabled())
         {
             LOGGER.info("Creating environment at environment path " + _storePath);
         }
 
-        File environmentPath = new File(storePath);
+        File environmentPath = new File(_storePath);
         if (!environmentPath.exists())
         {
             if (!environmentPath.mkdirs())
@@ -71,14 +70,24 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
             }
         }
 
-        String name = (String)attributes.get(ConfiguredObject.NAME);
+        String name = configuration.getName();
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
 
-        for (Map.Entry<String, String> configItem : attributes.entrySet())
+        Map<String, String> params = new HashMap<>(EnvironmentFacade.ENVCONFIG_DEFAULTS);
+        params.putAll(configuration.getParameters());
+
+        for (Map.Entry<String, String> configItem : params.entrySet())
         {
-            LOGGER.debug("Setting EnvironmentConfig key " + configItem.getKey() + " to '" + configItem.getValue() + "'");
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Setting EnvironmentConfig key "
+                             + configItem.getKey()
+                             + " to '"
+                             + configItem.getValue()
+                             + "'");
+            }
             envConfig.setConfigParam(configItem.getKey(), configItem.getValue());
         }
 

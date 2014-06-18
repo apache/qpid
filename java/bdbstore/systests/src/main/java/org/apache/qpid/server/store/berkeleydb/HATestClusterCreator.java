@@ -50,6 +50,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeImpl;
 import org.apache.qpid.systest.rest.RestTestHelper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -118,12 +119,12 @@ public class HATestClusterCreator
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.NAME, nodeName);
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.ADDRESS, getNodeHostPortForNodeAt(bdbPort));
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, getHelperHostPort());
-            virtualHostNodeAttributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+            virtualHostNodeAttributes.put(BDBHAVirtualHostNode.TYPE, BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE);
 
-            Map<String, String> repSettings = new HashMap<String, String>();
+            Map<String, String> repSettings = new HashMap<>();
             repSettings.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
             repSettings.put(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES, "0");
-            virtualHostNodeAttributes.put(BDBHAVirtualHostNode.REPLICATED_ENVIRONMENT_CONFIGURATION, repSettings);
+            virtualHostNodeAttributes.put(BDBHAVirtualHostNode.CONTEXT, repSettings);
 
             TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
             brokerConfiguration.addJmxManagementConfiguration();

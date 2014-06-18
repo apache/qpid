@@ -31,8 +31,7 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironment
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
 /**
- * This provide will create a {@link BDBHAMessageStoreManagerMBean} if the child is a virtual
- * host and of type {@link ReplicatedEnvironmentFacade#TYPE}.
+ * This provide will create a {@link BDBHAMessageStoreManagerMBean} if the child is a BDBHAVirtualHostNode.
  *
  */
 public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider

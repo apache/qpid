@@ -65,10 +65,12 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicationGroupListe
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 
-@ManagedObject( category = false, type = "BDB_HA" )
+@ManagedObject( category = false, type = BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE )
 public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtualHostNodeImpl> implements
         BDBHAVirtualHostNode<BDBHAVirtualHostNodeImpl>
 {
+    public static final String VIRTUAL_HOST_NODE_TYPE = "BDB_HA";
+
     /**
      * Length of time we synchronously await the a JE mutation to complete.  It is not considered an error if we exceed this timeout, although a
      * a warning will be logged.
@@ -80,9 +82,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     private final AtomicReference<ReplicatedEnvironmentFacade> _environmentFacade = new AtomicReference<>();
 
     private final AtomicReference<ReplicatedEnvironment.State> _lastReplicatedEnvironmentState = new AtomicReference<>(ReplicatedEnvironment.State.UNKNOWN);
-
-    @ManagedAttributeField
-    private Map<String, String> _environmentConfiguration;
 
     @ManagedAttributeField
     private String _storePath;
@@ -135,12 +134,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 throw new IllegalArgumentException("Changing role to other value then " + ReplicatedEnvironment.State.MASTER.name() + " is unsupported");
             }
         }
-    }
-
-    @Override
-    public Map<String, String> getEnvironmentConfiguration()
-    {
-        return _environmentConfiguration;
     }
 
     @Override

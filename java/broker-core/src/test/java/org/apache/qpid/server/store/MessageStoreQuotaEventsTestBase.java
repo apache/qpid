@@ -50,6 +50,7 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
     protected abstract MessageStore createStore() throws Exception;
     protected abstract Map<String, Object> createStoreSettings(String storeLocation);
+    protected abstract Map<String, String> createContextSettings();
     protected abstract int getNumberOfMessagesToFillStore();
 
     @Override
@@ -67,6 +68,8 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
 
         ConfiguredObject<?> parent = mock(ConfiguredObject.class);
         when(parent.getName()).thenReturn("test");
+        when(parent.getContext()).thenReturn(createContextSettings());
+
         _store.openMessageStore(parent, storeSettings);
 
         _transactionResource = UUID.randomUUID();

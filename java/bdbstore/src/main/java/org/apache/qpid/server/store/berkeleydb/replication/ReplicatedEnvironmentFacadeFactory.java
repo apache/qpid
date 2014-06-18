@@ -20,8 +20,14 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
+import com.sleepycat.je.config.ConfigParam;
+import com.sleepycat.je.config.EnvironmentParams;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
@@ -29,7 +35,7 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
     @Override
-    public EnvironmentFacade createEnvironmentFacade(final Map<String, Object> messageStoreSettings)
+    public EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
     {
         ReplicatedEnvironmentConfiguration configuration = new ReplicatedEnvironmentConfiguration()
         {
@@ -45,18 +51,16 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
                 return (String) messageStoreSettings.get(BDBHAVirtualHostNode.STORE_PATH);
             }
 
-            @SuppressWarnings("unchecked")
             @Override
             public Map<String, String> getParameters()
             {
-                return (Map<String, String>) messageStoreSettings.get(BDBHAVirtualHostNode.ENVIRONMENT_CONFIGURATION);
+                return buildEnvironmentConfigParameters(parent);
             }
 
-            @SuppressWarnings("unchecked")
             @Override
             public Map<String, String> getReplicationParameters()
             {
-                return (Map<String, String>) messageStoreSettings.get(BDBHAVirtualHostNode.REPLICATED_ENVIRONMENT_CONFIGURATION);
+                return buildReplicationConfigParameters(parent);
             }
 
             @Override
@@ -99,10 +103,31 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
 
     }
 
-    @Override
-    public String getType()
+    private Map<String, String> buildEnvironmentConfigParameters(ConfiguredObject<?> parent)
     {
-        return ReplicatedEnvironmentFacade.TYPE;
+        return buildConfig(parent, false);
     }
+
+    private Map<String, String> buildReplicationConfigParameters(ConfiguredObject<?> parent)
+    {
+
+        return buildConfig(parent, true);
+    }
+
+    private Map<String, String> buildConfig(ConfiguredObject<?> parent,  boolean selectReplicationParaemeters)
+    {
+        Map<String, String> targetMap = new HashMap<>();
+        for (ConfigParam entry : EnvironmentParams.SUPPORTED_PARAMS.values())
+        {
+            final String name = entry.getName();
+            if (entry.isForReplication() == selectReplicationParaemeters  && parent.getContext().containsKey(name))
+            {
+                String contextValue = parent.getContext().get(name);
+                targetMap.put(name, contextValue);
+            }
+        }
+        return Collections.unmodifiableMap(targetMap);
+    }
+
 
 }

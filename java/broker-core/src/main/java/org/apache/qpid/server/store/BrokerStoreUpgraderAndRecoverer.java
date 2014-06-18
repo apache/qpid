@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -233,7 +234,7 @@ public class BrokerStoreUpgraderAndRecoverer
                         addAttributeTransformer("storePath", copyAttribute()).
                         addAttributeTransformer("storeUnderfullSize", copyAttribute()).
                         addAttributeTransformer("storeOverfullSize", copyAttribute()).
-                        addAttributeTransformer("bdbEnvironmentConfig", mutateAttributeName("environmentConfiguration")));
+                        addAttributeTransformer("bdbEnvironmentConfig", mutateAttributeName("context")));
                 put("JDBC", new AttributesTransformer().
                         addAttributeTransformer("id", copyAttribute()).
                         addAttributeTransformer("name", copyAttribute()).
@@ -242,13 +243,13 @@ public class BrokerStoreUpgraderAndRecoverer
                         addAttributeTransformer("storePath", mutateAttributeName("connectionURL")).
                         addAttributeTransformer("connectionURL", mutateAttributeName("connectionUrl")).
                         addAttributeTransformer("connectionPool", mutateAttributeName("connectionPoolType")).
-                        addAttributeTransformer("jdbcBigIntType", mutateAttributeName("bigIntType")).
-                        addAttributeTransformer("jdbcBytesForBlob", mutateAttributeName("bytesForBlob")).
-                        addAttributeTransformer("jdbcBlobType", mutateAttributeName("blobType")).
-                        addAttributeTransformer("jdbcVarbinaryType", mutateAttributeName("varbinaryType")).
-                        addAttributeTransformer("partitionCount", copyAttribute()).
-                        addAttributeTransformer("maxConnectionsPerPartition", copyAttribute()).
-                        addAttributeTransformer("minConnectionsPerPartition", copyAttribute()));
+                        addAttributeTransformer("jdbcBigIntType", addContextVar("qpid.jdbcstore.bigIntType")).
+                        addAttributeTransformer("jdbcBytesForBlob", addContextVar("qpid.jdbcstore.useBytesForBlob")).
+                        addAttributeTransformer("jdbcBlobType", addContextVar("qpid.jdbcstore.blobType")).
+                        addAttributeTransformer("jdbcVarbinaryType", addContextVar("qpid.jdbcstore.varBinaryType")).
+                        addAttributeTransformer("partitionCount", addContextVar("qpid.jdbcstore.bonecp.partitionCount")).
+                        addAttributeTransformer("maxConnectionsPerPartition", addContextVar("qpid.jdbcstore.bonecp.maxConnectionsPerPartition")).
+                        addAttributeTransformer("minConnectionsPerPartition", addContextVar("qpid.jdbcstore.bonecp.minConnectionsPerPartition")));
                 put("BDB_HA", new AttributesTransformer().
                         addAttributeTransformer("id", copyAttribute()).
                         addAttributeTransformer("createdTime", copyAttribute()).
@@ -261,8 +262,8 @@ public class BrokerStoreUpgraderAndRecoverer
                         addAttributeTransformer("haHelperAddress", mutateAttributeName("helperAddress")).
                         addAttributeTransformer("haNodeAddress", mutateAttributeName("address")).
                         addAttributeTransformer("haDesignatedPrimary", mutateAttributeName("designatedPrimary")).
-                        addAttributeTransformer("haReplicationConfig", mutateAttributeName("replicatedEnvironmentConfiguration")).
-                        addAttributeTransformer("bdbEnvironmentConfig", mutateAttributeName("environmentConfiguration")));
+                        addAttributeTransformer("haReplicationConfig", mutateAttributeName("context")).
+                        addAttributeTransformer("bdbEnvironmentConfig", mutateAttributeName("context")));
             }};
 
         public ConfiguredObjectRecord upgrade(ConfiguredObjectRecord vhost)
@@ -300,7 +301,6 @@ public class BrokerStoreUpgraderAndRecoverer
 
             Map<String, Object> nodeAttributes = nodeAttributeTransformer.upgrade(attributes);
             nodeAttributes.put("type", type);
-            nodeAttributes.put("messageStoreProvider", true);
             return new ConfiguredObjectRecordImpl(vhost.getId(), "VirtualHostNode", nodeAttributes, vhost.getParents());
         }
 
@@ -329,7 +329,7 @@ public class BrokerStoreUpgraderAndRecoverer
 
         public Map<String, Object> upgrade(Map<String, Object> attributes)
         {
-            Map<String, Object> settings = new HashMap<String, Object>();
+            Map<String, Object> settings = new HashMap<>();
             for (Map.Entry<String, List<AttributeTransformer>> entry : _transformers.entrySet())
             {
                 String attributeName = entry.getKey();
@@ -349,7 +349,17 @@ public class BrokerStoreUpgraderAndRecoverer
                     }
                     if (newEntry != null)
                     {
-                        settings.put(newEntry.getKey(), newEntry.getValue());
+                        if (settings.get(newEntry.getKey()) instanceof Map && newEntry.getValue() instanceof Map)
+                        {
+                            final Map newMap = (Map)newEntry.getValue();
+                            final Map mergedMap = new HashMap((Map) settings.get(newEntry.getKey()));
+                            mergedMap.putAll(newMap);
+                            settings.put(newEntry.getKey(), mergedMap);
+                        }
+                        else
+                        {
+                            settings.put(newEntry.getKey(), newEntry.getValue());
+                        }
                     }
                 }
             }
@@ -365,6 +375,11 @@ public class BrokerStoreUpgraderAndRecoverer
     private static AttributeTransformer mutateAttributeName(String newName)
     {
         return new MutateAttributeName(newName);
+    }
+
+    private static AttributeTransformer addContextVar(String newName)
+    {
+        return new AddContextVar(newName);
     }
 
     private static interface AttributeTransformer
@@ -386,6 +401,23 @@ public class BrokerStoreUpgraderAndRecoverer
             return entry;
         }
     }
+
+    private static class AddContextVar implements AttributeTransformer
+    {
+        private final String _newName;
+
+        public AddContextVar(String newName)
+        {
+            _newName = newName;
+        }
+
+        @Override
+        public MutableEntry transform(MutableEntry entry)
+        {
+            return new MutableEntry("context", Collections.singletonMap(_newName, entry.getValue()));
+        }
+    }
+
     private static class MutateAttributeName implements AttributeTransformer
     {
         private final String _newName;

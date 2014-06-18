@@ -31,9 +31,10 @@ import java.util.Map;
 
 public class BoneCPConnectionProvider implements ConnectionProvider
 {
-    public static final String PARTITION_COUNT = "partitionCount";
-    public static final String MAX_CONNECTIONS_PER_PARTITION = "maxConnectionsPerPartition";
-    public static final String MIN_CONNECTIONS_PER_PARTITION = "minConnectionsPerPartition";
+    public static final String PARTITION_COUNT = "qpid.jdbcstore.bonecp.partitionCount";
+    public static final String MAX_CONNECTIONS_PER_PARTITION = "qpid.jdbcstore.bonecp.maxConnectionsPerPartition";
+    public static final String MIN_CONNECTIONS_PER_PARTITION = "qpid.jdbcstore.bonecp.minConnectionsPerPartition";
+
 
     public static final int DEFAULT_MIN_CONNECTIONS_PER_PARTITION = 5;
     public static final int DEFAULT_MAX_CONNECTIONS_PER_PARTITION = 10;
@@ -43,6 +44,7 @@ public class BoneCPConnectionProvider implements ConnectionProvider
 
     public BoneCPConnectionProvider(String connectionUrl, Map<String, Object> storeSettings) throws SQLException
     {
+        // TODO change interface to pass through username and password
         BoneCPConfig config = new BoneCPConfig();
         config.setJdbcUrl(connectionUrl);
         config.setMinConnectionsPerPartition(MapValueConverter.getIntegerAttribute(MIN_CONNECTIONS_PER_PARTITION, storeSettings, DEFAULT_MIN_CONNECTIONS_PER_PARTITION));

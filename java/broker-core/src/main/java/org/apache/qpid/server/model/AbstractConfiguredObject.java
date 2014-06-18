@@ -713,7 +713,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public Map<String,String> getContext()
     {
-        return _context == null ? null : Collections.unmodifiableMap(_context);
+        return _context == null ? Collections.<String,String>emptyMap() : Collections.unmodifiableMap(_context);
     }
 
     public State getDesiredState()

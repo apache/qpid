@@ -19,123 +19,128 @@
 
 package org.apache.qpid.server.store.jdbc;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JDBCDetails
+public abstract class JDBCDetails
 {
+    public static final String CONTEXT_JDBCSTORE_BIGINTTYPE = "qpid.jdbcstore.bigIntType";
+    public static final String CONTEXT_JDBCSTORE_VARBINARYTYPE = "qpid.jdbcstore.varBinaryType";
+    public static final String CONTEXT_JDBCSTORE_BLOBTYPE = "qpid.jdbcstore.blobType";
+    public static final String CONTEXT_JDBCSTORE_USEBYTESFORBLOB = "qpid.jdbcstore.useBytesForBlob";
 
-    private static Map<String, JDBCDetails> VENDOR_DETAILS = new HashMap<>();
+    public abstract String getVendor();
 
-    private static JDBCDetails DERBY_DETAILS =
-            new JDBCDetails("derby",
-                            "blob",
-                            "varchar(%d) for bit data",
-                            "bigint",
-                            false);
+    public abstract String getBlobType();
 
-    private static JDBCDetails POSTGRESQL_DETAILS =
-            new JDBCDetails("postgresql",
-                            "bytea",
-                            "bytea",
-                            "bigint",
-                            true);
+    public abstract String getVarBinaryType();
 
-    private static JDBCDetails MYSQL_DETAILS =
-            new JDBCDetails("mysql",
-                            "blob",
-                            "varbinary(%d)",
-                            "bigint",
-                            false);
+    public abstract String getBigintType();
 
+    public abstract boolean isUseBytesMethodsForBlob();
 
-    private static JDBCDetails SYBASE_DETAILS =
-            new JDBCDetails("sybase",
-                            "image",
-                            "varbinary(%d)",
-                            "bigint",
-                            false);
+    public abstract boolean isKnownVendor();
 
+    public abstract boolean isOverridden();
 
-    private static JDBCDetails ORACLE_DETAILS =
-            new JDBCDetails("oracle",
-                            "blob",
-                            "raw(%d)",
-                            "number",
-                            false);
-
-
-    static
+    static class KnownJDBCDetails extends JDBCDetails
     {
+        private static final JDBCDetails FALLBACK = new KnownJDBCDetails("fallback", "blob", "varchar(%d) for bit data", "bigint", false,
+                                                                         false);
+        private static final JDBCDetails ORACLE = new KnownJDBCDetails("oracle", "blob", "raw(%d)", "number", false,
+                                                                       true);
+        private static final JDBCDetails SYBASE = new KnownJDBCDetails("sybase", "image", "varbinary(%d)", "bigint", false,
+                                                                       true);
+        private static final JDBCDetails POSTGRES = new KnownJDBCDetails("postgresql", "bytea", "bytea", "bigint", true,
+                                                                         true);
+        private static final JDBCDetails DERBY = new KnownJDBCDetails("derby", "blob", "varchar(%d) for bit data", "bigint", false,
+                                                                      true);
 
-        addDetails(DERBY_DETAILS);
-        addDetails(POSTGRESQL_DETAILS);
-        addDetails(MYSQL_DETAILS);
-        addDetails(SYBASE_DETAILS);
-        addDetails(ORACLE_DETAILS);
-    }
-
-    public static JDBCDetails getDetails(String vendor)
-    {
-        return VENDOR_DETAILS.get(vendor);
-    }
-
-    public static JDBCDetails getDefaultDetails()
-    {
-        return DERBY_DETAILS;
-    }
-
-    private static void addDetails(JDBCDetails details)
-    {
-        VENDOR_DETAILS.put(details.getVendor(), details);
-    }
-
-    private final String _vendor;
-    private String _blobType;
-    private String _varBinaryType;
-    private String _bigintType;
-    private boolean _useBytesMethodsForBlob;
-
-    JDBCDetails(String vendor,
-                String blobType,
-                String varBinaryType,
-                String bigIntType,
-                boolean useBytesMethodsForBlob)
-    {
-        _vendor = vendor;
-        setBlobType(blobType);
-        setVarBinaryType(varBinaryType);
-        setBigintType(bigIntType);
-        setUseBytesMethodsForBlob(useBytesMethodsForBlob);
-    }
-
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
+        static
         {
-            return true;
+            Map<String, JDBCDetails> map = new HashMap<>();
+
+            try
+            {
+                map.put(ORACLE.getVendor(), ORACLE);
+                map.put(SYBASE.getVendor(), SYBASE);
+                map.put(POSTGRES.getVendor(), POSTGRES);
+                map.put(DERBY.getVendor(), DERBY);
+                map.put(FALLBACK.getVendor(), FALLBACK);
+            }
+            finally
+            {
+                VENDOR_DETAILS = Collections.unmodifiableMap(map);
+            }
         }
-        if (o == null || getClass() != o.getClass())
+
+        private final static Map<String, JDBCDetails> VENDOR_DETAILS;
+
+        private final String _vendor;
+        private final String _blobType;
+        private final String _varBinaryType;
+        private final String _bigintType;
+        private final boolean _useBytesMethodsForBlob;
+        private final boolean _isKnownVendor;
+
+        KnownJDBCDetails(String vendor,
+                         String blobType,
+                         String varBinaryType,
+                         String bigIntType,
+                         boolean useBytesMethodsForBlob,
+                         boolean knownVendor)
+        {
+            _vendor = vendor;
+            _blobType = blobType;
+            _varBinaryType = varBinaryType;
+            _bigintType = bigIntType;
+            _useBytesMethodsForBlob = useBytesMethodsForBlob;
+            _isKnownVendor = knownVendor;
+        }
+
+        @Override
+        public String getVendor()
+        {
+            return _vendor;
+        }
+
+        @Override
+        public String getBlobType()
+        {
+            return _blobType;
+        }
+
+        @Override
+        public String getVarBinaryType()
+        {
+            return _varBinaryType;
+        }
+
+        @Override
+        public boolean isUseBytesMethodsForBlob()
+        {
+            return _useBytesMethodsForBlob;
+        }
+
+        @Override
+        public String getBigintType()
+        {
+            return _bigintType;
+        }
+
+        @Override
+        public boolean isKnownVendor()
+        {
+            return _isKnownVendor;
+        }
+
+        @Override
+        public boolean isOverridden()
         {
             return false;
         }
 
-        JDBCDetails that = (JDBCDetails) o;
-
-        if (!getVendor().equals(that.getVendor()))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return getVendor().hashCode();
     }
 
     @Override
@@ -147,51 +152,145 @@ public class JDBCDetails
                ", varBinaryType='" + getVarBinaryType() + '\'' +
                ", bigIntType='" + getBigintType() + '\'' +
                ", useBytesMethodsForBlob=" + isUseBytesMethodsForBlob() +
+               ", knownVendor=" + isKnownVendor() +
+               ", overridden=" + isOverridden() +
                '}';
     }
 
-    public String getVendor()
+    @Override
+    public boolean equals(final Object o)
     {
-        return _vendor;
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        final JDBCDetails that = (JDBCDetails) o;
+
+        if (isKnownVendor() != that.isKnownVendor())
+        {
+            return false;
+        }
+        if (isOverridden() != that.isOverridden())
+        {
+            return false;
+        }
+        if (isUseBytesMethodsForBlob() != that.isUseBytesMethodsForBlob())
+        {
+            return false;
+        }
+        if (getBigintType() != null ? !getBigintType().equals(that.getBigintType()) : that.getBigintType() != null)
+        {
+            return false;
+        }
+        if (getBlobType() != null ? !getBlobType().equals(that.getBlobType()) : that.getBlobType() != null)
+        {
+            return false;
+        }
+        if (getVarBinaryType() != null ? !getVarBinaryType().equals(that.getVarBinaryType()) : that.getVarBinaryType() != null)
+        {
+            return false;
+        }
+        if (getVendor() != null ? !getVendor().equals(that.getVendor()) : that.getVendor() != null)
+        {
+            return false;
+        }
+
+        return true;
     }
 
-    public String getBlobType()
+    @Override
+    public int hashCode()
     {
-        return _blobType;
+        int result = getVendor() != null ? getVendor().hashCode() : 0;
+        result = 31 * result + (getBlobType() != null ? getBlobType().hashCode() : 0);
+        result = 31 * result + (getVarBinaryType() != null ? getVarBinaryType().hashCode() : 0);
+        result = 31 * result + (getBigintType() != null ? getBigintType().hashCode() : 0);
+        result = 31 * result + (isUseBytesMethodsForBlob() ? 1 : 0);
+        result = 31 * result + (isKnownVendor() ? 1 : 0);
+        result = 31 * result + (isOverridden() ? 1 : 0);
+        return result;
     }
 
-    public void setBlobType(String blobType)
+
+    public static JDBCDetails getDetailsForJdbcUrl(String jdbcUrl, final Map<String, String> contextMap)
     {
-        _blobType = blobType;
+        String[] components = jdbcUrl.split(":", 3);
+        final JDBCDetails details;
+        if(components.length >= 2)
+        {
+            String vendor = components[1];
+            if (KnownJDBCDetails.VENDOR_DETAILS.containsKey(vendor))
+            {
+                details = KnownJDBCDetails.VENDOR_DETAILS.get(vendor);
+            }
+            else
+            {
+                details = KnownJDBCDetails.FALLBACK;
+            }
+        }
+        else
+        {
+            details = KnownJDBCDetails.FALLBACK;
+        }
+
+
+        return new JDBCDetails()
+        {
+            @Override
+            public String getVendor()
+            {
+                return details.getVendor();
+            }
+
+            @Override
+            public String getBlobType()
+            {
+                return contextMap.containsKey(CONTEXT_JDBCSTORE_BLOBTYPE)
+                        ? String.valueOf(contextMap.get(CONTEXT_JDBCSTORE_BLOBTYPE)) : details.getBlobType();
+            }
+
+            @Override
+            public String getVarBinaryType()
+            {
+                return contextMap.containsKey(CONTEXT_JDBCSTORE_VARBINARYTYPE)
+                        ? String.valueOf(contextMap.get(CONTEXT_JDBCSTORE_VARBINARYTYPE)) : details.getVarBinaryType();
+            }
+
+            @Override
+            public String getBigintType()
+            {
+                return contextMap.containsKey(CONTEXT_JDBCSTORE_BIGINTTYPE)
+                        ? String.valueOf(contextMap.get(CONTEXT_JDBCSTORE_BIGINTTYPE)) : details.getBigintType();
+            }
+
+            @Override
+            public boolean isUseBytesMethodsForBlob()
+            {
+                return contextMap.containsKey(CONTEXT_JDBCSTORE_USEBYTESFORBLOB)
+                        ? Boolean.parseBoolean(contextMap.get(CONTEXT_JDBCSTORE_USEBYTESFORBLOB)) : details.isUseBytesMethodsForBlob();
+            }
+
+            @Override
+            public boolean isKnownVendor()
+            {
+                return details.isKnownVendor();
+            }
+
+            @Override
+            public boolean isOverridden()
+            {
+                return contextMap.containsKey(CONTEXT_JDBCSTORE_USEBYTESFORBLOB)
+                        || contextMap.containsKey(CONTEXT_JDBCSTORE_BIGINTTYPE)
+                        || contextMap.containsKey(CONTEXT_JDBCSTORE_VARBINARYTYPE)
+                        || contextMap.containsKey(CONTEXT_JDBCSTORE_BLOBTYPE);
+            }
+        };
+
     }
 
-    public String getVarBinaryType()
-    {
-        return _varBinaryType;
-    }
-
-    public void setVarBinaryType(String varBinaryType)
-    {
-        _varBinaryType = varBinaryType;
-    }
-
-    public boolean isUseBytesMethodsForBlob()
-    {
-        return _useBytesMethodsForBlob;
-    }
-
-    public void setUseBytesMethodsForBlob(boolean useBytesMethodsForBlob)
-    {
-        _useBytesMethodsForBlob = useBytesMethodsForBlob;
-    }
-
-    public String getBigintType()
-    {
-        return _bigintType;
-    }
-
-    public void setBigintType(String bigintType)
-    {
-        _bigintType = bigintType;
-    }
 }
