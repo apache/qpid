@@ -63,9 +63,6 @@ find_package_handle_standard_args(SASL DEFAULT_MSG FOUND_SASL_LIB FOUND_SASL_H)
 
 #set (CMAKE_VERBOSE_MAKEFILE ON)  # for debugging
 
-# Define windows versions and library helpers
-include (msvc.cmake)
-
 # Add a test to check the exported library API against expected API symbols
 MACRO (add_api_test libname)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_TESTING)
