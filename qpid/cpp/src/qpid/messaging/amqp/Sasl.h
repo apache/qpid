@@ -31,7 +31,7 @@ namespace sys {
 class SecurityLayer;
 }
 namespace messaging {
-class ConnectionOptions;
+struct ConnectionOptions;
 namespace amqp {
 class ConnectionContext;
 

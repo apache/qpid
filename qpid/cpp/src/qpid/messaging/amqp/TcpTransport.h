@@ -32,7 +32,7 @@ namespace sys {
 class ConnectionCodec;
 class AsynchConnector;
 class AsynchIO;
-class AsynchIOBufferBase;
+struct AsynchIOBufferBase;
 class Poller;
 }
 namespace messaging {

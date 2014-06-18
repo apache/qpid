@@ -26,7 +26,7 @@ namespace sys {
 class Codec;
 }
 namespace messaging {
-class ConnectionOptions;
+struct ConnectionOptions;
 
 namespace amqp {
 
