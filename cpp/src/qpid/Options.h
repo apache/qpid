@@ -63,7 +63,7 @@ QPID_COMMON_EXTERN std::string prettyArg(const std::string&, const std::string&)
 
 ///@internal
 template <class T>
-QPID_COMMON_EXTERN po::value_semantic* create_value(T& val, const std::string& arg);
+po::value_semantic* create_value(T& val, const std::string& arg);
 
 /** Create an option value.
  * name, value appear after the option name in help like this:
