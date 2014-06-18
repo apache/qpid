@@ -51,9 +51,6 @@ include(BuildInstallSettings.cmake)
 enable_testing()
 include (CTest)
 
-# Define windows versions and library helpers
-include (src/msvc.cmake)
-
 if (MSVC)
   # Change warning C4996 from level 1 to level 4. These are real and shouldn't
   # be completely ignored, but they're pretty well checked out and will throw
@@ -118,6 +115,9 @@ configure_file(
 
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
+# Define windows versions and library helpers
+include (src/msvc.cmake)
 
 # Do not keep on linking against transitive library dependencies
 # TODO Need to rework CMake files to use INTERFACE_LINK_LIBRARIES target property
