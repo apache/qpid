@@ -26,9 +26,9 @@ public class DerbyMessageStoreConfigurationTest extends AbstractDurableConfigura
 {
 
     @Override
-    protected DerbyMessageStore createConfigStore() throws Exception
+    protected DerbyConfigurationStore createConfigStore() throws Exception
     {
-        return new DerbyMessageStore();
+        return new DerbyConfigurationStore();
     }
 
 }

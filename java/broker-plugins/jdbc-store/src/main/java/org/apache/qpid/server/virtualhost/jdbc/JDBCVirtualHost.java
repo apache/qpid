@@ -26,7 +26,7 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.jdbc.JDBCMessageStore;
+import org.apache.qpid.server.store.jdbc.GenericJDBCMessageStore;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
 @ManagedObject(category = false, type = JDBCVirtualHost.VIRTUAL_HOST_TYPE)
@@ -45,6 +45,6 @@ public class JDBCVirtualHost extends AbstractVirtualHost<JDBCVirtualHost>
     @Override
     protected MessageStore createMessageStore()
     {
-        return new JDBCMessageStore().getMessageStore();
+        return new GenericJDBCMessageStore();
     }
 }
