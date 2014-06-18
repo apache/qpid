@@ -83,7 +83,7 @@ public class DerbyMessageStoreTest extends MessageStoreTestCase
     @Override
     protected MessageStore createMessageStore()
     {
-        return (new DerbyMessageStore()).getMessageStore();
+        return new DerbyMessageStore();
     }
 
 }

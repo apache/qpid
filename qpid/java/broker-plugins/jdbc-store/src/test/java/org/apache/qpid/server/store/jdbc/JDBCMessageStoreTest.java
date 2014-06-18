@@ -52,7 +52,7 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
 
     public void testOnDelete() throws Exception
     {
-        Set<String> expectedTables = JDBCMessageStore.MESSAGE_STORE_TABLE_NAMES;
+        Set<String> expectedTables = GenericJDBCMessageStore.MESSAGE_STORE_TABLE_NAMES;
         assertTablesExist(expectedTables, true);
         getStore().closeMessageStore();
         assertTablesExist(expectedTables, true);
@@ -65,7 +65,7 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
     {
         _connectionURL = "jdbc:derby:memory:/" + getTestName() + ";create=true";
         Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-        messageStoreSettings.put(JDBCMessageStore.CONNECTION_URL, _connectionURL);
+        messageStoreSettings.put(GenericJDBCMessageStore.CONNECTION_URL, _connectionURL);
         return messageStoreSettings;
     }
 
@@ -73,7 +73,7 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
     @Override
     protected MessageStore createMessageStore()
     {
-        return (new JDBCMessageStore()).getMessageStore();
+        return new GenericJDBCMessageStore();
     }
 
     private void assertTablesExist(Set<String> expectedTables, boolean exists) throws SQLException

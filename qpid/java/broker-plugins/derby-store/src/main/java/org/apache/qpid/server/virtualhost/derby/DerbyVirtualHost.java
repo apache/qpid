@@ -45,7 +45,7 @@ public class DerbyVirtualHost extends AbstractVirtualHost<DerbyVirtualHost>
     @Override
     protected MessageStore createMessageStore()
     {
-        return new DerbyMessageStore().getMessageStore();
+        return new DerbyMessageStore();
     }
 
 }
