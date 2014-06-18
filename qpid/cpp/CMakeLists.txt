@@ -198,6 +198,9 @@ if (MSVC)
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
   set (CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/debug /INCREMENTAL:NO")
 
+  # Define windows versions and library helpers
+  include (src/msvc.cmake)
+
   if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src)
     # Set the windows version for the .NET Binding cpp project
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src/org.apache.qpid.messaging.template.rc
