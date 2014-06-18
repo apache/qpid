@@ -408,11 +408,12 @@ com.sun.security.jgss.initiate {
     
     permission = [allow | allow-log | deny | deny-log]
     action = [consume | publish | create | access | 
-              bind | unbind | delete | purge | update]
-    object = [queue | exchange | broker | link | method]
+              bind | unbind | delete | purge | update |
+              move | redirect | reroute]
+    object = [queue | exchange | broker | link | method | query]
     property = [name | durable | owner | routingkey | 
                 autodelete | exclusive |type | 
-		alternate | queuename | 
+		alternate | queuename | exchangename |
 		schemapackage | schemaclass | 
 		queuemaxsizelowerlimit  | 
 		queuemaxsizeupperlimit  |
@@ -610,6 +611,39 @@ com.sun.security.jgss.initiate {
 								</para>
 
 							</entry>
+                                                </row>
+                                                 <row>
+                                                        <entry>
+                                                                <command>move</command>
+                                                        </entry>
+                                                         <entry>
+                                                                <para>
+                                                                        When moving messages between queues
+                                                                </para>
+
+                                                        </entry>
+                                                </row>
+                                                 <row>
+                                                        <entry>
+                                                                <command>redirect</command>
+                                                        </entry>
+                                                         <entry>
+                                                                <para>
+                                                                        When redirecting messages between queues
+                                                                </para>
+
+                                                        </entry>
+                                                </row>
+                                                 <row>
+                                                        <entry>
+                                                                <command>reroute</command>
+                                                        </entry>
+                                                         <entry>
+                                                                <para>
+                                                                        When rerouting messages from a queue to an exchange
+                                                                </para>
+
+                                                        </entry>
 
 						</row>
 
@@ -682,6 +716,18 @@ com.sun.security.jgss.initiate {
 							</entry>
 
 						</row>
+                                                 <row>
+                                                        <entry>
+                                                                <command>query</command>
+                                                        </entry>
+                                                         <entry>
+                                                                <para>
+                                                                        Management query (of an object or whole class)
+                                                                </para>
+
+                                                        </entry>
+
+                                                </row>
 
 					</tbody>
 
@@ -905,6 +951,12 @@ com.sun.security.jgss.initiate {
 				  <entry>name schemapackage schemaclass</entry>
 				  <entry></entry>
 				</row>
+                                <row>
+                                  <entry>access</entry>
+                                  <entry>query</entry>
+                                  <entry>name schemaclass</entry>
+                                  <entry></entry>
+                                </row>
 				<row>
 				  <entry>access</entry>
 				  <entry>queue</entry>
@@ -971,6 +1023,27 @@ com.sun.security.jgss.initiate {
 				  <entry>name</entry>
 				  <entry></entry>
 				</row>
+                                <row>
+                                  <entry>move</entry>
+                                  <entry>queue</entry>
+                                  <entry>name</entry>
+                                  <entry>queuename</entry>
+                                  <entry></entry>
+                                </row>
+                                <row>
+                                  <entry>redirect</entry>
+                                  <entry>queue</entry>
+                                  <entry>name</entry>
+                                  <entry>queuename</entry>
+                                  <entry></entry>
+                                </row>
+                                <row>
+                                  <entry>reroute</entry>
+                                  <entry>queue</entry>
+                                  <entry>name</entry>
+                                  <entry>exchangename</entry>
+                                  <entry></entry>
+                                </row>
 				<row>
 				  <entry>unbind</entry>
 				  <entry>exchange</entry>

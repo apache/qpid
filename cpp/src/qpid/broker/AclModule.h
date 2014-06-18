@@ -48,6 +48,7 @@ namespace acl {
         OBJ_BROKER,
         OBJ_LINK,
         OBJ_METHOD,
+        OBJ_QUERY,
         OBJECTSIZE }; // OBJECTSIZE must be last in list
 
     // Action  shared between ACL spec and ACL authorise interface
@@ -61,6 +62,9 @@ namespace acl {
         ACT_DELETE,
         ACT_PURGE,
         ACT_UPDATE,
+        ACT_MOVE,
+        ACT_REDIRECT,
+        ACT_REROUTE,
         ACTIONSIZE }; // ACTIONSIZE must be last in list
 
     // Property used in ACL authorize interface
@@ -74,6 +78,7 @@ namespace acl {
         PROP_TYPE,
         PROP_ALTERNATE,
         PROP_QUEUENAME,
+        PROP_EXCHANGENAME,
         PROP_SCHEMAPACKAGE,
         PROP_SCHEMACLASS,
         PROP_POLICYTYPE,
@@ -100,6 +105,7 @@ namespace acl {
         SPECPROP_TYPE            = PROP_TYPE,
         SPECPROP_ALTERNATE       = PROP_ALTERNATE,
         SPECPROP_QUEUENAME       = PROP_QUEUENAME,
+        SPECPROP_EXCHANGENAME    = PROP_EXCHANGENAME,
         SPECPROP_SCHEMAPACKAGE   = PROP_SCHEMAPACKAGE,
         SPECPROP_SCHEMACLASS     = PROP_SCHEMACLASS,
         SPECPROP_POLICYTYPE      = PROP_POLICYTYPE,
@@ -186,6 +192,7 @@ namespace acl {
             if (str.compare("broker")   == 0) return OBJ_BROKER;
             if (str.compare("link")     == 0) return OBJ_LINK;
             if (str.compare("method")   == 0) return OBJ_METHOD;
+            if (str.compare("query")    == 0) return OBJ_QUERY;
             throw qpid::Exception(str);
         }
         static inline std::string getObjectTypeStr(const ObjectType o) {
@@ -195,33 +202,40 @@ namespace acl {
             case OBJ_BROKER:   return "broker";
             case OBJ_LINK:     return "link";
             case OBJ_METHOD:   return "method";
+            case OBJ_QUERY:    return "query";
             default: assert(false); // should never get here
             }
             return "";
         }
         static inline Action getAction(const std::string& str) {
-            if (str.compare("consume") == 0) return ACT_CONSUME;
-            if (str.compare("publish") == 0) return ACT_PUBLISH;
-            if (str.compare("create")  == 0) return ACT_CREATE;
-            if (str.compare("access")  == 0) return ACT_ACCESS;
-            if (str.compare("bind")    == 0) return ACT_BIND;
-            if (str.compare("unbind")  == 0) return ACT_UNBIND;
-            if (str.compare("delete")  == 0) return ACT_DELETE;
-            if (str.compare("purge")   == 0) return ACT_PURGE;
-            if (str.compare("update")  == 0) return ACT_UPDATE;
+            if (str.compare("consume")  == 0) return ACT_CONSUME;
+            if (str.compare("publish")  == 0) return ACT_PUBLISH;
+            if (str.compare("create")   == 0) return ACT_CREATE;
+            if (str.compare("access")   == 0) return ACT_ACCESS;
+            if (str.compare("bind")     == 0) return ACT_BIND;
+            if (str.compare("unbind")   == 0) return ACT_UNBIND;
+            if (str.compare("delete")   == 0) return ACT_DELETE;
+            if (str.compare("purge")    == 0) return ACT_PURGE;
+            if (str.compare("update")   == 0) return ACT_UPDATE;
+            if (str.compare("move")     == 0) return ACT_MOVE;
+            if (str.compare("redirect") == 0) return ACT_REDIRECT;
+            if (str.compare("reroute")  == 0) return ACT_REROUTE;
             throw qpid::Exception(str);
         }
         static inline std::string getActionStr(const Action a) {
             switch (a) {
-            case ACT_CONSUME: return "consume";
-            case ACT_PUBLISH: return "publish";
-            case ACT_CREATE:  return "create";
-            case ACT_ACCESS:  return "access";
-            case ACT_BIND:    return "bind";
-            case ACT_UNBIND:  return "unbind";
-            case ACT_DELETE:  return "delete";
-            case ACT_PURGE:   return "purge";
-            case ACT_UPDATE:  return "update";
+            case ACT_CONSUME:  return "consume";
+            case ACT_PUBLISH:  return "publish";
+            case ACT_CREATE:   return "create";
+            case ACT_ACCESS:   return "access";
+            case ACT_BIND:     return "bind";
+            case ACT_UNBIND:   return "unbind";
+            case ACT_DELETE:   return "delete";
+            case ACT_PURGE:    return "purge";
+            case ACT_UPDATE:   return "update";
+            case ACT_MOVE:     return "move";
+            case ACT_REDIRECT: return "redirect";
+            case ACT_REROUTE:  return "reroute";
             default: assert(false); // should never get here
             }
             return "";
@@ -236,6 +250,7 @@ namespace acl {
             if (str.compare("type")          == 0) return PROP_TYPE;
             if (str.compare("alternate")     == 0) return PROP_ALTERNATE;
             if (str.compare("queuename")     == 0) return PROP_QUEUENAME;
+            if (str.compare("exchangename")  == 0) return PROP_EXCHANGENAME;
             if (str.compare("schemapackage") == 0) return PROP_SCHEMAPACKAGE;
             if (str.compare("schemaclass")   == 0) return PROP_SCHEMACLASS;
             if (str.compare("policytype")    == 0) return PROP_POLICYTYPE;
@@ -259,6 +274,7 @@ namespace acl {
             case PROP_TYPE:          return "type";
             case PROP_ALTERNATE:     return "alternate";
             case PROP_QUEUENAME:     return "queuename";
+            case PROP_EXCHANGENAME:  return "exchangename";
             case PROP_SCHEMAPACKAGE: return "schemapackage";
             case PROP_SCHEMACLASS:   return "schemaclass";
             case PROP_POLICYTYPE:    return "policytype";
@@ -283,6 +299,7 @@ namespace acl {
             if (str.compare("type")          == 0) return SPECPROP_TYPE;
             if (str.compare("alternate")     == 0) return SPECPROP_ALTERNATE;
             if (str.compare("queuename")     == 0) return SPECPROP_QUEUENAME;
+            if (str.compare("exchangename")  == 0) return SPECPROP_EXCHANGENAME;
             if (str.compare("schemapackage") == 0) return SPECPROP_SCHEMAPACKAGE;
             if (str.compare("schemaclass")   == 0) return SPECPROP_SCHEMACLASS;
             if (str.compare("policytype")    == 0) return SPECPROP_POLICYTYPE;
@@ -315,6 +332,7 @@ namespace acl {
                 case SPECPROP_TYPE:          return "type";
                 case SPECPROP_ALTERNATE:     return "alternate";
                 case SPECPROP_QUEUENAME:     return "queuename";
+                case SPECPROP_EXCHANGENAME:  return "exchangename";
                 case SPECPROP_SCHEMAPACKAGE: return "schemapackage";
                 case SPECPROP_SCHEMACLASS:   return "schemaclass";
                 case SPECPROP_POLICYTYPE:    return "policytype";
@@ -413,12 +431,22 @@ namespace acl {
             p4->insert(PROP_MAXQUEUESIZE);
             p4->insert(PROP_MAXQUEUECOUNT);
 
+            propSetPtr p5(new propSet);
+            p5->insert(PROP_QUEUENAME);
+
+            propSetPtr p6(new propSet);
+            p6->insert(PROP_EXCHANGENAME);
+
+
             actionMapPtr a1(new actionMap);
-            a1->insert(actionPair(ACT_ACCESS,  p0));
-            a1->insert(actionPair(ACT_CREATE,  p4));
-            a1->insert(actionPair(ACT_PURGE,   p0));
-            a1->insert(actionPair(ACT_DELETE,  p0));
-            a1->insert(actionPair(ACT_CONSUME, p0));
+            a1->insert(actionPair(ACT_ACCESS,   p0));
+            a1->insert(actionPair(ACT_CREATE,   p4));
+            a1->insert(actionPair(ACT_PURGE,    p0));
+            a1->insert(actionPair(ACT_DELETE,   p0));
+            a1->insert(actionPair(ACT_CONSUME,  p0));
+            a1->insert(actionPair(ACT_MOVE,     p5));
+            a1->insert(actionPair(ACT_REDIRECT, p5));
+            a1->insert(actionPair(ACT_REROUTE,  p6));
 
             map->insert(objectPair(OBJ_QUEUE, a1));
 
@@ -431,14 +459,25 @@ namespace acl {
 
             // == Method ==
 
-            propSetPtr p5(new propSet);
-            p5->insert(PROP_SCHEMAPACKAGE);
-            p5->insert(PROP_SCHEMACLASS);
+            propSetPtr p7(new propSet);
+            p7->insert(PROP_SCHEMAPACKAGE);
+            p7->insert(PROP_SCHEMACLASS);
 
             actionMapPtr a4(new actionMap);
-            a4->insert(actionPair(ACT_ACCESS, p5));
+            a4->insert(actionPair(ACT_ACCESS, p7));
 
             map->insert(objectPair(OBJ_METHOD, a4));
+
+            // == Query ==
+
+            propSetPtr p8(new propSet);
+            p8->insert(PROP_SCHEMACLASS);
+
+            actionMapPtr a5(new actionMap);
+            a5->insert(actionPair(ACT_ACCESS, p8));
+
+            map->insert(objectPair(OBJ_QUERY, a5));
+
         }
 
         //

@@ -613,6 +613,7 @@ acl allow zag@QPID publish exchange
 acl allow zag@QPID delete exchange
 acl allow zag@QPID access method
 acl allow zag@QPID create link
+acl allow zag@QPID access query
 # Normal user
 acl allow zig@QPID all all
 acl deny all all

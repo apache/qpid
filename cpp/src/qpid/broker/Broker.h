@@ -169,7 +169,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
                                             const Connection* context);
     Manageable::status_t setTimestampConfig(const bool receive,
                                             const Connection* context);
-    Manageable::status_t queueRedirect(const std::string& srcQueue, const std::string& tgtQueue);
+    Manageable::status_t queueRedirect(const std::string& srcQueue, const std::string& tgtQueue, const Connection* context);
     void queueRedirectDestroy(boost::shared_ptr<Queue> srcQ, boost::shared_ptr<Queue> tgtQ, bool moveMsgs);
     boost::shared_ptr<sys::Poller> poller;
     std::auto_ptr<sys::Timer> timer;
@@ -291,7 +291,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
         const std::string& srcQueue,
         const std::string& destQueue,
         uint32_t  qty,
-        const qpid::types::Variant::Map& filter);
+        const qpid::types::Variant::Map& filter,
+        const Connection* context);
 
     QPID_BROKER_EXTERN const TransportInfo& getTransportInfo(
         const std::string& name = TCP_TRANSPORT) const;
