@@ -51,6 +51,9 @@ include(BuildInstallSettings.cmake)
 enable_testing()
 include (CTest)
 
+# Define windows versions and library helpers
+include (src/msvc.cmake)
+
 if (MSVC)
   # Change warning C4996 from level 1 to level 4. These are real and shouldn't
   # be completely ignored, but they're pretty well checked out and will throw
@@ -197,9 +200,6 @@ if (MSVC)
   # set the RelWithDebInfo compile/link switches to equal Release
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
   set (CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/debug /INCREMENTAL:NO")
-
-  # Define windows versions and library helpers
-  include (src/msvc.cmake)
 
   if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src)
     # Set the windows version for the .NET Binding cpp project
