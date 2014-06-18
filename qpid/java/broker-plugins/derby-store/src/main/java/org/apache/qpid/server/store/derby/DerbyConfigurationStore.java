@@ -47,7 +47,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     private static final Logger LOGGER = Logger.getLogger(DerbyConfigurationStore.class);
 
     private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
-    private final MessageStoreWrapper _messageStore = new MessageStoreWrapper();
+    private final ProvidedMessageStore _providedMessageStore = new ProvidedMessageStore();
 
     private String _connectionURL;
     private String _storeLocation;
@@ -89,7 +89,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     @Override
     public void closeConfigurationStore() throws StoreException
     {
-        if (_messageStore.isMessageStoreOpen())
+        if (_providedMessageStore.isMessageStoreOpen())
         {
             throw new IllegalStateException("Cannot close the store as the provided message store is still open");
         }
@@ -134,7 +134,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     @Override
     public void onDelete()
     {
-        if (_messageStore.isMessageStoreOpen())
+        if (_providedMessageStore.isMessageStoreOpen())
         {
             throw new IllegalStateException("Cannot delete the store as the provided message store is still open");
         }
@@ -161,7 +161,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     @Override
     public MessageStore getMessageStore()
     {
-        return _messageStore;
+        return _providedMessageStore;
     }
 
     @Override
@@ -185,7 +185,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
         return LOGGER;
     }
 
-    private class MessageStoreWrapper extends AbstractDerbyMessageStore
+    private class ProvidedMessageStore extends AbstractDerbyMessageStore
     {
         @Override
         protected void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)

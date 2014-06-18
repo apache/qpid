@@ -52,7 +52,7 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
     public static final String JDBC_BLOB_TYPE = "blobType";
 
     private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
-    private final MessageStore _messageStoreFacade = new MessageStoreWrapper();
+    private final MessageStore _providedMessageStore = new ProvidedMessageStore();
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
@@ -222,10 +222,10 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
     @Override
     public MessageStore getMessageStore()
     {
-        return _messageStoreFacade;
+        return _providedMessageStore;
     }
 
-    private class MessageStoreWrapper extends GenericAbstractJDBCMessageStore
+    private class ProvidedMessageStore extends GenericAbstractJDBCMessageStore
     {
         @Override
         protected void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)

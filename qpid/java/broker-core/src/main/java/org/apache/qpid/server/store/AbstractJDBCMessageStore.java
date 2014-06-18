@@ -196,8 +196,9 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
     }
 
-    private void upgradeFromV7()
+    private void upgradeFromV7() throws SQLException
     {
+        updateDbVersion(8);
     }
 
     private void upgradeFromV6() throws SQLException
