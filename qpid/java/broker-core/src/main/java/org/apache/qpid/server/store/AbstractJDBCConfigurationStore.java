@@ -226,7 +226,7 @@ public abstract class AbstractJDBCConfigurationStore implements MessageStoreProv
         Connection connection = null;
         try
         {
-            connection = newConnection();
+            connection = newAutoCommitConnection();
 
             boolean tableExists = tableExists(CONFIGURATION_VERSION_TABLE_NAME, connection);
             if(tableExists)
