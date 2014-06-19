@@ -50,7 +50,7 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.util.FileUtils;
-import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore.BDBMessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 
 /**
  * Subclass of MessageStoreTestCase which runs the standard tests from the superclass against
@@ -431,7 +431,7 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
     @Override
     protected MessageStore createMessageStore()
     {
-        return new BDBConfigurationStore().getMessageStore();
+        return new BDBMessageStore();
     }
 
 }

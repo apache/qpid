@@ -27,6 +27,7 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
 @ManagedObject(category = false, type = BDBVirtualHost.VIRTUAL_HOST_TYPE)
@@ -45,6 +46,6 @@ public class BDBVirtualHost extends AbstractVirtualHost<BDBVirtualHost>
     @Override
     protected MessageStore createMessageStore()
     {
-        return new BDBConfigurationStore().getMessageStore();
+        return new BDBMessageStore();
     }
 }
