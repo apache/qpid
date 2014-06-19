@@ -26,6 +26,7 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.adapter.PortFactoryTest;
+import org.apache.qpid.server.plugin.AMQPProtocolVersionWrapper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
@@ -130,5 +131,33 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
         connection.close();
     }
 
+    public void testProtocolIsExpectedBasedOnTestProfile() throws Exception
+    {
+        super.setUp();
+        final AMQConnection connection = (AMQConnection) getConnection();
+        final Protocol expectedBrokerProtocol = getBrokerProtocol();
+        final AMQPProtocolVersionWrapper amqpProtocolVersionWrapper = new AMQPProtocolVersionWrapper(expectedBrokerProtocol);
+        final ProtocolVersion protocolVersion = connection.getProtocolVersion();
+        assertTrue("Connection AMQP protocol " + expectedBrokerProtocol + "is not the same as the test specified protocol " + protocolVersion,
+                    areEquivalent(amqpProtocolVersionWrapper, protocolVersion));
+        connection.close();
+    }
 
+    private boolean areEquivalent(AMQPProtocolVersionWrapper amqpProtocolVersionWrapper, ProtocolVersion protocolVersion)
+    {
+        byte byteMajor = (byte)amqpProtocolVersionWrapper.getMajor();
+        byte byteMinor;
+        if (amqpProtocolVersionWrapper.getPatch() == 0)
+        {
+            byteMinor = (byte)amqpProtocolVersionWrapper.getMinor();
+        }
+        else
+        {
+            final StringBuilder sb = new StringBuilder();
+            sb.append(amqpProtocolVersionWrapper.getMinor());
+            sb.append(amqpProtocolVersionWrapper.getPatch());
+            byteMinor = Byte.valueOf(sb.toString()).byteValue();
+        }
+        return (protocolVersion.getMajorVersion() == byteMajor && protocolVersion.getMinorVersion() == byteMinor);
+    }
 }

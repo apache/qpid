@@ -164,7 +164,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected BrokerCommandHelper _brokerCommandHelper = new BrokerCommandHelper(BROKER_COMMAND_TEMPLATE);
 
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
-    private final Protocol _brokerVersion = Protocol.valueOf("AMQP_" + System.getProperty(BROKER_VERSION, " ").substring(1));
+    private final Protocol _brokerProtocol = Protocol.valueOf("AMQP_" + System.getProperty(BROKER_VERSION, " ").substring(1));
     protected String _output = System.getProperty(TEST_OUTPUT, System.getProperty("java.io.tmpdir"));
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
 
@@ -993,12 +993,17 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public boolean isBroker08()
     {
-        return _brokerVersion.equals(Protocol.AMQP_0_8);
+        return _brokerProtocol.equals(Protocol.AMQP_0_8);
     }
 
     public boolean isBroker010()
     {
-        return _brokerVersion.equals(Protocol.AMQP_0_10);
+        return _brokerProtocol.equals(Protocol.AMQP_0_10);
+    }
+
+    public Protocol getBrokerProtocol()
+    {
+        return _brokerProtocol;
     }
 
     protected boolean isJavaBroker()
