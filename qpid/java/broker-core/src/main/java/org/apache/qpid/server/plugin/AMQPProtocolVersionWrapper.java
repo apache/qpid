@@ -1,3 +1,23 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.qpid.server.plugin;
 
 import org.apache.commons.lang.StringUtils;
@@ -5,11 +25,11 @@ import org.apache.qpid.server.model.Protocol;
 
 public class AMQPProtocolVersionWrapper
 {
-    private static final char DELIMITER = '_';
+    static final char DELIMITER = '_';
 
-    private int major;
-    private int minor;
-    private int patch;
+    private int _major;
+    private int _minor;
+    private int _patch;
 
     public AMQPProtocolVersionWrapper(Protocol amqpProtocol)
     {
@@ -23,51 +43,29 @@ public class AMQPProtocolVersionWrapper
         {
             switch (i)
             {
-                case 1: this.major = Integer.parseInt(parts[i]);
+                case 1: this._major = Integer.parseInt(parts[i]);
                     break;
-                case 2: this.minor = Integer.parseInt(parts[i]);
+                case 2: this._minor = Integer.parseInt(parts[i]);
                     break;
-                case 3: this.patch = Integer.parseInt(parts[i]);
+                case 3: this._patch = Integer.parseInt(parts[i]);
                     break;
             }
         }
     }
 
-    public AMQPProtocolVersionWrapper(int major, int minor, int patch)
-    {
-        this.major = major;
-        this.minor = minor;
-        this.patch = patch;
-    }
-
     public int getMajor()
     {
-        return major;
-    }
-
-    public void setMajor(int major)
-    {
-        this.major = major;
+        return _major;
     }
 
     public int getMinor()
     {
-        return minor;
-    }
-
-    public void setMinor(int minor)
-    {
-        this.minor = minor;
+        return _minor;
     }
 
     public int getPatch()
     {
-        return patch;
-    }
-
-    public void setPatch(int patch)
-    {
-        this.patch = patch;
+        return _patch;
     }
 
     public Protocol getProtocol()
@@ -89,15 +87,15 @@ public class AMQPProtocolVersionWrapper
 
         final AMQPProtocolVersionWrapper number = (AMQPProtocolVersionWrapper) o;
 
-        if (this.major != number.major)
+        if (this._major != number._major)
         {
             return false;
         }
-        else if (this.minor != number.minor)
+        else if (this._minor != number._minor)
         {
             return false;
         }
-        else if (this.patch != number.patch)
+        else if (this._patch != number._patch)
         {
             return false;
         }
@@ -110,9 +108,9 @@ public class AMQPProtocolVersionWrapper
     @Override
     public int hashCode()
     {
-        int result = major;
-        result = 31 * result + minor;
-        result = 31 * result + patch;
+        int result = _major;
+        result = 31 * result + _minor;
+        result = 31 * result + _patch;
         return result;
     }
 
@@ -120,11 +118,11 @@ public class AMQPProtocolVersionWrapper
     public String toString()
     {
         final StringBuilder sb = new StringBuilder(Protocol.ProtocolType.AMQP.name()).append(DELIMITER)
-                                     .append(major).append(DELIMITER)
-                                     .append(minor);
-        if (patch != 0)
+                                     .append(_major).append(DELIMITER)
+                                     .append(_minor);
+        if (_patch != 0)
         {
-            sb.append(DELIMITER).append(patch);
+            sb.append(DELIMITER).append(_patch);
         }
         return sb.toString();
     }
