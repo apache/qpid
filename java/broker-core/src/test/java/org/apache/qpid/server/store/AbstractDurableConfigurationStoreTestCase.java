@@ -64,8 +64,6 @@ import org.apache.qpid.util.FileUtils;
 
 public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTestCase
 {
-    private static final String EXCHANGE_NAME = "exchangeName";
-
     private static final String EXCHANGE = org.apache.qpid.server.model.Exchange.class.getSimpleName();
     private static final String BINDING = org.apache.qpid.server.model.Binding.class.getSimpleName();
     private static final String QUEUE = Queue.class.getSimpleName();
@@ -137,6 +135,13 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         {
             super.tearDown();
         }
+    }
+
+    public void testCloseIsIdempotent() throws Exception
+    {
+        _configStore.closeConfigurationStore();
+        // Second close should be accepted without exception
+        _configStore.closeConfigurationStore();
     }
 
     public void testCreateExchange() throws Exception

@@ -564,17 +564,11 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             releaseFileLock();
         }
-        catch (IOException e)
-        {
-            throw new StoreException("Failed to release lock", e);
-        }
         finally
         {
-            _fileLock = null;
             _idsByType.clear();
             _objectsById.clear();
         }
-
     }
 
     @Override
@@ -588,12 +582,25 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
     }
 
-    private void releaseFileLock() throws IOException
+    private void releaseFileLock()
     {
-        _fileLock.release();
-        _fileLock.channel().close();
+        if (_fileLock != null)
+        {
+            try
+            {
+                _fileLock.release();
+                _fileLock.channel().close();
+            }
+            catch (IOException e)
+            {
+                throw new StoreException("Failed to release lock " + _fileLock, e);
+            }
+            finally
+            {
+                _fileLock = null;
+            }
+        }
     }
-
 
     private static Map<String,Class<? extends ConfiguredObject>> generateClassNameMap(final Model model,
                                                                                       final Class<? extends ConfiguredObject> clazz)
