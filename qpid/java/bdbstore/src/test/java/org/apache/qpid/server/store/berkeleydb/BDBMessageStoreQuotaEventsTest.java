@@ -78,7 +78,7 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
     @Override
     protected MessageStore createStore() throws Exception
     {
-        MessageStore store = (new BDBConfigurationStore()).getMessageStore();
+        MessageStore store = new BDBMessageStore();
         return store;
     }
 }
