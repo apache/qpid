@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,6 +35,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
+import org.apache.qpid.server.plugin.ProtocolEngineCreatorComparator;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
@@ -69,11 +71,12 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
         _sslContext = sslContext;
         _supported = supportedVersions;
         _defaultSupportedReply = defaultSupportedReply;
-        List<ProtocolEngineCreator> creators = new ArrayList<ProtocolEngineCreator>();
+        final List<ProtocolEngineCreator> creators = new ArrayList<ProtocolEngineCreator>();
         for(ProtocolEngineCreator c : new QpidServiceLoader<ProtocolEngineCreator>().instancesOf(ProtocolEngineCreator.class))
         {
             creators.add(c);
         }
+        Collections.sort(creators, new ProtocolEngineCreatorComparator());
         _creators = creators.toArray(new ProtocolEngineCreator[creators.size()]);
         _wantClientAuth = wantClientAuth;
         _needClientAuth = needClientAuth;
