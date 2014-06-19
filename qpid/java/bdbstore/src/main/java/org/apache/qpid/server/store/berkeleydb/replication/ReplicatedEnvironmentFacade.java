@@ -782,8 +782,28 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
         finally
         {
-            _environment.close();
-            _environment = null;
+            // Try closing the environment but swallow EnvironmentFailureException
+            // if the environment becomes invalid while closing.
+            // This can be caused by potential race between facade close and DatabasePinger open.
+            try
+            {
+                _environment.close();
+            }
+            catch (EnvironmentFailureException efe)
+            {
+                if (!_environment.isValid())
+                {
+                    LOGGER.debug("Environment became invalid on close, so ignore", efe);
+                }
+                else
+                {
+                    throw efe;
+                }
+            }
+            finally
+            {
+                _environment = null;
+            }
         }
     }
 
