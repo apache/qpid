@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.server.virtualhostnode;
 
+import static org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -53,8 +55,6 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
 
     private UUID _nodeId = UUID.randomUUID();
     private Broker<?> _broker;
-    private DurableConfigurationStore _configStore;
-    private ConfiguredObjectRecord _record;
     private TaskExecutor _taskExecutor;
 
     @Override
@@ -83,27 +83,22 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
             super.tearDown();
         }
     }
-    public void testActivationOpensConfigStoreWithExistingVirtualHostRecord() throws Exception
+
+    /**
+     *  Tests activating a virtualhostnode with a config store that specifies a
+     *  virtualhost.  Ensures that the virtualhost created.
+     */
+    public void testActivateVHN_StoreHasVH() throws Exception
     {
         UUID virtualHostId = UUID.randomUUID();
-        _record = createMockVirtualHostCOR(virtualHostId);
+        ConfiguredObjectRecord vhostRecord = createVirtualHostConfiguredObjectRecord(virtualHostId);
+        DurableConfigurationStore configStore = configStoreThatProduces(vhostRecord);
 
-        _configStore = new NullMessageStore(){
-
-            @Override
-            public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException
-            {
-                handler.begin();
-                handler.handle(_record);
-                handler.end();
-            }
-        };
-
-        Map<String, Object> nodeAttributes = new HashMap<String, Object>();
+        Map<String, Object> nodeAttributes = new HashMap<>();
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
         nodeAttributes.put(VirtualHostNode.ID, _nodeId);
 
-        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, _configStore);
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
         node.open();
         node.start();
 
@@ -114,24 +109,20 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         assertEquals("Unexpected virtual host id", virtualHostId, virtualHost.getId());
     }
 
-    public void testActivationOpensConfigStoreWithoutVirtualHostRecord() throws Exception
+
+    /**
+     *  Tests activating a virtualhostnode with a config store which does not specify
+     *  a virtualhost.  Checks no virtualhost is created.
+     */
+    public void testActivateVHN_StoreHasNoVH() throws Exception
     {
-        _configStore = new NullMessageStore() {
+        DurableConfigurationStore configStore = configStoreThatProducesNoRecords();
 
-            @Override
-            public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException
-            {
-                handler.begin();
-                // No records
-                handler.end();
-            }
-        };
-
-        Map<String, Object> nodeAttributes = new HashMap<String, Object>();
+        Map<String, Object> nodeAttributes = new HashMap<>();
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
         nodeAttributes.put(VirtualHostNode.ID, _nodeId);
 
-        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, _configStore);
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
         node.open();
         node.start();
 
@@ -140,9 +131,111 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
 
     }
 
-    private ConfiguredObjectRecord createMockVirtualHostCOR(UUID virtualHostId)
+    /**
+     *  Tests activating a virtualhostnode with a blueprint context variable.  Config store
+     *  does not specify a virtualhost.  Checks virtualhost is created from the blueprint.
+     */
+    public void testActivateVHNWithVHBlueprint_StoreHasNoVH() throws Exception
     {
-        Map<String, Object> virtualHostAttributes = new HashMap<String, Object>();
+        DurableConfigurationStore configStore = configStoreThatProducesNoRecords();
+
+        String vhBlueprint = String.format("{ \"type\" : \"%s\", \"name\" : \"%s\"}",
+                                           TestMemoryVirtualHost.VIRTUAL_HOST_TYPE,
+                                           TEST_VIRTUAL_HOST_NAME);
+        Map<String, String> context = Collections.singletonMap(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
+
+        Map<String, Object> nodeAttributes = new HashMap<>();
+        nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
+        nodeAttributes.put(VirtualHostNode.ID, _nodeId);
+        nodeAttributes.put(VirtualHostNode.CONTEXT, context);
+
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
+        node.open();
+        node.start();
+
+        VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
+
+        assertNotNull("Virtual host should be created by blueprint", virtualHost);
+        assertEquals("Unexpected virtual host name", TEST_VIRTUAL_HOST_NAME, virtualHost.getName());
+        assertEquals("Unexpected virtual host state", State.ACTIVE, virtualHost.getState());
+        assertNotNull("Unexpected virtual host id", virtualHost.getId());
+
+        Map<String, String> updatedContext = node.getContext();
+
+        assertTrue("Context should now have utilised flag", updatedContext.containsKey(
+                VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR));
+        assertEquals("Utilised flag should be true",
+                     Boolean.TRUE.toString(),
+                     updatedContext.get(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR));
+    }
+
+    /**
+     *  Tests activating a virtualhostnode with blueprint context variable and the
+     *  marked utilised flag.  Config store does not specify a virtualhost.
+     *  Checks virtualhost is not recreated from the blueprint.
+     */
+    public void testActivateVHNWithVHBlueprintUsed_StoreHasNoVH() throws Exception
+    {
+        DurableConfigurationStore configStore = configStoreThatProducesNoRecords();
+
+        String vhBlueprint = String.format("{ \"type\" : \"%s\", \"name\" : \"%s\"}",
+                                           TestMemoryVirtualHost.VIRTUAL_HOST_TYPE,
+                                           TEST_VIRTUAL_HOST_NAME);
+        Map<String, String> context = new HashMap<>();
+        context.put(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
+        context.put(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR, Boolean.TRUE.toString());
+
+        Map<String, Object> nodeAttributes = new HashMap<>();
+        nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
+        nodeAttributes.put(VirtualHostNode.ID, _nodeId);
+        nodeAttributes.put(VirtualHostNode.CONTEXT, context);
+
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
+        node.open();
+        node.start();
+
+        VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
+
+        assertNull("Virtual host should not be created by blueprint", virtualHost);
+    }
+
+    /**
+     *  Tests activating a virtualhostnode with a blueprint context variable.  Config store
+     *  does specify a virtualhost.  Checks that virtualhost is recovered from store and
+     *  blueprint is ignored..
+     */
+    public void testActivateVHNWithVHBlueprint_StoreHasExistingVH() throws Exception
+    {
+        UUID virtualHostId = UUID.randomUUID();
+        ConfiguredObjectRecord record = createVirtualHostConfiguredObjectRecord(virtualHostId);
+
+        DurableConfigurationStore configStore = configStoreThatProduces(record);
+
+        String vhBlueprint = String.format("{ \"type\" : \"%s\", \"name\" : \"%s\"}",
+                                           TestMemoryVirtualHost.VIRTUAL_HOST_TYPE,
+                                           "vhFromBlueprint");
+        Map<String, String> context = Collections.singletonMap(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
+
+        Map<String, Object> nodeAttributes = new HashMap<>();
+        nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
+        nodeAttributes.put(VirtualHostNode.ID, _nodeId);
+        nodeAttributes.put(VirtualHostNode.CONTEXT, context);
+
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
+        node.open();
+        node.start();
+
+        VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
+
+        assertNotNull("Virtual host should be recovered", virtualHost);
+        assertEquals("Unexpected virtual host name", TEST_VIRTUAL_HOST_NAME, virtualHost.getName());
+        assertEquals("Unexpected virtual host state", State.ACTIVE, virtualHost.getState());
+        assertEquals("Unexpected virtual host id", virtualHostId, virtualHost.getId());
+    }
+
+    private ConfiguredObjectRecord createVirtualHostConfiguredObjectRecord(UUID virtualHostId)
+    {
+        Map<String, Object> virtualHostAttributes = new HashMap<>();
         virtualHostAttributes.put(VirtualHost.NAME, TEST_VIRTUAL_HOST_NAME);
         virtualHostAttributes.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
         virtualHostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
@@ -153,4 +246,26 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         when(record.getType()).thenReturn(VirtualHost.class.getSimpleName());
         return record;
     }
+
+    private NullMessageStore configStoreThatProduces(final ConfiguredObjectRecord record)
+    {
+        return new NullMessageStore(){
+
+            @Override
+            public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException
+            {
+                handler.begin();
+                if (record != null)
+                {
+                    handler.handle(record);
+                }
+                handler.end();
+            }
+        };
+    }
+    private NullMessageStore configStoreThatProducesNoRecords()
+    {
+        return configStoreThatProduces(null);
+    }
+
 }

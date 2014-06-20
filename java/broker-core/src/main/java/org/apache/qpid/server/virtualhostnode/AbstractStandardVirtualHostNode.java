@@ -45,6 +45,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractStandardVirtualHostNode.class);
     public static final String VIRTUALHOST_BLUEPRINT_CONTEXT_VAR = "virtualhostBlueprint";
+    public static final String VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR = "virtualhostBlueprintUtilised";
 
     public AbstractStandardVirtualHostNode(Map<String, Object> attributes,
                                            Broker<?> parent)
@@ -97,7 +98,12 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
 
         if (host == null)
         {
-            if (getContext() != null && getContext().containsKey(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR))
+
+            boolean hasBlueprint = getContext().containsKey(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
+            boolean blueprintUtilised = getContext().containsKey(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)
+                    && Boolean.parseBoolean(String.valueOf(getContext().get(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)));
+
+            if (hasBlueprint && !blueprintUtilised)
             {
                 Map<String, Object> virtualhostBlueprint = getContextValue(Map.class, VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
 
@@ -122,6 +128,12 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
                 {
                     LOGGER.debug("Created new virtualhost: " + host);
                 }
+
+                // Update the context with the utilised flag
+                Map<String, String> actualContext = (Map<String, String>) getActualAttributes().get(CONTEXT);
+                Map<String, String> context = new HashMap<>(actualContext);
+                context.put(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR, Boolean.TRUE.toString());
+                setAttribute(CONTEXT, getContext(), context);
             }
         }
         else
