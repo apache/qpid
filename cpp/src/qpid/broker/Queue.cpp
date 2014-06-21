@@ -1187,6 +1187,7 @@ void Queue::encode(Buffer& buffer) const
     buffer.put(encodableSettings);
     buffer.putShortString(alternateExchange.get() ? alternateExchange->getName() : std::string(""));
     buffer.putShortString(userId);
+    buffer.putInt8(isAutoDelete());
 }
 
 uint32_t Queue::encodedSize() const
@@ -1194,6 +1195,7 @@ uint32_t Queue::encodedSize() const
     return name.size() + 1/*short string size octet*/
         + (alternateExchange.get() ? alternateExchange->getName().size() : 0) + 1 /* short string */
         + userId.size() + 1 /* short string */
+        + 1 /* autodelete flag */
         + encodableSettings.encodedSize();
 }
 
@@ -1207,24 +1209,36 @@ Queue::shared_ptr Queue::restore( QueueRegistry& queues, Buffer& buffer )
 {
     string name;
     string _userId;
-    buffer.getShortString(name);
     FieldTable ft;
-    buffer.get(ft);
     boost::shared_ptr<Exchange> alternate;
-    QueueSettings settings(true, false);
-    settings.populate(ft, settings.storeSettings);
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, settings, alternate, true);
-    if (buffer.available()) {
-        string altExch;
-        buffer.getShortString(altExch);
-        result.first->alternateExchangeName.assign(altExch);
-    }
+    QueueSettings settings(true, false); // settings.autodelete might be overwritten
+    string altExch;
+    bool has_userId = false;
+    bool has_altExch = false;
 
+    buffer.getShortString(name);
+    buffer.get(ft);
+    settings.populate(ft, settings.storeSettings);
+    //get alternate exchange
+    if (buffer.available()) {
+        buffer.getShortString(altExch);
+        has_altExch = true;
+    }
     //get userId of queue's creator; ACL counters for userId are done after ACL plugin is initialized
     if (buffer.available()) {
         buffer.getShortString(_userId);
-        result.first->setOwningUser(_userId);
+        has_userId = true;
     }
+    //get autodelete flag
+    if (buffer.available()) {
+        settings.autodelete = buffer.getInt8();
+    }
+
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, settings, alternate, true);
+    if (has_altExch)
+        result.first->alternateExchangeName.assign(altExch);
+    if (has_userId)
+        result.first->setOwningUser(_userId);
 
     return result.first;
 }

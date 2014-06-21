@@ -253,9 +253,11 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
     // For backwards compatibility on restoring exchanges from before the alt-exchange update, perform check
     if (buffer.available())
         buffer.getShortString(altName);
+    // Check autodelete bool; for backwards compatibility if the bool isn't present, assume false
+    bool _autodelete = ((buffer.available()) && (buffer.getInt8()));
 
     try {
-        Exchange::shared_ptr exch = exchanges.declare(name, type, durable, false, args).first;
+        Exchange::shared_ptr exch = exchanges.declare(name, type, durable, _autodelete, args).first;
         exch->sequenceNo = args.getAsInt64(qpidSequenceCounter);
         exch->alternateName.assign(altName);
         return exch;
@@ -274,6 +276,7 @@ void Exchange::encode(Buffer& buffer) const
         args.setInt64(std::string(qpidSequenceCounter),sequenceNo);
     buffer.put(args);
     buffer.putShortString(alternate.get() ? alternate->getName() : string(""));
+    buffer.putInt8(isAutoDelete());
 }
 
 uint32_t Exchange::encodedSize() const
@@ -282,7 +285,8 @@ uint32_t Exchange::encodedSize() const
         + 1 /*durable*/
         + getType().size() + 1/*short string size*/
         + (alternate.get() ? alternate->getName().size() : 0) + 1/*short string size*/
-        + args.encodedSize();
+        + args.encodedSize()
+        + 1 /* autodelete bool as int_8 */;
 }
 
 void Exchange::recoveryComplete(ExchangeRegistry& exchanges)
