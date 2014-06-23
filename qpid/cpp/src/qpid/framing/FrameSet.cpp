@@ -26,9 +26,11 @@
 #include "qpid/framing/TypeFilter.h"
 
 using namespace qpid::framing;
+using qpid::sys::AbsTime;
+using qpid::sys::TIME_MSEC;
 
-FrameSet::FrameSet(const SequenceNumber& _id) : id(_id),contentSize(0),recalculateSize(true) { }
-FrameSet::FrameSet(const FrameSet& original) : id(original.id), contentSize(0), recalculateSize(true)
+FrameSet::FrameSet(const SequenceNumber& _id) : id(_id),contentSize(0),recalculateSize(true),received(AbsTime::FarFuture()) { }
+FrameSet::FrameSet(const FrameSet& original) : id(original.id), contentSize(0), recalculateSize(true), received(AbsTime::FarFuture())
 {
     for (Frames::const_iterator i = original.begin(); i != original.end(); ++i) {
         parts.push_back(AMQFrame(*(i->getBody())));
@@ -105,4 +107,22 @@ std::string FrameSet::getContent() const {
 
 bool FrameSet::hasContent() const {
     return parts.size() >= 3;
+}
+
+void FrameSet::setReceived()
+{
+    received = AbsTime::now();
+}
+namespace {
+uint64_t MAX_TTL = std::numeric_limits<int64_t>::max()/TIME_MSEC;
+}
+
+bool FrameSet::hasExpired() const
+{
+    const DeliveryProperties* props = getHeaderProperties<DeliveryProperties>();
+    if (props && props->hasTtl() && props->getTtl() < MAX_TTL) {
+        AbsTime expiration(received, props->getTtl()*TIME_MSEC);
+        return expiration < AbsTime::now();
+    }
+    return false;
 }

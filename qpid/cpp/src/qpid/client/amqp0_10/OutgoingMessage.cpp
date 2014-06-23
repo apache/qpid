@@ -24,6 +24,7 @@
 #include "qpid/types/encodings.h"
 #include "qpid/types/Variant.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/framing/enum.h"

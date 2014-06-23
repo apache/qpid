@@ -132,12 +132,16 @@ bool IncomingMessages::get(Handler& handler, qpid::sys::Duration timeout)
     AbsTime deadline(AbsTime::now(), timeout);
     do {
         //search through received list for any transfer of interest:
-        for (FrameSetQueue::iterator i = received.begin(); i != received.end(); i++)
+        for (FrameSetQueue::iterator i = received.begin(); i != received.end();)
         {
             MessageTransfer transfer(*i, *this);
-            if (handler.accept(transfer)) {
+            if (transfer.checkExpired()) {
+                i = received.erase(i);
+            } else if (handler.accept(transfer)) {
                 received.erase(i);
                 return true;
+            } else {
+                ++i;
             }
         }
         if (inUse) {
@@ -260,7 +264,9 @@ bool IncomingMessages::process(Handler* handler, qpid::sys::Duration duration)
         for (Duration timeout = duration; pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
             if (content->isA<MessageTransferBody>()) {
                 MessageTransfer transfer(content, *this);
-                if (handler && handler->accept(transfer)) {
+                if (transfer.checkExpired()) {
+                    QPID_LOG(debug, "Expired received transfer: " << *content->getMethod());
+                } else if (handler && handler->accept(transfer)) {
                     QPID_LOG(debug, "Delivered " << *content->getMethod() << " "
                              << *content->getHeaders());
                     return true;
@@ -359,6 +365,16 @@ void IncomingMessages::MessageTransfer::retrieve(qpid::messaging::Message* messa
     parent.retrieve(content, message);
 }
 
+bool IncomingMessages::MessageTransfer::checkExpired()
+{
+    if (content->hasExpired()) {
+        retrieve(0);
+        parent.accept(content->getId(), false);
+        return true;
+    } else {
+        return false;
+    }
+}
 
 namespace {
 //TODO: unify conversion to and from 0-10 message that is currently

@@ -26,6 +26,7 @@
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/sys/Time.h"
 #include "qpid/CommonImportExport.h"
 
 namespace qpid {
@@ -39,8 +40,9 @@ class FrameSet
     typedef InlineVector<AMQFrame, 4> Frames;
     const SequenceNumber id;
     Frames parts;
-	mutable uint64_t contentSize;
-	mutable bool recalculateSize;
+    mutable uint64_t contentSize;
+    mutable bool recalculateSize;
+    qpid::sys::AbsTime received;
 
 public:
     typedef boost::shared_ptr<FrameSet> shared_ptr;
@@ -57,6 +59,9 @@ public:
     QPID_COMMON_EXTERN void getContent(std::string&) const;
     QPID_COMMON_EXTERN std::string getContent() const;
     QPID_COMMON_EXTERN bool hasContent() const;
+
+    QPID_COMMON_EXTERN void setReceived();
+    QPID_COMMON_EXTERN bool hasExpired() const;
 
     bool isContentBearing() const;
 

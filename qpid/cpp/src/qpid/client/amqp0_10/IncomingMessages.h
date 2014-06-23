@@ -57,6 +57,7 @@ class IncomingMessages
       private:
         FrameSetPtr content;
         IncomingMessages& parent;
+        bool checkExpired();
 
         MessageTransfer(FrameSetPtr, IncomingMessages&);
       friend class IncomingMessages;

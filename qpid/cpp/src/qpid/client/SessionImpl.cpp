@@ -480,6 +480,7 @@ void SessionImpl::deliver(AMQFrame& frame) // network thread
         //as completion affects flow control; other commands will be
         //considered completed as soon as processed here
         if (arriving->isA<MessageTransferBody>()) {
+            arriving->setReceived();
             Lock l(state);
             incompleteIn.add(arriving->getId());
         } else {
