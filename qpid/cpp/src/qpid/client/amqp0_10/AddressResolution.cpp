@@ -642,9 +642,7 @@ void ExchangeSink::declare(qpid::client::AsyncSession& session, const std::strin
 
 void ExchangeSink::send(qpid::client::AsyncSession& session, const std::string&, OutgoingMessage& m)
 {
-    m.message.getDeliveryProperties().setRoutingKey(m.getSubject());
-    m.status = session.messageTransfer(arg::destination=name, arg::content=m.message);
-    QPID_LOG(debug, "Sending to exchange " << name << " " << m.message.getMessageProperties() << " " << m.message.getDeliveryProperties());
+    m.send(session, name, m.getSubject());
 }
 
 void ExchangeSink::cancel(qpid::client::AsyncSession& session, const std::string&)
@@ -663,9 +661,7 @@ void QueueSink::declare(qpid::client::AsyncSession& session, const std::string&)
 }
 void QueueSink::send(qpid::client::AsyncSession& session, const std::string&, OutgoingMessage& m)
 {
-    m.message.getDeliveryProperties().setRoutingKey(name);
-    m.status = session.messageTransfer(arg::content=m.message);
-    QPID_LOG(debug, "Sending to queue " << name << " " << m.message.getMessageProperties() << " " << m.message.getDeliveryProperties());
+    m.send(session, name);
 }
 
 void QueueSink::cancel(qpid::client::AsyncSession& session, const std::string&)

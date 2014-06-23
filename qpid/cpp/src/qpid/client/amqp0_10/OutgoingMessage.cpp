@@ -27,6 +27,7 @@
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/framing/enum.h"
+#include "qpid/log/Statement.h"
 #include <sstream>
 
 namespace qpid {
@@ -111,6 +112,7 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
     if (i != from.getProperties().end()) {
         message.getMessageProperties().setContentEncoding(i->second.asString());
     }
+    base = qpid::sys::now();
 }
 
 void OutgoingMessage::setSubject(const std::string& s)
@@ -122,5 +124,46 @@ std::string OutgoingMessage::getSubject() const
 {
     return subject;
 }
+
+void OutgoingMessage::send(qpid::client::AsyncSession& session, const std::string& destination, const std::string& routingKey)
+{
+    if (!expired) {
+        message.getDeliveryProperties().setRoutingKey(routingKey);
+        status = session.messageTransfer(arg::destination=destination, arg::content=message);
+        if (destination.empty()) {
+            QPID_LOG(debug, "Sending to queue " << routingKey << " " << message.getMessageProperties() << " " << message.getDeliveryProperties());
+        } else {
+            QPID_LOG(debug, "Sending to exchange " << destination << " " << message.getMessageProperties() << " " << message.getDeliveryProperties());
+        }
+    }
+}
+void OutgoingMessage::send(qpid::client::AsyncSession& session, const std::string& routingKey)
+{
+    send(session, std::string(), routingKey);
+}
+
+bool OutgoingMessage::isComplete()
+{
+    return expired || (status.isValid() && status.isComplete());
+}
+void OutgoingMessage::markRedelivered()
+{
+    message.setRedelivered(true);
+    if (message.getDeliveryProperties().hasTtl()) {
+        uint64_t delta = qpid::sys::Duration(base, qpid::sys::now())/qpid::sys::TIME_MSEC;
+        uint64_t ttl = message.getDeliveryProperties().getTtl();
+        if (ttl <= delta) {
+            QPID_LOG(debug, "Expiring outgoing message (" << ttl << " < " << delta << ")");
+            expired = true;
+            message.getDeliveryProperties().setTtl(1);
+        } else {
+            QPID_LOG(debug, "Adjusting ttl on outgoing message from " << ttl << " by " << delta);
+            ttl = ttl - delta;
+            message.getDeliveryProperties().setTtl(ttl);
+        }
+    }
+}
+OutgoingMessage::OutgoingMessage() : expired (false) {}
+
 
 }}} // namespace qpid::client::amqp0_10

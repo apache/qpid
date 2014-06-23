@@ -21,8 +21,10 @@
  * under the License.
  *
  */
+#include "qpid/client/AsyncSession.h"
 #include "qpid/client/Completion.h"
 #include "qpid/client/Message.h"
+#include "qpid/sys/Time.h"
 
 namespace qpid {
 namespace messaging {
@@ -31,15 +33,24 @@ class Message;
 namespace client {
 namespace amqp0_10 {
 
-struct OutgoingMessage
+class OutgoingMessage
 {
+  private:
     qpid::client::Message message;
     qpid::client::Completion status;
     std::string subject;
+    qpid::sys::AbsTime base;
+    bool expired;
 
+  public:
+    OutgoingMessage();
     void convert(const qpid::messaging::Message&);
     void setSubject(const std::string& subject);
     std::string getSubject() const;
+    void send(qpid::client::AsyncSession& session, const std::string& destination, const std::string& routingKey);
+    void send(qpid::client::AsyncSession& session,const std::string& routingKey);
+    bool isComplete();
+    void markRedelivered();
 };
 
 
