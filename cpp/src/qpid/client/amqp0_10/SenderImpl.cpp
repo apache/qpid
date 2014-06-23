@@ -158,7 +158,7 @@ uint32_t SenderImpl::checkPendingSends(bool flush, const sys::Mutex::ScopedLock&
     } else {
         flushed = false;
     }
-    while (!outgoing.empty() && outgoing.front().status.isComplete()) {
+    while (!outgoing.empty() && outgoing.front().status.isValid() && outgoing.front().status.isComplete()) {
         outgoing.pop_front();
     }
     return outgoing.size();
