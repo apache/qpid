@@ -104,7 +104,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     static final SyncPolicy LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY = SyncPolicy.SYNC;
     static final SyncPolicy REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY = SyncPolicy.NO_SYNC;
-    static final ReplicaAckPolicy REPLICA_REPLICA_ACKNOWLEDGMENT_POLICY = ReplicaAckPolicy.SIMPLE_MAJORITY;
+    public static final ReplicaAckPolicy REPLICA_REPLICA_ACKNOWLEDGMENT_POLICY = ReplicaAckPolicy.SIMPLE_MAJORITY;
 
     @SuppressWarnings("serial")
     private static final Map<String, String> REPCONFIG_DEFAULTS = Collections.unmodifiableMap(new HashMap<String, String>()
@@ -155,13 +155,13 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final AtomicReference<ReplicationGroupListener> _replicationGroupListener = new AtomicReference<ReplicationGroupListener>();
     private final AtomicReference<StateChangeListener> _stateChangeListener = new AtomicReference<StateChangeListener>();
     private final Durability _defaultDurability;
-    private final CoalescingCommiter _coalescingCommiter;
+    private final AtomicReference<Durability> _messageStoreDurability = new AtomicReference<Durability>();
 
+    private volatile Durability _realMessageStoreDurability = null;
+    private volatile CoalescingCommiter _coalescingCommiter = null;
     private volatile ReplicatedEnvironment _environment;
     private volatile long _joinTime;
     private volatile ReplicatedEnvironment.State _lastKnownEnvironmentState;
-    private volatile SyncPolicy _messageStoreLocalTransactionSyncronizationPolicy = LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY;
-    private volatile SyncPolicy _messageStoreRemoteTransactionSyncronizationPolicy = REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY;
 
     private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
@@ -190,7 +190,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _environmentJobExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("Environment-" + _prettyGroupNodeName));
         _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
 
-        _coalescingCommiter  = new CoalescingCommiter(_configuration.getGroupName(), this);
 
         // create environment in a separate thread to avoid renaming of the current thread by JE
         _environment = createEnvironment(true);
@@ -201,10 +200,15 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public Transaction beginTransaction()
     {
+        if (_messageStoreDurability.get() == null)
+        {
+            throw new IllegalStateException("Message store durability is not set");
+        }
+
         try
         {
             TransactionConfig transactionConfig = new TransactionConfig();
-            transactionConfig.setDurability(getMessageStoreTransactionDurability());
+            transactionConfig.setDurability(getRealMessageStoreDurability());
             return _environment.beginTransaction(null, transactionConfig);
         }
         catch(DatabaseException e)
@@ -220,13 +224,19 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             // Using commit() instead of commitNoSync() for the HA store to allow
             // the HA durability configuration to influence resulting behaviour.
-            tx.commit();
+            tx.commit(_realMessageStoreDurability);
         }
         catch (DatabaseException de)
         {
             throw handleDatabaseException("Got DatabaseException on commit, closing environment", de);
         }
-        return _coalescingCommiter.commit(tx, syncCommit);
+
+        if (_coalescingCommiter != null && _realMessageStoreDurability.getLocalSync() == SyncPolicy.NO_SYNC
+                && _messageStoreDurability.get().getLocalSync() == SyncPolicy.SYNC)
+        {
+            return _coalescingCommiter.commit(tx, syncCommit);
+        }
+        return StoreFuture.IMMEDIATE_FUTURE;
     }
 
     @Override
@@ -248,7 +258,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
                 try
                 {
-                    _coalescingCommiter.close();
+                    if (_coalescingCommiter != null)
+                    {
+                        _coalescingCommiter.stop();
+                    }
                     closeSequences();
                     closeDatabases();
                 }
@@ -506,26 +519,19 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return (String)_configuration.getHelperHostPort();
     }
 
-    Durability getMessageStoreTransactionDurability()
+    Durability getRealMessageStoreDurability()
     {
-        SyncPolicy localSync = getMessageStoreLocalTransactionSyncronizationPolicy();
-        if ( localSync == LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY && _coalescingCommiter.isStarted())
-        {
-            localSync = SyncPolicy.NO_SYNC;
-        }
-        SyncPolicy replicaSync = getMessageStoreRemoteTransactionSyncronizationPolicy();
-        return new Durability(localSync, replicaSync, getReplicaAcknowledgmentPolicy());
+        return _realMessageStoreDurability;
     }
 
-    public Durability getDurability()
+    public Durability getMessageStoreDurability()
     {
-        return new Durability(getMessageStoreLocalTransactionSyncronizationPolicy(),
-                getMessageStoreRemoteTransactionSyncronizationPolicy(), getReplicaAcknowledgmentPolicy());
+        return _messageStoreDurability.get();
     }
 
     public boolean isCoalescingSync()
     {
-        return _coalescingCommiter.isStarted();
+        return _coalescingCommiter != null;
     }
 
     public String getNodeState()
@@ -1087,37 +1093,22 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    public SyncPolicy getMessageStoreLocalTransactionSyncronizationPolicy()
+    public void setMessageStoreDurability(SyncPolicy localTransactionSynchronizationPolicy, SyncPolicy remoteTransactionSynchronizationPolicy, ReplicaAckPolicy replicaAcknowledgmentPolicy)
     {
-        return _messageStoreLocalTransactionSyncronizationPolicy;
-    }
-
-    public SyncPolicy getMessageStoreRemoteTransactionSyncronizationPolicy()
-    {
-        return _messageStoreRemoteTransactionSyncronizationPolicy;
-    }
-
-    public ReplicaAckPolicy getReplicaAcknowledgmentPolicy()
-    {
-        return REPLICA_REPLICA_ACKNOWLEDGMENT_POLICY;
-    }
-
-    public void setMessageStoreLocalTransactionSynchronizationPolicy(SyncPolicy localTransactionSyncronizationPolicy)
-    {
-        _messageStoreLocalTransactionSyncronizationPolicy = localTransactionSyncronizationPolicy;
-        if (localTransactionSyncronizationPolicy == LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY)
+        if (_messageStoreDurability.compareAndSet(null, new Durability(localTransactionSynchronizationPolicy, remoteTransactionSynchronizationPolicy, replicaAcknowledgmentPolicy )))
         {
-            _coalescingCommiter.start();
+            if (localTransactionSynchronizationPolicy == LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY)
+            {
+                localTransactionSynchronizationPolicy = SyncPolicy.NO_SYNC;
+                _coalescingCommiter = new CoalescingCommiter(_configuration.getGroupName(), this);
+                _coalescingCommiter.start();
+            }
+            _realMessageStoreDurability = new Durability(localTransactionSynchronizationPolicy, remoteTransactionSynchronizationPolicy, replicaAcknowledgmentPolicy);
         }
         else
         {
-            _coalescingCommiter.stop();
+            throw new IllegalStateException("Message store durability is already set to " + _messageStoreDurability.get());
         }
-    }
-
-    public void setMessageStoreRemoteTransactionSyncrhonizationPolicy(SyncPolicy remoteTransactionSyncronizationPolicy)
-    {
-        _messageStoreRemoteTransactionSyncronizationPolicy = remoteTransactionSyncronizationPolicy;
     }
 
     private void populateExistingRemoteReplicationNodes()

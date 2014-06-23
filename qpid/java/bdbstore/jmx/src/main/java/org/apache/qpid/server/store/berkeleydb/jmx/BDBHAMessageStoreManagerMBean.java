@@ -43,6 +43,7 @@ import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.RemoteReplicationNode;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
@@ -123,14 +124,24 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     @Override
     public String getDurability() throws IOException, JMException
     {
-        return _virtualHostNode.getDurability();
+        BDBHAVirtualHost<?> host = (BDBHAVirtualHost<?>)_virtualHostNode.getVirtualHost();
+        if (host != null)
+        {
+            return host.getDurability();
+        }
+        return null;
     }
 
 
     @Override
     public boolean getCoalescingSync() throws IOException, JMException
     {
-        return true;
+        BDBHAVirtualHost<?> host = (BDBHAVirtualHost<?>)_virtualHostNode.getVirtualHost();
+        if (host != null)
+        {
+            return host.isCoalescingSync();
+        }
+        return false;
     }
 
     @Override

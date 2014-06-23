@@ -22,9 +22,6 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
@@ -36,90 +33,55 @@ import com.sleepycat.je.Transaction;
 
 public class CoalescingCommiter implements Committer
 {
-    private final CommitTask _commitTask;
-    private final ExecutorService _taskExecutor;
+    private final CommitThread _commitThread;
 
-    public CoalescingCommiter(final String name, EnvironmentFacade environmentFacade)
+    public CoalescingCommiter(String name, EnvironmentFacade environmentFacade)
     {
-        _commitTask = new CommitTask(environmentFacade);
-        _taskExecutor = Executors.newSingleThreadExecutor(new ThreadFactory()
-        {
-            @Override
-            public Thread newThread(Runnable r)
-            {
-                Thread t = new Thread(r, "Commit-Thread-" + name);
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        _commitThread = new CommitThread("Commit-Thread-" + name, environmentFacade);
     }
 
     @Override
     public void start()
     {
-        if (_commitTask.start())
-        {
-            _taskExecutor.submit(_commitTask);
-        }
+        _commitThread.start();
     }
 
     @Override
     public void stop()
     {
-        _commitTask.stop();
-    }
-
-    @Override
-    public void close()
-    {
+        _commitThread.close();
         try
         {
-            _commitTask.close();
+            _commitThread.join();
         }
-        finally
+        catch (InterruptedException ie)
         {
-            _taskExecutor.shutdown();
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Commit thread has not shutdown", ie);
         }
     }
 
     @Override
     public StoreFuture commit(Transaction tx, boolean syncCommit)
     {
-        if (isStarted())
-        {
-            BDBCommitFuture commitFuture = new BDBCommitFuture(_commitTask, tx, syncCommit);
-            try
-            {
-                commitFuture.commit();
-                return commitFuture;
-            }
-            catch(IllegalStateException e)
-            {
-                // IllegalStateException is thrown when commit thread is stopped whilst commit is called
-            }
-        }
-
-        return StoreFuture.IMMEDIATE_FUTURE;
-    }
-
-    public boolean isStarted()
-    {
-        return !_commitTask.isStopped();
+        BDBCommitFuture commitFuture = new BDBCommitFuture(_commitThread, tx, syncCommit);
+        commitFuture.commit();
+        return commitFuture;
     }
 
     private static final class BDBCommitFuture implements StoreFuture
     {
         private static final Logger LOGGER = Logger.getLogger(BDBCommitFuture.class);
 
-        private final CommitTask _commitTask;
+        private final CommitThread _commitThread;
         private final Transaction _tx;
         private final boolean _syncCommit;
         private RuntimeException _databaseException;
         private boolean _complete;
 
-        public BDBCommitFuture(CommitTask commitTask, Transaction tx, boolean syncCommit)
+        public BDBCommitFuture(CommitThread commitThread, Transaction tx, boolean syncCommit)
         {
-            _commitTask = commitTask;
+            _commitThread = commitThread;
             _tx = tx;
             _syncCommit = syncCommit;
         }
@@ -145,7 +107,7 @@ public class CoalescingCommiter implements Committer
 
         public void commit() throws DatabaseException
         {
-            _commitTask.addJob(this, _syncCommit);
+            _commitThread.addJob(this, _syncCommit);
 
             if(!_syncCommit)
             {
@@ -180,7 +142,7 @@ public class CoalescingCommiter implements Committer
 
             while (!isComplete())
             {
-                _commitTask.explicitNotify();
+                _commitThread.explicitNotify();
                 try
                 {
                     wait(250);
@@ -188,24 +150,6 @@ public class CoalescingCommiter implements Committer
                 catch (InterruptedException e)
                 {
                     throw new RuntimeException(e);
-                }
-
-                if (!_commitTask.isClosed() && _commitTask.isStopped() && !isComplete())
-                {
-                    // coalesing sync is not required anymore
-                    // flush log and mark transaction as completed
-                    try
-                    {
-                        _commitTask.flushLog();
-                    }
-                    catch(DatabaseException e)
-                    {
-                        _databaseException = e;
-                    }
-                    finally
-                    {
-                        complete();
-                    }
                 }
             }
 
@@ -218,36 +162,26 @@ public class CoalescingCommiter implements Committer
     }
 
     /**
-     * Implements a {@link Runnable} which batches and commits a queue of {@link BDBCommitFuture} operations. The commit operations
+     * Implements a thread which batches and commits a queue of {@link BDBCommitFuture} operations. The commit operations
      * themselves are responsible for adding themselves to the queue and waiting for the commit to happen before
      * continuing, but it is the responsibility of this thread to tell the commit operations when they have been
      * completed by calling back on their {@link BDBCommitFuture#complete()} and {@link BDBCommitFuture#abort} methods.
      *
      * <p/><table id="crc"><caption>CRC Card</caption> <tr><th> Responsibilities <th> Collaborations </table>
      */
-    private static class CommitTask implements Runnable
+    private static class CommitThread extends Thread
     {
-        private static final Logger LOGGER = Logger.getLogger(CommitTask.class);
+        private static final Logger LOGGER = Logger.getLogger(CommitThread.class);
 
-        private final AtomicBoolean _stopped = new AtomicBoolean(true);
-        private final AtomicBoolean _closed = new AtomicBoolean(false);
+        private final AtomicBoolean _stopped = new AtomicBoolean(false);
         private final Queue<BDBCommitFuture> _jobQueue = new ConcurrentLinkedQueue<BDBCommitFuture>();
         private final Object _lock = new Object();
         private final EnvironmentFacade _environmentFacade;
 
-        public CommitTask(EnvironmentFacade environmentFacade)
+        public CommitThread(String name, EnvironmentFacade environmentFacade)
         {
+            super(name);
             _environmentFacade = environmentFacade;
-        }
-
-        public boolean isClosed()
-        {
-            return _closed.get();
-        }
-
-        public boolean isStopped()
-        {
-            return _stopped.get();
         }
 
         public void explicitNotify()
@@ -258,7 +192,6 @@ public class CoalescingCommiter implements Committer
             }
         }
 
-        @Override
         public void run()
         {
             while (!_stopped.get())
@@ -280,12 +213,6 @@ public class CoalescingCommiter implements Committer
                 }
                 processJobs();
             }
-
-            // process remaining jobs if such were added whilst stopped
-            if (hasJobs())
-            {
-                processJobs();
-            }
         }
 
         private void processJobs()
@@ -300,7 +227,11 @@ public class CoalescingCommiter implements Committer
                     startTime = System.currentTimeMillis();
                 }
 
-                flushLog();
+                Environment environment = _environmentFacade.getEnvironment();
+                if (environment != null && environment.isValid())
+                {
+                    environment.flushLog(true);
+                }
 
                 if(LOGGER.isDebugEnabled())
                 {
@@ -351,15 +282,6 @@ public class CoalescingCommiter implements Committer
             }
         }
 
-        private void flushLog()
-        {
-            Environment environment = _environmentFacade.getEnvironment();
-            if (environment != null && environment.isValid())
-            {
-                environment.flushLog(true);
-            }
-        }
-
         private boolean hasJobs()
         {
             return !_jobQueue.isEmpty();
@@ -381,44 +303,24 @@ public class CoalescingCommiter implements Committer
             }
         }
 
-        public boolean start()
-        {
-            return _stopped.compareAndSet(true, false);
-        }
-
-        public void stop()
-        {
-            if (_stopped.compareAndSet(false, true))
-            {
-                synchronized (_lock)
-                {
-                    _lock.notifyAll();
-                }
-                _jobQueue.clear();
-            }
-        }
-
         public void close()
         {
-            if (_closed.compareAndSet(false, true))
+            RuntimeException e = new RuntimeException("Commit thread has been closed, transaction aborted");
+            synchronized (_lock)
             {
-                RuntimeException e = new RuntimeException("Commit thread has been closed");
-                synchronized (_lock)
+                _stopped.set(true);
+                BDBCommitFuture commit = null;
+                int abortedCommits = 0;
+                while ((commit = _jobQueue.poll()) != null)
                 {
-                    _stopped.set(true);
-                    BDBCommitFuture commit = null;
-                    int abortedCommits = 0;
-                    while ((commit = _jobQueue.poll()) != null)
-                    {
-                        abortedCommits++;
-                        commit.abort(e);
-                    }
-                    if (LOGGER.isDebugEnabled() && abortedCommits > 0)
-                    {
-                        LOGGER.debug(abortedCommits + " commit(s) were aborted during close.");
-                    }
-                    _lock.notifyAll();
+                    abortedCommits++;
+                    commit.abort(e);
                 }
+                if (LOGGER.isDebugEnabled() && abortedCommits > 0)
+                {
+                    LOGGER.debug(abortedCommits + " commit(s) were aborted during close.");
+                }
+                _lock.notifyAll();
             }
         }
     }

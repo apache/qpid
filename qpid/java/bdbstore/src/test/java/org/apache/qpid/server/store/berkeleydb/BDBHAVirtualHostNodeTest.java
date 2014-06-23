@@ -477,7 +477,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         virtualHostAttributes.put(BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY, "SYNC");
         virtualHost.setAttributes(virtualHostAttributes);
 
-        awaitForAttributeChange(virtualHost, BDBHAVirtualHostImpl.COALESCING_SYNC, false);
+        virtualHost.stop();
+        virtualHost.start();
+
         assertEquals("Unexpected local transaction synchronization policy", "WRITE_NO_SYNC", virtualHost.getLocalTransactionSynchronizationPolicy());
         assertEquals("Unexpected remote transaction synchronization policy", "SYNC", virtualHost.getRemoteTransactionSynchronizationPolicy());
         assertFalse("CoalescingSync is not OFF", virtualHost.isCoalescingSync());

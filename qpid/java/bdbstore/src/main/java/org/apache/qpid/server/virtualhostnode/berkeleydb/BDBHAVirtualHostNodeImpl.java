@@ -161,17 +161,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     }
 
     @Override
-    public String getDurability()
-    {
-        ReplicatedEnvironmentFacade environmentFacade = _environmentFacade.get();
-        if (environmentFacade != null)
-        {
-            return environmentFacade.getDurability().toString();
-        }
-        return null;
-    }
-
-    @Override
     public boolean isDesignatedPrimary()
     {
         return _designatedPrimary;

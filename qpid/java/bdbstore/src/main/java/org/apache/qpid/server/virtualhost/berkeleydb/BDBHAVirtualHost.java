@@ -31,7 +31,7 @@ public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends Virtual
     String REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY = "remoteTransactionSynchronizationPolicy";
     String LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY = "localTransactionSynchronizationPolicy";
     String COALESCING_SYNC = "coalescingSync";
-    String REPLICA_ACKNOWLEDGMENT_POLICY = "replicaAcknowledgmentPolicy";
+    String DURABILITY = "durability";
 
     @ManagedAttribute( defaultValue = "SYNC")
     String getLocalTransactionSynchronizationPolicy();
@@ -40,8 +40,8 @@ public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends Virtual
     String getRemoteTransactionSynchronizationPolicy();
 
     @DerivedAttribute
-    String getReplicaAcknowledgmentPolicy();
+    boolean isCoalescingSync();
 
     @DerivedAttribute
-    boolean isCoalescingSync();
+    String getDurability();
 }

@@ -48,9 +48,6 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     @ManagedAttribute(mandatory=true)
     String getHelperAddress();
 
-    @DerivedAttribute
-    String getDurability();
-
     @ManagedAttribute(defaultValue = "false")
     boolean isDesignatedPrimary();
 
