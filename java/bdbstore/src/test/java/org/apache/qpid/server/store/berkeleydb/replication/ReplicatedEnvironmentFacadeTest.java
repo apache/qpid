@@ -40,7 +40,6 @@ import org.apache.qpid.util.FileUtils;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.Durability;
-import com.sleepycat.je.Durability.SyncPolicy;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.rep.NodeState;
@@ -163,18 +162,24 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Unexpected node helper host port", TEST_NODE_HELPER_HOST_PORT, createMaster().getHelperHostPort());
     }
 
-    public void testGetDurability() throws Exception
+    public void testSetMessageStoreDurability() throws Exception
     {
         ReplicatedEnvironmentFacade master = createMaster();
-        assertEquals("Unexpected message store durability", TEST_DURABILITY, master.getMessageStoreTransactionDurability());
-        assertEquals("Unexpected durability", TEST_DURABILITY, master.getDurability());
-        assertFalse("Coalescing syn before policy set to SYNC", master.isCoalescingSync());
-        master.setMessageStoreLocalTransactionSynchronizationPolicy(SyncPolicy.SYNC);
-        assertTrue("Coalescing syn after policy set to SYNC", master.isCoalescingSync());
-        assertEquals("Unexpected message store durability after committer start", "NO_SYNC,NO_SYNC,SIMPLE_MAJORITY", master.getMessageStoreTransactionDurability().toString());
-        master.setMessageStoreLocalTransactionSynchronizationPolicy(SyncPolicy.WRITE_NO_SYNC);
-        assertEquals("Unexpected message store durability after committer stop", "WRITE_NO_SYNC,NO_SYNC,SIMPLE_MAJORITY", master.getMessageStoreTransactionDurability().toString());
-        assertFalse("Coalescing syn after policy set to WRITE_NO_SYNC", master.isCoalescingSync());
+        assertEquals("Unexpected message store durability",
+                new Durability(Durability.SyncPolicy.NO_SYNC, Durability.SyncPolicy.NO_SYNC, Durability.ReplicaAckPolicy.SIMPLE_MAJORITY),
+                master.getRealMessageStoreDurability());
+        assertEquals("Unexpected durability", TEST_DURABILITY, master.getMessageStoreDurability());
+        assertTrue("Unexpected coalescing syn", master.isCoalescingSync());
+
+        try
+        {
+            master.setMessageStoreDurability(TEST_DURABILITY.getLocalSync(), TEST_DURABILITY.getReplicaSync(), TEST_DURABILITY.getReplicaAck());
+            fail("Cannot set message store durability twice");
+        }
+        catch(IllegalStateException e)
+        {
+            // pass
+        }
     }
 
     public void testGetNodeState() throws Exception
@@ -619,26 +624,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), firstNode.getNodeState());
     }
 
-    public void testSetLocalTransactionSyncronizationPolicy() throws Exception
-    {
-        ReplicatedEnvironmentFacade facade = createMaster();
-        assertEquals("Unexpected local transaction synchronization policy before change",
-                ReplicatedEnvironmentFacade.LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY, facade.getMessageStoreLocalTransactionSyncronizationPolicy());
-        facade.setMessageStoreLocalTransactionSynchronizationPolicy(SyncPolicy.WRITE_NO_SYNC);
-        assertEquals("Unexpected local transaction synchronization policy after change",
-                SyncPolicy.WRITE_NO_SYNC, facade.getMessageStoreLocalTransactionSyncronizationPolicy());
-    }
-
-    public void testSetRemoteTransactionSyncronizationPolicy() throws Exception
-    {
-        ReplicatedEnvironmentFacade facade = createMaster();
-        assertEquals("Unexpected remote transaction synchronization policy before change",
-                ReplicatedEnvironmentFacade.REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY, facade.getMessageStoreRemoteTransactionSyncronizationPolicy());
-        facade.setMessageStoreRemoteTransactionSyncrhonizationPolicy(SyncPolicy.WRITE_NO_SYNC);
-        assertEquals("Unexpected remote transaction synchronization policy after change",
-                SyncPolicy.WRITE_NO_SYNC, facade.getMessageStoreRemoteTransactionSyncronizationPolicy());
-    }
-
     public void testBeginTransaction() throws Exception
     {
         ReplicatedEnvironmentFacade facade = createMaster();
@@ -696,6 +681,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(config);
         ref.setStateChangeListener(stateChangeListener);
         ref.setReplicationGroupListener(replicationGroupListener);
+        ref.setMessageStoreDurability(TEST_DURABILITY.getLocalSync(), TEST_DURABILITY.getReplicaSync(), TEST_DURABILITY.getReplicaAck());
         _nodes.put(nodeName, ref);
         return ref;
     }

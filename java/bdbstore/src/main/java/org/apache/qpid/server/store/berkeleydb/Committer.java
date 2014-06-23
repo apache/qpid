@@ -31,8 +31,4 @@ public interface Committer
     StoreFuture commit(Transaction tx, boolean syncCommit);
 
     void stop();
-
-    void close();
-
-    boolean isStarted();
 }

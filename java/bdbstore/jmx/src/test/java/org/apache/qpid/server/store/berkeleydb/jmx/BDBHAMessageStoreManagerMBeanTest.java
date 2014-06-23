@@ -41,6 +41,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.RemoteReplicationNode;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
@@ -114,9 +115,20 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testDurability() throws Exception
     {
-        when(_virtualHostNode.getDurability()).thenReturn(TEST_DURABILITY);
+        BDBHAVirtualHost virtualHost = mock(BDBHAVirtualHost.class);
+        when(_virtualHostNode.getVirtualHost()).thenReturn(virtualHost);
+        when(virtualHost.getDurability()).thenReturn(TEST_DURABILITY);
 
         assertEquals(TEST_DURABILITY, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_DURABILITY));
+    }
+
+    public void testIsCoalescingSync() throws Exception
+    {
+        BDBHAVirtualHost virtualHost = mock(BDBHAVirtualHost.class);
+        when(_virtualHostNode.getVirtualHost()).thenReturn(virtualHost);
+        when(virtualHost.isCoalescingSync()).thenReturn(true);
+
+        assertEquals(true, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_COALESCING_SYNC));
     }
 
     public void testNodeState() throws Exception

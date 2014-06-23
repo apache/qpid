@@ -30,7 +30,6 @@ import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.StoreFuture;
 
 import com.sleepycat.je.Database;
@@ -129,10 +128,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     {
         try
         {
-            if (_committer != null)
-            {
-                _committer.close();
-            }
+            _committer.stop();
 
             closeSequences();
             closeDatabases();
