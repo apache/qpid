@@ -1347,13 +1347,16 @@ public abstract class MessageImpl implements Message
     {
         StringBuilder result = new StringBuilder();
 
-        for (Object o : items)
+        if (items != null)
         {
-            if (result.length() > 0)
+            for (Object o : items)
             {
-                result.append(sep);
+                if (result.length() > 0)
+                {
+                    result.append(sep);
+                }
+                result.append(o.toString());
             }
-            result.append(o.toString());
         }
 
         return result.toString();
