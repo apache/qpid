@@ -60,6 +60,9 @@ SslTransport::SslTransport(TransportContext& c, boost::shared_ptr<Poller> p) : c
         QPID_LOG(debug, "ssl-cert-name = " << options->sslCertName);
         socket.setCertName(options->sslCertName);
     }
+    if (options->sslIgnoreHostnameVerificationFailure) {
+        socket.ignoreHostnameVerificationFailure();
+    }
 }
 
 void SslTransport::connect(const std::string& host, const std::string& port)

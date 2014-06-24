@@ -155,6 +155,8 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
         settings.protocol = value.asString();
     } else if (name == "ssl-cert-name" || name == "ssl_cert_name") {
         settings.sslCertName = value.asString();
+    } else if (name == "ssl-ignore-hostname-verification-failure" || name == "ssl_ignore_hostname_verification_failure") {
+        settings.sslIgnoreHostnameVerificationFailure = value;
     } else if (name == "x-reconnect-on-limit-exceeded" || name == "x_reconnect_on_limit_exceeded") {
         reconnectOnLimitExceeded = value;
     } else if (name == "client-properties" || name == "client_properties") {
