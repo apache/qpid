@@ -25,14 +25,14 @@ using Org.Apache.Qpid.Messaging;
 namespace Org.Apache.Qpid.Messaging.Examples {
     class Server {
         static int Main(string[] args) {
+            // Usage: csharp.example.server [url [connectionOptions]]
             string url = "amqp:tcp:127.0.0.1:5672";
             string connectionOptions = "";
 
             if (args.Length > 0)
                 url = args[0];
-            // address args[1] is not used in this example
-            if (args.Length > 2)
-                connectionOptions = args[2];
+            if (args.Length > 1)
+                connectionOptions = args[1];
 
             try {
                 Connection connection = new Connection(url, connectionOptions);
