@@ -22,6 +22,7 @@ package org.apache.qpid.server.virtualhost;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 
 import javax.security.auth.Subject;
@@ -31,16 +32,13 @@ public abstract class HouseKeepingTask implements Runnable
 {
     private Logger _logger = Logger.getLogger(this.getClass());
 
-    private VirtualHostImpl _virtualHost;
-
     private String _name;
 
     private final Subject _subject;
 
-    public HouseKeepingTask(VirtualHostImpl vhost)
+    public HouseKeepingTask(VirtualHost vhost)
     {
-        _virtualHost = vhost;
-        _name = _virtualHost.getName() + ":" + this.getClass().getSimpleName();
+        _name = vhost.getName() + ":" + this.getClass().getSimpleName();
         _subject = SecurityManager.getSystemTaskSubject(_name);
     }
 
@@ -73,11 +71,6 @@ public abstract class HouseKeepingTask implements Runnable
             // eagerly revert the thread name to make thread dumps more meaningful if captured after task has finished
             Thread.currentThread().setName(originalThreadName);
         }
-    }
-
-    public VirtualHostImpl getVirtualHost()
-    {
-        return _virtualHost;
     }
 
     /** Execute the plugin. */

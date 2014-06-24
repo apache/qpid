@@ -32,7 +32,6 @@ import java.util.UUID;
 
 import javax.security.auth.Subject;
 
-import org.apache.qpid.server.configuration.store.JsonConfigurationEntryStore;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -62,9 +61,6 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class BrokerTestHelper
 {
-
-    protected static final String BROKER_STORE_CLASS_NAME_KEY = "brokerstore.class.name";
-    protected static final String JSON_BROKER_STORE_CLASS_NAME = JsonConfigurationEntryStore.class.getName();
 
     private static final TaskExecutor TASK_EXECUTOR = new CurrentThreadTaskExecutor();
     static
