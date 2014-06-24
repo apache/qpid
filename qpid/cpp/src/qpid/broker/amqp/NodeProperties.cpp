@@ -128,7 +128,7 @@ void NodeProperties::write(pn_data_t* data, boost::shared_ptr<Queue> node)
         pn_data_put_symbol(data, convert(SUPPORTED_DIST_MODES));
         pn_data_put_string(data, convert(MOVE));//TODO: should really add COPY as well, since queues can be browsed
         pn_bytes_t symbol;
-        if (wasSpecified(AUTO_DELETE) && node->isAutoDelete() && getLifetimeDescriptorSymbol(node->getSettings().lifetime, symbol)) {
+        if ((wasSpecified(AUTO_DELETE) || wasSpecified(LIFETIME_POLICY)) && node->isAutoDelete() && getLifetimeDescriptorSymbol(node->getSettings().lifetime, symbol)) {
             pn_data_put_symbol(data, convert(LIFETIME_POLICY));
             pn_data_put_described(data);
             pn_data_enter(data);
