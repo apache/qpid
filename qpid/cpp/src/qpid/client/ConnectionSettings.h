@@ -133,6 +133,11 @@ struct QPID_CLIENT_CLASS_EXTERN ConnectionSettings {
      * Passed as client-propreties on opening the connecction.
      */
     framing::FieldTable clientProperties;
+
+    /**
+     * If using SSL, connect regardless of hostname verification failure.
+     */
+    bool sslIgnoreHostnameVerificationFailure;
 };
 
 }} // namespace qpid::client

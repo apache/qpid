@@ -41,7 +41,8 @@ ConnectionSettings::ConnectionSettings() :
     service(qpid::saslName),
     minSsf(0),
     maxSsf(256),
-    sslCertName("")
+    sslCertName(""),
+    sslIgnoreHostnameVerificationFailure(false)
 {}
 
 ConnectionSettings::~ConnectionSettings() {}

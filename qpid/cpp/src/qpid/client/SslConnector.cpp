@@ -183,6 +183,9 @@ SslConnector::SslConnector(Poller::shared_ptr p,
         QPID_LOG(debug, "ssl-cert-name = " << settings.sslCertName);
         socket.setCertName(settings.sslCertName);
     }
+    if (settings.sslIgnoreHostnameVerificationFailure) {
+        socket.ignoreHostnameVerificationFailure();
+    }
 }
 
 SslConnector::~SslConnector() {

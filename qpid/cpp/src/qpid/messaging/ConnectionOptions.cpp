@@ -111,6 +111,8 @@ void ConnectionOptions::set(const std::string& name, const qpid::types::Variant&
         protocol = value.asString();
     } else if (name == "ssl-cert-name" || name == "ssl_cert_name") {
         sslCertName = value.asString();
+    } else if (name == "ssl-ignore-hostname-verification-failure" || name == "ssl_ignore_hostname_verification_failure") {
+        sslIgnoreHostnameVerificationFailure = value;
     } else if (name == "x-reconnect-on-limit-exceeded" || name == "x_reconnect_on_limit_exceeded") {
         reconnectOnLimitExceeded = value;
     } else if (name == "container-id" || name == "container_id") {

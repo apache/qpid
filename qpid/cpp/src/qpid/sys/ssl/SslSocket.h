@@ -45,6 +45,9 @@ public:
      */
     SslSocket(const std::string& certName = "", bool clientAuth = false);
 
+    /** Proceed with connect inspite of hostname verifcation failures*/
+    void ignoreHostnameVerificationFailure();
+
     /** Set socket non blocking */
     void setNonblocking() const;
 
@@ -92,6 +95,7 @@ protected:
      * in accept to pass through to newly created socket instances.
      */
     mutable PRFileDesc* prototype;
+    bool hostnameVerification;
 
     SslSocket(int fd, PRFileDesc* model);
     friend class SslMuxSocket; // Needed for this constructor

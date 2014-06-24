@@ -45,6 +45,7 @@
 #include <pk11pub.h>
 #include <ssl.h>
 #include <key.h>
+#include <sslerr.h>
 
 #include <boost/format.hpp>
 
@@ -83,7 +84,7 @@ std::string getDomainFromSubject(std::string subject)
 }
 
 SslSocket::SslSocket(const std::string& certName, bool clientAuth) :
-    nssSocket(0), certname(certName), prototype(0)
+    nssSocket(0), certname(certName), prototype(0), hostnameVerification(true)
 {
     //configure prototype socket:
     prototype = SSL_ImportFD(0, PR_NewTCPSocket());
@@ -103,6 +104,11 @@ SslSocket::SslSocket(int fd, PRFileDesc* model) : BSDSocket(fd), nssSocket(0), p
 {
     nssSocket = SSL_ImportFD(model, PR_ImportTCPSocket(fd));
     NSS_CHECK(SSL_ResetHandshake(nssSocket, PR_TRUE));
+}
+
+void SslSocket::ignoreHostnameVerificationFailure()
+{
+    hostnameVerification = false;
 }
 
 void SslSocket::setNonblocking() const
@@ -134,6 +140,18 @@ void SslSocket::connect(const SocketAddress& addr) const
     BSDSocket::connect(addr);
 }
 
+namespace {
+SECStatus bad_certificate(void* arg, PRFileDesc* /*fd*/) {
+    switch (PR_GetError()) {
+      case SSL_ERROR_BAD_CERT_DOMAIN:
+        QPID_LOG(info, "Ignoring hostname verification failure for " << (const char*) arg);
+        return SECSuccess;
+      default:
+        return SECFailure;
+    }
+}
+}
+
 void SslSocket::finishConnect(const SocketAddress& addr) const
 {
     nssSocket = SSL_ImportFD(0, PR_ImportTCPSocket(fd));
@@ -150,6 +168,9 @@ void SslSocket::finishConnect(const SocketAddress& addr) const
     NSS_CHECK(SSL_GetClientAuthDataHook(nssSocket, NSS_GetClientAuthData, arg));
 
     url = addr.getHost();
+    if (!hostnameVerification) {
+        NSS_CHECK(SSL_BadCertHook(nssSocket, bad_certificate, const_cast<char*>(url.data())));
+    }
     NSS_CHECK(SSL_SetURL(nssSocket, url.data()));
 
     NSS_CHECK(SSL_ResetHandshake(nssSocket, PR_FALSE));
