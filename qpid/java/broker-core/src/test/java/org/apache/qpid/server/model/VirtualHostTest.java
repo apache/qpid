@@ -20,15 +20,23 @@
  */
 package org.apache.qpid.server.model;
 
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.mockito.ArgumentMatcher;
+
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
@@ -39,6 +47,7 @@ public class VirtualHostTest extends QpidTestCase
     private Broker _broker;
     private TaskExecutor _taskExecutor;
     private VirtualHostNode<?> _virtualHostNode;
+    private DurableConfigurationStore _configStore;
 
     @Override
     protected void setUp() throws Exception
@@ -46,86 +55,163 @@ public class VirtualHostTest extends QpidTestCase
         super.setUp();
 
         _broker = BrokerTestHelper.createBrokerMock();
+
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
         _virtualHostNode = mock(VirtualHostNode.class);
-        when(_virtualHostNode.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
+        _configStore = mock(DurableConfigurationStore.class);
+        when(_virtualHostNode.getConfigurationStore()).thenReturn(_configStore);
+
+        // Virtualhost needs the EventLogger from the SystemContext.
         when(_virtualHostNode.getParent(Broker.class)).thenReturn(_broker);
+
         ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
-        when(_virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(_virtualHostNode.getTaskExecutor()).thenReturn(_taskExecutor);
-
-        when(((VirtualHostNode)_virtualHostNode).getCategoryClass()).thenReturn(VirtualHostNode.class);
     }
-
 
     @Override
     public void tearDown() throws Exception
     {
-        _taskExecutor.stopImmediately();
-        super.tearDown();
+        try
+        {
+            _taskExecutor.stopImmediately();
+        }
+        finally
+        {
+            super.tearDown();
+        }
     }
 
-    public void testActiveState()
+    public void testNewVirtualHost()
     {
-        VirtualHost<?,?,?> host = createHost();
+        String virtualHostName = getName();
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
 
+        assertNotNull("Unexpected id", virtualHost.getId());
+        assertEquals("Unexpected name", virtualHostName, virtualHost.getName());
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
 
-        host.start();
-        assertEquals("Unexpected state", State.ACTIVE, host.getAttribute(VirtualHost.STATE));
+        verify(_configStore).create(matchesRecord(virtualHost.getId(), virtualHost.getType()));
     }
 
-    public void testDeletedState()
+    public void testDeleteVirtualHost()
     {
-        VirtualHost<?,?,?> host = createHost();
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(getName());
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
 
-        host.delete();
-        assertEquals("Unexpected state", State.DELETED, host.getAttribute(VirtualHost.STATE));
+        virtualHost.delete();
+
+        assertEquals("Unexpected state", State.DELETED, virtualHost.getState());
+        verify(_configStore).remove(matchesRecord(virtualHost.getId(), virtualHost.getType()));
     }
 
-    public void testCreateQueueChildHavingMessageGroupingAttributes()
+    public void testDeleteDefaultVirtualHostIsDisallowed()
     {
-        VirtualHost<?,?,?> host = createHost();
+        String virtualHostName = getName();
+        when(_broker.getDefaultVirtualHost()).thenReturn(virtualHostName);
 
-        host.start();
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
 
-        String queueName = getTestName();
-        Map<String, Object> arguments = new HashMap<String, Object>();
-        arguments.put(Queue.MESSAGE_GROUP_KEY, "mykey");
-        arguments.put(Queue.MESSAGE_GROUP_SHARED_GROUPS, true);
+        try
+        {
+            virtualHost.delete();
+            fail("Exception not thrown");
+        }
+        catch(IntegrityViolationException ive)
+        {
+            // PASS
+        }
+
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
+        verify(_configStore, never()).remove(matchesRecord(virtualHost.getId(), virtualHost.getType()));
+    }
+
+    public void testStopAndStartVirtualHost()
+    {
+        String virtualHostName = getName();
+
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
+
+        virtualHost.stop();
+        assertEquals("Unexpected state", State.STOPPED, virtualHost.getState());
+
+        virtualHost.start();
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
+
+        verify(_configStore, times(1)).create(matchesRecord(virtualHost.getId(), virtualHost.getType()));
+        verify(_configStore, times(2)).update(eq(false), matchesRecord(virtualHost.getId(), virtualHost.getType()));
+    }
+
+    public void testCreateDurableQueue()
+    {
+        String virtualHostName = getName();
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
+
+        String queueName = "myQueue";
+        Map<String, Object> arguments = new HashMap<>();
         arguments.put(Queue.NAME, queueName);
+        arguments.put(Queue.DURABLE, Boolean.TRUE);
 
-        host.createChild(Queue.class, arguments);
+        Queue queue = virtualHost.createChild(Queue.class, arguments);
+        assertNotNull(queue.getId());
+        assertEquals(queueName, queue.getName());
 
-        Queue<?> queue = host.getChildByName(Queue.class, queueName);
-        Object messageGroupKey = queue.getAttribute(Queue.MESSAGE_GROUP_KEY);
-        assertEquals("Unexpected message group key attribute", "mykey", messageGroupKey);
-
-        Object sharedGroups = queue.getAttribute(Queue.MESSAGE_GROUP_SHARED_GROUPS);
-        assertEquals("Unexpected shared groups attribute", true, sharedGroups);
-
+        verify(_configStore).create(matchesRecord(queue.getId(), queue.getType()));
     }
 
-    private VirtualHost<?,?,?> createHost()
+    public void testCreateNonDurableQueue()
     {
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(VirtualHost.NAME, getName());
+        String virtualHostName = getName();
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
+
+        String queueName = "myQueue";
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put(Queue.NAME, queueName);
+        arguments.put(Queue.DURABLE, Boolean.FALSE);
+
+        Queue queue = virtualHost.createChild(Queue.class, arguments);
+        assertNotNull(queue.getId());
+        assertEquals(queueName, queue.getName());
+
+        verify(_configStore, never()).create(matchesRecord(queue.getId(), queue.getType()));
+    }
+
+    private VirtualHost<?,?,?> createVirtualHost(final String virtualHostName)
+    {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(VirtualHost.NAME, virtualHostName);
         attributes.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
 
-        VirtualHost<?,?,?> host = createHost(attributes);
-        return host;
-    }
-
-    private VirtualHost<?,?,?> createHost(Map<String, Object> attributes)
-    {
-        attributes = new HashMap<String, Object>(attributes);
-        attributes.put(VirtualHost.ID, UUID.randomUUID());
-        TestMemoryVirtualHost host= new TestMemoryVirtualHost(attributes, _virtualHostNode);
+        TestMemoryVirtualHost host = new TestMemoryVirtualHost(attributes, _virtualHostNode);
         host.create();
         return host;
     }
 
+    private static ConfiguredObjectRecord matchesRecord(UUID id, String type)
+    {
+        return argThat(new MinimalConfiguredObjectRecordMatcher(id, type));
+    }
+
+    private static class MinimalConfiguredObjectRecordMatcher extends ArgumentMatcher<ConfiguredObjectRecord>
+    {
+        private final UUID _id;
+        private final String _type;
+
+        private MinimalConfiguredObjectRecordMatcher(UUID id, String type)
+        {
+            _id = id;
+            _type = type;
+        }
+
+        @Override
+        public boolean matches(Object argument)
+        {
+            ConfiguredObjectRecord rhs = (ConfiguredObjectRecord) argument;
+            return (_id.equals(rhs.getId()) || _type.equals(rhs.getType()));
+        }
+    }
 }

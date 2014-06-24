@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HouseKeepingTaskTest extends QpidTestCase
@@ -27,14 +31,15 @@ public class HouseKeepingTaskTest extends QpidTestCase
 
     public void testThreadNameIsSetForDurationOfTask() throws Exception
     {
-
         String originalThreadName = Thread.currentThread().getName();
 
         String vhostName = "HouseKeepingTaskTestVhost";
 
         String expectedThreadNameDuringExecution = vhostName + ":" + "ThreadNameRememberingTask";
 
-        ThreadNameRememberingTask testTask = new ThreadNameRememberingTask(new MockVirtualHost(vhostName));
+        VirtualHost virtualHost = mock(VirtualHost.class);
+        when(virtualHost.getName()).thenReturn(vhostName);
+        ThreadNameRememberingTask testTask = new ThreadNameRememberingTask(virtualHost);
 
         testTask.run();
 
@@ -48,7 +53,7 @@ public class HouseKeepingTaskTest extends QpidTestCase
     {
         private String _threadNameDuringExecution;
 
-        private ThreadNameRememberingTask(VirtualHostImpl vhost)
+        private ThreadNameRememberingTask(VirtualHost vhost)
         {
             super(vhost);
         }

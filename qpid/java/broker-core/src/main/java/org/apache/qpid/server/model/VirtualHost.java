@@ -145,9 +145,11 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
 
     Collection<String> getExchangeTypeNames();
 
-    void delete();
-
     void start();
+
+    void stop();
+
+    void delete();
 
     public static interface Transaction
     {
