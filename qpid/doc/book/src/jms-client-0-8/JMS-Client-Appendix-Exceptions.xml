@@ -29,11 +29,12 @@
 <appendix id="JMS-Client-0-8-Appendix-Exceptions">
   <title>Exceptions</title>
 
-  <para>The methods of Qpid JMS Client throw <ulink url="&oracleJeeDocUrl;javax/jms/JMSException.html"
-      >JMSExceptions</ulink> in response to error conditions. Typically the exception's message
-    (#getMessage()) summarises the error condition, with contextual information being provided by
-    the messages of linked exception(s). To understand the problem, it is important to read the messages
-    associated with <emphasis>all</emphasis> the linked exceptions.</para>
+  <para>The methods of Qpid JMS Client throw <ulink
+      url="&oracleJeeDocUrl;javax/jms/JMSException.html">JMSExceptions</ulink> in response to error
+    conditions. Typically the exception's message (#getMessage()) summarises the error condition,
+    with contextual information being provided by the messages of linked exception(s). To understand
+    the problem, it is important to read the messages associated with <emphasis>all</emphasis> the
+    linked exceptions.</para>
 
   <para>The following table describes some of the more common exceptions linked to JMSException
     thrown by JMS methods whilst using the client:</para>
@@ -86,6 +87,23 @@
                 <xref linkend="JMS-Client-0-8-Client-Understanding-Connection-SSL"/></para></entry>
         </row>
         <row>
+          <entry>AMQConnectionFailure / AMQAuthenticationException</entry>
+          <entry>not allowed</entry>
+          <entry><para>Indicates that the user cannot be authenticated by the Broker. Check the
+              username and/or password elements within the <link
+                linkend="JMS-Client-0-8-Connection-URL">Connection URL</link>.</para></entry>
+        </row>
+        <row>
+          <entry>AMQConnectionFailure / AMQSecurityException</entry>
+          <entry>Permission denied: <emphasis>virtualhost name</emphasis>; access refused</entry>
+          <entry><para>Indicates that the user is not authorised to connect to the given
+              virtualhost. The user is recognised by the Broker and is using the correct password
+              but does not have permission. This exception normally indicates that the user (or
+              group) has not been permissioned within the Broker's <ulink
+                url="&qpidJavaBrokerBook;Java-Broker-Security-ACLs.html">Access Control List
+                (ACL)</ulink>.</para></entry>
+        </row>
+        <row>
           <entry>AMQTimeoutException</entry>
           <entry>Server did not respond in a timely fashion; Request Timeout</entry>
           <entry><para>Indicates that the broker did not respond to a request sent by the client in
@@ -95,6 +113,15 @@
               of a heavily loaded broker that cannot respond or the Broker may have failed in
               unexpected manner. Check the broker and the host on which it runs and performance of
               its storage.</para></entry>
+        </row>
+        <row>
+          <entry>AMQSecurityException</entry>
+          <entry>Permission denied: <emphasis>message varies</emphasis></entry>
+          <entry><para>Indicates that the user is not authorised to use the given resource or
+              perform the given operation. This exception normally indicates that the user (or
+              group) has not been permissioned within the Broker's <ulink
+                url="&qpidJavaBrokerBook;Java-Broker-Security-ACLs.html">Access Control List
+                (ACL)</ulink>.</para></entry>
         </row>
       </tbody>
     </tgroup>
