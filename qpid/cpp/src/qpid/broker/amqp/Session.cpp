@@ -486,10 +486,13 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
             if (!settings.autodelete) settings.autodelete = autodelete;
             altExchange = node.topic->getAlternateExchange();
         }
-        settings.autoDeleteDelay = pn_terminus_get_timeout(source);
+        if (!settings.autoDeleteDelay) {
+            //only use delay from link if policy didn't specify one
+            settings.autoDeleteDelay = pn_terminus_get_timeout(source);
+            settings.original["qpid.auto_delete_timeout"] = settings.autoDeleteDelay;
+        }
         if (settings.autoDeleteDelay) {
             settings.autodelete = true;
-            settings.original["qpid.auto_delete_timeout"] = settings.autoDeleteDelay;
         }
         filter.configure(settings);
         std::stringstream queueName;
