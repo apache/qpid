@@ -46,6 +46,7 @@ SenderError::SenderError(const std::string& msg) : LinkError(msg) {}
 SendError::SendError(const std::string& msg) : SenderError(msg) {}
 MessageRejected::MessageRejected(const std::string& msg) : SendError(msg) {}
 TargetCapacityExceeded::TargetCapacityExceeded(const std::string& msg) : SendError(msg) {}
+OutOfCapacity::OutOfCapacity(const std::string& msg) : SendError(msg) {}
 
 SessionError::SessionError(const std::string& msg) : MessagingException(msg) {}
 SessionClosed::SessionClosed() : SessionError("Session Closed") {}

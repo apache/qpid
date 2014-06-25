@@ -47,7 +47,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     enum State {UNRESOLVED, ACTIVE, CANCELLED};
 
     SenderImpl(SessionImpl& parent, const std::string& name, 
-               const qpid::messaging::Address& address);
+               const qpid::messaging::Address& address, bool autoReconnect);
     void send(const qpid::messaging::Message&, bool sync);
     void close();
     void setCapacity(uint32_t);
@@ -61,6 +61,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
   private:
     mutable sys::Mutex lock;
     boost::intrusive_ptr<SessionImpl> parent;
+    const bool autoReconnect;
     const std::string name;
     const qpid::messaging::Address address;
     State state;

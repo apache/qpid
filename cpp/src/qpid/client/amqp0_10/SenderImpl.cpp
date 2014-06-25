@@ -30,8 +30,8 @@ namespace client {
 namespace amqp0_10 {
 
 SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name, 
-                       const qpid::messaging::Address& _address) : 
-    parent(&_parent), name(_name), address(_address), state(UNRESOLVED),
+                       const qpid::messaging::Address& _address, bool _autoReconnect) : 
+    parent(&_parent), autoReconnect(_autoReconnect), name(_name), address(_address), state(UNRESOLVED),
     capacity(50), window(0), flushed(false), unreliable(AddressResolution::is_unreliable(address)) {}
 
 qpid::messaging::Address SenderImpl::getAddress() const
@@ -100,21 +100,37 @@ void SenderImpl::init(qpid::client::AsyncSession s, AddressResolution& resolver)
 void SenderImpl::waitForCapacity() 
 {
     sys::Mutex::ScopedLock l(lock);
-    //TODO: add option to throw exception rather than blocking?
-    if (!unreliable && capacity <=
-        (flushed ? checkPendingSends(false, l) : outgoing.size()))
-    {
-        //Initial implementation is very basic. As outgoing is
-        //currently only reduced on receiving completions and we are
-        //blocking anyway we may as well sync(). If successful that
-        //should clear all outstanding sends.
-        session.sync();
-        checkPendingSends(false, l);
-    }
-    //flush periodically and check for conmpleted sends
-    if (++window > (capacity / 4)) {//TODO: make this configurable?
-        checkPendingSends(true, l);
-        window = 0;
+    try {
+        //TODO: add option to throw exception rather than blocking?
+        if (!unreliable && capacity <=
+            (flushed ? checkPendingSends(false, l) : outgoing.size()))
+        {
+            //Initial implementation is very basic. As outgoing is
+            //currently only reduced on receiving completions and we are
+            //blocking anyway we may as well sync(). If successful that
+            //should clear all outstanding sends.
+            session.sync();
+            checkPendingSends(false, l);
+        }
+        //flush periodically and check for conmpleted sends
+        if (++window > (capacity / 4)) {//TODO: make this configurable?
+            checkPendingSends(true, l);
+            window = 0;
+        }
+    } catch (const qpid::TransportFailure&) {
+        //Disconnection prevents flushing or syncing. If we have any
+        //capacity we will return anyway (the subsequent attempt to
+        //send will fail, but message will be on replay buffer).
+        if (capacity > outgoing.size()) return;
+        //If we are out of capacity, but autoreconnect is on, then
+        //rethrow the transport failure to trigger reconnect which
+        //will have the effect of blocking until connected and
+        //capacity is freed up
+        if (autoReconnect) throw;
+        //Otherwise, in order to clearly signal to the application
+        //that the message was not pushed to replay buffer, throw an
+        //out of capacity error
+        throw qpid::messaging::OutOfCapacity(name);
     }
 }
 

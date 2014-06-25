@@ -392,5 +392,9 @@ bool ConnectionImpl::getAutoDecode() const
 {
     return !disableAutoDecode;
 }
+bool ConnectionImpl::getAutoReconnect() const
+{
+    return autoReconnect;
+}
 
 }}} // namespace qpid::client::amqp0_10
