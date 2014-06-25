@@ -233,6 +233,10 @@ void NullAuthenticator::start(const string& mechanism, const string* response)
     {
         throw ConnectionForcedException("User connection denied by configured limit");
     }
+    qmf::org::apache::qpid::broker::Connection::shared_ptr cnxMgmt = connection.getMgmtObject();
+    if ( cnxMgmt )
+        cnxMgmt->set_saslMechanism(mechanism);
+
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, connection.getHeartbeatMax());
 }
 
