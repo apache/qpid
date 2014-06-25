@@ -57,7 +57,8 @@ class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<Co
      * - protocol: the version of AMQP to use (e.g. amqp0-10 or amqp1.0)
      *
      * (Note: the transports and/or protocols recognised may depend on
-     * which plugins are loaded)
+     * which plugins are loaded. AT present support for heartbeats is
+     * missing in AMQP 1.0)
      *
      * - username: the username to authenticate as
      * - password: the password to use if required by the selected authentication mechanism
@@ -83,6 +84,36 @@ class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<Co
      *
      * Values in seconds can be fractional, for example 0.001 is a
      * millisecond delay.
+     *
+     * If the SSL transport is used, the following options apply:
+     *
+     * - ssl_cert_name: the name of the certificate to use for a given
+     * - connection ssl_ignore_hostname_verification_failure: if set
+     *               to true, will allow client to connect to server even
+     *               if the  hostname used (or ip address) doesn't match
+     *               what is in the servers certificate. I.e. this disables
+     *               authentication of the server to the client (and should
+     *               be used only as a last resort)
+     *
+     * When AMQP 1.0 is used, the following options apply:
+     *
+     * - container_id: sets the container id to use for the connection
+     * - nest_annotations: if true, any annotations in received
+     *      messages will be presented as properties with keys
+     *      x-amqp-delivery-annotations or x-amqp-delivery-annotations
+     *      and values that are nested maps containing the
+     *      annotations. If false, the annotations will simply be merged
+     *      in with the properties.
+     * - set_to_on_send: If true, all sent messages will have the to
+     *      field set to the node name of the sender
+     * - properties or client_properties: the properties to include in the open frame sent
+     *
+     * The following options can be used to tune behaviour if needed
+     * (these are not yet supported over AMQP 1.0):
+     *
+     * - tcp_nodelay: disables Nagle's algorithm on the underlying tcp socket
+     * - max_channels: restricts the maximum number of channels supported
+     * - max_frame_size: restricts the maximum frame size supported
      */
     QPID_MESSAGING_EXTERN Connection(const std::string& url, const qpid::types::Variant::Map& options = qpid::types::Variant::Map());
     /**
