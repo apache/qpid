@@ -88,7 +88,7 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     @Override
     public boolean isCoalescingSync()
     {
-        return _localTransactionSynchronizationPolicy.equals(SyncPolicy.SYNC.name());
+        return SyncPolicy.SYNC.name().equals(_localTransactionSynchronizationPolicy);
     }
 
     @Override
