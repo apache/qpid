@@ -30,6 +30,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
@@ -111,6 +112,31 @@ public class ConnectionRestTest extends QpidRestTestCase
         Map<String, Object> connectionDetails = getRestTestHelper().getJsonAsSingletonList("connection/test/test/"
                 + URLDecoder.decode(connectionName, "UTF-8"));
         assertConnection(connectionDetails);
+    }
+
+    public void testDeleteConnection() throws Exception
+    {
+        // get connection name
+        String connectionName = getConnectionName();
+
+        List<Map<String, Object>> connections = getRestTestHelper().getJsonAsList("connection/test/test");
+        assertEquals("Unexpected number of connections before deletion", 1, connections.size());
+
+        String connectionUrl = "connection/test/test/" + URLDecoder.decode(connectionName, "UTF-8");
+        getRestTestHelper().submitRequest(connectionUrl, "DELETE", HttpServletResponse.SC_OK);
+
+        connections = getRestTestHelper().getJsonAsList("connection/test/test");
+        assertEquals("Unexpected number of connections before deletion", 0, connections.size());
+
+        try
+        {
+            _connection.createSession(true, javax.jms.Session.SESSION_TRANSACTED);
+            fail("Exception not thrown");
+        }
+        catch (JMSException je)
+        {
+            // PASS
+        }
     }
 
     public void testGetAllSessions() throws Exception
