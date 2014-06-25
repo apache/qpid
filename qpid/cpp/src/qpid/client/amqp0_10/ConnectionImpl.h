@@ -57,6 +57,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     void reconnect();
     std::string getUrl() const;
     bool getAutoDecode() const;
+    bool getAutoReconnect() const;
   private:
     typedef std::map<std::string, qpid::messaging::Session> Sessions;
 

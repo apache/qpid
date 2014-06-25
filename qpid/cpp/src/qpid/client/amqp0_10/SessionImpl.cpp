@@ -233,7 +233,7 @@ Sender SessionImpl::createSenderImpl(const qpid::messaging::Address& address)
     ScopedLock l(lock);
     std::string name = address.getName();
     getFreeKey(name, senders);
-    Sender sender(new SenderImpl(*this, name, address));
+    Sender sender(new SenderImpl(*this, name, address, connection->getAutoReconnect()));
     getImplPtr<Sender, SenderImpl>(sender)->init(session, resolver);
     senders[name] = sender;
     return sender;

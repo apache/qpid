@@ -155,6 +155,16 @@ struct QPID_MESSAGING_CLASS_EXTERN TargetCapacityExceeded : public SendError
     QPID_MESSAGING_EXTERN TargetCapacityExceeded(const std::string&);
 };
 
+/**
+ * Thrown to indicate that the locally configured sender capacity has
+ * been reached, and thus no further messages can be put on the replay
+ * buffer.
+ */
+struct QPID_MESSAGING_CLASS_EXTERN OutOfCapacity : public SendError
+{
+    QPID_MESSAGING_EXTERN OutOfCapacity(const std::string&);
+};
+
 struct QPID_MESSAGING_CLASS_EXTERN SessionError : public MessagingException
 {
     QPID_MESSAGING_EXTERN SessionError(const std::string&);
