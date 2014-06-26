@@ -23,22 +23,38 @@ import java.io.File;
 
 public class BrokerCommandHelperTest extends QpidTestCase
 {
-    private BrokerCommandHelper _brokerCommandHelper = new BrokerCommandHelper("qpid -p @PORT -sp @STORE_PATH -st @STORE_TYPE -l @LOG_CONFIG_FILE");
+    private static final String PATH_TO_QPID_EXECUTABLE = "/path  / to (/qpid";
+    private static final String ARGUMENT_WITH_SPACES = " blah / blah /blah";
+    private static final String ARGUMENT_PORT = "-p";
+    private static final String ARGUMENT_PORT_VALUE = "@PORT";
+    private static final String ARGUMENT_STORE_PATH = "-sp";
+    private static final String ARGUMENT_STORE_PATH_VALUE = "@STORE_PATH";
+    private static final String ARGUMENT_STORE_TYPE = "-st";
+    private static final String ARGUMENT_STORE_TYPE_VALUE = "@STORE_TYPE";
+    private static final String ARGUMENT_LOG = "-l";
+    private static final String ARGUMENT_LOG_VALUE = "@LOG_CONFIG_FILE";
 
-    private File logConfigFile = mock(File.class);
+    private BrokerCommandHelper _brokerCommandHelper;
+
+    private File _logConfigFile = mock(File.class);
 
     @Override
     public void setUp()
     {
-        when(logConfigFile.getAbsolutePath()).thenReturn("log Config File");
+        when(_logConfigFile.getAbsolutePath()).thenReturn("log Config File");
+        _brokerCommandHelper = new BrokerCommandHelper("\"" + PATH_TO_QPID_EXECUTABLE + "\" " + ARGUMENT_PORT + "     "
+                + ARGUMENT_PORT_VALUE + " " + ARGUMENT_STORE_PATH + " " + ARGUMENT_STORE_PATH_VALUE + " " + ARGUMENT_STORE_TYPE
+                + " " + ARGUMENT_STORE_TYPE_VALUE + " " + ARGUMENT_LOG + " " + ARGUMENT_LOG_VALUE + "     '" + ARGUMENT_WITH_SPACES
+                + "'");
     }
 
     public void testGetBrokerCommand()
     {
-        String[] brokerCommand = _brokerCommandHelper.getBrokerCommand(1, "configFile", "json", logConfigFile);
+        String[] brokerCommand = _brokerCommandHelper.getBrokerCommand(1, "path to config file", "json", _logConfigFile);
 
-        String[] expected = { "qpid", "-p", "1", "-sp", "configFile", "-st", "json", "-l", "\"log Config File\"" };
-        assertEquals("Unexpected broker command", 9, brokerCommand.length);
+        String[] expected = { PATH_TO_QPID_EXECUTABLE, ARGUMENT_PORT, "1", ARGUMENT_STORE_PATH,  "path to config file",
+                ARGUMENT_STORE_TYPE, "json", ARGUMENT_LOG, "\"log Config File\"", ARGUMENT_WITH_SPACES };
+        assertEquals("Unexpected broker command", expected.length, brokerCommand.length);
         for (int i = 0; i < expected.length; i++)
         {
             assertEquals("Unexpected command part value at " + i,expected[i], brokerCommand[i] );
@@ -48,10 +64,12 @@ public class BrokerCommandHelperTest extends QpidTestCase
     public void testRemoveBrokerCommandLog4JFile()
     {
         _brokerCommandHelper.removeBrokerCommandLog4JFile();
-        String[] brokerCommand = _brokerCommandHelper.getBrokerCommand(1, "configFile", "json", logConfigFile);
+        String[] brokerCommand = _brokerCommandHelper.getBrokerCommand(1, "configFile", "json", _logConfigFile);
 
-        String[] expected = { "qpid", "-p", "1", "-sp", "configFile", "-st", "json" };
-        assertEquals("Unexpected broker command", 7, brokerCommand.length);
+        String[] expected = { PATH_TO_QPID_EXECUTABLE, ARGUMENT_PORT, "1", ARGUMENT_STORE_PATH, "configFile",
+                ARGUMENT_STORE_TYPE, "json", ARGUMENT_WITH_SPACES };
+
+        assertEquals("Unexpected broker command", expected.length, brokerCommand.length);
         for (int i = 0; i < expected.length; i++)
         {
             assertEquals("Unexpected command part value at " + i,expected[i], brokerCommand[i] );
