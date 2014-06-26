@@ -27,7 +27,7 @@ import com.sleepycat.je.DatabaseException;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.store.SizeMonitorSettings;
+import org.apache.qpid.server.store.SizeMonitoringSettings;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.FileUtils;
 
@@ -67,7 +67,7 @@ public class BDBMessageStore extends AbstractBDBMessageStore
         {
             _parent = parent;
 
-            final SizeMonitorSettings sizeMonitorSettings = (SizeMonitorSettings) parent;
+            final SizeMonitoringSettings sizeMonitorSettings = (SizeMonitoringSettings) parent;
             _persistentSizeHighThreshold = sizeMonitorSettings.getStoreOverfullSize();
             _persistentSizeLowThreshold = sizeMonitorSettings.getStoreUnderfullSize();
 
