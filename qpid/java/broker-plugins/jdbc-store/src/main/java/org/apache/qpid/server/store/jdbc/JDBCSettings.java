@@ -26,4 +26,8 @@ public interface JDBCSettings extends Settings
     String getConnectionUrl();
 
     String getConnectionPoolType();
+
+    String getUsername();
+
+    String getPassword();
 }

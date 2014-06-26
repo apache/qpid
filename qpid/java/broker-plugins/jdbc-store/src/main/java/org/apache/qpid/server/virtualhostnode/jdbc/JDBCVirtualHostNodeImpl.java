@@ -41,6 +41,12 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
     @ManagedAttributeField
     private String _connectionPoolType;
 
+    @ManagedAttributeField
+    private String _username;
+
+    @ManagedAttributeField
+    private String _password;
+
     @ManagedObjectFactoryConstructor
     public JDBCVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
     {
@@ -70,4 +76,24 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
         return _connectionPoolType;
     }
 
+    @Override
+    public String getUsername()
+    {
+        return _username;
+    }
+
+    @Override
+    public String getPassword()
+    {
+        return _password;
+    }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() +
+                                        ", connectionUrl=" + getConnectionUrl() +
+                                        ", connectionPoolType=" + getConnectionPoolType() +
+                                        ", username=" + getUsername() + "]";
+    }
 }

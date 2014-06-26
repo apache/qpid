@@ -20,25 +20,42 @@
  */
 package org.apache.qpid.server.store.jdbc.bonecp;
 
-import java.sql.SQLException;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableSet;
 
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 @PluggableService
 public class BoneCPConnectionProviderFactory implements JDBCConnectionProviderFactory
 {
+    public static final String PARTITION_COUNT = "qpid.jdbcstore.bonecp.partitionCount";
+    public static final String MAX_CONNECTIONS_PER_PARTITION = "qpid.jdbcstore.bonecp.maxConnectionsPerPartition";
+    public static final String MIN_CONNECTIONS_PER_PARTITION = "qpid.jdbcstore.bonecp.minConnectionsPerPartition";
+
+    private final Set<String> _supportedAttributes = unmodifiableSet(new HashSet<String>(asList(PARTITION_COUNT, MAX_CONNECTIONS_PER_PARTITION, MIN_CONNECTIONS_PER_PARTITION)));
+
     @Override
     public String getType()
     {
         return "BONECP";
     }
 
-    public ConnectionProvider getConnectionProvider(ConfiguredObject<?> parent, String connectionUrl)
+    public ConnectionProvider getConnectionProvider(String connectionUrl, String username, String password, Map<String, String> providerAttributes)
             throws SQLException
     {
-        return new BoneCPConnectionProvider(connectionUrl, parent);
+        return new BoneCPConnectionProvider(connectionUrl, username, password, providerAttributes);
+    }
+
+    @Override
+    public Set<String> getProviderAttributeNames()
+    {
+        return _supportedAttributes;
     }
 }

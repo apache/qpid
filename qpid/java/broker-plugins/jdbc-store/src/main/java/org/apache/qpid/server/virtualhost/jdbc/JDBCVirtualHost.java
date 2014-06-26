@@ -32,7 +32,12 @@ public interface JDBCVirtualHost<X extends JDBCVirtualHost<X>> extends VirtualHo
     @ManagedAttribute(mandatory=true)
     String getConnectionUrl();
 
-    @ManagedAttribute(defaultValue= DefaultConnectionProviderFactory.TYPE)
+    @ManagedAttribute(defaultValue=DefaultConnectionProviderFactory.TYPE)
     String getConnectionPoolType();
 
+    @ManagedAttribute
+    String getUsername();
+
+    @ManagedAttribute(secure=true)
+    String getPassword();
 }

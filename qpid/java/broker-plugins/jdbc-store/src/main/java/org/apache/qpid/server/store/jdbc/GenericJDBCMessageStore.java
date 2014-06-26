@@ -21,16 +21,22 @@
 package org.apache.qpid.server.store.jdbc;
 
 
+import java.security.PrivilegedAction;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.StoreException;
+
+import javax.security.auth.Subject;
 
 /**
  * Implementation of a MessageStore backed by a Generic JDBC Database.
@@ -84,12 +90,19 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
 
         try
         {
-            // TODO: Pass parent to the connenction provider?
-            _connectionProvider = connectionProviderFactory.getConnectionProvider(parent, _connectionURL);
+            Map<String, String> providerAttributes = new HashMap(parent.getContext());
+            providerAttributes.keySet().retainAll(connectionProviderFactory.getProviderAttributeNames());
+
+
+            _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL,
+                                                                                  settings.getUsername(),
+                                                                                  getPlainTextPassword(settings),
+                                                                                  providerAttributes);
         }
         catch (SQLException e)
         {
-            throw new StoreException("Failed to create connection provider for " + _connectionURL);
+            throw new StoreException("Failed to create connection provider for connectionUrl: " + _connectionURL +
+                                    " and username: " + settings.getUsername());
         }
 
     }
@@ -158,4 +171,15 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
         return _connectionURL;
     }
 
+    protected String getPlainTextPassword(final JDBCSettings settings)
+    {
+        return Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<String>()
+        {
+            @Override
+            public String run()
+            {
+                return settings.getPassword();
+            }
+        });
+    }
 }

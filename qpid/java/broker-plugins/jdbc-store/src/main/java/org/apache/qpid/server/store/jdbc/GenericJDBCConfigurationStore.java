@@ -20,17 +20,23 @@ package org.apache.qpid.server.store.jdbc;
 
 
 import java.nio.charset.Charset;
+import java.security.PrivilegedAction;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.*;
+
+import javax.security.auth.Subject;
 
 /**
  * Implementation of a DurableConfigurationStore backed by Generic JDBC Database
@@ -93,11 +99,18 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
 
             try
             {
-                _connectionProvider = connectionProviderFactory.getConnectionProvider(parent, _connectionURL);
+                Map<String, String> providerAttributes = new HashMap(_parent.getContext());
+                providerAttributes.keySet().retainAll(connectionProviderFactory.getProviderAttributeNames());
+
+                _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL,
+                                                                                      settings.getUsername(),
+                                                                                      getPlainTextPassword(settings),
+                                                                                      providerAttributes);
             }
             catch (SQLException e)
             {
-                throw new StoreException("Failed to create connection provider for " + _connectionURL);
+                throw new StoreException("Failed to create connection provider for connectionUrl: " + _connectionURL +
+                                            " and username: " + settings.getUsername());
             }
             _blobType = details.getBlobType();
             _varBinaryType = details.getVarBinaryType();
@@ -210,6 +223,18 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
     public MessageStore getMessageStore()
     {
         return _providedMessageStore;
+    }
+
+    protected String getPlainTextPassword(final JDBCSettings settings)
+    {
+        return Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<String>()
+        {
+            @Override
+            public String run()
+            {
+                return settings.getPassword();
+            }
+        });
     }
 
     private class ProvidedMessageStore extends GenericAbstractJDBCMessageStore
