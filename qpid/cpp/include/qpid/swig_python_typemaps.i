@@ -30,13 +30,16 @@ static PyObject* pUuidModule;
    * qpid.datatypes.
    */
   pUuidModule = PyImport_ImportModule("qpid.datatypes");
-
-  /* Although it is not required, we'll publish the uuid module in our
-   * module, as if this module was a python module and we called
-   * "import uuid"
-   */
-  Py_INCREF(pUuidModule);
-  PyModule_AddObject(m, "uuid", pUuidModule);
+  if (pUuidModule) {
+      /* Although it is not required, we'll publish the uuid module in our
+       * module, as if this module was a python module and we called
+       * "import uuid"
+       */
+      Py_INCREF(pUuidModule);
+      PyModule_AddObject(m, "uuid", pUuidModule);
+  } else {
+      if (!PyErr_Occurred) PyErr_SetString(PyExc_ImportError, "Cannot import qpid.datatypes");
+  }
 %}
 
 
@@ -101,7 +104,7 @@ typedef int Py_ssize_t;
                 result = PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) v->asUint64());
                 break;
             }
-            case qpid::types::VAR_INT8 : 
+            case qpid::types::VAR_INT8 :
             case qpid::types::VAR_INT16 :
             case qpid::types::VAR_INT32 : {
                 result = PyInt_FromLong((long) v->asInt32());
