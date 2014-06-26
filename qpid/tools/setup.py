@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,13 +47,13 @@ setup(name="qpid-tools",
                "src/py/qpid-stat",
                "src/py/qpid-tool",
                "src/py/qmf-tool"],
-      data_files=[("/usr/libexec", ["src/py/qpid-qls-analyze"]),
-                  ("/usr/shared/qpid-tools/python/qlslibs",
-					               ["src/py/qlslibs/anal.py",
-                           			"src/py/qlslibs/efp.py", 
-							        "src/py/qlslibs/err.py",
-									"src/py/qlslibs/jrnl.py",
-                           			"src/py/qlslibs/utils.py"])],
+      data_files=[("libexec", ["src/py/qpid-qls-analyze"]),
+                  ("share/qpid-tools/python/qlslibs",
+                   ["src/py/qlslibs/anal.py",
+                    "src/py/qlslibs/efp.py",
+                    "src/py/qlslibs/err.py",
+                    "src/py/qlslibs/jrnl.py",
+                    "src/py/qlslibs/utils.py"])],
       url="http://qpid.apache.org/",
       license="Apache Software License",
       description="Diagnostic and management tools for Apache Qpid brokers.",
