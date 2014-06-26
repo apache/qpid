@@ -18,7 +18,8 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhostnode;
+
+package org.apache.qpid.server.virtualhostnode.derby;
 
 import java.util.Map;
 
@@ -28,18 +29,19 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.JsonFileConfigStore;
+import org.apache.qpid.server.store.derby.DerbyConfigurationStore;
+import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
-@ManagedObject(type=JsonVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category=false)
-public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JsonVirtualHostNodeImpl> implements JsonVirtualHostNode<JsonVirtualHostNodeImpl>
+@ManagedObject( category = false, type = DerbyVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE )
+public class DerbyVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<DerbyVirtualHostNodeImpl> implements DerbyVirtualHostNode<DerbyVirtualHostNodeImpl>
 {
-    public static final String VIRTUAL_HOST_NODE_TYPE = "JSON";
+    public static final String VIRTUAL_HOST_NODE_TYPE = "DERBY";
 
     @ManagedAttributeField
     private String _storePath;
 
     @ManagedObjectFactoryConstructor
-    public JsonVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
+    public DerbyVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
     {
         super(attributes, parent);
     }
@@ -53,7 +55,7 @@ public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<Jso
     @Override
     protected DurableConfigurationStore createConfigurationStore()
     {
-        return new JsonFileConfigStore();
+        return new DerbyConfigurationStore();
     }
 
     @Override

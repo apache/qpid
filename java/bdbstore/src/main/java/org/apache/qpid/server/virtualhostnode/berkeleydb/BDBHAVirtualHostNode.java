@@ -24,8 +24,9 @@ import java.util.Map;
 
 import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.store.berkeleydb.HASettings;
 
-public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends BDBVirtualHostNode<X>
+public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends BDBVirtualHostNode<X>, HASettings
 {
     public static final String GROUP_NAME = "groupName";
     public static final String ADDRESS = "address";
@@ -35,7 +36,6 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     public static final String PRIORITY = "priority";
     public static final String QUORUM_OVERRIDE = "quorumOverride";
     public static final String ROLE = "role";
-    public static final String REPLICATED_ENVIRONMENT_CONFIGURATION = "replicatedEnvironmentConfiguration";
     public static final String LAST_KNOWN_REPLICATION_TRANSACTION_ID = "lastKnownReplicationTransactionId";
     public static final String JOIN_TIME = "joinTime";
 
@@ -59,9 +59,6 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
 
     @ManagedAttribute(persist = false)
     String getRole();
-
-    @ManagedAttribute
-    Map<String, String> getReplicatedEnvironmentConfiguration();
 
     @DerivedAttribute
     Long getLastKnownReplicationTransactionId();

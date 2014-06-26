@@ -21,13 +21,13 @@ package org.apache.qpid.server.store.berkeleydb;
 
 
 import java.io.File;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sleepycat.je.DatabaseException;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.SizeMonitorSettings;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.FileUtils;
 
@@ -61,26 +61,22 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     }
 
     @Override
-    public void openMessageStore(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+    public void openMessageStore(final ConfiguredObject<?> parent)
     {
         if (_messageStoreOpen.compareAndSet(false, true))
         {
             _parent = parent;
 
-            Object overfullAttr = messageStoreSettings.get(OVERFULL_SIZE);
-            Object underfullAttr = messageStoreSettings.get(UNDERFULL_SIZE);
+            final SizeMonitorSettings sizeMonitorSettings = (SizeMonitorSettings) parent;
+            _persistentSizeHighThreshold = sizeMonitorSettings.getStoreOverfullSize();
+            _persistentSizeLowThreshold = sizeMonitorSettings.getStoreUnderfullSize();
 
-            _persistentSizeHighThreshold = overfullAttr == null ? -1l :
-                    overfullAttr instanceof Number ? ((Number) overfullAttr).longValue() : Long.parseLong(overfullAttr.toString());
-            _persistentSizeLowThreshold = underfullAttr == null ? _persistentSizeHighThreshold :
-                    underfullAttr instanceof Number ? ((Number) underfullAttr).longValue() : Long.parseLong(underfullAttr.toString());
-
-            if(_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
+            if (_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
             {
                 _persistentSizeLowThreshold = _persistentSizeHighThreshold;
             }
 
-            _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent, messageStoreSettings);
+            _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent);
             _storeLocation = _environmentFacade.getStoreLocation();
         }
     }

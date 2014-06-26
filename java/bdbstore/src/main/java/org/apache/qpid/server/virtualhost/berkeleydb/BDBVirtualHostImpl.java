@@ -18,42 +18,44 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhostnode;
+package org.apache.qpid.server.virtualhost.berkeleydb;
 
 import java.util.Map;
 
-import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.JsonFileConfigStore;
+import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
-@ManagedObject(type=JsonVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category=false)
-public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JsonVirtualHostNodeImpl> implements JsonVirtualHostNode<JsonVirtualHostNodeImpl>
+@ManagedObject(category = false, type = BDBVirtualHostImpl.VIRTUAL_HOST_TYPE)
+public class BDBVirtualHostImpl extends AbstractVirtualHost<BDBVirtualHostImpl> implements BDBVirtualHost<BDBVirtualHostImpl>
 {
-    public static final String VIRTUAL_HOST_NODE_TYPE = "JSON";
+    public static final String VIRTUAL_HOST_TYPE = "BDB";
 
     @ManagedAttributeField
     private String _storePath;
 
+    @ManagedAttributeField
+    private Long _storeUnderfullSize;
+
+    @ManagedAttributeField
+    private Long _storeOverfullSize;
+
     @ManagedObjectFactoryConstructor
-    public JsonVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
+    public BDBVirtualHostImpl(final Map<String, Object> attributes,
+                              final VirtualHostNode<?> virtualHostNode)
     {
-        super(attributes, parent);
+        super(attributes, virtualHostNode);
     }
 
-    @Override
-    protected void writeLocationEventLog()
-    {
-        getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.STORE_LOCATION(getStorePath()));
-    }
 
     @Override
-    protected DurableConfigurationStore createConfigurationStore()
+    protected MessageStore createMessageStore()
     {
-        return new JsonFileConfigStore();
+        return new BDBMessageStore();
     }
 
     @Override
@@ -63,8 +65,14 @@ public class JsonVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<Jso
     }
 
     @Override
-    public String toString()
+    public Long getStoreUnderfullSize()
     {
-        return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", storePath=" + getStorePath() + "]";
+        return _storeUnderfullSize;
+    }
+
+    @Override
+    public Long getStoreOverfullSize()
+    {
+        return _storeOverfullSize;
     }
 }

@@ -35,10 +35,10 @@ import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
 import com.sleepycat.je.Durability.SyncPolicy;
 
-@ManagedObject( category = false, type = "BDB_HA" )
+@ManagedObject( category = false, type = BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE )
 public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostImpl> implements BDBHAVirtualHost<BDBHAVirtualHostImpl>
 {
-    public static final String TYPE = "BDB_HA";
+    public static final String VIRTUAL_HOST_TYPE = "BDB_HA";
 
     private final BDBConfigurationStore _configurationStore;
 
@@ -47,6 +47,12 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
 
     @ManagedAttributeField
     private String _remoteTransactionSynchronizationPolicy;
+
+    @ManagedAttributeField
+    private Long _storeUnderfullSize;
+
+    @ManagedAttributeField
+    private Long _storeOverfullSize;
 
     @ManagedObjectFactoryConstructor
     public BDBHAVirtualHostImpl(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
@@ -138,6 +144,18 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     private ReplicatedEnvironmentFacade getReplicatedEnvironmentFacade()
     {
         return (ReplicatedEnvironmentFacade) _configurationStore.getEnvironmentFacade();
+    }
+
+    @Override
+    public Long getStoreUnderfullSize()
+    {
+        return _storeUnderfullSize;
+    }
+
+    @Override
+    public Long getStoreOverfullSize()
+    {
+        return _storeOverfullSize;
     }
 
 }

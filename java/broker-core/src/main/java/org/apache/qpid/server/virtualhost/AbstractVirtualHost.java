@@ -86,8 +86,7 @@ import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.MapValueConverter;
 
 public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> extends AbstractConfiguredObject<X>
-        implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener,
-                   VirtualHost<X,AMQQueue<?>, ExchangeImpl<?>>
+        implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener
 {
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
     public static final String DLQ_ROUTING_KEY = "dlq";
@@ -128,9 +127,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private final VirtualHostNode<?> _virtualHostNode;
 
     private MessageStoreLogSubject _messageStoreLogSubject;
-
-    @ManagedAttributeField
-    private Map<String, Object> _messageStoreSettings;
 
     @ManagedAttributeField
     private boolean _queue_deadLetterQueueEnabled;
@@ -1082,12 +1078,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    public Map<String, Object> getMessageStoreSettings()
-    {
-        return _messageStoreSettings;
-    }
-
-    @Override
     public long getQueueCount()
     {
         return getQueues().size();
@@ -1328,12 +1318,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());
 
         MessageStore messageStore = getMessageStore();
-        Map<String, Object> messageStoreSettings = getMessageStoreSettings();
-        if (messageStoreSettings == null)
-        {
-            messageStoreSettings = Collections.emptyMap();
-        }
-        messageStore.openMessageStore(this, messageStoreSettings);
+        messageStore.openMessageStore(this);
 
         if (!(_virtualHostNode.getConfigurationStore() instanceof MessageStoreProvider))
         {

@@ -73,19 +73,12 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
             LOGGER.debug("Activating virtualhost node " + this);
         }
 
-        Map<String, Object> attributes = buildAttributesForStore();
-
-        getConfigurationStore().openConfigurationStore(this, attributes);
+        getConfigurationStore().openConfigurationStore(this);
         getConfigurationStore().upgradeStoreStructure();
 
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CREATED());
 
-        if (this instanceof FileBasedVirtualHostNode)
-        {
-            @SuppressWarnings("rawtypes")
-            FileBasedVirtualHostNode fileBasedVirtualHostNode = (FileBasedVirtualHostNode) this;
-            getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.STORE_LOCATION(fileBasedVirtualHostNode.getStorePath()));
-        }
+        writeLocationEventLog();
 
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.RECOVERY_START());
 
@@ -150,6 +143,8 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
             });
         }
     }
+
+    protected abstract void writeLocationEventLog();
 
     @Override
     public String toString()

@@ -66,9 +66,6 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     @ManagedAttributeField
-    private Map<String, Object> _messageStoreSettings;
-
-    @ManagedAttributeField
     private boolean _queue_deadLetterQueueEnabled;
 
     @ManagedAttributeField
@@ -217,12 +214,6 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     public int getHousekeepingThreadCount()
     {
         return 0;
-    }
-
-    @Override
-    public Map<String, Object> getMessageStoreSettings()
-    {
-        return null;
     }
 
     @Override

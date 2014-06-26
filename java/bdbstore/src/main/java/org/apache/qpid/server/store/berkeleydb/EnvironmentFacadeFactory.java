@@ -26,7 +26,6 @@ import org.apache.qpid.server.model.ConfiguredObject;
 
 public interface EnvironmentFacadeFactory
 {
-    EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent,
-                                              Map<String, Object> storeSettings);
+    EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent);
 
 }

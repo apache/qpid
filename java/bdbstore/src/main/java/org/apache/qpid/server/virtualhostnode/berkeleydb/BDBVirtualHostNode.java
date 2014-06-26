@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
-import java.util.Map;
-
 import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 
-public interface BDBVirtualHostNode<X extends BDBVirtualHostNode<X>> extends FileBasedVirtualHostNode<X>
+public interface BDBVirtualHostNode<X extends BDBVirtualHostNode<X>> extends org.apache.qpid.server.model.VirtualHostNode<X>, org.apache.qpid.server.store.FileBasedSettings
 {
+    String STORE_PATH = "storePath";
+
+    @ManagedAttribute(mandatory = true)
+    String getStorePath();
 }

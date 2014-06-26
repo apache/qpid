@@ -23,7 +23,6 @@ package org.apache.qpid.server.configuration.store;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -144,7 +143,7 @@ public class JsonConfigurationEntryStore extends MemoryConfigurationEntryStore
                 }
             };
 
-            initialStore.openConfigurationStore(_parentObject, Collections.<String,Object>emptyMap());
+            initialStore.openConfigurationStore(_parentObject);
             initialStore.visitConfiguredObjectRecords(replayHandler);
 
             update(true, records.toArray(new ConfiguredObjectRecord[records.size()]));

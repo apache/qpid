@@ -19,7 +19,6 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -37,7 +36,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent)
     {
     }
 
@@ -63,7 +62,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings)
+    public void openMessageStore(ConfiguredObject<?> parent)
     {
     }
 

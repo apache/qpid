@@ -28,17 +28,16 @@ import com.sleepycat.je.config.ConfigParam;
 import com.sleepycat.je.config.EnvironmentParams;
 
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.FileBasedSettings;
 
 public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
-
     @SuppressWarnings("unchecked")
     @Override
-    public EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent,
-                                                     final Map<String, Object> messageStoreSettings)
+    public EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent)
     {
-        final String storeLocation = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
+        final FileBasedSettings settings = (FileBasedSettings)parent;
+        final String storeLocation = settings.getStorePath();
 
         StandardEnvironmentConfiguration sec = new StandardEnvironmentConfiguration()
         {

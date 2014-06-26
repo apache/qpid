@@ -28,15 +28,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.store.AbstractJDBCMessageStore;
-import org.apache.qpid.server.store.Event;
-import org.apache.qpid.server.store.JdbcUtils;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.*;
 
 public abstract class AbstractDerbyMessageStore extends AbstractJDBCMessageStore
 {
@@ -50,7 +45,7 @@ public abstract class AbstractDerbyMessageStore extends AbstractJDBCMessageStore
     private ConfiguredObject<?> _parent;
 
     @Override
-    public final void openMessageStore(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+    public final void openMessageStore(final ConfiguredObject<?> parent)
     {
         if (_messageStoreOpen.compareAndSet(false, true))
         {
@@ -58,25 +53,16 @@ public abstract class AbstractDerbyMessageStore extends AbstractJDBCMessageStore
 
             DerbyUtils.loadDerbyDriver();
 
-            doOpen(parent, messageStoreSettings);
+            doOpen(parent);
 
-            Object overfullAttr = messageStoreSettings.get(MessageStore.OVERFULL_SIZE);
-            Object underfullAttr = messageStoreSettings.get(MessageStore.UNDERFULL_SIZE);
-
-            _persistentSizeHighThreshold = overfullAttr == null ? -1l :
-                    overfullAttr instanceof Number
-                            ? ((Number) overfullAttr).longValue()
-                            : Long.parseLong(overfullAttr.toString());
-            _persistentSizeLowThreshold = underfullAttr == null ? _persistentSizeHighThreshold :
-                    underfullAttr instanceof Number
-                            ? ((Number) underfullAttr).longValue()
-                            : Long.parseLong(underfullAttr.toString());
+            final SizeMonitorSettings sizeMonitorSettings = (SizeMonitorSettings) parent;
+            _persistentSizeHighThreshold = sizeMonitorSettings.getStoreOverfullSize();
+            _persistentSizeLowThreshold = sizeMonitorSettings.getStoreUnderfullSize();
 
             if (_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
             {
                 _persistentSizeLowThreshold = _persistentSizeHighThreshold;
             }
-
 
             createOrOpenMessageStoreDatabase();
             setInitialSize();
@@ -84,7 +70,7 @@ public abstract class AbstractDerbyMessageStore extends AbstractJDBCMessageStore
         }
     }
 
-    protected abstract void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings);
+    protected abstract void doOpen(final ConfiguredObject<?> parent);
 
     @Override
     public final void upgradeStoreStructure() throws StoreException

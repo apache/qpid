@@ -28,6 +28,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.Transaction.Record;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
@@ -49,25 +51,20 @@ import org.mockito.ArgumentMatcher;
 public abstract class MessageStoreTestCase extends QpidTestCase
 {
     private MessageStore _store;
-    private Map<String, Object> _storeSettings;
     private ConfiguredObject<?> _parent;
 
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _parent = mock(ConfiguredObject.class);
-        when(_parent.getName()).thenReturn("test");
-
-        _storeSettings = getStoreSettings();
+        _parent = createVirtualHost();
 
         _store = createMessageStore();
 
-        _store.openMessageStore(_parent, _storeSettings);
-
+        _store.openMessageStore(_parent);
     }
 
-    protected abstract Map<String, Object> getStoreSettings() throws Exception;
+    protected abstract VirtualHost createVirtualHost();
 
     protected abstract MessageStore createMessageStore();
 
@@ -81,7 +78,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         _store.closeMessageStore();
 
         _store = createMessageStore();
-        _store.openMessageStore(_parent, _storeSettings);
+        _store.openMessageStore(_parent);
     }
 
     public void testAddAndRemoveRecordXid() throws Exception

@@ -21,17 +21,17 @@
 package org.apache.qpid.server.store.berkeleydb;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBVirtualHost;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestBase
 {
-    private static final Logger _logger = Logger.getLogger(BDBMessageStoreQuotaEventsTest.class);
-
     /*
      * Notes on calculation of quota limits.
      *
@@ -47,8 +47,8 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
 
     private static final int NUMBER_OF_MESSAGES_TO_OVERFILL_STORE = 150;
 
-    private static final int OVERFULL_SIZE = 4000000; // ~4MB
-    private static final int UNDERFULL_SIZE = 3500000; // ~3.5MB
+    private static final long OVERFULL_SIZE = 4000000; // ~4MB
+    private static final long UNDERFULL_SIZE = 3500000; // ~3.5MB
 
     @Override
     protected int getNumberOfMessagesToFillStore()
@@ -56,24 +56,17 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
         return NUMBER_OF_MESSAGES_TO_OVERFILL_STORE;
     }
 
-
     @Override
-    protected Map<String, Object>createStoreSettings(String storeLocation)
+    protected VirtualHost createVirtualHost(String storeLocation)
     {
-        _logger.debug("Applying store specific config. overfull-size=" + OVERFULL_SIZE + ", underfull-size=" + UNDERFULL_SIZE);
-
-        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-        messageStoreSettings.put(MessageStore.STORE_PATH, storeLocation);
-        messageStoreSettings.put(MessageStore.OVERFULL_SIZE, OVERFULL_SIZE);
-        messageStoreSettings.put(MessageStore.UNDERFULL_SIZE, UNDERFULL_SIZE);
-        return messageStoreSettings;
+        final BDBVirtualHost parent = mock(BDBVirtualHost.class);
+        when(parent.getContext()).thenReturn(Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE));
+        when(parent.getStorePath()).thenReturn(storeLocation);
+        when(parent.getStoreOverfullSize()).thenReturn(OVERFULL_SIZE);
+        when(parent.getStoreUnderfullSize()).thenReturn(UNDERFULL_SIZE);
+        return parent;
     }
 
-    @Override
-    protected Map<String, String> createContextSettings()
-    {
-        return Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
-    }
 
     @Override
     protected MessageStore createStore() throws Exception

@@ -36,7 +36,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
-import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
+import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.memory.MemoryVirtualHostNode;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.JMXTestUtils;
@@ -97,7 +97,7 @@ public class MBeanLifeCycleTest extends QpidRestTestCase
 
         Map<String, Object> virtualhostData = new HashMap<>();
         virtualhostData.put(VirtualHost.NAME, nodeName);
-        virtualhostData.put(VirtualHost.TYPE, ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
+        virtualhostData.put(VirtualHost.TYPE, ProvidedStoreVirtualHostImpl.VIRTUAL_HOST_TYPE);
         getRestTestHelper().submitRequest("virtualhost/" + nodeName + "/" + hostName,
                                           "PUT",
                                           virtualhostData,

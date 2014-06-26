@@ -30,25 +30,27 @@ import com.sleepycat.je.config.EnvironmentParams;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacadeFactory;
-import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.server.store.berkeleydb.HASettings;
 
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
     @Override
-    public EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+    public EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent)
     {
+        final HASettings settings = (HASettings) parent;
+
         ReplicatedEnvironmentConfiguration configuration = new ReplicatedEnvironmentConfiguration()
         {
             @Override
             public boolean isDesignatedPrimary()
             {
-                return (Boolean)messageStoreSettings.get(BDBHAVirtualHostNode.DESIGNATED_PRIMARY);
+                return settings.isDesignatedPrimary();
             }
 
             @Override
             public String getStorePath()
             {
-                return (String) messageStoreSettings.get(BDBHAVirtualHostNode.STORE_PATH);
+                return settings.getStorePath();
             }
 
             @Override
@@ -66,37 +68,37 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             @Override
             public int getQuorumOverride()
             {
-                return (Integer)messageStoreSettings.get(BDBHAVirtualHostNode.QUORUM_OVERRIDE);
+                return settings.getQuorumOverride();
             }
 
             @Override
             public int getPriority()
             {
-                return (Integer)messageStoreSettings.get(BDBHAVirtualHostNode.PRIORITY);
+                return settings.getPriority();
             }
 
             @Override
             public String getName()
             {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNode.NAME);
+                return parent.getName();
             }
 
             @Override
             public String getHostPort()
             {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNode.ADDRESS);
+                return settings.getAddress();
             }
 
             @Override
             public String getHelperHostPort()
             {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNode.HELPER_ADDRESS);
+                return settings.getHelperAddress();
             }
 
             @Override
             public String getGroupName()
             {
-                return (String)messageStoreSettings.get(BDBHAVirtualHostNode.GROUP_NAME);
+                return settings.getGroupName();
             }
         };
         return new ReplicatedEnvironmentFacade(configuration);

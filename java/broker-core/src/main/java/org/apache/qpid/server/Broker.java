@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -150,7 +149,7 @@ public class Broker
             store = new ManagementModeStoreHandler(store, options);
         }
 
-        store.openConfigurationStore(systemContext, Collections.<String, Object>emptyMap());
+        store.openConfigurationStore(systemContext);
 
         _applicationRegistry = new ApplicationRegistry(store,systemContext);
         try

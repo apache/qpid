@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
@@ -49,7 +50,6 @@ import org.apache.qpid.server.security.access.FileAccessControlProviderConstants
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordDatabaseAuthenticationManager;
-import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -982,7 +982,7 @@ public class BrokerACLTest extends QpidRestTestCase
         Map<String, Object> data = new HashMap<String, Object>();
         data.put(VirtualHostNode.NAME, virtualHostNodeName);
         data.put(VirtualHostNode.TYPE, getTestProfileVirtualHostNodeType());
-        data.put(FileBasedVirtualHostNode.STORE_PATH, getStoreLocation(virtualHostNodeName));
+        data.put(JsonVirtualHostNode.STORE_PATH, getStoreLocation(virtualHostNodeName));
 
         return getRestTestHelper().submitRequest("virtualhostnode/" + virtualHostNodeName, "PUT", data);
     }

@@ -24,14 +24,16 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.SizeMonitorSettings;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>
+public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, SizeMonitorSettings
 {
     String REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY = "remoteTransactionSynchronizationPolicy";
     String LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY = "localTransactionSynchronizationPolicy";
     String COALESCING_SYNC = "coalescingSync";
     String DURABILITY = "durability";
+    String STORE_PATH = "storePath";
 
     @ManagedAttribute( defaultValue = "SYNC")
     String getLocalTransactionSynchronizationPolicy();
@@ -44,4 +46,10 @@ public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends Virtual
 
     @DerivedAttribute
     String getDurability();
+
+    @ManagedAttribute(mandatory = true, defaultValue = "0")
+    Long getStoreUnderfullSize();
+
+    @ManagedAttribute(mandatory = true, defaultValue = "0")
+    Long getStoreOverfullSize();
 }

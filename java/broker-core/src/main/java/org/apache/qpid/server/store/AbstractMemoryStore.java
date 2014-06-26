@@ -22,7 +22,6 @@ package org.apache.qpid.server.store;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -73,7 +72,7 @@ abstract class AbstractMemoryStore implements DurableConfigurationStore, Message
     }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent)
     {
     }
 

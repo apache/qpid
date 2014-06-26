@@ -46,6 +46,7 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreProvider;
+import org.apache.qpid.server.store.SizeMonitorSettings;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.berkeleydb.entry.HierarchyKey;
 import org.apache.qpid.server.store.berkeleydb.tuple.ConfiguredObjectBinding;
@@ -89,7 +90,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent)
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
         {
@@ -97,7 +98,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
             if (_environmentFacade == null)
             {
-                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent, storeSettings);
+                _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent);
                 _storeLocation = _environmentFacade.getStoreLocation();
             }
             else
@@ -500,23 +501,15 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         private ConfiguredObject<?> _parent;
 
         @Override
-        public void openMessageStore(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+        public void openMessageStore(final ConfiguredObject<?> parent)
         {
             if (_messageStoreOpen.compareAndSet(false, true))
             {
                 _parent = parent;
 
-                Object overfullAttr = messageStoreSettings.get(OVERFULL_SIZE);
-                Object underfullAttr = messageStoreSettings.get(UNDERFULL_SIZE);
-
-                _persistentSizeHighThreshold = overfullAttr == null ? -1l :
-                        overfullAttr instanceof Number
-                                ? ((Number) overfullAttr).longValue()
-                                : Long.parseLong(overfullAttr.toString());
-                _persistentSizeLowThreshold = underfullAttr == null ? _persistentSizeHighThreshold :
-                        underfullAttr instanceof Number
-                                ? ((Number) underfullAttr).longValue()
-                                : Long.parseLong(underfullAttr.toString());
+                final SizeMonitorSettings sizeMonitorSettings = (SizeMonitorSettings) parent;
+                _persistentSizeHighThreshold = sizeMonitorSettings.getStoreOverfullSize();
+                _persistentSizeLowThreshold = sizeMonitorSettings.getStoreUnderfullSize();
 
                 if (_persistentSizeLowThreshold > _persistentSizeHighThreshold || _persistentSizeLowThreshold < 0l)
                 {

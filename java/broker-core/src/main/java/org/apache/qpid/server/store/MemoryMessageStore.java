@@ -181,7 +181,7 @@ public class MemoryMessageStore implements MessageStore
 
 
     @Override
-    public void openMessageStore(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+    public void openMessageStore(final ConfiguredObject<?> parent)
     {
     }
 

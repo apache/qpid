@@ -20,18 +20,21 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
+import org.apache.qpid.server.virtualhost.jdbc.JDBCVirtualHost;
 
 public class JDBCMessageStoreTest extends MessageStoreTestCase
 {
@@ -61,12 +64,13 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
     }
 
     @Override
-    protected Map<String, Object> getStoreSettings()
+    protected VirtualHost createVirtualHost()
     {
         _connectionURL = "jdbc:derby:memory:/" + getTestName() + ";create=true";
-        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-        messageStoreSettings.put(GenericJDBCMessageStore.CONNECTION_URL, _connectionURL);
-        return messageStoreSettings;
+
+        final JDBCVirtualHost jdbcVirtualHost = mock(JDBCVirtualHost.class);
+        when(jdbcVirtualHost.getConnectionUrl()).thenReturn(_connectionURL);
+        return jdbcVirtualHost;
     }
 
 

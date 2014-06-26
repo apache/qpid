@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,35 +15,24 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
+
 package org.apache.qpid.server.virtualhost.jdbc;
 
-import java.util.Map;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.jdbc.DefaultConnectionProviderFactory;
+import org.apache.qpid.server.store.jdbc.JDBCSettings;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.jdbc.GenericJDBCMessageStore;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
-
-@ManagedObject(category = false, type = JDBCVirtualHost.VIRTUAL_HOST_TYPE)
-public class JDBCVirtualHost extends AbstractVirtualHost<JDBCVirtualHost>
+public interface JDBCVirtualHost<X extends JDBCVirtualHost<X>> extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>,
+        JDBCSettings
 {
-    public static final String VIRTUAL_HOST_TYPE = "JDBC";
+    @ManagedAttribute(mandatory=true)
+    String getConnectionUrl();
 
-    @ManagedObjectFactoryConstructor
-    public JDBCVirtualHost(final Map<String, Object> attributes,
-                           final VirtualHostNode<?> virtualHostNode)
-    {
-        super(attributes, virtualHostNode);
-    }
+    @ManagedAttribute(defaultValue= DefaultConnectionProviderFactory.TYPE)
+    String getConnectionPoolType();
 
-
-    @Override
-    protected MessageStore createMessageStore()
-    {
-        return new GenericJDBCMessageStore();
-    }
 }

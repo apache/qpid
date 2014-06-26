@@ -20,10 +20,24 @@
  */
 package org.apache.qpid.server.store.derby;
 
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.AbstractDurableConfigurationStoreTestCase;
+import org.apache.qpid.server.virtualhostnode.derby.DerbyVirtualHostNode;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DerbyMessageStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
+
+    @Override
+    protected VirtualHostNode createVirtualHostNode(String storeLocation, ConfiguredObjectFactory factory)
+    {
+        final DerbyVirtualHostNode parent = mock(DerbyVirtualHostNode.class);
+        when(parent.getStorePath()).thenReturn(storeLocation);
+        return parent;
+    }
 
     @Override
     protected DerbyConfigurationStore createConfigStore() throws Exception

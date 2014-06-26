@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.mock;
 
 import java.util.Collections;
@@ -273,7 +272,7 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         }
 
         @Override
-        public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings) throws StoreException
+        public void openConfigurationStore(ConfiguredObject<?> parent) throws StoreException
         {
         }
 

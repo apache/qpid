@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,51 +15,17 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 
 package org.apache.qpid.server.virtualhostnode.derby;
 
-import java.util.Map;
 
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ManagedAttributeField;
-import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.derby.DerbyConfigurationStore;
-import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
+import org.apache.qpid.server.model.ManagedAttribute;
 
-@ManagedObject( category = false, type = DerbyVirtualHostNode.VIRTUAL_HOST_NODE_TYPE )
-public class DerbyVirtualHostNode extends AbstractStandardVirtualHostNode<DerbyVirtualHostNode> implements FileBasedVirtualHostNode<DerbyVirtualHostNode>
+public interface DerbyVirtualHostNode<X extends DerbyVirtualHostNode<X>> extends org.apache.qpid.server.model.VirtualHostNode<X>, org.apache.qpid.server.store.FileBasedSettings
 {
-    public static final String VIRTUAL_HOST_NODE_TYPE = "DERBY";
+    String STORE_PATH = "storePath";
 
-    @ManagedAttributeField
-    private String _storePath;
-
-    @ManagedObjectFactoryConstructor
-    public DerbyVirtualHostNode(Map<String, Object> attributes, Broker<?> parent)
-    {
-        super(attributes, parent);
-    }
-
-    @Override
-    protected DurableConfigurationStore createConfigurationStore()
-    {
-        return new DerbyConfigurationStore();
-    }
-
-    @Override
-    public String getStorePath()
-    {
-        return _storePath;
-    }
-
-    @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", storePath=" + getStorePath() + "]";
-    }
+    @ManagedAttribute(mandatory = true)
+    String getStorePath();
 }

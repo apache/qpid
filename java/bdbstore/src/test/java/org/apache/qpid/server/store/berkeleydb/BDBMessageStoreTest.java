@@ -23,8 +23,6 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -32,6 +30,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
@@ -41,6 +40,7 @@ import org.apache.qpid.server.store.MessageStoreTestCase;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBVirtualHost;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageAcceptMode;
@@ -50,7 +50,9 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.util.FileUtils;
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Subclass of MessageStoreTestCase which runs the standard tests from the superclass against
@@ -406,14 +408,14 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
 
 
     @Override
-    protected Map<String, Object> getStoreSettings() throws Exception
+    protected VirtualHost createVirtualHost()
     {
         _storeLocation = TMP_FOLDER + File.separator + getTestName();
         deleteStoreIfExists();
-        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-        messageStoreSettings.put(MessageStore.STORE_PATH, _storeLocation);
-        return messageStoreSettings;
 
+        final BDBVirtualHost parent = mock(BDBVirtualHost.class);
+        when(parent.getStorePath()).thenReturn(_storeLocation);
+        return parent;
     }
 
     private void deleteStoreIfExists()

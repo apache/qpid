@@ -107,10 +107,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @ManagedAttributeField(afterSet="postSetRole")
     private String _role;
 
-    @ManagedAttributeField
-    private Map<String, String> _replicatedEnvironmentConfiguration;
-
-
     @ManagedObjectFactoryConstructor
     public BDBHAVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> broker)
     {
@@ -206,12 +202,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         return -1L;
     }
 
-    @Override
-    public Map<String, String> getReplicatedEnvironmentConfiguration()
-    {
-        return _replicatedEnvironmentConfiguration;
-    }
-
     @SuppressWarnings("rawtypes")
     @Override
     public Collection<? extends RemoteReplicationNode> getRemoteReplicationNodes()
@@ -264,9 +254,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             LOGGER.debug("Activating virtualhost node " + this);
         }
 
-        Map<String, Object> attributes = buildAttributesForStore();
-
-        getConfigurationStore().openConfigurationStore(this, attributes);
+        getConfigurationStore().openConfigurationStore(this);
 
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CREATED());
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.STORE_LOCATION(getStorePath()));

@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,18 +15,23 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.virtualhostnode;
 
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.VirtualHostNode;
+package org.apache.qpid.server.store.berkeleydb;
 
-public interface FileBasedVirtualHostNode<X extends FileBasedVirtualHostNode<X>> extends VirtualHostNode<X>
+import org.apache.qpid.server.store.FileBasedSettings;
+
+public interface HASettings extends FileBasedSettings
 {
-    public static final String STORE_PATH = "storePath";
+    String getGroupName();
 
-    @ManagedAttribute(mandatory = true)
-    public String getStorePath();
+    String getAddress();
 
+    String getHelperAddress();
+
+    boolean isDesignatedPrimary();
+
+    int getPriority();
+
+    int getQuorumOverride();
 }

@@ -34,6 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
@@ -83,7 +85,6 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     private UUID _queueId;
     private UUID _exchangeId;
     private DurableConfigurationStore _configStore;
-    protected Map<String, Object> _configurationStoreSettings;
     private ConfiguredObjectFactoryImpl _factory;
 
     private ConfiguredObject<?> _parent;
@@ -94,13 +95,11 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         super.setUp();
 
-        _configurationStoreSettings = new HashMap<String, Object>();
         _queueId = UUIDGenerator.generateRandomUUID();
         _exchangeId = UUIDGenerator.generateRandomUUID();
         _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         _storeName = getName();
         _storePath = TMP_FOLDER + File.separator + _storeName;
-        _configurationStoreSettings.put(MessageStore.STORE_PATH, _storePath);
         FileUtils.delete(new File(_storePath), true);
         setTestSystemProperty("QPID_WORK", TMP_FOLDER);
 
@@ -112,17 +111,15 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         String argValue = "some selector expression";
         _bindingArgs.put(argKey, argValue);
 
-
-        _parent = mock(ConfiguredObject.class);
-        when(_parent.getName()).thenReturn("testName");
-        when(_parent.getObjectFactory()).thenReturn(_factory);
-        when(_parent.getModel()).thenReturn(_factory.getModel());
+        _parent = createVirtualHostNode(_storePath, _factory);
 
         _configStore = createConfigStore();
-        _configStore.openConfigurationStore(_parent, _configurationStoreSettings);
+        _configStore.openConfigurationStore(_parent);
         _rootRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), VirtualHost.class.getSimpleName(), Collections.<String, Object>emptyMap());
         _configStore.create(_rootRecord);
     }
+
+    protected abstract VirtualHostNode createVirtualHostNode(String storeLocation, ConfiguredObjectFactory factory);
 
     public void tearDown() throws Exception
     {
@@ -529,7 +526,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         closeConfigStore();
         _configStore = createConfigStore();
-        _configStore.openConfigurationStore(_parent, _configurationStoreSettings);
+        _configStore.openConfigurationStore(_parent);
     }
 
     protected abstract DurableConfigurationStore createConfigStore() throws Exception;

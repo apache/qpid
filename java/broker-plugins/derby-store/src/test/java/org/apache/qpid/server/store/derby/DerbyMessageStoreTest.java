@@ -22,12 +22,15 @@ package org.apache.qpid.server.store.derby;
 
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
+import org.apache.qpid.server.virtualhost.derby.DerbyVirtualHost;
 import org.apache.qpid.util.FileUtils;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DerbyMessageStoreTest extends MessageStoreTestCase
 {
@@ -59,13 +62,14 @@ public class DerbyMessageStoreTest extends MessageStoreTestCase
     }
 
     @Override
-    protected Map<String, Object> getStoreSettings() throws Exception
+    protected VirtualHost createVirtualHost()
     {
         _storeLocation = TMP_FOLDER + File.separator + getTestName();
         deleteStoreIfExists();
-        Map<String, Object> messageStoreSettings = new HashMap<String, Object>();
-        messageStoreSettings.put(MessageStore.STORE_PATH, _storeLocation);
-        return messageStoreSettings;
+
+        final DerbyVirtualHost parent = mock(DerbyVirtualHost.class);
+        when(parent.getStorePath()).thenReturn(_storeLocation);
+        return parent;
     }
 
     private void deleteStoreIfExists()

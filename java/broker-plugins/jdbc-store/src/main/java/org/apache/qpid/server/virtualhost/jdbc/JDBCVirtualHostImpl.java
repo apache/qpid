@@ -18,22 +18,22 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhostnode.jdbc;
+package org.apache.qpid.server.virtualhost.jdbc;
 
-import java.util.Map;
-
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.jdbc.GenericJDBCConfigurationStore;
-import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
+import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.jdbc.GenericJDBCMessageStore;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
-@ManagedObject(type = JDBCVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false )
-public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDBCVirtualHostNodeImpl> implements JDBCVirtualHostNode<JDBCVirtualHostNodeImpl>
+import java.util.Map;
+
+@ManagedObject(category = false, type = JDBCVirtualHostImpl.VIRTUAL_HOST_TYPE)
+public class JDBCVirtualHostImpl extends AbstractVirtualHost<JDBCVirtualHostImpl> implements JDBCVirtualHost<JDBCVirtualHostImpl>
 {
-    public static final String VIRTUAL_HOST_NODE_TYPE = "JDBC";
+    public static final String VIRTUAL_HOST_TYPE = "JDBC";
 
     @ManagedAttributeField
     private String _connectionUrl;
@@ -42,20 +42,16 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
     private String _connectionPoolType;
 
     @ManagedObjectFactoryConstructor
-    public JDBCVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
+    public JDBCVirtualHostImpl(final Map<String, Object> attributes,
+                               final VirtualHostNode<?> virtualHostNode)
     {
-        super(attributes, parent);
+        super(attributes, virtualHostNode);
     }
 
     @Override
-    protected void writeLocationEventLog()
+    protected MessageStore createMessageStore()
     {
-    }
-
-    @Override
-    protected DurableConfigurationStore createConfigurationStore()
-    {
-        return new GenericJDBCConfigurationStore();
+        return new GenericJDBCMessageStore();
     }
 
     @Override
@@ -69,5 +65,4 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
     {
         return _connectionPoolType;
     }
-
 }

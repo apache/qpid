@@ -28,16 +28,12 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public interface DurableConfigurationStore
 {
-    String STORE_TYPE                    = "storeType";
-    String STORE_PATH                    = "storePath";
-
     /**
      * Initializes and opens the configuration store.
+     *  @param parent
      *
-     * @param parent
-     * @param storeSettings store settings
      */
-    void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings) throws StoreException;
+    void openConfigurationStore(ConfiguredObject<?> parent) throws StoreException;
 
     /**
      * Requests that the store performs any upgrade work on the store's structure. If there is no

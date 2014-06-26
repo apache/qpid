@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 /**
@@ -149,7 +149,7 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(VirtualHostNode.NAME, nodeName);
         nodeData.put(VirtualHostNode.TYPE, storeType);
-        nodeData.put(FileBasedVirtualHostNode.STORE_PATH, configStorePath);
+        nodeData.put(JsonVirtualHostNode.STORE_PATH, configStorePath);
 
         getRestTestHelper().submitRequest("virtualhostnode/" + nodeName,
                                           "PUT",

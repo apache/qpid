@@ -30,6 +30,7 @@ import java.lang.reflect.Proxy;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -308,7 +309,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             case 1:
                 return candidates.iterator().next();
             default:
-                throw new ServerScopedRuntimeException("The configured object class " + getClass().getSimpleName() + " implements no single common interface which extends ConfiguredObject");
+                ArrayList<Class<? extends ConfiguredObject>> list = new ArrayList<>(candidates);
+
+                throw new ServerScopedRuntimeException("The configured object class " + getClass().getSimpleName()
+                        + " implements no single common interface which extends ConfiguredObject"
+                        + " Identified candidates were : " + Arrays.toString(list.toArray()));
         }
     }
 
