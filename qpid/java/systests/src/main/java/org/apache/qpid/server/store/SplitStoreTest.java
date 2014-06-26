@@ -22,7 +22,6 @@ package org.apache.qpid.server.store;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.jms.Connection;
@@ -34,7 +33,8 @@ import javax.jms.Session;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNodeImpl;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -76,7 +76,7 @@ public class SplitStoreTest extends QpidBrokerTestCase
 
     public void testJsonConfigurationStoreWithPersistentMessageStore() throws Exception
     {
-        doTest(JsonFileConfigStore.TYPE, getTestProfileVirtualHostNodeType());
+        doTest(JsonVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, getTestProfileVirtualHostNodeType());
     }
 
     public void testSeparateConfigurationAndMessageStoresOfTheSameType() throws Exception
@@ -87,14 +87,14 @@ public class SplitStoreTest extends QpidBrokerTestCase
     private void configureAndStartBroker(String virtualHostNodeType, String virtualHostType) throws Exception
     {
         final String blueprint = String.format(
-           "{ \"type\" : \"%s\",  \"messageStoreSettings\" : { \"storePath\" : \"%s\" } }", virtualHostType, _messageStorePath);
+           "{ \"type\" : \"%s\",  \"storePath\" : \"%s\" }", virtualHostType, _messageStorePath);
         final Map<String, String> contextMap = Collections.singletonMap(AbstractStandardVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
                                                                         blueprint);
 
         TestBrokerConfiguration config = getBrokerConfiguration();
         config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.TYPE, virtualHostNodeType);
         config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, VirtualHostNode.CONTEXT, contextMap);
-        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, FileBasedVirtualHostNode.STORE_PATH, _configStorePath);
+        config.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, JsonVirtualHostNode.STORE_PATH, _configStorePath);
 
         super.startBroker();
     }

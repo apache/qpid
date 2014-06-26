@@ -22,8 +22,8 @@ package org.apache.qpid.server.store.jdbc.bonecp;
 
 import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
-import org.apache.qpid.server.util.MapValueConverter;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -42,17 +42,38 @@ public class BoneCPConnectionProvider implements ConnectionProvider
 
     private final BoneCP _connectionPool;
 
-    public BoneCPConnectionProvider(String connectionUrl, Map<String, Object> storeSettings) throws SQLException
+    public BoneCPConnectionProvider(String connectionUrl, ConfiguredObject<?> storeSettings) throws SQLException
     {
         // TODO change interface to pass through username and password
         BoneCPConfig config = new BoneCPConfig();
         config.setJdbcUrl(connectionUrl);
-        config.setMinConnectionsPerPartition(MapValueConverter.getIntegerAttribute(MIN_CONNECTIONS_PER_PARTITION, storeSettings, DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
-        config.setMaxConnectionsPerPartition(MapValueConverter.getIntegerAttribute(MAX_CONNECTIONS_PER_PARTITION, storeSettings, DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
-        config.setPartitionCount(MapValueConverter.getIntegerAttribute(PARTITION_COUNT, storeSettings, DEFAULT_PARTITION_COUNT));
+        Map<String, String> context =  storeSettings.getContext();
+
+        config.setMinConnectionsPerPartition(getContextValueAsInt(MIN_CONNECTIONS_PER_PARTITION, context, DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
+        config.setMaxConnectionsPerPartition(getContextValueAsInt(MAX_CONNECTIONS_PER_PARTITION, context, DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
+        config.setPartitionCount(getContextValueAsInt(PARTITION_COUNT, context, DEFAULT_PARTITION_COUNT));
+
         _connectionPool = new BoneCP(config);
     }
 
+    private int getContextValueAsInt(String key, Map<String, String> context, int defaultValue)
+    {
+        if (context.containsKey(key))
+        {
+            try
+            {
+                return Integer.parseInt(context.get(key));
+            }
+            catch (NumberFormatException e)
+            {
+               return defaultValue;
+            }
+        }
+        else
+        {
+            return defaultValue;
+        }
+    }
     @Override
     public Connection getConnection() throws SQLException
     {

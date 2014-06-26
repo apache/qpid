@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,30 +15,17 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.store.jdbc;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
-import org.apache.qpid.server.plugin.PluggableService;
+package org.apache.qpid.server.virtualhostnode;
 
-@PluggableService
-public class DefaultConnectionProviderFactory implements JDBCConnectionProviderFactory
+import org.apache.qpid.server.model.ManagedAttribute;
+
+public interface JsonVirtualHostNode<X extends JsonVirtualHostNode<X>> extends org.apache.qpid.server.model.VirtualHostNode<X>, org.apache.qpid.server.store.FileBasedSettings
 {
 
-    public static final String TYPE = "DEFAULT";
+    String STORE_PATH = "storePath";
 
-    @Override
-    public String getType()
-    {
-        return TYPE;
-    }
-
-    @Override
-    public ConnectionProvider getConnectionProvider(ConfiguredObject<?> parent, String connectionUrl)
-    {
-        return new DefaultConnectionProvider(connectionUrl);
-    }
-
+    @ManagedAttribute(mandatory = true)
+    String getStorePath();
 }

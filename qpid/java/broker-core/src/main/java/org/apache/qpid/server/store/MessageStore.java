@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Map;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
@@ -33,22 +32,16 @@ import org.apache.qpid.server.store.handler.MessageInstanceHandler;
  */
 public interface MessageStore
 {
-    String STORE_TYPE                           = "storeType";
-    String STORE_PATH                           = "storePath";
-    String UNDERFULL_SIZE                       = "storeUnderfullSize";
-    String OVERFULL_SIZE                        = "storeOverfullSize";
-
     String getStoreLocation();
 
     void addEventListener(EventListener eventListener, Event... events);
 
     /**
      * Initializes and opens the message store.
+     *  @param parent parent object
      *
-     * @param parent parent object
-     * @param messageStoreSettings store settings
      */
-    void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> messageStoreSettings);
+    void openMessageStore(ConfiguredObject<?> parent);
 
     /**
      * Requests that the store performs any upgrade work on the store's structure. If there is no

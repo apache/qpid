@@ -41,6 +41,11 @@ public class MemoryVirtualHostNode extends AbstractStandardVirtualHostNode<Memor
     }
 
     @Override
+    protected void writeLocationEventLog()
+    {
+    }
+
+    @Override
     protected DurableConfigurationStore createConfigurationStore()
     {
         return new MemoryConfigurationStore();

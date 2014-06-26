@@ -20,19 +20,7 @@
  */
 package org.apache.qpid.server.virtualhostnode;
 
-import java.security.AccessControlException;
-import java.security.PrivilegedAction;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
@@ -40,17 +28,20 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreProvider;
+
+import java.security.AccessControlException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<X>> extends AbstractConfiguredObject<X> implements VirtualHostNode<X>
 {
@@ -161,26 +152,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     protected MessageStoreLogSubject getConfigurationStoreLogSubject()
     {
         return _configurationStoreLogSubject;
-    }
-
-    protected Map<String, Object> buildAttributesForStore()
-    {
-        final Map<String, Object> attributes = new HashMap<String, Object>();
-        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
-        {
-            @Override
-            public Object run()
-            {
-                for (String attributeName : getAttributeNames())
-                {
-                    Object value = getAttribute(attributeName);
-                    attributes.put(attributeName, value);
-                }
-                return null;
-            }
-        });
-
-        return attributes;
     }
 
     @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )

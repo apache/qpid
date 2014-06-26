@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,55 +15,20 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
+
 package org.apache.qpid.server.virtualhost;
 
-import java.util.Map;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.queue.AMQQueue;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreProvider;
-
-@ManagedObject(category = false, type = ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE)
-public class ProvidedStoreVirtualHost extends AbstractVirtualHost<ProvidedStoreVirtualHost>
+public interface ProvidedStoreVirtualHost<X extends ProvidedStoreVirtualHost<X>> extends VirtualHostImpl<X,AMQQueue<?>,ExchangeImpl<?>>, org.apache.qpid.server.store.SizeMonitorSettings
 {
-    public static final String VIRTUAL_HOST_TYPE = "ProvidedStore";
+    @ManagedAttribute(mandatory = true, defaultValue = "0")
+    Long getStoreUnderfullSize();
 
-    @ManagedObjectFactoryConstructor
-    public ProvidedStoreVirtualHost(final Map<String, Object> attributes,
-                                    final VirtualHostNode<?> virtualHostNode)
-    {
-        super(attributes, virtualHostNode);
-    }
+    @ManagedAttribute(mandatory = true, defaultValue = "0")
+    Long getStoreOverfullSize();
 
-    @Override
-    public void onValidate()
-    {
-        super.onValidate();
-
-        VirtualHostNode<?> virtualHostNode = getParent(VirtualHostNode.class);
-        DurableConfigurationStore configurationStore = virtualHostNode.getConfigurationStore();
-        if (!(configurationStore instanceof MessageStoreProvider))
-        {
-            throw new IllegalConfigurationException(VIRTUAL_HOST_TYPE +
-                                                    " virtual host can only be used where the node's store ("
-                                                    + configurationStore.getClass().getName()
-                                                    + ") is a message store provider. ");
-        }
-    }
-
-    @Override
-    protected MessageStore createMessageStore()
-    {
-        VirtualHostNode<?> virtualHostNode = getParent(VirtualHostNode.class);
-        MessageStoreProvider messageStoreProvider = (MessageStoreProvider) virtualHostNode.getConfigurationStore();
-        return messageStoreProvider.getMessageStore();
-    }
 }
-
-

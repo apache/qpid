@@ -24,12 +24,11 @@ package org.apache.qpid.server.store.derby;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.FileBasedSettings;
 import org.apache.qpid.server.store.StoreException;
 
 /**
@@ -43,13 +42,12 @@ public class DerbyMessageStore extends AbstractDerbyMessageStore
     private String _storeLocation;
 
     @Override
-    protected void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+    protected void doOpen(final ConfiguredObject<?> parent)
     {
-        String databasePath = (String) messageStoreSettings.get(MessageStore.STORE_PATH);
-        String name = parent.getName();
+        final FileBasedSettings settings = (FileBasedSettings)parent;
+        _storeLocation = settings.getStorePath();
 
-        _storeLocation = databasePath;
-        _connectionURL = DerbyUtils.createConnectionUrl(name, databasePath);
+        _connectionURL = DerbyUtils.createConnectionUrl(parent.getName(), _storeLocation);
     }
 
     @Override

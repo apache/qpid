@@ -24,7 +24,6 @@ import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
@@ -43,9 +42,6 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
 
     private static final Logger LOGGER = Logger.getLogger(GenericJDBCConfigurationStore.class);
 
-    public static final String CONNECTION_URL = "connectionUrl";
-    public static final String CONNECTION_POOL_TYPE = "connectionPoolType";
-
     private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
     private final MessageStore _providedMessageStore = new ProvidedMessageStore();
 
@@ -60,14 +56,15 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
     private ConfiguredObject<?> _parent;
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent)
             throws StoreException
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
         {
             _parent = parent;
-            _connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
-            Object poolAttribute = storeSettings.get(CONNECTION_POOL_TYPE);
+
+            JDBCSettings settings = (JDBCSettings)parent;
+            _connectionURL = settings.getConnectionUrl();
 
             JDBCDetails details = JDBCDetails.getDetailsForJdbcUrl(_connectionURL, parent.getContext());
 
@@ -82,7 +79,7 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
                                +  " Using settings : " + details);
             }
 
-            String connectionPoolType = poolAttribute == null ? DefaultConnectionProviderFactory.TYPE : String.valueOf(poolAttribute);
+            String connectionPoolType = settings.getConnectionPoolType() == null ? DefaultConnectionProviderFactory.TYPE : settings.getConnectionPoolType();
 
             JDBCConnectionProviderFactory connectionProviderFactory =
                     JDBCConnectionProviderFactory.FACTORIES.get(connectionPoolType);
@@ -96,7 +93,7 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
 
             try
             {
-                _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL, storeSettings);
+                _connectionProvider = connectionProviderFactory.getConnectionProvider(parent, _connectionURL);
             }
             catch (SQLException e)
             {
@@ -218,7 +215,7 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
     private class ProvidedMessageStore extends GenericAbstractJDBCMessageStore
     {
         @Override
-        protected void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+        protected void doOpen(final ConfiguredObject<?> parent)
         {
             // Nothing to do, store provided by DerbyConfigurationStore
         }

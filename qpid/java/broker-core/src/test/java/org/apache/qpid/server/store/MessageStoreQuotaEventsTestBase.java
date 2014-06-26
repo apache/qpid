@@ -21,7 +21,6 @@
 package org.apache.qpid.server.store;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -33,6 +32,7 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 
@@ -49,8 +49,6 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     private UUID _transactionResource;
 
     protected abstract MessageStore createStore() throws Exception;
-    protected abstract Map<String, Object> createStoreSettings(String storeLocation);
-    protected abstract Map<String, String> createContextSettings();
     protected abstract int getNumberOfMessagesToFillStore();
 
     @Override
@@ -61,22 +59,18 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         _storeLocation = new File(new File(TMP_FOLDER), getTestName());
         FileUtils.delete(_storeLocation, true);
 
-
-        Map<String, Object> storeSettings = createStoreSettings(_storeLocation.getAbsolutePath());
-
         _store = createStore();
 
-        ConfiguredObject<?> parent = mock(ConfiguredObject.class);
-        when(parent.getName()).thenReturn("test");
-        when(parent.getContext()).thenReturn(createContextSettings());
+        ConfiguredObject<?> parent = createVirtualHost(_storeLocation.getAbsolutePath());
 
-        _store.openMessageStore(parent, storeSettings);
+        _store.openMessageStore(parent);
 
         _transactionResource = UUID.randomUUID();
         _events = new ArrayList<Event>();
         _store.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
     }
 
+    protected abstract VirtualHost createVirtualHost(String storeLocation);
 
     @Override
     public void tearDown() throws Exception

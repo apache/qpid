@@ -20,16 +20,19 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Collections;
-import java.util.Map;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
+
+import static org.mockito.Mockito.mock;
 
 public class MemoryMessageStoreTest extends MessageStoreTestCase
 {
 
     @Override
-    protected Map<String, Object> getStoreSettings() throws Exception
+    protected VirtualHost createVirtualHost()
     {
-        return Collections.<String, Object>emptyMap();
+        final TestMemoryVirtualHost parent = mock(TestMemoryVirtualHost.class);
+        return parent;
     }
 
     @Override

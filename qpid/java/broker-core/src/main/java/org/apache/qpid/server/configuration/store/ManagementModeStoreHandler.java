@@ -73,11 +73,11 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     }
 
     @Override
-    public void openConfigurationStore(final ConfiguredObject<?> parent, final Map<String, Object> storeSettings)
+    public void openConfigurationStore(final ConfiguredObject<?> parent)
             throws StoreException
     {
         _parent = parent;
-        _store.openConfigurationStore(parent,storeSettings);
+        _store.openConfigurationStore(parent);
 
 
         _records = new HashMap<UUID, ConfiguredObjectRecord>();

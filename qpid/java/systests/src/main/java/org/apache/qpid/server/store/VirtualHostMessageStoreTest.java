@@ -74,8 +74,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -138,7 +137,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         ConfiguredObjectFactory factory = broker.getObjectFactory();
         Map<String, Object> nodeAttributes = new HashMap<>();
         nodeAttributes.put(ConfiguredObject.TYPE, getTestProfileVirtualHostNodeType());
-        nodeAttributes.put(FileBasedVirtualHostNode.STORE_PATH, _storePath);
+        nodeAttributes.put(JsonVirtualHostNode.STORE_PATH, _storePath);
         nodeAttributes.put(VirtualHostNode.NAME, nodeName);
 
         _node = factory.create(VirtualHostNode.class, nodeAttributes, broker);

@@ -52,4 +52,8 @@ public class TestVirtualHostNode extends AbstractStandardVirtualHostNode<TestVir
         return _store;
     }
 
+    @Override
+    protected void writeLocationEventLog()
+    {
+    }
 }

@@ -68,10 +68,9 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MemoryConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.SystemUtils;
@@ -251,7 +250,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             configuration.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_JMX_PORT, Port.PORT, getManagementPort(actualPort) + JMXPORT_CONNECTORSERVER_OFFSET);
 
             String workDir = System.getProperty("QPID_WORK") + File.separator + TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST + File.separator + actualPort;
-            configuration.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, DurableConfigurationStore.STORE_PATH, workDir);
+            configuration.setObjectAttribute(VirtualHostNode.class, TestBrokerConfiguration.ENTRY_NAME_VIRTUAL_HOST, JsonVirtualHostNode.STORE_PATH, workDir);
         }
 
         return configuration;
@@ -869,9 +868,11 @@ public class QpidBrokerTestCase extends QpidTestCase
         attributes.put(VirtualHostNode.TYPE, storeType);
         if (storeDir != null)
         {
-            attributes.put(FileBasedVirtualHostNode.STORE_PATH, storeDir);
+            attributes.put(JsonVirtualHostNode.STORE_PATH, storeDir);
         }
+
         final String blueprint = getTestProfileVirtualHostNodeBlueprint();
+
         attributes.put(ConfiguredObject.CONTEXT, Collections.singletonMap(AbstractStandardVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
                                                                           blueprint));
 

@@ -22,6 +22,7 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
 import java.util.Map;
 
+import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
@@ -42,6 +43,12 @@ public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBV
     public BDBVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
     {
         super(attributes, parent);
+    }
+
+    @Override
+    protected void writeLocationEventLog()
+    {
+        getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.STORE_LOCATION(getStorePath()));
     }
 
     @Override

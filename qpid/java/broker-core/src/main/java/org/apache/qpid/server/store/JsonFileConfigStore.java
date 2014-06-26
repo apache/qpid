@@ -55,9 +55,6 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public class JsonFileConfigStore implements DurableConfigurationStore
 {
-
-    public static final String TYPE = "JSON";
-
     private final Map<UUID, ConfiguredObjectRecord> _objectsById = new HashMap<UUID, ConfiguredObjectRecord>();
     private final Map<String, List<UUID>> _idsByType = new HashMap<String, List<UUID>>();
     private final ObjectMapper _objectMapper = new ObjectMapper();
@@ -112,12 +109,13 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent)
     {
         _parent = parent;
         _name = parent.getName();
         _classNameMapping = generateClassNameMap(_parent.getModel(), _rootClass);
-        setup(storeSettings);
+        FileBasedSettings fileBasedSettings = (FileBasedSettings)_parent;
+        setup(fileBasedSettings);
         load();
     }
 
@@ -138,14 +136,13 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
 
-    private void setup(final Map<String, Object> configurationStoreSettings)
+    private void setup(final FileBasedSettings configurationStoreSettings)
     {
-        Object storePathAttr = configurationStoreSettings.get(DurableConfigurationStore.STORE_PATH);
-        if(!(storePathAttr instanceof String))
+        if(configurationStoreSettings.getStorePath() == null)
         {
             throw new StoreException("Cannot determine path for configuration storage");
         }
-        _directoryName = (String) storePathAttr;
+        _directoryName = configurationStoreSettings.getStorePath();
         _configFileName = _name + ".json";
         _backupFileName = _name + ".bak";
         checkDirectoryIsWritable(_directoryName);

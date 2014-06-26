@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,17 +15,12 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.virtualhostnode;
 
-import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.MessageStore;
+package org.apache.qpid.server.store;
 
-@ManagedObject( category = false )
-public interface MessageStoreProvidingVirtualHostNode<X extends MessageStoreProvidingVirtualHostNode<X>>
-        extends VirtualHostNode<X>
+public interface SizeMonitorSettings extends Settings
 {
-    MessageStore getProvidedMessageStore();
+    public Long getStoreUnderfullSize();
+    public Long getStoreOverfullSize();
 }

@@ -30,10 +30,11 @@ import java.util.Map;
 import javax.jms.Session;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 
+import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHostImpl;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
@@ -43,7 +44,7 @@ import org.apache.qpid.server.queue.LastValueQueue;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.SortedQueue;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
-import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
+
 import org.apache.qpid.util.FileUtils;
 
 public class VirtualHostRestTest extends QpidRestTestCase
@@ -534,13 +535,13 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Map<String, Object> nodeData = new HashMap<>();
         nodeData.put(VirtualHostNode.NAME, virtualHostName);
         nodeData.put(VirtualHostNode.TYPE, virtualHostNodeType);
-        nodeData.put(FileBasedVirtualHostNode.STORE_PATH, storePath);
+        nodeData.put(JsonVirtualHostNode.STORE_PATH, storePath);
 
         getRestTestHelper().submitRequest("virtualhostnode/" + virtualHostName, "PUT", nodeData, HttpServletResponse.SC_CREATED);
 
         Map<String, Object> virtualhostData = new HashMap<>();
         virtualhostData.put(VirtualHost.NAME, virtualHostName);
-        virtualhostData.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
+        virtualhostData.put(VirtualHost.TYPE, ProvidedStoreVirtualHostImpl.VIRTUAL_HOST_TYPE);
 
         getRestTestHelper().submitRequest("virtualhost/" + virtualHostName + "/" + virtualHostName,
                                           "PUT",

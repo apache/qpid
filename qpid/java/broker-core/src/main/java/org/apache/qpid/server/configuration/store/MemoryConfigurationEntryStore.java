@@ -141,7 +141,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
                 }
             };
 
-            initialStore.openConfigurationStore(parentObject, Collections.<String,Object>emptyMap());
+            initialStore.openConfigurationStore(parentObject);
             initialStore.visitConfiguredObjectRecords(replayHandler);
 
             update(true, records.toArray(new ConfiguredObjectRecord[records.size()]));
@@ -344,7 +344,7 @@ public class MemoryConfigurationEntryStore implements ConfigurationEntryStore
     }
 
     @Override
-    public void openConfigurationStore(final ConfiguredObject<?> parent, final Map<String, Object> storeSettings)
+    public void openConfigurationStore(final ConfiguredObject<?> parent)
             throws StoreException
     {
         _parent = parent;

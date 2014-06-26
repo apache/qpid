@@ -25,15 +25,12 @@ import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.util.MapValueConverter;
 
 /**
  * Implementation of a MessageStore backed by a Generic JDBC Database.
@@ -42,9 +39,6 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
 {
 
     private static final Logger _logger = Logger.getLogger(GenericJDBCMessageStore.class);
-
-    public static final String CONNECTION_URL = "connectionUrl";
-    public static final String CONNECTION_POOL_TYPE = "connectionPoolType";
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;
@@ -55,9 +49,10 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
     private boolean _useBytesMethodsForBlob;
 
     @Override
-    protected void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> storeSettings) throws StoreException
+    protected void doOpen(final ConfiguredObject<?> parent) throws StoreException
     {
-        _connectionURL = String.valueOf(storeSettings.get(CONNECTION_URL));
+        JDBCSettings settings = (JDBCSettings)parent;
+        _connectionURL = settings.getConnectionUrl();
 
         JDBCDetails details = JDBCDetails.getDetailsForJdbcUrl(_connectionURL, parent.getContext());
 
@@ -77,9 +72,7 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
         _useBytesMethodsForBlob = details.isUseBytesMethodsForBlob();
         _bigIntType = details.getBigintType();
 
-
-        Object poolAttribute = storeSettings.get(CONNECTION_POOL_TYPE);
-        String connectionPoolType = poolAttribute == null ? DefaultConnectionProviderFactory.TYPE : String.valueOf(poolAttribute);
+        String connectionPoolType = settings.getConnectionPoolType() == null ? DefaultConnectionProviderFactory.TYPE : settings.getConnectionPoolType();
 
         JDBCConnectionProviderFactory connectionProviderFactory =
                 JDBCConnectionProviderFactory.FACTORIES.get(connectionPoolType);
@@ -92,7 +85,7 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
         try
         {
             // TODO: Pass parent to the connenction provider?
-            _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL, storeSettings);
+            _connectionProvider = connectionProviderFactory.getConnectionProvider(parent, _connectionURL);
         }
         catch (SQLException e)
         {

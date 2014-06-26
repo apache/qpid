@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,36 +15,25 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
+
 package org.apache.qpid.server.virtualhost.derby;
 
-import java.util.Map;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.derby.DerbyMessageStore;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
-
-@ManagedObject(category = false, type = DerbyVirtualHost.VIRTUAL_HOST_TYPE)
-public class DerbyVirtualHost extends AbstractVirtualHost<DerbyVirtualHost>
+public interface DerbyVirtualHost<X extends DerbyVirtualHost<X>> extends VirtualHostImpl<X,AMQQueue<?>,ExchangeImpl<?>>, org.apache.qpid.server.store.FileBasedSettings, org.apache.qpid.server.store.SizeMonitorSettings
 {
-    public static final String VIRTUAL_HOST_TYPE = "DERBY";
+    String STORE_PATH = "storePath";
 
-    @ManagedObjectFactoryConstructor
-    public DerbyVirtualHost(final Map<String, Object> attributes,
-                            final VirtualHostNode<?> virtualHostNode)
-    {
-        super(attributes, virtualHostNode);
-    }
+    @ManagedAttribute(mandatory = true)
+    String getStorePath();
 
+    @ManagedAttribute(mandatory = true, defaultValue = "0")
+    Long getStoreUnderfullSize();
 
-    @Override
-    protected MessageStore createMessageStore()
-    {
-        return new DerbyMessageStore();
-    }
-
+    @ManagedAttribute(mandatory = true, defaultValue = "0")
+    Long getStoreOverfullSize();
 }

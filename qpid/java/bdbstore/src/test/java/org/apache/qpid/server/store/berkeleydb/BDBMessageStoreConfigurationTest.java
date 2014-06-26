@@ -20,11 +20,25 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.AbstractDurableConfigurationStoreTestCase;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBVirtualHostNode;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BDBMessageStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
+    @Override
+    protected VirtualHostNode createVirtualHostNode(String storeLocation, ConfiguredObjectFactory factory)
+    {
+        final BDBVirtualHostNode parent = mock(BDBVirtualHostNode.class);
+        when(parent.getStorePath()).thenReturn(storeLocation);
+        return parent;
+    }
+
     @Override
     protected DurableConfigurationStore createConfigStore() throws Exception
     {

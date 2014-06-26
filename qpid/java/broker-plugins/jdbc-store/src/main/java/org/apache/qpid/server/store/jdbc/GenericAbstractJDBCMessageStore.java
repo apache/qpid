@@ -20,7 +20,6 @@ package org.apache.qpid.server.store.jdbc;
 
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,20 +36,20 @@ public abstract class GenericAbstractJDBCMessageStore extends org.apache.qpid.se
     private ConfiguredObject<?> _parent;
 
     @Override
-    public final void openMessageStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    public final void openMessageStore(ConfiguredObject<?> parent)
     {
         if (_messageStoreOpen.compareAndSet(false, true))
         {
             _parent = parent;
 
-            doOpen(parent, storeSettings);
+            doOpen(parent);
 
             createOrOpenMessageStoreDatabase();
             setMaximumMessageId();
         }
     }
 
-    protected abstract void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> storeSettings)
+    protected abstract void doOpen(final ConfiguredObject<?> parent)
             throws StoreException;
 
     @Override

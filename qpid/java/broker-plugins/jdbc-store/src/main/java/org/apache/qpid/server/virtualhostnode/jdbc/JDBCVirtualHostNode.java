@@ -23,8 +23,9 @@ package org.apache.qpid.server.virtualhostnode.jdbc;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.jdbc.DefaultConnectionProviderFactory;
+import org.apache.qpid.server.store.jdbc.JDBCSettings;
 
-public interface JDBCVirtualHostNode<X extends JDBCVirtualHostNode<X>> extends VirtualHostNode<X>
+public interface JDBCVirtualHostNode<X extends JDBCVirtualHostNode<X>> extends VirtualHostNode<X>, JDBCSettings
 {
     //TODO: Split this attribute into connectionUrl, username and password. Make the password attribute secure.
     @ManagedAttribute(mandatory=true)
@@ -33,4 +34,5 @@ public interface JDBCVirtualHostNode<X extends JDBCVirtualHostNode<X>> extends V
     @ManagedAttribute(defaultValue=DefaultConnectionProviderFactory.TYPE)
     String getConnectionPoolType();
 
+    //add username and passwd managed attrs
 }

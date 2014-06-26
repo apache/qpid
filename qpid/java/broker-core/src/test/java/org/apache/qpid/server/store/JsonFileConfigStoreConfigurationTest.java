@@ -20,8 +20,27 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class JsonFileConfigStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
+    @Override
+    protected VirtualHostNode createVirtualHostNode(String storeLocation, ConfiguredObjectFactory factory)
+    {
+        final JsonVirtualHostNode parent = mock(JsonVirtualHostNode.class);
+        when(parent.getStorePath()).thenReturn(storeLocation);
+        when(parent.getName()).thenReturn("testName");
+        when(parent.getObjectFactory()).thenReturn(factory);
+        when(parent.getModel()).thenReturn(factory.getModel());
+
+        return parent;
+    }
+
     @Override
     protected DurableConfigurationStore createConfigStore() throws Exception
     {

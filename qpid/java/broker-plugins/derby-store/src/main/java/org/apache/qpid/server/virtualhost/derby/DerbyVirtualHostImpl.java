@@ -18,56 +18,61 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhostnode.jdbc;
+package org.apache.qpid.server.virtualhost.derby;
 
-import java.util.Map;
-
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.jdbc.GenericJDBCConfigurationStore;
-import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
+import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.derby.DerbyMessageStore;
+import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
-@ManagedObject(type = JDBCVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false )
-public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDBCVirtualHostNodeImpl> implements JDBCVirtualHostNode<JDBCVirtualHostNodeImpl>
+import java.util.Map;
+
+@ManagedObject(category = false, type = DerbyVirtualHostImpl.VIRTUAL_HOST_TYPE)
+public class DerbyVirtualHostImpl extends AbstractVirtualHost<DerbyVirtualHostImpl> implements DerbyVirtualHost<DerbyVirtualHostImpl>
 {
-    public static final String VIRTUAL_HOST_NODE_TYPE = "JDBC";
+    public static final String VIRTUAL_HOST_TYPE = "DERBY";
 
     @ManagedAttributeField
-    private String _connectionUrl;
+    private String _storePath;
 
     @ManagedAttributeField
-    private String _connectionPoolType;
+    private Long _storeUnderfullSize;
+
+    @ManagedAttributeField
+    private Long _storeOverfullSize;
 
     @ManagedObjectFactoryConstructor
-    public JDBCVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
+    public DerbyVirtualHostImpl(final Map<String, Object> attributes,
+                                final VirtualHostNode<?> virtualHostNode)
     {
-        super(attributes, parent);
+        super(attributes, virtualHostNode);
+    }
+
+
+    @Override
+    protected MessageStore createMessageStore()
+    {
+        return new DerbyMessageStore();
     }
 
     @Override
-    protected void writeLocationEventLog()
+    public String getStorePath()
     {
+        return _storePath;
     }
 
     @Override
-    protected DurableConfigurationStore createConfigurationStore()
+    public Long getStoreUnderfullSize()
     {
-        return new GenericJDBCConfigurationStore();
+        return _storeUnderfullSize;
     }
 
     @Override
-    public String getConnectionUrl()
+    public Long getStoreOverfullSize()
     {
-        return _connectionUrl;
+        return _storeOverfullSize;
     }
-
-    @Override
-    public String getConnectionPoolType()
-    {
-        return _connectionPoolType;
-    }
-
 }

@@ -25,21 +25,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.store.AbstractJDBCConfigurationStore;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MessageStoreProvider;
-import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.*;
 
 /**
  * Implementation of a DurableConfigurationStore backed by Apache Derby
- * that also provides a MessageStore.
+ * that also provides a MessageStore.A
  */
 public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
         implements MessageStoreProvider, DurableConfigurationStore
@@ -55,7 +50,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     private ConfiguredObject<?> _parent;
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent, Map<String, Object> storeSettings)
+    public void openConfigurationStore(ConfiguredObject<?> parent)
             throws StoreException
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
@@ -63,10 +58,9 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
             _parent = parent;
             DerbyUtils.loadDerbyDriver();
 
-            String databasePath =  (String) storeSettings.get(MessageStore.STORE_PATH);
-
-            _storeLocation = databasePath;
-            _connectionURL = DerbyUtils.createConnectionUrl(parent.getName(), databasePath);
+            final FileBasedSettings settings = (FileBasedSettings)parent;
+            _storeLocation = settings.getStorePath();
+            _connectionURL = DerbyUtils.createConnectionUrl(parent.getName(), _storeLocation);
 
             createOrOpenConfigurationStoreDatabase();
         }
@@ -188,7 +182,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     private class ProvidedMessageStore extends AbstractDerbyMessageStore
     {
         @Override
-        protected void doOpen(final ConfiguredObject<?> parent, final Map<String, Object> messageStoreSettings)
+        protected void doOpen(final ConfiguredObject<?> parent)
         {
             // Nothing to do, store provided by DerbyConfigurationStore
         }

@@ -21,8 +21,8 @@
 package org.apache.qpid.server.store.jdbc.bonecp;
 
 import java.sql.SQLException;
-import java.util.Map;
 
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
@@ -36,9 +36,9 @@ public class BoneCPConnectionProviderFactory implements JDBCConnectionProviderFa
         return "BONECP";
     }
 
-    public ConnectionProvider getConnectionProvider(String connectionUrl, Map<String, Object> storeSettings)
+    public ConnectionProvider getConnectionProvider(ConfiguredObject<?> parent, String connectionUrl)
             throws SQLException
     {
-        return new BoneCPConnectionProvider(connectionUrl, storeSettings);
+        return new BoneCPConnectionProvider(connectionUrl, parent);
     }
 }
