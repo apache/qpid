@@ -98,6 +98,7 @@
     <module>broker-plugins/websocket</module>
     <module>common</module>
     <module>client</module>
+    <module>client/example</module>
     <module>management/common</module>
     <module>jca</module>
     <module>jca/rar</module>
