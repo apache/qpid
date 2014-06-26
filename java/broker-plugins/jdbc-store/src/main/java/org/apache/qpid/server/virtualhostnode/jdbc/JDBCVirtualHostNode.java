@@ -27,12 +27,15 @@ import org.apache.qpid.server.store.jdbc.JDBCSettings;
 
 public interface JDBCVirtualHostNode<X extends JDBCVirtualHostNode<X>> extends VirtualHostNode<X>, JDBCSettings
 {
-    //TODO: Split this attribute into connectionUrl, username and password. Make the password attribute secure.
     @ManagedAttribute(mandatory=true)
     String getConnectionUrl();
 
     @ManagedAttribute(defaultValue=DefaultConnectionProviderFactory.TYPE)
     String getConnectionPoolType();
 
-    //add username and passwd managed attrs
+    @ManagedAttribute
+    String getUsername();
+
+    @ManagedAttribute(secure=true)
+    String getPassword();
 }

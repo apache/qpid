@@ -70,6 +70,8 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
 
         final JDBCVirtualHost jdbcVirtualHost = mock(JDBCVirtualHost.class);
         when(jdbcVirtualHost.getConnectionUrl()).thenReturn(_connectionURL);
+        when(jdbcVirtualHost.getUsername()).thenReturn("test");
+        when(jdbcVirtualHost.getPassword()).thenReturn("pass");
         return jdbcVirtualHost;
     }
 

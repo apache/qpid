@@ -20,14 +20,16 @@
  */
 package org.apache.qpid.server.store.jdbc;
 
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.plugin.PluggableService;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 @PluggableService
 public class DefaultConnectionProviderFactory implements JDBCConnectionProviderFactory
 {
-
     public static final String TYPE = "DEFAULT";
 
     @Override
@@ -37,9 +39,15 @@ public class DefaultConnectionProviderFactory implements JDBCConnectionProviderF
     }
 
     @Override
-    public ConnectionProvider getConnectionProvider(ConfiguredObject<?> parent, String connectionUrl)
+    public ConnectionProvider getConnectionProvider(String connectionUrl, String username, String password, Map<String, String> providerAttributes)
     {
-        return new DefaultConnectionProvider(connectionUrl);
+        return new DefaultConnectionProvider(connectionUrl, username, password);
+    }
+
+    @Override
+    public Set<String> getProviderAttributeNames()
+    {
+        return Collections.emptySet();
     }
 
 }

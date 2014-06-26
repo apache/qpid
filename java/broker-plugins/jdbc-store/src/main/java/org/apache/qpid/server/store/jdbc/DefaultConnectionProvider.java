@@ -27,16 +27,27 @@ import java.sql.SQLException;
 class DefaultConnectionProvider implements ConnectionProvider
 {
     private final String _connectionUrl;
+    private final String _username;
+    private final String _password;
 
-    public DefaultConnectionProvider(String connectionUrl)
+    public DefaultConnectionProvider(String connectionUrl, String username, String password)
     {
         _connectionUrl = connectionUrl;
+        _username = username;
+        _password = password;
     }
 
     @Override
     public Connection getConnection() throws SQLException
     {
-        return DriverManager.getConnection(_connectionUrl);
+        if (_username == null)
+        {
+            return DriverManager.getConnection(_connectionUrl);
+        }
+        else
+        {
+            return DriverManager.getConnection(_connectionUrl, _username, _password);
+        }
     }
 
     @Override

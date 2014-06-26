@@ -41,6 +41,12 @@ public class JDBCVirtualHostImpl extends AbstractVirtualHost<JDBCVirtualHostImpl
     @ManagedAttributeField
     private String _connectionPoolType;
 
+    @ManagedAttributeField
+    private String _username;
+
+    @ManagedAttributeField
+    private String _password;
+
     @ManagedObjectFactoryConstructor
     public JDBCVirtualHostImpl(final Map<String, Object> attributes,
                                final VirtualHostNode<?> virtualHostNode)
@@ -64,5 +70,26 @@ public class JDBCVirtualHostImpl extends AbstractVirtualHost<JDBCVirtualHostImpl
     public String getConnectionPoolType()
     {
         return _connectionPoolType;
+    }
+
+    @Override
+    public String getUsername()
+    {
+        return _username;
+    }
+
+    @Override
+    public String getPassword()
+    {
+        return _password;
+    }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() +
+                                           ", connectionUrl=" + getConnectionUrl() +
+                                           ", connectionPoolType=" + getConnectionPoolType() +
+                                           ", username=" + getUsername() + "]";
     }
 }

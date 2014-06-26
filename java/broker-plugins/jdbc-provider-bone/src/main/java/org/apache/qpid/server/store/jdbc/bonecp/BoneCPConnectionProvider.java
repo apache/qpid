@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.server.store.jdbc.bonecp;
 
+import static org.apache.qpid.server.store.jdbc.bonecp.BoneCPConnectionProviderFactory.MAX_CONNECTIONS_PER_PARTITION;
+import static org.apache.qpid.server.store.jdbc.bonecp.BoneCPConnectionProviderFactory.MIN_CONNECTIONS_PER_PARTITION;
+import static org.apache.qpid.server.store.jdbc.bonecp.BoneCPConnectionProviderFactory.PARTITION_COUNT;
+
 import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 
 import java.sql.Connection;
@@ -31,32 +34,30 @@ import java.util.Map;
 
 public class BoneCPConnectionProvider implements ConnectionProvider
 {
-    public static final String PARTITION_COUNT = "qpid.jdbcstore.bonecp.partitionCount";
-    public static final String MAX_CONNECTIONS_PER_PARTITION = "qpid.jdbcstore.bonecp.maxConnectionsPerPartition";
-    public static final String MIN_CONNECTIONS_PER_PARTITION = "qpid.jdbcstore.bonecp.minConnectionsPerPartition";
-
-
     public static final int DEFAULT_MIN_CONNECTIONS_PER_PARTITION = 5;
     public static final int DEFAULT_MAX_CONNECTIONS_PER_PARTITION = 10;
     public static final int DEFAULT_PARTITION_COUNT = 4;
 
     private final BoneCP _connectionPool;
 
-    public BoneCPConnectionProvider(String connectionUrl, ConfiguredObject<?> storeSettings) throws SQLException
+    public BoneCPConnectionProvider(String connectionUrl, String username, String password, Map<String, String> providerAttributes) throws SQLException
     {
-        // TODO change interface to pass through username and password
         BoneCPConfig config = new BoneCPConfig();
         config.setJdbcUrl(connectionUrl);
-        Map<String, String> context =  storeSettings.getContext();
+        if (username != null)
+        {
+            config.setUsername(username);
+            config.setPassword(password);
+        }
 
-        config.setMinConnectionsPerPartition(getContextValueAsInt(MIN_CONNECTIONS_PER_PARTITION, context, DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
-        config.setMaxConnectionsPerPartition(getContextValueAsInt(MAX_CONNECTIONS_PER_PARTITION, context, DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
-        config.setPartitionCount(getContextValueAsInt(PARTITION_COUNT, context, DEFAULT_PARTITION_COUNT));
+        config.setMinConnectionsPerPartition(convertToIntWithDefault(MIN_CONNECTIONS_PER_PARTITION, providerAttributes, DEFAULT_MIN_CONNECTIONS_PER_PARTITION));
+        config.setMaxConnectionsPerPartition(convertToIntWithDefault(MAX_CONNECTIONS_PER_PARTITION, providerAttributes, DEFAULT_MAX_CONNECTIONS_PER_PARTITION));
+        config.setPartitionCount(convertToIntWithDefault(PARTITION_COUNT, providerAttributes, DEFAULT_PARTITION_COUNT));
 
         _connectionPool = new BoneCP(config);
     }
 
-    private int getContextValueAsInt(String key, Map<String, String> context, int defaultValue)
+    private int convertToIntWithDefault(String key, Map<String, String> context, int defaultValue)
     {
         if (context.containsKey(key))
         {
