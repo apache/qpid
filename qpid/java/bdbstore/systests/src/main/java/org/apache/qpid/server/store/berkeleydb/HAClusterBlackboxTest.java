@@ -53,7 +53,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
 
     private final HATestClusterCreator _clusterCreator = new HATestClusterCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
 
-    private FailoverAwaitingListener _failoverAwaitingListener;
+    private FailoverAwaitingListener _failoverListener;
     private ConnectionURL _brokerFailoverUrl;
 
     @Override
@@ -71,7 +71,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         _brokerFailoverUrl = _clusterCreator.getConnectionUrlForAllClusterNodes();
 
         _clusterCreator.startCluster();
-        _failoverAwaitingListener = new FailoverAwaitingListener();
+        _failoverListener = new FailoverAwaitingListener();
 
         super.setUp();
     }
@@ -86,14 +86,14 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
 
-        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+        ((AMQConnection)connection).setConnectionListener(_failoverListener);
 
         final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
         LOGGER.info("Active connection port " + activeBrokerPort);
 
         _clusterCreator.stopNode(activeBrokerPort);
         LOGGER.info("Node is stopped");
-        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        _failoverListener.awaitFailoverCompletion(20000);
         LOGGER.info("Listener has finished");
         // any op to ensure connection remains
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -105,7 +105,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         final Connection connection = getConnection(_brokerFailoverUrl);
         LOGGER.info("Got connection to cluster");
 
-        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+        ((AMQConnection)connection).setConnectionListener(_failoverListener);
         final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
         LOGGER.info("Active connection port " + activeBrokerPort);
         final int inactiveBrokerPort = _clusterCreator.getPortNumberOfAnInactiveBroker(connection);
@@ -114,7 +114,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
 
         _clusterCreator.stopNode(inactiveBrokerPort);
 
-        _failoverAwaitingListener.assertFailoverDoesNotOccur(2000);
+        _failoverListener.assertNoFailoverCompletionWithin(2000);
 
         // any op to ensure connection remains
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -124,7 +124,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
 
-        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+        ((AMQConnection)connection).setConnectionListener(_failoverListener);
 
         final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
         LOGGER.info("Active connection port " + activeBrokerPort);
@@ -133,14 +133,14 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         LOGGER.info("Update role attribute on inactive broker on port " + inactiveBrokerPort);
 
         Map<String, Object> attributes = _clusterCreator.getNodeAttributes(inactiveBrokerPort);
-        assertEquals("Inactive broker has unexpeced role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
+        assertEquals("Inactive broker has unexpected role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
         _clusterCreator.setNodeAttributes(inactiveBrokerPort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.ROLE, "MASTER"));
 
-        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        _failoverListener.awaitFailoverCompletion(20000);
         LOGGER.info("Listener has finished");
 
         attributes = _clusterCreator.getNodeAttributes(inactiveBrokerPort);
-        assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
+        assertEquals("Inactive broker has unexpected role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
 
         assertProducingConsuming(connection);
 
@@ -151,7 +151,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
 
-        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+        ((AMQConnection)connection).setConnectionListener(_failoverListener);
 
         final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
         LOGGER.info("Active connection port " + activeBrokerPort);
@@ -161,15 +161,15 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
 
         _clusterCreator.awaitNodeToAttainRole(activeBrokerPort, inactiveBrokerPort, "REPLICA");
         Map<String, Object> attributes = _clusterCreator.getNodeAttributes(activeBrokerPort, inactiveBrokerPort);
-        assertEquals("Inactive broker has unexpeced role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
+        assertEquals("Inactive broker has unexpected role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
 
         _clusterCreator.setNodeAttributes(activeBrokerPort, inactiveBrokerPort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.ROLE, "MASTER"));
 
-        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        _failoverListener.awaitFailoverCompletion(20000);
         LOGGER.info("Listener has finished");
 
         attributes = _clusterCreator.getNodeAttributes(inactiveBrokerPort);
-        assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
+        assertEquals("Inactive broker has unexpected role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
 
         assertProducingConsuming(connection);
 
@@ -180,27 +180,25 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
 
-        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+        ((AMQConnection)connection).setConnectionListener(_failoverListener);
 
         Set<Integer> ports = _clusterCreator.getBrokerPortNumbersForNodes();
-        Iterator<Integer> iterator = ports.iterator();
-        Integer quorumOverridePort = iterator.next();
-        iterator.remove();
 
+        final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
+        ports.remove(activeBrokerPort);
+
+        // Stop all other nodes
         for (Integer p : ports)
         {
             _clusterCreator.stopNode(p);
         }
 
-        Map<String, Object> attributes = _clusterCreator.getNodeAttributes(quorumOverridePort);
-        assertEquals("Broker has unexpeced quorum override", new Integer(0), attributes.get(BDBHAVirtualHostNode.QUORUM_OVERRIDE));
-        _clusterCreator.setNodeAttributes(quorumOverridePort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.QUORUM_OVERRIDE, 1));
+        Map<String, Object> attributes = _clusterCreator.getNodeAttributes(activeBrokerPort);
+        assertEquals("Broker has unexpected quorum override", new Integer(0), attributes.get(BDBHAVirtualHostNode.QUORUM_OVERRIDE));
+        _clusterCreator.setNodeAttributes(activeBrokerPort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.QUORUM_OVERRIDE, 1));
 
-        _failoverAwaitingListener.assertFailoverOccurs(20000);
-        LOGGER.info("Listener has finished");
-
-        attributes = _clusterCreator.getNodeAttributes(quorumOverridePort);
-        assertEquals("Broker has unexpeced quorum override", new Integer(1), attributes.get(BDBHAVirtualHostNode.QUORUM_OVERRIDE));
+        attributes = _clusterCreator.getNodeAttributes(activeBrokerPort);
+        assertEquals("Broker has unexpected quorum override", new Integer(1), attributes.get(BDBHAVirtualHostNode.QUORUM_OVERRIDE));
 
         assertProducingConsuming(connection);
     }
@@ -209,7 +207,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
     {
         final Connection connection = getConnection(_brokerFailoverUrl);
 
-        ((AMQConnection)connection).setConnectionListener(_failoverAwaitingListener);
+        ((AMQConnection)connection).setConnectionListener(_failoverListener);
 
         final int activeBrokerPort = _clusterCreator.getBrokerPortNumberFromConnection(connection);
         LOGGER.info("Active connection port " + activeBrokerPort);
@@ -225,7 +223,7 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
                 highestPriorityBrokerPort = port;
                 _clusterCreator.setNodeAttributes(port, port, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PRIORITY, priority));
                 Map<String, Object> attributes = _clusterCreator.getNodeAttributes(port, port);
-                assertEquals("Broker has unexpeced priority", priority, attributes.get(BDBHAVirtualHostNode.PRIORITY));
+                assertEquals("Broker has unexpected priority", priority, attributes.get(BDBHAVirtualHostNode.PRIORITY));
             }
         }
 
@@ -234,18 +232,18 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
         LOGGER.info("Shutting down the MASTER");
         _clusterCreator.stopNode(activeBrokerPort);
 
-        _failoverAwaitingListener.assertFailoverOccurs(20000);
+        _failoverListener.awaitFailoverCompletion(20000);
         LOGGER.info("Listener has finished");
 
         Map<String, Object> attributes = _clusterCreator.getNodeAttributes(highestPriorityBrokerPort, highestPriorityBrokerPort);
-        assertEquals("Inactive broker has unexpeced role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
+        assertEquals("Inactive broker has unexpected role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
 
         assertProducingConsuming(connection);
     }
 
     private final class FailoverAwaitingListener implements ConnectionListener
     {
-        private final CountDownLatch _failoverLatch = new CountDownLatch(1);
+        private final CountDownLatch _failoverCompletionLatch = new CountDownLatch(1);
 
         @Override
         public boolean preResubscribe()
@@ -259,25 +257,25 @@ public class HAClusterBlackboxTest extends QpidBrokerTestCase
             return true;
         }
 
-        public void assertFailoverOccurs(long delay) throws InterruptedException
+        public void awaitFailoverCompletion(long delay) throws InterruptedException
         {
-            if (!_failoverLatch.await(delay, TimeUnit.MILLISECONDS))
+            if (!_failoverCompletionLatch.await(delay, TimeUnit.MILLISECONDS))
             {
                 LOGGER.warn("Test thread dump:\n\n" + TestUtils.dumpThreads() + "\n");
             }
-            assertEquals("Failover did not occur", 0, _failoverLatch.getCount());
+            assertEquals("Failover did not occur", 0, _failoverCompletionLatch.getCount());
         }
 
-        public void assertFailoverDoesNotOccur(long delay) throws InterruptedException
+        public void assertNoFailoverCompletionWithin(long delay) throws InterruptedException
         {
-            _failoverLatch.await(delay, TimeUnit.MILLISECONDS);
-            assertEquals("Failover occurred unexpectedly", 1L, _failoverLatch.getCount());
+            _failoverCompletionLatch.await(delay, TimeUnit.MILLISECONDS);
+            assertEquals("Failover occurred unexpectedly", 1L, _failoverCompletionLatch.getCount());
         }
 
         @Override
         public void failoverComplete()
         {
-            _failoverLatch.countDown();
+            _failoverCompletionLatch.countDown();
         }
 
         @Override
