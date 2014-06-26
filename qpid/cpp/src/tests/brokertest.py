@@ -344,9 +344,11 @@ class Broker(Popen):
         @param native if True force use of the native qpid.messaging client
         even if swig client is available.
         """
-        if self.test.protocol: kwargs.setdefault("protocol", self.test.protocol)
         if native: connection_class = qpid.messaging.Connection
-        else: connection_class = qm.Connection
+        else:
+          connection_class = qm.Connection
+          if (self.test.protocol and qm == qpid_messaging):
+            kwargs.setdefault("protocol", self.test.protocol)
         return connection_class.establish(self.host_port(), timeout=timeout, **kwargs)
 
     @property
