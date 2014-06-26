@@ -76,12 +76,12 @@ public class SplitStoreTest extends QpidBrokerTestCase
 
     public void testJsonConfigurationStoreWithPersistentMessageStore() throws Exception
     {
-        doTest(JsonFileConfigStore.TYPE, getTestProfileMessageStoreType());
+        doTest(JsonFileConfigStore.TYPE, getTestProfileVirtualHostNodeType());
     }
 
     public void testSeparateConfigurationAndMessageStoresOfTheSameType() throws Exception
     {
-        doTest(getTestProfileVirtualHostNodeType(), getTestProfileMessageStoreType());
+        doTest(getTestProfileVirtualHostNodeType(), getTestProfileVirtualHostNodeType());
     }
 
     private void configureAndStartBroker(String virtualHostNodeType, String virtualHostType) throws Exception

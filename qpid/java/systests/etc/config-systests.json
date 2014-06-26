@@ -59,10 +59,10 @@
   }],
   "virtualhostnodes" : [ {
     "name" : "test",
-    "type" : "${messagestore.type}",
+    "type" : "${virtualhostnode.type}",
     "storePath" : "${QPID_WORK}/${test.port}/test/config",
     "context" : {
-      "virtualhostBlueprint" : "{ \"type\" : \"ProvidedStore\" }"
+      "virtualhostBlueprint" : "${virtualhostnode.context.blueprint}"
     }
   } ]
 }

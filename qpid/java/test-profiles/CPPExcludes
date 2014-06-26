@@ -93,6 +93,7 @@ org.apache.qpid.server.store.VirtualHostMessageStoreTest#testQueuePersistence
 org.apache.qpid.server.store.VirtualHostMessageStoreTest#testDurableQueueRemoval
 org.apache.qpid.server.store.VirtualHostMessageStoreTest#testExchangePersistence
 org.apache.qpid.server.store.VirtualHostMessageStoreTest#testDurableExchangeRemoval
+org.apache.qpid.server.store.VirtualHostMessageStoreTest#testQueueExchangeAndBindingCreation
 org.apache.qpid.server.store.DurableConfigurationStoreTest#*
 
 // CPP Broker does not follow the same Logging convention as the Java broker

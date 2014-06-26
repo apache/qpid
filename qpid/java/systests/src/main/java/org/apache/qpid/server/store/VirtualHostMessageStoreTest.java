@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,10 +72,13 @@ import org.apache.qpid.server.queue.StandardQueueImpl;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  *
@@ -136,12 +140,21 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         nodeAttributes.put(ConfiguredObject.TYPE, getTestProfileVirtualHostNodeType());
         nodeAttributes.put(FileBasedVirtualHostNode.STORE_PATH, _storePath);
         nodeAttributes.put(VirtualHostNode.NAME, nodeName);
+
         _node = factory.create(VirtualHostNode.class, nodeAttributes, broker);
         _node.start();
 
         final Map<String,Object> virtualHostAttributes = new HashMap<>();
         virtualHostAttributes.put(VirtualHost.NAME, hostName);
-
+        virtualHostAttributes.put(VirtualHost.NAME, hostName);
+        String bluePrint = getTestProfileVirtualHostNodeBlueprint();
+        if (bluePrint == null)
+        {
+            bluePrint = "{type=\"" + TestMemoryVirtualHost.VIRTUAL_HOST_TYPE + "\"}";
+        }
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> attrs =  objectMapper.readValue(bluePrint, Map.class);
+        virtualHostAttributes.putAll(attrs);
         _node.createChild(VirtualHost.class, virtualHostAttributes, _node);
 
         _virtualHost = (VirtualHostImpl<?,?,?>)_node.getVirtualHost();
