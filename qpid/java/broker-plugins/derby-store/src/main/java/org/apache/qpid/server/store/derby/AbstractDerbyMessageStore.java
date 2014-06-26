@@ -55,7 +55,7 @@ public abstract class AbstractDerbyMessageStore extends AbstractJDBCMessageStore
 
             doOpen(parent);
 
-            final SizeMonitorSettings sizeMonitorSettings = (SizeMonitorSettings) parent;
+            final SizeMonitoringSettings sizeMonitorSettings = (SizeMonitoringSettings) parent;
             _persistentSizeHighThreshold = sizeMonitorSettings.getStoreOverfullSize();
             _persistentSizeLowThreshold = sizeMonitorSettings.getStoreUnderfullSize();
 

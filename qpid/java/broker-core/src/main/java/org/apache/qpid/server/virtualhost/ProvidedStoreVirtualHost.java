@@ -22,8 +22,9 @@ package org.apache.qpid.server.virtualhost;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.SizeMonitoringSettings;
 
-public interface ProvidedStoreVirtualHost<X extends ProvidedStoreVirtualHost<X>> extends VirtualHostImpl<X,AMQQueue<?>,ExchangeImpl<?>>, org.apache.qpid.server.store.SizeMonitorSettings
+public interface ProvidedStoreVirtualHost<X extends ProvidedStoreVirtualHost<X>> extends VirtualHostImpl<X,AMQQueue<?>,ExchangeImpl<?>>, SizeMonitoringSettings
 {
     @ManagedAttribute(mandatory = true, defaultValue = "0")
     Long getStoreUnderfullSize();

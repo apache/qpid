@@ -24,10 +24,10 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.SizeMonitorSettings;
+import org.apache.qpid.server.store.SizeMonitoringSettings;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, SizeMonitorSettings
+public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, SizeMonitoringSettings
 {
     String REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY = "remoteTransactionSynchronizationPolicy";
     String LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY = "localTransactionSynchronizationPolicy";

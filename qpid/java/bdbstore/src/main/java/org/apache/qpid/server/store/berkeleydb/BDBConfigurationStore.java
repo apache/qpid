@@ -46,7 +46,7 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreProvider;
-import org.apache.qpid.server.store.SizeMonitorSettings;
+import org.apache.qpid.server.store.SizeMonitoringSettings;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.berkeleydb.entry.HierarchyKey;
 import org.apache.qpid.server.store.berkeleydb.tuple.ConfiguredObjectBinding;
@@ -507,7 +507,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             {
                 _parent = parent;
 
-                final SizeMonitorSettings sizeMonitorSettings = (SizeMonitorSettings) parent;
+                final SizeMonitoringSettings sizeMonitorSettings = (SizeMonitoringSettings) parent;
                 _persistentSizeHighThreshold = sizeMonitorSettings.getStoreOverfullSize();
                 _persistentSizeLowThreshold = sizeMonitorSettings.getStoreUnderfullSize();
 
