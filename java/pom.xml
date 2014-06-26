@@ -60,8 +60,8 @@
     <profile.broker.type>internal</profile.broker.type>
     <profile.broker.stopped>Exception</profile.broker.stopped>
     <profile.broker.ready>BRK-1004</profile.broker.ready>
-    <profile.broker.command>${qpid.home}${file.separator}bin${file.separator}qpid-server -sp ${at.sign}STORE_PATH -st ${at.sign}STORE_TYPE -l ${at.sign}LOG_CONFIG_FILE</profile.broker.command>
-    <profile.broker.command.windows>${qpid.home}${file.separator}bin${file.separator}qpid-server.bat -sp ${at.sign}STORE_PATH -st ${at.sign}STORE_TYPE -l ${at.sign}LOG_CONFIG_FILE</profile.broker.command.windows>
+    <profile.broker.command>"${qpid.home}${file.separator}bin${file.separator}qpid"-server -sp ${at.sign}STORE_PATH -st ${at.sign}STORE_TYPE -l ${at.sign}LOG_CONFIG_FILE</profile.broker.command>
+    <profile.broker.command.windows>"${qpid.home}${file.separator}bin${file.separator}qpid"-server.bat -sp ${at.sign}STORE_PATH -st ${at.sign}STORE_TYPE -l ${at.sign}LOG_CONFIG_FILE</profile.broker.command.windows>
     <profile.test.excludes>Excludes JavaExcludes ${profile}.excludes ${profile.specific.excludes}</profile.test.excludes>
     <profile.specific.excludes>JavaTransientExcludes Java010Excludes</profile.specific.excludes>
     <profile.broker.version>v0_10</profile.broker.version>
@@ -671,7 +671,7 @@
         <profile.broker.type>spawned</profile.broker.type>
         <profile.broker.stopped>Exception constructed</profile.broker.stopped>
         <profile.broker.ready>Listening on TCP</profile.broker.ready>
-        <profile.broker.command>${cpp-broker-dir}/qpidd -p ${at.sign}PORT --data-dir ${qpid.work}/${at.sign}PORT -t --auth no --no-module-dir</profile.broker.command>
+        <profile.broker.command>"${cpp-broker-dir}/qpidd" -p ${at.sign}PORT --data-dir "${qpid.work}/${at.sign}PORT" -t --auth no --no-module-dir</profile.broker.command>
         <profile.broker.command.windows />
         <profile.test.excludes>Excludes CPPExcludes ${profile}.excludes ${profile.specific.excludes} cpp.excludes</profile.test.excludes>
         <profile.specific.excludes>CPPPrefetchExcludes CPPTransientExcludes</profile.specific.excludes>

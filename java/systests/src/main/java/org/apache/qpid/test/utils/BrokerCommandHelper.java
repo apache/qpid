@@ -18,7 +18,6 @@
 package org.apache.qpid.test.utils;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,7 +34,7 @@ public class BrokerCommandHelper
 
     public BrokerCommandHelper(String brokerCommandTemplate)
     {
-        _brokerCommandTemplateAsList = new LinkedList<String>(Arrays.asList(brokerCommandTemplate.split("\\s+")));
+        _brokerCommandTemplateAsList = split(brokerCommandTemplate);
     }
 
     public String[] getBrokerCommand( int port, String storePath, String storeType, File logConfigFile)
@@ -75,5 +74,38 @@ public class BrokerCommandHelper
         }
         _brokerCommandTemplateAsList.remove(logOptionIndex);
         _brokerCommandTemplateAsList.remove(logOptionIndex);
+    }
+
+    private static List<String> split(String str)
+    {
+        List<String> tokens = new LinkedList<String>();
+        boolean inQuote = false;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++)
+        {
+            char c = str.charAt(i);
+
+            if (c == '\"' || c == '\'')
+            {
+                inQuote = !inQuote;
+            }
+            else if (c == ' ' && !inQuote)
+            {
+                if (sb.length() > 0)
+                {
+                    tokens.add(sb.toString());
+                    sb.delete(0, sb.length());
+                }
+            }
+            else
+            {
+                sb.append(c);
+            }
+        }
+        if (sb.length() > 0)
+        {
+            tokens.add(sb.toString());
+        }
+        return tokens;
     }
 }
