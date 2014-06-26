@@ -443,7 +443,6 @@ void AsynchIO::readable(DispatchHandle& h) {
             errno = 0;
             int readCount = buff->byteCount-buff->dataCount;
             int rc = socket.read(buff->bytes + buff->dataCount, readCount);
-            int64_t duration = Duration(readStartTime, AbsTime::now());
             ++readCalls;
             if (rc > 0) {
                 buff->dataCount += rc;
@@ -451,6 +450,7 @@ void AsynchIO::readable(DispatchHandle& h) {
                 total += rc;
 
                 readCallback(*this, buff);
+                int64_t duration = Duration(readStartTime, AbsTime::now());
                 if (rc != readCount) {
                     // If we didn't fill the read buffer then time to stop reading
                     QPID_PROBE4(asynchio_read_finished_done, &h, duration, total, readCalls);
@@ -468,7 +468,7 @@ void AsynchIO::readable(DispatchHandle& h) {
                 bufferQueue.push_front(buff);
                 assert(buff);
 
-                QPID_PROBE5(asynchio_read_finished_error, &h, duration, total, readCalls, errno);
+                QPID_PROBE5(asynchio_read_finished_error, &h, Duration(readStartTime, AbsTime::now()), total, readCalls, errno);
                 // Eof or other side has gone away
                 if (rc == 0 || errno == ECONNRESET) {
                     eofCallback(*this);
