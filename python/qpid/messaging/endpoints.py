@@ -129,52 +129,61 @@ class Connection(Endpoint):
     @rtype: Connection
     @return: a disconnected Connection
     """
-    if url is None:
-      url = options.get("host")
+    # List of all attributes
+    opt_keys = ['host', 'transport', 'port', 'heartbeat', 'username', 'password', 'sasl_mechanisms', 'sasl_service', 'sasl_min_ssf', 'sasl_max_ssf', 'reconnect', 'reconnect_timeout', 'reconnect_interval', 'reconnect_interval_min', 'reconnect_interval_max', 'reconnect_limit', 'reconnect_urls', 'reconnect_log', 'address_ttl', 'tcp_nodelay', 'ssl_keyfile', 'ssl_certfile', 'ssl_trustfile', 'ssl_skip_hostname_check', 'client_properties', 'protocol' ]
+    # Create all attributes on self and set to None.
+    for key in opt_keys:
+        setattr(self, key, None)
+    # Get values from options, check for invalid options
+    for (key, value) in options.iteritems():
+        if key in opt_keys:
+            setattr(self, key, value)
+        else:
+            raise ConnectionError("Unknown connection option %s with value %s" %(key, value))
+
+    # Now handle items that need special treatment or have speical defaults:
+    if self.host:
+        url = default(url, self.host)
     if isinstance(url, basestring):
-      url = URL(url)
+        url = URL(url)
     self.host = url.host
-    if options.has_key("transport"):
-      self.transport = options.get("transport")
-    elif url.scheme == url.AMQP:
-      self.transport = "tcp"
-    elif url.scheme == url.AMQPS:
-      self.transport = "ssl"
-    else:
-      self.transport = "tcp"
+
+    if self.transport is None:
+      if url.scheme == url.AMQP:
+        self.transport = "tcp"
+      elif url.scheme == url.AMQPS:
+        self.transport = "ssl"
+      else:
+        self.transport = "tcp"
     if self.transport in ("ssl", "tcp+tls"):
-      self.port = default(url.port, options.get("port", AMQPS_PORT))
+      self.port = default(url.port, default(self.port, AMQPS_PORT))
     else:
-      self.port = default(url.port, options.get("port", AMQP_PORT))
-    self.heartbeat = options.get("heartbeat")
-    self.username = default(url.user, options.get("username", None))
-    self.password = default(url.password, options.get("password", None))
+      self.port = default(url.port, default(self.port, AMQP_PORT))
+
+    if self.protocol and self.protocol != "amqp0-10":
+        raise ConnectionError("Connection option 'protocol' value '" + value + "' unsupported (must be amqp0-10)")
+      
+    self.username = default(url.user, self.username)
+    self.password = default(url.password, self.password)
     self.auth_username = None
+    self.sasl_service = default(self.sasl_service, "qpidd")
 
-    self.sasl_mechanisms = options.get("sasl_mechanisms")
-    self.sasl_service = options.get("sasl_service", "qpidd")
-    self.sasl_min_ssf = options.get("sasl_min_ssf")
-    self.sasl_max_ssf = options.get("sasl_max_ssf")
+    self.reconnect = default(self.reconnect, False)
+    self.reconnect_interval_min = default(self.reconnect_interval_min,
+                                          default(self.reconnect_interval, 1))
+    self.reconnect_interval_max = default(self.reconnect_interval_max,
+                                          default(self.reconnect_interval, 2*60))
+    self.reconnect_urls = default(self.reconnect_urls, [])
+    self.reconnect_log = default(self.reconnect_log, True)
 
-    self.reconnect = options.get("reconnect", False)
-    self.reconnect_timeout = options.get("reconnect_timeout")
-    reconnect_interval = options.get("reconnect_interval")
-    self.reconnect_interval_min = options.get("reconnect_interval_min",
-                                              default(reconnect_interval, 1))
-    self.reconnect_interval_max = options.get("reconnect_interval_max",
-                                              default(reconnect_interval, 2*60))
-    self.reconnect_limit = options.get("reconnect_limit")
-    self.reconnect_urls = options.get("reconnect_urls", [])
-    self.reconnect_log = options.get("reconnect_log", True)
+    self.address_ttl = default(self.address_ttl, 60)
+    self.tcp_nodelay = default(self.tcp_nodelay, False)
 
-    self.address_ttl = options.get("address_ttl", 60)
-    self.tcp_nodelay = options.get("tcp_nodelay", False)
-
-    self.ssl_keyfile = options.get("ssl_keyfile", None)
-    self.ssl_certfile = options.get("ssl_certfile", None)
-    self.ssl_trustfile = options.get("ssl_trustfile", None)
-    self.ssl_skip_hostname_check = options.get("ssl_skip_hostname_check", False)
-    self.client_properties = options.get("client_properties", {})
+    self.ssl_keyfile = default(self.ssl_keyfile, None)
+    self.ssl_certfile = default(self.ssl_certfile, None)
+    self.ssl_trustfile = default(self.ssl_trustfile, None)
+    self.ssl_skip_hostname_check = default(self.ssl_skip_hostname_check, False)
+    self.client_properties = default(self.client_properties, {})
 
     self.options = options
 
