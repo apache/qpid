@@ -70,7 +70,6 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MemoryConfigurationStore;
-import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.url.URLSyntaxException;
@@ -561,8 +560,8 @@ public class QpidBrokerTestCase extends QpidTestCase
                 setSystemProperty("test.port.ssl");
                 setSystemProperty("test.port.alt");
                 setSystemProperty("test.port.alt.ssl");
-                setSystemProperty("messagestore.type");
-
+                setSystemProperty("virtualhostnode.type");
+                setSystemProperty("virtualhostnode.context.blueprint");
 
                 // Add all the specified system properties to QPID_OPTS
                 if (!_propertiesSetForBroker.isEmpty())
@@ -872,7 +871,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         {
             attributes.put(FileBasedVirtualHostNode.STORE_PATH, storeDir);
         }
-        final String blueprint = String.format("{ \"type\" : \"%s\"  } }", ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
+        final String blueprint = getTestProfileVirtualHostNodeBlueprint();
         attributes.put(ConfiguredObject.CONTEXT, Collections.singletonMap(AbstractStandardVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
                                                                           blueprint));
 

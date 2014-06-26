@@ -35,12 +35,13 @@ import junit.framework.TestResult;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-
 public class QpidTestCase extends TestCase
 {
     private static final String TEST_EXCLUDES = "test.excludes";
     private static final String TEST_EXCLUDELIST = "test.excludelist";
     private static final String TEST_EXCLUDEFILES = "test.excludefiles";
+    private static final String VIRTUAL_HOST_NODE_TYPE = "virtualhostnode.type";
+    private static final String VIRTUAL_HOST_NODE_CONTEXT_BLUEPRINT = "virtualhostnode.context.blueprint";
     public static final String QPID_HOME = System.getProperty("QPID_HOME");
     public static final String TEST_RESOURCES_DIR = QPID_HOME + "/../test-profiles/test_resources/";
     public static final String TEST_PROFILES_DIR = QPID_HOME + "/../test-profiles/";
@@ -124,8 +125,6 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    protected static final String MESSAGE_STORE_TYPE = "messagestore.type";
-
     private static List<String> _exclusionList;
 
     public QpidTestCase()
@@ -148,17 +147,21 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    public String getTestProfileMessageStoreType()
+    public String getTestProfileVirtualHostNodeType()
     {
-        final String storeType = System.getProperty(MESSAGE_STORE_TYPE);
-        _logger.debug(MESSAGE_STORE_TYPE + "=" + storeType);
+        final String storeType = System.getProperty(VIRTUAL_HOST_NODE_TYPE);
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(VIRTUAL_HOST_NODE_TYPE + "=" + storeType);
+        }
 
         return storeType != null ? storeType : "TestMemory";
     }
 
-    public String getTestProfileVirtualHostNodeType()
+    public String getTestProfileVirtualHostNodeBlueprint()
     {
-        return getTestProfileMessageStoreType();
+        return System.getProperty(VIRTUAL_HOST_NODE_CONTEXT_BLUEPRINT);
     }
 
     public static final int MIN_PORT_NUMBER = 1;

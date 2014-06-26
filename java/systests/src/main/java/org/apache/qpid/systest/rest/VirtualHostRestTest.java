@@ -30,6 +30,7 @@ import java.util.Map;
 import javax.jms.Session;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 
@@ -42,7 +43,6 @@ import org.apache.qpid.server.queue.LastValueQueue;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.SortedQueue;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
-import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHost;
 import org.apache.qpid.server.virtualhostnode.FileBasedVirtualHostNode;
 import org.apache.qpid.util.FileUtils;
 
@@ -540,7 +540,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         Map<String, Object> virtualhostData = new HashMap<>();
         virtualhostData.put(VirtualHost.NAME, virtualHostName);
-        virtualhostData.put(VirtualHost.TYPE, ProvidedStoreVirtualHost.VIRTUAL_HOST_TYPE);
+        virtualhostData.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
 
         getRestTestHelper().submitRequest("virtualhost/" + virtualHostName + "/" + virtualHostName,
                                           "PUT",
