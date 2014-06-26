@@ -105,12 +105,12 @@
     <statistic name="msgTxnDequeues"      type="count64" unit="message" desc="Total transactional messages dequeued from broker"/>
     <statistic name="byteTxnEnqueues"     type="count64" unit="octet"   desc="Total transactional bytes enqueued to broker"/>
     <statistic name="byteTxnDequeues"     type="count64" unit="octet"   desc="Total transactional bytes dequeued from broker"/>
-    <statistic name="msgFtdEnqueues"      type="count64" unit="message" desc="Total message bodies released from memory and flowed-to-disk on broker"/>
-    <statistic name="msgFtdDequeues"      type="count64" unit="message" desc="Total message bodies dequeued from the broker having been flowed-to-disk"/>
-    <statistic name="byteFtdEnqueues"     type="count64" unit="octet"   desc="Total bytes released from memory and flowed-to-disk on broker"/>
-    <statistic name="byteFtdDequeues"     type="count64" unit="octet"   desc="Total bytes dequeued from the broker having been flowed-to-disk"/>
-    <statistic name="msgFtdDepth"         type="count64" unit="message" desc="Current number of messages flowed-to-disk" assign="msgFtdEnqueues - msgFtdDequeues"/>
-    <statistic name="byteFtdDepth"        type="count64" unit="octet"   desc="Current number of bytes flowed-to-disk"    assign="byteFtdEnqueues - byteFtdDequeues"/>
+    <statistic name="msgFtdEnqueues"      type="count64" unit="message" desc="Deprecated"/>
+    <statistic name="msgFtdDequeues"      type="count64" unit="message" desc="Deprecated"/>
+    <statistic name="byteFtdEnqueues"     type="count64" unit="octet"   desc="Deprecated"/>
+    <statistic name="byteFtdDequeues"     type="count64" unit="octet"   desc="Deprecated"/>
+    <statistic name="msgFtdDepth"         type="count64" unit="message" desc="Deprecated"/>
+    <statistic name="byteFtdDepth"        type="count64" unit="octet"   desc="Deprecated"/>
     <statistic name="releases"            type="count64" unit="message" desc="Acquired messages reinserted into the queue"/>
     <statistic name="acquires"            type="count64" unit="message" desc="Messages acquired from the queue"/>
     <statistic name="discardsNoRoute"     type="count64" unit="message" desc="Messages discarded due to no-route from exchange"/>
@@ -251,14 +251,14 @@
     <statistic name="bytePersistEnqueues" type="count64"  unit="octet"       desc="Persistent messages enqueued"/>
     <statistic name="bytePersistDequeues" type="count64"  unit="octet"       desc="Persistent messages dequeued"/>
 
-    <!-- Flow-to-disk Statistics -->
+    <!-- Flow-to-disk Statistics, deprecated -->
 
-    <statistic name="msgFtdEnqueues"      type="count64"  unit="message"     desc="Total message bodies released from memory and flowed-to-disk on broker"/>
-    <statistic name="msgFtdDequeues"      type="count64"  unit="message"     desc="Total message bodies dequeued from the broker having been flowed-to-disk"/>
-    <statistic name="byteFtdEnqueues"     type="count64"  unit="octet"       desc="Total bytes released from memory and flowed-to-disk on broker"/>
-    <statistic name="byteFtdDequeues"     type="count64"  unit="octet"       desc="Total bytes dequeued from the broker having been flowed-to-disk"/>
-    <statistic name="msgFtdDepth"         type="count64"  unit="message"     desc="Current number of messages flowed-to-disk" assign="msgFtdEnqueues - msgFtdDequeues"/>
-    <statistic name="byteFtdDepth"        type="count64"  unit="octet"       desc="Current number of bytes flowed-to-disk"    assign="byteFtdEnqueues - byteFtdDequeues"/>
+    <statistic name="msgFtdEnqueues"      type="count64"  unit="message"     desc="Deprecated"/>
+    <statistic name="msgFtdDequeues"      type="count64"  unit="message"     desc="Deprecated"/>
+    <statistic name="byteFtdEnqueues"     type="count64"  unit="octet"       desc="Deprecated"/>
+    <statistic name="byteFtdDequeues"     type="count64"  unit="octet"       desc="Deprecated"/>
+    <statistic name="msgFtdDepth"         type="count64"  unit="message"     desc="Deprecated"/>
+    <statistic name="byteFtdDepth"        type="count64"  unit="octet"       desc="Deprecated"/>
 
     <!-- Acquire and Release Statistics - These do not affect msgDepth since msgDepth includes acquired-but-not-completed messages. -->
 
