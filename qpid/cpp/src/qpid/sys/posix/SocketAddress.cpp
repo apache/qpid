@@ -120,14 +120,14 @@ const ::addrinfo& getAddrInfo(const SocketAddress& sa)
     if (!sa.addrInfo) {
         ::addrinfo hints;
         ::memset(&hints, 0, sizeof(hints));
-        hints.ai_flags = AI_ADDRCONFIG; // Only use protocols that we have configured interfaces for
         hints.ai_family = AF_UNSPEC; // Allow both IPv4 and IPv6
         hints.ai_socktype = SOCK_STREAM;
 
         const char* node = 0;
         if (sa.host.empty()) {
-            hints.ai_flags |= AI_PASSIVE;
+            hints.ai_flags = AI_PASSIVE;
         } else {
+            hints.ai_flags = AI_ADDRCONFIG; // Only use protocols that we have configured interfaces for
             node = sa.host.c_str();
         }
         const char* service = sa.port.empty() ? "0" : sa.port.c_str();
