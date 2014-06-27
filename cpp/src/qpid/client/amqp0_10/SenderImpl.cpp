@@ -182,9 +182,11 @@ uint32_t SenderImpl::checkPendingSends(bool flush, const sys::Mutex::ScopedLock&
 
 void SenderImpl::closeImpl()
 {
-    sys::Mutex::ScopedLock l(lock);
-    state = CANCELLED;
-    sink->cancel(session, name);
+    {
+        sys::Mutex::ScopedLock l(lock);
+        state = CANCELLED;
+        sink->cancel(session, name);
+    }
     parent->senderCancelled(name);
 }
 
