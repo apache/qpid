@@ -1432,6 +1432,25 @@ QPID_AUTO_TEST_CASE(testCloseAndMultipleConcurrentFetches)
     BOOST_CHECK(!fetcher.timedOut);
 }
 
+QPID_AUTO_TEST_CASE(testSessionCheckError)
+{
+    MessagingFixture fix;
+    std::string queue();
+    Session session = fix.connection.createSession();
+    Sender sender = session.createSender("q; {create:always, node:{x-declare:{auto-delete:True, arguments:{qpid.max_count:1}}}}");
+    ScopedSuppressLogging sl;
+    for (uint i = 0; i < 2; ++i) {
+        sender.send(Message((boost::format("A_%1%") % (i+1)).str()));
+    }
+    try {
+        while (true) session.checkError();
+    } catch (const qpid::types::Exception&) {
+        //this is ok
+    } catch (const qpid::Exception&) {
+        BOOST_FAIL("Wrong exception type thrown");
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

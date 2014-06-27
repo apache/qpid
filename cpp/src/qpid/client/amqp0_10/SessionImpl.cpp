@@ -62,7 +62,21 @@ void SessionImpl::checkError()
 {
     ScopedLock l(lock);
     qpid::client::SessionBase_0_10Access s(session);
-    s.get()->assertOpen();
+    try {
+        s.get()->assertOpen();
+    } catch (const qpid::TransportFailure&) {
+        throw qpid::messaging::TransportFailure(std::string());
+    } catch (const qpid::framing::ResourceLimitExceededException& e) {
+        throw qpid::messaging::TargetCapacityExceeded(e.what());
+    } catch (const qpid::framing::UnauthorizedAccessException& e) {
+        throw qpid::messaging::UnauthorizedAccess(e.what());
+    } catch (const qpid::SessionException& e) {
+        throw qpid::messaging::SessionError(e.what());
+    } catch (const qpid::ConnectionException& e) {
+        throw qpid::messaging::ConnectionError(e.what());
+    } catch (const qpid::Exception& e) {
+        throw qpid::messaging::MessagingException(e.what());
+    }
 }
 
 bool SessionImpl::hasError()
