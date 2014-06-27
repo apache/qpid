@@ -173,7 +173,7 @@ public class ConsumerLoggingTest extends AbstractTestLogging
         browser.getEnumeration();
         //Validate
         //Ensure that we wait for the SUB log message
-        waitAndFindMatches("SUB-1001");
+        waitAndFindMatches("SUB-1002");
 
         List<String> results = findMatches(SUB_PREFIX);
 
