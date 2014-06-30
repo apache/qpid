@@ -152,7 +152,7 @@ class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<Co
     QPID_MESSAGING_EXTERN void reconnect();
     /**
      * returns a url reprsenting the broker the client is currently
-     * connected to (or an e,pty string if it is not connected).
+     * connected to (or an empty string if it is not connected).
      */
     QPID_MESSAGING_EXTERN std::string getUrl() const;
 
