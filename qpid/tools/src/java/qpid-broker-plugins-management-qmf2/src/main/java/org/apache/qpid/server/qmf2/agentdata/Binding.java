@@ -118,9 +118,8 @@ public class Binding extends QmfAgentData
         setValue("bindingKey", binding.getName());
 
         Map<String, Object> arguments = binding.getArguments();
-        // binding.getArguments() always returns a Map, but with the C++ broker if there are no arguments
-        // the property isn't populated, so we only add it if the _arguments.size() > 0
-        if (arguments.size() > 0)
+        // Only add arguments property if the bindings have arguments
+        if (arguments != null && arguments.size() > 0)
         {
             setValue("arguments", arguments);
         }

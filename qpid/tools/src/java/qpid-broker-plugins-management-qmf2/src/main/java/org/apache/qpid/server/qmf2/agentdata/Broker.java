@@ -352,7 +352,7 @@ public class Broker extends QmfAgentData
         super(getSchema());
 
         _broker = broker;
-        _defaultVirtualHost = (String)broker.getAttribute("defaultVirtualHost");
+        _defaultVirtualHost = broker.getDefaultVirtualHost();
         int amqpPort = 5672; // Default AMQP Port.
 
         // Search through the available Ports on this Broker looking for the AMQP Port using the TCP Transport
@@ -364,7 +364,7 @@ public class Broker extends QmfAgentData
         {
             boolean isAMQP = false;
             boolean isTCP  = false;
-            for (Protocol protocol : port.getProtocols())
+            for (Protocol protocol : port.getAvailableProtocols())
             {
                 isAMQP = protocol.isAMQP();
                 if (isAMQP)
