@@ -124,7 +124,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     public QmfManagementAgent(final String url, final Broker broker)
     {
         _broker = broker;
-        _defaultVirtualHost = (String)broker.getAttribute("defaultVirtualHost");
+        _defaultVirtualHost = broker.getDefaultVirtualHost();
 
         try
         {
@@ -174,12 +174,12 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
         }
         catch (QmfException qmfe)
         {
-            _log.info("QmfException {} caught in QmfManagementAgent Constructor", qmfe.getMessage());
+            _log.error("QmfException caught in QmfManagementAgent Constructor", qmfe);
             _agent = null; // Causes isConnected() to be false and thus prevents the "QMF2 Management Ready" message.
         }
         catch (Exception e)
         {
-            _log.info("Exception {} caught in QmfManagementAgent Constructor", e.getMessage());
+            _log.error("Exception caught in QmfManagementAgent Constructor", e);
             _agent = null; // Causes isConnected() to be false and thus prevents the "QMF2 Management Ready" message.
         }
     }
@@ -212,84 +212,119 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     {
         childAdded(null, _broker);
 
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Registering model listeners for broker " + _broker);
+        }
+
         for (VirtualHostNode<?> vhostNode : _broker.getVirtualHostNodes())
         {
+
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Considering virtualhostnode " + vhostNode);
+            }
+
             VirtualHost<?,?,?> vhost = vhostNode.getVirtualHost();
 
             // We don't add QmfAgentData VirtualHost objects. Possibly TODO, but it's a bit awkward at the moment
             // because the C++ Broker doesn't *seem* to do much with them and the command line tools such
             // as qpid-config don't appear to be VirtualHost aware. A way to stay compatible is to mark queues,
             // exchanges etc with [vhost:<vhost-name>/]<object-name> (see Constructor comments).
-            vhost.addChangeListener(this);
 
-            for (Connection<?> connection : vhost.getConnections())
+            if (vhost != null)
             {
-                childAdded(vhost, connection);
- 
-                for (Session<?> session : connection.getSessions())
-                {
-                    childAdded(connection, session);
+                vhost.addChangeListener(this);
 
-                    if (session.getConsumers() != null)
-                    {
-                        for (Consumer subscription : session.getConsumers())
-                        {
-                            childAdded(session, subscription);
-                        }
-                    }
+                addListenersForConnectionsAndChildren(vhost);
+                addListenersForExchangesAndChildren(vhost);
+                addListenersForQueuesAndChildren(vhost);
+            }
+        }
+
+
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("Registered model listeners");
+        }
+
+    }
+
+    private void addListenersForQueuesAndChildren(final VirtualHost<?, ?, ?> vhost)
+    {
+        for (Queue<?> queue : vhost.getQueues())
+        {
+            boolean agentQueue = false;
+            for (Binding binding : queue.getBindings())
+            {
+                String key = binding.getName();
+                if (key.equals("broker") || key.equals("console.request.agent_locate") ||
+                    key.startsWith("apache.org:qpidd:"))
+                {
+                    agentQueue = true;
+                    break;
                 }
             }
 
-            // The code blocks for adding Bindings (and adding Queues) contain checks to see if what is being added
-            // relates to Queues or Bindings for the QmfManagementAgent. If they are QmfManagementAgent related
-            // we avoid registering the Object as a QMF Object, in other words we "hide" QmfManagementAgent QMF Objects.
-            // This is done to be consistent with the C++ broker which also "hides" its own Connection, Queue & Binding.
-            for (Exchange<?> exchange : vhost.getExchanges())
+            // Don't add QMF related bindings or Queues in registerConfigurationChangeListeners as those will
+            // relate to the Agent itself and we want to "hide" those to be consistent with the C++ Broker.
+            if (!agentQueue)
             {
-                childAdded(vhost, exchange);
+                childAdded(vhost, queue);
 
-                for (Binding binding : exchange.getBindings())
-                {
-                    String key = binding.getName();
-                    if (key.equals("broker") || key.equals("console.request.agent_locate") ||
-                        key.startsWith("apache.org:qpidd:") || key.startsWith("TempQueue"))
-                    { // Don't add QMF related Bindings in registerConfigurationChangeListeners as those will relate
-                    } // to the Agent and we want to "hide" those.
-                    else
-                    {
-                        childAdded(exchange, binding);
-                    }
-                }
-            }
-
-            for (Queue<?> queue : vhost.getQueues())
-            {
-                boolean agentQueue = false;
                 for (Binding binding : queue.getBindings())
                 {
-                    String key = binding.getName();
-                    if (key.equals("broker") || key.equals("console.request.agent_locate") ||
-                        key.startsWith("apache.org:qpidd:"))
-                    {
-                        agentQueue = true;
-                        break;
-                    }
+                    childAdded(queue, binding);
                 }
 
-                // Don't add QMF related bindings or Queues in registerConfigurationChangeListeners as those will
-                // relate to the Agent itself and we want to "hide" those to be consistent with the C++ Broker.
-                if (!agentQueue)
+                for (Consumer subscription : queue.getChildren(Consumer.class))
                 {
-                    childAdded(vhost, queue);
+                    childAdded(queue, subscription);
+                }
+            }
+        }
+    }
 
-                    for (Binding binding : queue.getBindings())
-                    {
-                        childAdded(queue, binding);
-                    }
+    private void addListenersForExchangesAndChildren(final VirtualHost<?, ?, ?> vhost)
+    {
+        // The code blocks for adding Bindings (and adding Queues) contain checks to see if what is being added
+        // relates to Queues or Bindings for the QmfManagementAgent. If they are QmfManagementAgent related
+        // we avoid registering the Object as a QMF Object, in other words we "hide" QmfManagementAgent QMF Objects.
+        // This is done to be consistent with the C++ broker which also "hides" its own Connection, Queue & Binding.
+        for (Exchange<?> exchange : vhost.getExchanges())
+        {
+            childAdded(vhost, exchange);
 
-                    for (Consumer subscription : queue.getChildren(Consumer.class))
+            for (Binding binding : exchange.getBindings())
+            {
+                String key = binding.getName();
+                if (key.equals("broker") || key.equals("console.request.agent_locate") ||
+                    key.startsWith("apache.org:qpidd:") || key.startsWith("TempQueue"))
+                { // Don't add QMF related Bindings in registerConfigurationChangeListeners as those will relate
+                } // to the Agent and we want to "hide" those.
+                else
+                {
+                    childAdded(exchange, binding);
+                }
+            }
+        }
+    }
+
+    private void addListenersForConnectionsAndChildren(final VirtualHost<?, ?, ?> vhost)
+    {
+        for (Connection<?> connection : vhost.getConnections())
+        {
+            childAdded(vhost, connection);
+
+            for (Session<?> session : connection.getSessions())
+            {
+                childAdded(connection, session);
+
+                if (session.getConsumers() != null)
+                {
+                    for (Consumer subscription : session.getConsumers())
                     {
-                        childAdded(queue, subscription);
+                        childAdded(session, subscription);
                     }
                 }
             }
@@ -341,9 +376,16 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     @Override
     public void childAdded(final ConfiguredObject object, final ConfiguredObject child)
     {
-//System.out.println("childAdded: " + child.getClass().getSimpleName() + "." + child.getName());
+
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("childAdded: " + child.getClass().getSimpleName() + "." + child.getName());
+        }
 
         QmfAgentData data = null;
+
+        // We current don't listen for new virtualhostnodes or new virtualhosts, so any new instances
+        // of these objects wont be seen through QMF until the Broker is restarted.
 
         if (child instanceof Broker)
         {
@@ -478,7 +520,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
         }
         catch (QmfException qmfe)
         {
-            _log.info("QmfException {} caught in QmfManagementAgent.addObject()", qmfe.getMessage());
+            _log.error("QmfException caught in QmfManagementAgent.addObject()", qmfe);
         }
 
         child.addChangeListener(this);
@@ -497,7 +539,12 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     @Override
     public void childRemoved(final ConfiguredObject object, final ConfiguredObject child)
     {
-//System.out.println("childRemoved: " + child.getClass().getSimpleName() + "." + child.getName());
+
+
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("childRemoved: " + child.getClass().getSimpleName() + "." + child.getName());
+        }
 
         child.removeChangeListener(this);
 

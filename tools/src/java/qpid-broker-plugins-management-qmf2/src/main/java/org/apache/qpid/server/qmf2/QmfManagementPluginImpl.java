@@ -152,7 +152,8 @@ public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagement
             {
                 VirtualHost<?, ?, ?> vhost = node.getVirtualHost();
 
-                if (vhost.getName().equals(_defaultVirtualHost))
+
+                if (vhost != null && vhost.getName().equals(_defaultVirtualHost))
                 {
                     foundDefaultVirtualHost = true;
 
@@ -200,7 +201,7 @@ public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagement
         }
         catch (Exception e) // Catch and log any Exception so we avoid Plugin failures stopping Broker startup.
         {
-            _log.info("Exception {} caught in QmfManagementPlugin.start()", e.getMessage());
+            _log.error("Exception caught in QmfManagementPlugin.start()", e);
         }
     }
 
