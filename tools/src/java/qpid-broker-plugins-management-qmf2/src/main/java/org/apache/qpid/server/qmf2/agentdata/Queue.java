@@ -144,19 +144,19 @@ public class Queue extends QmfAgentData
         // DELETE_ON_SESSION_END, DELETE_ON_NO_OUTBOUND_LINKS, DELETE_ON_NO_LINKS, IN_USE
         // We map these to a boolean value to be consistent with the C++ Broker QMF value.
         // TODO The C++ and Java Brokers should really return consistent information.
-        LifetimePolicy lifetimePolicy = (LifetimePolicy)_queue.getAttribute("lifetimePolicy");
+        LifetimePolicy lifetimePolicy = _queue.getLifetimePolicy();
         boolean autoDelete = (lifetimePolicy != LifetimePolicy.PERMANENT) ? true : false;
 
         // In the Java Broker exclusivity may be NONE, SESSION, CONNECTION, CONTAINER, PRINCIPAL, LINK
         // We map these to a boolean value to be consistent with the C++ Broker QMF value.
         // TODO The C++ and Java Brokers should really return consistent information.
-        ExclusivityPolicy exclusivityPolicy = (ExclusivityPolicy)_queue.getAttribute("exclusive");
+        ExclusivityPolicy exclusivityPolicy = _queue.getExclusive();
         boolean exclusive = (exclusivityPolicy != ExclusivityPolicy.NONE) ? true : false;
 
         // TODO vhostRef - currently just use its name to try and get things working with standard command line tools.
 
         setValue("name", name);
-        setValue("durable", _queue.getAttribute("durable"));
+        setValue("durable", _queue.isDurable());
         setValue("autoDelete", autoDelete);
         setValue("exclusive", exclusive);
 
@@ -247,7 +247,7 @@ public class Queue extends QmfAgentData
         // too late to populate the "altEx" property of the queueDeclareEvent.
         if (_alternateExchange == null)
         {
-            Exchange altEx = (Exchange)_queue.getAttribute("alternateExchange");
+            Exchange altEx = _queue.getAlternateExchange();
             if (altEx != null)
             {
                 _alternateExchangeName = _vhostName + altEx.getName();

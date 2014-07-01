@@ -89,7 +89,7 @@ public class Session extends QmfAgentData
         super(getSchema());
         _session = session;
 
-        setValue("name", session.getAttribute("id")); // Use ID to be consistent with C++ Broker.
+        setValue("name", session.getId()); // Use ID to be consistent with C++ Broker.
         setValue("channelId", session.getName());     // The Java Broker name uses the channelId.
         setRefValue("connectionRef", connectionRef);
     }

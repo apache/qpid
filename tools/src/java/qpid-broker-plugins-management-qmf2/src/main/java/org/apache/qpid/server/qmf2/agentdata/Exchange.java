@@ -137,14 +137,14 @@ public class Exchange extends QmfAgentData
         // DELETE_ON_SESSION_END, DELETE_ON_NO_OUTBOUND_LINKS, DELETE_ON_NO_LINKS, IN_USE
         // We map these to a boolean value to be consistent with the C++ Broker QMF value.
         // TODO The C++ and Java Brokers should really return consistent information.
-        LifetimePolicy lifetimePolicy = (LifetimePolicy)_exchange.getAttribute("lifetimePolicy");
+        LifetimePolicy lifetimePolicy = _exchange.getLifetimePolicy();
         boolean autoDelete = (lifetimePolicy != LifetimePolicy.PERMANENT) ? true : false;
 
         // TODO vhostRef - currently just use its name to try and get things working with standard command line tools.
 
         setValue("name", _name);
-        setValue("type", _exchange.getAttribute("type"));
-        setValue("durable", _exchange.getAttribute("durable"));
+        setValue("type", _exchange.getType());
+        setValue("durable", _exchange.isDurable());
         setValue("autoDelete", autoDelete);
 
         // TODO altExchange and arguments properties.
