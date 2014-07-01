@@ -153,7 +153,7 @@ public class Subscription extends QmfAgentData
         // In the Java Broker exclusivity may be NONE, SESSION, CONNECTION, CONTAINER, PRINCIPAL, LINK
         // We map these to a boolean value to be consistent with the C++ Broker QMF values.
         // TODO The C++ and Java Brokers should really return consistent information.
-        ExclusivityPolicy exclusivityPolicy = (ExclusivityPolicy)queue.getAttribute("exclusive");
+        ExclusivityPolicy exclusivityPolicy = queue.getExclusive();
         _exclusive = (exclusivityPolicy != ExclusivityPolicy.NONE) ? true : false;
     }
 
