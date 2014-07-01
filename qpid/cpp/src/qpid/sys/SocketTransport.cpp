@@ -147,33 +147,29 @@ uint16_t SocketAcceptor::listen(const std::vector<std::string>& interfaces, uint
         QPID_LOG(debug, "Using interface: " << addresses[i]);
         SocketAddress sa(addresses[i], sport);
 
-        // We must have at least one resolved address
-        QPID_LOG(info, "Listening to: " << sa.asString())
-        Socket* s = factory();
-        uint16_t lport = s->listen(sa, backlog);
-        QPID_LOG(debug, "Listened to: " << lport);
-        addListener(s);
-
-        listeningPort = lport;
-
-        // If we were told to figure out the port then only allow listening to one address
-        if (port==0) {
-            // Print warning if the user specified more than one interface
-            // or there if is another address for this one
-            if (sa.nextAddress() || addresses.size()>1 ) {
+        do {
+        try {
+            // If we were told to figure out the port then only allow listening to one address
+            if (port==0 && listeningPort!=0) {
+                // Print warning if the user specified more than one interface
                 QPID_LOG(warning, "Specified port=0: Only listened to: " << sa.asString());
+                return listeningPort;
             }
-            break;
-        }
 
-        // Try any other resolved addresses
-        while (sa.nextAddress()) {
-            QPID_LOG(info, "Listening to: " << sa.asString())
-            Socket* s = factory();
+            QPID_LOG(info, "Listening to: " << sa.asString());
+            std::auto_ptr<Socket> s(factory());
             uint16_t lport = s->listen(sa, backlog);
             QPID_LOG(debug, "Listened to: " << lport);
-            addListener(s);
+            addListener(s.release());
+
+            if (listeningPort==0) listeningPort = lport;
+        } catch (std::exception& e) {
+            QPID_LOG(warning, "Couldn't listen to: " << sa.asString() << ": " << e.what());
         }
+        } while (sa.nextAddress());
+    }
+    if (listeningPort==0) {
+        throw Exception("Couldn't find any network address to listen to");
     }
     return listeningPort;
 }
