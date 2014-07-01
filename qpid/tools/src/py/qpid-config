@@ -672,7 +672,9 @@ class BrokerManager:
         # args are ignored.
         ok = True
         _args = {}
-        if res.type == "xml":
+        if not res:
+            pass
+        elif res.type == "xml":
             # this checks/imports the -f arg
             [ok, xquery] = snarf_xquery_args()
             _args = { "xquery" : xquery }
