@@ -97,8 +97,7 @@ Connection globalConnection;
 
 uint64_t current_time()
 {
-    Duration t(EPOCH, now());
-    return t;
+    return Duration::FromEpoch();
 }
 
 struct Stats
@@ -364,7 +363,7 @@ void Sender::sendByRate()
     AbsTime last = start;
     while (true) {
         AbsTime sentAt=now();
-        msg.getDeliveryProperties().setTimestamp(Duration(EPOCH, sentAt));
+        msg.getDeliveryProperties().setTimestamp(Duration::FromEpoch());
         async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
         if (opts.sync) session.sync();
         ++sent;

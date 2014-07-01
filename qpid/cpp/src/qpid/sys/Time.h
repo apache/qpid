@@ -62,11 +62,11 @@ class Duration;
  *  ...
  *  when = AbsTime(when, 2*TIME_SEC); // Advance timer 2 secs
  *
- * AbsTime is not intended to be used to represent calendar dates/times
- * but you can construct a Duration since the Unix Epoch, 1970-1-1-00:00,
- * so that you can convert to a date/time if needed:
+ * AbsTime is not intended to be used to represent calendar dates/times.
+ * There is a specific way to construct a Duration since the Unix Epoch,
+ * 1970-1-1-00:00:
  *
- *  int64_t nanosec_since_epoch = Duration(EPOCH, now());
+ *  int64_t nanosec_since_epoch = Duration::FromEpoch();
  *
  * There are some sensible operations that are currently missing from
  * AbsTime, but nearly all that's needed can be done with a mixture of
@@ -91,8 +91,9 @@ public:
     // Default copy constructor fine
 
     QPID_COMMON_EXTERN static AbsTime now();
+    QPID_COMMON_EXTERN static AbsTime epoch();
     QPID_COMMON_EXTERN static AbsTime FarFuture();
-    QPID_COMMON_EXTERN static AbsTime Epoch();
+    QPID_COMMON_EXTERN static AbsTime Zero();
 
     bool operator==(const AbsTime& t) const { return t.timepoint == timepoint; }
 
@@ -121,6 +122,10 @@ class Duration {
 public:
     QPID_COMMON_INLINE_EXTERN inline Duration(int64_t time0 = 0);
     QPID_COMMON_EXTERN explicit Duration(const AbsTime& start, const AbsTime& finish);
+
+    /** Duration since the Unix epoch: 1970-01-01T00:00:00 */
+    QPID_COMMON_EXTERN static Duration FromEpoch();
+
     inline operator int64_t() const;
 };
 
@@ -153,8 +158,8 @@ const Duration TIME_NSEC = 1;
 /** Value to represent an infinite timeout */
 const Duration TIME_INFINITE = std::numeric_limits<int64_t>::max();
 
-/** Absolute time point for the Unix epoch: 1970-01-01T00:00:00 */
-const AbsTime EPOCH = AbsTime::Epoch();
+/** Absolute time zero point */
+const AbsTime ZERO = AbsTime::Zero();
 
 /** Time greater than any other time */
 const AbsTime FAR_FUTURE = AbsTime::FarFuture();

@@ -32,7 +32,7 @@ namespace broker {
 namespace {
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
-using qpid::sys::EPOCH;
+using qpid::sys::ZERO;
 using qpid::sys::FAR_FUTURE;
 using qpid::sys::MemoryMappedFile;
 const uint32_t OVERHEAD(4/*content-size*/ + 4/*sequence-number*/ + 8/*persistence-id*/ + 8/*expiration*/);
@@ -54,7 +54,8 @@ size_t encode(const Message& msg, char* data, size_t size)
     sys::AbsTime expiration = msg.getExpiration();
     int64_t t(0);
     if (expiration < FAR_FUTURE) {
-        t = Duration(EPOCH, expiration);
+        // Just need an integer that will round trip
+        t = Duration(ZERO, expiration);
     }
     buffer.putLongLong(t);
     msg.getPersistentContext()->encode(buffer);
@@ -76,7 +77,7 @@ size_t decode(ProtocolRegistry& protocols, Message& msg, const char* data, size_
     msg.setSequence(qpid::framing::SequenceNumber(sequence));
     msg.getPersistentContext()->setPersistenceId(persistenceId);
     if (t) {
-        sys::AbsTime expiration(EPOCH, t);
+        sys::AbsTime expiration(ZERO, t);
         msg.getSharedState().setExpiration(expiration);
     }
     return encoded + metadata.getPosition();

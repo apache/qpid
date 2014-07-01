@@ -687,6 +687,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidcommon_platform_SOURCES
     qpid/sys/posix/AsynchIO.cpp
+    qpid/sys/posix/Condition.cpp
     qpid/sys/posix/Fork.cpp
     qpid/sys/posix/Path.cpp
     qpid/sys/posix/FileSysDir.cpp

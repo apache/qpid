@@ -645,7 +645,7 @@ void ConsoleSessionImpl::run()
 
     try {
         while (!threadCanceled) {
-            periodicProcessing((uint64_t) qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()) /
+            periodicProcessing((uint64_t) qpid::sys::Duration::FromEpoch() /
                                qpid::sys::TIME_SEC);
 
             Receiver rx;

@@ -280,9 +280,7 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     if (mgmtObject!=0){
         mgmtObject->set_transferAcl(transferAcl?1:0);
         mgmtObject->set_policyFile(aclFile);
-        sys::AbsTime now = sys::AbsTime::now();
-        int64_t ns = sys::Duration(sys::EPOCH, now);
-        mgmtObject->set_lastAclLoad(ns);
+        mgmtObject->set_lastAclLoad(Duration::FromEpoch());
         agent->raiseEvent(_qmf::EventFileLoaded(""));
     }
     return true;
@@ -305,9 +303,7 @@ void Acl::loadEmptyAclRuleset() {
     if (mgmtObject!=0){
         mgmtObject->set_transferAcl(transferAcl?1:0);
         mgmtObject->set_policyFile("");
-        sys::AbsTime now = sys::AbsTime::now();
-        int64_t ns = sys::Duration(sys::EPOCH, now);
-        mgmtObject->set_lastAclLoad(ns);
+        mgmtObject->set_lastAclLoad(Duration::FromEpoch());
         agent->raiseEvent(_qmf::EventFileLoaded(""));
     }
 }

@@ -409,7 +409,7 @@ int main(int argc, char ** argv)
 
                 if (opts.timestamp)
                     msg.getProperties()[TS] = int64_t(
-                        qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
+                        qpid::sys::Duration::FromEpoch());
                 sender.send(msg);
                 reporter.message(msg);
 

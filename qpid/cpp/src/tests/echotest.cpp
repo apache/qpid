@@ -64,8 +64,7 @@ struct  Args : public qpid::Options,
 
 uint64_t current_time()
 {
-    Duration t(EPOCH, now());
-    return t;
+    return Duration::FromEpoch();
 }
 
 class Listener : public MessageListener

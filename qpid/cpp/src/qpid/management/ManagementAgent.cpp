@@ -416,7 +416,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
         outBuffer.putShortString(event.getPackageName());
         outBuffer.putShortString(event.getEventName());
         outBuffer.putBin128(event.getMd5Sum());
-        outBuffer.putLongLong(uint64_t(sys::Duration(sys::EPOCH, sys::now())));
+        outBuffer.putLongLong(sys::Duration::FromEpoch());
         outBuffer.putOctet(sev);
         string sBuf;
         event.encode(sBuf);
@@ -438,7 +438,7 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
                                                event.getMd5Sum());
         event.mapEncode(values);
         map_["_values"] = values;
-        map_["_timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
+        map_["_timestamp"] = uint64_t(sys::Duration::FromEpoch());
         map_["_severity"] = sev;
 
         headers["method"] = "indication";
@@ -1048,7 +1048,7 @@ void ManagementAgent::periodicProcessing (void)
         char                msgChars[qmfV1BufferSize];
         Buffer msgBuffer(msgChars, qmfV1BufferSize);
         encodeHeader(msgBuffer, 'h');
-        msgBuffer.putLongLong(uint64_t(sys::Duration(sys::EPOCH, sys::now())));
+        msgBuffer.putLongLong(sys::Duration::FromEpoch());
 
         routingKey = "console.heartbeat.1.0";
         sendBuffer(msgBuffer, mExchange, routingKey);
@@ -1070,7 +1070,7 @@ void ManagementAgent::periodicProcessing (void)
         headers["qmf.agent"] = name_address;
 
         map["_values"] = attrMap;
-        map["_values"].asMap()["_timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
+        map["_values"].asMap()["_timestamp"] = uint64_t(sys::Duration::FromEpoch());
         map["_values"].asMap()["_heartbeat_interval"] = interval;
         map["_values"].asMap()["_epoch"] = bootSequence;
 
@@ -2132,7 +2132,7 @@ void ManagementAgent::handleLocateRequest(const string&, const string& rte, cons
     headers["qmf.agent"] = name_address;
 
     map["_values"] = attrMap;
-    map["_values"].asMap()["_timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
+    map["_values"].asMap()["_timestamp"] = uint64_t(sys::Duration::FromEpoch());
     map["_values"].asMap()["_heartbeat_interval"] = interval;
     map["_values"].asMap()["_epoch"] = bootSequence;
 
