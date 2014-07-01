@@ -23,7 +23,6 @@
  */
 
 #include "qpid/sys/Mutex.h"
-#include <boost/iterator/iterator_concepts.hpp>
 
 #include <map>
 
