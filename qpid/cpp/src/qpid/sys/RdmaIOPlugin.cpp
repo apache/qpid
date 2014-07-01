@@ -280,8 +280,7 @@ static class RdmaIOPlugin : public Plugin {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker
         if (broker) {
-            const broker::Broker::Options& opts = broker->getOptions();
-            boost::shared_ptr<RdmaIOProtocolFactory> protocol(new RdmaIOProtocolFactory(opts.port, opts.connectionBacklog));
+            boost::shared_ptr<RdmaIOProtocolFactory> protocol(new RdmaIOProtocolFactory(broker->getPortOption(), broker->getConnectionBacklog()));
             uint16_t port = protocol->getPort();
             QPID_LOG(notice, "Rdma: Listening on RDMA port " << port);
             broker->registerTransport("rdma", protocol, protocol, port);

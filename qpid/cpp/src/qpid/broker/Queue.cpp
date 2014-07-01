@@ -132,7 +132,7 @@ inline void mgntDeqStats(const Message& msg,
     }
 }
 
-QueueSettings merge(const QueueSettings& inputs, const Broker::Options& globalOptions)
+QueueSettings merge(const QueueSettings& inputs, const Broker& broker)
 {
     QueueSettings settings(inputs);
     settings.maxDepth = QueueDepth();
@@ -143,8 +143,8 @@ QueueSettings merge(const QueueSettings& inputs, const Broker::Options& globalOp
         if (inputs.maxDepth.getSize()) {
             settings.maxDepth.setSize(inputs.maxDepth.getSize());
         }
-    } else if (globalOptions.queueLimit) {
-        settings.maxDepth.setSize(globalOptions.queueLimit);
+    } else if (broker.getQueueLimit()) {
+        settings.maxDepth.setSize(broker.getQueueLimit());
     }
     return settings;
 }
@@ -197,7 +197,7 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
     exclusive(0),
     messages(new MessageDeque()),
     persistenceId(0),
-    settings(b ? merge(_settings, b->getOptions()) : _settings),
+    settings(b ? merge(_settings, *b) : _settings),
     eventMode(0),
     observers(name, messageLock),
     broker(b),

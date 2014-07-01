@@ -100,7 +100,7 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
 
     //4. threshold event config
     if (broker && broker->getManagementAgent()) {
-        ThresholdAlerts::observe(*queue, *(broker->getManagementAgent()), settings, broker->getOptions().queueThresholdEventRatio);
+        ThresholdAlerts::observe(*queue, *(broker->getManagementAgent()), settings, broker->getQueueThresholdEventRatio());
     }
     //5. flow control config
     if (flow_ptr) {

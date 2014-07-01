@@ -86,8 +86,6 @@ static struct SslPlugin : public Plugin {
     void earlyInitialize(Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         if (broker && broker->shouldListen("ssl")) {
-            broker::Broker::Options& opts = broker->getOptions();
-
             if (options.certDbPath.empty()) {
                 QPID_LOG(notice, "SSL plugin not enabled, you must set --ssl-cert-db to enable it.");
                 broker->disableListening("ssl");
@@ -103,8 +101,8 @@ static struct SslPlugin : public Plugin {
                 return;
             }
 
-            if (opts.port == options.port && // AMQP & AMQPS ports are the same
-                opts.port != 0 &&
+            if (broker->getPortOption() == options.port && // AMQP & AMQPS ports are the same
+                broker->getPortOption() != 0 &&
                 broker->shouldListen("tcp")) {
                 multiplex = true;
                 broker->disableListening("tcp");
@@ -117,13 +115,12 @@ static struct SslPlugin : public Plugin {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker
         if (broker) {
-            const broker::Broker::Options& opts = broker->getOptions();
             uint16_t port = options.port;
             TransportAcceptor::shared_ptr ta;
             if (broker->shouldListen("ssl")) {
                 SocketAcceptor* sa =
-                    new SocketAcceptor(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer());
-                    port = sa->listen(opts.listenInterfaces, options.port, opts.connectionBacklog,
+                    new SocketAcceptor(broker->getTcpNoDelay(), options.nodict, broker->getMaxNegotiateTime(), broker->getTimer());
+                    port = sa->listen(broker->getListenInterfaces(), options.port, broker->getConnectionBacklog(),
                                         multiplex ?
                                             boost::bind(&createServerSSLMuxSocket, options) :
                                             boost::bind(&createServerSSLSocket, options));
@@ -136,7 +133,7 @@ static struct SslPlugin : public Plugin {
                 }
             }
             TransportConnector::shared_ptr tc(
-                new SocketConnector(opts.tcpNoDelay, options.nodict, opts.maxNegotiateTime, broker->getTimer(),
+                new SocketConnector(broker->getTcpNoDelay(), options.nodict, broker->getMaxNegotiateTime(), broker->getTimer(),
                                     &createClientSSLSocket));
             broker->registerTransport("ssl", ta, tc, port);
         }

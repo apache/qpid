@@ -46,7 +46,7 @@ QPID_AUTO_TEST_SUITE(MessagingSessionTests)
 using namespace qpid::messaging;
 using namespace qpid::types;
 using namespace qpid;
-using qpid::broker::Broker;
+using qpid::broker::BrokerOptions;
 using qpid::framing::Uuid;
 
 
@@ -935,7 +935,7 @@ QPID_AUTO_TEST_CASE(testAcknowledge)
 
 QPID_AUTO_TEST_CASE(testQmfCreateAndDelete)
 {
-    MessagingFixture fix(Broker::Options(), true/*enable management*/);
+    MessagingFixture fix(BrokerOptions(), true/*enable management*/);
     MethodInvoker control(fix.session);
     control.createQueue("my-queue");
     control.createExchange("my-exchange", "topic");

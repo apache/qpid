@@ -244,8 +244,7 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
                 return;
             }
         } else {
-            Broker::Options& conf = connection.getBroker().getOptions();
-            if (conf.auth) {
+            if (connection.getBroker().isAuthenticating()) {
                 proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,
                             QPID_MSG("User " << connection.getUserId()
                                 << " federation connection denied. Systems with authentication "
@@ -409,7 +408,7 @@ void ConnectionHandler::Handler::tune(uint16_t channelMax,
     // this method is only ever called when this Connection
     // is a federation link where this Broker is acting as
     // a client to another Broker
-    sys::Duration interval = connection.getBroker().getOptions().linkHeartbeatInterval;
+    sys::Duration interval = connection.getBroker().getLinkHeartbeatInterval();
     uint16_t intervalSec = static_cast<uint16_t>(interval/sys::TIME_SEC);
     uint16_t hb = std::min(intervalSec, heartbeatMax);
     connection.setHeartbeat(hb);

@@ -659,8 +659,8 @@ DtxGetTimeoutResult SessionAdapter::DtxHandlerImpl::getTimeout(const Xid& xid)
 void SessionAdapter::DtxHandlerImpl::setTimeout(const Xid& xid,
                                                 uint32_t timeout)
 {
-    if ((timeout > getBroker().getOptions().dtxMaxTimeout) && (getBroker().getOptions().dtxMaxTimeout > 0))
-        throw InvalidArgumentException(QPID_MSG("xid " << xid << " has timeout " << timeout << " bigger than maximum allowed " << getBroker().getOptions().dtxMaxTimeout));
+    if ((timeout > getBroker().getDtxMaxTimeout()) && (getBroker().getDtxMaxTimeout() > 0))
+        throw InvalidArgumentException(QPID_MSG("xid " << xid << " has timeout " << timeout << " bigger than maximum allowed " << getBroker().getDtxMaxTimeout()));
     getBroker().getDtxManager().setTimeout(DtxManager::convert(xid), timeout);
 }
 

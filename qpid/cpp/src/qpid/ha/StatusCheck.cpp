@@ -112,7 +112,7 @@ void StatusCheckThread::run() {
 StatusCheck::StatusCheck(HaBroker& hb) :
     promote(true),
     settings(hb.getSettings()),
-    heartbeat(hb.getBroker().getOptions().linkHeartbeatInterval),
+    heartbeat(hb.getBroker().getLinkHeartbeatInterval()),
     brokerInfo(hb.getBrokerInfo())
 {}
 

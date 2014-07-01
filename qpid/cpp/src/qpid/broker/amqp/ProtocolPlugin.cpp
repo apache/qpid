@@ -115,17 +115,17 @@ qpid::sys::ConnectionCodec* ProtocolImpl::create(const qpid::framing::ProtocolVe
 {
     if (v == qpid::framing::ProtocolVersion(1, 0)) {
         if (v.getProtocol() == qpid::framing::ProtocolVersion::SASL) {
-            if (getBroker().getOptions().auth) {
+            if (getBroker().isAuthenticating()) {
                 QPID_LOG(info, "Using AMQP 1.0 (with SASL layer)");
                 return new qpid::broker::amqp::Sasl(out, id, *this,
-                                                    qpid::SaslFactory::getInstance().createServer(getBroker().getOptions().realm,getBroker().getOptions().requireEncrypted, external));
+                                                    qpid::SaslFactory::getInstance().createServer(getBroker().getRealm(),getBroker().requireEncrypted(), external));
             } else {
-                std::auto_ptr<SaslServer> authenticator(new qpid::NullSaslServer(getBroker().getOptions().realm));
+                std::auto_ptr<SaslServer> authenticator(new qpid::NullSaslServer(getBroker().getRealm()));
                 QPID_LOG(info, "Using AMQP 1.0 (with dummy SASL layer)");
                 return new qpid::broker::amqp::Sasl(out, id, *this, authenticator);
             }
         } else {
-            if (getBroker().getOptions().auth) {
+            if (getBroker().isAuthenticating()) {
                 throw qpid::Exception("SASL layer required!");
             } else {
                 QPID_LOG(info, "Using AMQP 1.0 (no SASL layer)");

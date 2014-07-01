@@ -169,18 +169,18 @@ void SaslAuthenticator::fini(void)
 
 std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(amqp_0_10::Connection& c )
 {
-    if (c.getBroker().getOptions().auth) {
+    if (c.getBroker().isAuthenticating()) {
         return std::auto_ptr<SaslAuthenticator>(
-            new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
+            new CyrusAuthenticator(c, c.getBroker().requireEncrypted()));
     } else {
         QPID_LOG(debug, "SASL: No Authentication Performed");
-        return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
+        return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().requireEncrypted()));
     }
 }
 
 
 NullAuthenticator::NullAuthenticator(amqp_0_10::Connection& c, bool e) : connection(c), client(c.getOutput()),
-                                                              realm(c.getBroker().getOptions().realm), encrypt(e) {}
+                                                              realm(c.getBroker().getRealm()), encrypt(e) {}
 NullAuthenticator::~NullAuthenticator() {}
 
 void NullAuthenticator::getMechanisms(Array& mechanisms)
@@ -272,7 +272,7 @@ void CyrusAuthenticator::init()
           */
     int code;
 
-    const char *realm = connection.getBroker().getOptions().realm.c_str();
+    const char *realm = connection.getBroker().getRealm().c_str();
     code = sasl_server_new(BROKER_SASL_NAME, /* Service name */
                            NULL, /* Server FQDN, gethostname() */
                            realm, /* Authentication realm */

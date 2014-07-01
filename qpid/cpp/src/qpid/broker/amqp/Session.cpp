@@ -435,8 +435,8 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
         throw Exception(qpid::amqp::error_conditions::NOT_FOUND, std::string("Node not found: ") + name);
     }
-    if (connection.getBroker().getOptions().auth && !connection.isLink())
-        incoming[link]->verify(connection.getUserId(), connection.getBroker().getOptions().realm);
+    if (connection.getBroker().isAuthenticating() && !connection.isLink())
+        incoming[link]->verify(connection.getUserId(), connection.getBroker().getRealm());
     QPID_LOG(debug, "Incoming link attached");
 }
 

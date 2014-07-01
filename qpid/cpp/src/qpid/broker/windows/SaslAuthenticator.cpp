@@ -86,7 +86,7 @@ void SaslAuthenticator::fini(void)
 
 std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(qpid::broker::amqp_0_10::Connection& c)
 {
-    if (c.getBroker().getOptions().auth) {
+    if (c.getBroker().isAuthenticating()) {
         return std::auto_ptr<SaslAuthenticator>(new SspiAuthenticator(c));
     } else {
         return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c));
@@ -94,7 +94,7 @@ std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(qpid::br
 }
 
 NullAuthenticator::NullAuthenticator(qpid::broker::amqp_0_10::Connection& c) :
-    connection(c), client(c.getOutput()), realm("@"+c.getBroker().getOptions().realm) {}
+    connection(c), client(c.getOutput()), realm("@"+c.getBroker().getRealm()) {}
 NullAuthenticator::~NullAuthenticator() {}
 
 void NullAuthenticator::getMechanisms(Array& mechanisms)

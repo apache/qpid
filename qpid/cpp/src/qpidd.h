@@ -21,7 +21,7 @@
 
 #include "qpid/Modules.h"
 #include "qpid/Options.h"
-#include "qpid/broker/Broker.h"
+#include "qpid/broker/BrokerOptions.h"
 #include "qpid/log/Options.h"
 
 #include <memory>
@@ -58,7 +58,7 @@ protected:
 struct QpiddOptions : public qpid::Options {
     qpid::CommonOptions common;
     qpid::ModuleOptions module;
-    qpid::broker::Broker::Options broker;
+    qpid::broker::BrokerOptions broker;
     qpid::log::Options log;
     std::auto_ptr<QpiddOptionsPrivate> platform;
 
