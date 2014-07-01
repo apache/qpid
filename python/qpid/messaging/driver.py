@@ -723,7 +723,11 @@ class Engine:
     try:
       mech, initial = self._sasl.start(" ".join(mechs))
     except sasl.SASLError, e:
-      raise AuthenticationFailure(text=str(e))
+      if "ANONYMOUS" not in mechs and self.connection.username is None:
+        _text="Anonymous connections disabled, missing credentials"
+      else:
+        _text=str(e)
+      raise AuthenticationFailure(text=_text)
 
     client_properties = get_client_properties_with_defaults(provided_client_properties=self.connection.client_properties);
     self.write_op(ConnectionStartOk(client_properties=client_properties,
