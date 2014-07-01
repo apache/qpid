@@ -78,7 +78,7 @@ class LinkRegistryConnectionObserver : public ConnectionObserver {
 LinkRegistry::LinkRegistry (Broker* _broker) :
     broker(_broker),
     parent(0), store(0),
-    realm(broker->getOptions().realm)
+    realm(broker->getRealm())
 {
     broker->getConnectionObservers().add(
         boost::shared_ptr<ConnectionObserver>(new LinkRegistryConnectionObserver(*this)));

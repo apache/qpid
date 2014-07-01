@@ -91,7 +91,7 @@ class SslProtocolFactory : public qpid::sys::SocketAcceptor, public qpid::sys::T
     CredHandle credHandle;
 
   public:
-    SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions&, Timer& timer);
+    SslProtocolFactory(const qpid::broker::Broker& broker, const SslServerOptions&, Timer& timer);
     ~SslProtocolFactory();
 
     void connect(sys::Poller::shared_ptr, const std::string& name, const std::string& host, const std::string& port,
@@ -121,11 +121,10 @@ static struct SslPlugin : public Plugin {
         // Only provide to a Broker
         if (broker) {
             try {
-                const broker::Broker::Options& opts = broker->getOptions();
-                boost::shared_ptr<SslProtocolFactory> protocol(new SslProtocolFactory(opts, options, broker->getTimer()));
+                boost::shared_ptr<SslProtocolFactory> protocol(new SslProtocolFactory(*broker, options, broker->getTimer()));
                 uint16_t port =
-                    protocol->listen(opts.listenInterfaces,
-                                     options.port, opts.connectionBacklog,
+                    protocol->listen(broker->getListenInterfaces(),
+                                     options.port, broker->getConnectionBacklog(),
                                      &createSocket);
                 QPID_LOG(notice, "Listening for SSL connections on TCP port " << port);
                 broker->registerTransport("ssl", protocol, protocol, port);
@@ -136,12 +135,12 @@ static struct SslPlugin : public Plugin {
     }
 } sslPlugin;
 
-SslProtocolFactory::SslProtocolFactory(const qpid::broker::Broker::Options& opts, const SslServerOptions& options, Timer& timer)
-    : SocketAcceptor(opts.tcpNoDelay, false, opts.maxNegotiateTime, timer,
+SslProtocolFactory::SslProtocolFactory(const qpid::broker::Broker& broker, const SslServerOptions& options, Timer& timer)
+    : SocketAcceptor(broker.getTcpNoDelay(), false, broker.getMaxNegotiateTime(), timer,
                      boost::bind(&SslProtocolFactory::establishedIncoming, this, _1, _2, _3)),
       brokerTimer(timer),
-      maxNegotiateTime(opts.maxNegotiateTime),
-      tcpNoDelay(opts.tcpNoDelay),
+      maxNegotiateTime(broker.getMaxNegotiateTime()),
+      tcpNoDelay(broker.getTcpNoDelay()),
       clientAuthSelected(options.clientAuth) {
 
     // Make sure that certificate store is good before listening to sockets

@@ -52,7 +52,7 @@ using namespace qpid;
 using qpid::sys::Monitor;
 using qpid::sys::Thread;
 using qpid::sys::TIME_SEC;
-using qpid::broker::Broker;
+using qpid::broker::BrokerOptions;
 using std::string;
 using std::cout;
 using std::endl;
@@ -105,7 +105,7 @@ struct SimpleListener : public MessageListener
 
 struct ClientSessionFixture : public SessionFixture
 {
-    ClientSessionFixture(Broker::Options opts = Broker::Options()) : SessionFixture(opts) {
+    ClientSessionFixture(BrokerOptions opts = BrokerOptions()) : SessionFixture(opts) {
         session.queueDeclare(arg::queue="my-queue");
     }
 };
@@ -248,7 +248,7 @@ QPID_AUTO_TEST_CASE(testOpenFailure) {
 }
 
 QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
-    Broker::Options opts;
+    BrokerOptions opts;
     opts.queueCleanInterval = 1*TIME_SEC;
     opts.queueFlowStopRatio = 0;
     opts.queueFlowResumeRatio = 0;

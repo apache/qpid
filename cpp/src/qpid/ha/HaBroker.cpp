@@ -79,7 +79,7 @@ class HaBroker::BrokerObserver : public broker::BrokerObserver {
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     : systemId(b.getSystem()->getSystemId().data()),
       settings(s),
-      userId(s.username+"@"+b.getOptions().realm),
+      userId(s.username+"@"+b.getRealm()),
       broker(b),
       observer(new ConnectionObserver(*this, systemId)),
       role(new StandAlone),

@@ -61,7 +61,7 @@ namespace {
 
 struct LinkTimerTask : public sys::TimerTask {
     LinkTimerTask(Link& l, sys::Timer& t)
-        : TimerTask(l.getBroker()->getOptions().linkMaintenanceInterval,
+        : TimerTask(l.getBroker()->getLinkMaintenanceInterval(),
                     "Link retry timer"),
           link(l), timer(t) {}
 

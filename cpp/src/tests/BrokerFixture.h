@@ -23,6 +23,7 @@
  */
 
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/BrokerOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Session.h"
@@ -42,22 +43,26 @@ namespace tests {
 struct  BrokerFixture : private boost::noncopyable {
     typedef qpid::broker::Broker Broker;
     typedef boost::intrusive_ptr<Broker> BrokerPtr;
+    typedef qpid::broker::BrokerOptions BrokerOptions;
     typedef std::vector<std::string> Args;
 
     BrokerPtr broker;
+    BrokerOptions opts;
     uint16_t port;
     qpid::sys::Thread brokerThread;
 
-    BrokerFixture(const Args& args=Args(), const Broker::Options& opts=Broker::Options(),
-                  bool isExternalPort_=false, uint16_t externalPort_=0)
+    BrokerFixture(const Args& args=Args(), const BrokerOptions& opts0=BrokerOptions(),
+                  bool isExternalPort_=false, uint16_t externalPort_=0) :
+        opts(opts0)
     {
-        init(args, opts, isExternalPort_, externalPort_);
+        init(args, isExternalPort_, externalPort_);
     }
 
-    BrokerFixture(const Broker::Options& opts,
-                  bool isExternalPort_=false, uint16_t externalPort_=0)
+    BrokerFixture(const BrokerOptions& opts0,
+                  bool isExternalPort_=false, uint16_t externalPort_=0) :
+        opts(opts0)
     {
-        init(Args(), opts, isExternalPort_, externalPort_);
+        init(Args(), isExternalPort_, externalPort_);
     }
 
     void shutdownBroker() {
@@ -78,8 +83,7 @@ struct  BrokerFixture : private boost::noncopyable {
     uint16_t getPort() { return port; }
 
   private:
-    void init(const Args& args, Broker::Options opts,
-              bool isExternalPort=false, uint16_t externalPort=0)
+    void init(const Args& args, bool isExternalPort=false, uint16_t externalPort=0)
     {
         // Keep the tests quiet unless logging env. vars have been set by user.
         if (!::getenv("QPID_LOG_ENABLE") && !::getenv("QPID_TRACE")) {
@@ -148,7 +152,7 @@ typedef ClientT<> Client;
 template <class ConnectionType, class SessionType=qpid::client::Session>
 struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
 
-    SessionFixtureT(Broker::Options opts=Broker::Options()) :
+    SessionFixtureT(BrokerOptions opts=BrokerOptions()) :
         BrokerFixture(BrokerFixture::Args(), opts),
         ClientT<ConnectionType,SessionType>(getPort())
     {}

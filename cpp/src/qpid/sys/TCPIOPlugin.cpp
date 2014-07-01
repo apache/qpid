@@ -40,20 +40,18 @@ static class TCPIOPlugin : public Plugin {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker
         if (broker) {
-            const broker::Broker::Options& opts = broker->getOptions();
-
-            uint16_t port = opts.port;
+            uint16_t port = broker->getPortOption();
             TransportAcceptor::shared_ptr ta;
             if (broker->shouldListen("tcp")) {
-                SocketAcceptor* aa = new SocketAcceptor(opts.tcpNoDelay, false, opts.maxNegotiateTime, broker->getTimer());
+                SocketAcceptor* aa = new SocketAcceptor(broker->getTcpNoDelay(), false, broker->getMaxNegotiateTime(), broker->getTimer());
                 ta.reset(aa);
-                port = aa->listen(opts.listenInterfaces, opts.port, opts.connectionBacklog, &createSocket);
+                port = aa->listen(broker->getListenInterfaces(), port, broker->getConnectionBacklog(), &createSocket);
                 if ( port!=0 ) {
                     QPID_LOG(notice, "Listening on TCP/TCP6 port " << port);
                 }
             }
 
-            TransportConnector::shared_ptr tc(new SocketConnector(opts.tcpNoDelay, false, opts.maxNegotiateTime, broker->getTimer(), &createSocket));
+            TransportConnector::shared_ptr tc(new SocketConnector(broker->getTcpNoDelay(), false, broker->getMaxNegotiateTime(), broker->getTimer(), &createSocket));
 
             broker->registerTransport("tcp", ta, tc, port);
         }

@@ -22,6 +22,7 @@
 #include "qpid/broker/Broker.h"
 
 #include "qpid/broker/AclModule.h"
+#include "qpid/broker/BrokerOptions.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
@@ -119,7 +120,7 @@ const std::string amq_match("amq.match");
 const std::string qpid_management("qpid.management");
 const std::string knownHostsNone("none");
 
-Broker::Options::Options(const std::string& name) :
+BrokerOptions::BrokerOptions(const std::string& name) :
     qpid::Options(name),
     noDataDir(0),
     port(DEFAULT_PORT),
@@ -208,25 +209,25 @@ framing::FieldTable noReplicateArgs() {
 }
 }
 
-Broker::Broker(const Broker::Options& conf) :
+Broker::Broker(const BrokerOptions& conf) :
     poller(new Poller),
     timer(new qpid::sys::Timer),
     config(conf),
     managementAgent(conf.enableMgmt ? new ManagementAgent(conf.qmf1Support,
                                                           conf.qmf2Support)
                                     : 0),
-    disabledListeningTransports(config.listenDisabled.begin(), config.listenDisabled.end()),
+    disabledListeningTransports(conf.listenDisabled.begin(), conf.listenDisabled.end()),
     store(new NullMessageStore),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
     pagingDir(!conf.pagingDir.empty() ? conf.pagingDir :
-              dataDir.isEnabled() ? dataDir.getPath() + Options::DEFAULT_PAGED_QUEUE_DIR :
+              dataDir.isEnabled() ? dataDir.getPath() + BrokerOptions::DEFAULT_PAGED_QUEUE_DIR :
               std::string() ),
     queues(this),
     exchanges(this),
     links(this),
     factory(new SecureConnectionFactory(*this)),
-    dtxManager(*timer.get(), getOptions().dtxDefaultTimeout),
+    dtxManager(*timer.get(), conf.dtxDefaultTimeout),
     sessionManager(
         qpid::SessionState::Configuration(
             conf.replayFlushLimit*1024, // convert kb to bytes.
@@ -234,6 +235,7 @@ Broker::Broker(const Broker::Options& conf) :
         *this),
     queueCleaner(queues, poller, timer.get()),
     recoveryInProgress(false),
+    timestampRcvMsgs(conf.timestampRcvMsgs),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if (!dataDir.isEnabled()) {
@@ -400,15 +402,79 @@ void Broker::declareStandardExchange(const std::string& name, const std::string&
     }
 }
 
+bool Broker::isAuthenticating() const
+{
+    return config.auth;
+}
+
+bool Broker::requireEncrypted() const
+{
+    return config.requireEncrypted;
+}
+
+std::string Broker::getRealm() const
+{
+    return config.realm;
+}
+
+bool Broker::getTcpNoDelay() const
+{
+    return config.tcpNoDelay;
+}
+
+uint32_t Broker::getMaxNegotiateTime() const
+{
+    return config.maxNegotiateTime;
+}
+
+uint16_t Broker::getPortOption() const
+{
+    return config.port;
+}
+
+const std::vector<std::string>& Broker::getListenInterfaces() const
+{
+    return config.listenInterfaces;
+}
+
+int Broker::getConnectionBacklog() const
+{
+    return config.connectionBacklog;
+}
+
+sys::Duration Broker::getLinkMaintenanceInterval() const
+{
+    return config.linkMaintenanceInterval;
+}
+
+sys::Duration Broker::getLinkHeartbeatInterval() const
+{
+    return config.linkHeartbeatInterval;
+}
+
+uint32_t Broker::getDtxMaxTimeout() const
+{
+    return config.dtxMaxTimeout;
+}
+
+uint16_t Broker::getQueueThresholdEventRatio() const
+{
+    return config.queueThresholdEventRatio;
+}
+
+uint Broker::getQueueLimit() const
+{
+    return config.queueLimit;
+}
 
 boost::intrusive_ptr<Broker> Broker::create(int16_t port)
 {
-    Options config;
+    BrokerOptions config;
     config.port=port;
     return create(config);
 }
 
-boost::intrusive_ptr<Broker> Broker::create(const Options& opts)
+boost::intrusive_ptr<Broker> Broker::create(const BrokerOptions& opts)
 {
     return boost::intrusive_ptr<Broker>(new Broker(opts));
 }
@@ -1031,7 +1097,7 @@ Manageable::status_t Broker::getTimestampConfig(bool& receive,
     if (acl && !acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_BROKER, name, NULL))  {
         throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied broker timestamp get request from " << userId));
     }
-    receive = config.timestampRcvMsgs;
+    receive = timestampRcvMsgs;
     return Manageable::STATUS_OK;
 }
 
@@ -1043,8 +1109,8 @@ Manageable::status_t Broker::setTimestampConfig(const bool receive,
     if (acl && !acl->authorise(userId, acl::ACT_UPDATE, acl::OBJ_BROKER, name, NULL)) {
         throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied broker timestamp set request from " << userId));
     }
-    config.timestampRcvMsgs = receive;
-    QPID_LOG(notice, "Receive message timestamping is " << ((config.timestampRcvMsgs) ? "ENABLED." : "DISABLED."));
+    timestampRcvMsgs = receive;
+    QPID_LOG(notice, "Receive message timestamping is " << ((timestampRcvMsgs) ? "ENABLED." : "DISABLED."));
     return Manageable::STATUS_OK;
 }
 

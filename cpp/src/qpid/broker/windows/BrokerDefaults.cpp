@@ -19,18 +19,19 @@
  *
  */
 
-#include "qpid/broker/Broker.h"
+#include "qpid/broker/BrokerOptions.h"
 #include <stdlib.h>
+#include <windows.h>
 
 namespace qpid {
 namespace broker {
 
-const std::string Broker::Options::DEFAULT_DATA_DIR_LOCATION("\\TEMP");
-const std::string Broker::Options::DEFAULT_DATA_DIR_NAME("\\QPIDD.DATA");
-const std::string Broker::Options::DEFAULT_PAGED_QUEUE_DIR("\\PQ");
+const std::string BrokerOptions::DEFAULT_DATA_DIR_LOCATION("\\TEMP");
+const std::string BrokerOptions::DEFAULT_DATA_DIR_NAME("\\QPIDD.DATA");
+const std::string BrokerOptions::DEFAULT_PAGED_QUEUE_DIR("\\PQ");
 
 std::string
-Broker::Options::getHome() {
+BrokerOptions::getHome() {
     std::string home;
 #ifdef _MSC_VER
     char home_c[MAX_PATH+1];
