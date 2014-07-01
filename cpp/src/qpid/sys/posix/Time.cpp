@@ -42,7 +42,7 @@ AbsTime::AbsTime(const AbsTime& t, const Duration& d) :
     timepoint(d == Duration::max() ? max_abstime() : t.timepoint+d.nanosecs)
 {}
 
-AbsTime AbsTime::Epoch() {
+AbsTime AbsTime::Zero() {
     AbsTime epoch; epoch.timepoint = 0;
     return epoch;
 }
@@ -53,10 +53,20 @@ AbsTime AbsTime::FarFuture() {
 
 AbsTime AbsTime::now() {
     struct timespec ts;
-    ::clock_gettime(CLOCK_REALTIME, &ts);
+    ::clock_gettime(CLOCK_MONOTONIC, &ts);
     AbsTime time_now;
     time_now.timepoint = toTime(ts).nanosecs;
     return time_now;
+}
+
+AbsTime AbsTime::epoch() {
+    return AbsTime(now(), -Duration::FromEpoch());
+}
+
+Duration Duration::FromEpoch() {
+    struct timespec ts;
+    ::clock_gettime(CLOCK_REALTIME, &ts);
+    return toTime(ts).nanosecs;
 }
 
 Duration::Duration(const AbsTime& start, const AbsTime& finish) :
@@ -68,7 +78,8 @@ namespace {
 const time_t TIME_T_MAX = std::numeric_limits<time_t>::max();
 }
 
-struct timespec& toTimespec(struct timespec& ts, const Duration& t) {
+struct timespec& toTimespec(struct timespec& ts, const AbsTime& a) {
+    Duration t(ZERO, a);
     Duration secs = t / TIME_SEC;
     ts.tv_sec = (secs > TIME_T_MAX) ? TIME_T_MAX : static_cast<time_t>(secs);
     ts.tv_nsec = static_cast<long>(t % TIME_SEC);

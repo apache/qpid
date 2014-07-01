@@ -68,7 +68,13 @@ AbsTime AbsTime::FarFuture() {
     return ff;
 }
 
-AbsTime AbsTime::Epoch() {
+AbsTime AbsTime::Zero() {
+    AbsTime time_epoch;
+    time_epoch.timepoint = boost::posix_time::from_time_t(0);
+    return time_epoch;
+}
+
+AbsTime AbsTime::epoch() {
     AbsTime time_epoch;
     time_epoch.timepoint = boost::posix_time::from_time_t(0);
     return time_epoch;
@@ -78,6 +84,11 @@ AbsTime AbsTime::now() {
     AbsTime time_now;
     time_now.timepoint = boost::get_system_time();
     return time_now;
+}
+
+Duration Duration::FromEpoch() {
+    time_duration d = boost::get_system_time() - boost::posix_time::from_time_t(0);
+    return d.total_nanoseconds();
 }
 
 Duration::Duration(const AbsTime& start, const AbsTime& finish) {
