@@ -44,7 +44,6 @@
 
 #include "qmf/org/apache/qpid/broker/Connection.h"
 
-#include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/bind.hpp>
 
