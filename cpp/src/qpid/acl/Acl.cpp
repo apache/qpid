@@ -248,7 +248,9 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     boost::shared_ptr<AclData> d(new AclData);
     AclReader ar(aclValues.aclMaxConnectPerUser, aclValues.aclMaxQueuesPerUser);
     if (ar.read(aclFile, d)){
-        agent->raiseEvent(_qmf::EventFileLoadFailed("", ar.getError()));
+        if (agent != 0){
+            agent->raiseEvent(_qmf::EventFileLoadFailed("", ar.getError()));
+        }
         errorText = ar.getError();
         QPID_LOG(error,ar.getError());
         return false;
