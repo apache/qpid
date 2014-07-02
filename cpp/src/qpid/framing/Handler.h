@@ -21,9 +21,6 @@
  * under the License.
  *
  */
-#include <boost/shared_ptr.hpp>
-#include <boost/type_traits/remove_reference.hpp>
-#include <assert.h>
 
 namespace qpid {
 namespace framing {

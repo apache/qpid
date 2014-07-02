@@ -21,7 +21,6 @@
 #ifndef _DtxManager_
 #define _DtxManager_
 
-#include <boost/ptr_container/ptr_map.hpp>
 #include "qpid/broker/DtxBuffer.h"
 #include "qpid/broker/DtxWorkRecord.h"
 #include "qpid/broker/TransactionalStore.h"
