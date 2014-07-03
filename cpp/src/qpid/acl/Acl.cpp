@@ -69,7 +69,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
 
     agent = broker->getManagementAgent();
 
-    if (agent != 0){
+    if (agent != 0) {
         _qmf::Package  packageInit(agent);
         mgmtObject = _qmf::Acl::shared_ptr(new _qmf::Acl (agent, this, broker));
         agent->addObject (mgmtObject);
@@ -100,7 +100,9 @@ void Acl::reportConnectLimit(const std::string user, const std::string addr)
     if (mgmtObject!=0)
         mgmtObject->inc_connectionDenyCount();
 
-    agent->raiseEvent(_qmf::EventConnectionDeny(user, addr));
+    if (agent != 0) {
+        agent->raiseEvent(_qmf::EventConnectionDeny(user, addr));
+    }
 }
 
 
@@ -109,7 +111,9 @@ void Acl::reportQueueLimit(const std::string user, const std::string queueName)
     if (mgmtObject!=0)
         mgmtObject->inc_queueQuotaDenyCount();
 
-    agent->raiseEvent(_qmf::EventQueueQuotaDeny(user, queueName));
+    if (agent != 0) {
+        agent->raiseEvent(_qmf::EventQueueQuotaDeny(user, queueName));
+    }
 }
 
 
@@ -208,9 +212,11 @@ bool Acl::result(
             << " action:" << AclHelper::getActionStr(action)
             << " ObjectType:" << AclHelper::getObjectTypeStr(objType)
             << " Name:" << name );
-        agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
-                          AclHelper::getObjectTypeStr(objType),
-                          name, types::Variant::Map()));
+        if (agent != 0) {
+            agent->raiseEvent(_qmf::EventAllow(id,  AclHelper::getActionStr(action),
+                              AclHelper::getObjectTypeStr(objType),
+                              name, types::Variant::Map()));
+        }
         // FALLTHROUGH
     case ALLOW:
         result = true;
@@ -221,9 +227,11 @@ bool Acl::result(
             << " action:" << AclHelper::getActionStr(action)
             << " ObjectType:" << AclHelper::getObjectTypeStr(objType)
             << " Name:" << name);
-        agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
-                                          AclHelper::getObjectTypeStr(objType),
-                                          name, types::Variant::Map()));
+        if (agent != 0) {
+            agent->raiseEvent(_qmf::EventDeny(id, AclHelper::getActionStr(action),
+                                              AclHelper::getObjectTypeStr(objType),
+                                              name, types::Variant::Map()));
+        }
         // FALLTHROUGH
     case DENY:
         if (mgmtObject!=0)
@@ -248,7 +256,7 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
     boost::shared_ptr<AclData> d(new AclData);
     AclReader ar(aclValues.aclMaxConnectPerUser, aclValues.aclMaxQueuesPerUser);
     if (ar.read(aclFile, d)){
-        if (agent != 0){
+        if (agent != 0) {
             agent->raiseEvent(_qmf::EventFileLoadFailed("", ar.getError()));
         }
         errorText = ar.getError();
@@ -283,7 +291,9 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
         mgmtObject->set_transferAcl(transferAcl?1:0);
         mgmtObject->set_policyFile(aclFile);
         mgmtObject->set_lastAclLoad(Duration::FromEpoch());
-        agent->raiseEvent(_qmf::EventFileLoaded(""));
+        if (agent != 0) {
+            agent->raiseEvent(_qmf::EventFileLoaded(""));
+        }
     }
     return true;
 }
@@ -306,7 +316,9 @@ void Acl::loadEmptyAclRuleset() {
         mgmtObject->set_transferAcl(transferAcl?1:0);
         mgmtObject->set_policyFile("");
         mgmtObject->set_lastAclLoad(Duration::FromEpoch());
-        agent->raiseEvent(_qmf::EventFileLoaded(""));
+        if (agent != 0) {
+            agent->raiseEvent(_qmf::EventFileLoaded(""));
+        }
     }
 }
 
