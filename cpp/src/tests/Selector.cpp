@@ -152,7 +152,8 @@ QPID_AUTO_TEST_CASE(tokeniseSuccess)
 {
     verifyTokeniserSuccess(&tokenise, "", qb::T_EOS, "", "");
     verifyTokeniserSuccess(&tokenise, "null_123+blah", qb::T_IDENTIFIER, "null_123", "+blah");
-    verifyTokeniserSuccess(&tokenise, "null_123+blah", qb::T_IDENTIFIER, "null_123", "+blah");
+    verifyTokeniserSuccess(&tokenise, "\"null-123\"+blah", qb::T_IDENTIFIER, "null-123", "+blah");
+    verifyTokeniserSuccess(&tokenise, "\"This is an \"\"odd!\"\" identifier\"+blah", qb::T_IDENTIFIER, "This is an \"odd!\" identifier", "+blah");
     verifyTokeniserSuccess(&tokenise, "null+blah", qb::T_NULL, "null", "+blah");
     verifyTokeniserSuccess(&tokenise, "null+blah", qb::T_NULL, "null", "+blah");
     verifyTokeniserSuccess(&tokenise, "Is nOt null", qb::T_IS, "Is", " nOt null");
