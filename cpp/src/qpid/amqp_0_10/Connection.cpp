@@ -20,7 +20,7 @@
  */
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/log/Statement.h"
-#include "qpid/amqp_0_10/exceptions.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -28,6 +28,7 @@
 namespace qpid {
 namespace amqp_0_10 {
 
+using framing::InternalErrorException;
 using sys::Mutex;
 
 Connection::Connection(sys::OutputControl& o, const std::string& id, bool _isClient)

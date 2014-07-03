@@ -140,21 +140,6 @@ EOS
       rgen_subdirs.each_key { |subdir|
         out << "\nset(rgen_#{subdir}_srcs #{cmake_continue(rgen_subdirs[subdir])})\n"
       }
-      out << <<EOS
-set(rgen_srcs #{cmake_continue rgen_srcs})
-
-# Header file install rules.
-EOS
-      ["amqp_0_10", "framing", "client/no_keyword","client", "broker"].each { |ns|
-        dir="qpid/#{ns}"
-        dir_ = dir.tr("/", "_")
-        regex=%r|#{dir}/[^/]+\.h$|
-        out << <<EOS
-set(#{dir_}dir  \${includedir}/#{dir})
-set(dist_#{dir_}_HEADERS #{cmake_continue rgen_srcs.grep(regex)})
-
-EOS
-      } # each
     }   # File makefile
   end   # if (makefile)
 end
