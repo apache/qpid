@@ -78,6 +78,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void attach(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     void detach(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
     void detach(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
+    void drain_and_release_messages(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     bool isClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     void send(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext> ctxt, const qpid::messaging::Message& message, bool sync);
     bool fetch(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk, qpid::messaging::Message& message, qpid::messaging::Duration timeout);

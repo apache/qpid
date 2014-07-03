@@ -140,13 +140,9 @@ void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     if (pn_session_state(ssn->session) & PN_REMOTE_ACTIVE) {
         //explicitly release messages that have yet to be fetched
-        for (boost::shared_ptr<ReceiverContext> lnk = ssn->nextReceiver(); lnk != boost::shared_ptr<ReceiverContext>(); lnk = ssn->nextReceiver()) {
-            for (pn_delivery_t* d = pn_link_current(lnk->receiver); d; d = pn_link_current(lnk->receiver)) {
-                pn_link_advance(lnk->receiver);
-                pn_delivery_update(d, PN_RELEASED);
-                pn_delivery_settle(d);
-            }
-	}
+        for (SessionContext::ReceiverMap::iterator i = ssn->receivers.begin(); i != ssn->receivers.end(); ++i) {
+            drain_and_release_messages(ssn, i->second);
+        }
         //wait for outstanding sends to settle
         while (!ssn->settled()) {
             QPID_LOG(debug, "Waiting for sends to settle before closing");
@@ -338,9 +334,8 @@ void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::sha
     ssn->removeSender(lnk->getName());
 }
 
-void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
+void ConnectionContext::drain_and_release_messages(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
 {
-    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     pn_link_drain(lnk->receiver, 0);
     wakeupDriver();
     //Not all implementations handle drain correctly, so limit the
@@ -356,6 +351,12 @@ void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::sha
         pn_delivery_update(d, PN_RELEASED);
         pn_delivery_settle(d);
     }
+}
+
+void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
+{
+    qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    drain_and_release_messages(ssn, lnk);
     if (pn_link_state(lnk->receiver) & PN_LOCAL_ACTIVE) {
         lnk->close();
     }
