@@ -151,6 +151,7 @@ void verifyTokeniserFail(TokeniseF t, const char* c) {
 QPID_AUTO_TEST_CASE(tokeniseSuccess)
 {
     verifyTokeniserSuccess(&tokenise, "", qb::T_EOS, "", "");
+    verifyTokeniserSuccess(&tokenise, " ", qb::T_EOS, "", "");
     verifyTokeniserSuccess(&tokenise, "null_123+blah", qb::T_IDENTIFIER, "null_123", "+blah");
     verifyTokeniserSuccess(&tokenise, "\"null-123\"+blah", qb::T_IDENTIFIER, "null-123", "+blah");
     verifyTokeniserSuccess(&tokenise, "\"This is an \"\"odd!\"\" identifier\"+blah", qb::T_IDENTIFIER, "This is an \"odd!\" identifier", "+blah");
@@ -344,6 +345,8 @@ QPID_AUTO_TEST_CASE(simpleEval)
     env.set("A", "Bye, bye cruel world");
     env.set("B", "hello kitty");
 
+    BOOST_CHECK(qb::Selector("").eval(env));
+    BOOST_CHECK(qb::Selector(" ").eval(env));
     BOOST_CHECK(qb::Selector("A is not null").eval(env));
     BOOST_CHECK(!qb::Selector("A is null").eval(env));
     BOOST_CHECK(!qb::Selector("A = C").eval(env));

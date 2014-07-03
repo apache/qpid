@@ -728,6 +728,16 @@ friend TopExpression* TopExpression::parse(const string&);
 
 string error;
 
+Expression* selectorExpression(Tokeniser& tokeniser)
+{
+    if ( tokeniser.nextToken().type==T_EOS ) {
+        return (new Literal(true));
+    }
+    tokeniser.returnTokens();
+    std::auto_ptr<Expression> e(orExpression(tokeniser));
+    return e.release();
+}
+
 Expression* orExpression(Tokeniser& tokeniser)
 {
     std::auto_ptr<Expression> e(andExpression(tokeniser));
@@ -991,7 +1001,7 @@ TopExpression* TopExpression::parse(const string& exp)
     string::const_iterator e = exp.end();
     Tokeniser tokeniser(s,e);
     Parse parse;
-    std::auto_ptr<Expression> b(parse.orExpression(tokeniser));
+    std::auto_ptr<Expression> b(parse.selectorExpression(tokeniser));
     if (!b.get()) {
         throwParseError(tokeniser, parse.error);
     }

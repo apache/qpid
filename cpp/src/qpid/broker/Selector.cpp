@@ -229,13 +229,8 @@ bool Selector::filter(const Message& msg)
     return eval(env);
 }
 
-namespace {
-const boost::shared_ptr<Selector> NULL_SELECTOR = boost::shared_ptr<Selector>();
-}
-
 boost::shared_ptr<Selector> returnSelector(const string& e)
 {
-    if (e.empty()) return NULL_SELECTOR;
     return boost::shared_ptr<Selector>(new Selector(e));
 }
 
