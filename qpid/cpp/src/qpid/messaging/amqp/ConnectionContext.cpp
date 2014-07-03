@@ -139,6 +139,14 @@ void ConnectionContext::endSession(boost::shared_ptr<SessionContext> ssn)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     if (pn_session_state(ssn->session) & PN_REMOTE_ACTIVE) {
+        //explicitly release messages that have yet to be fetched
+        for (boost::shared_ptr<ReceiverContext> lnk = ssn->nextReceiver(); lnk != boost::shared_ptr<ReceiverContext>(); lnk = ssn->nextReceiver()) {
+            for (pn_delivery_t* d = pn_link_current(lnk->receiver); d; d = pn_link_current(lnk->receiver)) {
+                pn_link_advance(lnk->receiver);
+                pn_delivery_update(d, PN_RELEASED);
+                pn_delivery_settle(d);
+            }
+	}
         //wait for outstanding sends to settle
         while (!ssn->settled()) {
             QPID_LOG(debug, "Waiting for sends to settle before closing");
