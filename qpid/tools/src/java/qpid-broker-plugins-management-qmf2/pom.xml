@@ -81,4 +81,73 @@
     </plugins>
   </build>
 
+  <profiles>
+    <profile>
+      <id>copy-broker</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <!--version specified in qpid-parent pluginManagement -->
+            <executions>
+              <execution>
+                <id>extract-broker-distribution</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <configuration>
+                  <outputAbsoluteArtifactFilename>false</outputAbsoluteArtifactFilename>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.apache.qpid</groupId>
+                      <artifactId>qpid-broker</artifactId>
+                      <version>${project.version}</version>
+                      <classifier>bin</classifier>
+                      <type>tar.gz</type>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+
+              <execution>
+                <id>copy-plugin-jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>copy</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>${project.groupId}</groupId>
+                      <artifactId>${project.artifactId}</artifactId>
+                      <version>${project.version}</version>
+                      <type>jar</type>
+                    </artifactItem>
+                  </artifactItems>
+                  <outputDirectory>${project.build.directory}/qpid-broker/${project.version}/lib</outputDirectory>
+                  <overWriteSnapshots>true</overWriteSnapshots>
+                </configuration>
+              </execution>
+
+              <execution>
+                <id>copy-plugin-deps</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>copy-dependencies</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.build.directory}/qpid-broker/${project.version}/lib</outputDirectory>
+                  <overWriteSnapshots>true</overWriteSnapshots>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>
