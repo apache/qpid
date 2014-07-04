@@ -32,7 +32,6 @@ import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
@@ -149,7 +148,8 @@ public class BDBHARemoteReplicationNodeTest extends QpidTestCase
     private BDBHARemoteReplicationNode createRemoteReplicationNode(final String replicationNodeName)
     {
         Map<String, Object> attributes = new HashMap<>();
-        attributes.put(RemoteReplicationNode.NAME, replicationNodeName);
+        attributes.put(BDBHARemoteReplicationNode.NAME, replicationNodeName);
+        attributes.put(BDBHARemoteReplicationNode.MONITOR, Boolean.FALSE);
 
         BDBHARemoteReplicationNodeImpl node = new BDBHARemoteReplicationNodeImpl(_virtualHostNode, attributes, _facade);
         node.create();
