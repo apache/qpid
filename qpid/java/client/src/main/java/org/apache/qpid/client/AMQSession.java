@@ -2271,6 +2271,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             _failedOverDirty = true;
         }
 
+        _highestDeliveryTag.set(-1);
         _rollbackMark.set(-1);
         resubscribeProducers();
         resubscribeConsumers();
