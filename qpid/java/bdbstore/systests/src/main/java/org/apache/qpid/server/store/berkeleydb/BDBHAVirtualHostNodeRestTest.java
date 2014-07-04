@@ -281,9 +281,17 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
         envConfig.setDurability(Durability.parse((String)nodeData.get(BDBHAVirtualHostNode.DURABILITY)));
-        ReplicatedEnvironment intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
 
-        waitForAttributeChanged(_baseNodeRestUrl + NODE1, VirtualHost.STATE, State.ERRORED.name());
+        ReplicatedEnvironment intruder = null;
+        try
+        {
+            intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+        }
+        finally
+        {
+            intruder.close();
+        }
+        waitForAttributeChanged(_baseNodeRestUrl + NODE1, VirtualHostNode.STATE, State.ERRORED.name());
     }
 
     private void createHANode(String nodeName, int nodePort, int helperPort) throws Exception
