@@ -25,16 +25,30 @@ and allow the Java Broker to be controlled by the Qpid Command Line tools and al
 and GUI thus providing a unified view across a mixture of C++ and Java Brokers.
 
 
-To build the Java Broker QMF2 plugin do:
+************************************************ Building**************************************************
+
+To build the Java Broker QMF2 plugin from source, do:
 
 mvn clean package
 
 This will build the main plugin jar, and additionally a tar.gz release assembly which contains all the necessary
-dependencies to install the plugin in a broker installation. To install the plugin, copy all of the files from
-the lib/ dir of the assembly into the lib/ or lib/plugins dir of your extracted broker installation.
+dependencies to install the plugin in a broker installation.
 
+To aid during development, you can optionally use the 'copy-broker' profile to extract the broker release archive
+into the target/qpid-broker directory and copy the qmf2 broker plugin and dependencies into its lib dir:
 
-************************************************* Config **************************************************
+mvn clean package -Pcopy-broker
+
+You can then configure the extracted broker as described below.
+
+*********************************************** Installing *************************************************
+
+To install a release of the plugin, extract the release assembly and copy all of the files from the lib/ dir
+into either the lib/ or lib/plugins/ directory of your extracted broker installation.
+
+You can then configure the broker as described below.
+
+********************************************** Configuring **************************************************
 
 The Java Broker stores its main configuration in a JSON file (default: $QPID_WORK/config.json), which is typically
 managed file via the Web Management GUI. It is IMPORTANT to ensure that the following:
