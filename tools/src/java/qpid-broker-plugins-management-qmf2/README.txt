@@ -59,7 +59,7 @@ HTTP port to something other than 8080, or the brokers list of "ports" in $QPID_
 {
     "id" :   <UUID>,
     "name" : "HTTP",
-    "port" : 8080,
+    "port" : "${qpid.jmx_port}"
     "protocols" : [ "HTTP" ]
   }
 
