@@ -108,6 +108,13 @@ public class RuleSetTest extends QpidTestCase
         assertEquals(_ruleSet.getDefault(), _ruleSet.check(_testSubject, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY));
     }
 
+    public void testVirtualHostNodeCreateAllowPermissionWithVirtualHostName() throws Exception
+    {
+        _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.CREATE, ObjectType.VIRTUALHOSTNODE, ObjectProperties.EMPTY);
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.VIRTUALHOSTNODE, ObjectProperties.EMPTY));
+        assertEquals(Result.DENIED, _ruleSet.check(_testSubject, Operation.DELETE, ObjectType.VIRTUALHOSTNODE, ObjectProperties.EMPTY));
+    }
+
     public void testVirtualHostAccessAllowPermissionWithVirtualHostName() throws Exception
     {
         _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, new ObjectProperties(ALLOWED_VH));

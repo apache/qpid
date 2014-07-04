@@ -22,12 +22,15 @@ package org.apache.qpid.server.model;
 
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -36,6 +39,8 @@ import org.mockito.ArgumentMatcher;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -44,6 +49,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class VirtualHostTest extends QpidTestCase
 {
+    private final SecurityManager _mockSecurityManager = mock(SecurityManager.class);
     private Broker _broker;
     private TaskExecutor _taskExecutor;
     private VirtualHostNode<?> _virtualHostNode;
@@ -178,6 +184,82 @@ public class VirtualHostTest extends QpidTestCase
         assertEquals(queueName, queue.getName());
 
         verify(_configStore, never()).create(matchesRecord(queue.getId(), queue.getType()));
+    }
+
+    // ***************  VH Access Control Tests  ***************
+
+    public void testUpdateDeniedByACL()
+    {
+        when(_broker.getSecurityManager()).thenReturn(_mockSecurityManager);
+
+        String virtualHostName = getName();
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
+
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHost(
+                virtualHostName,
+                Operation.UPDATE);
+
+        assertNull(virtualHost.getDescription());
+
+        try
+        {
+            virtualHost.setAttribute(VirtualHost.DESCRIPTION, null, "My description");
+            fail("Exception not thrown");
+        }
+        catch (AccessControlException ace)
+        {
+            // PASS
+        }
+
+        verify(_configStore, never()).update(eq(false), matchesRecord(virtualHost.getId(), virtualHost.getType()));
+    }
+
+    public void testStopDeniedByACL()
+    {
+        when(_broker.getSecurityManager()).thenReturn(_mockSecurityManager);
+
+        String virtualHostName = getName();
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
+
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHost(
+                virtualHostName,
+                Operation.UPDATE);
+
+        try
+        {
+            virtualHost.stop();
+            fail("Exception not thrown");
+        }
+        catch (AccessControlException ace)
+        {
+            // PASS
+        }
+
+        verify(_configStore, never()).update(eq(false), matchesRecord(virtualHost.getId(), virtualHost.getType()));
+    }
+
+    public void testDeleteDeniedByACL()
+    {
+        when(_broker.getSecurityManager()).thenReturn(_mockSecurityManager);
+
+        String virtualHostName = getName();
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
+
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHost(
+                virtualHostName,
+                Operation.DELETE);
+
+        try
+        {
+            virtualHost.delete();
+            fail("Exception not thrown");
+        }
+        catch (AccessControlException ace)
+        {
+            // PASS
+        }
+
+        verify(_configStore, never()).remove(matchesRecord(virtualHost.getId(), virtualHost.getType()));
     }
 
     private VirtualHost<?,?,?> createVirtualHost(final String virtualHostName)

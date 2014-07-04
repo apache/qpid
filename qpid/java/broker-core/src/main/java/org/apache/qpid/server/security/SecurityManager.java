@@ -25,6 +25,7 @@ import static org.apache.qpid.server.security.access.ObjectType.METHOD;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
 import static org.apache.qpid.server.security.access.ObjectType.USER;
 import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
+import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOSTNODE;
 import static org.apache.qpid.server.security.access.Operation.*;
 
 import java.security.AccessControlException;
@@ -242,9 +243,24 @@ public class SecurityManager implements ConfigurationChangeListener
         }
     }
 
-    public void authoriseCreateConnection(final AMQConnectionModel connection)
+    public void authoriseVirtualHostNode(final String virtualHostNodeName, final Operation operation)
     {
-        final String virtualHostName = connection.getVirtualHostName();
+        if(!checkAllPlugins(new AccessCheck()
+        {
+            Result allowed(AccessControl plugin)
+            {
+                ObjectProperties properties = new ObjectProperties(virtualHostNodeName);
+                return plugin.authorise(operation, VIRTUALHOSTNODE, properties);
+            }
+        }))
+        {
+            throw new AccessControlException(operation + " permission denied for " + VIRTUALHOSTNODE
+                                             + " : " + virtualHostNodeName);
+        }
+    }
+
+    public void authoriseVirtualHost(final String virtualHostName, final Operation operation)
+    {
         if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
@@ -252,9 +268,23 @@ public class SecurityManager implements ConfigurationChangeListener
                 // We put the name into the properties under both name and virtualhost_name so the user may express predicates using either.
                 ObjectProperties properties = new ObjectProperties(virtualHostName);
                 properties.put(Property.VIRTUALHOST_NAME, virtualHostName);
-                return plugin.authorise(Operation.ACCESS, VIRTUALHOST, properties);
+                return plugin.authorise(operation, VIRTUALHOST, properties);
             }
         }))
+        {
+            throw new AccessControlException(operation + " permission denied for " + VIRTUALHOST
+                                             + " : " + virtualHostName);
+        }
+    }
+
+    public void authoriseCreateConnection(final AMQConnectionModel connection)
+    {
+        String virtualHostName = connection.getVirtualHostName();
+        try
+        {
+            authoriseVirtualHost(virtualHostName, Operation.ACCESS);
+        }
+        catch (AccessControlException ace)
         {
             throw new AccessControlException("Permission denied: " + virtualHostName);
         }
