@@ -54,6 +54,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     private volatile String _role;
 
     private final AtomicReference<State> _state;
+    private final boolean _isMonitor;
 
     public BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNode<?> virtualHostNode, Map<String, Object> attributes, ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
     {
@@ -61,6 +62,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         _address = (String)attributes.get(ADDRESS);
         _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
         _state = new AtomicReference<State>(State.ACTIVE);
+        _isMonitor = (Boolean)attributes.get(MONITOR);
     }
 
     @Override
@@ -97,6 +99,12 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     public long getLastKnownReplicationTransactionId()
     {
         return _lastTransactionId;
+    }
+
+    @Override
+    public boolean isMonitor()
+    {
+        return _isMonitor;
     }
 
     @Override

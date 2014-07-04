@@ -33,6 +33,7 @@ public interface BDBHARemoteReplicationNode<X extends BDBHARemoteReplicationNode
     String ROLE = "role";
     String LAST_KNOWN_REPLICATION_TRANSACTION_ID = "lastKnownReplicationTransactionId";
     String JOIN_TIME = "joinTime";
+    String MONITOR = "monitor";
 
     @DerivedAttribute
     String getGroupName();
@@ -49,4 +50,6 @@ public interface BDBHARemoteReplicationNode<X extends BDBHARemoteReplicationNode
     @DerivedAttribute
     long getLastKnownReplicationTransactionId();
 
+    @DerivedAttribute
+    boolean isMonitor();
 }

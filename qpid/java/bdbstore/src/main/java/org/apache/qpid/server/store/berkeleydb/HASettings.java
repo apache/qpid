@@ -34,4 +34,6 @@ public interface HASettings extends FileBasedSettings
     int getPriority();
 
     int getQuorumOverride();
+
+    String getHelperNodeName();
 }

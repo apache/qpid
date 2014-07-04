@@ -31,11 +31,16 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.sleepycat.je.Durability;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
+import com.sleepycat.je.rep.ReplicationConfig;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.systest.rest.Asserts;
@@ -136,7 +141,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         Map<String, Object> remoteNode1 = findRemoteNodeByName(remoteNodes, NODE1);
 
         assertEquals("Node 1 observed from node 2 is in the wrong state",
-                     "UNAVAILABLE", remoteNode1.get(BDBHARemoteReplicationNode.STATE));
+                "UNAVAILABLE", remoteNode1.get(BDBHARemoteReplicationNode.STATE));
         assertEquals("Node 1 observed from node 2 has the wrong role",
                      "UNKNOWN", remoteNode1.get(BDBHARemoteReplicationNode.ROLE));
 
@@ -240,7 +245,56 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of remote nodes on " + NODE2, 1, data.size());
     }
 
+    public void testIntruderProtection() throws Exception
+    {
+        createHANode(NODE1, _node1HaPort, _node1HaPort);
+        assertNode(NODE1, _node1HaPort, _node1HaPort, NODE1);
+
+        String virtualHostRestUrl = "virtualhost/" + NODE1 + "/" + _hostName;
+
+        Map<String,Object> hostData = new HashMap<String,Object>();
+        hostData.put(BDBHAVirtualHost.PERMITTED_NODES, Arrays.asList( "localhost:" + _node1HaPort,  "localhost:" + _node3HaPort));
+        getRestTestHelper().submitRequest(virtualHostRestUrl, "PUT", hostData, 200);
+
+        // add permitted node
+        Map<String, Object> node3Data = createNodeAttributeMap(NODE3, _node3HaPort, _node1HaPort);
+        node3Data.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE3, "PUT", node3Data, 201);
+        assertNode(NODE3, _node3HaPort, _node1HaPort, NODE1);
+        assertRemoteNodes(NODE1, NODE3);
+
+        // try to add not permitted node
+        Map<String, Object> nodeData = createNodeAttributeMap(NODE2, _node2HaPort, _node1HaPort);
+        nodeData.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "PUT", nodeData, 409);
+
+        assertRemoteNodes(NODE1, NODE3);
+
+        //connect intruder node
+        String nodeName = NODE2;
+        String nodeHostPort = (String)nodeData.get(BDBHAVirtualHostNode.ADDRESS);
+        File environmentPathFile = new File((String)nodeData.get(BDBHAVirtualHostNode.STORE_PATH), nodeName);
+        environmentPathFile.mkdirs();
+        ReplicationConfig replicationConfig = new ReplicationConfig((String)nodeData.get(BDBHAVirtualHostNode.GROUP_NAME), nodeName, nodeHostPort);
+        replicationConfig.setHelperHosts((String)nodeData.get(BDBHAVirtualHostNode.HELPER_ADDRESS));
+        EnvironmentConfig envConfig = new EnvironmentConfig();
+        envConfig.setAllowCreate(true);
+        envConfig.setTransactional(true);
+        envConfig.setDurability(Durability.parse((String)nodeData.get(BDBHAVirtualHostNode.DURABILITY)));
+        ReplicatedEnvironment intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+
+        waitForAttributeChanged(_baseNodeRestUrl + NODE1, VirtualHost.STATE, State.ERRORED.name());
+    }
+
     private void createHANode(String nodeName, int nodePort, int helperPort) throws Exception
+    {
+        Map<String, Object> nodeData = createNodeAttributeMap(nodeName, nodePort, helperPort);
+
+        int responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + nodeName, "PUT", nodeData);
+        assertEquals("Unexpected response code for virtual host node " + nodeName + " creation request", 201, responseCode);
+    }
+
+    private Map<String, Object> createNodeAttributeMap(String nodeName, int nodePort, int helperPort)
     {
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(BDBHAVirtualHostNode.NAME, nodeName);
@@ -249,9 +303,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         nodeData.put(BDBHAVirtualHostNode.GROUP_NAME, _hostName);
         nodeData.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + nodePort);
         nodeData.put(BDBHAVirtualHostNode.HELPER_ADDRESS, "localhost:" + helperPort);
-
-        int responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + nodeName, "PUT", nodeData);
-        assertEquals("Unexpected response code for virtual host node " + nodeName + " creation request", 201, responseCode);
+        return nodeData;
     }
 
     private void assertNode(String nodeName, int nodePort, int nodeHelperPort, String masterNode) throws Exception

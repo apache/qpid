@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.virtualhost.berkeleydb;
 
+import java.util.List;
+
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
@@ -34,6 +36,7 @@ public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends Virtual
     String COALESCING_SYNC = "coalescingSync";
     String DURABILITY = "durability";
     String STORE_PATH = "storePath";
+    String PERMITTED_NODES = "permittedNodes";
 
     @ManagedAttribute( defaultValue = "SYNC")
     String getLocalTransactionSynchronizationPolicy();
@@ -52,4 +55,7 @@ public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends Virtual
 
     @ManagedAttribute(mandatory = true, defaultValue = "0")
     Long getStoreOverfullSize();
+
+    @ManagedAttribute
+    List<String> getPermittedNodes();
 }

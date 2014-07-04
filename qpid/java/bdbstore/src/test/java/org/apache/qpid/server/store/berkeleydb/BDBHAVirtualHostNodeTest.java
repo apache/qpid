@@ -23,11 +23,13 @@ package org.apache.qpid.server.store.berkeleydb;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -38,8 +40,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.MessageLogger;
+import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
@@ -503,6 +510,201 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
             //pass
         }
 
+    }
+
+    public void testIntruderProtection() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+
+        Map<String, Object> node1Attributes = new HashMap<String, Object>();
+        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
+        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
+
+        BDBHAVirtualHostNode<?> node1 = createAndStartHaVHN(node1Attributes);
+        BDBHAVirtualHost<?> host = (BDBHAVirtualHost<?>)node1.getVirtualHost();
+
+        List<String> permittedNodes = new ArrayList<String>();
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
+        permittedNodes.add(helperAddress);
+        permittedNodes.add("localhost:" + node2PortNumber);
+        host.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes));
+
+        Map<String, Object> node2Attributes = new HashMap<String, Object>();
+        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
+        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
+        node2Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
+
+        BDBHAVirtualHostNode<?> node2 = createAndStartHaVHN(node2Attributes);
+
+        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+        Map<String, Object> node3Attributes = new HashMap<String, Object>();
+        node3Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node3Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node3Attributes.put(BDBHAVirtualHostNode.NAME, "node3");
+        node3Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
+        node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "3");
+        node3Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
+        node3Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
+
+        try
+        {
+            createHaVHN(node3Attributes);
+            fail("The VHN should not be permitted to join the group");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            assertEquals("Unexpected exception message", String.format("Node from '%s' is not permitted!", "localhost:" + node3PortNumber), e.getMessage());
+        }
+
+        // join node by skipping a step retrieving node state and checking the permitted hosts
+        node3Attributes.remove(BDBHAVirtualHostNode.HELPER_NODE_NAME);
+
+        final CountDownLatch stopLatch = new CountDownLatch(1);
+        ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+            {
+                if (newState == State.ERRORED)
+                {
+                    stopLatch.countDown();
+                }
+            }
+        };
+        node1.addChangeListener(listener);
+
+        createHaVHN(node3Attributes);
+
+        assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
+    }
+
+    public void testIntruderProtectionInManagementMode() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+
+        Map<String, Object> node1Attributes = new HashMap<String, Object>();
+        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
+        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
+
+        BDBHAVirtualHostNode<?> node1 = createAndStartHaVHN(node1Attributes);
+
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
+        Map<String, Object> node2Attributes = new HashMap<String, Object>();
+        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
+        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
+        node2Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
+
+        BDBHAVirtualHostNode<?> node2 = createAndStartHaVHN(node2Attributes);
+
+        final CountDownLatch stopLatch = new CountDownLatch(1);
+        ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+            {
+                if (newState == State.ERRORED)
+                {
+                    stopLatch.countDown();
+                }
+            }
+        };
+        node1.addChangeListener(listener);
+
+        BDBHAVirtualHost<?> host = (BDBHAVirtualHost<?>)node1.getVirtualHost();
+
+        List<String> permittedNodes = new ArrayList<String>();
+        permittedNodes.add(helperAddress);
+        host.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes));
+
+        assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
+
+        when(_broker.isManagementMode()).thenReturn(true);
+        node1.start();
+
+        awaitRemoteNodes(node1, 1);
+
+        BDBHARemoteReplicationNode<?> remote = findRemoteNode(node1, node2.getName());
+        remote.delete();
+    }
+
+    public void testIntruderConnectedBeforePermittedNodesAreSet() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+
+        Map<String, Object> node1Attributes = new HashMap<String, Object>();
+        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
+        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "1");
+
+        BDBHAVirtualHostNode<?> node1 = createAndStartHaVHN(node1Attributes);
+
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
+        Map<String, Object> node2Attributes = new HashMap<String, Object>();
+        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
+        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
+        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
+        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
+        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, _bdbStorePath + File.separator + "2");
+        node2Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
+
+        createAndStartHaVHN(node2Attributes);
+
+        final CountDownLatch stopLatch = new CountDownLatch(1);
+        ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+            {
+                if (newState == State.ERRORED)
+                {
+                    stopLatch.countDown();
+                }
+            }
+        };
+        node1.addChangeListener(listener);
+
+        BDBHAVirtualHost<?> host = (BDBHAVirtualHost<?>)node1.getVirtualHost();
+        List<String> permittedNodes = new ArrayList<String>();
+        permittedNodes.add(helperAddress);
+        host.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes));
+
+        assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(20, TimeUnit.SECONDS));
     }
 
     private BDBHARemoteReplicationNode<?> findRemoteNode(BDBHAVirtualHostNode<?> node, String name)

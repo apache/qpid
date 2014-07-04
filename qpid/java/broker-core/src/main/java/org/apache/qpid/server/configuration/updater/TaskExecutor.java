@@ -21,6 +21,7 @@
 package org.apache.qpid.server.configuration.updater;
 
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.Future;
 
 public interface TaskExecutor
 {
@@ -39,5 +40,7 @@ public interface TaskExecutor
     <E extends Exception> void run(VoidTaskWithException<E> task) throws CancellationException, E;
 
     <T> T run(Task<T> task) throws CancellationException;
+
+    <T> Future<T> submit(Task<T> task) throws CancellationException;
 
 }

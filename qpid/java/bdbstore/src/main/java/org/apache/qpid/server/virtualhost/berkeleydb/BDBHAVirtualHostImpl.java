@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost.berkeleydb;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,6 +54,9 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
 
     @ManagedAttributeField
     private Long _storeOverfullSize;
+
+    @ManagedAttributeField(afterSet = "applyPermittedNodes")
+    private List<String> _permittedNodes;
 
     @ManagedObjectFactoryConstructor
     public BDBHAVirtualHostImpl(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
@@ -127,6 +131,31 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
             String policy = ((BDBHAVirtualHost<?>)proxyForValidation).getRemoteTransactionSynchronizationPolicy();
             validateTransactionSynchronizationPolicy(policy);
         }
+
+        if(changedAttributes.contains(PERMITTED_NODES))
+        {
+
+            List<String> permittedNodes = ((BDBHAVirtualHost<?>)proxyForValidation).getPermittedNodes();
+            if (permittedNodes != null)
+            {
+                for (String permittedNode: permittedNodes)
+                {
+                    String[] tokens = permittedNode.split(":");
+                    if (tokens.length != 2)
+                    {
+                        throw new IllegalArgumentException(String.format("Invalid permitted node specified '%s'. ", permittedNode));
+                    }
+                    try
+                    {
+                        Integer.parseInt(tokens[1]);
+                    }
+                    catch(Exception e)
+                    {
+                        throw new IllegalArgumentException(String.format("Invalid port is specified in permitted node '%s'. ", permittedNode));
+                    }
+                }
+            }
+        }
     }
 
     private void validateTransactionSynchronizationPolicy(String policy)
@@ -158,4 +187,18 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
         return _storeOverfullSize;
     }
 
+    @Override
+    public List<String> getPermittedNodes()
+    {
+        return _permittedNodes;
+    }
+
+    protected void applyPermittedNodes()
+    {
+        ReplicatedEnvironmentFacade facade = getReplicatedEnvironmentFacade();
+        if (facade != null)
+        {
+            facade.setPermittedNodes(getPermittedNodes());
+        }
+    }
 }

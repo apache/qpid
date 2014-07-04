@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,11 +49,13 @@ import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
 import org.apache.qpid.server.util.DaemonThreadFactory;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
@@ -63,10 +67,13 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.TransactionConfig;
+import com.sleepycat.je.rep.AppStateMonitor;
 import com.sleepycat.je.rep.InsufficientLogException;
+import com.sleepycat.je.rep.InsufficientAcksException;
 import com.sleepycat.je.rep.InsufficientReplicasException;
 import com.sleepycat.je.rep.NetworkRestore;
 import com.sleepycat.je.rep.NetworkRestoreConfig;
+import com.sleepycat.je.rep.NodeType;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.RepInternal;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
@@ -143,6 +150,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }});
 
     public static final String TYPE = "BDB-HA";
+    private static final String PERMITTED_NODE_LIST = "permittedNodes";
 
     private final ReplicatedEnvironmentConfiguration _configuration;
     private final String _prettyGroupNodeName;
@@ -165,6 +173,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
+    private final Set<String> _permittedNodes = new CopyOnWriteArraySet<String>();
 
     public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration)
     {
@@ -189,7 +198,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         // we relay on this executor being single-threaded as we need to restart and mutate the environment in one thread
         _environmentJobExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("Environment-" + _prettyGroupNodeName));
         _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
-
 
         // create environment in a separate thread to avoid renaming of the current thread by JE
         _environment = createEnvironment(true);
@@ -298,7 +306,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public DatabaseException handleDatabaseException(String contextMessage, final DatabaseException dbe)
     {
-        boolean restart = (dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientReplicasException || dbe instanceof RestartRequiredException);
+        boolean restart = (dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientAcksException || dbe instanceof RestartRequiredException);
         if (restart)
         {
             tryToRestartEnvironment(dbe);
@@ -821,6 +829,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         _environment = createEnvironment(false);
 
+        registerAppStateMonitorIfPermittedNodesSpecified();
+
         if (_stateChangeListener.get() != null)
         {
             _environment.setStateChangeListener(this);
@@ -935,25 +945,34 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         boolean designatedPrimary = _configuration.isDesignatedPrimary();
         int priority = _configuration.getPriority();
         int quorumOverride = _configuration.getQuorumOverride();
+        String nodeName = _configuration.getName();
+        String helperNodeName = _configuration.getHelperNodeName();
 
         if (LOGGER.isInfoEnabled())
         {
             LOGGER.info("Creating environment");
             LOGGER.info("Environment path " + _environmentDirectory.getAbsolutePath());
             LOGGER.info("Group name " + groupName);
-            LOGGER.info("Node name " + _configuration.getName());
+            LOGGER.info("Node name " + nodeName);
             LOGGER.info("Node host port " + hostPort);
             LOGGER.info("Helper host port " + helperHostPort);
+            LOGGER.info("Helper host name " + helperNodeName);
             LOGGER.info("Durability " + _defaultDurability);
             LOGGER.info("Designated primary (applicable to 2 node case only) " + designatedPrimary);
             LOGGER.info("Node priority " + priority);
             LOGGER.info("Quorum override " + quorumOverride);
+            LOGGER.info("Permitted node list " + _permittedNodes);
+        }
+
+        if (helperNodeName != null && _permittedNodes.isEmpty() && !helperHostPort.equals(hostPort))
+        {
+            connectToHelperNodeAndCheckPermittedHosts(helperNodeName, helperHostPort, hostPort);
         }
 
         Map<String, String> replicationEnvironmentParameters = new HashMap<>(ReplicatedEnvironmentFacade.REPCONFIG_DEFAULTS);
         replicationEnvironmentParameters.putAll(_configuration.getReplicationParameters());
 
-        ReplicationConfig replicationConfig = new ReplicationConfig(groupName, _configuration.getName(), hostPort);
+        ReplicationConfig replicationConfig = new ReplicationConfig(groupName, nodeName, hostPort);
         replicationConfig.setHelperHosts(helperHostPort);
         replicationConfig.setDesignatedPrimary(designatedPrimary);
         replicationConfig.setNodePriority(priority);
@@ -1111,6 +1130,144 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
+    public void setPermittedNodes(Collection<String> permittedNodes)
+    {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Setting permitted nodes to " + permittedNodes);
+        }
+
+        _permittedNodes.clear();
+        if (permittedNodes != null)
+        {
+            _permittedNodes.addAll(permittedNodes);
+            registerAppStateMonitorIfPermittedNodesSpecified();
+
+            ReplicationGroupListener listener = _replicationGroupListener.get();
+            for(ReplicationNode node: _remoteReplicationNodes.values())
+            {
+                if (!isNodePermitted(node))
+                {
+                    onIntruder(listener, node);
+                }
+            }
+        }
+    }
+
+    private void registerAppStateMonitorIfPermittedNodesSpecified()
+    {
+        if (!_permittedNodes.isEmpty())
+        {
+            byte[] data = permittedNodeListToBytes(_permittedNodes);
+            _environment.registerAppStateMonitor(new EnvironmentStateHolder(data));
+        }
+    }
+
+    private boolean isNodePermitted(ReplicationNode replicationNode)
+    {
+        if (_permittedNodes.isEmpty())
+        {
+            return true;
+        }
+
+        String nodeHostPort = getHostPort(replicationNode);
+        return _permittedNodes.contains(nodeHostPort);
+    }
+
+    private String getHostPort(ReplicationNode replicationNode)
+    {
+        return replicationNode.getHostName() + ":" + replicationNode.getPort();
+    }
+
+
+    private void onIntruder(ReplicationGroupListener replicationGroupListener, ReplicationNode replicationNode)
+    {
+        if (replicationGroupListener != null)
+        {
+            replicationGroupListener.onIntruderNode(replicationNode);
+        }
+        else
+        {
+            LOGGER.warn(String.format("Found an intruder node '%s' from ''%s' . The node is not listed in permitted list: %s",
+                    replicationNode.getName(), getHostPort(replicationNode), String.valueOf(_permittedNodes)));
+        }
+    }
+
+    private byte[] permittedNodeListToBytes(Set<String> permittedNodeList)
+    {
+        HashMap<String, Object> data = new HashMap<String, Object>();
+        data.put(PERMITTED_NODE_LIST, permittedNodeList);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectMapper objectMapper = new ObjectMapper();
+        try
+        {
+            objectMapper.writeValue(baos, data);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Unexpected exception on serializing of permitted node list into json", e);
+        }
+        return baos.toByteArray();
+    }
+
+    Collection<String> bytesToPermittedNodeList(byte[] applicationState)
+    {
+        if (applicationState == null || applicationState.length == 0)
+        {
+            return Collections.emptySet();
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        try
+        {
+            Map<String, Object> settings = objectMapper.readValue(applicationState, Map.class);
+            return (Collection<String>)settings.get(PERMITTED_NODE_LIST);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Unexpected exception on de-serializing of application state", e);
+        }
+    }
+
+    private void connectToHelperNodeAndCheckPermittedHosts(String helperNodeName, String helperHostPort, String hostPort)
+    {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug(String.format("Requesting state of the node '%s' at '%s'", helperNodeName, helperHostPort));
+        }
+
+        Collection<String> permittedNodes = null;
+        try
+        {
+            NodeState state = getRemoteNodeState(new ReplicationNodeImpl(helperNodeName, helperHostPort));
+            byte[] applicationState = state.getAppState();
+            permittedNodes = bytesToPermittedNodeList(applicationState);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException(String.format("Cannot connect to '%s'", helperHostPort), e);
+        }
+        catch (ServiceConnectFailedException e)
+        {
+            throw new IllegalConfigurationException(String.format("Failure to connect to '%s'", helperHostPort), e);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(String.format("Unexpected exception on attempt to retrieve state from '%s' at '%s'",
+                    helperNodeName, helperHostPort), e);
+        }
+
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug(String.format("Attribute 'permittedNodes' on node '%s' is set to '%s'", helperNodeName, String.valueOf(permittedNodes)));
+        }
+
+        if (permittedNodes != null && !permittedNodes.isEmpty() && !permittedNodes.contains(hostPort))
+        {
+            throw new IllegalConfigurationException(String.format("Node from '%s' is not permitted!", hostPort));
+        }
+    }
+
     private void populateExistingRemoteReplicationNodes()
     {
         ReplicationGroup group = _environment.getGroup();
@@ -1157,7 +1314,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
                     Map<ReplicationNode, NodeState> nodeStates = discoverNodeStates(_remoteReplicationNodes.values());
 
-                    executeDabasePingerOnNodeChangesIfMaster(nodeStates);
+                    executeDatabasePingerOnNodeChangesIfMaster(nodeStates);
 
                     notifyGroupListenerAboutNodeStates(nodeStates);
                 }
@@ -1187,7 +1344,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             if (env != null)
             {
                 ReplicationGroup group = env.getGroup();
-                Set<ReplicationNode> nodes = new HashSet<ReplicationNode>(group.getElectableNodes());
+                Set<ReplicationNode> nodes = new HashSet<ReplicationNode>(group.getNodes());
                 String localNodeName = getNodeName();
 
                 Map<String, ReplicationNode> removalMap = new HashMap<String, ReplicationNode>(_remoteReplicationNodes);
@@ -1205,9 +1362,16 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
                             _remoteReplicationNodes.put(discoveredNodeName, replicationNode);
 
-                            if (replicationGroupListener != null)
+                            if (isNodePermitted(replicationNode))
                             {
-                                replicationGroupListener.onReplicationNodeAddedToGroup(replicationNode);
+                                if (replicationGroupListener != null)
+                                {
+                                    replicationGroupListener.onReplicationNodeAddedToGroup(replicationNode);
+                                }
+                            }
+                            else
+                            {
+                                onIntruder(replicationGroupListener, replicationNode);
                             }
                         }
                         else
@@ -1288,7 +1452,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             return nodeStates;
         }
 
-        private void executeDabasePingerOnNodeChangesIfMaster(final Map<ReplicationNode, NodeState> nodeStates)
+        private void executeDatabasePingerOnNodeChangesIfMaster(final Map<ReplicationNode, NodeState> nodeStates)
         {
             if (ReplicatedEnvironment.State.MASTER == _environment.getState())
             {
@@ -1329,5 +1493,83 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         RESTARTING,
         CLOSING,
         CLOSED
+    }
+
+    private static class EnvironmentStateHolder implements AppStateMonitor
+    {
+        private byte[] _data;
+
+        private EnvironmentStateHolder(byte[] data)
+        {
+            this._data = data;
+        }
+
+        @Override
+        public byte[] getAppState()
+        {
+            return _data;
+        }
+    }
+
+    static class ReplicationNodeImpl implements ReplicationNode
+    {
+
+        private final InetSocketAddress _address;
+        private final String _nodeName;
+        private final String _host;
+        private final int _port;
+
+        public ReplicationNodeImpl(String nodeName, String hostPort)
+        {
+            String[] tokens = hostPort.split(":");
+            if (tokens.length != 2)
+            {
+                throw new IllegalArgumentException("Unexpected host port value :" + hostPort);
+            }
+            _host = tokens[0];
+            _port = Integer.parseInt(tokens[1]);
+            _nodeName = nodeName;
+            _address = new InetSocketAddress(_host, _port);
+        }
+
+        @Override
+        public String getName()
+        {
+            return _nodeName;
+        }
+
+        @Override
+        public NodeType getType()
+        {
+            return NodeType.ELECTABLE;
+        }
+
+        @Override
+        public InetSocketAddress getSocketAddress()
+        {
+            return _address;
+        }
+
+        @Override
+        public String getHostName()
+        {
+            return _host;
+        }
+
+        @Override
+        public int getPort()
+        {
+            return _port;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "ReplicationNodeImpl{" +
+                    "_nodeName='" + _nodeName + '\'' +
+                    ", _host='" + _host + '\'' +
+                    ", _port=" + _port +
+                    '}';
+        }
     }
 }
