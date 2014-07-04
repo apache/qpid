@@ -1823,7 +1823,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
                 lastSeen = context.getLastSeenEntry();
                 releasedNode = context.getReleasedEntry();
-                node = (releasedNode != null && lastSeen.compareTo(releasedNode)>0) ? releasedNode : getEntries().next(
+                node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : getEntries().next(
                         lastSeen);
             }
             return node;
