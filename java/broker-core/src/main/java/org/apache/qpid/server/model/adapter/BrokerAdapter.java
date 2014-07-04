@@ -895,9 +895,19 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     protected <C extends ConfiguredObject> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes,
             ConfiguredObject... otherParents) throws AccessControlException
     {
-        if (!_securityManager.authoriseConfiguringBroker(String.valueOf(attributes.get(NAME)), childClass, Operation.CREATE))
+        if (childClass == VirtualHostNode.class)
         {
-            throw new AccessControlException("Creation of new broker level entity is denied");
+            _securityManager.authoriseVirtualHostNode(String.valueOf(attributes.get(NAME)), Operation.CREATE);
+
+        }
+        else
+        {
+            if (!_securityManager.authoriseConfiguringBroker(String.valueOf(attributes.get(NAME)),
+                                                             childClass,
+                                                             Operation.CREATE))
+            {
+                throw new AccessControlException("Creation of new broker level entity is denied");
+            }
         }
     }
 

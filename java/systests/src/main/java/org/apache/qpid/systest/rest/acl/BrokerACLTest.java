@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
@@ -45,7 +44,6 @@ import org.apache.qpid.server.model.adapter.FileBasedGroupProvider;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProviderImpl;
 import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.server.security.FileTrustStore;
-import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
 import org.apache.qpid.server.security.acl.AbstractACLTestCase;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
@@ -72,7 +70,7 @@ public class BrokerACLTest extends QpidRestTestCase
                 "ACL DENY-LOG " + DENIED_USER + " CONFIGURE BROKER",
                 "ACL DENY-LOG ALL ALL");
 
-        _secondaryAclFileContent =
+                _secondaryAclFileContent =
                 "ACL ALLOW-LOG ALL ACCESS MANAGEMENT\n" +
                 "ACL ALLOW-LOG " + ALLOWED_USER + " CONFIGURE BROKER\n" +
                 "ACL DENY-LOG " + DENIED_USER + " CONFIGURE BROKER\n" +
@@ -188,58 +186,6 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("Unexpected PATH attribute value",
                 providerData.get(ExternalFileBasedAuthenticationManager.PATH),
                 provider.get(ExternalFileBasedAuthenticationManager.PATH));
-    }
-
-    /* === VirtualHostNode === */
-
-    public void testCreateVirtualHostNodeAllowed() throws Exception
-    {
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-
-        String hostName = getTestName();
-
-        int responseCode = createVirtualHostNode(hostName);
-        assertEquals("Host creation should be allowed", 201, responseCode);
-
-        assertVirtualHostNodeExists(hostName);
-    }
-
-    public void testCreateVirtualHostNodeDenied() throws Exception
-    {
-        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-
-        String hostName = getTestName();
-
-        int responseCode = createVirtualHostNode(hostName);
-        assertEquals("Virtual host node creation should be denied", 403, responseCode);
-
-        assertVirtualHostNodeDoesNotExist(hostName);
-    }
-
-    public void testDeleteVirtualHostNodeAllowed() throws Exception
-    {
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-
-        assertVirtualHostNodeExists(TEST2_VIRTUALHOST);
-
-        int responseCode = getRestTestHelper().submitRequest("virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE");
-        assertEquals("Virtual host node deletion should be allowed", 200, responseCode);
-
-        assertVirtualHostNodeDoesNotExist(TEST2_VIRTUALHOST);
-    }
-
-    public void testDeleteVirtualHostNodeDenied() throws Exception
-    {
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-
-        assertVirtualHostNodeExists(TEST2_VIRTUALHOST);
-
-        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-
-        int responseCode = getRestTestHelper().submitRequest("virtualhostnode/" + TEST2_VIRTUALHOST, "DELETE");
-        assertEquals("Virtual host node deletion should be denied", 403, responseCode);
-
-        assertVirtualHostNodeExists(TEST2_VIRTUALHOST);
     }
 
     /* === Port === */
@@ -975,37 +921,6 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore/" + trustStoreName);
         assertEquals("Unexpected result", exists, !trustStores.isEmpty());
-    }
-
-    private int createVirtualHostNode(String virtualHostNodeName) throws Exception
-    {
-        Map<String, Object> data = new HashMap<String, Object>();
-        data.put(VirtualHostNode.NAME, virtualHostNodeName);
-        data.put(VirtualHostNode.TYPE, getTestProfileVirtualHostNodeType());
-        data.put(JsonVirtualHostNode.STORE_PATH, getStoreLocation(virtualHostNodeName));
-
-        return getRestTestHelper().submitRequest("virtualhostnode/" + virtualHostNodeName, "PUT", data);
-    }
-
-    private void assertVirtualHostNodeDoesNotExist(String name) throws Exception
-    {
-        assertVirtualHostNodeExistence(name, false);
-    }
-
-    private void assertVirtualHostNodeExists(String name) throws Exception
-    {
-        assertVirtualHostNodeExistence(name, true);
-    }
-
-    private void assertVirtualHostNodeExistence(String name, boolean exists) throws Exception
-    {
-        List<Map<String, Object>> hosts = getRestTestHelper().getJsonAsList("virtualhostnode/" + name);
-        assertEquals("Node " + name + (exists ? " does not exist" : " exists" ), exists, !hosts.isEmpty());
-    }
-
-    private String getStoreLocation(String hostName)
-    {
-        return new File(TMP_FOLDER, "store-" + hostName + "-" + System.currentTimeMillis()).getAbsolutePath();
     }
 
     private int createAuthenticationProvider(String authenticationProviderName) throws Exception

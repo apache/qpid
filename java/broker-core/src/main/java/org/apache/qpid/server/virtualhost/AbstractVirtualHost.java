@@ -318,20 +318,18 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         if(desiredState == State.DELETED)
         {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), org.apache.qpid.server.model.VirtualHost.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of virtual host is denied");
-            }
+            _broker.getSecurityManager().authoriseVirtualHost(getName(), Operation.DELETE);
+        }
+        else
+        {
+            _broker.getSecurityManager().authoriseVirtualHost(getName(), Operation.UPDATE);
         }
     }
 
     @Override
     protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), org.apache.qpid.server.model.VirtualHost.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of virtual host attributes is denied");
-        }
+        _broker.getSecurityManager().authoriseVirtualHost(getName(), Operation.UPDATE);
     }
 
     public Collection<Connection> getConnections()

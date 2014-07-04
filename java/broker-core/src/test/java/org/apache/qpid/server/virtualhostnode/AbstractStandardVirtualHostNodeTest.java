@@ -21,9 +21,11 @@
 package org.apache.qpid.server.virtualhostnode;
 
 import static org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode.*;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.security.AccessControlException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,8 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.NullMessageStore;
@@ -53,7 +57,8 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
     private static final String TEST_VIRTUAL_HOST_NODE_NAME = "testNode";
     private static final String TEST_VIRTUAL_HOST_NAME = "testVirtualHost";
 
-    private UUID _nodeId = UUID.randomUUID();
+    private final UUID _nodeId = UUID.randomUUID();
+    private final SecurityManager _mockSecurityManager = mock(SecurityManager.class);
     private Broker<?> _broker;
     private TaskExecutor _taskExecutor;
 
@@ -109,7 +114,6 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         assertEquals("Unexpected virtual host id", virtualHostId, virtualHost.getId());
     }
 
-
     /**
      *  Tests activating a virtualhostnode with a config store which does not specify
      *  a virtualhost.  Checks no virtualhost is created.
@@ -128,7 +132,6 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
 
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
         assertNull("Virtual host should not be automatically created", virtualHost);
-
     }
 
     /**
@@ -233,6 +236,125 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         assertEquals("Unexpected virtual host id", virtualHostId, virtualHost.getId());
     }
 
+    public void testStopStartVHN() throws Exception
+    {
+        DurableConfigurationStore configStore = configStoreThatProducesNoRecords();
+
+        Map<String, Object> nodeAttributes = new HashMap<>();
+        nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
+        nodeAttributes.put(VirtualHostNode.ID, _nodeId);
+
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
+        node.open();
+        node.start();
+
+        assertEquals("Unexpected virtual host node state", State.ACTIVE, node.getState());
+
+        node.stop();
+        assertEquals("Unexpected virtual host node state after stop", State.STOPPED, node.getState());
+
+        node.start();
+        assertEquals("Unexpected virtual host node state after start", State.ACTIVE, node.getState());
+    }
+
+
+    // ***************  VHN Access Control Tests  ***************
+
+    public void testUpdateVHNDeniedByACL() throws Exception
+    {
+        when(_broker.getSecurityManager()).thenReturn(_mockSecurityManager);
+
+        DurableConfigurationStore configStore = configStoreThatProducesNoRecords();
+
+        Map<String, Object> nodeAttributes = new HashMap<>();
+        nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
+        nodeAttributes.put(VirtualHostNode.ID, _nodeId);
+
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
+        node.open();
+        node.start();
+
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHostNode(
+                TEST_VIRTUAL_HOST_NODE_NAME,
+                Operation.UPDATE);
+
+        assertNull(node.getDescription());
+        try
+        {
+            node.setAttribute(VirtualHostNode.DESCRIPTION, null, "My virtualhost node");
+            fail("Exception not throws");
+        }
+        catch (AccessControlException ace)
+        {
+            // PASS
+        }
+        assertNull("Description unexpected updated", node.getDescription());
+    }
+
+    public void testDeleteVHNDeniedByACL() throws Exception
+    {
+        SecurityManager mockSecurityManager = mock(SecurityManager.class);
+        when(_broker.getSecurityManager()).thenReturn(mockSecurityManager);
+
+        DurableConfigurationStore configStore = configStoreThatProducesNoRecords();
+
+        Map<String, Object> nodeAttributes = new HashMap<>();
+        nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
+        nodeAttributes.put(VirtualHostNode.ID, _nodeId);
+
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
+        node.open();
+        node.start();
+
+        doThrow(new AccessControlException("mocked ACL exception")).when(mockSecurityManager).authoriseVirtualHostNode(
+                TEST_VIRTUAL_HOST_NODE_NAME,
+                Operation.DELETE);
+
+        try
+        {
+            node.delete();
+            fail("Exception not throws");
+        }
+        catch (AccessControlException ace)
+        {
+            // PASS
+        }
+
+        assertEquals("Virtual host node state changed unexpectedly", State.ACTIVE, node.getState());
+    }
+
+    public void testStopVHNDeniedByACL() throws Exception
+    {
+        SecurityManager mockSecurityManager = mock(SecurityManager.class);
+        when(_broker.getSecurityManager()).thenReturn(mockSecurityManager);
+
+        DurableConfigurationStore configStore = configStoreThatProducesNoRecords();
+
+        Map<String, Object> nodeAttributes = new HashMap<>();
+        nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
+        nodeAttributes.put(VirtualHostNode.ID, _nodeId);
+
+        VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
+        node.open();
+        node.start();
+
+        doThrow(new AccessControlException("mocked ACL exception")).when(mockSecurityManager).authoriseVirtualHostNode(
+                TEST_VIRTUAL_HOST_NODE_NAME,
+                Operation.UPDATE);
+
+        try
+        {
+            node.stop();
+            fail("Exception not throws");
+        }
+        catch (AccessControlException ace)
+        {
+            // PASS
+        }
+
+        assertEquals("Virtual host node state changed unexpectedly", State.ACTIVE, node.getState());
+    }
+
     private ConfiguredObjectRecord createVirtualHostConfiguredObjectRecord(UUID virtualHostId)
     {
         Map<String, Object> virtualHostAttributes = new HashMap<>();
@@ -263,6 +385,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
             }
         };
     }
+
     private NullMessageStore configStoreThatProducesNoRecords()
     {
         return configStoreThatProduces(null);

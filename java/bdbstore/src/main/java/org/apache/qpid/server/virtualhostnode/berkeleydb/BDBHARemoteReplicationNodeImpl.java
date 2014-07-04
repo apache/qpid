@@ -24,6 +24,7 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 import static com.sleepycat.je.rep.ReplicatedEnvironment.State.MASTER;
 import static com.sleepycat.je.rep.ReplicatedEnvironment.State.REPLICA;
 
+import java.security.AccessControlException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,11 +34,13 @@ import com.sleepycat.je.rep.MasterStateException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
 public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDBHARemoteReplicationNodeImpl> implements BDBHARemoteReplicationNode<BDBHARemoteReplicationNodeImpl>
@@ -46,6 +49,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
     private final ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
     private final String _address;
+    private final Broker _broker;
 
     private volatile long _joinTime;
     private volatile long _lastTransactionId;
@@ -59,6 +63,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     public BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNode<?> virtualHostNode, Map<String, Object> attributes, ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
     {
         super(parentsMap(virtualHostNode), attributes);
+        _broker = virtualHostNode.getParent(Broker.class);
         _address = (String)attributes.get(ADDRESS);
         _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
         _state = new AtomicReference<State>(State.ACTIVE);
@@ -111,6 +116,27 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     public void deleted()
     {
         super.deleted();
+    }
+
+
+    @Override
+    protected void authoriseSetAttributes(final ConfiguredObject<?> proxyForValidation,
+                                          final Set<String> modifiedAttributes)
+    {
+        _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.UPDATE);
+    }
+
+    @Override
+    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
+    {
+        if(desiredState == State.DELETED)
+        {
+            _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.DELETE);
+        }
+        else
+        {
+            _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.UPDATE);
+        }
     }
 
     @Override

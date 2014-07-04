@@ -197,20 +197,36 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     {
         if(desiredState == State.DELETED)
         {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), VirtualHostNode.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of virtual host node is denied");
-            }
+            _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.DELETE);
+        }
+        else
+        {
+            _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.UPDATE);
+        }
+    }
+
+    @Override
+    protected <C extends ConfiguredObject> void authoriseCreateChild(final Class<C> childClass,
+                                                                     final Map<String, Object> attributes,
+                                                                     final ConfiguredObject... otherParents)
+            throws AccessControlException
+    {
+        if (childClass == VirtualHost.class)
+        {
+            _broker.getSecurityManager().authoriseVirtualHost(String.valueOf(attributes.get(VirtualHost.NAME)),
+                                                              Operation.CREATE);
+
+        }
+        else
+        {
+            super.authoriseCreateChild(childClass, attributes, otherParents);
         }
     }
 
     @Override
     protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), VirtualHostNode.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of virtual host node attributes is denied");
-        }
+        _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.UPDATE);
     }
 
     private void closeConfigurationStore()

@@ -42,7 +42,8 @@ import java.util.Set;
 public enum ObjectType
 {
     ALL(Operation.ALL),
-    VIRTUALHOST(Operation.ALL, ACCESS),
+    VIRTUALHOSTNODE(Operation.ALL, CREATE, DELETE, UPDATE),
+    VIRTUALHOST(Operation.ALL, ACCESS, CREATE, DELETE, UPDATE),
     MANAGEMENT(Operation.ALL, ACCESS),
     QUEUE(Operation.ALL, CREATE, DELETE, PURGE, CONSUME, UPDATE),
     EXCHANGE(Operation.ALL, ACCESS, CREATE, DELETE, BIND, UNBIND, PUBLISH, UPDATE),
