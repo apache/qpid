@@ -21,6 +21,10 @@
 package org.apache.qpid.server.configuration.updater;
 
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class CurrentThreadTaskExecutor implements TaskExecutor
@@ -92,6 +96,45 @@ public class CurrentThreadTaskExecutor implements TaskExecutor
     {
         checkThread();
         return task.execute();
+    }
+
+    @Override
+    public <T> Future<T> submit(Task<T> task) throws CancellationException
+    {
+        checkThread();
+        final T result = task.execute();
+        return new Future<T>()
+        {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning)
+            {
+                return true;
+            }
+
+            @Override
+            public boolean isCancelled()
+            {
+                return false;
+            }
+
+            @Override
+            public boolean isDone()
+            {
+                return true;
+            }
+
+            @Override
+            public T get() throws InterruptedException, ExecutionException
+            {
+                return result;
+            }
+
+            @Override
+            public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException
+            {
+                return result;
+            }
+        };
     }
 
     public static TaskExecutor newStartedInstance()

@@ -117,7 +117,8 @@ public class TaskExecutorImpl implements TaskExecutor
         }
     }
 
-    <T> Future<T> submit(Task<T> task)
+    @Override
+    public <T> Future<T> submit(Task<T> task)
     {
         checkState();
         if (LOGGER.isDebugEnabled())

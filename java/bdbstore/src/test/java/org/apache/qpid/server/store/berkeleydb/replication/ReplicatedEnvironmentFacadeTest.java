@@ -24,14 +24,19 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -41,6 +46,7 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
@@ -52,6 +58,7 @@ import com.sleepycat.je.rep.StateChangeListener;
 
 public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 {
+    private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacadeTest.class);
     private static final int TEST_NODE_PORT = new QpidTestCase().findFreePort();
     private static final int LISTENER_TIMEOUT = 5;
     private static final int WAIT_STATE_CHANGE_TIMEOUT = 30;
@@ -644,6 +651,105 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         }
     }
 
+    public void testSetPermittedNodes() throws Exception
+    {
+        ReplicatedEnvironmentFacade firstNode = createMaster();
+
+        Set<String> permittedNodes = new HashSet<String>();
+        permittedNodes.add("localhost:" + TEST_NODE_PORT);
+        permittedNodes.add("localhost:" + getNextAvailable(TEST_NODE_PORT + 1));
+        firstNode.setPermittedNodes(permittedNodes);
+
+        NodeState nodeState = firstNode.getRemoteNodeState(new ReplicatedEnvironmentFacade.ReplicationNodeImpl(TEST_NODE_NAME, TEST_NODE_HOST_PORT));
+
+        Collection<String> appStatePermittedNodes = firstNode.bytesToPermittedNodeList(nodeState.getAppState());
+        assertEquals("Unexpected permitted nodes", permittedNodes, new HashSet<String>(appStatePermittedNodes));
+    }
+
+    public void testPermittedNodeIsAllowedToConnect() throws Exception
+    {
+        ReplicatedEnvironmentFacade firstNode = createMaster();
+
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node1NodeHostPort = "localhost:" + replica1Port;
+
+        Set<String> permittedNodes = new HashSet<String>();
+        permittedNodes.add("localhost:" + TEST_NODE_PORT);
+        permittedNodes.add(node1NodeHostPort);
+        firstNode.setPermittedNodes(permittedNodes);
+
+        ReplicatedEnvironmentConfiguration configuration =  createReplicatedEnvironmentConfiguration(TEST_NODE_NAME + "_1", node1NodeHostPort, false);
+        when(configuration.getHelperNodeName()).thenReturn(TEST_NODE_NAME);
+
+        TestStateChangeListener stateChangeListener = new TestStateChangeListener(State.REPLICA);
+        ReplicatedEnvironmentFacade secondNode = createReplicatedEnvironmentFacade(TEST_NODE_NAME + "_1",
+                stateChangeListener, new NoopReplicationGroupListener(), configuration);
+        assertTrue("Environment was not created", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
+        assertEquals("Unexpected state", State.REPLICA.name(), secondNode.getNodeState());
+    }
+
+    public void testNotPermittedNodeIsNotAllowedToConnect() throws Exception
+    {
+        ReplicatedEnvironmentFacade firstNode = createMaster();
+
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node1NodeHostPort = "localhost:" + replica1Port;
+
+        Set<String> permittedNodes = new HashSet<String>();
+        permittedNodes.add("localhost:" + TEST_NODE_PORT);
+
+        firstNode.setPermittedNodes(permittedNodes);
+
+        ReplicatedEnvironmentConfiguration configuration =  createReplicatedEnvironmentConfiguration(TEST_NODE_NAME + "_1", node1NodeHostPort, false);
+        when(configuration.getHelperNodeName()).thenReturn(TEST_NODE_NAME);
+
+        try
+        {
+            createReplicatedEnvironmentFacade(TEST_NODE_NAME + "_1", new TestStateChangeListener(State.REPLICA), new NoopReplicationGroupListener(), configuration);
+            fail("Node is not allowed to connect from " + node1NodeHostPort + " but environment was successfully created");
+        }
+        catch (IllegalConfigurationException e)
+        {
+            assertEquals("Unexpected exception message", String.format("Node from '%s' is not permitted!",
+                    node1NodeHostPort), e.getMessage());
+        }
+    }
+
+    public void testIntruderNodeIsDetected() throws Exception
+    {
+        final CountDownLatch intruderLatch = new CountDownLatch(1);
+        ReplicationGroupListener listener = new NoopReplicationGroupListener()
+        {
+            @Override
+            public void onIntruderNode(ReplicationNode node)
+            {
+                intruderLatch.countDown();
+            }
+        };
+        ReplicatedEnvironmentFacade firstNode = createMaster(listener);
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node1NodeHostPort = "localhost:" + replica1Port;
+
+        Set<String> permittedNodes = new HashSet<String>();
+        permittedNodes.add("localhost:" + TEST_NODE_PORT);
+
+        firstNode.setPermittedNodes(permittedNodes);
+
+        String nodeName = TEST_NODE_NAME + "_1";
+        File environmentPathFile = new File(_storePath, nodeName);
+        environmentPathFile.mkdirs();
+
+        ReplicationConfig replicationConfig = new ReplicationConfig(TEST_GROUP_NAME, TEST_NODE_NAME + "_1", node1NodeHostPort);
+        replicationConfig.setHelperHosts(TEST_NODE_HOST_PORT);
+
+        EnvironmentConfig envConfig = new EnvironmentConfig();
+        envConfig.setAllowCreate(true);
+        envConfig.setTransactional(true);
+        envConfig.setDurability(TEST_DURABILITY);
+        ReplicatedEnvironment intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+        assertTrue("Intruder node was not detected", intruderLatch.await(10, TimeUnit.SECONDS));
+    }
+
     private ReplicatedEnvironmentFacade createMaster() throws Exception
     {
         return createMaster(new NoopReplicationGroupListener());
@@ -678,6 +784,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                                                 StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener)
     {
         ReplicatedEnvironmentConfiguration config = createReplicatedEnvironmentConfiguration(nodeName, nodeHostPort, designatedPrimary);
+        return createReplicatedEnvironmentFacade(nodeName, stateChangeListener, replicationGroupListener, config);
+    }
+
+    private ReplicatedEnvironmentFacade createReplicatedEnvironmentFacade(String nodeName, StateChangeListener stateChangeListener, ReplicationGroupListener replicationGroupListener, ReplicatedEnvironmentConfiguration config) {
         ReplicatedEnvironmentFacade ref = new ReplicatedEnvironmentFacade(config);
         ref.setStateChangeListener(stateChangeListener);
         ref.setReplicationGroupListener(replicationGroupListener);
@@ -733,6 +843,12 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         @Override
         public void onNodeState(ReplicationNode node, NodeState nodeState)
         {
+        }
+
+        @Override
+        public void onIntruderNode(ReplicationNode node)
+        {
+            LOGGER.warn("Intruder node " + node);
         }
 
     }

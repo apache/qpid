@@ -463,7 +463,7 @@ public class JMXManagementPluginImpl
         @Override
         public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
         {
-            if (newState == State.DELETED || newState == State.STOPPED)
+            if (newState == State.DELETED || newState == State.STOPPED || newState == State.ERRORED)
             {
                 destroyObjectMBeans(object, newState == State.DELETED);
             }

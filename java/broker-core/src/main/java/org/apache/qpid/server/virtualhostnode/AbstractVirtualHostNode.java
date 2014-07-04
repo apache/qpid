@@ -88,7 +88,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     }
 
 
-    @StateTransition( currentState = {State.UNINITIALIZED, State.STOPPED }, desiredState = State.ACTIVE )
+    @StateTransition( currentState = {State.UNINITIALIZED, State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
     private void doActivate()
     {
         try
@@ -176,9 +176,14 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     @StateTransition( currentState = { State.ACTIVE, State.ERRORED, State.UNINITIALIZED }, desiredState = State.STOPPED )
     protected void doStop()
     {
+        stopAndSetStateTo(State.STOPPED);
+    }
+
+    protected void stopAndSetStateTo(State stoppedState)
+    {
         closeChildren();
         closeConfigurationStore();
-        _state.set(State.STOPPED);
+        _state.set(stoppedState);
     }
 
     @Override

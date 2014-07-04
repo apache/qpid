@@ -66,6 +66,12 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             }
 
             @Override
+            public String getHelperNodeName()
+            {
+                return settings.getHelperNodeName();
+            }
+
+            @Override
             public int getQuorumOverride()
             {
                 return settings.getQuorumOverride();

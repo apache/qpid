@@ -36,6 +36,7 @@ import javax.security.auth.Subject;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.rep.NodeState;
+import com.sleepycat.je.rep.NodeType;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
@@ -44,6 +45,8 @@ import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.updater.Task;
+import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -106,6 +109,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     @ManagedAttributeField(afterSet="postSetRole")
     private String _role;
+
+    @ManagedAttributeField
+    private String _helperNodeName;
 
     @ManagedObjectFactoryConstructor
     public BDBHAVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> broker)
@@ -202,6 +208,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         return -1L;
     }
 
+    @Override
+    public String getHelperNodeName()
+    {
+        return _helperNodeName;
+    }
+
     @SuppressWarnings("rawtypes")
     @Override
     public Collection<? extends RemoteReplicationNode> getRemoteReplicationNodes()
@@ -260,6 +272,11 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.STORE_LOCATION(getStorePath()));
 
         ReplicatedEnvironmentFacade environmentFacade = (ReplicatedEnvironmentFacade) getConfigurationStore().getEnvironmentFacade();
+        if (environmentFacade == null)
+        {
+            throw new IllegalStateException("Environment facade is not created");
+        }
+
         if (_environmentFacade.compareAndSet(null, environmentFacade))
         {
             environmentFacade.setStateChangeListener(new BDBHAMessageStoreStateChangeListener());
@@ -276,11 +293,16 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
         finally
         {
-            ReplicatedEnvironmentFacade environmentFacade = getReplicatedEnvironmentFacade();
-            if (_environmentFacade.compareAndSet(environmentFacade, null))
-            {
-                environmentFacade.close();
-            }
+            stopEnvironment();
+        }
+    }
+
+    private void stopEnvironment()
+    {
+        ReplicatedEnvironmentFacade environmentFacade = getReplicatedEnvironmentFacade();
+        if (_environmentFacade.compareAndSet(environmentFacade, null))
+        {
+            environmentFacade.close();
         }
     }
 
@@ -598,7 +620,20 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     private class RemoteNodesDiscoverer implements ReplicationGroupListener
     {
         @Override
-        public void onReplicationNodeAddedToGroup(ReplicationNode node)
+        public void onReplicationNodeAddedToGroup(final ReplicationNode node)
+        {
+            getTaskExecutor().submit(new Task<Void>()
+            {
+                @Override
+                public Void execute()
+                {
+                    addRemoteReplicationNode(node);
+                    return null;
+                }
+            });
+        }
+
+        private void addRemoteReplicationNode(ReplicationNode node)
         {
             BDBHARemoteReplicationNodeImpl remoteNode = new BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNodeImpl.this, nodeToAttributes(node), getReplicatedEnvironmentFacade());
             remoteNode.create();
@@ -606,14 +641,40 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
 
         @Override
-        public void onReplicationNodeRecovered(ReplicationNode node)
+        public void onReplicationNodeRecovered(final ReplicationNode node)
+        {
+            getTaskExecutor().submit(new Task<Void>()
+            {
+                @Override
+                public Void execute()
+                {
+                    recoverRemoteReplicationNode(node);
+                    return null;
+                }
+            });
+        }
+
+        private void recoverRemoteReplicationNode(ReplicationNode node)
         {
             BDBHARemoteReplicationNodeImpl remoteNode = new BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNodeImpl.this, nodeToAttributes(node), getReplicatedEnvironmentFacade());
             remoteNode.open();
         }
 
         @Override
-        public void onReplicationNodeRemovedFromGroup(ReplicationNode node)
+        public void onReplicationNodeRemovedFromGroup(final ReplicationNode node)
+        {
+            getTaskExecutor().submit(new Task<Void>()
+            {
+                @Override
+                public Void execute()
+                {
+                    removeRemoteReplicationNode(node);
+                    return null;
+                }
+            });
+        }
+
+        private void removeRemoteReplicationNode(ReplicationNode node)
         {
             BDBHARemoteReplicationNodeImpl remoteNode = getChildByName(BDBHARemoteReplicationNodeImpl.class, node.getName());
             if (remoteNode != null)
@@ -634,10 +695,54 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 }
                 else
                 {
-                    remoteNode.setRole(nodeState.getNodeState().name());
                     remoteNode.setJoinTime(nodeState.getJoinTime());
                     remoteNode.setLastTransactionId(nodeState.getCurrentTxnEndVLSN());
+                    remoteNode.setRole(nodeState.getNodeState().name());
                 }
+            }
+        }
+
+        @Override
+        public void onIntruderNode(ReplicationNode node)
+        {
+            boolean inManagementMode = getParent(Broker.class).isManagementMode();
+            if (inManagementMode)
+            {
+                LOGGER.warn(String.format("Intruder replication node '%s' from '%s' is detected. Ignoring intruder in management mode",
+                        node.getName(), node.getHostName() + ":" + node.getPort() ));
+                BDBHARemoteReplicationNodeImpl remoteNode = getChildByName(BDBHARemoteReplicationNodeImpl.class, node.getName());
+                if (remoteNode == null)
+                {
+                    addRemoteReplicationNode(node);
+                }
+            }
+            else
+            {
+                LOGGER.error(String.format("Intruder node '%s' from '%s' is detected. Stopping down virtual host node '%s'",
+                        node.getName(), node.getHostName() + ":" + node.getPort(), BDBHAVirtualHostNodeImpl.this.toString() ));
+
+                getTaskExecutor().submit(new Task<Void>()
+                {
+                    @Override
+                    public Void execute()
+                    {
+                        State state = getState();
+
+                        if (state == State.ACTIVE)
+                        {
+                            try
+                            {
+                                stopAndSetStateTo(State.ERRORED);
+                            }
+                            finally
+                            {
+                                stopEnvironment();
+                            }
+                            notifyStateChanged(state, State.ERRORED);
+                        }
+                        return null;
+                    }
+                });
             }
         }
 
@@ -647,6 +752,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             attributes.put(ConfiguredObject.NAME, replicationNode.getName());
             attributes.put(ConfiguredObject.DURABLE, false);
             attributes.put(BDBHARemoteReplicationNode.ADDRESS, replicationNode.getHostName() + ":" + replicationNode.getPort());
+            attributes.put(BDBHARemoteReplicationNode.MONITOR, replicationNode.getType() == NodeType.MONITOR);
             return attributes;
         }
     }

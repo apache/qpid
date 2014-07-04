@@ -48,4 +48,9 @@ public interface ReplicationGroupListener
      */
     void onNodeState(ReplicationNode node, NodeState nodeState);
 
+    /**
+     * Invoked on intruder node detected
+     */
+    void onIntruderNode(ReplicationNode node);
+
 }
