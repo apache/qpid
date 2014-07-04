@@ -20,6 +20,7 @@
 org.apache.qpid.server.store.berkeleydb.*
 org.apache.qpid.server.store.berkeleydb.replication.*
 org.apache.qpid.server.store.SplitStoreTest#*
+org.apache.qpid.systest.rest.acl.VirtualHostACLTest#*
 org.apache.qpid.systest.rest.VirtualHostNodeRestTest#testCreateAndDeleteVirtualHostNode
 org.apache.qpid.systest.rest.VirtualHostRestTest#testPutCreateVirtualHostUsingProfileNodeType
 org.apache.qpid.server.BrokerStartupTest#testStartupWithNoConfig
