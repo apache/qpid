@@ -71,7 +71,7 @@ public class BindingImpl
         _queue = queue;
         _exchange = exchange;
 
-
+        setArguments((Map<String, Object>)getActualAttributes().get(ARGUMENTS));
     }
 
     @Override
