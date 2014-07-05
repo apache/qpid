@@ -2384,7 +2384,8 @@ qmfui.Bindings = new function() {
      */
     var render = function(exchange, binding) {
         if (exchange.type == "headers") {
-            var arguments = binding.arguments;
+            // Arguments *should* be returned, but set to empty object if not to protect subsequent code.
+            var arguments = binding.arguments ? binding.arguments : {"x-match": "any"};
             var headers = "<p class='title'>x-match: " + arguments["x-match"] + "</p>";
             for (var key in arguments) {
                 if (key != "x-match") {
