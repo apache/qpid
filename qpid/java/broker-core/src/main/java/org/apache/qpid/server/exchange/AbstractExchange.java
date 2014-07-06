@@ -696,11 +696,9 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 attributes.put(Binding.ARGUMENTS, arguments);
 
                 BindingImpl b = new BindingImpl(attributes, queue, this);
+                b.create(); // Must be called before addBinding as it resolves automated attributes.
 
                 addBinding(b);
-                b.create();
-
-
                 return true;
             }
             else if(force)
