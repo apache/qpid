@@ -356,7 +356,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
         else
         {
-
+            record = new ConfiguredObjectRecordImpl(record);
             _objectsById.put(record.getId(), record);
             List<UUID> idsForType = _idsByType.get(record.getType());
             if(idsForType == null)
@@ -537,6 +537,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
         for(ConfiguredObjectRecord record : records)
         {
+            record = new ConfiguredObjectRecordImpl(record);
             final UUID id = record.getId();
             final String type = record.getType();
             if(_objectsById.put(id, record) == null)
@@ -623,6 +624,11 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         private final Map<String, Object> _attributes;
         private final Map<String, UUID> _parents;
 
+        private ConfiguredObjectRecordImpl(ConfiguredObjectRecord record)
+        {
+            this(record.getId(), record.getType(), record.getAttributes(), convertParents(record.getParents()));
+        }
+
         private ConfiguredObjectRecordImpl(final UUID id, final String type, final Map<String, Object> attributes,
                                            final Map<String, UUID> parents)
         {
@@ -676,6 +682,20 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                     + _parents + "]";
         }
 
+    }
+
+    private static Map<String, UUID> convertParents(final Map<String, ConfiguredObjectRecord> parents)
+    {
+        if(parents == null || parents.isEmpty())
+        {
+            return Collections.emptyMap();
+        }
+        Map<String,UUID> parentMap = new HashMap<>();
+        for(Map.Entry<String,ConfiguredObjectRecord> entry : parents.entrySet())
+        {
+            parentMap.put(entry.getKey(), entry.getValue().getId());
+        }
+        return parentMap;
     }
 
 

@@ -26,14 +26,6 @@ public interface ConfigurationEntryStore extends DurableConfigurationStore
 {
 
     /**
-     * Copies the store into the given location
-     *
-     * @param target location to copy store into
-     * @throws IllegalConfigurationException if store cannot be copied into given location
-     */
-    void copyTo(String copyLocation);
-
-    /**
      * Return the store location for the opened store or null if store has not been opened.
      *
      * @return store location for the opened store or null if store has not been opened
