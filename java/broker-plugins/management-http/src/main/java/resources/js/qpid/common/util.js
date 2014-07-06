@@ -140,7 +140,7 @@ define(["dojo/_base/xhr",
 
            util.isProviderManagingUsers = function(type)
            {
-               return (type === "PlainPasswordFile" || type === "Base64MD5PasswordFile" || type === "SCRAM-SHA-1");
+               return (type === "PlainPasswordFile" || type === "Base64MD5PasswordFile" || type === "SCRAM-SHA-1" || type === "SCRAM-SHA-256");
            };
 
            util.showSetAttributesDialog = function(attributeWidgetFactories, data, putURL, dialogTitle, appendNameToUrl)

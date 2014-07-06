@@ -27,20 +27,20 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 
-@ManagedObject( category = false, type = "SCRAM-SHA-1" )
-public class ScramSHA1AuthenticationManager
-        extends AbstractScramAuthenticationManager<ScramSHA1AuthenticationManager>
+@ManagedObject( category = false, type = "SCRAM-SHA-256" )
+public class ScramSHA256AuthenticationManager
+        extends AbstractScramAuthenticationManager<ScramSHA256AuthenticationManager>
 {
-    public static final String PROVIDER_TYPE = "SCRAM-SHA-1";
-    private static final String HMAC_NAME = "HmacSHA1";
+    public static final String PROVIDER_TYPE = "SCRAM-SHA-256";
+    private static final String HMAC_NAME = "HmacSHA256";
 
     static final Charset ASCII = Charset.forName("ASCII");
-    private static final String MECHANISM = "SCRAM-SHA-1";
-    private static final String DIGEST_NAME = "SHA-1";
+    private static final String MECHANISM = "SCRAM-SHA-256";
+    private static final String DIGEST_NAME = "SHA-256";
 
 
     @ManagedObjectFactoryConstructor
-    protected ScramSHA1AuthenticationManager(final Map<String, Object> attributes, final Broker broker)
+    protected ScramSHA256AuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
         super(attributes, broker);
     }

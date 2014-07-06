@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
@@ -148,8 +147,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         if(childClass == PreferencesProvider.class)
         {
             attributes = new HashMap<String, Object>(attributes);
-            attributes.put(ConfiguredObject.ID, UUID.randomUUID());
-            attributes.put(ConfiguredObject.DESIRED_STATE, State.ACTIVE);
             PreferencesProvider pp = getObjectFactory().create(PreferencesProvider.class, attributes, this);
 
             _preferencesProvider = pp;

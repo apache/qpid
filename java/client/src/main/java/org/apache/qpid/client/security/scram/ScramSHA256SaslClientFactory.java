@@ -27,7 +27,7 @@ import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslClientFactory;
 import javax.security.sasl.SaslException;
 
-public class ScramSHA1SaslClientFactory implements SaslClientFactory
+public class ScramSHA256SaslClientFactory implements SaslClientFactory
 {
 
     @Override
@@ -40,14 +40,15 @@ public class ScramSHA1SaslClientFactory implements SaslClientFactory
     {
         for (int i = 0; i < mechanisms.length; i++)
         {
-            if (mechanisms[i].equals(ScramSHA1SaslClient.MECHANISM))
+            if (mechanisms[i].equals(ScramSHA256SaslClient.MECHANISM))
             {
                 if (cbh == null)
                 {
                     throw new SaslException("CallbackHandler must not be null");
                 }
-                return new ScramSHA1SaslClient(cbh);
+                return new ScramSHA256SaslClient(cbh);
             }
+
         }
         return null;
     }

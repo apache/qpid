@@ -22,13 +22,13 @@ package org.apache.qpid.client.security.scram;
 
 import javax.security.auth.callback.CallbackHandler;
 
-public class ScramSHA1SaslClient extends AbstractScramSaslClient
+public class ScramSHA256SaslClient extends AbstractScramSaslClient
 {
 
-    public static final String MECHANISM = "SCRAM-SHA-1";
+    public static final String MECHANISM = "SCRAM-SHA-256";
 
-    public ScramSHA1SaslClient(final CallbackHandler cbh)
+    public ScramSHA256SaslClient(final CallbackHandler cbh)
     {
-        super(cbh, MECHANISM, "SHA-1", "HmacSHA1");
+        super(cbh, MECHANISM, "SHA-256", "HmacSHA256");
     }
 }
