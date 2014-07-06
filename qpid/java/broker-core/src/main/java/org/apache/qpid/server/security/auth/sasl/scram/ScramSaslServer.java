@@ -20,13 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.sasl.scram;
 
-import org.apache.qpid.server.security.auth.manager.ScramSHA1AuthenticationManager;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-import javax.xml.bind.DatatypeConverter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
@@ -35,13 +28,23 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class ScramSHA1SaslServer implements SaslServer
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.qpid.server.security.auth.manager.AbstractScramAuthenticationManager;
+
+public class ScramSaslServer implements SaslServer
 {
-    public static final String MECHANISM = "SCRAM-SHA-1";
+    public final String _mechanism;
+    public final String _hmacName;
+    public final String _digestName;
 
     private static final Charset ASCII = Charset.forName("ASCII");
 
-    private final ScramSHA1AuthenticationManager _authManager;
+    private final AbstractScramAuthenticationManager _authManager;
     private State _state = State.INITIAL;
     private String _nonce;
     private String _username;
@@ -50,9 +53,15 @@ public class ScramSHA1SaslServer implements SaslServer
     private String _clientFirstMessageBare;
     private byte[] _serverSignature;
 
-    public ScramSHA1SaslServer(final ScramSHA1AuthenticationManager authenticationManager)
+    public ScramSaslServer(final AbstractScramAuthenticationManager authenticationManager,
+                           final String mechanism,
+                           final String hmacName,
+                           final String digestName)
     {
         _authManager = authenticationManager;
+        _mechanism = mechanism;
+        _hmacName = hmacName;
+        _digestName = digestName;
     }
 
     enum State
@@ -65,7 +74,7 @@ public class ScramSHA1SaslServer implements SaslServer
     @Override
     public String getMechanismName()
     {
-        return MECHANISM;
+        return _mechanism;
     }
 
     @Override
@@ -174,11 +183,11 @@ public class ScramSHA1SaslServer implements SaslServer
 
             byte[] saltedPassword = _authManager.getSaltedPassword(_username);
 
-            byte[] clientKey = computeHmacSHA1(saltedPassword, "Client Key");
+            byte[] clientKey = computeHmac(saltedPassword, "Client Key");
 
-            byte[] storedKey = MessageDigest.getInstance("SHA1").digest(clientKey);
+            byte[] storedKey = MessageDigest.getInstance(_digestName).digest(clientKey);
 
-            byte[] clientSignature = computeHmacSHA1(storedKey, authMessage);
+            byte[] clientSignature = computeHmac(storedKey, authMessage);
 
             byte[] clientProof = clientKey.clone();
             for(int i = 0 ; i < clientProof.length; i++)
@@ -190,8 +199,8 @@ public class ScramSHA1SaslServer implements SaslServer
             {
                 throw new SaslException("Authentication failed");
             }
-            byte[] serverKey = computeHmacSHA1(saltedPassword, "Server Key");
-            String finalResponse = "v=" + DatatypeConverter.printBase64Binary(computeHmacSHA1(serverKey, authMessage));
+            byte[] serverKey = computeHmac(saltedPassword, "Server Key");
+            String finalResponse = "v=" + DatatypeConverter.printBase64Binary(computeHmac(serverKey, authMessage));
 
             return finalResponse.getBytes(ASCII);
         }
@@ -241,7 +250,7 @@ public class ScramSHA1SaslServer implements SaslServer
 
     }
 
-    private byte[] computeHmacSHA1(final byte[] key, final String string)
+    private byte[] computeHmac(final byte[] key, final String string)
             throws SaslException, UnsupportedEncodingException
     {
         Mac mac = createSha1Hmac(key);
@@ -255,8 +264,8 @@ public class ScramSHA1SaslServer implements SaslServer
     {
         try
         {
-            SecretKeySpec key = new SecretKeySpec(keyBytes, "HmacSHA1");
-            Mac mac = Mac.getInstance("HmacSHA1");
+            SecretKeySpec key = new SecretKeySpec(keyBytes, _hmacName);
+            Mac mac = Mac.getInstance(_hmacName);
             mac.init(key);
             return mac;
         }

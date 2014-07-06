@@ -138,10 +138,20 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
 
 };
 
-        var saslScramSha1 = function saslScramSha1(user, password, saslMechanism, callbackFunction)
-        {
+        var saslScramSha1 = function saslScramSha1(user, password, saslMechanism, callbackFunction) {
+            saslScram("sha1",user,password,saslMechanism,callbackFunction);
+        };
 
-            script.get("webjars/cryptojs/3.1.2/rollups/hmac-sha1.js").then( function()
+        var saslScramSha256 = function saslScramSha1(user, password, saslMechanism, callbackFunction) {
+            saslScram("sha256",user,password,saslMechanism,callbackFunction);
+        };
+
+        var saslScram = function saslScramSha1(mechanism, user, password, saslMechanism, callbackFunction) {
+
+            var DIGEST = mechanism.toUpperCase();
+            var HMAC = "Hmac"+DIGEST;
+
+            script.get("webjars/cryptojs/3.1.2/rollups/hmac-"+mechanism+".js").then( function()
             {
                 script.get("webjars/cryptojs/3.1.2/components/enc-base64-min.js").then ( function()
                 {
@@ -187,7 +197,7 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
 
                     var generateSaltedPassword = function generateSaltedPassword(salt, password, iterationCount)
                     {
-                        var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA1, password);
+                        var hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo[DIGEST], password);
 
                         hmac.update(salt);
                         hmac.update(CryptoJS.enc.Hex.parse("00000001"));
@@ -196,7 +206,7 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
                         var previous = null;
                         for(var i = 1 ;i < iterationCount; i++)
                         {
-                            hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA1, password);
+                            hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo[DIGEST], password);
                             hmac.update( previous != null ? previous : result );
                             previous = hmac.finalize();
                             result = xor(result, previous);
@@ -238,12 +248,12 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
                                 var saltedPassword = generateSaltedPassword(salt, password, iterationCount)
                                 var clientFinalMessageWithoutProof = "c=" + toBase64(GS2_HEADER) + ",r=" + nonce;
                                 var authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
-                                var clientKey = CryptoJS.HmacSHA1("Client Key", saltedPassword);
-                                var storedKey = CryptoJS.SHA1(clientKey);
-                                var clientSignature = CryptoJS.HmacSHA1(authMessage, storedKey);
+                                var clientKey = CryptoJS[HMAC]("Client Key", saltedPassword);
+                                var storedKey = CryptoJS[DIGEST](clientKey);
+                                var clientSignature = CryptoJS[HMAC](authMessage, storedKey);
                                 var clientProof = xor(clientKey, clientSignature);
-                                var serverKey = CryptoJS.HmacSHA1("Server Key", saltedPassword);
-                                serverSignature = CryptoJS.HmacSHA1(authMessage, serverKey);
+                                var serverKey = CryptoJS[HMAC]("Server Key", saltedPassword);
+                                serverSignature = CryptoJS[HMAC](authMessage, serverKey);
                                 dojo.xhrPost({
                                     // The URL of the request
                                     url: saslServiceUrl,
@@ -300,7 +310,11 @@ SaslClient.authenticate = function(username, password, callbackFunction)
     }).then(function(data)
             {
                var mechMap = data.mechanisms;
-               if(containsMechanism(mechMap, "SCRAM-SHA-1"))
+               if(containsMechanism(mechMap, "SCRAM-SHA-256"))
+               {
+                   saslScramSha256(username, password, "SCRAM-SHA-256", callbackFunction)
+               }
+               else if(containsMechanism(mechMap, "SCRAM-SHA-1"))
                {
                    saslScramSha1(username, password, "SCRAM-SHA-1", callbackFunction)
                }

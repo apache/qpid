@@ -44,12 +44,12 @@ import org.apache.qpid.server.security.access.Operation;
 class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements User<ScramAuthUser>
 {
 
-    private ScramSHA1AuthenticationManager _authenticationManager;
+    private AbstractScramAuthenticationManager _authenticationManager;
     @ManagedAttributeField
     private String _password;
 
     @ManagedObjectFactoryConstructor
-    ScramAuthUser(final Map<String, Object> attributes, ScramSHA1AuthenticationManager parent)
+    ScramAuthUser(final Map<String, Object> attributes, AbstractScramAuthenticationManager parent)
     {
         super(parentsMap(parent), attributes);
         _authenticationManager = parent;
