@@ -103,7 +103,7 @@ struct MessagingFixture : public BrokerFixture
     messaging::Session session;
     BrokerAdmin admin;
 
-    MessagingFixture(BrokerOptions opts = BrokerOptions(), bool mgmtEnabled=false) :
+    MessagingFixture(const BrokerOptions& opts = BrokerOptions(), bool mgmtEnabled=false) :
         BrokerFixture(opts, mgmtEnabled),
         connection(open(broker->getPort(Broker::TCP_TRANSPORT))),
         session(connection.createSession()),
