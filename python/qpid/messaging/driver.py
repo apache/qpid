@@ -29,6 +29,7 @@ from qpid.messaging import address, transports
 from qpid.messaging.constants import UNLIMITED, REJECTED, RELEASED
 from qpid.messaging.exceptions import *
 from qpid.messaging.message import get_codec, Disposition, Message
+from qpid.messaging.endpoints import MangledString
 from qpid.ops import *
 from qpid.selector import Selector
 from qpid.util import URL, default,get_client_properties_with_defaults
@@ -945,6 +946,14 @@ class Engine:
         # XXX: subject
         if lnk.options is None:
           lnk.options = {}
+        if isinstance(addr, MangledString):
+          lnk.options['create'] = "always"
+          if 'node' not in lnk.options:
+            lnk.options['node'] = {}
+          if 'x-declare' not in lnk.options['node']:
+            lnk.options['node']['x-declare'] = {}
+          lnk.options['node']['x-declare']['auto-delete'] = "True"
+          lnk.options['node']['x-declare']['exclusive'] = "True"
       except address.LexError, e:
         return MalformedAddress(text=str(e))
       except address.ParseError, e:
