@@ -93,21 +93,29 @@ void Sasl::mechanisms(const std::string& offered)
         mechanisms = offered;
     }
 
-    if (sasl->start(mechanisms, response, context.getTransportSecuritySettings())) {
-        init(sasl->getMechanism(), &response, hostname.size() ? &hostname : 0);
-    } else {
-        init(sasl->getMechanism(), 0, hostname.size() ? &hostname : 0);
+    try {
+        if (sasl->start(mechanisms, response, context.getTransportSecuritySettings())) {
+            init(sasl->getMechanism(), &response, hostname.size() ? &hostname : 0);
+        } else {
+            init(sasl->getMechanism(), 0, hostname.size() ? &hostname : 0);
+        }
+        haveOutput = true;
+        context.activateOutput();
+    } catch (const std::exception& e) {
+        failed(e.what());
     }
-    haveOutput = true;
-    context.activateOutput();
 }
 void Sasl::challenge(const std::string& challenge)
 {
     QPID_LOG_CAT(debug, protocol, id << " Received SASL-CHALLENGE(" << challenge.size() << " bytes)");
-    std::string r = sasl->step(challenge);
-    response(&r);
-    haveOutput = true;
-    context.activateOutput();
+    try {
+        std::string r = sasl->step(challenge);
+        response(&r);
+        haveOutput = true;
+        context.activateOutput();
+    } catch (const std::exception& e) {
+        failed(e.what());
+    }
 }
 namespace {
 const std::string EMPTY;
@@ -115,8 +123,12 @@ const std::string EMPTY;
 void Sasl::challenge()
 {
     QPID_LOG_CAT(debug, protocol, id << " Received SASL-CHALLENGE(null)");
-    std::string r = sasl->step(EMPTY);
-    response(&r);
+    try {
+        std::string r = sasl->step(EMPTY);
+        response(&r);
+    } catch (const std::exception& e) {
+        failed(e.what());
+    }
 }
 void Sasl::outcome(uint8_t result, const std::string& extra)
 {
@@ -146,13 +158,24 @@ qpid::sys::Codec* Sasl::getSecurityLayer()
     return securityLayer.get();
 }
 
+namespace {
+const std::string DEFAULT_ERROR("Authentication failed");
+}
+
 bool Sasl::authenticated()
 {
     switch (state) {
       case SUCCEEDED: return true;
-      case FAILED: throw qpid::messaging::UnauthorizedAccess("Failed to authenticate");
+      case FAILED: throw qpid::messaging::AuthenticationFailure(error.size() ? error : DEFAULT_ERROR);
       case NONE: default: return false;
     }
+}
+
+void Sasl::failed(const std::string& text)
+{
+    QPID_LOG_CAT(info, client, id << " Failure during authentication: " << text);
+    error = text;
+    state = FAILED;
 }
 
 std::string Sasl::getAuthenticatedUsername()

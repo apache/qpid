@@ -56,6 +56,7 @@ TransactionAborted::TransactionAborted(const std::string& msg) : TransactionErro
 UnauthorizedAccess::UnauthorizedAccess(const std::string& msg) : SessionError(msg) {}
 
 ConnectionError::ConnectionError(const std::string& msg) : MessagingException(msg) {}
+AuthenticationFailure::AuthenticationFailure(const std::string& msg) : ConnectionError(msg) {}
 
 TransportFailure::TransportFailure(const std::string& msg) : MessagingException(msg) {}
 

@@ -61,12 +61,14 @@ class Sasl : public qpid::sys::Codec, qpid::amqp::SaslClient
         NONE, FAILED, SUCCEEDED
     } state;
     std::auto_ptr<qpid::sys::SecurityLayer> securityLayer;
+    std::string error;
 
     void mechanisms(const std::string&);
     void challenge(const std::string&);
     void challenge(); //null != empty string
     void outcome(uint8_t result, const std::string&);
     void outcome(uint8_t result);
+    void failed(const std::string&);
   protected:
     bool stopReading();
 };
