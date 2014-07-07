@@ -272,10 +272,10 @@ void CyrusAuthenticator::init()
           */
     int code;
 
-    const char *realm = connection.getBroker().getRealm().c_str();
+    std::string realm = connection.getBroker().getRealm();
     code = sasl_server_new(BROKER_SASL_NAME, /* Service name */
                            NULL, /* Server FQDN, gethostname() */
-                           realm, /* Authentication realm */
+                           realm.c_str(), /* Authentication realm */
                            NULL, /* Local IP, needed for some mechanism */
                            NULL, /* Remote IP, needed for some mechanism */
                            NULL, /* Callbacks */

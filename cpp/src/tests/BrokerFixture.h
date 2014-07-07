@@ -152,7 +152,7 @@ typedef ClientT<> Client;
 template <class ConnectionType, class SessionType=qpid::client::Session>
 struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
 
-    SessionFixtureT(BrokerOptions opts=BrokerOptions()) :
+    SessionFixtureT(const BrokerOptions& opts=BrokerOptions()) :
         BrokerFixture(BrokerFixture::Args(), opts),
         ClientT<ConnectionType,SessionType>(getPort())
     {}

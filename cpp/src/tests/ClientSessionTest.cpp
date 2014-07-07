@@ -105,7 +105,7 @@ struct SimpleListener : public MessageListener
 
 struct ClientSessionFixture : public SessionFixture
 {
-    ClientSessionFixture(BrokerOptions opts = BrokerOptions()) : SessionFixture(opts) {
+    ClientSessionFixture(const BrokerOptions& opts = BrokerOptions()) : SessionFixture(opts) {
         session.queueDeclare(arg::queue="my-queue");
     }
 };
