@@ -208,6 +208,11 @@ struct QPID_MESSAGING_CLASS_EXTERN ConnectionError : public MessagingException
     QPID_MESSAGING_EXTERN ConnectionError(const std::string&);
 };
 
+struct QPID_MESSAGING_CLASS_EXTERN AuthenticationFailure : public ConnectionError
+{
+    QPID_MESSAGING_EXTERN AuthenticationFailure(const std::string&);
+};
+
 /**
  * Thrown to indicate loss of underlying connection. When
  * auto-reconnect is used this will be caught by the library and used

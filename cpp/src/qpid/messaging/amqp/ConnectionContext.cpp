@@ -851,13 +851,17 @@ std::size_t ConnectionContext::decode(const char* buffer, std::size_t size)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     size_t decoded = 0;
-    if (sasl.get() && !sasl->authenticated()) {
-        decoded = sasl->decode(buffer, size);
-        if (!sasl->authenticated()) return decoded;
-    }
-    if (decoded < size) {
-        if (sasl.get() && sasl->getSecurityLayer()) decoded += sasl->getSecurityLayer()->decode(buffer+decoded, size-decoded);
-        else decoded += decodePlain(buffer+decoded, size-decoded);
+    try {
+        if (sasl.get() && !sasl->authenticated()) {
+            decoded = sasl->decode(buffer, size);
+            if (!sasl->authenticated()) return decoded;
+        }
+        if (decoded < size) {
+            if (sasl.get() && sasl->getSecurityLayer()) decoded += sasl->getSecurityLayer()->decode(buffer+decoded, size-decoded);
+            else decoded += decodePlain(buffer+decoded, size-decoded);
+        }
+    } catch (const AuthenticationFailure&) {
+        transport->close();
     }
     return decoded;
 }
@@ -865,13 +869,17 @@ std::size_t ConnectionContext::encode(char* buffer, std::size_t size)
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     size_t encoded = 0;
-    if (sasl.get() && sasl->canEncode()) {
-        encoded += sasl->encode(buffer, size);
-        if (!sasl->authenticated()) return encoded;
-    }
-    if (encoded < size) {
-        if (sasl.get() && sasl->getSecurityLayer()) encoded += sasl->getSecurityLayer()->encode(buffer+encoded, size-encoded);
-        else encoded += encodePlain(buffer+encoded, size-encoded);
+    try {
+        if (sasl.get() && sasl->canEncode()) {
+            encoded += sasl->encode(buffer, size);
+            if (!sasl->authenticated()) return encoded;
+        }
+        if (encoded < size) {
+            if (sasl.get() && sasl->getSecurityLayer()) encoded += sasl->getSecurityLayer()->encode(buffer+encoded, size-encoded);
+            else encoded += encodePlain(buffer+encoded, size-encoded);
+        }
+    } catch (const AuthenticationFailure&) {
+        transport->close();
     }
     return encoded;
 }
@@ -879,9 +887,14 @@ bool ConnectionContext::canEncode()
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     if (sasl.get()) {
-        if (sasl->canEncode()) return true;
-        else if (!sasl->authenticated()) return false;
-        else if (sasl->getSecurityLayer()) return sasl->getSecurityLayer()->canEncode();
+        try {
+            if (sasl->canEncode()) return true;
+            else if (!sasl->authenticated()) return false;
+            else if (sasl->getSecurityLayer()) return sasl->getSecurityLayer()->canEncode();
+        } catch (const AuthenticationFailure&) {
+            transport->close();
+            return false;
+        }
     }
     return canEncodePlain();
 }
