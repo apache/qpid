@@ -778,9 +778,11 @@ class Session(Endpoint):
     finally:
       self.connection._remove_session(self)
 
+class MangledString(str): pass
+
 def _mangle(addr):
   if addr and addr.startswith("#"):
-    return str(uuid4()) + addr
+    return MangledString(str(uuid4()) + addr)
   else:
     return addr
 
