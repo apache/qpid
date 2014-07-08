@@ -746,7 +746,18 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
         envConfig.setDurability(TEST_DURABILITY);
-        ReplicatedEnvironment intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+        ReplicatedEnvironment intruder = null;
+        try
+        {
+            intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+        }
+        finally
+        {
+            if (intruder != null)
+            {
+                intruder.close();
+            }
+        }
         assertTrue("Intruder node was not detected", intruderLatch.await(10, TimeUnit.SECONDS));
     }
 
