@@ -46,7 +46,6 @@ import com.sleepycat.je.rep.utilint.HostPortPair;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.updater.Task;
-import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -103,6 +102,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     @ManagedAttributeField(afterSet="postSetPriority")
     private int _priority;
+
 
     @ManagedAttributeField(afterSet="postSetQuorumOverride")
     private int _quorumOverride;
@@ -426,11 +426,22 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private void onReplica()
     {
+        createReplicaVirtualHost();
+    }
+
+
+    private void onDetached()
+    {
+        createReplicaVirtualHost();
+    }
+
+    private void createReplicaVirtualHost()
+    {
         try
         {
             closeVirtualHostIfExist();
 
-            Map<String, Object> hostAttributes = new HashMap<String, Object>();
+            Map<String, Object> hostAttributes = new HashMap<>();
             hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
             hostAttributes.put(VirtualHost.NAME, getGroupName());
             hostAttributes.put(VirtualHost.TYPE, "BDB_HA_REPLICA");
@@ -440,11 +451,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
             LOGGER.error("Failed to create a replica virtualhost", e);
         }
-    }
-
-    private void onDetached()
-    {
-        closeVirtualHostIfExist();
     }
 
     protected void closeVirtualHostIfExist()
@@ -478,11 +484,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 onReplica();
                 break;
             case DETACHED:
-                LOGGER.error("BDB replicated node in detached state, therefore passivating.");
                 onDetached();
                 break;
             case UNKNOWN:
-                LOGGER.warn("BDB replicated node in unknown state (hopefully temporarily)");
                 break;
             default:
                 LOGGER.error("Unexpected state change: " + state);
