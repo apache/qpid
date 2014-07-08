@@ -279,11 +279,11 @@ bool CyrusSasl::start(const std::string& mechanisms, std::string& response, cons
     secprops.maxbufsize = 65535;
 
     QPID_LOG(debug, "min_ssf: " << secprops.min_ssf << ", max_ssf: " << secprops.max_ssf);
-    
+
     secprops.property_names = 0;
     secprops.property_values = 0;
     secprops.security_flags = 0;//TODO: provide means for application to configure these
-    
+
     result = sasl_setprop(conn, SASL_SEC_PROPS, &secprops);
     if (result != SASL_OK) {
         throw framing::InternalErrorException(QPID_MSG("SASL error: " << sasl_errdetail(conn)));
@@ -307,7 +307,13 @@ bool CyrusSasl::start(const std::string& mechanisms, std::string& response, cons
         }        
     } while (result == SASL_INTERACT);
 
-    if (result != SASL_CONTINUE && result != SASL_OK) {
+    if (result == SASL_NOMECH) {
+        if (mechanisms.size()) {
+            throw qpid::Exception(std::string("Can't authenticate using ") + mechanisms);
+        } else {
+            throw qpid::Exception("No mutually acceptable authentication mechanism");
+        }
+    } else if (result != SASL_CONTINUE && result != SASL_OK) {
         throw InternalErrorException(QPID_MSG("Sasl error: " << sasl_errdetail(conn)));
     }
 
