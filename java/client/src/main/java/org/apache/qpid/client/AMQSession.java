@@ -1105,6 +1105,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             try
             {
                 C consumer = (C) createConsumer(dest, messageSelector, noLocal);
+                consumer.markAsDurableSubscriber();
                 subscriber = new TopicSubscriberAdaptor<C>(dest, consumer);
 
                 // Save subscription information

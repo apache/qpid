@@ -134,6 +134,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     private final boolean _browseOnly;
     private List<StackTraceElement> _closedStack = null;
 
+    private boolean _isDurableSubscriber = false;
 
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
                                    String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
@@ -1034,5 +1035,15 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     protected MessageFactoryRegistry getMessageFactory()
     {
         return _messageFactory;
+    }
+
+    protected boolean isDurableSubscriber()
+    {
+        return _isDurableSubscriber;
+    }
+
+    protected void markAsDurableSubscriber()
+    {
+        _isDurableSubscriber = true;
     }
 }
