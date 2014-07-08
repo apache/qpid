@@ -1143,26 +1143,35 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     public boolean isQueueExist(AMQDestination dest, boolean assertNode) throws AMQException
     {
+        Node node = dest.getNode();
+        return isQueueExist(dest.getAddressName(), assertNode,
+                            node.isDurable(), node.isAutoDelete(),
+                            node.isExclusive(), node.getDeclareArgs());
+    }
+    
+    public boolean isQueueExist(String queueName, boolean assertNode,
+                                boolean durable, boolean autoDelete,
+                                boolean exclusive, Map<String, Object> args) throws AMQException
+    {    
         boolean match = true;
         try
         {
-            QueueQueryResult result = getQpidSession().queueQuery(dest.getAddressName(), Option.NONE).get();
-            match = dest.getAddressName().equals(result.getQueue());
-            Node node = dest.getNode();
+            QueueQueryResult result = getQpidSession().queueQuery(queueName, Option.NONE).get();
+            match = queueName.equals(result.getQueue());
 
             if (match && assertNode)
             {
-                match = (result.getDurable() == node.isDurable()) &&
-                         (result.getAutoDelete() == node.isAutoDelete()) &&
-                         (result.getExclusive() == node.isExclusive()) &&
-                         (matchProps(result.getArguments(),node.getDeclareArgs()));
+                match = (result.getDurable() == durable) &&
+                         (result.getAutoDelete() == autoDelete) &&
+                         (result.getExclusive() == exclusive) &&
+                         (matchProps(result.getArguments(),args));
             }
 
             if (assertNode)
             {
                 if (!match)
                 {
-                    throw new AMQException("Assert failed for address : " + dest  +", Result was : " + result);
+                    throw new AMQException("Assert failed for queue : " + queueName  +", Result was : " + result);
                 }
             }
         }
@@ -1596,7 +1605,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         // We need to delete the subscription queue.
         if (dest.getAddressType() == AMQDestination.TOPIC_TYPE &&
             dest.getLink().getSubscriptionQueue().isExclusive() &&
-            isQueueExist(dest, false))
+            isQueueExist(dest.getQueueName(), false, false, false, false, null))
         {
             getQpidSession().queueDelete(dest.getQueueName());
         }

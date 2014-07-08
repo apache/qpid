@@ -509,11 +509,14 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             if (dest.getDelete() == AddressOption.ALWAYS ||
                 dest.getDelete() == AddressOption.RECEIVER )
             {
-                ((AMQSession_0_10) getSession()).handleNodeDelete(dest);
-                ((AMQSession_0_10) getSession()).deleteSubscriptionQueue(dest);
+                ((AMQSession_0_10) getSession()).handleNodeDelete(dest);                
             }
             // Subscription queue is handled as part of linkDelete method.
             ((AMQSession_0_10) getSession()).handleLinkDelete(dest);
+            if (!isDurableSubscriber())
+            {
+                ((AMQSession_0_10) getSession()).deleteSubscriptionQueue(dest);
+            }
         }
     }
 
