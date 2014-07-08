@@ -846,23 +846,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             try
             {
-                if (environment.isValid())
-                {
-                    environment.setStateChangeListener(new StateChangeListener()
-                    {
-                        @Override
-                        public void stateChange(StateChangeEvent stateChangeEvent) throws RuntimeException
-                        {
-                            if (LOGGER.isDebugEnabled())
-                            {
-                                LOGGER.debug(
-                                        "When restarting a state change event is received on NOOP listener for state:"
-                                        + stateChangeEvent.getState());
-                            }
-                        }
-                    });
-                }
-
                 try
                 {
                     closeSequences();

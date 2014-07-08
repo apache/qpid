@@ -22,11 +22,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.io.File;
 
 import javax.jms.Connection;
-import javax.jms.Destination;
 import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
 import javax.management.ObjectName;
 
 import org.apache.qpid.jms.ConnectionURL;
@@ -36,8 +32,6 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class HAClusterTwoNodeTest extends QpidBrokerTestCase
 {
-    private static final long RECEIVE_TIMEOUT = 5000l;
-
     private static final String VIRTUAL_HOST = "test";
 
     private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(VIRTUAL_HOST);
@@ -123,20 +117,22 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         assertProducingConsuming(connection);
     }
 
-    public void testPersistentOperationsFailOnNonDesignatedPrimarysAfterSecondaryStopped() throws Exception
+    public void testPersistentOperationsFailOnNonDesignatedPrimaryAfterSecondaryStopped() throws Exception
     {
         startCluster(false);
         _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
-        final Connection connection = getConnection(_brokerFailoverUrl);
-        assertNotNull("Expected to get a valid connection to primary", connection);
+
         try
         {
+            Connection connection = getConnection(_brokerFailoverUrl);
             assertProducingConsuming(connection);
-            fail("JMS peristent operations succeded on Master 'not designated primary' buy they should fail as replica is not available");
+            fail("Exception not thrown");
         }
         catch(JMSException e)
         {
-            // JMSException should be thrown on transaction start/commit
+            // JMSException should be thrown either on getConnection, or produce/consume
+            // depending on whether the relative timing of the node discovering that the
+            // secondary has gone.
         }
     }
 
@@ -166,7 +162,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         assertFalse("Expected secondary node to NOT be set as designated primary", secondaryStoreBean.getDesignatedPrimary());
     }
 
-    public void testSecondaryDesignatedAsPrimaryAfterOrginalPrimaryStopped() throws Exception
+    public void testSecondaryDesignatedAsPrimaryAfterOriginalPrimaryStopped() throws Exception
     {
         startCluster(true);
         final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfSecondaryNode());

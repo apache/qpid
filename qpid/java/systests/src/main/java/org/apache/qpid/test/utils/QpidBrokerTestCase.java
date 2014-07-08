@@ -1052,7 +1052,6 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public InitialContext getInitialContext() throws NamingException
     {
-        _logger.info("get InitialContext");
         if (_initialContext == null)
         {
             _initialContext = new InitialContext();
@@ -1070,7 +1069,6 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public AMQConnectionFactory getConnectionFactory() throws NamingException
     {
-        _logger.info("get ConnectionFactory");
         if (_connectionFactory == null)
         {
             if (Boolean.getBoolean(PROFILE_USE_SSL))
