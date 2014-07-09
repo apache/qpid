@@ -166,7 +166,7 @@ struct Options : public qpid::Options
             qpid::log::Logger::instance().configure(log);
             if (help) {
                 std::cout << *this << std::endl << std::endl
-                          << "Drains messages from the specified address" << std::endl;
+                          << "Sends messages to the specified address" << std::endl;
                 return false;
             } else {
                 return true;
