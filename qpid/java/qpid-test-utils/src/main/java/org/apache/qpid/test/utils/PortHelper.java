@@ -19,7 +19,7 @@
 package org.apache.qpid.test.utils;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.Set;
 
@@ -31,7 +31,7 @@ public class PortHelper
 
     private static final int DEFAULT_TIMEOUT_MILLIS = 5000;
 
-    private int timeout = DEFAULT_TIMEOUT_MILLIS;
+    private int _timeout = DEFAULT_TIMEOUT_MILLIS;
 
     public void waitUntilPortsAreFree(Set<Integer> ports)
     {
@@ -48,14 +48,14 @@ public class PortHelper
     private void waitUntilPortIsFree(int port)
     {
         long startTime = System.currentTimeMillis();
-        long deadline = startTime + timeout;
+        long deadline = startTime + _timeout;
         boolean alreadyFailed = false;
 
         while (true)
         {
             if (System.currentTimeMillis() > deadline)
             {
-                throw new RuntimeException("Timed out after " + timeout + " ms waiting for port " + port + " to become available");
+                throw new RuntimeException("Timed out after " + _timeout + " ms waiting for port " + port + " to become available");
             }
 
             if (isPortAvailable(port))
@@ -85,14 +85,12 @@ public class PortHelper
     public boolean isPortAvailable(int port)
     {
         ServerSocket serverSocket = null;
-        DatagramSocket datagramSocket = null;
-
         try
         {
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket();
             serverSocket.setReuseAddress(true); // ensures that the port is subsequently usable
-            datagramSocket = new DatagramSocket(port);
-            datagramSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(port));
+
             return true;
         }
         catch (IOException e)
@@ -110,18 +108,16 @@ public class PortHelper
                 }
                 catch (IOException e)
                 {
-                    throw new RuntimeException("Couldn't close port " + port + " that we created to check its availability", e);
+                    throw new RuntimeException("Couldn't close port "
+                                               + port
+                                               + " that we created to check its availability", e);
                 }
-            }
-            if(datagramSocket != null)
-            {
-                datagramSocket.close();
             }
         }
     }
 
     public void setTimeout(int timeout)
     {
-        this.timeout = timeout;
+        this._timeout = timeout;
     }
 }
