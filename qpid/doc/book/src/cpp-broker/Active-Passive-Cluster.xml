@@ -112,13 +112,21 @@ under the License.
 	message is consumed and acknowledged by a regular client before it has
 	been replicated to a backup, then it doesn't need to be replicated.
       </para>
-      <variablelist>
+      <variablelist id="ha-broker-states">
 	<title>HA Broker States</title>
+	<varlistentry>
+	  <term>Stand-alone</term>
+	  <listitem>
+	    <para>
+	      Broker is not part of a HA cluster.
+	    </para>
+	  </listitem>
+	</varlistentry>
 	<varlistentry>
 	  <term>Joining</term>
 	  <listitem>
 	    <para>
-	      Initial state of a new broker that has not yet connected to the primary.
+	      Newly started broker, not yet connected to any existing primary.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -126,8 +134,8 @@ under the License.
 	  <term>Catch-up</term>
 	  <listitem>
 	    <para>
-	      A backup broker that is connected to the primary and catching up
-	      on queues and messages.
+	      A backup broker that is connected to the primary and downloading
+	      existing state (queues, messages etc.)
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -144,7 +152,8 @@ under the License.
 	  <term>Recovering</term>
 	  <listitem>
 	    <para>
-	      The newly-promoted primary, waiting for backups to connect and catch up.
+	      Newly-promoted primary, waiting for backups to connect and catch up.
+	      Clients can connect but they are stalled until the primary is active.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -222,7 +231,7 @@ under the License.
     <note>
       <para>
 	Incorrect security settings are a common cause of problems when
-	getting started, see <xref linkend="ha-security"/>.	
+	getting started, see <xref linkend="ha-security"/>.
       </para>
     </note>
     <table frame="all" id="ha-broker-options">
@@ -1049,22 +1058,16 @@ link-heartbeat-interval=5
     <section id="ha-troubleshoot-total-cluster-failure">
       <title>Total cluster failure</title>
       <para>
+	Note: for definition of broker states <firstterm>joining</firstterm>,
+	<firstterm>catch-up</firstterm>, <firstterm>ready</firstterm>,
+	<firstterm>recovering</firstterm> and <firstterm>active</firstterm> see
+	<xref linkend="ha-broker-states"/>
+      </para>
+      <para>
 	The cluster can only guarantee availability as long as there is at
 	least one active primary broker or ready backup broker left alive.
 	If all the brokers fail simultaneously, the cluster will fail and
 	non-persistent data will be lost.
-      </para>
-      <para>
-	To explain this better, note that brokers are in one of 4 states:
-	- standalone: not part of a HA cluster - joining: newly started
-	backup, not yet joined to the cluster. - catch-up: backup has
-	connected to the primary and is downloading queues, messages etc.
-	- ready: backup is connected and actively replicating from
-	primary, it is ready to take over. - recovering: newly-promoted to
-	primary, waiting for backups to catch up before serving clients.
-	Only a single primary broker can be recovering at a time. -
-	active: serving clients, only a single primary broker can be
-	active at a time.
       </para>
       <para>
 	While there is an active primary broker, clients can get service.
@@ -1097,27 +1100,43 @@ link-heartbeat-interval=5
 	  this:
 	</para>
 	<programlisting>
-Service Name                   Owner (Last)                   State         
-------- ----                   ----- ------                   -----         
-service:mrg33-qpidd-service    20.0.10.33                     started       
-service:mrg34-qpidd-service    20.0.10.34                     started       
-service:mrg35-qpidd-service    20.0.10.35                     started       
-service:qpidd-primary-service  (20.0.10.33)                   stopped       
+Service Name                   Owner (Last)                   State
+------- ----                   ----- ------                   -----
+service:mrg33-qpidd-service    20.0.10.33                     started
+service:mrg34-qpidd-service    20.0.10.34                     started
+service:mrg35-qpidd-service    20.0.10.35                     started
+service:qpidd-primary-service  (20.0.10.33)                   stopped
 	</programlisting>
 	<para>
 	  Eventually all brokers become stuck in &quot;joining&quot; mode,
-	  as shown by qpid-ha status --all.
+	  as shown by: <literal>qpid-ha status --all</literal>
 	</para>
 	<para>
 	  At this point you need to restart the cluster in one of the
-	  following ways: Restart the entire cluster: - In
-	  luci:<replaceable>your-cluster</replaceable>:Nodes click reboot to restart the entire
-	  cluster. - OR stop and restart the cluster with ccs --stopall;
-	  ccs --startall Restart just the Qpid services: - In
-	  luci:<replaceable>your-cluster</replaceable>:Service Groups - select all the qpidd (not
-	  primary) services, click restart - select the qpidd-primary
-	  service, click restart - OR stop the primary and qpidd services
-	  with clusvcadm, then restart (primary last)
+	  following ways:
+	  <orderedlist>
+	    <listitem><para>
+	      Restart the entire cluster:
+	      In <literal>luci:<replaceable>your-cluster</replaceable>:Nodes</literal>
+	      click reboot to restart the entire cluster
+	    </para></listitem>
+	    <listitem><para>
+	      Stop and restart the cluster with
+	      <literal>ccs --stopall; ccs --startall</literal>
+	    </para></listitem>
+	    <listitem><para>
+	      Restart just the Qpid services:In <literal>luci:<replaceable>your-cluster</replaceable>:Service Groups</literal>
+	      <orderedlist>
+		<listitem><para>Select all the qpidd (not qpidd-primary) services, click restart</para></listitem>
+		<listitem><para>Select the qpidd-primary service, click restart</para></listitem>
+	      </orderedlist>
+	    </para></listitem>
+	    <listitem><para>
+	      Stop the <literal>qpidd-primary</literal> and
+	      <literal>qpidd</literal> services with <literal>clusvcadm</literal>,
+	      then restart (qpidd-primary last)
+	    </para></listitem>
+	  </orderedlist>
 	</para>
       </section>
       <section id="ha-troubleshoot-the-cluster-reboots">
