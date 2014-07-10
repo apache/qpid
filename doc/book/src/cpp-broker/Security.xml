@@ -315,7 +315,7 @@ com.sun.security.jgss.initiate {
 	 <!--          ###################################################          --> <section id="sect-Messaging_User_Guide-Security-Authorization">
 		<title>Authorization</title>
 		 <para>
-		   In Qpid, Authorization specifies which actions can be performed by each authenticated user using an Access Control List (ACL). 
+		   In Qpid, Authorization specifies which actions can be performed by each authenticated user using an Access Control List (ACL).
 		 </para>
 		 <para>
 		   Use the <command>--acl-file</command> command to load the access control list. The filename should have a <filename>.acl</filename> extension:
@@ -384,17 +384,17 @@ com.sun.security.jgss.initiate {
 </programlisting>
 
 		 <para>
-			Performance Note: Most ACL queries are performed infrequently. The overhead associated with 
+			Performance Note: Most ACL queries are performed infrequently. The overhead associated with
 			ACL passing an allow or deny decision on the creation of a queue is negligible
 			compared to actually creating and using the queue. One notable exception is the <command>publish exchange</command>
-			query. ACL files with no <emphasis>publish exchange</emphasis> rules are noted and the broker short circuits the logic 
-			associated with the per-messsage <emphasis>publish exchange</emphasis> ACL query. 
+			query. ACL files with no <emphasis>publish exchange</emphasis> rules are noted and the broker short circuits the logic
+			associated with the per-messsage <emphasis>publish exchange</emphasis> ACL query.
 			However, if an ACL file has any <emphasis>publish exchange</emphasis> rules
 			then the broker is required to perform a <emphasis>publish exchange</emphasis> query for each message published.
 			Users with performance critical applications are encouraged to structure exchanges, queues, and bindings so that
 			the <emphasis>publish exchange</emphasis> ACL rules are unnecessary.
 		</para>
-              
+
 		 <!--          ########          --> <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntax">
 			<title>ACL Syntax</title>
 			 <para>
@@ -403,32 +403,32 @@ com.sun.security.jgss.initiate {
     user = username[/domain[@realm]]
     user-list = user1 user2 user3 ...
     group-name-list = group1 group2 group3 ...
-    
+
     group <group-name> = [user-list] [group-name-list]
-    
+
     permission = [allow | allow-log | deny | deny-log]
-    action = [consume | publish | create | access | 
+    action = [consume | publish | create | access |
               bind | unbind | delete | purge | update |
               move | redirect | reroute]
     object = [queue | exchange | broker | link | method | query]
-    property = [name | durable | owner | routingkey | 
-                autodelete | exclusive |type | 
+    property = [name | durable | owner | routingkey |
+                autodelete | exclusive |type |
 		alternate | queuename | exchangename |
-		schemapackage | schemaclass | 
-		queuemaxsizelowerlimit  | 
+		schemapackage | schemaclass |
+		queuemaxsizelowerlimit  |
 		queuemaxsizeupperlimit  |
-                queuemaxcountlowerlimit | 
+                queuemaxcountlowerlimit |
 		queuemaxcountupperlimit |
-                filemaxsizelowerlimit   | 
+                filemaxsizelowerlimit   |
 		filemaxsizeupperlimit   |
-                filemaxcountlowerlimit  | 
+                filemaxcountlowerlimit  |
 		filemaxcountupperlimit  |
                 pageslowerlimit         |
                 pagesupperlimit         |
                 pagefactorlowerlimit    |
                 pagefactorupperlimit ]
-    
-    acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all" 
+
+    acl permission {<group-name>|<user-name>|"all"} {action|"all"} [object|"all"
                 [property=<property-value> ...]]
 
     quota-spec = [connections | queues]
@@ -523,7 +523,7 @@ com.sun.security.jgss.initiate {
 								<para>
 									Applied on a per message basis
 									to verify that the user has rights to publish to the given
-									exchange with the given routingkey. 
+									exchange with the given routingkey.
 								</para>
 
 							</entry>
@@ -889,20 +889,20 @@ com.sun.security.jgss.initiate {
 				   </tbody>
 				</tgroup>
 			</table>
-			
+
 			<section id="sect-Messaging_User_Guide-Authorization-ACL_ActionObjectPropertyTuples">
 			  <title>ACL Action-Object-Property Tuples</title>
 			  <para>
 			    Not every ACL action is applicable to every ACL object. Furthermore, not every property may be
 			    specified for every action-object pair.
 			    The following table enumerates which action and object pairs are allowed.
-			    The table also lists which optional ACL properties are allowed to qualify 
+			    The table also lists which optional ACL properties are allowed to qualify
 			    action-object pairs.
 			  </para>
 			  <para>
-			    The <emphasis>access</emphasis> action is called with different argument 
+			    The <emphasis>access</emphasis> action is called with different argument
 			    lists for the <emphasis>exchange</emphasis> and <emphasis>queue</emphasis> objects.
-			    A separate column shows the AMQP 0.10 method that the Access ACL rule is satisfying. 
+			    A separate column shows the AMQP 0.10 method that the Access ACL rule is satisfying.
 			    Write separate rules with the additional arguments for the <emphasis>declare</emphasis>
 			    and <emphasis>bind</emphasis> methods and include these rules in the ACL file
 			    before the rules for the <emphasis>query</emphasis> method.
@@ -1028,21 +1028,18 @@ com.sun.security.jgss.initiate {
                                   <entry>queue</entry>
                                   <entry>name</entry>
                                   <entry>queuename</entry>
-                                  <entry></entry>
                                 </row>
                                 <row>
                                   <entry>redirect</entry>
                                   <entry>queue</entry>
                                   <entry>name</entry>
                                   <entry>queuename</entry>
-                                  <entry></entry>
                                 </row>
                                 <row>
                                   <entry>reroute</entry>
                                   <entry>queue</entry>
                                   <entry>name</entry>
                                   <entry>exchangename</entry>
-                                  <entry></entry>
                                 </row>
 				<row>
 				  <entry>unbind</entry>
@@ -1078,7 +1075,7 @@ com.sun.security.jgss.initiate {
 			      </listitem>
 			      <listitem>
 				<para>
-				  Embedded comments and trailing comments are not allowed. The <command>#</command> is commonly found in routing keys and other AMQP literals which occur naturally in ACL rule specifications. 
+				  Embedded comments and trailing comments are not allowed. The <command>#</command> is commonly found in routing keys and other AMQP literals which occur naturally in ACL rule specifications.
 				</para>
 			      </listitem>
 			    </itemizedlist>
@@ -1212,12 +1209,12 @@ com.sun.security.jgss.initiate {
 			    </listitem>
 			  </itemizedlist>
 			</section>
-			
-			
+
+
 			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-keywords">
 			  <title>ACL File Keywords</title>
 			  ACL reserves several words for convenience and for context sensitive substitution.
-			  
+
 			  <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-keywords-all">
 			    <title>The <command>all</command> Keyword</title>
 			    The keyword <command>all</command> is reserved. It may be used in ACL rules to match all individuals and groups, all actions, or all objects.
@@ -1227,7 +1224,7 @@ com.sun.security.jgss.initiate {
 			      <listitem>acl allow bob@QPID create all</listitem>
 			    </itemizedlist>
 			  </section>
-			  
+
 			  <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions-keywords-userdomain">
 			    <title>User Name and Domain Name Keywords</title>
 			    <para>
@@ -1238,7 +1235,7 @@ com.sun.security.jgss.initiate {
 			    </para>
 			    <para>
 			      In the following table an authenticated user named bob.user@QPID.COM has his substitution keywords expanded.
-			      
+
 			      <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_UsernameSubstitution">
 				<title>ACL User Name and Domain Name Substitution Keywords</title>
 				<tgroup cols="2">
@@ -1265,7 +1262,7 @@ com.sun.security.jgss.initiate {
 				</tgroup>
 			      </table>
 			    </para>
-			    
+
 			    <para>
 			      <itemizedlist>
 				<listitem>
@@ -1276,17 +1273,17 @@ com.sun.security.jgss.initiate {
 				</listitem>
 			      </itemizedlist>
 			    </para>
-			    
+
 <programlisting><![CDATA[
   # Example:
-  # 
+  #
   # Administrators can set up Acl rule files that allow every user to create a
-  # private exchange, a private queue, and a private binding between them. 
-  # In this example the users are also allowed to create private backup exchanges, 
-  # queues and bindings. This effectively provides limits to user's exchange, 
-  # queue, and binding creation and guarantees that each user gets exclusive 
+  # private exchange, a private queue, and a private binding between them.
+  # In this example the users are also allowed to create private backup exchanges,
+  # queues and bindings. This effectively provides limits to user's exchange,
+  # queue, and binding creation and guarantees that each user gets exclusive
   # access to these resources.
-  # 
+  #
   #
   # Create primary queue and exchange:
   #
@@ -1335,9 +1332,9 @@ com.sun.security.jgss.initiate {
   acl deny all all
 ]]></programlisting>
                           </section>
-			  
+
 			</section>
-			
+
 			<section id="sect-Messaging_User_Guide-Authorization-ACL_Syntatic_Conventions-wildcards">
 			  <title>Wildcards</title>
 			  ACL privides two types of wildcard matching to provide flexibility in writing rules.
@@ -1429,9 +1426,9 @@ com.sun.security.jgss.initiate {
 			  </section>
 
 			</section>
-			
-		      
-			
+
+
+
 		      </section>
 
 		 <section id="sect-Messaging_User_Guide-Authorization-ACL_Rule_Matching">
@@ -1456,45 +1453,45 @@ com.sun.security.jgss.initiate {
     # Example of rule matching
     #
     # Using this ACL file content:
-    
+
     (1)  acl deny bob create exchange name=test durable=true passive=true
     (2)  acl deny bob create exchange name=myEx type=direct
     (3)  acl allow all all
-    
+
     #
-    # Lookup 1. id:bob action:create objectType:exchange name=test 
+    # Lookup 1. id:bob action:create objectType:exchange name=test
     #           {durable=false passive=false type=direct alternate=}
     #
     # ACL Match Processing:
-    #  1. Rule 1 passes minimum criteria with user bob, action create, 
+    #  1. Rule 1 passes minimum criteria with user bob, action create,
     #     and object exchange.
     #  2. Rule 1 matches name=test.
-    #  3. Rule 1 does not match the rule's durable=true with the requested 
+    #  3. Rule 1 does not match the rule's durable=true with the requested
     #     lookup of durable=false.
-    #  4. Rule 1 does not control the decision and processing continues 
+    #  4. Rule 1 does not control the decision and processing continues
     #     to Rule 2.
-    #  5. Rule 2 passes minimum criteria with user bob, action create, 
+    #  5. Rule 2 passes minimum criteria with user bob, action create,
     #     and object exchange.
-    #  6. Rule 2 does not match the rule's name=myEx with the requested 
+    #  6. Rule 2 does not match the rule's name=myEx with the requested
     #     lookup of name=test.
-    #  7. Rule 2 does not control the decision and processing continues 
+    #  7. Rule 2 does not control the decision and processing continues
     #     to Rule 3.
     #  8. Rule 3 matches everything and the decision is 'allow'.
     #
-    # Lookup 2. id:bob action:create objectType:exchange name=myEx 
+    # Lookup 2. id:bob action:create objectType:exchange name=myEx
     #           {durable=true passive=true type=direct alternate=}
     #
     # ACL Match Processing:
-    #  1. Rule 1 passes minimum criteria with user bob, action create, 
+    #  1. Rule 1 passes minimum criteria with user bob, action create,
     #     and object exchange.
-    #  2. Rule 1 does not match the rule's name=test with the requested 
+    #  2. Rule 1 does not match the rule's name=test with the requested
     #     lookup of name=myEx.
     #  3. Rule 1 does not control the decision and processing continues
     #     to Rule 2.
-    #  4. Rule 2 passes minimum criteria with user bob, action create, 
+    #  4. Rule 2 passes minimum criteria with user bob, action create,
     #     and object exchange.
     #  5. Rule 2 matches name=myEx.
-    #  6. Rule 2 matches the rule's type=direct with the requested 
+    #  6. Rule 2 matches the rule's type=direct with the requested
     #     lookup of type=direct.
     #  7. Rule 2 is the matching rule and the decision is 'deny'.
     #
@@ -1575,7 +1572,7 @@ com.sun.security.jgss.initiate {
 	      <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Quotas">
 		<title>User Connection and Queue Quotas</title>
 		The ACL module enforces various quotas and thereby limits user activity.
-		
+
 		<section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Connection_Limits">
 		  <title>Connection Limits</title>
 		  <para>
@@ -1643,7 +1640,7 @@ com.sun.security.jgss.initiate {
 		    </itemizedlist>
 		  </para>
 		</section>
-		
+
 		<section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Queue_Limits">
 		  <title>Queue Limits</title>
 		  <para>
@@ -1695,7 +1692,7 @@ com.sun.security.jgss.initiate {
 		    </itemizedlist>
 		  </para>
 		</section>
-		
+
 	      </section>
 
 	 <!--          ###########################          --> <section id="sect-Messaging_User_Guide-Security-Encryption_using_SSL">
@@ -1969,4 +1966,3 @@ certutil -S -d ${CERT_DIR} -n ${NICKNAME} -s &#34;CN=${NICKNAME}&#34; -t &#34;CT
 
 
 </section>
-
