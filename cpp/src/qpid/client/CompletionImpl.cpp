@@ -1,6 +1,3 @@
-#ifndef QPID_CLIENT_COMPLETIONIMPL_H
-#define QPID_CLIENT_COMPLETIONIMPL_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -22,31 +19,16 @@
  *
  */
 
-#include "qpid/RefCounted.h"
-#include "qpid/client/Future.h"
-#include "qpid/client/ClientImportExport.h"
-#include <boost/shared_ptr.hpp>
+#include "qpid/client/CompletionImpl.h"
+#include "qpid/client/Handle.h"
+#include "qpid/client/PrivateImplRef.h"
 
 namespace qpid {
 namespace client {
 
-///@internal
-class QPID_CLIENT_CLASS_EXTERN CompletionImpl : public RefCounted
-{
-public:
-    QPID_CLIENT_EXTERN CompletionImpl();
-    QPID_CLIENT_EXTERN CompletionImpl(Future f, boost::shared_ptr<SessionImpl> s);
+CompletionImpl::CompletionImpl() {}
 
-    QPID_CLIENT_EXTERN bool isComplete() { return future.isComplete(*session); }
-    QPID_CLIENT_EXTERN void wait() { future.wait(*session); }
-    QPID_CLIENT_EXTERN std::string getResult() { return future.getResult(*session); }
-
-protected:
-    Future future;
-    boost::shared_ptr<SessionImpl> session;
-};
+CompletionImpl::CompletionImpl(Future f, boost::shared_ptr<SessionImpl> s) : 
+    future(f), session(s) {}
 
 }} // namespace qpid::client
-
-
-#endif  /*!QPID_CLIENT_COMPLETIONIMPL_H*/

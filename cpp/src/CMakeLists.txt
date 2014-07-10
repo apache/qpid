@@ -890,6 +890,7 @@ set (qpidclient_SOURCES
      ${sslconnector_SOURCES}
      qpid/client/Bounds.cpp
      qpid/client/Completion.cpp
+     qpid/client/CompletionImpl.cpp
      qpid/client/Connection.cpp
      qpid/client/ConnectionHandler.cpp
      qpid/client/ConnectionImpl.cpp
