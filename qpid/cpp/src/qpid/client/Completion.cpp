@@ -26,6 +26,9 @@
 namespace qpid {
 namespace client {
 
+// Explicitly instantiate Handle superclass
+template class Handle<CompletionImpl>;
+
 typedef PrivateImplRef<Completion> PI;
 Completion::Completion(CompletionImpl* p) { PI::ctor(*this, p); }
 Completion::Completion(const Completion& c) : Handle<CompletionImpl>() { PI::copy(*this, c); }
