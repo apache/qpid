@@ -69,6 +69,13 @@ public class BrokerStartupTest extends AbstractTestLogging
             setTestSystemProperty("qpid.rmi_port",String.valueOf(connectorServerPort));
             setTestSystemProperty("qpid.http_port",String.valueOf(DEFAULT_HTTP_MANAGEMENT_PORT));
 
+            File brokerConfigFile = new File(getTestConfigFile(port));
+            if (brokerConfigFile.exists())
+            {
+                // Config exists from previous test run, delete it.
+                brokerConfigFile.delete();
+            }
+
             startBroker(port, null);
 
             AMQConnectionURL url = new AMQConnectionURL(String.format("amqp://"
