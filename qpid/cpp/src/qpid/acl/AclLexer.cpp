@@ -30,189 +30,107 @@
 namespace qpid {
 namespace acl {
 
+// ObjectType
+const std::string objectNames[OBJECTSIZE] = {
+    "queue", "exchange", "broker", "link", "method", "query" };
+
 ObjectType AclHelper::getObjectType(const std::string& str) {
-    if (str.compare("queue")    == 0) return OBJ_QUEUE;
-    if (str.compare("exchange") == 0) return OBJ_EXCHANGE;
-    if (str.compare("broker")   == 0) return OBJ_BROKER;
-    if (str.compare("link")     == 0) return OBJ_LINK;
-    if (str.compare("method")   == 0) return OBJ_METHOD;
-    if (str.compare("query")    == 0) return OBJ_QUERY;
+    for (int i=0; i< OBJECTSIZE; ++i) {
+        if (str.compare(objectNames[i]) == 0)
+            return ObjectType(i);
+    }
     throw qpid::Exception(str);
 }
-std::string AclHelper::getObjectTypeStr(const ObjectType o) {
-    switch (o) {
-    case OBJ_QUEUE:    return "queue";
-    case OBJ_EXCHANGE: return "exchange";
-    case OBJ_BROKER:   return "broker";
-    case OBJ_LINK:     return "link";
-    case OBJ_METHOD:   return "method";
-    case OBJ_QUERY:    return "query";
-    default: assert(false); // should never get here
-    }
-    return "";
+
+const std::string& AclHelper::getObjectTypeStr(const ObjectType o) {
+    return objectNames[o];
 }
+
+// Action
+const std::string actionNames[ACTIONSIZE] = {
+    "consume", "publish", "create", "access", "bind",
+    "unbind", "delete", "purge", "update", "move",
+    "redirect", "reroute" };
+
 Action AclHelper::getAction(const std::string& str) {
-    if (str.compare("consume")  == 0) return ACT_CONSUME;
-    if (str.compare("publish")  == 0) return ACT_PUBLISH;
-    if (str.compare("create")   == 0) return ACT_CREATE;
-    if (str.compare("access")   == 0) return ACT_ACCESS;
-    if (str.compare("bind")     == 0) return ACT_BIND;
-    if (str.compare("unbind")   == 0) return ACT_UNBIND;
-    if (str.compare("delete")   == 0) return ACT_DELETE;
-    if (str.compare("purge")    == 0) return ACT_PURGE;
-    if (str.compare("update")   == 0) return ACT_UPDATE;
-    if (str.compare("move")     == 0) return ACT_MOVE;
-    if (str.compare("redirect") == 0) return ACT_REDIRECT;
-    if (str.compare("reroute")  == 0) return ACT_REROUTE;
+    for (int i=0; i< ACTIONSIZE; ++i) {
+        if (str.compare(actionNames[i]) == 0)
+            return Action(i);
+    }
     throw qpid::Exception(str);
 }
-std::string AclHelper::getActionStr(const Action a) {
-    switch (a) {
-    case ACT_CONSUME:  return "consume";
-    case ACT_PUBLISH:  return "publish";
-    case ACT_CREATE:   return "create";
-    case ACT_ACCESS:   return "access";
-    case ACT_BIND:     return "bind";
-    case ACT_UNBIND:   return "unbind";
-    case ACT_DELETE:   return "delete";
-    case ACT_PURGE:    return "purge";
-    case ACT_UPDATE:   return "update";
-    case ACT_MOVE:     return "move";
-    case ACT_REDIRECT: return "redirect";
-    case ACT_REROUTE:  return "reroute";
-    default: assert(false); // should never get here
-    }
-    return "";
+
+const std::string& AclHelper::getActionStr(const Action a) {
+    return actionNames[a];
 }
+
+// Property
+// These are shared between broker and acl using code enums.
+const std::string propertyNames[PROPERTYSIZE] = {
+    "name", "durable", "owner", "routingkey", "autodelete", "exclusive", "type",
+    "alternate", "queuename", "exchangename", "schemapackage",
+    "schemaclass", "policytype", "paging",
+
+    "maxpages", "maxpagefactor",
+    "maxqueuesize", "maxqueuecount", "maxfilesize", "maxfilecount"};
+
 Property AclHelper::getProperty(const std::string& str) {
-    if (str.compare("name")          == 0) return PROP_NAME;
-    if (str.compare("durable")       == 0) return PROP_DURABLE;
-    if (str.compare("owner")         == 0) return PROP_OWNER;
-    if (str.compare("routingkey")    == 0) return PROP_ROUTINGKEY;
-    if (str.compare("autodelete")    == 0) return PROP_AUTODELETE;
-    if (str.compare("exclusive")     == 0) return PROP_EXCLUSIVE;
-    if (str.compare("type")          == 0) return PROP_TYPE;
-    if (str.compare("alternate")     == 0) return PROP_ALTERNATE;
-    if (str.compare("queuename")     == 0) return PROP_QUEUENAME;
-    if (str.compare("exchangename")  == 0) return PROP_EXCHANGENAME;
-    if (str.compare("schemapackage") == 0) return PROP_SCHEMAPACKAGE;
-    if (str.compare("schemaclass")   == 0) return PROP_SCHEMACLASS;
-    if (str.compare("policytype")    == 0) return PROP_POLICYTYPE;
-    if (str.compare("paging")        == 0) return PROP_PAGING;
-    if (str.compare("maxpages")      == 0) return PROP_MAXPAGES;
-    if (str.compare("maxpagefactor") == 0) return PROP_MAXPAGEFACTOR;
-    if (str.compare("maxqueuesize")  == 0) return PROP_MAXQUEUESIZE;
-    if (str.compare("maxqueuecount") == 0) return PROP_MAXQUEUECOUNT;
-    if (str.compare("maxfilesize")   == 0) return PROP_MAXFILESIZE;
-    if (str.compare("maxfilecount")  == 0) return PROP_MAXFILECOUNT;
+    for (int i=0; i< PROPERTYSIZE; ++i) {
+        if (str.compare(propertyNames[i]) == 0)
+            return Property(i);
+    }
     throw qpid::Exception(str);
 }
-std::string AclHelper::getPropertyStr(const Property p) {
-    switch (p) {
-    case PROP_NAME:          return "name";
-    case PROP_DURABLE:       return "durable";
-    case PROP_OWNER:         return "owner";
-    case PROP_ROUTINGKEY:    return "routingkey";
-    case PROP_AUTODELETE:    return "autodelete";
-    case PROP_EXCLUSIVE:     return "exclusive";
-    case PROP_TYPE:          return "type";
-    case PROP_ALTERNATE:     return "alternate";
-    case PROP_QUEUENAME:     return "queuename";
-    case PROP_EXCHANGENAME:  return "exchangename";
-    case PROP_SCHEMAPACKAGE: return "schemapackage";
-    case PROP_SCHEMACLASS:   return "schemaclass";
-    case PROP_POLICYTYPE:    return "policytype";
-    case PROP_PAGING:        return "paging";
-    case PROP_MAXPAGES:      return "maxpages";
-    case PROP_MAXPAGEFACTOR: return "maxpagefactor";
-    case PROP_MAXQUEUESIZE:  return "maxqueuesize";
-    case PROP_MAXQUEUECOUNT: return "maxqueuecount";
-    case PROP_MAXFILESIZE:   return "maxfilesize";
-    case PROP_MAXFILECOUNT:  return "maxfilecount";
-    default: assert(false); // should never get here
-    }
-    return "";
+
+const std::string& AclHelper::getPropertyStr(const Property p) {
+    return propertyNames[p];
 }
+
+// SpecProperty
+// These are shared between user acl files and acl using text.
+const std::string specPropertyNames[SPECPROPSIZE] = {
+    "name", "durable", "owner", "routingkey", "autodelete", "exclusive", "type",
+    "alternate", "queuename", "exchangename", "schemapackage",
+    "schemaclass", "policytype", "paging",
+
+     "queuemaxsizelowerlimit",  "queuemaxsizeupperlimit",
+    "queuemaxcountlowerlimit", "queuemaxcountupperlimit",
+      "filemaxsizelowerlimit",   "filemaxsizeupperlimit",
+     "filemaxcountlowerlimit",  "filemaxcountupperlimit",
+            "pageslowerlimit",         "pagesupperlimit",
+       "pagefactorlowerlimit",    "pagefactorupperlimit" };
+
 SpecProperty AclHelper::getSpecProperty(const std::string& str) {
-    if (str.compare("name")          == 0) return SPECPROP_NAME;
-    if (str.compare("durable")       == 0) return SPECPROP_DURABLE;
-    if (str.compare("owner")         == 0) return SPECPROP_OWNER;
-    if (str.compare("routingkey")    == 0) return SPECPROP_ROUTINGKEY;
-    if (str.compare("autodelete")    == 0) return SPECPROP_AUTODELETE;
-    if (str.compare("exclusive")     == 0) return SPECPROP_EXCLUSIVE;
-    if (str.compare("type")          == 0) return SPECPROP_TYPE;
-    if (str.compare("alternate")     == 0) return SPECPROP_ALTERNATE;
-    if (str.compare("queuename")     == 0) return SPECPROP_QUEUENAME;
-    if (str.compare("exchangename")  == 0) return SPECPROP_EXCHANGENAME;
-    if (str.compare("schemapackage") == 0) return SPECPROP_SCHEMAPACKAGE;
-    if (str.compare("schemaclass")   == 0) return SPECPROP_SCHEMACLASS;
-    if (str.compare("policytype")    == 0) return SPECPROP_POLICYTYPE;
-    if (str.compare("paging")        == 0) return SPECPROP_PAGING;
-    if (str.compare("queuemaxsizelowerlimit")   == 0) return SPECPROP_MAXQUEUESIZELOWERLIMIT;
-    if (str.compare("queuemaxsizeupperlimit")   == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
-    if (str.compare("queuemaxcountlowerlimit")  == 0) return SPECPROP_MAXQUEUECOUNTLOWERLIMIT;
-    if (str.compare("queuemaxcountupperlimit")  == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
-    if (str.compare("filemaxsizelowerlimit")    == 0) return SPECPROP_MAXFILESIZELOWERLIMIT;
-    if (str.compare("filemaxsizeupperlimit")    == 0) return SPECPROP_MAXFILESIZEUPPERLIMIT;
-    if (str.compare("filemaxcountlowerlimit")   == 0) return SPECPROP_MAXFILECOUNTLOWERLIMIT;
-    if (str.compare("filemaxcountupperlimit")   == 0) return SPECPROP_MAXFILECOUNTUPPERLIMIT;
-    if (str.compare("pageslowerlimit")          == 0) return SPECPROP_MAXPAGESLOWERLIMIT;
-    if (str.compare("pagesupperlimit")          == 0) return SPECPROP_MAXPAGESUPPERLIMIT;
-    if (str.compare("pagefactorlowerlimit")     == 0) return SPECPROP_MAXPAGEFACTORLOWERLIMIT;
-    if (str.compare("pagefactorupperlimit")     == 0) return SPECPROP_MAXPAGEFACTORUPPERLIMIT;
+    for (int i=0; i< SPECPROPSIZE; ++i) {
+        if (str.compare(specPropertyNames[i]) == 0)
+            return SpecProperty(i);
+    }
     // Allow old names in ACL file as aliases for newly-named properties
-    if (str.compare("maxqueuesize")             == 0) return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
-    if (str.compare("maxqueuecount")            == 0) return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
+    if (str.compare("maxqueuesize") == 0)
+        return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
+    if (str.compare("maxqueuecount") == 0)
+        return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
     throw qpid::Exception(str);
 }
-std::string AclHelper::getPropertyStr(const SpecProperty p) {
-    switch (p) {
-        case SPECPROP_NAME:          return "name";
-        case SPECPROP_DURABLE:       return "durable";
-        case SPECPROP_OWNER:         return "owner";
-        case SPECPROP_ROUTINGKEY:    return "routingkey";
-        case SPECPROP_AUTODELETE:    return "autodelete";
-        case SPECPROP_EXCLUSIVE:     return "exclusive";
-        case SPECPROP_TYPE:          return "type";
-        case SPECPROP_ALTERNATE:     return "alternate";
-        case SPECPROP_QUEUENAME:     return "queuename";
-        case SPECPROP_EXCHANGENAME:  return "exchangename";
-        case SPECPROP_SCHEMAPACKAGE: return "schemapackage";
-        case SPECPROP_SCHEMACLASS:   return "schemaclass";
-        case SPECPROP_POLICYTYPE:    return "policytype";
-        case SPECPROP_PAGING:        return "paging";
-        case SPECPROP_MAXQUEUESIZELOWERLIMIT:  return "queuemaxsizelowerlimit";
-        case SPECPROP_MAXQUEUESIZEUPPERLIMIT:  return "queuemaxsizeupperlimit";
-        case SPECPROP_MAXQUEUECOUNTLOWERLIMIT: return "queuemaxcountlowerlimit";
-        case SPECPROP_MAXQUEUECOUNTUPPERLIMIT: return "queuemaxcountupperlimit";
-        case SPECPROP_MAXFILESIZELOWERLIMIT:   return "filemaxsizelowerlimit";
-        case SPECPROP_MAXFILESIZEUPPERLIMIT:   return "filemaxsizeupperlimit";
-        case SPECPROP_MAXFILECOUNTLOWERLIMIT:  return "filemaxcountlowerlimit";
-        case SPECPROP_MAXFILECOUNTUPPERLIMIT:  return "filemaxcountupperlimit";
-        case SPECPROP_MAXPAGESLOWERLIMIT:      return "pageslowerlimit";
-        case SPECPROP_MAXPAGESUPPERLIMIT:      return "pagesupperlimit";
-        case SPECPROP_MAXPAGEFACTORLOWERLIMIT: return "pagefactorlowerlimit";
-        case SPECPROP_MAXPAGEFACTORUPPERLIMIT: return "pagefactorupperlimit";
-        default: assert(false); // should never get here
-    }
-    return "";
+
+const std::string& AclHelper::getPropertyStr(const SpecProperty p) {
+    return specPropertyNames[p];
 }
+
+// AclResult
+const std::string resultNames[RESULTSIZE] = {
+    "allow", "allow-log", "deny", "deny-log" };
+
 AclResult AclHelper::getAclResult(const std::string& str) {
-    if (str.compare("allow")     == 0) return ALLOW;
-    if (str.compare("allow-log") == 0) return ALLOWLOG;
-    if (str.compare("deny")      == 0) return DENY;
-    if (str.compare("deny-log")  == 0) return DENYLOG;
+    for (int i=0; i< RESULTSIZE; ++i) {
+        if (str.compare(resultNames[i]) == 0)
+            return AclResult(i);
+    }
     throw qpid::Exception(str);
 }
-std::string AclHelper::getAclResultStr(const AclResult r) {
-    switch (r) {
-    case ALLOW:    return "allow";
-    case ALLOWLOG: return "allow-log";
-    case DENY:     return "deny";
-    case DENYLOG:  return "deny-log";
-    default: assert(false); // should never get here
-    }
-    return "";
+
+const std::string& AclHelper::getAclResultStr(const AclResult r) {
+    return resultNames[r];
 }
 
 // This map contains the legal combinations of object/action/properties
