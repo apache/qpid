@@ -110,11 +110,15 @@ target_link_libraries (qpid-txtest qpidclient qpidcommon qpidtypes)
 #qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
 remember_location(qpid-txtest)
 
+add_executable (qpid-txtest2 qpid-txtest2.cpp ${platform_test_additions})
+target_link_libraries (qpid-txtest2 qpidmessaging qpidtypes qpidcommon)
+remember_location(qpid-txtest2)
+
 install (TARGETS
          qpid-perftest qpid-latency-test qpid-client-test
          qpid-ping
          qpid-topic-listener qpid-topic-publisher receiver sender
-         qpid-txtest
+         qpid-txtest qpid-txtest2
          RUNTIME DESTINATION ${QPID_INSTALL_TESTDIR})
 
 # Only build test code if testing is turned on
