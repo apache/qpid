@@ -1435,7 +1435,6 @@ QPID_AUTO_TEST_CASE(testCloseAndMultipleConcurrentFetches)
 QPID_AUTO_TEST_CASE(testSessionCheckError)
 {
     MessagingFixture fix;
-    std::string queue();
     Session session = fix.connection.createSession();
     Sender sender = session.createSender("q; {create:always, node:{x-declare:{auto-delete:True, arguments:{qpid.max_count:1}}}}");
     ScopedSuppressLogging sl;
