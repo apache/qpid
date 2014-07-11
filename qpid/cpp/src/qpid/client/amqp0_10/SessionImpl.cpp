@@ -189,16 +189,23 @@ template <class T> void getFreeKey(std::string& key, T& map)
 void SessionImpl::setSession(qpid::client::Session s)
 {
     ScopedLock l(lock);
-    session = s;
-    incoming.setSession(session);
-    if (transactional) session.txSelect();
-    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) {
-        getImplPtr<Receiver, ReceiverImpl>(i->second)->init(session, resolver);
+    if (session.isValid() && transactional) {
+        qpid::client::SessionBase_0_10Access ssn_ptr(session);
+        ssn_ptr.get()->setException(new TransactionAborted("Transaction aborted due to transport failure"));
+    } else {
+        session = s;
+        incoming.setSession(session);
+        if (transactional) {
+            session.txSelect();
+        }
+        for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) {
+            getImplPtr<Receiver, ReceiverImpl>(i->second)->init(session, resolver);
+        }
+        for (Senders::iterator i = senders.begin(); i != senders.end(); ++i) {
+            getImplPtr<Sender, SenderImpl>(i->second)->init(session, resolver);
+        }
+        session.sync();
     }
-    for (Senders::iterator i = senders.begin(); i != senders.end(); ++i) {
-        getImplPtr<Sender, SenderImpl>(i->second)->init(session, resolver);
-    }
-    session.sync();
 }
 
 struct SessionImpl::CreateReceiver : Command
