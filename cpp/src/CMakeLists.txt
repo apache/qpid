@@ -504,6 +504,8 @@ if (BUILD_ACL)
        qpid/acl/AclConnectionCounter.h
        qpid/acl/AclData.cpp
        qpid/acl/AclData.h
+       qpid/acl/AclLexer.cpp
+       qpid/acl/AclLexer.h
        qpid/acl/AclPlugin.cpp
        qpid/acl/AclReader.cpp
        qpid/acl/AclReader.h
