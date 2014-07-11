@@ -100,7 +100,7 @@ public:
     void sendCompletion();
     void sendFlush();
 
-    void setException(const sys::ExceptionHolder&);
+    QPID_CLIENT_EXTERN void setException(const sys::ExceptionHolder&);
     
     //NOTE: these are called by the network thread when the connection is closed or dies
     void connectionClosed(uint16_t code, const std::string& text);
