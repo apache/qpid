@@ -37,6 +37,7 @@ QPID_AUTO_TEST_SUITE(AclTestSuite)
     BOOST_CHECK_EQUAL(AclHelper::getObjectType((s)),(e))
 
 QPID_AUTO_TEST_CASE(TestLexerObjectEnums) {
+    BOOST_CHECK_EQUAL(OBJECTSIZE, 6);
     OBJ_ENUMS(OBJ_QUEUE,    "queue");
     OBJ_ENUMS(OBJ_EXCHANGE, "exchange");
     OBJ_ENUMS(OBJ_BROKER,   "broker");
@@ -50,6 +51,7 @@ QPID_AUTO_TEST_CASE(TestLexerObjectEnums) {
     BOOST_CHECK_EQUAL(AclHelper::getAction((s)),(e))
 
 QPID_AUTO_TEST_CASE(TestLexerActionEnums) {
+    BOOST_CHECK_EQUAL(ACTIONSIZE, 12);
     ACT_ENUMS(ACT_CONSUME,  "consume");
     ACT_ENUMS(ACT_PUBLISH,  "publish");
     ACT_ENUMS(ACT_CREATE,   "create");
@@ -69,6 +71,7 @@ QPID_AUTO_TEST_CASE(TestLexerActionEnums) {
     BOOST_CHECK_EQUAL(AclHelper::getProperty((s)),(e))
 
 QPID_AUTO_TEST_CASE(TestLexerPropertyEnums) {
+    BOOST_CHECK_EQUAL(PROPERTYSIZE, 20);
     PROP_ENUMS(PROP_NAME,           "name");
     PROP_ENUMS(PROP_DURABLE,        "durable");
     PROP_ENUMS(PROP_OWNER,          "owner");
@@ -97,6 +100,7 @@ QPID_AUTO_TEST_CASE(TestLexerPropertyEnums) {
     BOOST_CHECK_EQUAL(AclHelper::getSpecProperty((s)),(e))
 
 QPID_AUTO_TEST_CASE(TestLexerSpecPropertyEnums) {
+    BOOST_CHECK_EQUAL(SPECPROPSIZE, 26);
     SPECPROP_ENUMS(SPECPROP_NAME,          "name");
     SPECPROP_ENUMS(SPECPROP_DURABLE,       "durable");
     SPECPROP_ENUMS(SPECPROP_OWNER,         "owner");
@@ -133,23 +137,11 @@ QPID_AUTO_TEST_CASE(TestLexerSpecPropertyEnums) {
     BOOST_CHECK_EQUAL(AclHelper::getAclResult((s)),(e))
 
 QPID_AUTO_TEST_CASE(TestLexerResultEnums) {
+    BOOST_CHECK_EQUAL(RESULTSIZE, 4);
     RESULT_ENUMS(ALLOW,    "allow");
     RESULT_ENUMS(ALLOWLOG, "allow-log");
     RESULT_ENUMS(DENY,     "deny");
     RESULT_ENUMS(DENYLOG,  "deny-log");
-}
-
-#define ENUM_ENUMS(enum, func, size) \
-    for (int i=0; i<(int)(size); i++) \
-        BOOST_CHECK((func)( (enum)(i) ).length() != 0 );
-
-QPID_AUTO_TEST_CASE(TextLexerEnumEnums) {
-    ENUM_ENUMS(ObjectType,   AclHelper::getObjectTypeStr, OBJECTSIZE);
-    ENUM_ENUMS(Action,       AclHelper::getActionStr,     ACTIONSIZE);
-    ENUM_ENUMS(Property,     AclHelper::getPropertyStr,   PROPERTYSIZE);
-    ENUM_ENUMS(SpecProperty, AclHelper::getPropertyStr,   SPECPROPSIZE);
-    ENUM_ENUMS(AclResult,    AclHelper::getAclResultStr,  RESULTSIZE);
-
 }
 
 QPID_AUTO_TEST_SUITE_END()
