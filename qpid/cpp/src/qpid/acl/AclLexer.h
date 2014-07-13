@@ -165,10 +165,6 @@ namespace acl {
         typedef std::map<SpecProperty, std::string> specPropMap;
         typedef specPropMap::const_iterator         specPropMapItr;
 
-        // This map contains the legal combinations of object/action/properties
-        // found in an ACL file
-        static void loadValidationMap(objectMapPtr& map);
-
         //
         // properyMapToString
         //

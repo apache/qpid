@@ -39,7 +39,7 @@ ObjectType AclHelper::getObjectType(const std::string& str) {
         if (str.compare(objectNames[i]) == 0)
             return ObjectType(i);
     }
-    throw qpid::Exception(str);
+    throw qpid::Exception("Acl illegal object name: " + str);
 }
 
 const std::string& AclHelper::getObjectTypeStr(const ObjectType o) {
@@ -57,7 +57,7 @@ Action AclHelper::getAction(const std::string& str) {
         if (str.compare(actionNames[i]) == 0)
             return Action(i);
     }
-    throw qpid::Exception(str);
+    throw qpid::Exception("Acl illegal action name: " + str);
 }
 
 const std::string& AclHelper::getActionStr(const Action a) {
@@ -79,7 +79,7 @@ Property AclHelper::getProperty(const std::string& str) {
         if (str.compare(propertyNames[i]) == 0)
             return Property(i);
     }
-    throw qpid::Exception(str);
+    throw qpid::Exception("Acl illegal property name: " + str);
 }
 
 const std::string& AclHelper::getPropertyStr(const Property p) {
@@ -110,7 +110,7 @@ SpecProperty AclHelper::getSpecProperty(const std::string& str) {
         return SPECPROP_MAXQUEUESIZEUPPERLIMIT;
     if (str.compare("maxqueuecount") == 0)
         return SPECPROP_MAXQUEUECOUNTUPPERLIMIT;
-    throw qpid::Exception(str);
+    throw qpid::Exception("Acl illegal spec property name: " + str);
 }
 
 const std::string& AclHelper::getPropertyStr(const SpecProperty p) {
@@ -126,106 +126,11 @@ AclResult AclHelper::getAclResult(const std::string& str) {
         if (str.compare(resultNames[i]) == 0)
             return AclResult(i);
     }
-    throw qpid::Exception(str);
+    throw qpid::Exception("Acl illegal result name: " + str);
 }
 
 const std::string& AclHelper::getAclResultStr(const AclResult r) {
     return resultNames[r];
-}
-
-// This map contains the legal combinations of object/action/properties
-// found in an ACL file
-void AclHelper::loadValidationMap(objectMapPtr& map) {
-    if (!map.get()) return;
-    map->clear();
-    propSetPtr p0; // empty ptr, used for no properties
-
-    // == Exchanges ==
-
-    propSetPtr p1(new propSet);
-    p1->insert(PROP_TYPE);
-    p1->insert(PROP_ALTERNATE);
-    p1->insert(PROP_DURABLE);
-
-    propSetPtr p2(new propSet);
-    p2->insert(PROP_ROUTINGKEY);
-
-    propSetPtr p3(new propSet);
-    p3->insert(PROP_QUEUENAME);
-    p3->insert(PROP_ROUTINGKEY);
-
-    actionMapPtr a0(new actionMap);
-    a0->insert(actionPair(ACT_CREATE,  p1));
-    a0->insert(actionPair(ACT_DELETE,  p0));
-    a0->insert(actionPair(ACT_ACCESS,  p0));
-    a0->insert(actionPair(ACT_BIND,    p2));
-    a0->insert(actionPair(ACT_UNBIND,  p2));
-    a0->insert(actionPair(ACT_ACCESS,  p3));
-    a0->insert(actionPair(ACT_PUBLISH, p0));
-
-    map->insert(objectPair(OBJ_EXCHANGE, a0));
-
-    // == Queues ==
-
-    propSetPtr p4(new propSet);
-    p4->insert(PROP_ALTERNATE);
-    p4->insert(PROP_DURABLE);
-    p4->insert(PROP_EXCLUSIVE);
-    p4->insert(PROP_AUTODELETE);
-    p4->insert(PROP_POLICYTYPE);
-    p4->insert(PROP_PAGING);
-    p4->insert(PROP_MAXPAGES);
-    p4->insert(PROP_MAXPAGEFACTOR);
-    p4->insert(PROP_MAXQUEUESIZE);
-    p4->insert(PROP_MAXQUEUECOUNT);
-
-    propSetPtr p5(new propSet);
-    p5->insert(PROP_QUEUENAME);
-
-    propSetPtr p6(new propSet);
-    p6->insert(PROP_EXCHANGENAME);
-
-
-    actionMapPtr a1(new actionMap);
-    a1->insert(actionPair(ACT_ACCESS,   p0));
-    a1->insert(actionPair(ACT_CREATE,   p4));
-    a1->insert(actionPair(ACT_PURGE,    p0));
-    a1->insert(actionPair(ACT_DELETE,   p0));
-    a1->insert(actionPair(ACT_CONSUME,  p0));
-    a1->insert(actionPair(ACT_MOVE,     p5));
-    a1->insert(actionPair(ACT_REDIRECT, p5));
-    a1->insert(actionPair(ACT_REROUTE,  p6));
-
-    map->insert(objectPair(OBJ_QUEUE, a1));
-
-    // == Links ==
-
-    actionMapPtr a2(new actionMap);
-    a2->insert(actionPair(ACT_CREATE,  p0));
-
-    map->insert(objectPair(OBJ_LINK, a2));
-
-    // == Method ==
-
-    propSetPtr p7(new propSet);
-    p7->insert(PROP_SCHEMAPACKAGE);
-    p7->insert(PROP_SCHEMACLASS);
-
-    actionMapPtr a4(new actionMap);
-    a4->insert(actionPair(ACT_ACCESS, p7));
-
-    map->insert(objectPair(OBJ_METHOD, a4));
-
-    // == Query ==
-
-    propSetPtr p8(new propSet);
-    p8->insert(PROP_SCHEMACLASS);
-
-    actionMapPtr a5(new actionMap);
-    a5->insert(actionPair(ACT_ACCESS, p8));
-
-    map->insert(objectPair(OBJ_QUERY, a5));
-
 }
 
 }} // namespace qpid::acl

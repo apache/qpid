@@ -251,7 +251,6 @@ namespace acl {
         cliMaxQueuesPerUser (theCliMaxQueuesPerUser),
         queueQuotaRulesExist(false),
         queueQuota(new AclData::quotaRuleSet) {
-        AclHelper::loadValidationMap(validationMap);
         names.insert(AclData::ACL_KEYWORD_WILDCARD);
     }
 
