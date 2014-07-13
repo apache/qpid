@@ -21,6 +21,7 @@
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/IntegerTypes.h"
+#include "qpid/StringUtils.h"
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <numeric>
@@ -132,6 +133,42 @@ namespace acl {
                           boost::shared_ptr<PropertyType>(
                             new EnumPropertyType(v))));
 
+        // Insert allowed action/object/property sets (generated manually 20140712)
+#define RP registerProperties
+        RP("Broker::queryQueue",                    ACT_ACCESS,  OBJ_QUEUE);
+        RP("Broker::getTimestampConfig",            ACT_ACCESS,  OBJ_BROKER);
+        RP("Broker::setTimestampConfig",            ACT_UPDATE,  OBJ_BROKER);
+        RP("Broker::queueRedirect",                 ACT_REDIRECT,OBJ_QUEUE);
+        RP("Broker::queueMoveMessages",             ACT_MOVE,    OBJ_QUEUE);
+        RP("Broker::createQueue",                   ACT_CREATE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype paging maxpages maxpagefactor maxqueuecount maxqueuesize maxfilecount maxfilesize");
+        RP("Broker::deleteQueue",                   ACT_DELETE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype");
+        RP("Broker::createExchange",                ACT_CREATE,  OBJ_EXCHANGE, "type alternate durable autodelete");
+        RP("Broker::deleteExchange",                ACT_DELETE,  OBJ_EXCHANGE, "type alternate durable");
+        RP("Broker::bind",                          ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
+        RP("Broker::unbind",                        ACT_UNBIND,  OBJ_EXCHANGE, "queuename routingkey");
+        RP("ConnectionHandler::Handler::open",      ACT_CREATE,  OBJ_LINK);
+        RP("Queue::ManagementMethod",               ACT_PURGE,   OBJ_QUEUE);
+        RP("Queue::ManagementMethod",               ACT_REROUTE, OBJ_QUEUE, "exchangename");
+        RP("SemanticState::route",                  ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
+        RP("ExchangeHandlerImpl::declare",          ACT_ACCESS,  OBJ_EXCHANGE, "type alternate durable autodelete");
+        RP("ExchangeHandlerImpl::query",            ACT_ACCESS,  OBJ_EXCHANGE);
+        RP("ExchangeHandlerImpl::bound",            ACT_ACCESS,  OBJ_EXCHANGE, "queuename routingkey");
+        RP("QueueHandlerImpl::query",               ACT_ACCESS,  OBJ_QUEUE);
+        RP("QueueHandlerImpl::declare",             ACT_ACCESS,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize"); // ?? Why not ACT_CREATE?
+        RP("QueueHandlerImpl::purge",               ACT_PURGE,   OBJ_QUEUE);
+        RP("MessageHandlerImpl::subscribe",         ACT_CONSUME, OBJ_QUEUE);
+        RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE, "type durable");
+        RP("Authorise::access",                     ACT_ACCESS,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize");
+        RP("Authorise::incoming",                   ACT_PUBLISH, OBJ_EXCHANGE);
+        RP("Authorise::outgoing",                   ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
+        RP("Authorise::outgoing",                   ACT_CONSUME, OBJ_QUEUE);
+        RP("Authorise::route",                      ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
+        RP("Authorise::interlink",                  ACT_CREATE,  OBJ_LINK);
+        RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE);
+        RP("Authorise::access",                     ACT_ACCESS,  OBJ_QUEUE);
+        RP("ManagementAgent::handleMethodRequest",  ACT_ACCESS,  OBJ_METHOD, "schemapackage schemaclass");
+        RP("ManagementAgent::handleGetQuery",       ACT_ACCESS,  OBJ_QUERY, "schemaclass");
+        RP("ManagementAgent::authorizeAgentMessage",ACT_ACCESS,  OBJ_METHOD, "schemapackage schemaclass");
     }
 
     AclValidator::~AclValidator(){
@@ -182,6 +219,63 @@ namespace acl {
                 throw Exception( prop.second + " is not a valid value for '" +
                     AclHelper::getPropertyStr(prop.first) + "', " +
                     itr->second->allowedValues());
+            }
+        }
+    }
+
+    /**
+     * Construct a record of all the calls that the broker will
+     * make to acl::authorize and the properties for each call.
+     * From that create the list of all the spec properties that
+     * users are then allowed to specify in acl rule files.
+     */
+    void AclValidator::registerProperties(
+        const std::string& /* source */,
+        Action action,
+        ObjectType object,
+        const std::string& properties) {
+        if (!allowedProperties[action][object].get()) {
+            boost::shared_ptr<std::set<Property> > t1(new std::set<Property>());
+            allowedProperties[action][object] = t1;
+            boost::shared_ptr<std::set<SpecProperty> > t2(new std::set<SpecProperty>());
+            allowedSpecProperties[action][object] = t2;
+        }
+        std::vector<std::string> props = split(properties, " ");
+        for (size_t i=0; i<props.size(); i++) {
+            Property prop = AclHelper::getProperty(props[i]);
+            allowedProperties[action][object]->insert(prop);
+            // Given that the broker will be calling with this property,
+            // determine what user rule settings are allowed.
+            switch (prop) {
+                // Cases where broker supplies a property but Acl has upper/lower limit for it
+                case PROP_MAXPAGES:
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXPAGESLOWERLIMIT);
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXPAGESUPPERLIMIT);
+                    break;
+                case PROP_MAXPAGEFACTOR:
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXPAGEFACTORLOWERLIMIT);
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXPAGEFACTORUPPERLIMIT);
+                    break;
+                case PROP_MAXQUEUESIZE:
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXQUEUESIZELOWERLIMIT);
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXQUEUESIZEUPPERLIMIT);
+                    break;
+                case PROP_MAXQUEUECOUNT:
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXQUEUECOUNTLOWERLIMIT);
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXQUEUECOUNTUPPERLIMIT);
+                    break;
+                case PROP_MAXFILESIZE:
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXFILESIZELOWERLIMIT);
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXFILESIZEUPPERLIMIT);
+                    break;
+                case PROP_MAXFILECOUNT:
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXFILECOUNTLOWERLIMIT);
+                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXFILECOUNTUPPERLIMIT);
+                    break;
+                default:
+                    // Cases where broker supplies a property and Acl matches it directly
+                    allowedSpecProperties[action][object]->insert( SpecProperty(prop) );
+                    break;
             }
         }
     }
