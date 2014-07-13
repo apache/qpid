@@ -72,7 +72,7 @@ public class SSLSender implements Sender<ByteBuffer>
                 return;
             }
             log.debug("Closing SSL connection");
-            
+
             engine.closeOutbound();
             try
             {
@@ -211,10 +211,15 @@ public class SSLSender implements Sender<ByteBuffer>
                     flush();
                     synchronized(_sslStatus.getSslLock())
                     {
+                        if (_sslStatus.getSslErrorFlag())
+                        {
+                            break;
+                        }
+
                         switch (engine.getHandshakeStatus())
                         {
                         case NEED_UNWRAP:
-                            long start = System.currentTimeMillis();
+                            final long start = System.currentTimeMillis();
                             try
                             {
                                 _sslStatus.getSslLock().wait(timeout);
@@ -224,10 +229,10 @@ public class SSLSender implements Sender<ByteBuffer>
                                 // pass
                             }
 
-                            if (System.currentTimeMillis()- start >= timeout)
+                            if (!_sslStatus.getSslErrorFlag() && System.currentTimeMillis() - start >= timeout)
                             {                                
                                 throw new SenderException(
-                                                          "SSL Engine timed out waiting for a response." +
+                                                          "SSL Engine timed out after waiting " + timeout + "ms. for a response." +
                                                           "To get more info,run with -Djavax.net.debug=ssl");
                             }
                             break;
