@@ -23,9 +23,7 @@ package org.apache.qpid.server.store.berkeleydb.replication;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.sleepycat.je.config.ConfigParam;
-import com.sleepycat.je.config.EnvironmentParams;
+import java.util.regex.Pattern;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
@@ -34,6 +32,9 @@ import org.apache.qpid.server.store.berkeleydb.HASettings;
 
 public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFactory
 {
+    public static final Pattern NON_REP_JE_PARAM_PATTERN = Pattern.compile("^je\\.(?!rep\\.).*");
+    public static final Pattern REP_JE_PARAM_PATTERN = Pattern.compile("^je\\.rep\\..*");
+
     @Override
     public EnvironmentFacade createEnvironmentFacade(final ConfiguredObject<?> parent)
     {
@@ -113,27 +114,27 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
 
     private Map<String, String> buildEnvironmentConfigParameters(ConfiguredObject<?> parent)
     {
-        return buildConfig(parent, false);
+        return buildConfig(parent, NON_REP_JE_PARAM_PATTERN);
     }
 
     private Map<String, String> buildReplicationConfigParameters(ConfiguredObject<?> parent)
     {
 
-        return buildConfig(parent, true);
+        return buildConfig(parent, REP_JE_PARAM_PATTERN);
     }
 
-    private Map<String, String> buildConfig(ConfiguredObject<?> parent,  boolean selectReplicationParaemeters)
+    private Map<String, String> buildConfig(ConfiguredObject<?> parent, Pattern paramName)
     {
         Map<String, String> targetMap = new HashMap<>();
-        for (ConfigParam entry : EnvironmentParams.SUPPORTED_PARAMS.values())
+        for (String name : parent.getContext().keySet())
         {
-            final String name = entry.getName();
-            if (entry.isForReplication() == selectReplicationParaemeters  && parent.getContext().containsKey(name))
+            if (paramName.matcher(name).matches())
             {
                 String contextValue = parent.getContext().get(name);
                 targetMap.put(name, contextValue);
             }
         }
+
         return Collections.unmodifiableMap(targetMap);
     }
 
