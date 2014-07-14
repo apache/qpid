@@ -53,4 +53,6 @@ public interface ReplicationGroupListener
      */
     void onIntruderNode(ReplicationNode node);
 
+    void onNoMajority();
+
 }
