@@ -862,5 +862,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
             LOGGER.warn("Intruder node " + node);
         }
 
+        @Override
+        public void onNoMajority()
+        {
+        }
+
     }
 }

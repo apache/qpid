@@ -306,7 +306,18 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public DatabaseException handleDatabaseException(String contextMessage, final DatabaseException dbe)
     {
-        boolean restart = (dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientAcksException || dbe instanceof RestartRequiredException);
+        boolean noMajority = dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientAcksException;
+
+        if (noMajority)
+        {
+            ReplicationGroupListener listener = _replicationGroupListener.get();
+            if (listener != null)
+            {
+                listener.onNoMajority();
+            }
+        }
+
+        boolean restart = (noMajority || dbe instanceof RestartRequiredException);
         if (restart)
         {
             tryToRestartEnvironment(dbe);
@@ -951,7 +962,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             connectToHelperNodeAndCheckPermittedHosts(helperNodeName, helperHostPort, hostPort);
         }
-
         Map<String, String> replicationEnvironmentParameters = new HashMap<>(ReplicatedEnvironmentFacade.REPCONFIG_DEFAULTS);
         replicationEnvironmentParameters.putAll(_configuration.getReplicationParameters());
 
@@ -1106,10 +1116,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 _coalescingCommiter.start();
             }
             _realMessageStoreDurability = new Durability(localTransactionSynchronizationPolicy, remoteTransactionSynchronizationPolicy, replicaAcknowledgmentPolicy);
-        }
-        else
-        {
-            throw new IllegalStateException("Message store durability is already set to " + _messageStoreDurability.get());
         }
     }
 
