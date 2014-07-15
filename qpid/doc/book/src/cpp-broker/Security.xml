@@ -1087,7 +1087,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
                                  <row>
                                    <entry>redirect</entry>
                                    <entry>queue</entry>
-                                   <entry></entry>
+                                   <entry>queuename</entry>
                                    <entry>Broker:: queueRedirect</entry>
                                  </row>
                                  <row>

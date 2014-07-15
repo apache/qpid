@@ -135,40 +135,40 @@ namespace acl {
 
         // Insert allowed action/object/property sets (generated manually 20140712)
 #define RP registerProperties
-        RP("Broker::queryQueue",                    ACT_ACCESS,  OBJ_QUEUE);
         RP("Broker::getTimestampConfig",            ACT_ACCESS,  OBJ_BROKER);
-        RP("Broker::setTimestampConfig",            ACT_UPDATE,  OBJ_BROKER);
-        RP("Broker::queueRedirect",                 ACT_REDIRECT,OBJ_QUEUE, "queuename");
-        RP("Broker::queueMoveMessages",             ACT_MOVE,    OBJ_QUEUE, "queuename");
-        RP("Broker::createQueue",                   ACT_CREATE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype paging maxpages maxpagefactor maxqueuecount maxqueuesize maxfilecount maxfilesize");
-        RP("Broker::deleteQueue",                   ACT_DELETE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype");
-        RP("Broker::createExchange",                ACT_CREATE,  OBJ_EXCHANGE, "type alternate durable autodelete");
-        RP("Broker::deleteExchange",                ACT_DELETE,  OBJ_EXCHANGE, "type alternate durable");
-        RP("Broker::bind",                          ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
-        RP("Broker::unbind",                        ACT_UNBIND,  OBJ_EXCHANGE, "queuename routingkey");
-        RP("ConnectionHandler::Handler::open",      ACT_CREATE,  OBJ_LINK);
-        RP("Queue::ManagementMethod",               ACT_PURGE,   OBJ_QUEUE);
-        RP("Queue::ManagementMethod",               ACT_REROUTE, OBJ_QUEUE, "exchangename");
-        RP("SemanticState::route",                  ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
-        RP("ExchangeHandlerImpl::declare",          ACT_ACCESS,  OBJ_EXCHANGE, "type alternate durable autodelete");
         RP("ExchangeHandlerImpl::query",            ACT_ACCESS,  OBJ_EXCHANGE);
         RP("ExchangeHandlerImpl::bound",            ACT_ACCESS,  OBJ_EXCHANGE, "queuename routingkey");
+        RP("ExchangeHandlerImpl::declare",          ACT_ACCESS,  OBJ_EXCHANGE, "type alternate durable autodelete");
+        RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE, "type durable");
+        RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE);
+        RP("ManagementAgent::handleMethodRequest",  ACT_ACCESS,  OBJ_METHOD, "schemapackage schemaclass");
+        RP("ManagementAgent::authorizeAgentMessage",ACT_ACCESS,  OBJ_METHOD, "schemapackage schemaclass");
+        RP("ManagementAgent::handleGetQuery",       ACT_ACCESS,  OBJ_QUERY, "schemaclass");
+        RP("Broker::queryQueue",                    ACT_ACCESS,  OBJ_QUEUE);
         RP("QueueHandlerImpl::query",               ACT_ACCESS,  OBJ_QUEUE);
         RP("QueueHandlerImpl::declare",             ACT_ACCESS,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize");
-        RP("QueueHandlerImpl::purge",               ACT_PURGE,   OBJ_QUEUE);
-        RP("MessageHandlerImpl::subscribe",         ACT_CONSUME, OBJ_QUEUE);
-        RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE, "type durable");
         RP("Authorise::access",                     ACT_ACCESS,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize");
-        RP("Authorise::incoming",                   ACT_PUBLISH, OBJ_EXCHANGE);
-        RP("Authorise::outgoing",                   ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
-        RP("Authorise::outgoing",                   ACT_CONSUME, OBJ_QUEUE);
-        RP("Authorise::route",                      ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
-        RP("Authorise::interlink",                  ACT_CREATE,  OBJ_LINK);
-        RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE);
         RP("Authorise::access",                     ACT_ACCESS,  OBJ_QUEUE);
-        RP("ManagementAgent::handleMethodRequest",  ACT_ACCESS,  OBJ_METHOD, "schemapackage schemaclass");
-        RP("ManagementAgent::handleGetQuery",       ACT_ACCESS,  OBJ_QUERY, "schemaclass");
-        RP("ManagementAgent::authorizeAgentMessage",ACT_ACCESS,  OBJ_METHOD, "schemapackage schemaclass");
+        RP("Broker::bind",                          ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
+        RP("Authorise::outgoing",                   ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
+        RP("MessageHandlerImpl::subscribe",         ACT_CONSUME, OBJ_QUEUE);
+        RP("Authorise::outgoing",                   ACT_CONSUME, OBJ_QUEUE);
+        RP("Broker::createQueue",                   ACT_CREATE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype paging maxpages maxpagefactor maxqueuecount maxqueuesize maxfilecount maxfilesize");
+        RP("Broker::createExchange",                ACT_CREATE,  OBJ_EXCHANGE, "type alternate durable autodelete");
+        RP("ConnectionHandler::Handler::open",      ACT_CREATE,  OBJ_LINK);
+        RP("Authorise::interlink",                  ACT_CREATE,  OBJ_LINK);
+        RP("Broker::deleteQueue",                   ACT_DELETE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype");
+        RP("Broker::deleteExchange",                ACT_DELETE,  OBJ_EXCHANGE, "type alternate durable");
+        RP("Broker::queueMoveMessages",             ACT_MOVE,    OBJ_QUEUE, "queuename");
+        RP("SemanticState::route",                  ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
+        RP("Authorise::incoming",                   ACT_PUBLISH, OBJ_EXCHANGE);
+        RP("Authorise::route",                      ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
+        RP("Queue::ManagementMethod",               ACT_PURGE,   OBJ_QUEUE);
+        RP("QueueHandlerImpl::purge",               ACT_PURGE,   OBJ_QUEUE);
+        RP("Broker::queueRedirect",                 ACT_REDIRECT,OBJ_QUEUE, "queuename");
+        RP("Queue::ManagementMethod",               ACT_REROUTE, OBJ_QUEUE, "exchangename");
+        RP("Broker::unbind",                        ACT_UNBIND,  OBJ_EXCHANGE, "queuename routingkey");
+        RP("Broker::setTimestampConfig",            ACT_UPDATE,  OBJ_BROKER);
     }
 
     AclValidator::~AclValidator(){
