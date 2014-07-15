@@ -1117,6 +1117,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             }
             _realMessageStoreDurability = new Durability(localTransactionSynchronizationPolicy, remoteTransactionSynchronizationPolicy, replicaAcknowledgmentPolicy);
         }
+        else
+        {
+            throw new IllegalStateException("Message store durability is already set to " + _messageStoreDurability.get());
+        }
     }
 
     public void setPermittedNodes(Collection<String> permittedNodes)
