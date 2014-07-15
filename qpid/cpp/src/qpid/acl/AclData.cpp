@@ -20,6 +20,8 @@
 #include "qpid/log/Statement.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <boost/lexical_cast.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 namespace qpid {
 namespace acl {
@@ -48,10 +50,10 @@ AclData::AclData():
     decisionMode(qpid::acl::DENY),
     transferAcl(false),
     aclSource("UNKNOWN"),
-    connQuotaRulesExist(false),
     connQuotaRuleSettings(new quotaRuleSet),
-    queueQuotaRulesExist(false),
-    queueQuotaRuleSettings(new quotaRuleSet)
+    queueQuotaRuleSettings(new quotaRuleSet),
+    connBWHostsGlobalRules(new bwHostRuleSet),
+    connBWHostsRuleSettings(new bwHostUserRuleMap)
 {
     for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++) {
         actionList[cnt]=0;
@@ -73,10 +75,10 @@ void AclData::clear ()
         delete[] actionList[cnt];
     }
     transferAcl = false;
-    connQuotaRulesExist = false;
     connQuotaRuleSettings->clear();
-    queueQuotaRulesExist = false;
     queueQuotaRuleSettings->clear();
+    connBWHostsGlobalRules->clear();
+    connBWHostsRuleSettings->clear();
 }
 
 
@@ -509,9 +511,8 @@ AclResult AclData::lookup(
 //
 //
 void AclData::setConnQuotaRuleSettings (
-    bool rulesExist, boost::shared_ptr<quotaRuleSet> quotaPtr)
+    boost::shared_ptr<quotaRuleSet> quotaPtr)
 {
-    connQuotaRulesExist = rulesExist;
     connQuotaRuleSettings = quotaPtr;
 }
 
@@ -530,7 +531,7 @@ void AclData::setConnQuotaRuleSettings (
 //
 bool AclData::getConnQuotaForUser(const std::string& theUserName,
                                   uint16_t* theResult) const {
-    if (connQuotaRulesExist) {
+    if (this->enforcingConnectionQuotas()) {
         // look for this user explicitly
         quotaRuleSetItr nameItr = (*connQuotaRuleSettings).find(theUserName);
         if (nameItr != (*connQuotaRuleSettings).end()) {
@@ -557,16 +558,15 @@ bool AclData::getConnQuotaForUser(const std::string& theUserName,
                  << " unavailable; quota settings are not specified. Return value : 0");
         *theResult = 0;
     }
-    return connQuotaRulesExist;
+    return this->enforcingConnectionQuotas();
 }
 
 //
 //
 //
 void AclData::setQueueQuotaRuleSettings (
-    bool rulesExist, boost::shared_ptr<quotaRuleSet> quotaPtr)
+    boost::shared_ptr<quotaRuleSet> quotaPtr)
 {
-    queueQuotaRulesExist = rulesExist;
     queueQuotaRuleSettings = quotaPtr;
 }
 
@@ -585,7 +585,7 @@ void AclData::setQueueQuotaRuleSettings (
 //
 bool AclData::getQueueQuotaForUser(const std::string& theUserName,
                                    uint16_t* theResult) const {
-    if (queueQuotaRulesExist) {
+    if (this->enforcingQueueQuotas()) {
         // look for this user explicitly
         quotaRuleSetItr nameItr = (*queueQuotaRuleSettings).find(theUserName);
         if (nameItr != (*queueQuotaRuleSettings).end()) {
@@ -612,7 +612,28 @@ bool AclData::getQueueQuotaForUser(const std::string& theUserName,
                  << " unavailable; quota settings are not specified. Return value : 0");
         *theResult = 0;
     }
-    return queueQuotaRulesExist;
+    return this->enforcingQueueQuotas();
+}
+
+void AclData::setConnGlobalRules (boost::shared_ptr<bwHostRuleSet> cgr) {
+    connBWHostsGlobalRules = cgr;
+}
+
+void AclData::setConnUserRules (boost::shared_ptr<bwHostUserRuleMap> hurm) {
+    connBWHostsRuleSettings = hurm;
+}
+
+
+//
+// Get user-specific black/white connection rule list
+//
+boost::shared_ptr<const AclData::bwHostRuleSet> AclData::getUserConnectionRules(const std::string& name){
+    AclData::bwHostUserRuleMapItr itrRule = connBWHostsRuleSettings->find(name);
+    if (itrRule == connBWHostsRuleSettings->end()) {
+        return boost::shared_ptr<const bwHostRuleSet>();
+    } else {
+        return boost::make_shared<const bwHostRuleSet>(itrRule->second);
+    }
 }
 
 

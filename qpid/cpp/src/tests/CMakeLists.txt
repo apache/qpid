@@ -167,6 +167,7 @@ set (qpid_test_boost_libs
 set(all_unit_tests
     AccumulatedAckTest
     Acl
+    AclHost
     Array
     AsyncCompletion
     AtomicValue

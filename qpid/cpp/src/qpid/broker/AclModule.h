@@ -35,7 +35,7 @@ namespace broker {
     public:
 
         // Some ACLs are invoked on every message transfer.
-        // doTransferAcl pervents time consuming ACL calls on a per-message basis.
+        // doTransferAcl prevents time consuming ACL calls on a per-message basis.
         virtual bool doTransferAcl()=0;
 
         virtual uint16_t getMaxConnectTotal()=0;
