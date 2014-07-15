@@ -238,8 +238,6 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         reset(_eventLogger);
 
-        resetEventLogger();
-
         int node2PortNumber = getNextAvailable(node1PortNumber + 1);
         Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress);
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
