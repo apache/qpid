@@ -32,7 +32,7 @@ namespace acl {
 
 // ObjectType
 const std::string objectNames[OBJECTSIZE] = {
-    "queue", "exchange", "broker", "link", "method", "query" };
+    "queue", "exchange", "broker", "link", "method", "query", "connection" };
 
 ObjectType AclHelper::getObjectType(const std::string& str) {
     for (int i=0; i< OBJECTSIZE; ++i) {
@@ -69,7 +69,7 @@ const std::string& AclHelper::getActionStr(const Action a) {
 const std::string propertyNames[PROPERTYSIZE] = {
     "name", "durable", "owner", "routingkey", "autodelete", "exclusive", "type",
     "alternate", "queuename", "exchangename", "schemapackage",
-    "schemaclass", "policytype", "paging",
+    "schemaclass", "policytype", "paging", "host",
 
     "maxpages", "maxpagefactor",
     "maxqueuesize", "maxqueuecount", "maxfilesize", "maxfilecount"};
@@ -91,7 +91,7 @@ const std::string& AclHelper::getPropertyStr(const Property p) {
 const std::string specPropertyNames[SPECPROPSIZE] = {
     "name", "durable", "owner", "routingkey", "autodelete", "exclusive", "type",
     "alternate", "queuename", "exchangename", "schemapackage",
-    "schemaclass", "policytype", "paging",
+    "schemaclass", "policytype", "paging", "host",
 
      "queuemaxsizelowerlimit",  "queuemaxsizeupperlimit",
     "queuemaxcountlowerlimit", "queuemaxcountupperlimit",

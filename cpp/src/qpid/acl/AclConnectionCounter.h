@@ -24,6 +24,7 @@
 
 #include "qpid/broker/ConnectionObserver.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/acl/AclData.h"
 
 #include <map>
 
@@ -93,8 +94,12 @@ public:
 
     // Connection counting
     bool approveConnection(const broker::Connection& conn,
+                           const std::string& userName,
                            bool enforcingConnectionQuotas,
-                           uint16_t connectionLimit );
+                           uint16_t connectionLimit,
+                           boost::shared_ptr<const AclData::bwHostRuleSet> globalBWRules,
+                           boost::shared_ptr<const AclData::bwHostRuleSet> userBWRules
+                          );
 };
 
 }} // namespace qpid::ha

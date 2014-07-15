@@ -49,6 +49,7 @@ namespace acl {
         OBJ_LINK,
         OBJ_METHOD,
         OBJ_QUERY,
+        OBJ_CONNECTION,
         OBJECTSIZE }; // OBJECTSIZE must be last in list
 
     // Action  shared between ACL spec and ACL authorise interface
@@ -83,6 +84,7 @@ namespace acl {
         PROP_SCHEMACLASS,
         PROP_POLICYTYPE,
         PROP_PAGING,
+        PROP_HOST,
         PROP_MAXPAGES,
         PROP_MAXPAGEFACTOR,
         PROP_MAXQUEUESIZE,
@@ -110,6 +112,7 @@ namespace acl {
         SPECPROP_SCHEMACLASS     = PROP_SCHEMACLASS,
         SPECPROP_POLICYTYPE      = PROP_POLICYTYPE,
         SPECPROP_PAGING          = PROP_PAGING,
+        SPECPROP_HOST            = PROP_HOST,
 
         SPECPROP_MAXQUEUESIZELOWERLIMIT,
         SPECPROP_MAXQUEUESIZEUPPERLIMIT,

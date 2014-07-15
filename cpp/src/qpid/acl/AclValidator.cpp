@@ -153,6 +153,7 @@ namespace acl {
         RP("Authorise::outgoing",                   ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
         RP("MessageHandlerImpl::subscribe",         ACT_CONSUME, OBJ_QUEUE);
         RP("Authorise::outgoing",                   ACT_CONSUME, OBJ_QUEUE);
+        RP("ConnectionHandler",                     ACT_CREATE,  OBJ_CONNECTION, "host");
         RP("Broker::createQueue",                   ACT_CREATE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype paging maxpages maxpagefactor maxqueuecount maxqueuesize maxfilecount maxfilesize");
         RP("Broker::createExchange",                ACT_CREATE,  OBJ_EXCHANGE, "type alternate durable autodelete");
         RP("ConnectionHandler::Handler::open",      ACT_CREATE,  OBJ_LINK);

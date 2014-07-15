@@ -21,6 +21,7 @@
  */
 
 #include "qpid/broker/AclModule.h"
+#include "qpid/AclHost.h"
 #include "AclTopicMatch.h"
 #include "qpid/log/Statement.h"
 #include "boost/shared_ptr.hpp"
@@ -29,6 +30,32 @@
 
 namespace qpid {
 namespace acl {
+
+/** A rule for tracking black/white host connection settings.
+ * When a connection is attempted, the remote host is verified
+ * against lists of these rules. When the remote host is in
+ * the range specified by this aclHost then the AclResult is
+ * applied as allow/deny.
+ */
+class AclBWHostRule {
+public:
+    AclBWHostRule(AclResult r, std::string h) :
+        aclResult(r), aclHost(h) {}
+
+    std::string toString () const {
+        std::ostringstream ruleStr;
+        ruleStr << "[ruleMode = " << AclHelper::getAclResultStr(aclResult)
+                << " {" << aclHost.str() << "}";
+        return ruleStr.str();
+    }
+    const AclHost& getAclHost() const { return aclHost; }
+    const AclResult& getAclResult() const { return aclResult; }
+
+private:
+    AclResult   aclResult;
+    AclHost     aclHost;
+};
+
 
 class AclData {
 
@@ -116,6 +143,10 @@ public:
     typedef  actionObject*                   aclAction;
     typedef  std::map<std::string, uint16_t> quotaRuleSet; // <username, N>
     typedef  quotaRuleSet::const_iterator    quotaRuleSetItr;
+    typedef  std::vector<AclBWHostRule>      bwHostRuleSet; // allow/deny hosts-vector
+    typedef  bwHostRuleSet::const_iterator   bwHostRuleSetItr;
+    typedef  std::map<std::string, bwHostRuleSet> bwHostUserRuleMap; //<username, hosts-vector>
+    typedef  bwHostUserRuleMap::const_iterator    bwHostUserRuleMapItr;
 
     // Action*[] -> Object*[] -> map<user -> set<Rule> >
     aclAction*           actionList[qpid::acl::ACTIONSIZE];
@@ -136,6 +167,12 @@ public:
         const ObjectType&                objType,
         const std::string&               ExchangeName,
         const std::string&               RoutingKey);
+
+    boost::shared_ptr<const bwHostRuleSet> getGlobalConnectionRules() {
+        return connBWHostsGlobalRules;
+    }
+
+    boost::shared_ptr<const AclData::bwHostRuleSet> getUserConnectionRules(const std::string& name);
 
     bool matchProp(const std::string & src, const std::string& src1);
     void clear ();
@@ -164,17 +201,23 @@ public:
 
     // Per user connection quotas extracted from acl rule file
     //   Set by reader
-    void setConnQuotaRuleSettings (bool, boost::shared_ptr<quotaRuleSet>);
+    void setConnQuotaRuleSettings (boost::shared_ptr<quotaRuleSet>);
     //   Get by connection approvers
-    bool enforcingConnectionQuotas() { return connQuotaRulesExist; }
+    bool enforcingConnectionQuotas() const { return connQuotaRuleSettings->size() > 0; }
     bool getConnQuotaForUser(const std::string&, uint16_t*) const;
 
     // Per user queue quotas extracted from acl rule file
     //   Set by reader
-    void setQueueQuotaRuleSettings (bool, boost::shared_ptr<quotaRuleSet>);
+    void setQueueQuotaRuleSettings (boost::shared_ptr<quotaRuleSet>);
     //   Get by queue approvers
-    bool enforcingQueueQuotas() { return queueQuotaRulesExist; }
+    bool enforcingQueueQuotas() const { return queueQuotaRuleSettings->size() > 0; }
     bool getQueueQuotaForUser(const std::string&, uint16_t*) const;
+
+    // Global connection Black/White list rules
+    void setConnGlobalRules (boost::shared_ptr<bwHostRuleSet>);
+
+    // Per-user connection Black/White list rules map
+    void setConnUserRules (boost::shared_ptr<bwHostUserRuleMap>);
 
     /** getConnectMaxSpec
      * Connection quotas are held in uint16_t variables.
@@ -225,11 +268,16 @@ private:
                     bool                          theMaxFlag);
 
     // Per-user connection quota
-    bool connQuotaRulesExist;
-    boost::shared_ptr<quotaRuleSet> connQuotaRuleSettings; // Map of user-to-N values from rule file
+    boost::shared_ptr<quotaRuleSet> connQuotaRuleSettings;
+
     // Per-user queue quota
-    bool queueQuotaRulesExist;
-    boost::shared_ptr<quotaRuleSet> queueQuotaRuleSettings; // Map of user-to-N values from rule file
+    boost::shared_ptr<quotaRuleSet> queueQuotaRuleSettings;
+
+    // Global host connection black/white rule set
+    boost::shared_ptr<bwHostRuleSet> connBWHostsGlobalRules;
+
+    // Per-user host connection black/white rule set map
+    boost::shared_ptr<bwHostUserRuleMap> connBWHostsRuleSettings;
 };
 
 }} // namespace qpid::acl

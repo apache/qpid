@@ -169,8 +169,17 @@ bool Acl::approveConnection(const qpid::broker::Connection& conn)
     }
 
     (void) dataLocal->getConnQuotaForUser(userName, &connectionLimit);
+    boost::shared_ptr<const AclData::bwHostRuleSet> globalRules = dataLocal->getGlobalConnectionRules();
+    boost::shared_ptr<const AclData::bwHostRuleSet> userRules   = dataLocal->getUserConnectionRules(userName);
 
-    return connectionCounter->approveConnection(conn, dataLocal->enforcingConnectionQuotas(), connectionLimit);
+
+    return connectionCounter->approveConnection(conn,
+                                                userName,
+                                                dataLocal->enforcingConnectionQuotas(),
+                                                connectionLimit,
+                                                globalRules,
+                                                userRules
+                                               );
 }
 
 bool Acl::approveCreateQueue(const std::string& userId, const std::string& queueName)

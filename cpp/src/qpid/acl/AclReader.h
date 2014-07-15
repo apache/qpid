@@ -87,6 +87,9 @@ class AclReader {
     typedef keywordSet::const_iterator               ksCitr;
     typedef std::pair<std::string, std::string>      nvPair; // Name-Value pair
 
+    typedef boost::shared_ptr<std::vector<acl::AclBWHostRule> >      aclGlobalHostRuleSet;
+    typedef boost::shared_ptr<std::map<std::string, std::vector<acl::AclBWHostRule> > > aclUserHostRuleSet;
+
     std::string             fileName;
     int                     lineNumber;
     bool                    contFlag;
@@ -116,6 +119,9 @@ class AclReader {
 
     bool processAclLine(tokList& toks);
     void printRules() const; // debug aid
+    void printConnectionRules(const std::string name, const AclData::bwHostRuleSet& rules) const;
+    void printGlobalConnectRules() const;
+    void printUserConnectRules() const;
     bool isValidUserName(const std::string& name);
 
     bool processQuotaLine(tokList& toks);
@@ -133,6 +139,9 @@ class AclReader {
     const uint16_t cliMaxQueuesPerUser;
     bool queueQuotaRulesExist;
     aclQuotaRuleSet queueQuota;
+
+    aclGlobalHostRuleSet  globalHostRules;
+    aclUserHostRuleSet    userHostRules;
 };
 
 }} // namespace qpid::acl

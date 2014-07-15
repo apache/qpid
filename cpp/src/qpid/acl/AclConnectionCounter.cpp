@@ -24,6 +24,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/SocketAddress.h"
 #include <assert.h>
 #include <sstream>
 
@@ -211,11 +212,13 @@ void ConnectionCounter::closed(broker::Connection& connection) {
 //
 bool ConnectionCounter::approveConnection(
         const broker::Connection& connection,
+        const std::string& userName,
         bool enforcingConnectionQuotas,
-        uint16_t connectionUserQuota )
+        uint16_t connectionUserQuota,
+        boost::shared_ptr<const AclData::bwHostRuleSet> globalBWRules,
+        boost::shared_ptr<const AclData::bwHostRuleSet> userBWRules)
 {
     const std::string& hostName(getClientHost(connection.getMgmtId()));
-    const std::string& userName(              connection.getUserId());
 
     Mutex::ScopedLock locker(dataLock);
 
@@ -223,6 +226,75 @@ bool ConnectionCounter::approveConnection(
     (void) countConnectionLH(connectProgressMap, connection.getMgmtId(),
                              C_OPENED, false, false);
 
+    // Run global black/white list check
+    //
+    // TODO: The global check could be run way back in AsynchIO where
+    // disapproval would mean that the socket is not accepted. Or
+    // it may be accepted and closed right away without running any 
+    // protocol and creating the connection churn that gets here.
+    //
+    sys::SocketAddress sa(hostName, "");
+    if (sa.isIp()) {
+        if (boost::shared_ptr<const AclData::bwHostRuleSet>() != globalBWRules) {
+            AclData::bwHostRuleSet::const_iterator it;
+            for (it=globalBWRules->begin(); it!=globalBWRules->end(); it++) {
+                if (it->getAclHost().match(hostName)) {
+                    // This host matches a global spec and controls the
+                    // allow/deny decision for this connection.
+                    AclResult res = it->getAclResult();
+                    if (res == DENY || res == DENYLOG) {
+                        // The result is deny
+                        QPID_LOG(trace, "ACL ConnectionApprover global rule " << it->toString()
+                                << " denies connection for host " << hostName << ", user "
+                                << userName);
+                        acl.reportConnectLimit(userName, hostName);
+                        return false;
+                    } else {
+                        // The result is allow
+                        QPID_LOG(trace, "ACL ConnectionApprover global rule " << it->toString()
+                                << " allows connection for host " << hostName << ", user "
+                                << userName);
+                        break;
+                    }
+                } else {
+                    // This rule in the global spec doesn't match and
+                    // does not control the allow/deny decision.
+                }
+            }
+        }
+
+        // Run user black/white list check
+        if (boost::shared_ptr<const AclData::bwHostRuleSet>() != userBWRules) {
+            AclData::bwHostRuleSet::const_iterator it;
+            for (it=userBWRules->begin(); it!=userBWRules->end(); it++) {
+                if (it->getAclHost().match(hostName)) {
+                    // This host matches a user spec and controls the
+                    // allow/deny decision for this connection.
+                    AclResult res = it->getAclResult();
+                    if (res == DENY || res == DENYLOG) {
+                        // The result is deny
+                        QPID_LOG(trace, "ACL ConnectionApprover user rule " << it->toString()
+                                << " denies connection for host " << hostName << ", user "
+                                << userName);
+                        acl.reportConnectLimit(userName, hostName);
+                        return false;
+                    } else {
+                        // The result is allow
+                        QPID_LOG(trace, "ACL ConnectionApprover user rule " << it->toString()
+                                << " allows connection for host " << hostName << ", user "
+                                << userName);
+                        break;
+                    }
+                } else {
+                    // This rule in the user's spec doesn't match and
+                    // does not control the allow/deny decision.
+                }
+            }
+        }
+    } else {
+        // Non-IP hosts don't get subjected to blacklist and whitelist
+        // checks.
+    }
     // Approve total connections
     bool okTotal  = true;
     if (totalLimit > 0) {

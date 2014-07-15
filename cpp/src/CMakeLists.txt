@@ -740,6 +740,7 @@ set (qpidcommon_SOURCES
      ${qpidcommon_sasl_source}
      ${sslcommon_SOURCES}
      qpid/assert.cpp
+     qpid/AclHost.cpp
      qpid/Address.cpp
      qpid/DataDir.cpp
      qpid/Exception.cpp

@@ -37,13 +37,14 @@ QPID_AUTO_TEST_SUITE(AclTestSuite)
     BOOST_CHECK_EQUAL(AclHelper::getObjectType((s)),(e))
 
 QPID_AUTO_TEST_CASE(TestLexerObjectEnums) {
-    BOOST_CHECK_EQUAL(OBJECTSIZE, 6);
-    OBJ_ENUMS(OBJ_QUEUE,    "queue");
-    OBJ_ENUMS(OBJ_EXCHANGE, "exchange");
-    OBJ_ENUMS(OBJ_BROKER,   "broker");
-    OBJ_ENUMS(OBJ_LINK,     "link");
-    OBJ_ENUMS(OBJ_METHOD,   "method");
-    OBJ_ENUMS(OBJ_QUERY,    "query");
+    BOOST_CHECK_EQUAL(OBJECTSIZE, 7);
+    OBJ_ENUMS(OBJ_QUEUE,      "queue");
+    OBJ_ENUMS(OBJ_EXCHANGE,   "exchange");
+    OBJ_ENUMS(OBJ_BROKER,     "broker");
+    OBJ_ENUMS(OBJ_LINK,       "link");
+    OBJ_ENUMS(OBJ_METHOD,     "method");
+    OBJ_ENUMS(OBJ_QUERY,      "query");
+    OBJ_ENUMS(OBJ_CONNECTION, "connection");
 }
 
 #define ACT_ENUMS(e, s) \
@@ -71,7 +72,7 @@ QPID_AUTO_TEST_CASE(TestLexerActionEnums) {
     BOOST_CHECK_EQUAL(AclHelper::getProperty((s)),(e))
 
 QPID_AUTO_TEST_CASE(TestLexerPropertyEnums) {
-    BOOST_CHECK_EQUAL(PROPERTYSIZE, 20);
+    BOOST_CHECK_EQUAL(PROPERTYSIZE, 21);
     PROP_ENUMS(PROP_NAME,           "name");
     PROP_ENUMS(PROP_DURABLE,        "durable");
     PROP_ENUMS(PROP_OWNER,          "owner");
@@ -86,6 +87,7 @@ QPID_AUTO_TEST_CASE(TestLexerPropertyEnums) {
     PROP_ENUMS(PROP_SCHEMACLASS,    "schemaclass");
     PROP_ENUMS(PROP_POLICYTYPE,     "policytype");
     PROP_ENUMS(PROP_PAGING,         "paging");
+    PROP_ENUMS(PROP_HOST,           "host");
     PROP_ENUMS(PROP_MAXPAGES,       "maxpages");
     PROP_ENUMS(PROP_MAXPAGEFACTOR,  "maxpagefactor");
     PROP_ENUMS(PROP_MAXQUEUESIZE,   "maxqueuesize");
@@ -100,7 +102,7 @@ QPID_AUTO_TEST_CASE(TestLexerPropertyEnums) {
     BOOST_CHECK_EQUAL(AclHelper::getSpecProperty((s)),(e))
 
 QPID_AUTO_TEST_CASE(TestLexerSpecPropertyEnums) {
-    BOOST_CHECK_EQUAL(SPECPROPSIZE, 26);
+    BOOST_CHECK_EQUAL(SPECPROPSIZE, 27);
     SPECPROP_ENUMS(SPECPROP_NAME,          "name");
     SPECPROP_ENUMS(SPECPROP_DURABLE,       "durable");
     SPECPROP_ENUMS(SPECPROP_OWNER,         "owner");
@@ -115,6 +117,7 @@ QPID_AUTO_TEST_CASE(TestLexerSpecPropertyEnums) {
     SPECPROP_ENUMS(SPECPROP_SCHEMACLASS,   "schemaclass");
     SPECPROP_ENUMS(SPECPROP_POLICYTYPE,    "policytype");
     SPECPROP_ENUMS(SPECPROP_PAGING,        "paging");
+    SPECPROP_ENUMS(SPECPROP_HOST,          "host");
     SPECPROP_ENUMS(SPECPROP_MAXQUEUESIZELOWERLIMIT,  "queuemaxsizelowerlimit");
     SPECPROP_ENUMS(SPECPROP_MAXQUEUESIZEUPPERLIMIT,  "queuemaxsizeupperlimit");
     SPECPROP_ENUMS(SPECPROP_MAXQUEUECOUNTLOWERLIMIT, "queuemaxcountlowerlimit");

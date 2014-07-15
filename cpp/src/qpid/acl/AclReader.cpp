@@ -102,6 +102,29 @@ namespace acl {
                     QPID_LOG(debug, "ACL: FoundMode "
                         << AclHelper::getAclResultStr(d->decisionMode));
                     foundmode = true;
+            } else if ((*i)->action == acl::ACT_CREATE && (*i)->object == acl::OBJ_CONNECTION) {
+                // Intercept CREATE CONNECTION rules process them into separate lists to
+                // be consumed in the connection approval code path.
+                propMap::const_iterator pHost = (*i)->props.find(SPECPROP_HOST);
+                if (pHost == (*i)->props.end()) {
+                    throw Exception(QPID_MSG("ACL: CREATE CONNECTION rule " << cnt << " has no 'host' property"));
+                }
+                // create the connection rule
+                AclBWHostRule bwRule((*i)->res,
+                                     (pHost->second.compare(AclData::ACL_KEYWORD_ALL) != 0 ? pHost->second : ""));
+
+                // apply the rule globally or to user list
+                if ((*(*i)->names.begin()).compare(AclData::ACL_KEYWORD_WILDCARD) == 0) {
+                    // Rules for user "all" go into the gloabl list
+                    globalHostRules->insert( globalHostRules->begin(), bwRule );
+                } else {
+                    // other rules go into binned rule sets for each user
+                    for (nsCitr itr  = (*i)->names.begin();
+                                itr != (*i)->names.end();
+                                itr++) {
+                        (*userHostRules)[(*itr)].insert( (*userHostRules)[(*itr)].begin(), bwRule);
+                    }
+                }
             } else {
                 AclData::Rule rule(cnt, (*i)->res, (*i)->props);
 
@@ -223,9 +246,13 @@ namespace acl {
         }
 
         // connection quota
-        d->setConnQuotaRuleSettings(connQuotaRulesExist, connQuota);
+        d->setConnQuotaRuleSettings(connQuota);
         // queue quota
-        d->setQueueQuotaRuleSettings(queueQuotaRulesExist, queueQuota);
+        d->setQueueQuotaRuleSettings(queueQuota);
+        // global B/W connection rules
+        d->setConnGlobalRules(globalHostRules);
+        // user B/W connection rules
+        d->setConnUserRules(userHostRules);
     }
 
 
@@ -250,7 +277,9 @@ namespace acl {
         connQuota(new AclData::quotaRuleSet),
         cliMaxQueuesPerUser (theCliMaxQueuesPerUser),
         queueQuotaRulesExist(false),
-        queueQuota(new AclData::quotaRuleSet) {
+        queueQuota(new AclData::quotaRuleSet),
+        globalHostRules(new AclData::bwHostRuleSet),
+        userHostRules(new AclData::bwHostUserRuleMap) {
         names.insert(AclData::ACL_KEYWORD_WILDCARD);
     }
 
@@ -310,7 +339,14 @@ namespace acl {
         printRules();
         printQuotas(AclData::ACL_KEYWORD_QUOTA_CONNECTIONS, connQuota);
         printQuotas(AclData::ACL_KEYWORD_QUOTA_QUEUES, queueQuota);
-        loadDecisionData(d);
+        try {
+            loadDecisionData(d);
+        } catch (const std::exception& e) {
+            errorStream << "Error loading decision data : " << e.what();
+            return -6;
+        }
+        printGlobalConnectRules();
+        printUserConnectRules();
 
         return 0;
     }
@@ -690,6 +726,26 @@ namespace acl {
         int cnt = 1;
         for (rlCitr i=rules.begin(); i<rules.end(); i++,cnt++) {
             QPID_LOG(debug, "ACL:   " << std::setfill(' ') << std::setw(2) << cnt << " " << (*i)->toString());
+        }
+    }
+
+    void AclReader::printConnectionRules(const std::string name, const AclData::bwHostRuleSet& rules) const {
+        QPID_LOG(debug, "ACL: " << name << " Connection Rule list : " << rules.size() << " rules found :");
+        int cnt = 1;
+        for (AclData::bwHostRuleSetItr i=rules.begin(); i<rules.end(); i++,cnt++) {
+            QPID_LOG(debug, "ACL:   " << std::setfill(' ') << std::setw(2) << cnt << " " << i->toString());
+        }
+    }
+
+    void AclReader::printGlobalConnectRules() const {
+        printConnectionRules("global", *globalHostRules);
+    }
+
+    void AclReader::printUserConnectRules() const {
+        QPID_LOG(debug, "ACL: User Connection Rule lists : " << userHostRules->size() << " user lists found :");
+        int cnt = 1;
+        for (AclData::bwHostUserRuleMapItr i=userHostRules->begin(); i!=userHostRules->end(); i++,cnt++) {
+            printConnectionRules(std::string((*i).first), (*i).second);
         }
     }
 
