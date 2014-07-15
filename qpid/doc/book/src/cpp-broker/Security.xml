@@ -500,7 +500,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     User is attempting to read the object
+				     Using an object
 				   </para>
 				   
 				 </entry>
@@ -511,7 +511,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     User is attempting to write a message to the exchange.
+				     Authenticating an incoming message.
 				   </para>
 				 </entry>
 			       </row>
@@ -521,7 +521,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     User is creating the object
+				     Creating an object.
 				   </para>
 				 </entry>
 			       </row>
@@ -531,7 +531,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     User is accessing (reading) the object
+				     Accessing or reading an object
 				   </para>
 				 </entry>
 			       </row>
@@ -541,7 +541,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     User is associating a queue to an exchange with a routing key.
+				     Associating a queue to an exchange with a routing key.
 				   </para>
 				 </entry>
 			       </row>
@@ -551,7 +551,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     Useris disassociating a queue from an exchange with a routing key.
+				     Disassociating a queue from an exchange with a routing key.
 				   </para>
 				 </entry>
 			       </row>
@@ -561,7 +561,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     User is deleting the object.
+				     Deleting an object.
 				   </para>
 				 </entry>
 			       </row>
@@ -571,7 +571,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     User is purging a queue.
+				     Purging a queue.
 				   </para>
 				 </entry>
 			       </row>
@@ -581,7 +581,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     User is changing a broker configuration setting.
+				     Changing a broker configuration setting.
 				   </para>
 				 </entry>
                                </row>
@@ -591,7 +591,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
                                  </entry>
                                  <entry>
                                    <para>
-                                     When moving messages between queues
+                                     Moving messages between queues.
                                    </para>
                                  </entry>
                                </row>
@@ -601,7 +601,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
                                  </entry>
                                  <entry>
                                    <para>
-                                     When redirecting messages between queues
+                                     Redirecting messages between queues
                                    </para>
                                  </entry>
                                </row>
@@ -611,7 +611,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
                                  </entry>
                                  <entry>
                                    <para>
-                                     When rerouting messages from a queue to an exchange
+                                     Rerouting messages from a queue to an exchange
                                    </para>
                                  </entry>
 			       </row>
@@ -628,7 +628,6 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     A queue
 				   </para>
 				 </entry>
 			       </row>
@@ -638,7 +637,6 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     An exchange
 				   </para>
 				 </entry>
 			       </row>
@@ -648,7 +646,6 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     The broker
 				   </para>
 				 </entry>
 			       </row>
@@ -668,7 +665,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 				 </entry>
 				 <entry>
 				   <para>
-				     Management or agent or broker method
+				     Management method
 				   </para>
 				 </entry>
 			       </row>
@@ -678,7 +675,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
                                  </entry>
                                  <entry>
                                    <para>
-                                     Management query (of an object or whole class)
+                                     Management query of an object or class
                                    </para>
                                  </entry>
                                </row>
@@ -688,7 +685,7 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
                                  </entry>
                                  <entry>
                                    <para>
-                                     An incoming TCP/IP connection
+                                     Incoming TCP/IP connection
                                    </para>
                                  </entry>
                                </row>
@@ -1723,12 +1720,13 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 		<section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Connection_Host_Limits">
 		  <title>Connection Limits by Host Name</title>
 		  <para>
-		    The 0.30 C++ Broker ACL module adds the ability to create allow and deny lists of the TCP/IP hosts from which users may connect. The rule accepts two forms:
+		    The 0.30 C++ Broker ACL module adds the ability to create allow and deny lists of the TCP/IP hosts from which users may connect. The rule accepts these forms:
 		  </para>
 		  <para>
 		    <programlisting>
     acl allow user create connection host=host1
     acl allow user create connection host=host1,host2
+    acl deny  user create connection host=all
 		    </programlisting>
 		  </para>
 		  <para>
@@ -1736,6 +1734,9 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
 		  </para>
 		  <para>
 		    Using the form <command>host=host1,host2</command> specifies a range of TCP/IP addresses. With a host range each host must resolve to a single TCP/IP address and the second address must be numerically larger than the first. A connection from any host where host &#62;= host1 and host &#60;= host2 match the rule and the connection is allowed or denied accordingly.
+		  </para>
+		  <para>
+		    Using the form <command>host=all</command> specifies all TCP/IP addresses. A connection from any host matches the rule and the connection is allowed or denied accordingly.
 		  </para>
 		  <para>
 		    Connection denial is only applied to incoming TCP/IP connections. Other socket types are not subjected to nor denied by range checks.
@@ -1751,17 +1752,14 @@ property =  "name" | "durable" | "routingkey" | "autodelete" |
     acl allow admins   create connection host=localhost
     acl allow admins   create connection host=10.0.0.0,10.255.255.255
     acl allow admins   create connection host=192.168.0.0,192.168.255.255
+    acl allow admins   create connection host=[fc00::],[fc00::ff]
     acl allow Company1 create connection host=company1.com
     acl allow Company2 create connection host=company2.com
-    acl deny  all      create connection host=company1.com
-    acl deny  all      create connection host=company2.com
-    acl deny  all      create connection host=10.0.0.0,10.255.255.255
-    acl deny  all      create connection host=192.168.0.0,192.168.255.255
-    acl deny  all      create connection host=localhost
+    acl deny  all      create connection host=all
 		    </programlisting>
 		  </para>
 		  <para>
-		    In this example admins may connect from localhost or from any system on the 10.0.0.0/24 and 192.168.0.0/16 subnets. Company1 users may connect only from company1.com while admins and Company2 users are blocked. Similarly Company2 users may connect only from company2.com while admins and Company1 users are blocked.
+		    In this example admins may connect from localhost or from any system on the 10.0.0.0/24, 192.168.0.0/16, and fc00::/7 subnets. Company1 users may connect only from company1.com and Company2 users may connect only from company2.com. All other connections are denied.
 		  </para>
 		</section>
 
