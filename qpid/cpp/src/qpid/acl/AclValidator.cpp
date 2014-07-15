@@ -138,8 +138,8 @@ namespace acl {
         RP("Broker::queryQueue",                    ACT_ACCESS,  OBJ_QUEUE);
         RP("Broker::getTimestampConfig",            ACT_ACCESS,  OBJ_BROKER);
         RP("Broker::setTimestampConfig",            ACT_UPDATE,  OBJ_BROKER);
-        RP("Broker::queueRedirect",                 ACT_REDIRECT,OBJ_QUEUE);
-        RP("Broker::queueMoveMessages",             ACT_MOVE,    OBJ_QUEUE);
+        RP("Broker::queueRedirect",                 ACT_REDIRECT,OBJ_QUEUE, "queuename");
+        RP("Broker::queueMoveMessages",             ACT_MOVE,    OBJ_QUEUE, "queuename");
         RP("Broker::createQueue",                   ACT_CREATE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype paging maxpages maxpagefactor maxqueuecount maxqueuesize maxfilecount maxfilesize");
         RP("Broker::deleteQueue",                   ACT_DELETE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype");
         RP("Broker::createExchange",                ACT_CREATE,  OBJ_EXCHANGE, "type alternate durable autodelete");
@@ -154,7 +154,7 @@ namespace acl {
         RP("ExchangeHandlerImpl::query",            ACT_ACCESS,  OBJ_EXCHANGE);
         RP("ExchangeHandlerImpl::bound",            ACT_ACCESS,  OBJ_EXCHANGE, "queuename routingkey");
         RP("QueueHandlerImpl::query",               ACT_ACCESS,  OBJ_QUEUE);
-        RP("QueueHandlerImpl::declare",             ACT_ACCESS,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize"); // ?? Why not ACT_CREATE?
+        RP("QueueHandlerImpl::declare",             ACT_ACCESS,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize");
         RP("QueueHandlerImpl::purge",               ACT_PURGE,   OBJ_QUEUE);
         RP("MessageHandlerImpl::subscribe",         ACT_CONSUME, OBJ_QUEUE);
         RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE, "type durable");
