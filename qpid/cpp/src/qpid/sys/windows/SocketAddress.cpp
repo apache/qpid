@@ -173,33 +173,43 @@ std::string SocketAddress::comparisonDetails(const SocketAddress& rangeHi) const
  * This check is run at acl file load time and not at run tme.
  */
 bool SocketAddress::isComparable(const SocketAddress& hiPeer) const {
-    // May only compare if this socket is IPv4 or IPv6
-    SocketAddress lo(*this);
-    const ::addrinfo& peerLoInfo = getAddrInfo(lo);
-    if (!(peerLoInfo.ai_family == AF_INET || peerLoInfo.ai_family == AF_INET6)) {
+    try {
+        // May only compare if this socket is IPv4 or IPv6
+        SocketAddress lo(*this);
+        const ::addrinfo& peerLoInfo = getAddrInfo(lo);
+        if (!(peerLoInfo.ai_family == AF_INET || peerLoInfo.ai_family == AF_INET6)) {
+            return false;
+        }
+        try {
+            // May only compare if peer socket is same family
+            SocketAddress hi(hiPeer);
+            const ::addrinfo& peerHiInfo = getAddrInfo(hi);
+            if (peerLoInfo.ai_family != peerHiInfo.ai_family) {
+                return false;
+            }
+            // Host names that resolve to lists are allowed if they are equal.
+            // For example: localhost, or fjord.lab.example.com
+            if ((*this).asString() == hiPeer.asString()) {
+                return true;
+            }
+            // May only compare if this and peer resolve to single address.
+            if (lo.nextAddress() || hi.nextAddress()) {
+                return false;
+            }
+            // Make sure that the lo/hi relationship is ok
+            int res;
+            if (!compareAddresses(peerLoInfo, peerHiInfo, res) || res < 0) {
+                return false;
+            }
+            return true;
+        } catch (Exception) {
+            // failed to resolve hi
+            return false;
+        }
+    } catch (Exception) {
+        // failed to resolve lo
         return false;
     }
-    // May only compare if peer socket is same family
-    SocketAddress hi(hiPeer);
-    const ::addrinfo& peerHiInfo = getAddrInfo(hi);
-    if (peerLoInfo.ai_family != peerHiInfo.ai_family) {
-        return false;
-    }
-    // Host names that resolve to lists are allowed if they are equal.
-    // For example: localhost, or fjord.lab.example.com
-    if ((*this).asString() == hiPeer.asString()) {
-        return true;
-    }
-    // May only compare if this and peer resolve to single address.
-    if (lo.nextAddress() || hi.nextAddress()) {
-        return false;
-    }
-    // Make sure that the lo/hi relationship is ok
-    int res;
-    if (!compareAddresses(peerLoInfo, peerHiInfo, res) || res < 0) {
-        return false;
-    }
-    return true;
 }
 
 /**
