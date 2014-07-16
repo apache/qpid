@@ -237,14 +237,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             _childrenByName.put(childClass, new ConcurrentHashMap<String, ConfiguredObject<?>>());
         }
 
-        for(ConfiguredObject<?> parent : parents.values())
-        {
-            if(parent instanceof AbstractConfiguredObject<?>)
-            {
-                ((AbstractConfiguredObject<?>)parent).registerChild(this);
-            }
-        }
-
         for(Map.Entry<Class<? extends ConfiguredObject>, ConfiguredObject<?>> entry : parents.entrySet())
         {
             addParent((Class<ConfiguredObject<?>>) entry.getKey(), entry.getValue());
@@ -405,6 +397,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    public void registerWithParents()
+    {
+        for(ConfiguredObject<?> parent : _parents.values())
+        {
+            if(parent instanceof AbstractConfiguredObject<?>)
+            {
+                ((AbstractConfiguredObject<?>)parent).registerChild(this);
+            }
+        }
+    }
+
     protected void closeChildren()
     {
         applyToChildren(new Action<ConfiguredObject<?>>()
@@ -453,6 +456,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
         {
+            registerWithParents();
             final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
             if(currentUser != null)
             {

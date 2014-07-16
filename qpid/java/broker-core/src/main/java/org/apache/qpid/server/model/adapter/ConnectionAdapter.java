@@ -61,7 +61,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
                 deleted();
             }
         });
-        open();
 
         conn.addSessionListener(this);
     }
@@ -215,6 +214,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     public void sessionAdded(final AMQSessionModel<?, ?> session)
     {
         SessionAdapter adapter = new SessionAdapter(this, session);
+        adapter.create();
         childAdded(adapter);
     }
 
