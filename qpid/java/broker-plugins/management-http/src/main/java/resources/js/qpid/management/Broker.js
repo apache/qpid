@@ -31,7 +31,7 @@ define(["dojo/_base/xhr",
         "dijit/registry",
         "dojox/html/entities",
         "qpid/management/addAuthenticationProvider",
-        "qpid/management/addVirtualHostNode",
+        "qpid/management/addVirtualHostNodeAndVirtualHost",
         "qpid/management/addPort",
         "qpid/management/addKeystore",
         "qpid/management/addGroupProvider",
@@ -49,7 +49,7 @@ define(["dojo/_base/xhr",
         "dijit/Menu",
         "dijit/MenuItem",
         "dojo/domReady!"],
-       function (xhr, parser, query, json, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities, addAuthenticationProvider, addVirtualHostNode, addPort, addKeystore, addGroupProvider, addAccessControlProvider) {
+       function (xhr, parser, query, json, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities, addAuthenticationProvider, addVirtualHostNodeAndVirtualHost, addPort, addKeystore, addGroupProvider, addAccessControlProvider) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -198,8 +198,8 @@ define(["dojo/_base/xhr",
                                 }
                             );
 
-                            var addHostButton = query(".addVirtualHost", contentPane.containerNode)[0];
-                            connect.connect(registry.byNode(addHostButton), "onClick", function(evt){ addVirtualHostNode.show(); });
+                            var addVHNAndVHButton = query(".addVirtualHostNodeAndVirtualHostButton", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(addVHNAndVHButton), "onClick", function(evt){ addVirtualHostNodeAndVirtualHost.show(); });
 
                             var addPortButton = query(".addPort", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addPortButton), "onClick", function(evt){

@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,7 +15,6 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 define(["dojo/_base/xhr",
         "dojo/_base/array",
@@ -27,7 +25,7 @@ define(["dojo/_base/xhr",
         "dojo/string",
         "dojo/store/Memory",
         "dijit/registry",
-        "dojo/text!virtualhostnode/jdbc/add.html",
+        "dojo/text!virtualhost/jdbc/add.html",
         "dojo/text!service/helper?action=pluginList&plugin=JDBCConnectionProviderFactory",
         "dijit/form/ValidationTextBox",
         "dijit/form/CheckBox",
@@ -47,10 +45,10 @@ define(["dojo/_base/xhr",
                 poolTypesData[i]= {id: poolTypes[i], name: poolTypes[i]};
             }
             var poolTypesStore = new Memory({ data: poolTypesData });
-            var poolTypeControl = registry.byId("addVirtualHostNode.connectionPoolType");
+            var poolTypeControl = registry.byId("addVirtualHost.connectionPoolType");
             poolTypeControl.set("store", poolTypesStore);
 
-            var poolTypeFieldsDiv = dom.byId("addVirtualHostNode.poolSpecificDiv");
+            var poolTypeFieldsDiv = dom.byId("addVirtualHost.poolSpecificDiv");
             poolTypeControl.on("change",
                     function(type)
                     {
@@ -62,7 +60,7 @@ define(["dojo/_base/xhr",
                           require(["qpid/management/store/pool/"+type.toLowerCase()+"/add"],
                           function(poolType)
                           {
-                              poolType.show("addVirtualHostNode.poolSpecificDiv", "formAddVirtualHostNode.qpid.jdbcstore.bonecp", "virtualhostnode/store/pool/" + type.toLowerCase() + "/add.html");
+                              poolType.show("addVirtualHost.poolSpecificDiv", "formAddVirtualHost.qpid.jdbcstore.bonecp", "virtualhost/store/pool/"+type.toLowerCase()+"/add.html");
                           });
                       }
                     }

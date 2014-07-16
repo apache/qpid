@@ -110,7 +110,7 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
             catch (SQLException e)
             {
                 throw new StoreException("Failed to create connection provider for connectionUrl: " + _connectionURL +
-                                            " and username: " + settings.getUsername());
+                                            " and username: " + settings.getUsername(), e);
             }
             _blobType = details.getBlobType();
             _varBinaryType = details.getVarBinaryType();

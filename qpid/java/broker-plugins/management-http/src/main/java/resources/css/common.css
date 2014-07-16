@@ -90,9 +90,31 @@ div .messages {
 	height: 350px;
 }
 
+.formBox {
+    border: .1em solid lightgrey;
+    margin: 10px 0px 20px 0px;
+    border-radius: 5px;
+}
+
+.formBox legend {
+    font-weight: bold;
+    margin-top: -10px;
+    margin-left: 5px;
+    background-color: white;
+}
+
+.formBox fieldset {
+    padding: 10px 0px 10px 0px;
+}
+
+.formBox .formLabel-labelCell {
+    margin-left: 5px;
+}
+
 .formLabel-labelCell {
   font-weight: bold;
 }
+
 
 .formLabel-controlCell {
   padding: 1px;
