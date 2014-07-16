@@ -146,6 +146,7 @@ public class FileBasedGroupProviderImpl
             attrMap.put(Group.NAME, group.getName());
             GroupAdapter groupAdapter = new GroupAdapter(attrMap);
             principals.add(groupAdapter);
+            groupAdapter.registerWithParents();
             groupAdapter.open();
         }
 
@@ -407,6 +408,7 @@ public class FileBasedGroupProviderImpl
                 attrMap.put(GroupMember.ID,id);
                 attrMap.put(GroupMember.NAME, principal.getName());
                 GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap);
+                groupMemberAdapter.registerWithParents();
                 groupMemberAdapter.open();
                 members.add(groupMemberAdapter);
             }

@@ -109,7 +109,9 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
         {
             Map<String,Object> attributesWithId = new HashMap<String, Object>(getRecord().getAttributes());
             attributesWithId.put(ConfiguredObject.ID, getRecord().getId());
-            return createInstance(attributesWithId, getParents());
+            X instance = createInstance(attributesWithId, getParents());
+            instance.registerWithParents();
+            return instance;
         }
     }
 }

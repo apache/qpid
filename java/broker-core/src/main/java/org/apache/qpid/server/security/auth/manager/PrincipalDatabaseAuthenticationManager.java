@@ -110,6 +110,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             for (Principal user : users)
             {
                 PrincipalAdapter principalAdapter = new PrincipalAdapter(user);
+                principalAdapter.registerWithParents();
                 principalAdapter.open();
                 _userMap.put(user, principalAdapter);
             }

@@ -768,7 +768,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             connection.block();
         }
 
-        Connection c = new ConnectionAdapter(connection);
+        ConnectionAdapter c = new ConnectionAdapter(connection);
+        c.create();
         childAdded(c);
 
     }

@@ -78,7 +78,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
             }
         });
 
-        open();
     }
 
     private static Map<String, Object> createAttributes(final AMQSessionModel session)
