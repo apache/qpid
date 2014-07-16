@@ -46,7 +46,7 @@ class AclHost {
     /** Empty AclHost. */
     AclHost() : allAddresses(false) {}
 
-    explicit AclHost(const std::string& hostSpec) { parse(hostSpec); }
+    explicit AclHost(const std::string& hostSpec) : allAddresses(false) { parse(hostSpec); }
 
     QPID_COMMON_EXTERN std::string comparisonDetails() const {
         if (loSAptr.get()) {
