@@ -61,12 +61,13 @@ struct Options : public qpid::Options {
     std::string url;
     std::string connectionOptions;
     qpid::log::Options log;
+    uint port;
     bool quiet;
 
     Options() : help(false), init(true), transfer(true), check(true),
                 size(256), durable(true), queues(2),
                 base("tx-test2"), msgsPerTx(1), txCount(5), totalMsgCount(10),
-                capacity(1000), url("localhost"), quiet(false)
+                capacity(1000), url("localhost"), port(0), quiet(false)
     {
         addOptions()
             ("init", qpid::optValue(init, "yes|no"), "Declare queues and populate one with the initial set of messages.")
@@ -82,6 +83,7 @@ struct Options : public qpid::Options {
             ("capacity", qpid::optValue(capacity, "N"), "Pre-fetch window (0 implies no pre-fetch)")
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
             ("connection-options", qpid::optValue(connectionOptions, "OPTIONS"), "options for the connection")
+            ("port,p", qpid::optValue(port, "PORT"), "(for test compatibility only, use broker option instead)")
             ("quiet", qpid::optValue(quiet), "reduce output from test")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
@@ -90,6 +92,18 @@ struct Options : public qpid::Options {
     {
         try {
             qpid::Options::parse(argc, argv);
+            if (port) {
+                if (url == "localhost") {
+                    std::stringstream u;
+                    u << url << ":" << port;
+                    url = u.str();
+                } else {
+                    std::cerr << *this << std::endl << std::endl
+                              << "--port and --broker should not be specified together; specify full url in --broker option" << std::endl;
+                    return false;
+                }
+
+            }
             qpid::log::Logger::instance().configure(log);
             if (help) {
                 std::cout << *this << std::endl << std::endl
