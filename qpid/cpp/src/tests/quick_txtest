@@ -20,4 +20,3 @@
 #
 
 exec `dirname $0`/run_test ./qpid-txtest --queues 4 --tx-count 10 --quiet
-exec `dirname $0`/run_test ./qpid-txtest2 --queues 4 --tx-count 10 --quiet

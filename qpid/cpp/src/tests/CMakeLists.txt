@@ -352,6 +352,7 @@ add_test (qpid-client-test ${test_wrap} --start-broker -- ${qpid-client-test_LOC
 add_test (quick_perftest ${test_wrap} --start-broker -- ${qpid-perftest_LOCATION} --summary --count 100)
 add_test (quick_topictest ${test_wrap} --start-broker -- ${CMAKE_CURRENT_SOURCE_DIR}/quick_topictest${test_script_suffix})
 add_test (quick_txtest ${test_wrap} --start-broker -- ${qpid-txtest_LOCATION} --queues 4 --tx-count 10 --quiet)
+add_test (quick_txtest2 ${test_wrap} --start-broker -- ${qpid-txtest2_LOCATION} --queues 4 --tx-count 10 --quiet)
 add_test (msg_group_tests ${test_wrap} --start-broker -- ${CMAKE_CURRENT_SOURCE_DIR}/run_msg_group_tests${test_script_suffix})
 add_test (run_header_test ${test_wrap} --start-broker -- ${CMAKE_CURRENT_SOURCE_DIR}/run_header_test${test_script_suffix})
 add_test (python_tests ${test_wrap} --start-broker -- ${CMAKE_CURRENT_SOURCE_DIR}/python_tests${test_script_suffix})
