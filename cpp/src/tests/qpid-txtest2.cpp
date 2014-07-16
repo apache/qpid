@@ -258,6 +258,7 @@ struct Controller : public Client
                 drained.push_back(msg.getCorrelationId());
                 ++count;
             }
+            session.acknowledge();
             receiver.close();
             if (!opts.quiet) std::cout << "Drained " << count << " messages from " << *i << std::endl;
         }
