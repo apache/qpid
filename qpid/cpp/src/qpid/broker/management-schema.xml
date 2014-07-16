@@ -530,6 +530,7 @@
   <class name="Session">
     <property name="vhostRef"         type="objId"   references="Vhost" access="RC" index="y" parentRef="y"/>
     <property name="name"             type="sstr"    access="RC" index="y"/>
+    <property name="fullName"         type="lstr"    access="RO" optional="y"/>
     <property name="channelId"        type="uint16"  access="RO"/>
     <property name="connectionRef"    type="objId"   references="Connection" access="RO"/>
     <property name="detachedLifespan" type="uint32"  access="RO" unit="second"/>

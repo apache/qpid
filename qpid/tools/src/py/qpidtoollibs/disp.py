@@ -182,8 +182,8 @@ class Display:
     print line
     line = self.tablePrefix
     for width in colWidth:
-      for i in range (width):
-        line = line + "="
+      line = line + "=" * width
+    line = line[:255]
     print line
 
     for row in rows:
