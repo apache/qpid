@@ -33,18 +33,18 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
     function (xhr, dom, construct, win, registry, parser, array, event, json, string, Memory, FilteringSelect) {
         return {
-            show: function() {
-                var node = dom.byId("addVirtualHost.poolSpecificDiv");
+            show: function(poolSpecificDivId, formFieldPrefix, htmlUrl) {
+                var node = dom.byId(poolSpecificDivId);
                 var that = this;
 
                 array.forEach(registry.toArray(),
                               function(item) {
-                                  if(item.id.substr(0,39) == "formAddVirtualHost.specific.store.pool.") {
+                                  if(item.id.substr(0,formFieldPrefix.length) == formFieldPrefix) {
                                       item.destroyRecursive();
                                   }
                               });
 
-                xhr.get({url: "virtualhost/store/pool/none/add.html",
+                xhr.get({url: htmlUrl,
                      sync: true,
                      load:  function(data) {
                                 node.innerHTML = data;
