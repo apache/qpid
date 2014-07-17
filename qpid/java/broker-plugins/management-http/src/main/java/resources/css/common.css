@@ -92,7 +92,7 @@ div .messages {
 
 .formBox {
     border: .1em solid lightgrey;
-    margin: 10px 0px 20px 0px;
+    margin: 10px 5px;
     border-radius: 5px;
 }
 
@@ -104,7 +104,7 @@ div .messages {
 }
 
 .formBox fieldset {
-    padding: 10px 0px 10px 0px;
+    padding: 5px;
 }
 
 .formBox .formLabel-labelCell {
@@ -187,4 +187,10 @@ div .messages {
     background: url("../images/help.png") no-repeat;
     width: 16px;
     height: 16px;
+}
+
+.infoMessage
+{
+    padding: 5px;
+    font-style: italic;
 }

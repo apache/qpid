@@ -86,18 +86,18 @@ define(["dojo/_base/xhr",
 
           //VH Type BDB_HA_REPLICA is not user creatable. This is only needed until we have model meta data available.
           this.supportedVirtualHostTypes = array.filter(this.supportedVirtualHostTypes, function(item){
-              return item != "BDB_HA_REPLICA";
+              return item != "BDB_HA_REPLICA" && item != "BDB_HA";
           });
 
           var virtualHostNodeTypeStore = this._makeTypeStore(this.supportedVirtualHostNodeTypes);
           this.virtualHostNodeType.set("store", virtualHostNodeTypeStore);
           this.virtualHostNodeType.set("disabled", false);
-          this.virtualHostNodeType.on("change", function(type){that._typeChanged(type, that.virtualHostNodeTypeFieldsContainer, "qpid/management/virtualhostnode/");});
+          this.virtualHostNodeType.on("change", function(type){that._vhnTypeChanged(type, that.virtualHostNodeTypeFieldsContainer, "qpid/management/virtualhostnode/");});
 
-          var virtualHostTypeStore = this._makeTypeStore(this.supportedVirtualHostTypes);
-          this.virtualHostType.set("store", virtualHostTypeStore);
+          this.virtualHostTypeStore = this._makeTypeStore(this.supportedVirtualHostTypes);
+          this.virtualHostType.set("store", this.virtualHostTypeStore);
           this.virtualHostType.set("disabled", false);
-          this.virtualHostType.on("change", function(type){that._typeChanged(type, that.virtualHostTypeFieldsContainer, "qpid/management/virtualhost/");});
+          this.virtualHostType.on("change", function(type){that._vhTypeChanged(type, that.virtualHostTypeFieldsContainer, "qpid/management/virtualhost/");});
       },
       show: function()
       {
@@ -121,6 +121,16 @@ define(["dojo/_base/xhr",
             domConstruct.destroy(this.containerNode);
             this.containerNode = null;
         }
+      },
+      _vhnTypeChanged: function (type, typeFieldsContainer, urlStem)
+      {
+        this._processDropDownsForBdbHa(type);
+        this._processDropDownsForJson(type);
+        this._typeChanged(type, typeFieldsContainer, urlStem);
+      },
+      _vhTypeChanged: function (type, typeFieldsContainer, urlStem)
+      {
+        this._typeChanged(type, typeFieldsContainer, urlStem);
       },
       _typeChanged: function (type, typeFieldsContainer, urlStem)
       {
@@ -146,6 +156,52 @@ define(["dojo/_base/xhr",
             );
           }
       },
+      _processDropDownsForBdbHa: function (type)
+      {
+        if (type == "BDB_HA")
+        {
+          this.virtualHostType.set("disabled", true);
+          if (!this.virtualHostTypeStore.get("BDB_HA"))
+          {
+            this.virtualHostTypeStore.add({id: "BDB_HA", name: "BDB_HA"});
+          }
+          this.virtualHostType.set("value", "BDB_HA");
+        }
+        else
+        {
+          if (this.virtualHostType.value == "BDB_HA")
+          {
+            if (this.virtualHostTypeStore.get("BDB_HA"))
+            {
+              this.virtualHostTypeStore.remove("BDB_HA");
+            }
+            this.virtualHostType.set("value", "");
+          }
+          this.virtualHostType.set("disabled", false);
+        }
+      },
+      _processDropDownsForJson: function (type)
+      {
+        if (type == "JSON")
+        {
+          if (this.virtualHostType.value == "ProvidedStore")
+          {
+            this.virtualHostType.set("value", "");
+          }
+
+          if (this.virtualHostTypeStore.get("ProvidedStore"))
+          {
+            this.virtualHostTypeStore.remove("ProvidedStore");
+          }
+        }
+        else
+        {
+          if (!this.virtualHostTypeStore.get("ProvidedStore"))
+          {
+            this.virtualHostTypeStore.add({id: "ProvidedStore", name: "ProvidedStore"});
+          }
+        }
+      },
       _cancel: function(e)
       {
           this.dialog.hide();
@@ -164,12 +220,6 @@ define(["dojo/_base/xhr",
           var virtualHostNodeData = this._getValues(this.virtualHostNodeForm);
           var virtualHostData = this._getValues(this.virtualHostForm);
 
-          if (virtualHostNodeData["type"] == "JSON" && virtualHostData["type"] == "ProvidedStore")
-          {
-              alert('Cannot use a JSON Virtual Host Node with a ProvidedStore Virtual Host');
-              return;
-          }
-
           //Default the VH name to be the same as the VHN name.
           virtualHostData["name"] = virtualHostNodeData["name"];
 
@@ -184,7 +234,7 @@ define(["dojo/_base/xhr",
               error: function(error) {success = false; failureReason = error;}
           });
 
-          if(success === true)
+          if(success === true && virtualHostNodeData["type"] != "BDB_HA")
           {
               var encodedVirtualHostName = encodeURIComponent(virtualHostData.name);
               xhr.put({

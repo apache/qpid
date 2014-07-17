@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,36 +15,25 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 define(["dojo/_base/xhr",
+        "dojo/parser",
         "dojo/dom",
         "dojo/dom-construct",
-        "dojo/_base/window",
+        "dojo/json",
         "dijit/registry",
-        "dojo/parser",
-        "dojo/_base/array",
+        "dojo/text!virtualhost/bdb_ha/add.html",
+        "dijit/form/ValidationTextBox",
+        "dijit/form/CheckBox",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array) {
-        return {
-            show: function() {
-
-                var node = dom.byId("addVirtualHost.typeSpecificDiv");
-                var that = this;
-
-                array.forEach(registry.toArray(),
-                              function(item) {
-                                  if(item.id.substr(0,27) == "formAddVirtualHost.specific") {
-                                      item.destroyRecursive();
-                                  }
-                              });
-
-                xhr.get({url: "virtualhost/bdb_ha/add.html",
-                     sync: true,
-                     load:  function(data) {
-                                node.innerHTML = data;
-                                parser.parse(node);
-                     }});
-            }
-        };
-    });
+  function (xhr, parser, dom, domConstruct, json, registry, template)
+  {
+    return {
+        show: function(data)
+        {
+            this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
+            parser.parse(this.containerNode);
+        }
+    };
+  }
+);
