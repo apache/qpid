@@ -78,6 +78,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     qpid::messaging::Connection getConnection() const;
     void checkError();
     bool hasError();
+    bool isTransactional() const;
 
     bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::messaging::Duration timeout);
 
@@ -96,6 +97,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     template <class T> bool execute(T& f)
     {
         try {
+            checkAborted();
             f();
             return true;
         } catch (const qpid::TransportFailure&) {
@@ -129,12 +131,16 @@ class SessionImpl : public qpid::messaging::SessionImpl
     Receivers receivers;
     Senders senders;
     const bool transactional;
+    bool aborted;
 
     bool accept(ReceiverImpl*, qpid::messaging::Message*, IncomingMessages::MessageTransfer&);
     bool getIncoming(IncomingMessages::Handler& handler, qpid::messaging::Duration timeout);
     bool getNextReceiver(qpid::messaging::Receiver* receiver, IncomingMessages::MessageTransfer& transfer);
     void reconnect();
     bool backoff();
+    void abortTransaction();
+    void checkAborted();
+    void checkAbortedLH(const qpid::sys::Mutex::ScopedLock&);
 
     void commitImpl();
     void rollbackImpl();
