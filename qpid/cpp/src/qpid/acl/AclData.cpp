@@ -21,7 +21,6 @@
 #include "qpid/sys/IntegerTypes.h"
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 
 namespace qpid {
 namespace acl {
@@ -632,7 +631,7 @@ boost::shared_ptr<const AclData::bwHostRuleSet> AclData::getUserConnectionRules(
     if (itrRule == connBWHostsRuleSettings->end()) {
         return boost::shared_ptr<const bwHostRuleSet>();
     } else {
-        return boost::make_shared<const bwHostRuleSet>(itrRule->second);
+        return boost::shared_ptr<const bwHostRuleSet>(&itrRule->second);
     }
 }
 
