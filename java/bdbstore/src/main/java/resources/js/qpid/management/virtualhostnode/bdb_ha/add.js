@@ -20,6 +20,7 @@
  */
 define(["dojo/_base/xhr",
         "dojo/parser",
+        "dojo/_base/array",
         "dojo/dom",
         "dojo/dom-construct",
         "dojo/json",
@@ -28,46 +29,48 @@ define(["dojo/_base/xhr",
         "dijit/form/ValidationTextBox",
         "dijit/form/RadioButton",
         "dojo/domReady!"],
-  function (xhr, parser, dom, domConstruct, json, registry, template)
+  function (xhr, parser, array, dom, domConstruct, json, registry, template)
   {
+      return {
+          show: function(data)
+          {
+              var that=this;
 
-    var nodeFields = ["address", "helperAddress", "joinGroup", "newGroup"];
+              this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
+              parser.parse(this.containerNode);
 
-    return {
-        show: function(data)
-        {
-            var that = this;
-            this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
-            parser.parse(this.containerNode);
-            for(var i=0; i<nodeFields.length;i++)
-            {
-                var fieldName = nodeFields[i];
-                this[fieldName]= registry.byId("addVirtualHostNode." + fieldName);
-            }
+              // lookup field
+              this.groupChoice = registry.byId("addVirtualHostNode.group");
+              this.virtualHostNodeBdbhaTypeFieldsContainer = dom.byId("addVirtualHostNode.bdbha.typeFields");
 
-            this.helperAddressContainer = dom.byId("addVirtualHostNode.helperAddressContainer");
-            this.joinGroup.on("change",
-                    function(value)
-                    {
-                        that.helperAddressContainer.style.display = (this.checked ? "block" : "none");
-                    }
-            );
-            this.newGroup.on("change",
-                    function(value)
-                    {
-                        that.helperAddressContainer.style.display = (this.checked ? "none" :  "block");
-                    }
-            );
-            this.address.on("change",
-                    function(value)
-                    {
-                        if (that.newGroup.checked)
-                        {
-                            that.helperAddress.set("value", value );
-                        }
-                    }
-            );
-        }
-    };
+              // add callback
+              this.groupChoice.on("change", function(type){that._groupChoiceChanged(type, that.virtualHostNodeBdbhaTypeFieldsContainer, "qpid/management/virtualhostnode/bdb_ha/add/");});
+
+          },
+          _groupChoiceChanged: function(type, typeFieldsContainer, urlStem)
+          {
+              var widgets = registry.findWidgets(typeFieldsContainer);
+              array.forEach(widgets, function(item) { item.destroyRecursive();});
+              domConstruct.empty(typeFieldsContainer);
+
+              if (type)
+              {
+                  var that = this;
+                  require([urlStem + type.toLowerCase() + "/add"],
+                      function(TypeUI)
+                      {
+                          try
+                          {
+                              TypeUI.show({containerNode:typeFieldsContainer, parent: that});
+                          }
+                          catch(e)
+                          {
+                              console.warn(e);
+                          }
+                      }
+                  );
+              }
+          }
+      };
   }
 );
