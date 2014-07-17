@@ -186,18 +186,27 @@ struct Transfer : public TransactionalClient, public Runnable
             Sender sender(session.createSender(target));
             Receiver receiver(session.createReceiver(source));
             receiver.setCapacity(opts.capacity);
-            for (uint t = 0; t < opts.txCount; t++) {
-                for (uint m = 0; m < opts.msgsPerTx; m++) {
-                    Message msg = receiver.fetch(Duration::SECOND*30);
-                    if (msg.getContentSize() != opts.size) {
-                        std::ostringstream oss;
-                        oss << "Message size incorrect: size=" << msg.getContentSize() << "; expected " << opts.size;
-                        throw std::runtime_error(oss.str());
+            for (uint t = 0; t < opts.txCount;) {
+                try {
+                    for (uint m = 0; m < opts.msgsPerTx; m++) {
+                        Message msg = receiver.fetch(Duration::SECOND*30);
+                        if (msg.getContentSize() != opts.size) {
+                            std::ostringstream oss;
+                            oss << "Message size incorrect: size=" << msg.getContentSize() << "; expected " << opts.size;
+                            throw std::runtime_error(oss.str());
+                        }
+                        sender.send(msg);
                     }
-                    sender.send(msg);
+                    session.commit();
+                    t++;
+                    if (!opts.quiet && t % 10 == 0) std::cout << "Transaction " << t << " of " << opts.txCount << " committed successfully" << std::endl;
+                } catch (const TransactionAborted&) {
+                    std::cout << "Transaction " << (t+1) << " of " << opts.txCount << " was aborted and will be retried" << std::endl;
+                    session = connection.createTransactionalSession();
+                    sender = session.createSender(target);
+                    receiver = session.createReceiver(source);
+                    receiver.setCapacity(opts.capacity);
                 }
-                QPID_LOG(info, "Moved " << opts.msgsPerTx << " from " << source << " to " << target);
-                session.commit();
             }
             sender.close();
             receiver.close();

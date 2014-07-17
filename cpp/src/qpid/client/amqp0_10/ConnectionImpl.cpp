@@ -317,7 +317,9 @@ bool ConnectionImpl::resetSessions(const sys::Mutex::ScopedLock& )
     try {
         qpid::sys::Mutex::ScopedLock l(lock);
         for (Sessions::iterator i = sessions.begin(); i != sessions.end(); ++i) {
-            getImplPtr(i->second)->setSession(connection.newSession(i->first));
+            if (!getImplPtr(i->second)->isTransactional()) {
+                getImplPtr(i->second)->setSession(connection.newSession(i->first));
+            }
         }
         return true;
     } catch (const qpid::TransportFailure& e) {
