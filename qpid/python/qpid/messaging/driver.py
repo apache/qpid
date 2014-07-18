@@ -676,6 +676,12 @@ class Engine:
 
   def close(self, e=None):
     self._reset()
+    # We cannot re-establish transactional sessions, they must be aborted.
+    # We could re-do transactional enqueues, but not dequeues.
+    for ssn in self.connection.sessions.values():
+      if ssn.transactional:
+        ssn.error = TransactionAborted("Transaction aborted due to transport failure")
+        ssn.closed = True
     if e:
       self.connection.error = e
     self._status = CLOSED
