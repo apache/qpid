@@ -109,6 +109,11 @@ else:
       else:
         validate = CERT_NONE
 
+      # if user manually set flag to false then require cert
+      actual = getattr(conn, "_ssl_skip_hostname_check_actual", None)
+      if actual is not None and conn.ssl_skip_hostname_check is False:
+        validate = CERT_REQUIRED
+
       self.tls = wrap_socket(self.socket, keyfile=conn.ssl_keyfile,
                              certfile=conn.ssl_certfile,
                              ca_certs=conn.ssl_trustfile,

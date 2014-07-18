@@ -182,6 +182,8 @@ class Connection(Endpoint):
     self.ssl_keyfile = default(self.ssl_keyfile, None)
     self.ssl_certfile = default(self.ssl_certfile, None)
     self.ssl_trustfile = default(self.ssl_trustfile, None)
+    # if ssl_skip_hostname_check was not explicitly set, this will be None
+    self._ssl_skip_hostname_check_actual = options.get("ssl_skip_hostname_check")
     self.ssl_skip_hostname_check = default(self.ssl_skip_hostname_check, False)
     self.client_properties = default(self.client_properties, {})
 
