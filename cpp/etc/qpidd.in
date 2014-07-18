@@ -50,6 +50,9 @@ QPID_HA_OPTIONS="--config $QPID_CONFIG"
 test -f @sysconfdir@/sysconfig/$prog && source @sysconfdir@/sysconfig/$prog
 source /etc/rc.d/init.d/functions
 
+# Data dir: respect the config file if set.
+grep -q '^ *data-dir *=' $QPID_CONFIG || QPIDD_OPTIONS="$QPIDD_OPTIONS --data-dir=$QPID_DATA_DIR"
+
 # Check presence of executables/scripts
 for f in $QPID_BIN; do
     test -x $f || { echo "$f not found or not executable"; exit 5; }
@@ -73,12 +76,21 @@ fi
 
 do_status() {
     # Check PID file and ping for liveness
-    status $prog && $qpid_ping
+    MESSAGE=$(status $prog) || {
+	RC=$?
+	echo $MESSAGE
+	return $RC
+    }
+    qpid_ping || {
+	return 1
+    }
+    echo $MESSAGE
+    return 0
 }
 
 start() {
         echo -n $"Starting Qpid AMQP daemon: "
-	daemon --pidfile $pidfile --check $prog --user qpidd $QPID_BIN --config $QPID_CONFIG --data-dir $QPID_DATA_DIR --daemon $QPIDD_OPTIONS
+	daemon --pidfile $pidfile --check $prog --user qpidd $QPID_BIN --config $QPID_CONFIG --daemon $QPIDD_OPTIONS
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && touch $lockfile
