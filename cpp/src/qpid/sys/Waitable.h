@@ -25,21 +25,15 @@
 #include "qpid/sys/ExceptionHolder.h"
 #include <assert.h>
 
-#if __cplusplus >=201103L
-#define DESTRUCTOR_THROWS noexcept(false)
-#else
-#define DESTRUCTOR_THROWS
-#endif
-
 namespace qpid {
 namespace sys {
 
 /**
  * A monitor that keeps track of waiting threads.  Threads declare a
  * ScopedWait around wait() inside a ScopedLock to be considered
- * waiters. 
+ * waiters.
  *
- * Allows waiting threads to be interrupted by an exception. 
+ * Allows waiting threads to be interrupted by an exception.
  */
 class Waitable : public Monitor {
   public:
@@ -62,7 +56,7 @@ class Waitable : public Monitor {
      *@pre Must be called inside a ScopedLock but NOT a ScopedWait.
      */
     void waitWaiters() {
-        while (waiters != 0) 
+        while (waiters != 0)
             Monitor::wait();
     }
 
@@ -79,7 +73,7 @@ class Waitable : public Monitor {
     void setException(const ExceptionHolder& e) {
         exception = e;
         notifyAll();
-        
+
     }
 
     /** True if the waitable has an exception */
@@ -93,23 +87,19 @@ class Waitable : public Monitor {
 
     /** Throws an exception if one is set before or during the wait. */
     void wait() {
-        ExCheck e(exception);
+        exception.raise();
         Monitor::wait();
+        exception.raise();
     }
 
     /** Throws an exception if one is set before or during the wait. */
     bool wait(const AbsTime& absoluteTime) {
-        ExCheck e(exception);
+        exception.raise();
         return Monitor::wait(absoluteTime);
+        exception.raise();
     }
 
   private:
-    struct ExCheck {
-        const ExceptionHolder& exception;
-        ExCheck(const ExceptionHolder& e) : exception(e) { e.raise(); }
-        ~ExCheck() DESTRUCTOR_THROWS { exception.raise(); }
-    };
-        
     size_t waiters;
     ExceptionHolder exception;
 
