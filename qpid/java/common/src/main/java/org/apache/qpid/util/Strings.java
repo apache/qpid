@@ -22,8 +22,11 @@ package org.apache.qpid.util;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -122,14 +125,14 @@ public final class Strings
 
     public static interface Resolver
     {
-        String resolve(String variable);
+        String resolve(String variable, final Resolver resolver);
     }
 
     private static final Resolver NULL_RESOLVER =
             new Resolver()
             {
                 @Override
-                public String resolve(final String variable)
+                public String resolve(final String variable, final Resolver resolver)
                 {
                     return null;
                 }
@@ -145,7 +148,7 @@ public final class Strings
             this.map = map;
         }
 
-        public String resolve(String variable)
+        public String resolve(String variable, final Resolver resolver)
         {
             return map.get(variable);
         }
@@ -161,7 +164,7 @@ public final class Strings
             this.properties = properties;
         }
 
-        public String resolve(String variable)
+        public String resolve(String variable, final Resolver resolver)
         {
             return properties.getProperty(variable);
         }
@@ -178,12 +181,12 @@ public final class Strings
             this.secondary = secondary;
         }
 
-        public String resolve(String variable)
+        public String resolve(String variable, final Resolver resolver)
         {
-            String result = primary.resolve(variable);
+            String result = primary.resolve(variable, resolver);
             if (result == null)
             {
-                result = secondary.resolve(variable);
+                result = secondary.resolve(variable, resolver);
             }
             return result;
         }
@@ -192,7 +195,7 @@ public final class Strings
     public static final Resolver ENV_VARS_RESOLVER = new Resolver()
         {
             @Override
-            public String resolve(final String variable)
+            public String resolve(final String variable, final Resolver resolver)
             {
                 return System.getenv(variable);
             }
@@ -202,7 +205,7 @@ public final class Strings
     public static final Resolver JAVA_SYS_PROPS_RESOLVER = new Resolver()
     {
         @Override
-        public String resolve(final String variable)
+        public String resolve(final String variable, final Resolver resolver)
         {
             return System.getProperty(variable);
         }
@@ -269,7 +272,7 @@ public final class Strings
                                stack));
         }
 
-        String result = resolver.resolve(var);
+        String result = resolver.resolve(var, resolver);
         if (result == null)
         {
             if(failOnUnresolved)
@@ -329,4 +332,75 @@ public final class Strings
         return sb.toString();
     }
 
+
+    public static Resolver createSubstitutionResolver(String prefix, LinkedHashMap<String,String> substitutions)
+    {
+        return new StringSubstitutionResolver(prefix, substitutions);
+    }
+
+    private static class StringSubstitutionResolver implements Resolver
+    {
+
+        private final ThreadLocal<Set<String>> _stack = new ThreadLocal<>();
+
+        private final LinkedHashMap<String, String> _substitutions;
+        private final String _prefix;
+
+        private StringSubstitutionResolver(String prefix, LinkedHashMap<String, String> substitutions)
+        {
+            _prefix = prefix;
+            _substitutions = substitutions;
+        }
+
+        @Override
+        public String resolve(final String variable, final Resolver resolver)
+        {
+            boolean clearStack = false;
+            Set<String> currentStack = _stack.get();
+            if(currentStack == null)
+            {
+                currentStack = new HashSet<>();
+                _stack.set(currentStack);
+                clearStack = true;
+            }
+
+            try
+            {
+                if(currentStack.contains(variable))
+                {
+                    throw new IllegalArgumentException("The value of attribute " + variable + " is defined recursively");
+
+                }
+
+
+                if (variable.startsWith(_prefix))
+                {
+                    currentStack.add(variable);
+                    String expanded = resolver.resolve(variable.substring(_prefix.length()), resolver);
+                    currentStack.remove(variable);
+                    if(expanded != null)
+                    {
+                        for(Map.Entry<String,String> entry : _substitutions.entrySet())
+                        {
+                            expanded = expanded.replace(entry.getKey(), entry.getValue());
+                        }
+                    }
+                    return expanded;
+                }
+                else
+                {
+                    return null;
+                }
+
+            }
+            finally
+            {
+
+                if(clearStack)
+                {
+                    _stack.remove();
+                }
+            }
+        }
+    }
 }
