@@ -78,7 +78,7 @@ void SessionImpl::checkAborted()
 void SessionImpl::checkAbortedLH(const qpid::sys::Mutex::ScopedLock&)
 {
     if (aborted) {
-        throw TransactionAborted("Transaction implicitly aborted");
+        throw TransactionAborted("Transaction aborted due to transport failure");
     }
 }
 

@@ -1318,13 +1318,14 @@ def open_read(name):
 
 class TransactionTests(HaBrokerTest):
 
-    def tx_simple_setup(self, broker):
+    def tx_simple_setup(self, cluster, broker=0):
         """Start a transaction, remove messages from queue a, add messages to queue b"""
-        c = broker.connect(protocol=self.tx_protocol)
+        c = cluster.connect(broker, protocol=self.tx_protocol)
         # Send messages to a, no transaction.
         sa = c.session().sender("a;{create:always,node:{durable:true}}")
         tx_msgs =  ["x","y","z"]
         for m in tx_msgs: sa.send(qm.Message(content=m, durable=True))
+        sa.close()
 
         # Receive messages from a, in transaction.
         tx = c.session(transactional=True)
@@ -1339,6 +1340,7 @@ class TransactionTests(HaBrokerTest):
         for tx_m,m in zip(tx_msgs2, msgs):
             txs.send(tx_m);
             sb.send(m)
+        sb.close()
         return tx
 
     def tx_subscriptions(self, broker):
@@ -1348,7 +1350,7 @@ class TransactionTests(HaBrokerTest):
 
     def test_tx_simple_commit(self):
         cluster = HaCluster(self, 2, test_store=True)
-        tx = self.tx_simple_setup(cluster[0])
+        tx = self.tx_simple_setup(cluster)
         tx.sync()
         tx_queues = cluster[0].agent.tx_queues()
 
@@ -1394,7 +1396,7 @@ class TransactionTests(HaBrokerTest):
 
     def test_tx_simple_rollback(self):
         cluster = HaCluster(self, 2, test_store=True)
-        tx = self.tx_simple_setup(cluster[0])
+        tx = self.tx_simple_setup(cluster)
         tx.sync()
         tx_queues = cluster[0].agent.tx_queues()
         tx.acknowledge()
@@ -1415,22 +1417,27 @@ class TransactionTests(HaBrokerTest):
 
     def test_tx_simple_failover(self):
         cluster = HaCluster(self, 3, test_store=True)
-        tx = self.tx_simple_setup(cluster[0])
+        tx = self.tx_simple_setup(cluster)
         tx.sync()
         tx_queues = cluster[0].agent.tx_queues()
         tx.acknowledge()
-        cluster.bounce(0)       # Should cause roll-back
-        cluster[0].wait_status("ready") # Restarted.
-        cluster[1].wait_status("active") # Promoted.
-        cluster[2].wait_status("ready")  # Failed over.
-        for b in cluster: self.assert_simple_rollback_outcome(b, tx_queues)
+        l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
+        try:
+            cluster.bounce(0)       # Should cause roll-back
+            tx.connection.session() # Wait for reconnect
+            for b in cluster: self.assert_simple_rollback_outcome(b, tx_queues)
+            self.assertRaises(qm.TransactionAborted, tx.sync)
+            self.assertRaises(qm.TransactionAborted, tx.commit)
+            tx.connection.close()
+            for b in cluster: self.assert_simple_rollback_outcome(b, tx_queues)
+        finally: l.restore()
 
     def test_tx_no_backups(self):
         """Test the special case of a TX where there are no backups"""
 
         # Test commit
         cluster = HaCluster(self, 1, test_store=True)
-        tx = self.tx_simple_setup(cluster[0])
+        tx = self.tx_simple_setup(cluster)
         tx.acknowledge()
         tx.commit()
         tx.sync()
@@ -1440,7 +1447,7 @@ class TransactionTests(HaBrokerTest):
 
         # Test rollback
         cluster = HaCluster(self, 1, test_store=True)
-        tx = self.tx_simple_setup(cluster[0])
+        tx = self.tx_simple_setup(cluster)
         tx.sync()
         tx_queues = cluster[0].agent.tx_queues()
         tx.acknowledge()
@@ -1498,7 +1505,7 @@ class TransactionTests(HaBrokerTest):
         """Verify that TXs blocked in commit don't deadlock."""
         cluster = HaCluster(self, 2, args=["--worker-threads=2"], test_store=True)
         n = 10                  # Number of concurrent transactions
-        sessions = [cluster[0].connect(protocol=self.tx_protocol).session(transactional=True) for i in xrange(n)]
+        sessions = [cluster.connect(0, protocol=self.tx_protocol).session(transactional=True) for i in xrange(n)]
         # Have the store delay the response for 10s
         for s in sessions:
             sn = s.sender("qq;{create:always,node:{durable:true}}")
