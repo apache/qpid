@@ -43,6 +43,9 @@ public interface SimpleLDAPAuthenticationManager<X extends SimpleLDAPAuthenticat
     @ManagedAttribute( description = "Search filter")
     String getSearchFilter();
 
+    @ManagedAttribute( description = "Bind without search")
+    boolean isBindWithoutSearch();
+
     @ManagedAttribute( description = "LDAP context factory")
     String getLdapContextFactory();
 
