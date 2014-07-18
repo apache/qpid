@@ -35,7 +35,7 @@ HA_BROKER = "org.apache.qpid.ha:habroker:ha-broker"
 # Define these defaults here rather than in add_option because we want
 # to use qpidd.conf for defaults if --config is specified and
 # these defaults otherwise:
-DEFAULTS = { "broker":"localhost", "timeout":10.0}
+DEFAULTS = { "broker":"0.0.0.0", "timeout":10.0}
 
 class ExitStatus(Exception):
     """Raised if a command want's a non-0 exit status from the script"""
@@ -106,6 +106,27 @@ class Command:
         ha_broker = self.connect_agent and qmf_broker.getHaBroker()
         return (connection, qmf_broker, ha_broker)
 
+    def all_brokers(self, ha_broker, opts, func):
+        """@return: List of (broker_addr, ha_broker) for all brokers in the cluster.
+        Returns (broker_addr, Exception) if an exception is raised accessing a broker.
+        """
+        # The brokersUrl setting is not in python URL format, simpler parsing here.
+        result = []
+        brokers = filter(None, re.sub(r'(^amqps?:)|(tcp:)', "", ha_broker.brokersUrl).split(","))
+        if brokers and opts.all:
+            if "@" in opts.broker: userpass = opts.broker.split("@")[0]
+            else: userpass = None
+            for b in brokers:
+                if userpass and not "@" in b: opts.broker = userpass+"@"+b
+                else: opts.broker = b
+                try:
+                    connection, qmf_broker, ha_broker = self.connect(opts)
+                    func(ha_broker, b)
+                except Exception,e:
+                    func(ha_broker, b, e)
+        else:
+            func(ha_broker)
+
     def execute(self, args):
         opts, args = self.op.parse_args(args)
         if len(args) != len(self.arg_names)+1:
@@ -134,6 +155,7 @@ class PromoteCmd(Command):
         qmf_broker._method("promote", {}, HA_BROKER)
 PromoteCmd()
 
+
 class StatusCmd(Command):
     def __init__(self):
         Command.__init__(self, "status", "Print HA status")
@@ -146,27 +168,19 @@ class StatusCmd(Command):
         self.op.add_option(
             "--all", action="store_true", default=False,
             help="Print status for all brokers in the cluster")
+
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         if opts.is_primary:
             if not ha_broker.status in ["active", "recovering"]: raise ExitStatus(1)
         if opts.expect:
             if opts.expect != ha_broker.status: raise ExitStatus(1)
-        # The brokersUrl setting is not in python UR format, simpler parsing here.
-        brokers = filter(None, re.sub(r'(^amqps?:)|(tcp:)', "", ha_broker.brokersUrl).split(","))
-        if opts.all and brokers:
-            opts.all=False
-            if "@" in opts.broker: userpass = opts.broker.split("@")[0]
-            else: userpass = None
-            for b in brokers:
-                if userpass and not "@" in b: opts.broker = userpass+"@"+b
-                else: opts.broker = b
-                try:
-                    connection, qmf_broker, ha_broker = self.connect(opts)
-                    print b, ha_broker.status
-                except Exception,e:
-                    print b, e
-        else:
-            print ha_broker.status
+        def status(hb, b=None, ex=None):
+            if ex: print b, ex
+            elif b: print b, hb.status
+            else: print hb.status
+
+        self.all_brokers(ha_broker, opts, status)
+
 StatusCmd()
 
 class ReplicateCmd(Command):
@@ -179,15 +193,27 @@ ReplicateCmd()
 class QueryCmd(Command):
     def __init__(self):
         Command.__init__(self, "query", "Print HA configuration and status")
+        self.op.add_option(
+            "--all", action="store_true", default=False,
+            help="Print configuration and status for all brokers in the cluster")
 
     def do_execute(self, qmf_broker, ha_broker, opts, args):
-        hb = ha_broker
-        for x in [("Status:", hb.status),
-                  ("Brokers URL:", hb.brokersUrl),
-                  ("Public URL:", hb.publicUrl),
-                  ("Replicate: ", hb.replicateDefault)
-                  ]:
-            print "%-20s %s"%(x[0], x[1])
+        def query(hb, b=None, ex=None):
+            if ex:
+                print "%s %s\n" % (b, ex)
+            else:
+                if b:
+                    print "%-20s %s"%("Address:", b)
+                for x in [("Status:", hb.status),
+                          ("Broker ID:", hb.systemId),
+                          ("Brokers URL:", hb.brokersUrl),
+                          ("Public URL:", hb.publicUrl),
+                          ("Replicate: ", hb.replicateDefault)
+                          ]:
+                    print "%-20s %s"%x
+                if b: print
+        self.all_brokers(ha_broker, opts, query)
+
 
 QueryCmd()
 
