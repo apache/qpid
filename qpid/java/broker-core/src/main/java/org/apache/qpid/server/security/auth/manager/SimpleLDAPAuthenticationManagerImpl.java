@@ -90,6 +90,9 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
     @ManagedAttributeField
     private TrustStore _trustStore;
 
+    @ManagedAttributeField
+    private boolean _bindWithoutSearch;
+
     /**
      * Dynamically created SSL Socket Factory implementation used in the case where user has specified a trust store.
      */
@@ -411,33 +414,46 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
 
     private String getNameFromId(String id) throws NamingException
     {
-        Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerUrl);
-
-        env.put(Context.SECURITY_AUTHENTICATION, "none");
-        InitialDirContext ctx = createInitialDirContext(env);
-
-        try
+        if(!isBindWithoutSearch())
         {
-            SearchControls searchControls = new SearchControls();
-            searchControls.setReturningAttributes(new String[] {});
-            searchControls.setCountLimit(1l);
-            searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            NamingEnumeration<?> namingEnum = null;
-            String name = null;
+            Hashtable<String, Object> env = createInitialDirContextEnvironment(_providerUrl);
 
-            namingEnum = ctx.search(_searchContext, _searchFilter, new String[] { id }, searchControls);
-            if(namingEnum.hasMore())
+            env.put(Context.SECURITY_AUTHENTICATION, "none");
+            InitialDirContext ctx = createInitialDirContext(env);
+
+            try
             {
-                SearchResult result = (SearchResult) namingEnum.next();
-                name = result.getNameInNamespace();
+                SearchControls searchControls = new SearchControls();
+                searchControls.setReturningAttributes(new String[]{});
+                searchControls.setCountLimit(1l);
+                searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                NamingEnumeration<?> namingEnum = null;
+                String name = null;
+
+                namingEnum = ctx.search(_searchContext, _searchFilter, new String[]{id}, searchControls);
+                if (namingEnum.hasMore())
+                {
+                    SearchResult result = (SearchResult) namingEnum.next();
+                    name = result.getNameInNamespace();
+                }
+                return name;
             }
-            return name;
+            finally
+            {
+                closeSafely(ctx);
+            }
         }
-        finally
+        else
         {
-            closeSafely(ctx);
+            return id;
         }
 
+    }
+
+    @Override
+    public boolean isBindWithoutSearch()
+    {
+        return _bindWithoutSearch;
     }
 
     private void closeSafely(InitialDirContext ctx)
