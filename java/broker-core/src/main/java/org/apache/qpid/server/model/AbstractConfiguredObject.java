@@ -1361,6 +1361,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         Map<String,String> inheritedContext = new HashMap<String, String>();
         generateInheritedContext(object.getModel(), object, inheritedContext);
         return Strings.expand(value, false,
+                              JSON_SUBSTITUTION_RESOLVER,
                               getOwnAttributeResolver(object),
                               new Strings.MapResolver(inheritedContext),
                               Strings.JAVA_SYS_PROPS_RESOLVER,
@@ -1394,6 +1395,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+
+    private static final Strings.Resolver JSON_SUBSTITUTION_RESOLVER =
+            Strings.createSubstitutionResolver("json:",
+                                               new LinkedHashMap<String, String>()
+                                               {
+                                                   {
+                                                       put("\\","\\\\");
+                                                       put("\"","\\\"");
+                                                   }
+                                               });
 
     private static class OwnAttributeResolver implements Strings.Resolver
     {
@@ -1432,7 +1443,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
 
         @Override
-        public String resolve(final String variable)
+        public String resolve(final String variable, final Strings.Resolver resolver)
         {
             boolean clearStack = false;
             Set<String> currentStack = _stack.get();
