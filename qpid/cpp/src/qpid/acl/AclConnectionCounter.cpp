@@ -106,7 +106,7 @@ bool ConnectionCounter::countConnectionLH(
     } else {
         theMap[theName] = count = 1;
     }
-    if (enforceLimit) { 
+    if (enforceLimit) {
         result = count <= theLimit;
     }
     if (emitLog) {
@@ -230,7 +230,7 @@ bool ConnectionCounter::approveConnection(
     //
     // TODO: The global check could be run way back in AsynchIO where
     // disapproval would mean that the socket is not accepted. Or
-    // it may be accepted and closed right away without running any 
+    // it may be accepted and closed right away without running any
     // protocol and creating the connection churn that gets here.
     //
     sys::SocketAddress sa(hostName, "");
@@ -354,7 +354,12 @@ std::string ConnectionCounter::getClientHost(const std::string mgmtId)
         size_t colon = mgmtId.find_last_of(':');
         if (std::string::npos != colon) {
             // trailing colon found
-            return mgmtId.substr(hyphen+1, colon - hyphen - 1);
+            std::string tmp = mgmtId.substr(hyphen+1, colon - hyphen - 1);
+            // undecorate ipv6
+            if (tmp.length() >= 3 && tmp.find("[") == 0 && tmp.rfind("]") == tmp.length()-1)
+                tmp = tmp.substr(1, tmp.length()-2);
+            return tmp;
+
         } else {
             // colon not found - use everything after hyphen
             return mgmtId.substr(hyphen+1);
