@@ -32,6 +32,7 @@ import java.util.UUID;
 class AMQTemporaryTopic extends AMQTopic implements TemporaryTopic, TemporaryDestination
 {
 
+    private static final long serialVersionUID = -4990099300883216207L;
     private final AMQSession _session;
     private boolean _deleted;
     /**

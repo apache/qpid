@@ -29,8 +29,7 @@ import java.util.UUID;
 /** AMQ implementation of a TemporaryQueue. */
 final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue, TemporaryDestination
 {
-
-
+    private static final long serialVersionUID = -5457866720195625708L;
     private final AMQSession _session;
     private boolean _deleted;
 

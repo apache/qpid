@@ -26,6 +26,7 @@ public class AMQUndefinedDestination extends AMQDestination
 {
 
     private static final AMQShortString UNKNOWN_EXCHANGE_CLASS = new AMQShortString("unknown");
+    private static final long serialVersionUID = -1487224209485888847L;
 
 
     public AMQUndefinedDestination(AMQShortString exchange, AMQShortString routingKey, AMQShortString queueName)

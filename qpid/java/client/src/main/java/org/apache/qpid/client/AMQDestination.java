@@ -39,14 +39,20 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-public abstract class AMQDestination implements Destination, Referenceable
+public abstract class AMQDestination implements Destination, Referenceable, Externalizable
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQDestination.class);
+    private static final long serialVersionUID = -3716263015355017537L;
 
     private AMQShortString _exchangeName;
 
@@ -995,5 +1001,51 @@ public abstract class AMQDestination implements Destination, Referenceable
     public RejectBehaviour getRejectBehaviour()
     {
         return _rejectBehaviour;
+    }
+
+    @Override
+    public void writeExternal(final ObjectOutput out) throws IOException
+    {
+        out.writeObject(_destSyntax);
+        if (_destSyntax == DestSyntax.BURL)
+        {
+            out.writeObject(toURL());
+        }
+        else
+        {
+            out.writeObject(_address);
+        }
+    }
+
+    @Override
+    public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException
+    {
+        _destSyntax = (DestSyntax) in.readObject();
+        if (_destSyntax == DestSyntax.BURL)
+        {
+            String burl = (String) in.readObject();
+            final AMQBindingURL binding;
+            try
+            {
+                binding = new AMQBindingURL(burl);
+            }
+            catch (URISyntaxException e)
+            {
+                throw new IllegalStateException("Cannot convert url " + burl + " into a BindingURL", e);
+            }
+            getInfoFromBindingURL(binding);
+        }
+        else
+        {
+            _address = (Address) in.readObject();
+            try
+            {
+                getInfoFromAddress();
+            }
+            catch (Exception e)
+            {
+                throw new IllegalStateException("Cannot convert get info from  " + _address, e);
+            }
+        }
     }
 }

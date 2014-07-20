@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.test.unit.client.connectionurl;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQBrokerDetails;
@@ -619,6 +625,30 @@ public class ConnectionURLTest extends TestCase
         connectionURL = new AMQConnectionURL(url);
 
         assertFalse("value should be false", Boolean.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_VERIFY_QUEUE_ON_SEND)));
+    }
+
+    public void testSerialization() throws Exception
+    {
+        String url = "amqp://ritchiem:bob@/test?brokerlist='tcp://localhost:5672'";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+
+        assertTrue(connectionurl instanceof Serializable);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(connectionurl);
+        oos.close();
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        Object deserializedObject = ois.readObject();
+        ois.close();
+
+        ConnectionURL deserialisedConnectionUrl = (AMQConnectionURL) deserializedObject;
+        assertEquals(connectionurl, deserialisedConnectionUrl);
+        assertEquals(connectionurl.hashCode(), deserialisedConnectionUrl.hashCode());
+
     }
 }
 

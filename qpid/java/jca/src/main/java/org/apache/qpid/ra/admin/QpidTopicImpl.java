@@ -34,6 +34,7 @@ import org.apache.qpid.ra.inflow.QpidActivation;
 
 public class QpidTopicImpl extends AMQTopic implements QpidTopic, Externalizable
 {
+    private static final long serialVersionUID = -2872685901706214228L;
     private String _url;
 
     public QpidTopicImpl()
@@ -71,6 +72,7 @@ public class QpidTopicImpl extends AMQTopic implements QpidTopic, Externalizable
     	return this._url;
     }
 
+    @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
     {
         this._url = (String)in.readObject();
@@ -86,6 +88,7 @@ public class QpidTopicImpl extends AMQTopic implements QpidTopic, Externalizable
         }
     }
 
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException
     {
         out.writeObject(this._url);

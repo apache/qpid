@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.client;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
 import javax.jms.JMSException;
 
 import junit.framework.TestCase;
@@ -75,5 +81,26 @@ public class AMQConnectionFactoryTest extends TestCase
         {
             assertEquals("Unexpected exception", AMQConnectionFactory.NO_URL_CONFIGURED, e.getMessage());
         }
+    }
+
+    public void testSerialization() throws Exception
+    {
+        AMQConnectionFactory factory = new AMQConnectionFactory();
+        assertTrue(factory instanceof Serializable);
+        factory.setConnectionURLString("amqp://guest:guest@clientID/test?brokerlist='tcp://localhost:5672'");
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(factory);
+        oos.close();
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        Object deserializedObject = ois.readObject();
+        ois.close();
+
+        AMQConnectionFactory deserialisedFactory = (AMQConnectionFactory) deserializedObject;
+        assertEquals(factory, deserialisedFactory);
+        assertEquals(factory.hashCode(), deserialisedFactory.hashCode());
     }
 }

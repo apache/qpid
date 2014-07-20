@@ -33,6 +33,7 @@ import org.apache.qpid.client.AMQQueue;
 
 public class QpidQueueImpl extends AMQQueue implements QpidQueue, Externalizable
 {
+    private static final long serialVersionUID = 7952672727182960611L;
     private String _url;
 
     public QpidQueueImpl()
@@ -71,6 +72,7 @@ public class QpidQueueImpl extends AMQQueue implements QpidQueue, Externalizable
     	return this._url;
     }
 
+    @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
     {
         this._url = (String)in.readObject();
@@ -86,6 +88,7 @@ public class QpidQueueImpl extends AMQQueue implements QpidQueue, Externalizable
         }
     }
 
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException
     {
         out.writeObject(this._url);
