@@ -66,6 +66,8 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironment
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicationGroupListener;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 
 @ManagedObject( category = false, type = BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE )
@@ -414,14 +416,43 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             {
                 if (LOGGER.isDebugEnabled())
                 {
-                    LOGGER.debug("Creating new virtualhost with name : " +  getGroupName());
+                    LOGGER.debug("Creating new virtualhost with name : " + getGroupName());
                 }
 
-                Map<String, Object> hostAttributes = new HashMap<String, Object>();
+                boolean hasBlueprint = getContext().containsKey(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
+                boolean blueprintUtilised = getContext().containsKey(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)
+                                            && Boolean.parseBoolean(String.valueOf(getContext().get(
+                        VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)));
+
+                Map<String, Object> hostAttributes = new HashMap<>();
+                if (hasBlueprint && !blueprintUtilised)
+                {
+                    Map<String, Object> virtualhostBlueprint =
+                            getContextValue(Map.class, VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
+
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Using virtualhost blueprint " + virtualhostBlueprint);
+                    }
+
+                    hostAttributes.putAll(virtualhostBlueprint);
+
+
+                }
+
                 hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
                 hostAttributes.put(VirtualHost.NAME, getGroupName());
-                hostAttributes.put(VirtualHost.TYPE, "BDB_HA");
+                hostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE);
                 host = createChild(VirtualHost.class, hostAttributes);
+
+                if (hasBlueprint && !blueprintUtilised)
+                {
+                    // Update the context with the utilised flag
+                    Map<String, String> actualContext = (Map<String, String>) getActualAttributes().get(CONTEXT);
+                    Map<String, String> context = new HashMap<>(actualContext);
+                    context.put(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR, Boolean.TRUE.toString());
+                    setAttribute(CONTEXT, getContext(), context);
+                }
             }
             else
             {

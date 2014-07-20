@@ -32,7 +32,7 @@ import javax.jms.Session;
 
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNodeImpl;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -88,7 +88,7 @@ public class SplitStoreTest extends QpidBrokerTestCase
     {
         final String blueprint = String.format(
            "{ \"type\" : \"%s\",  \"storePath\" : \"%s\" }", virtualHostType, _messageStorePath);
-        final Map<String, String> contextMap = Collections.singletonMap(AbstractStandardVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
+        final Map<String, String> contextMap = Collections.singletonMap(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
                                                                         blueprint);
 
         TestBrokerConfiguration config = getBrokerConfiguration();
