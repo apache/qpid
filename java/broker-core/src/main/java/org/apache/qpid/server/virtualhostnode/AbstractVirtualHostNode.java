@@ -47,6 +47,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<X>> extends AbstractConfiguredObject<X> implements VirtualHostNode<X>
 {
 
+    public static final String VIRTUALHOST_BLUEPRINT_CONTEXT_VAR = "virtualhostBlueprint";
+    public static final String VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR = "virtualhostBlueprintUtilised";
     private static final Logger LOGGER = Logger.getLogger(AbstractVirtualHostNode.class);
 
     private final Broker<?> _broker;

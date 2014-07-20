@@ -44,8 +44,6 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
                 implements VirtualHostNode<X>
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractStandardVirtualHostNode.class);
-    public static final String VIRTUALHOST_BLUEPRINT_CONTEXT_VAR = "virtualhostBlueprint";
-    public static final String VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR = "virtualhostBlueprintUtilised";
 
     public AbstractStandardVirtualHostNode(Map<String, Object> attributes,
                                            Broker<?> parent)

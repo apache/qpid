@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.virtualhostnode;
 
-import static org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -145,7 +144,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         String vhBlueprint = String.format("{ \"type\" : \"%s\", \"name\" : \"%s\"}",
                                            TestMemoryVirtualHost.VIRTUAL_HOST_TYPE,
                                            TEST_VIRTUAL_HOST_NAME);
-        Map<String, String> context = Collections.singletonMap(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
+        Map<String, String> context = Collections.singletonMap(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
 
         Map<String, Object> nodeAttributes = new HashMap<>();
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
@@ -166,10 +165,10 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         Map<String, String> updatedContext = node.getContext();
 
         assertTrue("Context should now have utilised flag", updatedContext.containsKey(
-                VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR));
+                AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR));
         assertEquals("Utilised flag should be true",
                      Boolean.TRUE.toString(),
-                     updatedContext.get(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR));
+                     updatedContext.get(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR));
     }
 
     /**
@@ -185,8 +184,8 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
                                            TestMemoryVirtualHost.VIRTUAL_HOST_TYPE,
                                            TEST_VIRTUAL_HOST_NAME);
         Map<String, String> context = new HashMap<>();
-        context.put(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
-        context.put(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR, Boolean.TRUE.toString());
+        context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
+        context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR, Boolean.TRUE.toString());
 
         Map<String, Object> nodeAttributes = new HashMap<>();
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
@@ -217,7 +216,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         String vhBlueprint = String.format("{ \"type\" : \"%s\", \"name\" : \"%s\"}",
                                            TestMemoryVirtualHost.VIRTUAL_HOST_TYPE,
                                            "vhFromBlueprint");
-        Map<String, String> context = Collections.singletonMap(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
+        Map<String, String> context = Collections.singletonMap(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
 
         Map<String, Object> nodeAttributes = new HashMap<>();
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);

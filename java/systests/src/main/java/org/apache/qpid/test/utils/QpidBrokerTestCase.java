@@ -69,7 +69,7 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.MemoryConfigurationStore;
-import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
@@ -873,7 +873,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         final String blueprint = getTestProfileVirtualHostNodeBlueprint();
 
-        attributes.put(ConfiguredObject.CONTEXT, Collections.singletonMap(AbstractStandardVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
+        attributes.put(ConfiguredObject.CONTEXT, Collections.singletonMap(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
                                                                           blueprint));
 
         int port = getPort(brokerPort);

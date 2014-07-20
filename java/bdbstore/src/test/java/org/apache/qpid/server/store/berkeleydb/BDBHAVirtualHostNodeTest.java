@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import static java.util.Collections.*;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -45,6 +46,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
+import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNodeImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
@@ -95,7 +97,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperHostPort);
         attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath);
         attributes.put(BDBHAVirtualHostNode.CONTEXT,
-                Collections.singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
+                singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
 
         BDBHAVirtualHostNode<?> node = _helper.createHaVHN(attributes);
 
@@ -467,10 +469,18 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
     {
         String messageStorePath = _helper.getMessageStorePath();
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
 
-        Map<String, Object> node1Attributes = new HashMap<String, Object>();
+        List<String> permittedNodes = new ArrayList<>();
+        permittedNodes.add(helperAddress);
+        String node2Address = "localhost:" + node2PortNumber;
+        permittedNodes.add(node2Address);
+
+        String blueprint = String.format("{ \"%s\" : [ \"%s\", \"%s\" ] } ", BDBHAVirtualHost.PERMITTED_NODES, helperAddress, node2Address);
+
+        Map<String, Object> node1Attributes = new HashMap<>();
         node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
         node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
         node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
@@ -478,22 +488,17 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "1");
+        Map<String, String> contextMap = singletonMap(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, blueprint);
+        node1Attributes.put(BDBHAVirtualHostNode.CONTEXT, contextMap);
 
         BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
-        BDBHAVirtualHost<?> host = (BDBHAVirtualHost<?>)node1.getVirtualHost();
-
-        List<String> permittedNodes = new ArrayList<String>();
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-        permittedNodes.add(helperAddress);
-        permittedNodes.add("localhost:" + node2PortNumber);
-        host.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes));
 
         Map<String, Object> node2Attributes = new HashMap<String, Object>();
         node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
         node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
         node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
         node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
+        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, node2Address);
         node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "2");
         node2Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
