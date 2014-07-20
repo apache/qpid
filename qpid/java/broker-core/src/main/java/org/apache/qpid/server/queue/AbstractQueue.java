@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
@@ -225,6 +226,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private int _maximumDistinctGroups;
 
     private State _state = State.UNINITIALIZED;
+    private final AtomicBoolean _recovering = new AtomicBoolean(true);
+    private final ConcurrentLinkedQueue<EnqueueRequest> _postRecoveryQueue = new ConcurrentLinkedQueue<>();
 
     protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
@@ -246,6 +249,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         {
             _virtualHost.getDurableConfigurationStore().create(asObjectRecord());
         }
+
+        _recovering.set(false);
     }
 
     @Override
@@ -842,15 +847,69 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     // ------ Enqueue / Dequeue
 
-    public void enqueue(ServerMessage message, Action<? super MessageInstance> action)
+    public final void enqueue(ServerMessage message, Action<? super MessageInstance> action)
     {
         incrementQueueCount();
         incrementQueueSize(message);
 
         _totalMessagesReceived.incrementAndGet();
 
+        if(_recovering.get())
+        {
+            EnqueueRequest request = new EnqueueRequest(message, action);
+            _postRecoveryQueue.add(request);
+
+            // deal with the case the recovering status changed just as we added to the post recovery queue
+            if(!_recovering.get() && _postRecoveryQueue.remove(request))
+            {
+                doEnqueue(message, action);
+            }
+        }
+        else
+        {
+            doEnqueue(message, action);
+        }
+
+    }
+
+    public final void recover(ServerMessage message)
+    {
+        incrementQueueCount();
+        incrementQueueSize(message);
+
+        _totalMessagesReceived.incrementAndGet();
+
+        doEnqueue(message, null);
+    }
 
 
+    @Override
+    public final void completeRecovery()
+    {
+        if(_recovering.get())
+        {
+            enqueueFromPostRecoveryQueue();
+
+            _recovering.set(false);
+
+            // deal with any enqueues that occurred just as we cleared the queue
+            enqueueFromPostRecoveryQueue();
+        }
+    }
+
+    private void enqueueFromPostRecoveryQueue()
+    {
+        while(!_postRecoveryQueue.isEmpty())
+        {
+            EnqueueRequest request = _postRecoveryQueue.poll();
+            MessageReference<?> messageReference = request.getMessage();
+            doEnqueue(messageReference.getMessage(), request.getAction());
+            messageReference.release();
+        }
+    }
+
+    protected void doEnqueue(final ServerMessage message, final Action<? super MessageInstance> action)
+    {
         final QueueConsumer<?> exclusiveSub = _exclusiveSubscriber;
         final QueueEntry entry = getEntries().add(message);
 
@@ -939,7 +998,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         {
             action.performAction(entry);
         }
-
     }
 
     private void deliverToConsumer(final QueueConsumer<?> sub, final QueueEntry entry)
@@ -2733,6 +2791,29 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                                  final Object newAttributeValue)
         {
 
+        }
+    }
+
+    private static class EnqueueRequest
+    {
+        private final MessageReference<?> _message;
+        private final Action<? super MessageInstance> _action;
+
+        public EnqueueRequest(final ServerMessage message,
+                              final Action<? super MessageInstance> action)
+        {
+            _message = message.newReference();
+            _action = action;
+        }
+
+        public MessageReference<?> getMessage()
+        {
+            return _message;
+        }
+
+        public Action<? super MessageInstance> getAction()
+        {
+            return _action;
         }
     }
 }

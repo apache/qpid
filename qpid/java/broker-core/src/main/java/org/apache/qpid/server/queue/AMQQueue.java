@@ -29,6 +29,7 @@ import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.protocol.CapacityChecker;
@@ -107,4 +108,7 @@ public interface AMQQueue<X extends AMQQueue<X>>
     void setNotificationListener(QueueNotificationListener listener);
 
 
+    void completeRecovery();
+
+    void recover(ServerMessage<?> message);
 }

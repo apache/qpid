@@ -32,6 +32,8 @@ import org.apache.qpid.server.store.handler.MessageInstanceHandler;
  */
 public interface MessageStore
 {
+    long getNextMessageId();
+
     String getStoreLocation();
 
     void addEventListener(EventListener eventListener, Event... events);
@@ -56,10 +58,12 @@ public interface MessageStore
     void visitMessages(MessageHandler handler) throws StoreException;
 
     void visitMessageInstances(MessageInstanceHandler handler) throws StoreException;
+    void visitMessageInstances(TransactionLogResource queue, MessageInstanceHandler handler) throws StoreException;
 
     void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException;
 
     <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
+    StoredMessage<?> getMessage(long messageId);
 
     /**
      * Is this store capable of persisting the data

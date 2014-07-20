@@ -194,7 +194,7 @@ public class MemoryMessageStore implements MessageStore
     @Override
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(final T metaData)
     {
-        long id = _messageId.getAndIncrement();
+        long id = getNextMessageId();
 
         if(metaData.isPersistent())
         {
@@ -221,6 +221,12 @@ public class MemoryMessageStore implements MessageStore
         {
             return new StoredMemoryMessage<T>(id, metaData);
         }
+    }
+
+    @Override
+    public long getNextMessageId()
+    {
+        return _messageId.getAndIncrement();
     }
 
     @Override
@@ -275,6 +281,12 @@ public class MemoryMessageStore implements MessageStore
     }
 
     @Override
+    public StoredMessage<?> getMessage(final long messageId)
+    {
+        return _messages.get(messageId);
+    }
+
+    @Override
     public void visitMessageInstances(final MessageInstanceHandler handler) throws StoreException
     {
         synchronized (_transactionLock)
@@ -292,6 +304,27 @@ public class MemoryMessageStore implements MessageStore
             }
         }
     }
+
+    @Override
+    public void visitMessageInstances(TransactionLogResource queue, final MessageInstanceHandler handler) throws StoreException
+    {
+        synchronized (_transactionLock)
+        {
+            Set<Long> ids = _messageInstances.get(queue.getId());
+            if(ids != null)
+            {
+                for (long id : ids)
+                {
+                    if (!handler.handle(queue.getId(), id))
+                    {
+                        return;
+                    }
+
+                }
+            }
+        }
+    }
+
 
     @Override
     public void visitDistributedTransactions(final DistributedTransactionHandler handler) throws StoreException

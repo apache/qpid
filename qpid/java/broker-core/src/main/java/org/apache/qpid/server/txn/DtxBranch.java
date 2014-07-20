@@ -68,7 +68,6 @@ public class DtxBranch
         ROLLBACK_ONLY
     }
 
-
     public DtxBranch(Xid xid, MessageStore store, VirtualHostImpl vhost)
     {
         _xid = xid;

@@ -34,9 +34,9 @@ import static org.mockito.Mockito.when;
 import java.util.UUID;
 
 import junit.framework.TestCase;
+import org.mockito.ArgumentMatcher;
 
 import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
@@ -58,9 +58,8 @@ import org.apache.qpid.server.txn.DtxBranch;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.transport.Xid;
-import org.mockito.ArgumentMatcher;
 
-public class MessageStoreRecovererTest extends TestCase
+public class SynchronousMessageStoreRecovererTest extends TestCase
 {
     private VirtualHostImpl _virtualHost;
 
@@ -99,11 +98,12 @@ public class MessageStoreRecovererTest extends TestCase
 
         when(_virtualHost.getMessageStore()).thenReturn(store);
 
-        MessageStoreRecoverer recoverer = new MessageStoreRecoverer(_virtualHost, mock(MessageStoreLogSubject.class));
-        recoverer.recover();
+        SynchronousMessageStoreRecoverer
+                recoverer = new SynchronousMessageStoreRecoverer();
+        recoverer.recover(_virtualHost);
 
         ServerMessage<?> message = storedMessage.getMetaData().getType().createMessage(storedMessage);
-        verify(queue, times(1)).enqueue(eq(message), (Action<? super MessageInstance>)isNull());
+        verify(queue, times(1)).recover(eq(message));
     }
 
     @SuppressWarnings("unchecked")
@@ -137,8 +137,9 @@ public class MessageStoreRecovererTest extends TestCase
 
         when(_virtualHost.getMessageStore()).thenReturn(store);
 
-        MessageStoreRecoverer recoverer = new MessageStoreRecoverer(_virtualHost, mock(MessageStoreLogSubject.class));
-        recoverer.recover();
+        SynchronousMessageStoreRecoverer
+                recoverer = new SynchronousMessageStoreRecoverer();
+        recoverer.recover(_virtualHost);
 
         verify(queue, never()).enqueue(any(ServerMessage.class), any(Action.class));
         verify(transaction).dequeueMessage(same(queue), argThat(new MessageNumberMatcher(messageId)));
@@ -175,8 +176,9 @@ public class MessageStoreRecovererTest extends TestCase
 
         when(_virtualHost.getMessageStore()).thenReturn(store);
 
-        MessageStoreRecoverer recoverer = new MessageStoreRecoverer(_virtualHost, mock(MessageStoreLogSubject.class));
-        recoverer.recover();
+        SynchronousMessageStoreRecoverer
+                recoverer = new SynchronousMessageStoreRecoverer();
+        recoverer.recover(_virtualHost);
 
         verify(transaction).dequeueMessage(argThat(new QueueIdMatcher(queueId)), argThat(new MessageNumberMatcher(messageId)));
         verify(transaction, times(1)).commitTranAsync();
@@ -205,8 +207,9 @@ public class MessageStoreRecovererTest extends TestCase
 
         when(_virtualHost.getMessageStore()).thenReturn(store);
 
-        MessageStoreRecoverer recoverer = new MessageStoreRecoverer(_virtualHost, mock(MessageStoreLogSubject.class));
-        recoverer.recover();
+        SynchronousMessageStoreRecoverer
+                recoverer = new SynchronousMessageStoreRecoverer();
+        recoverer.recover(_virtualHost);
 
         verify(storedMessage, times(1)).remove();
     }
@@ -262,8 +265,9 @@ public class MessageStoreRecovererTest extends TestCase
         when(_virtualHost.getMessageStore()).thenReturn(store);
         when(_virtualHost.getDtxRegistry()).thenReturn(dtxRegistry);
 
-        MessageStoreRecoverer recoverer = new MessageStoreRecoverer(_virtualHost, mock(MessageStoreLogSubject.class));
-        recoverer.recover();
+        SynchronousMessageStoreRecoverer
+                recoverer = new SynchronousMessageStoreRecoverer();
+        recoverer.recover(_virtualHost);
 
         DtxBranch branch = dtxRegistry.getBranch(new Xid(format, globalId, branchId));
         assertNotNull("Expected dtx branch to be created", branch);
@@ -330,8 +334,9 @@ public class MessageStoreRecovererTest extends TestCase
         when(_virtualHost.getMessageStore()).thenReturn(store);
         when(_virtualHost.getDtxRegistry()).thenReturn(dtxRegistry);
 
-        MessageStoreRecoverer recoverer = new MessageStoreRecoverer(_virtualHost, mock(MessageStoreLogSubject.class));
-        recoverer.recover();
+        SynchronousMessageStoreRecoverer
+                recoverer = new SynchronousMessageStoreRecoverer();
+        recoverer.recover(_virtualHost);
 
         DtxBranch branch = dtxRegistry.getBranch(new Xid(format, globalId, branchId));
         assertNotNull("Expected dtx branch to be created", branch);
@@ -377,6 +382,7 @@ public class MessageStoreRecovererTest extends TestCase
         when(queue.getId()).thenReturn(queueId);
         when(queue.getName()).thenReturn("test-queue");
         when(_virtualHost.getQueue(queueId)).thenReturn(queue);
+        when(_virtualHost.getQueue("test-queue")).thenReturn(queue);
         return queue;
     }
 
