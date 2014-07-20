@@ -18,10 +18,9 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static org.apache.qpid.server.store.berkeleydb.BDBUtils.*;
+import static org.apache.qpid.server.store.berkeleydb.BDBUtils.DEFAULT_DATABASE_CONFIG;
 import static org.apache.qpid.server.store.berkeleydb.BDBUtils.abortTransactionSafely;
 import static org.apache.qpid.server.store.berkeleydb.BDBUtils.closeCursorSafely;
-import static org.apache.qpid.server.store.berkeleydb.BDBUtils.DEFAULT_DATABASE_CONFIG;
 
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
@@ -122,7 +121,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
     {
 
-        long newMessageId = getNextMessageSequenceNumber();
+        long newMessageId = getNextMessageId();
 
         if (metaData.isPersistent())
         {
@@ -134,7 +133,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         }
     }
 
-    private long getNextMessageSequenceNumber()
+    public long getNextMessageId()
     {
         long newMessageId;
         try
@@ -180,6 +179,73 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         checkMessageStoreOpen();
         visitMessagesInternal(handler, getEnvironmentFacade());
     }
+
+    @Override
+    public StoredMessage<?> getMessage(final long messageId)
+    {
+        checkMessageStoreOpen();
+        return getMessageInternal(messageId, getEnvironmentFacade());
+    }
+
+    @Override
+    public void visitMessageInstances(final TransactionLogResource queue, final MessageInstanceHandler handler) throws StoreException
+    {
+        checkMessageStoreOpen();
+
+        Cursor cursor = null;
+        List<QueueEntryKey> entries = new ArrayList<QueueEntryKey>();
+        try
+        {
+            cursor = getDeliveryDb().openCursor(null, null);
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+
+            QueueEntryBinding keyBinding = QueueEntryBinding.getInstance();
+            keyBinding.objectToEntry(new QueueEntryKey(queue.getId(),0l), key);
+
+            if(cursor.getSearchKeyRange(key,value,LockMode.DEFAULT) == OperationStatus.SUCCESS)
+            {
+                QueueEntryKey entry = keyBinding.entryToObject(key);
+                if(entry.getQueueId().equals(queue.getId()))
+                {
+                    entries.add(entry);
+                }
+                while (cursor.getNext(key, value, LockMode.DEFAULT) == OperationStatus.SUCCESS)
+                {
+                    entry = keyBinding.entryToObject(key);
+                    if(entry.getQueueId().equals(queue.getId()))
+                    {
+                        entries.add(entry);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        catch (DatabaseException e)
+        {
+            throw getEnvironmentFacade().handleDatabaseException("Cannot visit message instances", e);
+        }
+        finally
+        {
+            closeCursorSafely(cursor, getEnvironmentFacade());
+        }
+
+        for(QueueEntryKey entry : entries)
+        {
+            UUID queueId = entry.getQueueId();
+            long messageId = entry.getMessageId();
+            if (!handler.handle(queueId, messageId))
+            {
+                break;
+            }
+        }
+
+    }
+
+
 
     @Override
     public void visitMessageInstances(final MessageInstanceHandler handler) throws StoreException
@@ -539,6 +605,33 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                     throw environmentFacade.handleDatabaseException("Cannot close cursor", e);
                 }
             }
+        }
+    }
+
+
+    private StoredBDBMessage<?> getMessageInternal(long messageId, EnvironmentFacade environmentFacade)
+    {
+        try
+        {
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+            MessageMetaDataBinding valueBinding = MessageMetaDataBinding.getInstance();
+            LongBinding.longToEntry(messageId, key);
+            if(getMessageMetaDataDb().get(null, key, value, LockMode.READ_COMMITTED) == OperationStatus.SUCCESS)
+            {
+                StorableMessageMetaData metaData = valueBinding.entryToObject(value);
+                StoredBDBMessage message = new StoredBDBMessage(messageId, metaData, true);
+                return message;
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+        catch (DatabaseException e)
+        {
+            throw environmentFacade.handleDatabaseException("Cannot visit messages", e);
         }
     }
 

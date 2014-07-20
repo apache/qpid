@@ -53,12 +53,12 @@ public class SortedQueueImpl extends OutOfOrderQueue<SortedQueueImpl> implements
     }
 
     @Override
-    public void enqueue(final ServerMessage message,
+    protected void doEnqueue(final ServerMessage message,
                         final Action<? super MessageInstance> action)
     {
         synchronized (_sortedQueueLock)
         {
-            super.enqueue(message, action);
+            super.doEnqueue(message, action);
         }
     }
 

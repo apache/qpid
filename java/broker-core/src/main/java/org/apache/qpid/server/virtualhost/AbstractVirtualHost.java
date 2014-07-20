@@ -88,6 +88,8 @@ import org.apache.qpid.server.util.MapValueConverter;
 public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> extends AbstractConfiguredObject<X>
         implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener
 {
+    private static final String USE_ASYNC_RECOVERY = "use_async_message_store_recovery";
+
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
     public static final String DLQ_ROUTING_KEY = "dlq";
     public static final String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
@@ -149,9 +151,13 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @ManagedAttributeField
     private int _housekeepingThreadCount;
 
+
+    private boolean _useAsyncRecoverer;
+
     private MessageDestination _defaultDestination;
 
     private MessageStore _messageStore;
+
 
     public AbstractVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
@@ -1332,7 +1338,20 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             createDefaultExchanges();
         }
 
-        new MessageStoreRecoverer(this, getMessageStoreLogSubject()).recover();
+        MessageStoreRecoverer messageStoreRecoverer;
+
+
+
+        if(getContextValue(Boolean.class, USE_ASYNC_RECOVERY))
+        {
+            messageStoreRecoverer = new AsynchronousMessageStoreRecoverer();
+        }
+        else
+        {
+           messageStoreRecoverer = new SynchronousMessageStoreRecoverer();
+        }
+        messageStoreRecoverer.recover(this);
+
 
         State finalState = State.ERRORED;
         try

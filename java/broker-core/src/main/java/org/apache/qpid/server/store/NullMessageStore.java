@@ -127,6 +127,11 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
+    public void visitMessageInstances(TransactionLogResource queue, MessageInstanceHandler handler) throws StoreException
+    {
+    }
+
+    @Override
     public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
     {
     }
@@ -136,4 +141,15 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     {
     }
 
+    @Override
+    public long getNextMessageId()
+    {
+        return 0;
+    }
+
+    @Override
+    public StoredMessage<?> getMessage(final long messageId)
+    {
+        return null;
+    }
 }

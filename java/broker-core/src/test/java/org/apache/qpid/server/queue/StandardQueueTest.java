@@ -142,7 +142,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
     {
         // create a queue where each even entry is considered a dequeued
         AbstractQueue queue = new DequeuedQueue(getVirtualHost());
-        queue.open();
+        queue.create();
         // create a consumer
         MockConsumer consumer = new MockConsumer();
 
@@ -188,7 +188,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
                 // do nothing
             }
         };
-        testQueue.open();
+        testQueue.create();
 
         // put messages
         List<StandardQueueEntry> entries =

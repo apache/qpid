@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -78,6 +77,8 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     private static final String INSERT_INTO_QUEUE_ENTRY = "INSERT INTO " + QUEUE_ENTRY_TABLE_NAME + " (queue_id, message_id) values (?,?)";
     private static final String DELETE_FROM_QUEUE_ENTRY = "DELETE FROM " + QUEUE_ENTRY_TABLE_NAME + " WHERE queue_id = ? AND message_id =?";
     private static final String SELECT_FROM_QUEUE_ENTRY = "SELECT queue_id, message_id FROM " + QUEUE_ENTRY_TABLE_NAME + " ORDER BY queue_id, message_id";
+    private static final String SELECT_FROM_QUEUE_ENTRY_FOR_QUEUE = "SELECT queue_id, message_id FROM " + QUEUE_ENTRY_TABLE_NAME + " WHERE queue_id = ? ORDER BY queue_id, message_id";
+
     private static final String INSERT_INTO_MESSAGE_CONTENT = "INSERT INTO " + MESSAGE_CONTENT_TABLE_NAME
                                                               + "( message_id, content ) values (?, ?)";
     private static final String SELECT_FROM_MESSAGE_CONTENT = "SELECT content FROM " + MESSAGE_CONTENT_TABLE_NAME
@@ -90,6 +91,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             "SELECT meta_data FROM " + META_DATA_TABLE_NAME + " WHERE message_id = ?";
     private static final String DELETE_FROM_META_DATA = "DELETE FROM " + META_DATA_TABLE_NAME + " WHERE message_id = ?";
     private static final String SELECT_ALL_FROM_META_DATA = "SELECT message_id, meta_data FROM " + META_DATA_TABLE_NAME;
+    private static final String SELECT_ONE_FROM_META_DATA = "SELECT message_id, meta_data FROM " + META_DATA_TABLE_NAME + " WHERE message_id = ?";
 
     private static final String INSERT_INTO_XIDS =
             "INSERT INTO "+ XID_TABLE_NAME +" ( format, global_id, branch_id ) values (?, ?, ?)";
@@ -114,19 +116,56 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
     protected void setMaximumMessageId()
     {
-        visitMessages(new MessageHandler()
+
+        try
         {
-            @Override
-            public boolean handle(StoredMessage<?> storedMessage)
+            Connection conn = newAutoCommitConnection();
+            try
             {
-                long id = storedMessage.getMessageNumber();
-                if (_messageId.get() < id)
-                {
-                    _messageId.set(id);
-                }
-                return true;
+                setMaxMessageId(conn, "SELECT max(message_id) FROM " + MESSAGE_CONTENT_TABLE_NAME, 1);
+                setMaxMessageId(conn, "SELECT max(message_id) FROM " + META_DATA_TABLE_NAME, 1);
+                setMaxMessageId(conn, "SELECT queue_id, max(message_id) FROM " + QUEUE_ENTRY_TABLE_NAME + " GROUP BY queue_id " , 2);
             }
-        });
+            finally
+            {
+                conn.close();
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new StoreException(e);
+        }
+
+    }
+
+    private void setMaxMessageId(final Connection conn, final String query, int col) throws SQLException
+    {
+        PreparedStatement statement =
+                conn.prepareStatement(query);
+        try
+        {
+            ResultSet rs = statement.executeQuery();
+            try
+            {
+                while(rs.next())
+                {
+                    long maxMessageId = rs.getLong(col);
+                    if(_messageId.get() < maxMessageId)
+                    {
+                        _messageId.set(maxMessageId);
+                    }
+                }
+
+            }
+            finally
+            {
+                rs.close();
+            }
+        }
+        finally
+        {
+            statement.close();
+        }
     }
 
     protected void upgrade(ConfiguredObject<?> parent) throws StoreException
@@ -410,12 +449,18 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
         if(metaData.isPersistent())
         {
-            return new StoredJDBCMessage(_messageId.incrementAndGet(), metaData);
+            return new StoredJDBCMessage(getNextMessageId(), metaData);
         }
         else
         {
-            return new StoredMemoryMessage(_messageId.incrementAndGet(), metaData);
+            return new StoredMemoryMessage(getNextMessageId(), metaData);
         }
+    }
+
+    @Override
+    public long getNextMessageId()
+    {
+        return _messageId.incrementAndGet();
     }
 
     private void removeMessage(long messageId)
@@ -1353,6 +1398,51 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     }
 
     @Override
+    public StoredMessage<?> getMessage(long messageId) throws StoreException
+    {
+        checkMessageStoreOpen();
+
+        Connection conn = null;
+        StoredJDBCMessage message;
+        try
+        {
+            conn = newAutoCommitConnection();
+            try (PreparedStatement stmt = conn.prepareStatement(SELECT_ONE_FROM_META_DATA))
+            {
+                stmt.setLong(1, messageId);
+                try (ResultSet rs = stmt.executeQuery())
+                {
+                    if (rs.next())
+                    {
+                        byte[] dataAsBytes = getBlobAsBytes(rs, 2);
+                        ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
+                        buf.position(1);
+                        buf = buf.slice();
+                        MessageMetaDataType<?> type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                        StorableMessageMetaData metaData = type.createMetaData(buf);
+                        message = new StoredJDBCMessage(messageId, metaData, true);
+
+                    }
+                    else
+                    {
+                        message = null;
+                    }
+                }
+            }
+            return message;
+        }
+        catch (SQLException e)
+        {
+            throw new StoreException("Error encountered when visiting messages", e);
+        }
+        finally
+        {
+            JdbcUtils.closeConnection(conn, getLogger());
+        }
+    }
+
+
+    @Override
     public void visitMessages(MessageHandler handler) throws StoreException
     {
         checkMessageStoreOpen();
@@ -1401,6 +1491,53 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         {
             JdbcUtils.closeConnection(conn, getLogger());
         }
+    }
+
+    @Override
+    public void visitMessageInstances(TransactionLogResource queue, MessageInstanceHandler handler) throws StoreException
+    {
+        checkMessageStoreOpen();
+
+        Connection conn = null;
+        try
+        {
+            conn = newAutoCommitConnection();
+            PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_QUEUE_ENTRY_FOR_QUEUE);
+            try
+            {
+                stmt.setString(1, queue.getId().toString());
+                ResultSet rs = stmt.executeQuery();
+                try
+                {
+                    while(rs.next())
+                    {
+                        String id = rs.getString(1);
+                        long messageId = rs.getLong(2);
+                        if (!handler.handle(UUID.fromString(id), messageId))
+                        {
+                            break;
+                        }
+                    }
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+        catch(SQLException e)
+        {
+            throw new StoreException("Error encountered when visiting message instances", e);
+        }
+        finally
+        {
+            JdbcUtils.closeConnection(conn, getLogger());
+        }
+
     }
 
     @Override
