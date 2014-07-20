@@ -33,6 +33,8 @@ import java.net.URISyntaxException;
 
 public class AMQTopic extends AMQDestination implements Topic
 {
+    private static final long serialVersionUID = -4773561540716587036L;
+
     public AMQTopic(String address) throws URISyntaxException
     {
         super(address);
@@ -43,7 +45,7 @@ public class AMQTopic extends AMQDestination implements Topic
         super(address);
     }
 
-    protected AMQTopic()
+    public AMQTopic()
     {
         super();
     }

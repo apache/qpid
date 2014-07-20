@@ -29,6 +29,8 @@ import org.apache.qpid.url.BindingURL;
  */
 public class AMQHeadersExchange extends AMQDestination
 {
+    private static final long serialVersionUID = 2187866678283988301L;
+
     public AMQHeadersExchange(BindingURL binding)
     {
         super(binding);

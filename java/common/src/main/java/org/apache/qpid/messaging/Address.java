@@ -24,6 +24,7 @@ import org.apache.qpid.messaging.util.AddressParser;
 
 import static org.apache.qpid.messaging.util.PyPrint.pprint;
 
+import java.io.Serializable;
 import java.util.Map;
 
 
@@ -32,8 +33,10 @@ import java.util.Map;
  *
  */
 
-public class Address
+public class Address implements Serializable
 {
+
+    private static final long serialVersionUID = 6096143531336726036L;
 
     private String _name;
     private String _subject;

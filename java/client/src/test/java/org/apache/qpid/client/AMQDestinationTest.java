@@ -20,9 +20,18 @@
  */
 package org.apache.qpid.client;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.jms.Destination;
+import javax.jms.Queue;
+import javax.jms.Topic;
 
 import junit.framework.TestCase;
 
@@ -132,11 +141,12 @@ public class AMQDestinationTest extends TestCase
         assertEmptyLinkBindingsAndSubscriptionArgs(new AMQAnyDestination(xSubscribeAddr));
     }
 
-    private void assertEmptyLinkBindingsAndSubscriptionArgs(AMQDestination dest) {
+    private void assertEmptyLinkBindingsAndSubscriptionArgs(AMQDestination dest)
+    {
         assertEquals("Default link subscription arguments should be the constant Collections empty map.",
                 Collections.emptyMap(), dest.getLink().getSubscription().getArgs());
         assertSame("Defaultl link bindings should be the constant Collections empty list.",
-                Collections.emptyList(), dest.getLink().getBindings());
+                   Collections.emptyList(), dest.getLink().getBindings());
     }
 
     /**
@@ -152,10 +162,69 @@ public class AMQDestinationTest extends TestCase
         assertEmptyNodeBindings(new AMQAnyDestination("ADDR:testDest3; {node: {type: topic}}"));
     }
 
+    public void testSerializeAMQQueue_BURL() throws Exception
+    {
+        Queue queue = new AMQQueue("BURL:direct://amq.direct/test-route/Foo?routingkey='Foo'");
+        assertTrue(queue instanceof Serializable);
+
+        Queue deserialisedQueue = (Queue) serialiseDeserialiseDestination(queue);
+
+        assertEquals(queue, deserialisedQueue);
+        assertEquals(queue.hashCode(), deserialisedQueue.hashCode());
+    }
+
+    public void testSerializeAMQQueue_ADDR() throws Exception
+    {
+        Queue queue = new AMQQueue("ADDR:testDest2; {node: {type: queue}}");
+        assertTrue(queue instanceof Serializable);
+
+        Queue deserialisedQueue = (Queue) serialiseDeserialiseDestination(queue);
+
+        assertEquals(queue, deserialisedQueue);
+        assertEquals(queue.hashCode(), deserialisedQueue.hashCode());
+    }
+
+    public void testSerializeAMQTopic_BURL() throws Exception
+    {
+        Topic topic = new AMQTopic("BURL:topic://amq.topic/mytopic/?routingkey='mytopic'");
+        assertTrue(topic instanceof Serializable);
+
+        Topic deserialisedTopic = (Topic) serialiseDeserialiseDestination(topic);
+
+        assertEquals(topic, deserialisedTopic);
+        assertEquals(topic.hashCode(), deserialisedTopic.hashCode());
+    }
+
+    public void testSerializeAMQTopic_ADDR() throws Exception
+    {
+        Topic topic = new AMQTopic("ADDR:my-topic; {assert: always, node:{ type: topic }}");
+        assertTrue(topic instanceof Serializable);
+
+        Topic deserialisedTopic = (Topic) serialiseDeserialiseDestination(topic);
+
+        assertEquals(topic, deserialisedTopic);
+        assertEquals(topic.hashCode(), deserialisedTopic.hashCode());
+    }
+
     private void assertEmptyNodeBindings(AMQDestination dest)
     {
         assertSame("Empty node bindings should refer to the constant Collections empty list.",
                 Collections.emptyList(), dest.getNode().getBindings());
     }
+
+    private Destination serialiseDeserialiseDestination(final Destination dest) throws Exception
+    {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(dest);
+        oos.close();
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        Object deserializedObject = ois.readObject();
+        ois.close();
+        return (Destination)deserializedObject;
+    }
+
 
 }

@@ -27,7 +27,6 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.CustomJMSXProperty;
-import org.apache.qpid.client.JMSAMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.url.AMQBindingURL;
@@ -611,6 +610,8 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
     private static class DefaultRouterDestination extends AMQDestination implements Queue
     {
+        private static final long serialVersionUID = -5042408431861384536L;
+
         public DefaultRouterDestination(final String replyToEncoding)
         {
             super(AMQShortString.EMPTY_STRING,
@@ -634,6 +635,8 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
     private static class NonBURLReplyToDestination extends AMQDestination implements Queue
     {
+        private static final long serialVersionUID = 122897705932489259L;
+
         public NonBURLReplyToDestination(final String exchange, final String routingKey)
         {
             super(AMQShortString.valueOf(exchange),

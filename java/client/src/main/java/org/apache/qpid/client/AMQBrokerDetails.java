@@ -25,13 +25,16 @@ import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AMQBrokerDetails implements BrokerDetails
+public class AMQBrokerDetails implements BrokerDetails, Serializable
 {
+    private static final long serialVersionUID = 8450786374975932890L;
+
     private String _host;
     private int _port;
     private String _transport;

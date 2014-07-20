@@ -45,6 +45,8 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
+
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Hashtable;
@@ -53,9 +55,10 @@ import java.util.UUID;
 
 public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory,
                                              ObjectFactory, Referenceable, XATopicConnectionFactory,
-                                             XAQueueConnectionFactory, XAConnectionFactory
+                                             XAQueueConnectionFactory, XAConnectionFactory, Serializable
 {
     protected static final String NO_URL_CONFIGURED = "The connection factory wasn't created with a proper URL, the connection details are empty";
+
 
     private ConnectionURL _connectionDetails;
 
@@ -411,5 +414,43 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     public XAQueueConnection createXAQueueConnection(String username, String password) throws JMSException
     {
         return (XAQueueConnection) createXAConnection(username, password);
+    }
+
+    @Override
+    public boolean equals(final Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        final AMQConnectionFactory that = (AMQConnectionFactory) o;
+
+        if (_connectionDetails != null
+                ? !_connectionDetails.equals(that._connectionDetails)
+                : that._connectionDetails != null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _connectionDetails != null ? _connectionDetails.hashCode() : 0;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "AMQConnectionFactory{" +
+               "_connectionDetails=" + _connectionDetails +
+               '}';
     }
 }

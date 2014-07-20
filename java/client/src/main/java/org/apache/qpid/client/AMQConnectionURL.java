@@ -27,13 +27,16 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class AMQConnectionURL implements ConnectionURL
+public class AMQConnectionURL implements ConnectionURL, Serializable
 {
+    private static final long serialVersionUID = -5102704772070465832L;
+
     private String _url;
     private String _failoverMethod;
     private Map<String, String> _failoverOptions;
@@ -43,10 +46,10 @@ public class AMQConnectionURL implements ConnectionURL
     private String _username;
     private String _password;
     private String _virtualHost;
-    private AMQShortString _defaultQueueExchangeName;
-    private AMQShortString _defaultTopicExchangeName;
-    private AMQShortString _temporaryTopicExchangeName;
-    private AMQShortString _temporaryQueueExchangeName;
+    private String _defaultQueueExchangeName;
+    private String _defaultTopicExchangeName;
+    private String _temporaryTopicExchangeName;
+    private String _temporaryQueueExchangeName;
 
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
     {
@@ -183,47 +186,145 @@ public class AMQConnectionURL implements ConnectionURL
 
     public AMQShortString getDefaultQueueExchangeName()
     {
-        return _defaultQueueExchangeName;
+        return _defaultQueueExchangeName == null ? null : new AMQShortString(_defaultQueueExchangeName);
     }
 
     public void setDefaultQueueExchangeName(AMQShortString defaultQueueExchangeName)
     {
-        _defaultQueueExchangeName = defaultQueueExchangeName;
+        _defaultQueueExchangeName = defaultQueueExchangeName == null ? null : defaultQueueExchangeName.asString();
     }
 
     public AMQShortString getDefaultTopicExchangeName()
     {
-        return _defaultTopicExchangeName;
+        return _defaultTopicExchangeName == null ? null : new AMQShortString(_defaultTopicExchangeName);
     }
 
     public void setDefaultTopicExchangeName(AMQShortString defaultTopicExchangeName)
     {
-        _defaultTopicExchangeName = defaultTopicExchangeName;
+        _defaultTopicExchangeName = defaultTopicExchangeName == null ? null : defaultTopicExchangeName.asString();
     }
 
     public AMQShortString getTemporaryQueueExchangeName()
     {
-        return _temporaryQueueExchangeName;
+        return _temporaryQueueExchangeName == null ? null : new AMQShortString(_temporaryQueueExchangeName);
     }
 
     public void setTemporaryQueueExchangeName(AMQShortString temporaryQueueExchangeName)
     {
-        _temporaryQueueExchangeName = temporaryQueueExchangeName;
+        _temporaryQueueExchangeName = temporaryQueueExchangeName == null ? null : temporaryQueueExchangeName.asString();
     }
 
     public AMQShortString getTemporaryTopicExchangeName()
     {
-        return _temporaryTopicExchangeName;
+        return _temporaryTopicExchangeName == null ? null : new AMQShortString(_temporaryTopicExchangeName);
     }
 
     public void setTemporaryTopicExchangeName(AMQShortString temporaryTopicExchangeName)
     {
-        _temporaryTopicExchangeName = temporaryTopicExchangeName;
+        _temporaryTopicExchangeName = temporaryTopicExchangeName == null ? null : temporaryTopicExchangeName.asString() ;
     }
 
+    @Override
+    public boolean equals(final Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        final AMQConnectionURL that = (AMQConnectionURL) o;
+
+        if (_brokers != null ? !_brokers.equals(that._brokers) : that._brokers != null)
+        {
+            return false;
+        }
+        if (_clientName != null ? !_clientName.equals(that._clientName) : that._clientName != null)
+        {
+            return false;
+        }
+        if (_defaultQueueExchangeName != null
+                ? !_defaultQueueExchangeName.equals(that._defaultQueueExchangeName)
+                : that._defaultQueueExchangeName != null)
+        {
+            return false;
+        }
+        if (_defaultTopicExchangeName != null
+                ? !_defaultTopicExchangeName.equals(that._defaultTopicExchangeName)
+                : that._defaultTopicExchangeName != null)
+        {
+            return false;
+        }
+        if (_failoverMethod != null ? !_failoverMethod.equals(that._failoverMethod) : that._failoverMethod != null)
+        {
+            return false;
+        }
+        if (_failoverOptions != null ? !_failoverOptions.equals(that._failoverOptions) : that._failoverOptions != null)
+        {
+            return false;
+        }
+        if (_options != null ? !_options.equals(that._options) : that._options != null)
+        {
+            return false;
+        }
+        if (_password != null ? !_password.equals(that._password) : that._password != null)
+        {
+            return false;
+        }
+        if (_temporaryQueueExchangeName != null
+                ? !_temporaryQueueExchangeName.equals(that._temporaryQueueExchangeName)
+                : that._temporaryQueueExchangeName != null)
+        {
+            return false;
+        }
+        if (_temporaryTopicExchangeName != null
+                ? !_temporaryTopicExchangeName.equals(that._temporaryTopicExchangeName)
+                : that._temporaryTopicExchangeName != null)
+        {
+            return false;
+        }
+        if (_url != null ? !_url.equals(that._url) : that._url != null)
+        {
+            return false;
+        }
+        if (_username != null ? !_username.equals(that._username) : that._username != null)
+        {
+            return false;
+        }
+        if (_virtualHost != null ? !_virtualHost.equals(that._virtualHost) : that._virtualHost != null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _url != null ? _url.hashCode() : 0;
+        result = 31 * result + (_failoverMethod != null ? _failoverMethod.hashCode() : 0);
+        result = 31 * result + (_failoverOptions != null ? _failoverOptions.hashCode() : 0);
+        result = 31 * result + (_options != null ? _options.hashCode() : 0);
+        result = 31 * result + (_brokers != null ? _brokers.hashCode() : 0);
+        result = 31 * result + (_clientName != null ? _clientName.hashCode() : 0);
+        result = 31 * result + (_username != null ? _username.hashCode() : 0);
+        result = 31 * result + (_password != null ? _password.hashCode() : 0);
+        result = 31 * result + (_virtualHost != null ? _virtualHost.hashCode() : 0);
+        result = 31 * result + (_defaultQueueExchangeName != null ? _defaultQueueExchangeName.hashCode() : 0);
+        result = 31 * result + (_defaultTopicExchangeName != null ? _defaultTopicExchangeName.hashCode() : 0);
+        result = 31 * result + (_temporaryTopicExchangeName != null ? _temporaryTopicExchangeName.hashCode() : 0);
+        result = 31 * result + (_temporaryQueueExchangeName != null ? _temporaryQueueExchangeName.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         sb.append(AMQ_PROTOCOL);
         sb.append("://");

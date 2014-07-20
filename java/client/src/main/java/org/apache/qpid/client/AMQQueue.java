@@ -29,7 +29,9 @@ import java.net.URISyntaxException;
 
 public class AMQQueue extends AMQDestination implements Queue
 {
-    protected AMQQueue()
+    private static final long serialVersionUID = -1283142598932655606L;
+
+    public AMQQueue()
     {
         super();
     }

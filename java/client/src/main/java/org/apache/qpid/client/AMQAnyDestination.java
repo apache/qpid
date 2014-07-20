@@ -40,6 +40,8 @@ import java.net.URISyntaxException;
  */
 public class AMQAnyDestination extends AMQDestination implements Queue, Topic
 {
+    private static final long serialVersionUID = 2853054849716163231L;
+
     protected AMQAnyDestination()
     {
         super();
