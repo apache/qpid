@@ -209,7 +209,15 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
     public void closeReceived()
     {
+        Collection<Session_1_0> sessions = new ArrayList(_sessions);
+
+        for(Session_1_0 session : sessions)
+        {
+            session.remoteEnd(new End());
+        }
+
         List<Action<? super Connection_1_0>> taskCopy;
+
         synchronized (_closeTasks)
         {
             taskCopy = new ArrayList<Action<? super Connection_1_0>>(_closeTasks);
