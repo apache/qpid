@@ -59,6 +59,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
     private final AtomicReference<State> _state;
     private final boolean _isMonitor;
+    private boolean _detached;
 
     public BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNode<?> virtualHostNode, Map<String, Object> attributes, ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
     {
@@ -254,5 +255,15 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
         boolean isActive = MASTER.name().equals(role) || REPLICA.name().equals(role);
         _state.compareAndSet(currentState, isActive ? State.ACTIVE : State.UNAVAILABLE);
+    }
+
+    public boolean isDetached()
+    {
+        return _detached;
+    }
+
+    public void setDetached(boolean detached)
+    {
+        this._detached = detached;
     }
 }

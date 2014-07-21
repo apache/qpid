@@ -284,6 +284,86 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DELETED_LOG_HIERARCHY)));
     }
 
+    public void testRemoteNodeDetached() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+        String nodeName = "node1";
+
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
+        BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
+        _helper.assertNodeRole(node1, "MASTER");
+
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress);
+        BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
+        _helper.awaitRemoteNodes(node1, 1);
+
+        reset(_eventLogger);
+
+        BDBHARemoteReplicationNodeImpl remoteNode = (BDBHARemoteReplicationNodeImpl)node1.getRemoteReplicationNodes().iterator().next();
+
+        // close remote node
+        node2.close();
+
+        waitForNodeDetachedField(remoteNode, true);
+
+        // verify that remaining node issues the DETACHED operational logging for remote node
+        String expectedMessage = HighAvailabilityMessages.DETACHED(node2.getName(), groupName).toString();
+        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
+                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DETACHED_LOG_HIERARCHY)));
+    }
+
+
+    public void testRemoteNodeReAttached() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+        String nodeName = "node1";
+
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
+        BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
+        _helper.assertNodeRole(node1, "MASTER");
+
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress);
+        BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
+        _helper.awaitRemoteNodes(node1, 1);
+
+        BDBHARemoteReplicationNodeImpl remoteNode = (BDBHARemoteReplicationNodeImpl)node1.getRemoteReplicationNodes().iterator().next();
+
+        // stop remote node
+        node2.stop();
+
+        waitForNodeDetachedField(remoteNode, true);
+
+        reset(_eventLogger);
+        resetEventLogger();
+
+        node2 = (BDBHAVirtualHostNodeImpl)_helper.recoverHaVHN(node2.getId(), node2Attributes);
+        _helper.assertNodeRole(node2, "REPLICA");
+
+        waitForNodeDetachedField(remoteNode, false);
+
+        // verify that remaining node issues the ATTACHED operational logging for remote node
+        String expectedMessage = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "REPLICA").toString();
+        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
+                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.ATTACHED_LOG_HIERARCHY)));
+    }
+
+    private void waitForNodeDetachedField(BDBHARemoteReplicationNodeImpl remoteNode, boolean expectedDetached) throws InterruptedException {
+        int counter = 0;
+        while (expectedDetached != remoteNode.isDetached() && counter<50)
+        {
+            Thread.sleep(100);
+            counter++;
+        }
+    }
+
     private EventLogger resetEventLogger()
     {
         EventLogger eventLogger = mock(EventLogger.class);

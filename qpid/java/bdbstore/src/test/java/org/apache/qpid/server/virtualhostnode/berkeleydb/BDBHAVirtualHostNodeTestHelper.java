@@ -45,6 +45,9 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
+import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
@@ -190,6 +193,20 @@ public class BDBHAVirtualHostNodeTestHelper
     {
         @SuppressWarnings("unchecked")
         BDBHAVirtualHostNode<?> node = (BDBHAVirtualHostNode<?>) _objectFactory.create(VirtualHostNode.class, attributes, _broker);
+        _nodes.add(node);
+        return node;
+    }
+
+    public BDBHAVirtualHostNode<?> recoverHaVHN(UUID id, Map<String, Object> attributes)
+    {
+        Map<String,ConfiguredObjectRecord> parents = new HashMap<>();
+        parents.put(Broker.class.getSimpleName(),new ConfiguredObjectRecordImpl(_broker.getId(), Broker.class.getSimpleName(), Collections.<String, Object>singletonMap(Broker.NAME, _broker.getName()) ));
+        ConfiguredObjectRecordImpl record = new ConfiguredObjectRecordImpl(id, VirtualHostNode.class.getSimpleName(), attributes, parents );
+
+        @SuppressWarnings("unchecked")
+        UnresolvedConfiguredObject<BDBHAVirtualHostNodeImpl> unresolved =  _objectFactory.recover(record, _broker);
+        BDBHAVirtualHostNode<?> node = unresolved.resolve();
+        node.open();
         _nodes.add(node);
         return node;
     }
