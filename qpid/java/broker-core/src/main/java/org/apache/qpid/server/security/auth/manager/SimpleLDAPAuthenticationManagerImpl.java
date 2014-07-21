@@ -93,6 +93,11 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
     @ManagedAttributeField
     private boolean _bindWithoutSearch;
 
+    @ManagedAttributeField
+    private String _searchUsername;
+    @ManagedAttributeField
+    private String _searchPassword;
+
     /**
      * Dynamically created SSL Socket Factory implementation used in the case where user has specified a trust store.
      */
@@ -147,6 +152,18 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
     public TrustStore getTrustStore()
     {
         return _trustStore;
+    }
+
+    @Override
+    public String getSearchUsername()
+    {
+        return _searchUsername;
+    }
+
+    @Override
+    public String getSearchPassword()
+    {
+        return _searchPassword;
     }
 
 
@@ -344,7 +361,8 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
     private void validateInitialDirContext()
     {
         Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerUrl);
-        env.put(Context.SECURITY_AUTHENTICATION, "none");
+
+        setupSearchContext(env);
 
         InitialDirContext ctx = null;
         try
@@ -358,6 +376,20 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         finally
         {
             closeSafely(ctx);
+        }
+    }
+
+    private void setupSearchContext(final Hashtable<String, Object> env)
+    {
+        if(_searchUsername != null && _searchUsername.trim().length()>0)
+        {
+            env.put(Context.SECURITY_AUTHENTICATION, "simple");
+            env.put(Context.SECURITY_PRINCIPAL, _searchUsername);
+            env.put(Context.SECURITY_CREDENTIALS, _searchPassword);
+        }
+        else
+        {
+            env.put(Context.SECURITY_AUTHENTICATION, "none");
         }
     }
 
@@ -418,7 +450,8 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         {
             Hashtable<String, Object> env = createInitialDirContextEnvironment(_providerUrl);
 
-            env.put(Context.SECURITY_AUTHENTICATION, "none");
+            setupSearchContext(env);
+
             InitialDirContext ctx = createInitialDirContext(env);
 
             try
