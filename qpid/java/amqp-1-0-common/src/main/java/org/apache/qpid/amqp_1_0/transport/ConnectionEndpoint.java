@@ -938,6 +938,19 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         {
             init.setMechanism(SASL_EXTERNAL);
         }
+        else
+        {
+            synchronized (getLock())
+            {
+                _saslComplete = true;
+                _authenticated = false;
+                getLock().notifyAll();
+            }
+            setClosedForInput(true);
+            _saslFrameOutput.close();
+
+            return;
+        }
         _saslFrameOutput.send(new SASLFrame(init), null);
     }
 
