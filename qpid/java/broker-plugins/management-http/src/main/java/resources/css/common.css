@@ -91,30 +91,40 @@ div .messages {
 }
 
 .formBox {
-    border: .1em solid lightgrey;
     margin: 10px 5px;
-    border-radius: 5px;
 }
 
 .formBox legend {
     font-weight: bold;
-    margin-top: -10px;
     margin-left: 5px;
     background-color: white;
 }
 
 .formBox fieldset {
     padding: 5px;
+    border: .1em solid lightgrey;
+    border-radius: 5px;
 }
 
 .formBox .formLabel-labelCell {
     margin-left: 5px;
 }
 
+.formBox .addPermittedNodeList {
+    width: 15em;
+}
+
+.formBox .addPermittedNodeList select {
+    width: 100%;
+}
+
+.formBoxButtons {
+    float : right;
+}
+
 .formLabel-labelCell {
   font-weight: bold;
 }
-
 
 .formLabel-controlCell {
   padding: 1px;
@@ -194,3 +204,5 @@ div .messages {
     padding: 5px;
     font-style: italic;
 }
+
+
