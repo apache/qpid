@@ -176,17 +176,13 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                 new Durability(Durability.SyncPolicy.NO_SYNC, Durability.SyncPolicy.NO_SYNC, Durability.ReplicaAckPolicy.SIMPLE_MAJORITY),
                 master.getRealMessageStoreDurability());
         assertEquals("Unexpected durability", TEST_DURABILITY, master.getMessageStoreDurability());
-        assertTrue("Unexpected coalescing syn", master.isCoalescingSync());
+        assertTrue("Unexpected coalescing sync", master.isCoalescingSync());
 
-        try
-        {
-            master.setMessageStoreDurability(TEST_DURABILITY.getLocalSync(), TEST_DURABILITY.getReplicaSync(), TEST_DURABILITY.getReplicaAck());
-            fail("Cannot set message store durability twice");
-        }
-        catch(IllegalStateException e)
-        {
-            // pass
-        }
+        master.setMessageStoreDurability(Durability.SyncPolicy.WRITE_NO_SYNC, Durability.SyncPolicy.SYNC, Durability.ReplicaAckPolicy.ALL);
+        assertEquals("Unexpected message store durability",
+                new Durability(Durability.SyncPolicy.WRITE_NO_SYNC, Durability.SyncPolicy.SYNC, Durability.ReplicaAckPolicy.ALL),
+                master.getRealMessageStoreDurability());
+        assertFalse("Coalescing sync committer is still running", master.isCoalescingSync());
     }
 
     public void testGetNodeState() throws Exception
