@@ -757,12 +757,22 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 if (nodeState == null)
                 {
                     remoteNode.setRole(ReplicatedEnvironment.State.UNKNOWN.name());
+                    if (!remoteNode.isDetached())
+                    {
+                        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DETACHED(remoteNode.getName(), getGroupName()));
+                        remoteNode.setDetached(true);
+                    }
                 }
                 else
                 {
                     remoteNode.setJoinTime(nodeState.getJoinTime());
                     remoteNode.setLastTransactionId(nodeState.getCurrentTxnEndVLSN());
                     remoteNode.setRole(nodeState.getNodeState().name());
+                    if (remoteNode.isDetached())
+                    {
+                        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.ATTACHED(remoteNode.getName(), getGroupName(), remoteNode.getRole() ));
+                        remoteNode.setDetached(false);
+                    }
                 }
 
                 String newRole = remoteNode.getRole();
