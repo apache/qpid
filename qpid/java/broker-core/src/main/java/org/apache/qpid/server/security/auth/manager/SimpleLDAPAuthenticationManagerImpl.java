@@ -371,7 +371,7 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         }
         catch (NamingException e)
         {
-            throw new ServerScopedRuntimeException("Unable to establish anonymous connection to the ldap server at " + _providerUrl, e);
+            throw new ServerScopedRuntimeException("Unable to establish connection to the ldap server at " + _providerUrl, e);
         }
         finally
         {
