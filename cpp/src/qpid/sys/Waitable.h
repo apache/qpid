@@ -95,8 +95,9 @@ class Waitable : public Monitor {
     /** Throws an exception if one is set before or during the wait. */
     bool wait(const AbsTime& absoluteTime) {
         exception.raise();
-        return Monitor::wait(absoluteTime);
+        bool result = Monitor::wait(absoluteTime);
         exception.raise();
+        return result;
     }
 
   private:
