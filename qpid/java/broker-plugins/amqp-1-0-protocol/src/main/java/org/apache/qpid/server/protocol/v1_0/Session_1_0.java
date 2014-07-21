@@ -510,6 +510,11 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
             iter.remove();
         }
 
+        for(LinkEndpoint linkEndpoint : _endpoint.getLocalLinkEndpoints())
+        {
+            linkEndpoint.remoteDetached(new Detach());
+        }
+
         _connection.sessionEnded(this);
 
     }

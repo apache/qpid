@@ -21,21 +21,38 @@
 
 package org.apache.qpid.amqp_1_0.transport;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.qpid.amqp_1_0.framing.OversizeFrameException;
-import org.apache.qpid.amqp_1_0.type.*;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.DeliveryState;
+import org.apache.qpid.amqp_1_0.type.DistributionMode;
+import org.apache.qpid.amqp_1_0.type.FrameBody;
+import org.apache.qpid.amqp_1_0.type.Outcome;
+import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.messaging.Target;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
 import org.apache.qpid.amqp_1_0.type.messaging.TerminusExpiryPolicy;
-import org.apache.qpid.amqp_1_0.type.transaction.*;
+import org.apache.qpid.amqp_1_0.type.transaction.Coordinator;
 import org.apache.qpid.amqp_1_0.type.transaction.TxnCapability;
-import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
+import org.apache.qpid.amqp_1_0.type.transport.Attach;
+import org.apache.qpid.amqp_1_0.type.transport.Begin;
+import org.apache.qpid.amqp_1_0.type.transport.Detach;
+import org.apache.qpid.amqp_1_0.type.transport.Disposition;
+import org.apache.qpid.amqp_1_0.type.transport.End;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
-
-
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.TimeoutException;
+import org.apache.qpid.amqp_1_0.type.transport.Flow;
+import org.apache.qpid.amqp_1_0.type.transport.LinkError;
+import org.apache.qpid.amqp_1_0.type.transport.Role;
+import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 
 public class SessionEndpoint
 {
@@ -605,7 +622,7 @@ public class SessionEndpoint
             ByteBuffer payload = xfr.getPayload();
             int payloadSent = send(xfr, payload);
 
-            if(payload != null && payloadSent < payload.remaining())
+            if(payload != null && payloadSent < payload.remaining() && payloadSent >= 0)
             {
                 payload = payload.duplicate();
                 payload.position(payload.position()+payloadSent);
@@ -849,6 +866,10 @@ public class SessionEndpoint
         return _linkMap;
     }
 
+    public Collection<LinkEndpoint> getLocalLinkEndpoints()
+    {
+        return new ArrayList<>(_localLinkEndpoints.keySet());
+    }
 
     public boolean isEnded()
     {
