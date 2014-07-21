@@ -851,14 +851,14 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
 
     public void receiveSaslInit(final SaslInit saslInit)
     {
-        Symbol mechanism = saslInit.getMechanism();
+        String mechanism = saslInit.getMechanism() == null ? null : saslInit.getMechanism().toString();
         final Binary initialResponse = saslInit.getInitialResponse();
         byte[] response = initialResponse == null ? new byte[0] : initialResponse.getArray();
 
 
         try
         {
-            _saslServer = _saslServerProvider.getSaslServer(mechanism.toString(), "localhost");
+            _saslServer = _saslServerProvider.getSaslServer(mechanism, "localhost");
 
             // Process response from the client
             byte[] challenge = _saslServer.evaluateResponse(response != null ? response : new byte[0]);
