@@ -20,15 +20,11 @@
  */
 package org.apache.qpid.amqp_1_0.jms.jndi;
 
-import org.apache.qpid.amqp_1_0.jms.impl.ConnectionFactoryImpl;
-import org.apache.qpid.amqp_1_0.jms.impl.DestinationImpl;
-import org.apache.qpid.amqp_1_0.jms.impl.QueueImpl;
-import org.apache.qpid.amqp_1_0.jms.impl.TopicImpl;
-
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
@@ -42,6 +38,11 @@ import javax.jms.Topic;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
+
+import org.apache.qpid.amqp_1_0.jms.impl.ConnectionFactoryImpl;
+import org.apache.qpid.amqp_1_0.jms.impl.DestinationImpl;
+import org.apache.qpid.amqp_1_0.jms.impl.QueueImpl;
+import org.apache.qpid.amqp_1_0.jms.impl.TopicImpl;
 
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
@@ -75,7 +76,18 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             {
 
                 // Load the properties specified
-                BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+                BufferedInputStream inputStream;
+
+                try
+                {
+                    URL fileURL = new URL(file);
+                    inputStream = new BufferedInputStream(fileURL.openStream());
+                }
+                catch(MalformedURLException e)
+                {
+                    inputStream = new BufferedInputStream(new FileInputStream(file));
+                }
+
                 Properties p = new Properties();
                 try
                 {
@@ -85,7 +97,6 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
                 {
                     inputStream.close();
                 }
-
 
                 for (Map.Entry me : p.entrySet())
                 {
