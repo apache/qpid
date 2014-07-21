@@ -43,7 +43,7 @@ define(["dojo/_base/xhr",
           this.virtualHostNodeHelperAddress = registry.byId("addVirtualHostNode.helperAddress");
 
           // add callback
-          virtualHostNodeAddress.on("change", function(address){that._addressChanged(address, that.virtualHostNodeHelperAddress);});
+          virtualHostNodeAddress.on("change", function(address){that._changeAddress(address, that.virtualHostNodeHelperAddress);});
 
           // list objects html node and dojo object
           this.addVirtualHostNodePermittedNodesList = dom.byId("addVirtualHostNode.permittedNodesList");
@@ -52,7 +52,7 @@ define(["dojo/_base/xhr",
 
           // permitted node text field
           this.addVirtualHostNodePermittedNode = registry.byId("addVirtualHostNode.permittedNode");
-          this.addVirtualHostNodePermittedNode.on("input", function(event){that._inputPermittedNode(event);});
+          this.addVirtualHostNodePermittedNode.on("change", function(value){that._changePermittedNode(value);});
 
           // add and remove buttons & click handlers
           this.addVirtualHostNodePermittedNodeAddButton = registry.byId("addVirtualHostNode.permittedNodeAdd");
@@ -93,12 +93,13 @@ define(["dojo/_base/xhr",
           var hasSelection = this.addVirtualHostNodePermittedNodesListDojo.get("value").length > 0;
           this.addVirtualHostNodePermittedNodeRemoveButton.set("disabled", !hasSelection);
         },
-        _inputPermittedNode: function(event)
+        _changePermittedNode: function(value)
         {
-          this.addVirtualHostNodePermittedNodeAddButton.set("disabled", false);
+          var fieldIsEmpty = (this.addVirtualHostNodePermittedNode.get("value") == "");
+          this.addVirtualHostNodePermittedNodeAddButton.set("disabled", fieldIsEmpty);
           return true;
         },
-        _addressChanged: function(address, virtualHostNodeHelperAddress)
+        _changeAddress: function(address, virtualHostNodeHelperAddress)
         {
           virtualHostNodeHelperAddress.set("value", address);
         },
