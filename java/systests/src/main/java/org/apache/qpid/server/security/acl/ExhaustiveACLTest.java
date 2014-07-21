@@ -18,20 +18,23 @@
  */
 package org.apache.qpid.server.security.acl;
 
+import javax.jms.Connection;
+import javax.jms.MessageConsumer;
+import javax.jms.Queue;
+import javax.jms.Session;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
-
-import javax.jms.Connection;
-import javax.jms.Session;
 
 /**
  * ACL version 2/3 file testing to verify that ACL entries control queue creation with specific properties.
  *
  * Tests have their own ACL files that setup specific permissions, and then try to create queues with every possible combination
  * of properties to show that rule matching works correctly. For example, a rule that specified {@code autodelete="true"} for
- * queues with {@link name="temp.true.*"} as well should not affect queues that have names that do not match, or queues that
+ * queues with {@code name="temp.true.*"} as well should not affect queues that have names that do not match, or queues that
  * are not autodelete, or both. Also checks that ACL entries only affect the specified users and virtual hosts.
  */
 public class ExhaustiveACLTest extends AbstractACLTestCase
@@ -115,6 +118,51 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
 		createQueueFailure("test", "client", "temp.false.07", true, false);
 		createQueueFailure("test", "server", "temp.true.08", true, false);
 		createQueueFailure("test", "client", "temp.other.09", false, false);
+    }
+
+
+    public void setUpAuthoriseQueueAutodeleteDeleteByOther() throws Exception
+    {
+        writeACLFile("acl allow client access virtualhost",
+                     "acl allow server access virtualhost",
+                     "acl allow client create queue name=\"temp.true.*\" autodelete=true",
+                     "acl allow server consume queue name=\"temp.true.*\"",
+                     "acl allow server bind exchange",
+                     "acl deny client create queue",
+                     "acl allow client delete queue",
+                     "acl deny all create queue"
+                    );
+    }
+    /**
+     * Test creation of temporary queues, with the autodelete property and then autodeleted.
+     */
+    public void testAuthoriseQueueAutodeleteDeleteByOther() throws Exception
+    {
+        // stop the consumer trying to redeclare the queue
+        setTestSystemProperty(ClientProperties.QPID_DECLARE_QUEUES_PROP_NAME, "false");
+
+        // create a temp queue as use client
+        createQueueSuccess("test", "client", "temp.true.00", true, false);
+
+        // consume from temp queue as user server
+        Connection conn = getConnection("test", "server", "guest");
+        Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        conn.start();
+        Queue queue = sess.createQueue("temp.true.00");
+        MessageConsumer cons = sess.createConsumer(queue);
+        cons.close();
+        sess.close();
+
+        sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        conn.start();
+
+        // test if the queue is bound to the default exchange
+        assertFalse(((AMQSession)sess).isQueueBound("","temp.true.00","temp.true.00",null));
+        sess.close();
+
+        conn.close();
+
+
     }
 
     public void setUpAuthoriseCreateQueue() throws Exception

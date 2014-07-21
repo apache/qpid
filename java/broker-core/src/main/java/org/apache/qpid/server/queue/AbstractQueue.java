@@ -430,7 +430,16 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             @Override
             public void performAction(final Deletable object)
             {
-                getVirtualHost().removeQueue(AbstractQueue.this);
+                Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(),
+                             new PrivilegedAction<Void>()
+                             {
+                                 @Override
+                                 public Void run()
+                                 {
+                                     getVirtualHost().removeQueue(AbstractQueue.this);
+                                     return null;
+                                 }
+                             });
             }
         };
 
@@ -742,7 +751,16 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                     _logger.info("Auto-deleting queue:" + this);
                 }
 
-                getVirtualHost().removeQueue(this);
+                Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
+                             {
+                                 @Override
+                                 public Object run()
+                                 {
+                                     getVirtualHost().removeQueue(AbstractQueue.this);
+                                     return null;
+                                 }
+                             });
+
 
                 // we need to manually fire the event to the removed consumer (which was the last one left for this
                 // queue. This is because the delete method uses the consumer set which has just been cleared
