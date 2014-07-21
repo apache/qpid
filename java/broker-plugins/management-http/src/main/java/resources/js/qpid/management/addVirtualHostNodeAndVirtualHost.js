@@ -27,6 +27,7 @@ define(["dojo/_base/xhr",
         "dojo/json",
         "dojo/parser",
         "dojo/store/Memory",
+        "dojox/lang/functional/object",
         "dijit/registry",
         "dijit/Dialog",
         "dijit/form/Button",
@@ -39,7 +40,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, registry, Dialog, Button, FilteringSelect, properties, template)
+  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, fobject, registry, Dialog, Button, FilteringSelect, properties, template)
   {
 
     var addVirtualHostNodeAndVirtualHost =
@@ -320,7 +321,7 @@ define(["dojo/_base/xhr",
         }
 
         // One or more context variables were defined on form
-        if (Object.keys(contextMap).length > 0)
+        if (fobject.keys(contextMap).length > 0)
         {
             values ["context"] = contextMap;
         }

@@ -17,6 +17,7 @@
  * under the License.
  */
 define(["dojo/_base/xhr",
+        "dojo/_base/window",
         "dojo/parser",
         "dojo/dom",
         "dojo/dom-construct",
@@ -24,9 +25,10 @@ define(["dojo/_base/xhr",
         "dijit/registry",
         "dojo/text!virtualhostnode/bdb_ha/add/newgroup/add.html",
         "dijit/form/ValidationTextBox",
-        "dijit/form/CheckBox",
+        "dijit/form/MultiSelect",
+        "dijit/form/Button",
         "dojo/domReady!"],
-  function (xhr, parser, dom, domConstruct, json, registry, template)
+  function (xhr, win, parser, dom, domConstruct, json, registry, template)
   {
     return {
         show: function(data)
@@ -42,10 +44,126 @@ define(["dojo/_base/xhr",
 
           // add callback
           virtualHostNodeAddress.on("change", function(address){that._addressChanged(address, that.virtualHostNodeHelperAddress);});
+
+          // list objects html node and dojo object
+          this.addVirtualHostNodePermittedNodesList = dom.byId("addVirtualHostNode.permittedNodesList");
+          this.addVirtualHostNodePermittedNodesListDojo = registry.byId("addVirtualHostNode.permittedNodesList");
+          this.addVirtualHostNodePermittedNodesListDojo.on("change", function(value){that._changePermittedNodeList(value);});
+
+          // permitted node text field
+          this.addVirtualHostNodePermittedNode = registry.byId("addVirtualHostNode.permittedNode");
+          this.addVirtualHostNodePermittedNode.on("input", function(event){that._inputPermittedNode(event);});
+
+          // add and remove buttons & click handlers
+          this.addVirtualHostNodePermittedNodeAddButton = registry.byId("addVirtualHostNode.permittedNodeAdd");
+          this.addVirtualHostNodePermittedNodeAddButton.set("disabled", true);
+          this.addVirtualHostNodePermittedNodeRemoveButton = registry.byId("addVirtualHostNode.permittedNodeRemove");
+          this.addVirtualHostNodePermittedNodeRemoveButton.set("disabled", true);
+          this.addVirtualHostNodePermittedNodeAddButton.on("click", function(e){that._clickAddPermittedNodeButton(e);});
+          this.addVirtualHostNodePermittedNodeRemoveButton.on("click", function(e){that._clickRemovePermittedNodeButton(e);});
+
+          // This will contain the serialised form that will go to the server
+          this.addVirtualHostNodeVirtualhostBlueprint = registry.byId("addVirtualHostNode.virtualhostBlueprint");
+          this.addVirtualHostNodeAddress = registry.byId("addVirtualHostNode.address");
+          this.addVirtualHostNodeAddress.on("click", function(e){that._updatePermittedNodesJson();});
+        },
+        _updatePermittedNodesJson: function ()
+        {
+          var nodeAddress = this.addVirtualHostNodeAddress.get("value");
+          var permittedNodes = [ ];
+          if (nodeAddress)
+          {
+            permittedNodes.push(nodeAddress);
+          }
+          var children = this.addVirtualHostNodePermittedNodesList.children;
+          var i;
+          for (i = 0; i < children.length; i++)
+          {
+            var child = children.item(i);
+            if (child.value != nodeAddress)
+            {
+              permittedNodes.push(child.value);
+            }
+          }
+
+          this.addVirtualHostNodeVirtualhostBlueprint.set("value",json.stringify({"permittedNodes" : permittedNodes}));
+        },
+        _changePermittedNodeList: function(value)
+        {
+          var hasSelection = this.addVirtualHostNodePermittedNodesListDojo.get("value").length > 0;
+          this.addVirtualHostNodePermittedNodeRemoveButton.set("disabled", !hasSelection);
+        },
+        _inputPermittedNode: function(event)
+        {
+          this.addVirtualHostNodePermittedNodeAddButton.set("disabled", false);
+          return true;
         },
         _addressChanged: function(address, virtualHostNodeHelperAddress)
         {
           virtualHostNodeHelperAddress.set("value", address);
+        },
+        _clickAddPermittedNodeButton: function(e)
+        {
+          // check the text box is valid and not empty
+          if(this.addVirtualHostNodePermittedNode.isValid() &&
+                this.addVirtualHostNodePermittedNode.value &&
+                this.addVirtualHostNodePermittedNode.value != "")
+          {
+            // read value to add from text box
+            var newAddress = this.addVirtualHostNodePermittedNode.value;
+
+            // clear UI value
+            this.addVirtualHostNodePermittedNode.set("value", "");
+            this.addVirtualHostNodePermittedNodeAddButton.set("disabled", true);
+
+            //check entry not already present in list
+            var alreadyPresent = false;
+            var children = this.addVirtualHostNodePermittedNodesList.children;
+            var i;
+            for (i = 0; i < children.length; i++)
+              {
+                var child = children.item(i);
+                if (child.value == newAddress)
+                {
+                  alreadyPresent = true;
+                  break;
+                }
+              }
+
+              if (!alreadyPresent)
+              {
+                // construct new option for list
+                var newOption = win.doc.createElement('option');
+                newOption.innerHTML = newAddress;
+                newOption.value = newAddress;
+
+                // add new option to list
+                this.addVirtualHostNodePermittedNodesList.appendChild(newOption);
+              }
+          }
+          this._updatePermittedNodesJson();
+        },
+        _clickRemovePermittedNodeButton: function(e)
+        {
+          var selectedValues = this.addVirtualHostNodePermittedNodesListDojo.get("value");
+          var v;
+          for (v in selectedValues)
+          {
+            var children = this.addVirtualHostNodePermittedNodesList.children;
+            var i;
+            for (i = 0; i < children.length; i++)
+            {
+              var child = children.item(i);
+              if (child.value == selectedValues[v])
+              {
+                this.addVirtualHostNodePermittedNodesList.removeChild(child);
+              }
+            }
+          }
+          this.addVirtualHostNodePermittedNodeRemoveButton.set("disabled", true);
+
+          this._updatePermittedNodesJson();
+
         }
     };
   }

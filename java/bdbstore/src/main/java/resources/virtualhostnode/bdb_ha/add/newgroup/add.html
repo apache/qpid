@@ -18,7 +18,7 @@
   -->
 <div>
     <div style="clear:both">
-      <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Node Name*:</div>
+      <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Node name*:</div>
       <div class="formLabel-controlCell tableContainer-valueCell" style="float:left;">
           <input type="text" id="addVirtualHostNode.nodeName"
                           data-dojo-type="dijit/form/ValidationTextBox"
@@ -32,7 +32,7 @@
       </div>
     </div>
     <div style="clear:both">
-      <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Group Name*:</div>
+      <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Group name*:</div>
       <div class="formLabel-controlCell tableContainer-valueCell" style="float:left;">
           <input type="text" id="addVirtualHostNode.groupName"
                           data-dojo-type="dijit/form/ValidationTextBox"
@@ -72,6 +72,48 @@
                               title: 'Enter store path'" />
       </div>
     </div>
+    <div class="formBox" style="clear:both">
+        <fieldset>
+            <legend>Permitted group nodes</legend>
+            <div style="clear:both">
+                <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Permitted addresses*:</div>
+                <div class="formLabel-controlCell tableContainer-valueCell addPermittedNodeList" style="float:left;">
+                    <select type="text" id="addVirtualHostNode.permittedNodesList"
+                           data-dojo-type="dijit/form/MultiSelect"
+                           data-dojo-props="
+                                      name: 'permittedNodesList',
+                                      readOnly : 'true',
+                                      title: 'Enter permitted nodes'">
+                    </select> <!-- must use closing tag rather than shorthand - dojo bug? -->
+                </div>
+                <div class="formBoxButtons">
+                    <button data-dojo-type="dijit/form/Button" id="addVirtualHostNode.permittedNodeRemove" data-dojo-props="label: '-'" ></button>
+                </div>
+            </div>
+
+            <div style="clear:both"></div>
+            <div style="clear:both">
+                <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Address:</div>
+                <div class="formLabel-controlCell tableContainer-valueCell" style="float:left;">
+                    <input type="text" id="addVirtualHostNode.permittedNode"
+                           data-dojo-type="dijit/form/ValidationTextBox"
+                           data-dojo-props="
+                                      name: 'permittedNode',
+                                      placeHolder: 'host:port',
+                                      title: 'Enter address',
+                                      pattern: '([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}'" />
+                </div>
+                <div class="formBoxButtons">
+                    <button data-dojo-type="dijit/form/Button" id="addVirtualHostNode.permittedNodeAdd" data-dojo-props="label: '+'"></button>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+
+    <input type="hidden" id="addVirtualHostNode.virtualhostBlueprint"
+           data-dojo-type="dijit/form/ValidationTextBox"
+           data-dojo-props="name: 'virtualhostBlueprint'"
+           contextvar="true"/>
 
     <input type="hidden" id="addVirtualHostNode.helperAddress"
            data-dojo-type="dijit/form/ValidationTextBox"
