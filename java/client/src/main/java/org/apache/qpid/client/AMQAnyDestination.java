@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.messaging.Address;
-import org.apache.qpid.url.BindingURL;
+import java.net.URISyntaxException;
 
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.Topic;
-import java.net.URISyntaxException;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.messaging.Address;
+import org.apache.qpid.url.BindingURL;
 
 /**
  * In order to support JMS 1.0 the Qpid implementation maps the 
@@ -42,7 +43,7 @@ public class AMQAnyDestination extends AMQDestination implements Queue, Topic
 {
     private static final long serialVersionUID = 2853054849716163231L;
 
-    protected AMQAnyDestination()
+    public AMQAnyDestination()
     {
         super();
     }
