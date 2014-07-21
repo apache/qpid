@@ -25,6 +25,7 @@
                    data-dojo-type="dijit/form/NumberTextBox"
                    data-dojo-props="
                               name: 'storeOverfullSize',
+                              placeHolder: 'size in bytes',
                               required: false,
                               title: 'Enter ceiling (in bytes) at which store will begin to throttle sessions producing messages',
                               constraints:{min:0,places:0}" />
@@ -37,6 +38,7 @@
                    data-dojo-type="dijit/form/NumberTextBox"
                    data-dojo-props="
                               name: 'storeUnderfullSize',
+                              placeHolder: 'size in bytes',
                               required: false,
                               title: 'Enter floor (in bytes) at which store will cease to throttle sessions producing messages',
                               constraints:{min:0,places:0}" />
