@@ -20,22 +20,6 @@
  */
 package org.apache.qpid.amqp_1_0.framing;
 
-import org.apache.qpid.amqp_1_0.codec.FrameWriter;
-import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
-import org.apache.qpid.amqp_1_0.codec.ProtocolHeaderHandler;
-import org.apache.qpid.amqp_1_0.codec.ValueHandler;
-import org.apache.qpid.amqp_1_0.codec.ValueWriter;
-import org.apache.qpid.amqp_1_0.transport.BytesProcessor;
-import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
-
-import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.transport.Open;
-import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.UnsignedShort;
-import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -46,6 +30,21 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.qpid.amqp_1_0.codec.FrameWriter;
+import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
+import org.apache.qpid.amqp_1_0.codec.ProtocolHeaderHandler;
+import org.apache.qpid.amqp_1_0.codec.ValueHandler;
+import org.apache.qpid.amqp_1_0.codec.ValueWriter;
+import org.apache.qpid.amqp_1_0.transport.BytesProcessor;
+import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
+import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedShort;
+import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
+import org.apache.qpid.amqp_1_0.type.transport.Open;
 
 public class ConnectionHandler
 {
@@ -87,7 +86,7 @@ public class ConnectionHandler
 
     // ----------------------------------------------------------------
 
-    public static class FrameOutput<T> implements FrameOutputHandler<T>, FrameSource
+    public static class FrameOutput<T> implements FrameOutputHandler<T>
     {
 
         private static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.wrap(new byte[0]);
@@ -114,6 +113,39 @@ public class ConnectionHandler
         public FrameOutput(final ConnectionEndpoint conn)
         {
             _conn = conn;
+        }
+
+        public FrameSource asFrameSource()
+        {
+            return new FrameSource()
+            {
+                @Override
+                public AMQFrame getNextFrame(final boolean wait)
+                {
+                    return FrameOutput.this.getNextFrame(wait);
+                }
+
+                @Override
+                public boolean closed()
+                {
+                    return FrameOutput.this.closed();
+                }
+
+                @Override
+                public void close()
+                {
+                    FrameOutput.this.immediateClose();
+                }
+            };
+        }
+
+        private void immediateClose()
+        {
+            synchronized (_conn.getLock())
+            {
+                _closed = true;
+                _conn.getLock().notifyAll();
+            }
         }
 
         public boolean canSend()
@@ -239,6 +271,8 @@ public class ConnectionHandler
     {
         AMQFrame<T> getNextFrame(boolean wait);
         boolean closed();
+
+        void close();
     }
 
 
@@ -246,6 +280,8 @@ public class ConnectionHandler
     {
         void getBytes(BytesProcessor processor, boolean wait);
         boolean closed();
+
+        void close();
     }
 
     public static class FrameToBytesSourceAdapter implements BytesSource
@@ -320,6 +356,12 @@ public class ConnectionHandler
         {
             return _buffer.position() == 0 && _frameSource.closed();
         }
+
+        @Override
+        public void close()
+        {
+            _frameSource.close();
+        }
     }
 
 
@@ -343,6 +385,11 @@ public class ConnectionHandler
         public boolean closed()
         {
             return !_buffer.hasRemaining();
+        }
+
+        @Override
+        public void close()
+        {
         }
     }
 
@@ -378,6 +425,19 @@ public class ConnectionHandler
         public boolean closed()
         {
             return _sources.isEmpty();
+        }
+
+        @Override
+        public void close()
+        {
+            BytesSource src = _sources.peek();
+            while (src != null)
+            {
+                src.close();
+                _sources.poll();
+                src = _sources.peek();
+            }
+
         }
     }
 
@@ -419,6 +479,19 @@ public class ConnectionHandler
         public boolean closed()
         {
             return _sources.isEmpty();
+        }
+
+        @Override
+        public void close()
+        {
+            FrameSource src = _sources.peek();
+            while (src != null)
+            {
+                src.close();
+                _sources.poll();
+                src = _sources.peek();
+            }
+
         }
     }
 
@@ -470,6 +543,7 @@ public class ConnectionHandler
             catch (IOException e)
             {
                 _closed = true;
+                _bytesSource.close();
                 _exceptionHandler.handleException(e);
             }
         }

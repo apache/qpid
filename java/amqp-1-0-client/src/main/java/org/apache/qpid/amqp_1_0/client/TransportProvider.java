@@ -20,12 +20,10 @@
  */
 package org.apache.qpid.amqp_1_0.client;
 
-import org.apache.qpid.amqp_1_0.framing.ConnectionHandler;
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.amqp_1_0.framing.ExceptionHandler;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
-import org.apache.qpid.amqp_1_0.type.FrameBody;
-
-import javax.net.ssl.SSLContext;
 
 public interface TransportProvider
 {
@@ -34,4 +32,6 @@ public interface TransportProvider
                  int port,
                  SSLContext sslContext,
                  ExceptionHandler exceptionHandler) throws ConnectionException;
+
+    void close();
 }

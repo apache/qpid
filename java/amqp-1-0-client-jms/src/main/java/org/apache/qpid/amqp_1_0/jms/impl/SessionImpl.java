@@ -891,9 +891,10 @@ public class SessionImpl implements Session, QueueSession, TopicSession
         {
             synchronized(getLock())
             {
-                while(!_closed)
+
+                while(!(_closed || getClientSession().getEndpoint().isEnded()))
                 {
-                    while(!_closed && (!_started || (_recoveredMessage == null && _messageConsumerList.isEmpty())))
+                    while(!(_closed || getClientSession().getEndpoint().isEnded()) && (!_started || (_recoveredMessage == null && _messageConsumerList.isEmpty())))
                     {
                         try
                         {
@@ -904,7 +905,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                             return;
                         }
                     }
-                    while(!_closed && (_started && (_recoveredMessage != null || !_messageConsumerList.isEmpty())))
+                    while(!(_closed || getClientSession().getEndpoint().isEnded()) && (_started && (_recoveredMessage != null || !_messageConsumerList.isEmpty())))
                     {
                         Message msg;
 

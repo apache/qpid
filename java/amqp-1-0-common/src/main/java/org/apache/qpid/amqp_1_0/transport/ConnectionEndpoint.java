@@ -179,20 +179,27 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     {
         if (_requiresSASLClient)
         {
-            synchronized (getLock())
+            try
             {
-                while (!(_saslComplete || _closedForInput))
+                waitUntil(new Predicate()
                 {
-                    try
+
+                    @Override
+                    public boolean isSatisfied()
                     {
-                        getLock().wait();
+                        return _saslComplete || _closedForInput;
                     }
-                    catch (InterruptedException e)
-                    {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
-                }
+                });
             }
+            catch (TimeoutException e)
+            {
+                throw new RuntimeException("Could not connect - authentication error");
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+
             if (!_authenticated)
             {
                 throw new RuntimeException("Could not connect - authentication error");
@@ -470,6 +477,10 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
 
                     }
                 }
+            }
+            if(_connectionEventListener != null)
+            {
+                _connectionEventListener.closeReceived();
             }
         }
         notifyAll();
@@ -801,9 +812,9 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         return _describedTypeRegistry;
     }
 
-    public synchronized void setClosedForOutput(boolean b)
+    public synchronized void setClosedForOutput(boolean closed)
     {
-        _closedForOutput = true;
+        _closedForOutput = closed;
         notifyAll();
     }
 
