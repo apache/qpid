@@ -24,12 +24,11 @@ package org.apache.qpid.server.queue;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.TaskPrincipal;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.TransportException;
 
 import javax.security.auth.Subject;
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -73,16 +72,16 @@ class SubFlushRunner implements Runnable
                     {
                         complete = getQueue().flushConsumer(_sub, ITERATIONS);
                     }
-                    catch (final TransportException transe)
+                    catch (ConnectionScopedRuntimeException | TransportException  e)
                     {
                         final String errorMessage = "Problem during asynchronous delivery by " + toString();
                         if(_logger.isDebugEnabled())
                         {
-                            _logger.debug(errorMessage, transe);
+                            _logger.debug(errorMessage, e);
                         }
                         else
                         {
-                            _logger.info(errorMessage + ' ' + transe.getMessage());
+                            _logger.info(errorMessage + ' ' + e.getMessage());
                         }
                     }
                     finally

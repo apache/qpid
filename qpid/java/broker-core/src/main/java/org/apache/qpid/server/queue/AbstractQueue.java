@@ -82,11 +82,13 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.util.MapValueConverter;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.transport.TransportException;
 
 public abstract class AbstractQueue<X extends AbstractQueue<X>>
         extends AbstractConfiguredObject<X>
@@ -931,90 +933,115 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         final QueueConsumer<?> exclusiveSub = _exclusiveSubscriber;
         final QueueEntry entry = getEntries().add(message);
 
-        if(action != null || (exclusiveSub == null  && _queueRunner.isIdle()))
+        try
         {
-            /*
-            * iterate over consumers and if any is at the end of the queue and can deliver this message,
-             * then deliver the message
-             */
-
-            Subject.doAs(SecurityManager.getSystemTaskSubject("Immediate Delivery"),
-                         new PrivilegedAction<Object>()
-                         {
-                             @Override
-                             public Object run()
+            if (action != null || (exclusiveSub == null  && _queueRunner.isIdle()))
+            {
+                Subject.doAs(SecurityManager.getSystemTaskSubject("Immediate Delivery"),
+                             new PrivilegedAction<Void>()
                              {
-
-                                 QueueConsumerList.ConsumerNode node = _consumerList.getMarkedNode();
-                                 QueueConsumerList.ConsumerNode nextNode = node.findNext();
-                                 if (nextNode == null)
+                                 @Override
+                                 public Void run()
                                  {
-                                     nextNode = _consumerList.getHead().findNext();
+                                     tryDeliverStraightThrough(entry);
+                                     return null;
                                  }
-                                 while (nextNode != null)
-                                 {
-                                     if (_consumerList.updateMarkedNode(node, nextNode))
-                                     {
-                                         break;
-                                     }
-                                     else
-                                     {
-                                         node = _consumerList.getMarkedNode();
-                                         nextNode = node.findNext();
-                                         if (nextNode == null)
-                                         {
-                                             nextNode = _consumerList.getHead().findNext();
-                                         }
-                                     }
-                                 }
-                                 // always do one extra loop after we believe we've finished
-                                 // this catches the case where we *just* miss an update
-                                 int loops = 2;
-
-                                 while (entry.isAvailable() && loops != 0)
-                                 {
-                                     if (nextNode == null)
-                                     {
-                                         loops--;
-                                         nextNode = _consumerList.getHead();
-                                     }
-                                     else
-                                     {
-                                         // if consumer at end, and active, offer
-                                         final QueueConsumer<?> sub = nextNode.getConsumer();
-                                         deliverToConsumer(sub, entry);
-
-
-                                     }
-                                     nextNode = nextNode.findNext();
-
-                                 }
-
-                                 return null;
                              }
-                         });
+                            );
+            }
+
+            if (entry.isAvailable())
+            {
+                checkConsumersNotAheadOfDelivery(entry);
+
+                if (exclusiveSub != null)
+                {
+                    deliverAsync(exclusiveSub);
+                }
+                else
+                {
+                    deliverAsync();
+                }
+            }
+
+            checkForNotification(entry.getMessage());
+        }
+        finally
+        {
+            if(action != null)
+            {
+                action.performAction(entry);
+            }
         }
 
+    }
 
-        if (entry.isAvailable())
+    /**
+     * iterate over consumers and if any is at the end of the queue and can deliver this message,
+     * then deliver the message
+     */
+    private void tryDeliverStraightThrough(final QueueEntry entry)
+    {
+        try
         {
-            checkConsumersNotAheadOfDelivery(entry);
-
-            if (exclusiveSub != null)
+            QueueConsumerList.ConsumerNode node = _consumerList.getMarkedNode();
+            QueueConsumerList.ConsumerNode nextNode = node.findNext();
+            if (nextNode == null)
             {
-                deliverAsync(exclusiveSub);
+                nextNode = _consumerList.getHead().findNext();
+            }
+            while (nextNode != null)
+            {
+                if (_consumerList.updateMarkedNode(node, nextNode))
+                {
+                    break;
+                }
+                else
+                {
+                    node = _consumerList.getMarkedNode();
+                    nextNode = node.findNext();
+                    if (nextNode == null)
+                    {
+                        nextNode = _consumerList.getHead().findNext();
+                    }
+                }
+            }
+            // always do one extra loop after we believe we've finished
+            // this catches the case where we *just* miss an update
+            int loops = 2;
+
+            while (entry.isAvailable() && loops != 0)
+            {
+                if (nextNode == null)
+                {
+                    loops--;
+                    nextNode = _consumerList.getHead();
+                }
+                else
+                {
+                    // if consumer at end, and active, offer
+                    final QueueConsumer<?> sub = nextNode.getConsumer();
+                    deliverToConsumer(sub, entry);
+
+
+                }
+                nextNode = nextNode.findNext();
+
+            }
+        }
+        catch (ConnectionScopedRuntimeException | TransportException e)
+        {
+            String errorMessage = "Suppressing " + e.getClass().getSimpleName() +
+                              " during straight through delivery, as this" +
+                              " can only indicate an issue with a consumer.";
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug(errorMessage, e);
             }
             else
             {
-                deliverAsync();
-           }
-        }
-
-        checkForNotification(entry.getMessage());
-
-        if(action != null)
-        {
-            action.performAction(entry);
+                _logger.info(errorMessage + ' ' + e.getMessage());
+            }
         }
     }
 
