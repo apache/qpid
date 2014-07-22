@@ -635,7 +635,7 @@
         <profile.qpid.broker_default_amqp_protocol_excludes>AMQP_1_0,AMQP_0_10</profile.qpid.broker_default_amqp_protocol_excludes>
         <profile.broker.persistent>true</profile.broker.persistent>
         <profile.virtualhostnode.type>JSON</profile.virtualhostnode.type>
-        <profile.virtualhostnode.context.blueprint>{"type":"DERBY","storePath":"${dollar.sign}{QPID_WORK}/${dollar.sign}{this:name}/derby"}</profile.virtualhostnode.context.blueprint>
+        <profile.virtualhostnode.context.blueprint>{"type":"DERBY","storePath":"${dollar.sign}{json:QPID_WORK}/${dollar.sign}{this:name}/derby"}</profile.virtualhostnode.context.blueprint>
       </properties>
     </profile>
 

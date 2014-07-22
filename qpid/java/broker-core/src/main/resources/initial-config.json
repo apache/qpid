@@ -57,7 +57,7 @@
     "type" : "JSON",
     "storePath" : "${qpid.work_dir}/default/config",
     "context" : {
-        "virtualhostBlueprint" : "{ \"type\" : \"DERBY\", \"storePath\" : \"${qpid.work_dir}/default/messages\" }"
+        "virtualhostBlueprint" : "{ \"type\" : \"DERBY\", \"storePath\" : \"${json:qpid.work_dir}/default/messages\" }"
     }
   } ],
   "plugins" : [ {
