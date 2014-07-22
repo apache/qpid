@@ -229,8 +229,9 @@ void SessionState::handleContent(AMQFrame& frame)
 
         IncompleteIngressMsgXfer xfer(this, msg);
         msg->getIngressCompletion().begin();
-        semanticState.route(deliverable.getMessage(), deliverable);
+        // This call should come before routing, because it calcs required credit.
         msgBuilder.end();
+        semanticState.route(deliverable.getMessage(), deliverable);
         msg->getIngressCompletion().end(xfer);  // allows msg to complete xfer
     }
 }

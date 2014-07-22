@@ -153,17 +153,27 @@ uint32_t MessageTransfer::getRequiredCredit() const
     if (cachedRequiredCredit) {
         return requiredCredit;
     } else {
-        qpid::framing::SumBodySize sum;
-        frames.map_if(sum, qpid::framing::TypeFilter2<qpid::framing::HEADER_BODY, qpid::framing::CONTENT_BODY>());
-        return sum.getSize();
+    // TODO -- remove this code and replace it with a QPID_ASSERT(cachedRequiredCredit),
+    //         then fix whatever breaks.  compute should always be called before get.
+        uint32_t sum = 0;
+        for(FrameSet::Frames::const_iterator i = frames.begin(); i != frames.end(); ++i ) {
+            uint8_t type = (*i).getBody()->type();
+            if ((type == qpid::framing::HEADER_BODY ) || (type == qpid::framing::CONTENT_BODY ))
+                sum += (*i).getBody()->encodedSize();
+        }
+        return sum;
     }
 }
 void MessageTransfer::computeRequiredCredit()
 {
     //add up payload for all header and content frames in the frameset
-    qpid::framing::SumBodySize sum;
-    frames.map_if(sum, qpid::framing::TypeFilter2<qpid::framing::HEADER_BODY, qpid::framing::CONTENT_BODY>());
-    requiredCredit = sum.getSize();
+    uint32_t sum = 0;
+    for(FrameSet::Frames::const_iterator i = frames.begin(); i != frames.end(); ++i ) {
+        uint8_t type = (*i).getBody()->type();
+        if ((type == qpid::framing::HEADER_BODY ) || (type == qpid::framing::CONTENT_BODY ))
+            sum += (*i).getBody()->encodedSize();
+    }
+    requiredCredit = sum;
     cachedRequiredCredit = true;
 }
 

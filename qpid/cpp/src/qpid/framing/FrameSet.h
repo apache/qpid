@@ -37,7 +37,10 @@ namespace framing {
  */
 class FrameSet
 {
+public:
     typedef InlineVector<AMQFrame, 4> Frames;
+
+private:
     const SequenceNumber id;
     Frames parts;
     mutable uint64_t contentSize;
