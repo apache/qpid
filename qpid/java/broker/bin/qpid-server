@@ -39,7 +39,7 @@ QPID_LIBS="$QPID_HOME/lib/*:$QPID_HOME/lib/plugins/*:$QPID_HOME/lib/opt/*"
 # Set other variables used by the qpid-run script before calling
 export JAVA=java \
        JAVA_VM=-server \
-       JAVA_MEM=-Xmx1024m \
+       JAVA_MEM=-Xmx2g \
        JAVA_GC="-XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError" \
        QPID_CLASSPATH=$QPID_LIBS \
        QPID_RUN_LOG=2 
