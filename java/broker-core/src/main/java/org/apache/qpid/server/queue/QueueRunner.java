@@ -21,16 +21,13 @@
 package org.apache.qpid.server.queue;
 
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.security.*;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.TaskPrincipal;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.TransportException;
 
@@ -79,7 +76,7 @@ public class QueueRunner implements Runnable
                     {
                         runAgain = _queue.processQueue(QueueRunner.this);
                     }
-                    catch (final ConnectionScopedRuntimeException e)
+                    catch (ConnectionScopedRuntimeException | TransportException  e)
                     {
                         final String errorMessage = "Problem during asynchronous delivery by " + toString();
                         if(_logger.isDebugEnabled())
@@ -89,18 +86,6 @@ public class QueueRunner implements Runnable
                         else
                         {
                             _logger.info(errorMessage + ' ' + e.getMessage());
-                        }
-                    }
-                    catch (final TransportException transe)
-                    {
-                        final String errorMessage = "Problem during asynchronous delivery by " + toString();
-                        if(_logger.isDebugEnabled())
-                        {
-                            _logger.debug(errorMessage, transe);
-                        }
-                        else
-                        {
-                            _logger.info(errorMessage + ' ' + transe.getMessage());
                         }
                     }
                     finally
