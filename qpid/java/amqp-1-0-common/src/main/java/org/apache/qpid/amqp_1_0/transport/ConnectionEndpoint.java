@@ -181,7 +181,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         {
             synchronized (getLock())
             {
-                while (!_saslComplete)
+                while (!(_saslComplete || _closedForInput))
                 {
                     try
                     {
@@ -711,8 +711,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
 
     public void invalidHeaderReceived()
     {
-        // TODO
-        _closedForInput = true;
+        setClosedForInput(true);
     }
 
     public synchronized boolean closedForInput()

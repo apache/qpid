@@ -19,16 +19,17 @@
 
 package org.apache.qpid.amqp_1_0.framing;
 
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
-
-import java.nio.ByteBuffer;
 
 public class SASLProtocolHeaderHandler implements ProtocolHandler
 {
     private ConnectionEndpoint _connection;
     private static final byte MAJOR_VERSION = (byte) 1;
     private static final byte MINOR_VERSION = (byte) 0;
+    private boolean _done;
 
     enum State {
         AWAITING_MAJOR,
@@ -54,26 +55,30 @@ public class SASLProtocolHeaderHandler implements ProtocolHandler
             {
                 case AWAITING_MAJOR:
                     _state = in.get() == MAJOR_VERSION ? State.AWAITING_MINOR : State.ERROR;
-                    if(!in.hasRemaining())
+                    if(_state == State.ERROR || !in.hasRemaining())
                     {
+                        _done = true;
                         break;
                     }
                 case AWAITING_MINOR:
                     _state = in.get() == MINOR_VERSION ? State.AWAITING_MINOR : State.ERROR;
-                    if(!in.hasRemaining())
+                    if(_state == State.ERROR || !in.hasRemaining())
                     {
+                        _done = true;
                         break;
                     }
                 case AWAITING_REVISION:
                     byte revision = in.get();
                     _connection.protocolHeaderReceived(MAJOR_VERSION, MINOR_VERSION, revision);
                     ProtocolHandler handler = new SASLFrameHandler(_connection);
+                    _done = true;
                     return handler.parse(in);
             }
         }
         if(_state == State.ERROR)
         {
             _connection.invalidHeaderReceived();
+
         }
         return this;
 
@@ -81,6 +86,6 @@ public class SASLProtocolHeaderHandler implements ProtocolHandler
 
     public boolean isDone()
     {
-        return _state != State.ERROR && !_connection.closedForInput();
+        return _done || _connection.closedForInput();
     }
 }
