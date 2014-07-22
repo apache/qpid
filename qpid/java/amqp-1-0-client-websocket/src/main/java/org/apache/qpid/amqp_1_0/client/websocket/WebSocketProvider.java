@@ -20,6 +20,18 @@
  */
 package org.apache.qpid.amqp_1_0.client.websocket;
 
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
+
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.websocket.WebSocket;
+import org.eclipse.jetty.websocket.WebSocketClient;
+import org.eclipse.jetty.websocket.WebSocketClientFactory;
+
 import org.apache.qpid.amqp_1_0.client.ConnectionException;
 import org.apache.qpid.amqp_1_0.client.TransportProvider;
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
@@ -29,16 +41,6 @@ import org.apache.qpid.amqp_1_0.framing.ExceptionHandler;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.websocket.WebSocket;
-import org.eclipse.jetty.websocket.WebSocketClient;
-import org.eclipse.jetty.websocket.WebSocketClientFactory;
-
-import javax.net.ssl.SSLContext;
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
 
 class WebSocketProvider implements TransportProvider
 {
@@ -49,6 +51,7 @@ class WebSocketProvider implements TransportProvider
     private static QueuedThreadPool _threadPool;
     private final String _transport;
     private static WebSocketClientFactory _factory;
+    private WebSocket.Connection _connection;
 
     public WebSocketProvider(final String transport)
     {
@@ -134,7 +137,7 @@ class WebSocketProvider implements TransportProvider
                                                                                                (byte)1,
                                                                                                (byte)0,
                                                                                                (byte)0),
-                                                                   saslOut,
+                                                                   saslOut.asFrameSource(),
                                                                    new HeaderFrameSource((byte)'A',
                                                                                                (byte)'M',
                                                                                                (byte)'Q',
@@ -143,7 +146,7 @@ class WebSocketProvider implements TransportProvider
                                                                                                (byte)1,
                                                                                                (byte)0,
                                                                                                (byte)0),
-                                                                   out);
+                                                                   out.asFrameSource());
 
                 conn.setSaslFrameOutput(saslOut);
             }
@@ -157,13 +160,13 @@ class WebSocketProvider implements TransportProvider
                                                                                                (byte)1,
                                                                                                (byte)0,
                                                                                                (byte)0),
-                                                               out);
+                                                               out.asFrameSource());
             }
 
             final ConnectionHandler handler = new ConnectionHandler(conn);
             conn.setFrameOutputHandler(out);
             final URI uri = new URI(_transport +"://"+ address+":"+ port +"/");
-            WebSocket.Connection connection = client.open(uri, new WebSocket.OnBinaryMessage()
+            _connection = client.open(uri, new WebSocket.OnBinaryMessage()
             {
                 public void onOpen(Connection connection)
                 {
@@ -192,6 +195,11 @@ class WebSocketProvider implements TransportProvider
 
     }
 
+    @Override
+    public void close()
+    {
+        _connection.close();
+    }
 
 
     public static class HeaderFrameSource implements ConnectionHandler.FrameSource
@@ -223,6 +231,12 @@ class WebSocketProvider implements TransportProvider
         public boolean closed()
         {
             return _closed;
+        }
+
+        @Override
+        public void close()
+        {
+            _closed = true;
         }
 
     }

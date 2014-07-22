@@ -25,8 +25,10 @@ import java.security.Principal;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.qpid.amqp_1_0.framing.ExceptionHandler;
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.amqp_1_0.framing.ConnectionHandler;
+import org.apache.qpid.amqp_1_0.framing.ExceptionHandler;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.Container;
 import org.apache.qpid.amqp_1_0.transport.Predicate;
@@ -36,8 +38,6 @@ import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
-
-import javax.net.ssl.SSLContext;
 
 public class Connection implements ExceptionHandler
 {
@@ -225,7 +225,7 @@ public class Connection implements ExceptionHandler
                                                                                                        (byte)1,
                                                                                                        (byte)0,
                                                                                                        (byte)0),
-                                                               new ConnectionHandler.FrameToBytesSourceAdapter(saslOut,_conn.getDescribedTypeRegistry()),
+                                                               new ConnectionHandler.FrameToBytesSourceAdapter(saslOut.asFrameSource(),_conn.getDescribedTypeRegistry()),
                                                                new ConnectionHandler.HeaderBytesSource(_conn, (byte)'A',
                                                                                                        (byte)'M',
                                                                                                        (byte)'Q',
@@ -234,7 +234,7 @@ public class Connection implements ExceptionHandler
                                                                                                        (byte)1,
                                                                                                        (byte)0,
                                                                                                        (byte)0),
-                                                               new ConnectionHandler.FrameToBytesSourceAdapter(out,_conn.getDescribedTypeRegistry())
+                                                               new ConnectionHandler.FrameToBytesSourceAdapter(out.asFrameSource(),_conn.getDescribedTypeRegistry())
             );
 
             _conn.setSaslFrameOutput(saslOut);
@@ -249,7 +249,7 @@ public class Connection implements ExceptionHandler
                                                                                                        (byte)1,
                                                                                                        (byte)0,
                                                                                                        (byte)0),
-                                                               new ConnectionHandler.FrameToBytesSourceAdapter(out,_conn.getDescribedTypeRegistry())
+                                                               new ConnectionHandler.FrameToBytesSourceAdapter(out.asFrameSource(),_conn.getDescribedTypeRegistry())
             );
         }
 
@@ -258,7 +258,14 @@ public class Connection implements ExceptionHandler
         transportProvider.connect(_conn,address,port, sslContext, this);
 
 
-        _conn.open();
+        try
+        {
+            _conn.open();
+        }
+        catch(RuntimeException e)
+        {
+            transportProvider.close();
+        }
 
     }
 
@@ -295,7 +302,14 @@ public class Connection implements ExceptionHandler
     {
         if(getEndpoint().isClosed())
         {
-            throw new ConnectionClosedException(getEndpoint().getRemoteError());
+            Error remoteError = getEndpoint().getRemoteError();
+            if(remoteError == null)
+            {
+                remoteError = new Error();
+                remoteError.setDescription("Connection closed for unknown reason");
+
+            }
+            throw new ConnectionClosedException(remoteError);
         }
     }
 
@@ -377,7 +391,7 @@ public class Connection implements ExceptionHandler
         if(_connectionErrorTask != null)
         {
             Thread thread = new Thread(_connectionErrorTask);
-            thread.run();
+            thread.start();
         }
     }
 }

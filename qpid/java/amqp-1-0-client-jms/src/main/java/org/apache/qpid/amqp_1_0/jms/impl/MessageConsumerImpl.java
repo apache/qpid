@@ -239,7 +239,12 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     public MessageImpl receive() throws JMSException
     {
         checkClosed();
-        return receiveImpl(-1L);
+        MessageImpl message = receiveImpl(-1L);
+        if(message == null)
+        {
+            throw new JMSException("Message could not be retrieved");
+        }
+        return message;
     }
 
     public MessageImpl receive(final long timeout) throws JMSException
