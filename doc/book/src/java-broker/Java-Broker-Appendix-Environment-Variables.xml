@@ -98,7 +98,7 @@
         <row id="Java-Broker-Appendix-Environment-Variables-Qpid-Java-Mem">
           <entry>QPID_JAVA_MEM</entry>
           <entry>
-            <literal>-Xmx1024m</literal>
+            <literal>-Xmx2g</literal>
           </entry>
           <entry>
             <para>This is the preferred mechanism for customising the size of the JVM's heap memory.
