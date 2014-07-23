@@ -38,7 +38,7 @@ static PyObject* pUuidModule;
       Py_INCREF(pUuidModule);
       PyModule_AddObject(m, "uuid", pUuidModule);
   } else {
-      if (!PyErr_Occurred) PyErr_SetString(PyExc_ImportError, "Cannot import qpid.datatypes");
+      if (!PyErr_Occurred()) PyErr_SetString(PyExc_ImportError, "Cannot import qpid.datatypes");
   }
 %}
 
