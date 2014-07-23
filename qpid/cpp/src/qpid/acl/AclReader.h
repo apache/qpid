@@ -30,6 +30,7 @@
 #include "qpid/acl/AclData.h"
 #include "qpid/acl/Acl.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/acl/AclValidator.h"
 
 namespace qpid {
 namespace acl {
@@ -70,7 +71,6 @@ class AclReader {
         void setObjectType(const ObjectType o);
         void setObjectTypeAll();
         bool addProperty(const SpecProperty p, const std::string v);
-        bool validate(const AclHelper::objectMapPtr& validationMap);
         std::string toString(); // debug aid
       private:
         void processName(const std::string& name, const groupMap& groups);
@@ -97,7 +97,7 @@ class AclReader {
     nameSet                 names;
     groupMap                groups;
     ruleList                rules;
-    AclHelper::objectMapPtr validationMap;
+    AclValidator            validator;
     std::ostringstream      errorStream;
 
   public:
@@ -108,7 +108,7 @@ class AclReader {
 
   private:
     bool processLine(char* line);
-    void loadDecisionData( boost::shared_ptr<AclData> d);
+    void loadDecisionData(boost::shared_ptr<AclData> d);
     int tokenize(char* line, tokList& toks);
 
     bool processGroupLine(tokList& toks, const bool cont);
@@ -116,6 +116,7 @@ class AclReader {
     void addName(const std::string& name, nameSetPtr groupNameSet);
     void addName(const std::string& name);
     void printNames() const; // debug aid
+    int  printNamesFieldWidth() const;
 
     bool processAclLine(tokList& toks);
     void printRules() const; // debug aid

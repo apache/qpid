@@ -43,30 +43,34 @@ namespace acl {
 
     // ObjectType  shared between ACL spec and ACL authorise interface
     enum ObjectType {
-        OBJ_QUEUE,
-        OBJ_EXCHANGE,
         OBJ_BROKER,
+        OBJ_CONNECTION,
+        OBJ_EXCHANGE,
         OBJ_LINK,
         OBJ_METHOD,
         OBJ_QUERY,
-        OBJ_CONNECTION,
+        OBJ_QUEUE,
         OBJECTSIZE }; // OBJECTSIZE must be last in list
+
+    const int OBJECTTYPE_STR_WIDTH = 10;
 
     // Action  shared between ACL spec and ACL authorise interface
     enum Action {
-        ACT_CONSUME,
-        ACT_PUBLISH,
-        ACT_CREATE,
         ACT_ACCESS,
         ACT_BIND,
-        ACT_UNBIND,
+        ACT_CONSUME,
+        ACT_CREATE,
         ACT_DELETE,
-        ACT_PURGE,
-        ACT_UPDATE,
         ACT_MOVE,
+        ACT_PUBLISH,
+        ACT_PURGE,
         ACT_REDIRECT,
         ACT_REROUTE,
+        ACT_UNBIND,
+        ACT_UPDATE,
         ACTIONSIZE }; // ACTIONSIZE must be last in list
+
+    const int ACTION_STR_WIDTH = 8;
 
     // Property used in ACL authorize interface
     enum Property {
@@ -153,6 +157,7 @@ namespace acl {
         static QPID_BROKER_EXTERN const std::string&   getPropertyStr(const SpecProperty p);
         static QPID_BROKER_EXTERN AclResult              getAclResult(const std::string& str);
         static QPID_BROKER_EXTERN const std::string&  getAclResultStr(const AclResult r);
+        static QPID_BROKER_EXTERN bool                   resultAllows(const AclResult r);
 
         typedef std::set<Property>                  propSet;
         typedef boost::shared_ptr<propSet>          propSetPtr;
@@ -160,9 +165,6 @@ namespace acl {
         typedef std::map<Action, propSetPtr>        actionMap;
         typedef boost::shared_ptr<actionMap>        actionMapPtr;
         typedef std::pair<ObjectType, actionMapPtr> objectPair;
-        typedef std::map<ObjectType, actionMapPtr>  objectMap;
-        typedef objectMap::const_iterator           omCitr;
-        typedef boost::shared_ptr<objectMap>        objectMapPtr;
         typedef std::map<Property, std::string>     propMap;
         typedef propMap::const_iterator             propMapItr;
         typedef std::map<SpecProperty, std::string> specPropMap;

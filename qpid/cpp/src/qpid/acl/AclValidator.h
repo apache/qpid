@@ -24,6 +24,7 @@
 #include "qpid/acl/AclData.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/concept_check.hpp>
 #include <vector>
 #include <sstream>
 
@@ -65,8 +66,8 @@ class AclValidator {
     typedef std::pair<acl::SpecProperty,boost::shared_ptr<PropertyType> > Validator;
     typedef std::map<acl::SpecProperty,boost::shared_ptr<PropertyType> > ValidatorMap;
     typedef ValidatorMap::iterator ValidatorItr;
-    typedef boost::shared_ptr<std::set<Property> >     AllowedProperties    [ACTIONSIZE][OBJECTSIZE];
-    typedef boost::shared_ptr<std::set<SpecProperty> > AllowedSpecProperties[ACTIONSIZE][OBJECTSIZE];
+    typedef boost::shared_ptr<std::set<Property> >         AllowedProperties    [ACTIONSIZE][OBJECTSIZE];
+    typedef boost::shared_ptr<std::vector<AclData::Rule> > AllowedSpecProperties[ACTIONSIZE][OBJECTSIZE];
 
     ValidatorMap validators;
     AllowedProperties     allowedProperties;
@@ -78,14 +79,26 @@ public:
     void validateRule(qpid::acl::AclData::Rule& rule);
     void validateProperty(std::pair<const qpid::acl::SpecProperty, std::string>& prop);
     void validate(boost::shared_ptr<AclData> d);
+    bool validateAllowedProperties(qpid::acl::Action action,
+                                   qpid::acl::ObjectType object,
+                                   const AclData::specPropertyMap& props,
+                                   bool emitLog) const;
+    void findPossibleLookupMatch(qpid::acl::Action action,
+                                 qpid::acl::ObjectType object,
+                                 const AclData::specPropertyMap& props,
+                                 std::vector<int>& result) const;
+    void tracePropertyDefs();
+
     AclValidator();
     ~AclValidator();
 
 private:
     void registerProperties(const std::string& source,
+                            const std::string& description,
                             Action action,
                             ObjectType object,
                             const std::string& properties = "");
+    int propertyIndex;
 };
 
 }} // namespace qpid::acl

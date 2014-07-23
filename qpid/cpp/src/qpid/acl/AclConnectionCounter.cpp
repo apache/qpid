@@ -139,8 +139,9 @@ void ConnectionCounter::releaseLH(
         }
     } else {
         // User had no connections.
-        QPID_LOG(notice, "ACL ConnectionCounter Connection for '" << theName
-            << "' not found in connection count pool");
+        // Connections denied by ACL never get users added
+        //QPID_LOG(notice, "ACL ConnectionCounter Connection for '" << theName
+        //    << "' not found in connection count pool");
     }
 }
 
@@ -215,8 +216,7 @@ bool ConnectionCounter::approveConnection(
         const std::string& userName,
         bool enforcingConnectionQuotas,
         uint16_t connectionUserQuota,
-        boost::shared_ptr<const AclData::bwHostRuleSet> globalBWRules,
-        boost::shared_ptr<const AclData::bwHostRuleSet> userBWRules)
+        boost::shared_ptr<AclData> localdata)
 {
     const std::string& hostName(getClientHost(connection.getMgmtId()));
 
@@ -227,74 +227,17 @@ bool ConnectionCounter::approveConnection(
                              C_OPENED, false, false);
 
     // Run global black/white list check
-    //
-    // TODO: The global check could be run way back in AsynchIO where
-    // disapproval would mean that the socket is not accepted. Or
-    // it may be accepted and closed right away without running any
-    // protocol and creating the connection churn that gets here.
-    //
     sys::SocketAddress sa(hostName, "");
+    bool okByHostList(true);
+    std::string hostLimitText;
     if (sa.isIp()) {
-        if (boost::shared_ptr<const AclData::bwHostRuleSet>() != globalBWRules) {
-            AclData::bwHostRuleSet::const_iterator it;
-            for (it=globalBWRules->begin(); it!=globalBWRules->end(); it++) {
-                if (it->getAclHost().match(hostName)) {
-                    // This host matches a global spec and controls the
-                    // allow/deny decision for this connection.
-                    AclResult res = it->getAclResult();
-                    if (res == DENY || res == DENYLOG) {
-                        // The result is deny
-                        QPID_LOG(trace, "ACL ConnectionApprover global rule " << it->toString()
-                                << " denies connection for host " << hostName << ", user "
-                                << userName);
-                        acl.reportConnectLimit(userName, hostName);
-                        return false;
-                    } else {
-                        // The result is allow
-                        QPID_LOG(trace, "ACL ConnectionApprover global rule " << it->toString()
-                                << " allows connection for host " << hostName << ", user "
-                                << userName);
-                        break;
-                    }
-                } else {
-                    // This rule in the global spec doesn't match and
-                    // does not control the allow/deny decision.
-                }
-            }
+        AclResult result = localdata->isAllowedConnection(userName, hostName, hostLimitText);
+        okByHostList = AclHelper::resultAllows(result);
+        if (okByHostList) {
+            QPID_LOG(trace, "ACL: ConnectionApprover host list " << hostLimitText);
         }
-
-        // Run user black/white list check
-        if (boost::shared_ptr<const AclData::bwHostRuleSet>() != userBWRules) {
-            AclData::bwHostRuleSet::const_iterator it;
-            for (it=userBWRules->begin(); it!=userBWRules->end(); it++) {
-                if (it->getAclHost().match(hostName)) {
-                    // This host matches a user spec and controls the
-                    // allow/deny decision for this connection.
-                    AclResult res = it->getAclResult();
-                    if (res == DENY || res == DENYLOG) {
-                        // The result is deny
-                        QPID_LOG(trace, "ACL ConnectionApprover user rule " << it->toString()
-                                << " denies connection for host " << hostName << ", user "
-                                << userName);
-                        acl.reportConnectLimit(userName, hostName);
-                        return false;
-                    } else {
-                        // The result is allow
-                        QPID_LOG(trace, "ACL ConnectionApprover user rule " << it->toString()
-                                << " allows connection for host " << hostName << ", user "
-                                << userName);
-                        break;
-                    }
-                } else {
-                    // This rule in the user's spec doesn't match and
-                    // does not control the allow/deny decision.
-                }
-            }
-        }
-    } else {
-        // Non-IP hosts don't get subjected to blacklist and whitelist
-        // checks.
     }
+
     // Approve total connections
     bool okTotal  = true;
     if (totalLimit > 0) {
@@ -313,6 +256,10 @@ bool ConnectionCounter::approveConnection(
                                       enforcingConnectionQuotas);
 
     // Emit separate log for each disapproval
+    if (!okByHostList) {
+        QPID_LOG(error, "ACL: ConnectionApprover host list " << hostLimitText
+                 << " Connection refused.");
+    }
     if (!okTotal) {
         QPID_LOG(error, "Client max total connection count limit of " << totalLimit
                  << " exceeded by '"
@@ -333,7 +280,7 @@ bool ConnectionCounter::approveConnection(
     }
 
     // Count/Event once for each disapproval
-    bool result = okTotal && okByIP && okByUser;
+    bool result = okByHostList && okTotal && okByIP && okByUser;
     if (!result) {
         acl.reportConnectLimit(userName, hostName);
     }

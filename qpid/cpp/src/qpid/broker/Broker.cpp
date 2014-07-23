@@ -607,7 +607,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
             dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
         QPID_LOG (debug, "Broker::queueMoveMessages()");
-        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, 
+        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty,
                               moveArgs.i_filter, getCurrentPublisher()) >=0)
             status = Manageable::STATUS_OK;
         else
@@ -1245,7 +1245,7 @@ Manageable::status_t Broker::queueRedirect(const std::string& srcQueue,
             if (!acl->authorise((context)?context->getUserId():"", acl::ACT_REDIRECT, acl::OBJ_QUEUE, srcQ->getName(), &params))
                 throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied redirect request from " << ((context)?context->getUserId():"(uknown)")));
         }
-                                  
+
         queueRedirectDestroy(srcQ, tgtQ, true);
 
         return Manageable::STATUS_OK;

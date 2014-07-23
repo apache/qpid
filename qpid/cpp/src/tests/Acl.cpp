@@ -45,6 +45,13 @@ QPID_AUTO_TEST_CASE(TestLexerObjectEnums) {
     OBJ_ENUMS(OBJ_METHOD,     "method");
     OBJ_ENUMS(OBJ_QUERY,      "query");
     OBJ_ENUMS(OBJ_CONNECTION, "connection");
+    int maxLen = 0;
+    for (int i=0; i<acl::OBJECTSIZE; i++) {
+        int thisLen = AclHelper::getObjectTypeStr( ObjectType(i) ).length();
+        if (thisLen > maxLen)
+            maxLen = thisLen;
+    }
+    BOOST_CHECK_EQUAL(maxLen, acl::OBJECTTYPE_STR_WIDTH);
 }
 
 #define ACT_ENUMS(e, s) \
@@ -65,6 +72,13 @@ QPID_AUTO_TEST_CASE(TestLexerActionEnums) {
     ACT_ENUMS(ACT_MOVE,     "move");
     ACT_ENUMS(ACT_REDIRECT, "redirect");
     ACT_ENUMS(ACT_REROUTE,  "reroute");
+    int maxLen = 0;
+    for (int i=0; i<acl::ACTIONSIZE; i++) {
+        int thisLen = AclHelper::getActionStr( Action(i) ).length();
+        if (thisLen > maxLen)
+            maxLen = thisLen;
+    }
+    BOOST_CHECK_EQUAL(maxLen, acl::ACTION_STR_WIDTH);
 }
 
 #define PROP_ENUMS(e, s) \

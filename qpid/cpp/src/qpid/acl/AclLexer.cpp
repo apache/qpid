@@ -32,7 +32,7 @@ namespace acl {
 
 // ObjectType
 const std::string objectNames[OBJECTSIZE] = {
-    "queue", "exchange", "broker", "link", "method", "query", "connection" };
+    "broker", "connection", "exchange", "link", "method", "query", "queue" };
 
 ObjectType AclHelper::getObjectType(const std::string& str) {
     for (int i=0; i< OBJECTSIZE; ++i) {
@@ -48,9 +48,9 @@ const std::string& AclHelper::getObjectTypeStr(const ObjectType o) {
 
 // Action
 const std::string actionNames[ACTIONSIZE] = {
-    "consume", "publish", "create", "access", "bind",
-    "unbind", "delete", "purge", "update", "move",
-    "redirect", "reroute" };
+    "access", "bind", "consume", "create", "delete",
+    "move", "publish", "purge", "redirect", "reroute",
+    "unbind", "update" };
 
 Action AclHelper::getAction(const std::string& str) {
     for (int i=0; i< ACTIONSIZE; ++i) {
@@ -131,6 +131,11 @@ AclResult AclHelper::getAclResult(const std::string& str) {
 
 const std::string& AclHelper::getAclResultStr(const AclResult r) {
     return resultNames[r];
+}
+
+bool AclHelper::resultAllows(const AclResult r) {
+    bool answer = r == ALLOW || r == ALLOWLOG;
+    return answer;
 }
 
 }} // namespace qpid::acl
