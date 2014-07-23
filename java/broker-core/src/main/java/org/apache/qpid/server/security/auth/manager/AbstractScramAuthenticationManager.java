@@ -45,7 +45,6 @@ import org.apache.qpid.server.configuration.updater.VoidTaskWithException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -56,7 +55,6 @@ public abstract class AbstractScramAuthenticationManager<X extends AbstractScram
         extends AbstractAuthenticationManager<X>
         implements PasswordCredentialManagingAuthenticationProvider<X>
 {
-    public static final String SCRAM_USER_TYPE = "scram";
 
     static final Charset ASCII = Charset.forName("ASCII");
     private final SecureRandom _random = new SecureRandom();
@@ -257,7 +255,7 @@ public abstract class AbstractScramAuthenticationManager<X extends AbstractScram
                     userAttrs.put(User.ID, UUID.randomUUID());
                     userAttrs.put(User.NAME, username);
                     userAttrs.put(User.PASSWORD, createStoredPassword(password));
-                    userAttrs.put(User.TYPE, SCRAM_USER_TYPE);
+                    userAttrs.put(User.TYPE, ScramAuthUser.SCRAM_USER_TYPE);
                     ScramAuthUser user = new ScramAuthUser(userAttrs, AbstractScramAuthenticationManager.this);
                     user.create();
 
@@ -287,7 +285,7 @@ public abstract class AbstractScramAuthenticationManager<X extends AbstractScram
                 final ScramAuthUser authUser = getUser(user);
                 if(authUser != null)
                 {
-                    authUser.setState(State.DELETED);
+                    authUser.delete();
                 }
                 else
                 {
@@ -382,11 +380,6 @@ public abstract class AbstractScramAuthenticationManager<X extends AbstractScram
             }
         }
         return super.addChild(childClass, attributes, otherParents);
-    }
-
-    void doDeleted()
-    {
-        deleted();
     }
 
     Map<String, ScramAuthUser> getUserMap()
