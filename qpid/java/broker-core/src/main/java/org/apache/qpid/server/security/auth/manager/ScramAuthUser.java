@@ -37,12 +37,14 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.access.Operation;
 
-@ManagedObject( category = false, type = "scram")
+@ManagedObject( category = false, type = ScramAuthUser.SCRAM_USER_TYPE)
 class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements User<ScramAuthUser>
 {
+    public static final String SCRAM_USER_TYPE = "scram";
 
     private AbstractScramAuthenticationManager _authenticationManager;
     @ManagedAttributeField
@@ -86,22 +88,24 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
     }
+
     @Override
-    protected boolean setState(final State desiredState)
+    protected void authoriseSetDesiredState(final State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)
         {
             _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.DELETE, getName());
-            _authenticationManager.getUserMap().remove(getName());
-            _authenticationManager.doDeleted();
-            deleted();
-            return true;
         }
-        else
-        {
-            return false;
-        }
+
     }
+
+    @StateTransition(currentState = {State.ACTIVE}, desiredState = State.DELETED)
+    private void doDelete()
+    {
+        _authenticationManager.getUserMap().remove(getName());
+        deleted();
+    }
+
 
     @Override
     public void setAttributes(final Map<String, Object> attributes)
