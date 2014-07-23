@@ -87,12 +87,6 @@
       <type>zip</type>
     </dependency>
 
-      <dependency>
-          <groupId>org.webjars</groupId>
-          <artifactId>cryptojs</artifactId>
-          <version>3.1.2</version>
-      </dependency>
-
     <!-- test dependencies -->
     <dependency>
       <groupId>org.apache.qpid</groupId>
