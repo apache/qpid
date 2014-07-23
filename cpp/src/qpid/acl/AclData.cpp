@@ -17,10 +17,13 @@
  */
 
 #include "qpid/acl/AclData.h"
+#include "qpid/acl/AclValidator.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
+#include <sstream>
+#include <iomanip>
 
 namespace qpid {
 namespace acl {
@@ -49,10 +52,11 @@ AclData::AclData():
     decisionMode(qpid::acl::DENY),
     transferAcl(false),
     aclSource("UNKNOWN"),
+    connectionDecisionMode(qpid::acl::ALLOW),
     connQuotaRuleSettings(new quotaRuleSet),
     queueQuotaRuleSettings(new quotaRuleSet),
     connBWHostsGlobalRules(new bwHostRuleSet),
-    connBWHostsRuleSettings(new bwHostUserRuleMap)
+    connBWHostsUserRules(new bwHostUserRuleMap)
 {
     for (unsigned int cnt=0; cnt< qpid::acl::ACTIONSIZE; cnt++) {
         actionList[cnt]=0;
@@ -74,12 +78,56 @@ void AclData::clear ()
         delete[] actionList[cnt];
     }
     transferAcl = false;
+    connectionDecisionMode = qpid::acl::ALLOW;
     connQuotaRuleSettings->clear();
     queueQuotaRuleSettings->clear();
     connBWHostsGlobalRules->clear();
-    connBWHostsRuleSettings->clear();
+    connBWHostsUserRules->clear();
 }
 
+void AclData::printDecisionRules(int userFieldWidth) {
+    AclValidator validator;
+    QPID_LOG(trace, "ACL: Decision rule cross reference");
+    for (int act=0; act<acl::ACTIONSIZE; act++) {
+        acl::Action action = acl::Action(act);
+        for (int obj=0; obj<acl::OBJECTSIZE; obj++) {
+            acl::ObjectType object = acl::ObjectType(obj);
+            if (actionList[act] != NULL && actionList[act][obj] != NULL) {
+                for (actObjItr aoitr = actionList[act][obj]->begin();
+                    aoitr != actionList[act][obj]->end();
+                    aoitr++) {
+                    std::string user = (*aoitr).first;
+                    ruleSetItr rsitr = (*aoitr).second.end();
+                    for (size_t rCnt=0; rCnt < (*aoitr).second.size(); rCnt++) {
+                        rsitr--;
+                        std::vector<int> candidates;
+                        validator.findPossibleLookupMatch(
+                            action, object, rsitr->props, candidates);
+                        std::stringstream ss;
+                        std::string sep("");
+                        for (std::vector<int>::const_iterator
+                            itr = candidates.begin(); itr != candidates.end(); itr++) {
+                            ss << sep << *itr;
+                            sep = ",";
+                        }
+                        QPID_LOG(trace, "ACL: User: "
+                            << std::setfill(' ') << std::setw(userFieldWidth +1) << std::left
+                            << user << " "
+                            << std::setfill(' ') << std::setw(acl::ACTION_STR_WIDTH +1) << std::left
+                            << AclHelper::getActionStr(action)
+                            << std::setfill(' ') << std::setw(acl::OBJECTTYPE_STR_WIDTH) << std::left
+                            << AclHelper::getObjectTypeStr(object)
+                            << " Rule: "
+                            << rsitr->toString() << " may match Lookups : ("
+                            << ss.str() << ")");
+                    }
+                }
+            } else {
+                // no rules for action/object
+            }
+        }
+    }
+}
 
 //
 // matchProp
@@ -619,22 +667,66 @@ void AclData::setConnGlobalRules (boost::shared_ptr<bwHostRuleSet> cgr) {
 }
 
 void AclData::setConnUserRules (boost::shared_ptr<bwHostUserRuleMap> hurm) {
-    connBWHostsRuleSettings = hurm;
+    connBWHostsUserRules = hurm;
 }
 
-
-//
-// Get user-specific black/white connection rule list
-//
-boost::shared_ptr<const AclData::bwHostRuleSet> AclData::getUserConnectionRules(const std::string& name){
-    AclData::bwHostUserRuleMapItr itrRule = connBWHostsRuleSettings->find(name);
-    if (itrRule == connBWHostsRuleSettings->end()) {
-        return boost::shared_ptr<const bwHostRuleSet>();
-    } else {
-        return boost::shared_ptr<const bwHostRuleSet>(&itrRule->second);
+AclResult AclData::isAllowedConnection(const std::string& userName,
+                                       const std::string& hostName,
+                                       std::string& logText) {
+    bool decisionMade(false);
+    AclResult result(ALLOW);
+    for (bwHostRuleSetItr it=connBWHostsGlobalRules->begin();
+                          it!=connBWHostsGlobalRules->end(); it++) {
+        if (it->getAclHost().match(hostName)) {
+            // This host matches a global spec and controls the
+            // allow/deny decision for this connection.
+            result = it->getAclResult();
+            logText = QPID_MSG("global rule " << it->toString()
+                    << (AclHelper::resultAllows(result) ? " allows" : " denies")
+                    << " connection for host " << hostName << ", user "
+                    << userName);
+            decisionMade = true;
+            break;
+        } else {
+            // This rule in the global spec doesn't match and
+            // does not control the allow/deny decision.
+        }
     }
-}
 
+    // Run user black/white list check
+    if (!decisionMade) {
+        bwHostUserRuleMapItr itrRule = connBWHostsUserRules->find(userName);
+        if (itrRule != connBWHostsUserRules->end()) {
+            for (bwHostRuleSetItr it=(*itrRule).second.begin();
+                 it!=(*itrRule).second.end(); it++) {
+                if (it->getAclHost().match(hostName)) {
+                    // This host matches a user spec and controls the
+                    // allow/deny decision for this connection.
+                    result = it->getAclResult();
+                    logText = QPID_MSG("global rule " << it->toString()
+                            << (AclHelper::resultAllows(result) ? " allows" : " denies")
+                            << " connection for host " << hostName << ", user "
+                            << userName);
+                    decisionMade = true;
+                    break;
+                } else {
+                    // This rule in the user's spec doesn't match and
+                    // does not control the allow/deny decision.
+                }
+            }
+        }
+    }
+
+    // Apply global connection mode
+    if (!decisionMade) {
+        result = connectionDecisionMode;
+        logText = QPID_MSG("default connection policy "
+                << (AclHelper::resultAllows(result) ? "allows" : "denies")
+                << " connection for host " << hostName << ", user "
+                << userName);
+    }
+    return result;
+}
 
 //
 //

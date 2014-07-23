@@ -97,8 +97,7 @@ public:
                            const std::string& userName,
                            bool enforcingConnectionQuotas,
                            uint16_t connectionLimit,
-                           boost::shared_ptr<const AclData::bwHostRuleSet> globalBWRules,
-                           boost::shared_ptr<const AclData::bwHostRuleSet> userBWRules
+                           boost::shared_ptr<AclData> localdata
                           );
 };
 

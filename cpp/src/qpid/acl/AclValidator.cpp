@@ -18,6 +18,7 @@
 
 #include "qpid/acl/AclValidator.h"
 #include "qpid/acl/AclData.h"
+#include "qpid/acl/AclLexer.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/IntegerTypes.h"
@@ -26,6 +27,7 @@
 #include <boost/bind.hpp>
 #include <numeric>
 #include <sstream>
+#include <iomanip>
 
 namespace qpid {
 namespace acl {
@@ -78,7 +80,7 @@ namespace acl {
         return oss.str();
     }
 
-    AclValidator::AclValidator(){
+    AclValidator::AclValidator() : propertyIndex(1) {
         validators.insert(Validator(acl::SPECPROP_MAXQUEUESIZELOWERLIMIT,
                           boost::shared_ptr<PropertyType>(
                             new IntPropertyType(0,std::numeric_limits<int64_t>::max()))));
@@ -135,41 +137,111 @@ namespace acl {
 
         // Insert allowed action/object/property sets (generated manually 20140712)
 #define RP registerProperties
-        RP("Broker::getTimestampConfig",            ACT_ACCESS,  OBJ_BROKER);
-        RP("ExchangeHandlerImpl::query",            ACT_ACCESS,  OBJ_EXCHANGE);
-        RP("ExchangeHandlerImpl::bound",            ACT_ACCESS,  OBJ_EXCHANGE, "queuename routingkey");
-        RP("ExchangeHandlerImpl::declare",          ACT_ACCESS,  OBJ_EXCHANGE, "type alternate durable autodelete");
-        RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE, "type durable");
-        RP("Authorise::access",                     ACT_ACCESS,  OBJ_EXCHANGE);
-        RP("ManagementAgent::handleMethodRequest",  ACT_ACCESS,  OBJ_METHOD, "schemapackage schemaclass");
-        RP("ManagementAgent::authorizeAgentMessage",ACT_ACCESS,  OBJ_METHOD, "schemapackage schemaclass");
-        RP("ManagementAgent::handleGetQuery",       ACT_ACCESS,  OBJ_QUERY, "schemaclass");
-        RP("Broker::queryQueue",                    ACT_ACCESS,  OBJ_QUEUE);
-        RP("QueueHandlerImpl::query",               ACT_ACCESS,  OBJ_QUEUE);
-        RP("QueueHandlerImpl::declare",             ACT_ACCESS,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize");
-        RP("Authorise::access",                     ACT_ACCESS,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize");
-        RP("Authorise::access",                     ACT_ACCESS,  OBJ_QUEUE);
-        RP("Broker::bind",                          ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
-        RP("Authorise::outgoing",                   ACT_BIND,    OBJ_EXCHANGE, "queuename routingkey");
-        RP("MessageHandlerImpl::subscribe",         ACT_CONSUME, OBJ_QUEUE);
-        RP("Authorise::outgoing",                   ACT_CONSUME, OBJ_QUEUE);
-        RP("ConnectionHandler",                     ACT_CREATE,  OBJ_CONNECTION, "host");
-        RP("Broker::createQueue",                   ACT_CREATE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype paging maxpages maxpagefactor maxqueuecount maxqueuesize maxfilecount maxfilesize");
-        RP("Broker::createExchange",                ACT_CREATE,  OBJ_EXCHANGE, "type alternate durable autodelete");
-        RP("ConnectionHandler::Handler::open",      ACT_CREATE,  OBJ_LINK);
-        RP("Authorise::interlink",                  ACT_CREATE,  OBJ_LINK);
-        RP("Broker::deleteQueue",                   ACT_DELETE,  OBJ_QUEUE, "alternate durable exclusive autodelete policytype");
-        RP("Broker::deleteExchange",                ACT_DELETE,  OBJ_EXCHANGE, "type alternate durable");
-        RP("Broker::queueMoveMessages",             ACT_MOVE,    OBJ_QUEUE, "queuename");
-        RP("SemanticState::route",                  ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
-        RP("Authorise::incoming",                   ACT_PUBLISH, OBJ_EXCHANGE);
-        RP("Authorise::route",                      ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
-        RP("Queue::ManagementMethod",               ACT_PURGE,   OBJ_QUEUE);
-        RP("QueueHandlerImpl::purge",               ACT_PURGE,   OBJ_QUEUE);
-        RP("Broker::queueRedirect",                 ACT_REDIRECT,OBJ_QUEUE, "queuename");
-        RP("Queue::ManagementMethod",               ACT_REROUTE, OBJ_QUEUE, "exchangename");
-        RP("Broker::unbind",                        ACT_UNBIND,  OBJ_EXCHANGE, "queuename routingkey");
-        RP("Broker::setTimestampConfig",            ACT_UPDATE,  OBJ_BROKER);
+        RP( "Broker::getTimestampConfig",
+            "User querying message timestamp setting ",
+            ACT_ACCESS,  OBJ_BROKER);
+        RP( "ExchangeHandlerImpl::query",
+            "AMQP 0-10 protocol received 'query'     ",
+            ACT_ACCESS,  OBJ_EXCHANGE, "name");
+        RP( "ExchangeHandlerImpl::bound",
+            "AMQP 0-10 query binding                 ",
+            ACT_ACCESS,  OBJ_EXCHANGE, "name queuename routingkey");
+        RP( "ExchangeHandlerImpl::declare",
+            "AMQP 0-10 exchange declare              ",
+            ACT_ACCESS,  OBJ_EXCHANGE, "name type alternate durable autodelete");
+        RP( "Authorise::access",
+            "AMQP 1.0 exchange access                ",
+            ACT_ACCESS,  OBJ_EXCHANGE, "name type durable");
+        RP( "Authorise::access",
+            "AMQP 1.0 node resolution                ",
+            ACT_ACCESS,  OBJ_EXCHANGE, "name");
+        RP( "ManagementAgent::handleMethodRequest",
+            "Management method request               ",
+            ACT_ACCESS,  OBJ_METHOD, "name schemapackage schemaclass");
+        RP( "ManagementAgent::authorizeAgentMessage",
+            "Management agent method request         ",
+            ACT_ACCESS,  OBJ_METHOD, "name schemapackage schemaclass");
+        RP( "ManagementAgent::handleGetQuery",
+            "Management agent query                  ",
+            ACT_ACCESS,  OBJ_QUERY, "name schemaclass");
+        RP( "Broker::queryQueue",
+            "QMF 'query queue' method                ",
+            ACT_ACCESS,  OBJ_QUEUE, "name");
+        RP( "QueueHandlerImpl::query",
+            "AMQP 0-10 query                         ",
+            ACT_ACCESS,  OBJ_QUEUE, "name");
+        RP( "QueueHandlerImpl::declare",
+            "AMQP 0-10 queue declare                 ",
+            ACT_ACCESS,  OBJ_QUEUE, "name alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize");
+        RP( "Authorise::access",
+            "AMQP 1.0 queue access                   ",
+            ACT_ACCESS,  OBJ_QUEUE, "name alternate durable exclusive autodelete policytype maxqueuecount maxqueuesize");
+        RP( "Authorise::access",
+            "AMQP 1.0 node resolution                ",
+            ACT_ACCESS,  OBJ_QUEUE, "name");
+        RP( "Broker::bind",
+            "AMQP 0-10 or QMF bind request           ",
+            ACT_BIND,    OBJ_EXCHANGE, "name queuename routingkey");
+        RP( "Authorise::outgoing",
+            "AMQP 1.0 new outgoing link from exchange",
+            ACT_BIND,    OBJ_EXCHANGE, "name queuename routingkey");
+        RP( "MessageHandlerImpl::subscribe",
+            "AMQP 0-10 subscribe request             ",
+            ACT_CONSUME, OBJ_QUEUE, "name");
+        RP( "Authorise::outgoing",
+            "AMQP 1.0 new outgoing link from queue   ",
+            ACT_CONSUME, OBJ_QUEUE, "name");
+        RP( "ConnectionHandler",
+            "TCP/IP connection creation              ",
+            ACT_CREATE,  OBJ_CONNECTION, "host");
+        RP( "Broker::createExchange",
+            "Create exchange                         ",
+            ACT_CREATE,  OBJ_EXCHANGE, "name type alternate durable autodelete");
+        RP( "ConnectionHandler::Handler::open",
+            "Interbroker link creation               ",
+            ACT_CREATE,  OBJ_LINK);
+        RP( "Authorise::interlink",
+            "Interbroker link creation               ",
+            ACT_CREATE,  OBJ_LINK);
+        RP( "Broker::createQueue",
+            "Create queue                            ",
+            ACT_CREATE,  OBJ_QUEUE, "name alternate durable exclusive autodelete policytype paging maxpages maxpagefactor maxqueuecount maxqueuesize maxfilecount maxfilesize");
+        RP( "Broker::deleteExchange",
+            "Delete exchange                         ",
+            ACT_DELETE,  OBJ_EXCHANGE, "name type alternate durable");
+        RP( "Broker::deleteQueue",
+            "Delete queue                            ",
+            ACT_DELETE,  OBJ_QUEUE, "name alternate durable exclusive autodelete policytype");
+        RP( "Broker::queueMoveMessages",
+            "Management 'move queue' request         ",
+            ACT_MOVE,    OBJ_QUEUE, "name queuename");
+        RP( "SemanticState::route",
+            "AMQP 0-10 received message processing   ",
+            ACT_PUBLISH, OBJ_EXCHANGE, "name routingkey");
+        RP( "Authorise::incoming",
+            "AMQP 1.0 establish sender link to queue ",
+            ACT_PUBLISH, OBJ_EXCHANGE, "routingkey");
+        RP( "Authorise::route",
+            "AMQP 1.0 received message processing    ",
+            ACT_PUBLISH, OBJ_EXCHANGE, "name routingkey");
+        RP( "Queue::ManagementMethod",
+            "Management 'purge queue' request        ",
+            ACT_PURGE,   OBJ_QUEUE, "name");
+        RP( "QueueHandlerImpl::purge",
+            "Management 'purge queue' request        ",
+            ACT_PURGE,   OBJ_QUEUE, "name");
+        RP( "Broker::queueRedirect",
+            "Management 'redirect queue' request     ",
+            ACT_REDIRECT,OBJ_QUEUE, "name queuename");
+        RP( "Queue::ManagementMethod",
+            "Management 'reroute queue' request      ",
+            ACT_REROUTE, OBJ_QUEUE, "name exchangename");
+        RP( "Broker::unbind",
+            "Management 'unbind exchange' request    ",
+            ACT_UNBIND,  OBJ_EXCHANGE, "name queuename routingkey");
+        RP( "Broker::setTimestampConfig",
+            "User modifying message timestamp setting",
+            ACT_UPDATE,  OBJ_BROKER);
     }
 
     AclValidator::~AclValidator(){
@@ -189,10 +261,10 @@ namespace acl {
                         std::for_each(d->actionList[cnt][cnt1]->begin(),
                                       d->actionList[cnt][cnt1]->end(),
                                       boost::bind(&AclValidator::validateRuleSet, this, _1));
-                    }//if
-                }//for
-            }//if
-        }//for
+                    }
+                }
+            }
+        }
     }
 
     void AclValidator::validateRuleSet(std::pair<const std::string, qpid::acl::AclData::ruleSet>& rules){
@@ -225,23 +297,155 @@ namespace acl {
     }
 
     /**
+     * validateAllowedProperties
+     * verify that at least one lookup definition can satisfy this
+     * action/object/props tuple.
+     * Return false and conditionally emit a warning log entry if the
+     * incoming definition can not be matched.
+     */
+    bool AclValidator::validateAllowedProperties(qpid::acl::Action action,
+                                                 qpid::acl::ObjectType object,
+                                                 const AclData::specPropertyMap& props,
+                                                 bool emitLog) const {
+        // No rules defined means no match
+        if (!allowedSpecProperties[action][object].get()) {
+            if (emitLog) {
+                QPID_LOG(warning, "ACL rule ignored: Broker never checks for rules with action: '"
+                    << AclHelper::getActionStr(action) << "' and object: '"
+                    << AclHelper::getObjectTypeStr(object) << "'");
+            }
+            return false;
+        }
+        // two empty property sets is a match
+        if (allowedSpecProperties[action][object]->size() == 0) {
+            if ((props.size() == 0) ||
+                (props.size() == 1 && props.find(acl::SPECPROP_NAME) != props.end())) {
+                return true;
+            }
+        }
+        // Scan vector of rules looking for one that matches all properties
+        bool validRuleFound = false;
+        for (std::vector<AclData::Rule>::const_iterator
+            ruleItr  = allowedSpecProperties[action][object]->begin();
+            ruleItr != allowedSpecProperties[action][object]->end() && !validRuleFound;
+            ruleItr++) {
+            // Scan one rule
+            validRuleFound = true;
+            for(AclData::specPropertyMapItr itr = props.begin();
+                itr != props.end();
+                itr++) {
+                if ((*itr).first != acl::SPECPROP_NAME &&
+                    ruleItr->props.find((*itr).first) ==
+                    ruleItr->props.end()) {
+                    // Test property not found in this rule
+                    validRuleFound = false;
+                    break;
+                }
+            }
+        }
+        if (!validRuleFound) {
+            if (emitLog) {
+                QPID_LOG(warning, "ACL rule ignored: Broker checks for rules with action: '"
+                    << AclHelper::getActionStr(action) << "' and object: '"
+                    << AclHelper::getObjectTypeStr(object)
+                    << "' but will never match with property set: "
+                    << AclHelper::propertyMapToString(&props));
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Return a list of indexes of definitions that this lookup might match
+     */
+    void AclValidator::findPossibleLookupMatch(qpid::acl::Action action,
+                                               qpid::acl::ObjectType object,
+                                               const AclData::specPropertyMap& props,
+                                               std::vector<int>& result) const {
+        if (!allowedSpecProperties[action][object].get()) {
+            return;
+        } else {
+            // Scan vector of rules returning the indexes of all that match
+            bool validRuleFound;
+            for (std::vector<AclData::Rule>::const_iterator
+                ruleItr  = allowedSpecProperties[action][object]->begin();
+                ruleItr != allowedSpecProperties[action][object]->end();
+                ruleItr++) {
+                // Scan one rule
+                validRuleFound = true;
+                for(AclData::specPropertyMapItr
+                    itr = props.begin(); itr != props.end(); itr++) {
+                    if ((*itr).first != acl::SPECPROP_NAME &&
+                        ruleItr->props.find((*itr).first) ==
+                        ruleItr->props.end()) {
+                        // Test property not found in this rule
+                        validRuleFound = false;
+                        break;
+                    }
+                }
+                if (validRuleFound) {
+                    result.push_back(ruleItr->rawRuleNum);
+                }
+            }
+        }
+        return;
+    }
+
+    /**
+     * Emit trace log of original property definitions
+     */
+    void AclValidator::tracePropertyDefs() {
+        QPID_LOG(trace, "ACL: Definitions of action, object, (allowed properties) lookups");
+        for (int iA=0; iA<acl::ACTIONSIZE; iA++) {
+            for (int iO=0; iO<acl::OBJECTSIZE; iO++) {
+                if (allowedSpecProperties[iA][iO].get()) {
+                    for (std::vector<AclData::Rule>::const_iterator
+                        ruleItr  = allowedSpecProperties[iA][iO]->begin();
+                        ruleItr != allowedSpecProperties[iA][iO]->end();
+                        ruleItr++) {
+                        std::string pstr;
+                        for (AclData::specPropertyMapItr pMItr  = ruleItr->props.begin();
+                            pMItr != ruleItr->props.end();
+                            pMItr++) {
+                            pstr += AclHelper::getPropertyStr((SpecProperty) pMItr-> first);
+                            pstr += ",";
+                        }
+                        QPID_LOG(trace, "ACL: Lookup "
+                            << std::setfill(' ') << std::setw(2)
+                            << ruleItr->rawRuleNum << ": "
+                            << ruleItr->lookupHelp << " "
+                            << std::setfill(' ') << std::setw(acl::ACTION_STR_WIDTH +1) << std::left
+                            << AclHelper::getActionStr(acl::Action(iA))
+                            << std::setfill(' ') << std::setw(acl::OBJECTTYPE_STR_WIDTH) << std::left
+                            << AclHelper::getObjectTypeStr(acl::ObjectType(iO))
+                            << " (" << pstr.substr(0, pstr.length()-1) << ")");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Construct a record of all the calls that the broker will
      * make to acl::authorize and the properties for each call.
      * From that create the list of all the spec properties that
      * users are then allowed to specify in acl rule files.
      */
     void AclValidator::registerProperties(
-        const std::string& /* source */,
+        const std::string& source,
+        const std::string& description,
         Action action,
         ObjectType object,
         const std::string& properties) {
         if (!allowedProperties[action][object].get()) {
             boost::shared_ptr<std::set<Property> > t1(new std::set<Property>());
             allowedProperties[action][object] = t1;
-            boost::shared_ptr<std::set<SpecProperty> > t2(new std::set<SpecProperty>());
+            boost::shared_ptr<std::vector<AclData::Rule> > t2(new std::vector<AclData::Rule>());
             allowedSpecProperties[action][object] = t2;
         }
         std::vector<std::string> props = split(properties, " ");
+        AclData::specPropertyMap spm;
         for (size_t i=0; i<props.size(); i++) {
             Property prop = AclHelper::getProperty(props[i]);
             allowedProperties[action][object]->insert(prop);
@@ -250,35 +454,39 @@ namespace acl {
             switch (prop) {
                 // Cases where broker supplies a property but Acl has upper/lower limit for it
                 case PROP_MAXPAGES:
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXPAGESLOWERLIMIT);
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXPAGESUPPERLIMIT);
+                    spm[SPECPROP_MAXPAGESLOWERLIMIT]="";
+                    spm[SPECPROP_MAXPAGESUPPERLIMIT]="";
                     break;
                 case PROP_MAXPAGEFACTOR:
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXPAGEFACTORLOWERLIMIT);
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXPAGEFACTORUPPERLIMIT);
+                    spm[SPECPROP_MAXPAGEFACTORLOWERLIMIT]="";
+                    spm[SPECPROP_MAXPAGEFACTORUPPERLIMIT]="";
                     break;
                 case PROP_MAXQUEUESIZE:
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXQUEUESIZELOWERLIMIT);
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXQUEUESIZEUPPERLIMIT);
+                    spm[SPECPROP_MAXQUEUESIZELOWERLIMIT]="";
+                    spm[SPECPROP_MAXQUEUESIZEUPPERLIMIT]="";
                     break;
                 case PROP_MAXQUEUECOUNT:
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXQUEUECOUNTLOWERLIMIT);
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXQUEUECOUNTUPPERLIMIT);
+                    spm[SPECPROP_MAXQUEUECOUNTLOWERLIMIT]="";
+                    spm[SPECPROP_MAXQUEUECOUNTUPPERLIMIT]="";
                     break;
                 case PROP_MAXFILESIZE:
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXFILESIZELOWERLIMIT);
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXFILESIZEUPPERLIMIT);
+                    spm[SPECPROP_MAXFILESIZELOWERLIMIT]="";
+                    spm[SPECPROP_MAXFILESIZEUPPERLIMIT]="";
                     break;
                 case PROP_MAXFILECOUNT:
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXFILECOUNTLOWERLIMIT);
-                    allowedSpecProperties[action][object]->insert(SPECPROP_MAXFILECOUNTUPPERLIMIT);
+                    spm[SPECPROP_MAXFILECOUNTLOWERLIMIT]="";
+                    spm[SPECPROP_MAXFILECOUNTUPPERLIMIT]="";
                     break;
                 default:
                     // Cases where broker supplies a property and Acl matches it directly
-                    allowedSpecProperties[action][object]->insert( SpecProperty(prop) );
+                    SpecProperty sp = SpecProperty(prop);
+                    spm[ sp ]="";
                     break;
             }
         }
+        AclData::Rule someProps(propertyIndex, acl::ALLOW, spm, source, description);
+        propertyIndex++;
+        allowedSpecProperties[action][object]->push_back(someProps);
     }
 
 }}

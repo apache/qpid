@@ -169,17 +169,13 @@ bool Acl::approveConnection(const qpid::broker::Connection& conn)
     }
 
     (void) dataLocal->getConnQuotaForUser(userName, &connectionLimit);
-    boost::shared_ptr<const AclData::bwHostRuleSet> globalRules = dataLocal->getGlobalConnectionRules();
-    boost::shared_ptr<const AclData::bwHostRuleSet> userRules   = dataLocal->getUserConnectionRules(userName);
 
-
-    return connectionCounter->approveConnection(conn,
-                                                userName,
-                                                dataLocal->enforcingConnectionQuotas(),
-                                                connectionLimit,
-                                                globalRules,
-                                                userRules
-                                               );
+    return connectionCounter->approveConnection(
+        conn,
+        userName,
+        dataLocal->enforcingConnectionQuotas(),
+        connectionLimit,
+        dataLocal);
 }
 
 bool Acl::approveCreateQueue(const std::string& userId, const std::string& queueName)
@@ -295,6 +291,9 @@ bool Acl::readAclFile(std::string& aclFile, std::string& errorText) {
         QPID_LOG(debug, "ACL: Queue quotas are Enabled.");
     }
 
+    QPID_LOG(debug, "ACL: Default connection mode : "
+        << AclHelper::getAclResultStr(d->connectionMode()));
+
     data->aclSource = aclFile;
     if (mgmtObject!=0){
         mgmtObject->set_transferAcl(transferAcl?1:0);
@@ -317,6 +316,7 @@ void Acl::loadEmptyAclRuleset() {
     boost::shared_ptr<AclData> d(new AclData);
     d->decisionMode = ALLOW;
     d->aclSource = "";
+    d->connectionDecisionMode = ALLOW;
     {
         Mutex::ScopedLock locker(dataLock);
         data = d;
@@ -357,13 +357,23 @@ Manageable::status_t Acl::lookup(qpid::management::Args& args, std::string& text
             Mutex::ScopedLock locker(dataLock);
             dataLocal = data;  //rcu copy
         }
-        AclResult aclResult = dataLocal->lookup(
-            ioArgs.i_userId,
-            action,
-            objType,
-            ioArgs.i_objectName,
-            &propertyMap);
-
+        AclResult aclResult;
+        // CREATE CONNECTION does not use lookup()
+        if (action == ACT_CREATE && objType == OBJ_CONNECTION) {
+            std::string host = propertyMap[acl::PROP_HOST];
+            std::string logString;
+            aclResult = dataLocal->isAllowedConnection(
+                ioArgs.i_userId,
+                host,
+                logString);
+        } else {
+            aclResult = dataLocal->lookup(
+                ioArgs.i_userId,
+                action,
+                objType,
+                ioArgs.i_objectName,
+                &propertyMap);
+        }
         ioArgs.o_result = AclHelper::getAclResultStr(aclResult);
         result = STATUS_OK;
 

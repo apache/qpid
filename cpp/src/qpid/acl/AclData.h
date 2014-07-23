@@ -69,7 +69,7 @@ public:
     typedef specPropertyMap::const_iterator                specPropertyMapItr;
 
     //
-    // rule
+    // Rule
     //
     // Created by AclReader and stored in a ruleSet vector for subsequent
     //  run-time lookup matching and allow/deny decisions.
@@ -92,6 +92,8 @@ public:
         bool                  pubExchNameMatchesBlank;
         std::string           pubExchName;
         std::vector<bool>     ruleHasUserSub;
+        std::string           lookupSource;
+        std::string           lookupHelp;
 
         Rule (int ruleNum, qpid::acl::AclResult res, specPropertyMap& p) :
             rawRuleNum(ruleNum),
@@ -104,6 +106,24 @@ public:
             pubExchNameMatchesBlank(false),
             pubExchName(),
             ruleHasUserSub(PROPERTYSIZE, false)
+            {}
+
+        // Variation of Rule for tracking PropertyDefs
+        // for AclValidation.
+        Rule (int ruleNum, qpid::acl::AclResult res, specPropertyMap& p,
+              const std::string& ls, const std::string& lh
+        ) :
+            rawRuleNum(ruleNum),
+            ruleMode(res),
+            props(p),
+            pubRoutingKeyInRule(false),
+            pubRoutingKey(),
+            pubExchNameInRule(false),
+            pubExchNameMatchesBlank(false),
+            pubExchName(),
+            ruleHasUserSub(PROPERTYSIZE, false),
+            lookupSource(ls),
+            lookupHelp(lh)
             {}
 
 
@@ -148,11 +168,12 @@ public:
     typedef  std::map<std::string, bwHostRuleSet> bwHostUserRuleMap; //<username, hosts-vector>
     typedef  bwHostUserRuleMap::const_iterator    bwHostUserRuleMapItr;
 
-    // Action*[] -> Object*[] -> map<user -> set<Rule> >
+    // Action*[] -> Object*[] -> map<user, set<Rule> >
     aclAction*           actionList[qpid::acl::ACTIONSIZE];
     qpid::acl::AclResult decisionMode;  // allow/deny[-log] if no matching rule found
     bool                 transferAcl;
     std::string          aclSource;
+    qpid::acl::AclResult connectionDecisionMode;
 
     AclResult lookup(
         const std::string&               id,        // actor id
@@ -172,10 +193,14 @@ public:
         return connBWHostsGlobalRules;
     }
 
-    boost::shared_ptr<const AclData::bwHostRuleSet> getUserConnectionRules(const std::string& name);
+    boost::shared_ptr<const bwHostUserRuleMap> getUserConnectionRules() {
+        return connBWHostsUserRules;
+    }
 
     bool matchProp(const std::string & src, const std::string& src1);
     void clear ();
+    void printDecisionRules(int userFieldWidth);
+
     static const std::string ACL_KEYWORD_USER_SUBST;
     static const std::string ACL_KEYWORD_DOMAIN_SUBST;
     static const std::string ACL_KEYWORD_USERDOMAIN_SUBST;
@@ -243,6 +268,19 @@ public:
         return "65530";
     }
 
+    /**
+     * isAllowedConnection
+     * Return true if this user is allowed to connect to this host.
+     * Return log text describing both success and failure.
+     */
+    AclResult isAllowedConnection(const std::string& userName,
+                                  const std::string& hostName,
+                                  std::string& logText);
+
+    AclResult connectionMode() const {
+        return connectionDecisionMode;
+    }
+
     AclData();
     virtual ~AclData();
 
@@ -277,7 +315,7 @@ private:
     boost::shared_ptr<bwHostRuleSet> connBWHostsGlobalRules;
 
     // Per-user host connection black/white rule set map
-    boost::shared_ptr<bwHostUserRuleMap> connBWHostsRuleSettings;
+    boost::shared_ptr<bwHostUserRuleMap> connBWHostsUserRules;
 };
 
 }} // namespace qpid::acl
