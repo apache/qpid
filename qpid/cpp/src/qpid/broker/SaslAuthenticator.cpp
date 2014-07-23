@@ -301,6 +301,11 @@ void CyrusAuthenticator::init()
     SecuritySettings external = connection.getExternalSecuritySettings();
     QPID_LOG(debug, "External ssf=" << external.ssf << " and auth=" << external.authid);
     sasl_ssf_t external_ssf = (sasl_ssf_t) external.ssf;
+
+    if ((external_ssf) && (external.authid.empty())) {
+        QPID_LOG(warning, "SASL error: unable to offer EXTERNAL mechanism as authid cannot be determined");
+    }
+
     if (external_ssf) {
         int result = sasl_setprop(sasl_conn, SASL_SSF_EXTERNAL, &external_ssf);
         if (result != SASL_OK) {
