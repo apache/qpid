@@ -151,9 +151,9 @@ var saslCramMD5 = function saslCramMD5(user, password, saslMechanism, callbackFu
             var DIGEST = mechanism.toUpperCase();
             var HMAC = "Hmac"+DIGEST;
 
-            script.get("webjars/cryptojs/3.1.2/rollups/hmac-"+mechanism+".js").then( function()
+            script.get("js/crypto-js/hmac-"+mechanism+".js").then( function()
             {
-                script.get("webjars/cryptojs/3.1.2/components/enc-base64-min.js").then ( function()
+                script.get("js/crypto-js/enc-base64-min.js").then ( function()
                 {
 
                     var toBase64 = function toBase64( input )
