@@ -222,7 +222,8 @@ class Connection(Endpoint):
           self.error = None
           raise e
 
-      self.close()
+      if not self._unlinked():
+          self.close()
       raise e
 
   def get_error(self):
