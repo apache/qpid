@@ -178,33 +178,44 @@ class GeneralTests(Base):
         except Empty: pass
         self.assertEqual(received, ["a", "c"])
 
-    def _node_disambiguation_test(self, e, q):
+    def _node_disambiguation_test(self, e, q, ambiguous_send=False):
         s1 = self.ssn.sender("ambiguous; {node:{type:topic}}");
         s2 = self.ssn.sender("ambiguous; {node:{type:queue}}");
-        s3 = self.ssn.sender("ambiguous");
         s1.send(Message("a"))
         s2.send(Message("b"))
-        s3.send(Message("c"))
+        if ambiguous_send:
+            # pure python client defaults to using the queue when the
+            # node name is ambiguous and no type is specified; the
+            # swigged version treats this as an error
+            s3 = self.ssn.sender("ambiguous");
+            s3.send(Message("c"))
         self.assertEqual(e.fetch().content, "a")
         self.assertEqual(q.fetch().content, "b")
-        self.assertEqual(q.fetch().content, "c")
+        if ambiguous_send:
+            self.assertEqual(q.fetch().content, "c")
         for r in [e, q]:
             try:
                 m = r.fetch(timeout=0)
                 self.fail("Found unexpected message %s")
             except Empty: pass
 
-    def test_node_disambiguation(self):
+    def _node_disambiguation_precreated(self, ambiguous_send):
         agent = BrokerAgent(self.conn)
         agent.addExchange("fanout", "ambiguous")
         agent.addQueue("ambiguous")
         try:
             r1 = self.ssn.receiver("ambiguous; {node:{type:topic}}")
             r2 = self.ssn.receiver("ambiguous; {node:{type:queue}}")
-            self._node_disambiguation_test(r1, r2)
+            self._node_disambiguation_test(r1, r2, ambiguous_send=ambiguous_send)
         finally:
             agent.delExchange("ambiguous")
             agent.delQueue("ambiguous", False, False)
+
+    def test_node_disambiguation_1(self):
+        self._node_disambiguation_precreated(False)
+
+    def test_node_disambiguation_2(self):
+        self._node_disambiguation_precreated(True)
 
     def test_ambiguous_create_1(self):
         #create queue first, then exchange
