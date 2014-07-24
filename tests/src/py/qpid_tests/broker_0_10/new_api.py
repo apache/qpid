@@ -197,7 +197,7 @@ class GeneralTests(Base):
     def test_node_disambiguation(self):
         agent = BrokerAgent(self.conn)
         agent.addExchange("fanout", "ambiguous")
-        queue = agent.addQueue("ambiguous")
+        agent.addQueue("ambiguous")
         try:
             r1 = self.ssn.receiver("ambiguous; {node:{type:topic}}")
             r2 = self.ssn.receiver("ambiguous; {node:{type:queue}}")
@@ -235,6 +235,35 @@ class GeneralTests(Base):
         finally:
             if exchange: agent.delExchange("ambiguous")
             if queue: agent.delQueue("ambiguous", False, False)
+
+    def test_ambiguous_delete_1(self):
+        agent = BrokerAgent(self.conn)
+        agent.addExchange("fanout", "ambiguous")
+        agent.addQueue("ambiguous")
+        self.ssn.receiver("ambiguous; {delete:receiver, node:{type:topic}}").close()
+        exchange = agent.getExchange("ambiguous")
+        queue = agent.getQueue("ambiguous")
+        try:
+            assert(not exchange)
+            assert(queue)
+        finally:
+            if exchange: agent.delExchange("ambiguous")
+            if queue: agent.delQueue("ambiguous", False, False)
+
+    def test_ambiguous_delete_2(self):
+        agent = BrokerAgent(self.conn)
+        agent.addExchange("fanout", "ambiguous")
+        agent.addQueue("ambiguous")
+        self.ssn.receiver("ambiguous; {delete:receiver, node:{type:queue}}").close()
+        exchange = agent.getExchange("ambiguous")
+        queue = agent.getQueue("ambiguous")
+        try:
+            assert(exchange)
+            assert(not queue)
+        finally:
+            if exchange: agent.delExchange("ambiguous")
+            if queue: agent.delQueue("ambiguous", False, False)
+
 
 class SequenceNumberTests(Base):
     """
