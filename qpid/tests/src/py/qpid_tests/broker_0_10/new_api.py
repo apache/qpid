@@ -19,6 +19,7 @@
 
 from qpid.tests.messaging.implementation import *
 from qpid.tests.messaging import Base
+from qpidtoollibs import BrokerAgent
 from time import sleep
 
 #
@@ -177,6 +178,63 @@ class GeneralTests(Base):
         except Empty: pass
         self.assertEqual(received, ["a", "c"])
 
+    def _node_disambiguation_test(self, e, q):
+        s1 = self.ssn.sender("ambiguous; {node:{type:topic}}");
+        s2 = self.ssn.sender("ambiguous; {node:{type:queue}}");
+        s3 = self.ssn.sender("ambiguous");
+        s1.send(Message("a"))
+        s2.send(Message("b"))
+        s3.send(Message("c"))
+        self.assertEqual(e.fetch().content, "a")
+        self.assertEqual(q.fetch().content, "b")
+        self.assertEqual(q.fetch().content, "c")
+        for r in [e, q]:
+            try:
+                m = r.fetch(timeout=0)
+                self.fail("Found unexpected message %s")
+            except Empty: pass
+
+    def test_node_disambiguation(self):
+        agent = BrokerAgent(self.conn)
+        agent.addExchange("fanout", "ambiguous")
+        queue = agent.addQueue("ambiguous")
+        try:
+            r1 = self.ssn.receiver("ambiguous; {node:{type:topic}}")
+            r2 = self.ssn.receiver("ambiguous; {node:{type:queue}}")
+            self._node_disambiguation_test(r1, r2)
+        finally:
+            agent.delExchange("ambiguous")
+            agent.delQueue("ambiguous", False, False)
+
+    def test_ambiguous_create_1(self):
+        #create queue first, then exchange
+        r1 = self.ssn.receiver("ambiguous; {create:receiver, node:{type:queue}}")
+        r2 = self.ssn.receiver("ambiguous; {create:receiver, node:{type:topic}}")
+        agent = BrokerAgent(self.conn)
+        exchange = agent.getExchange("ambiguous")
+        queue = agent.getQueue("ambiguous")
+        try:
+            assert(exchange)
+            assert(queue)
+            self._node_disambiguation_test(r2, r1)
+        finally:
+            if exchange: agent.delExchange("ambiguous")
+            if queue: agent.delQueue("ambiguous", False, False)
+
+    def test_ambiguous_create_2(self):
+        #create exchange first, then queue
+        r1 = self.ssn.receiver("ambiguous; {create:receiver, node:{type:topic}}")
+        r2 = self.ssn.receiver("ambiguous; {create:receiver, node:{type:queue}}")
+        agent = BrokerAgent(self.conn)
+        exchange = agent.getExchange("ambiguous")
+        queue = agent.getQueue("ambiguous")
+        try:
+            assert(exchange)
+            assert(queue)
+            self._node_disambiguation_test(r1, r2)
+        finally:
+            if exchange: agent.delExchange("ambiguous")
+            if queue: agent.delQueue("ambiguous", False, False)
 
 class SequenceNumberTests(Base):
     """
