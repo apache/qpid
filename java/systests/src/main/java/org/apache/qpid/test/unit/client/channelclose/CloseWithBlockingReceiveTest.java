@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
+import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
@@ -34,22 +34,12 @@ public class CloseWithBlockingReceiveTest extends QpidBrokerTestCase
 {
 
 
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-    }
-
-
     public void testReceiveReturnsNull() throws Exception
     {
-        final AMQConnection connection =  (AMQConnection) getConnection("guest", "guest");
+        final Connection connection =  getConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        MessageConsumer consumer = session.createConsumer(new AMQTopic(connection, "banana"));
+        Destination destination = session.createQueue(getTestQueueName());
+        MessageConsumer consumer = session.createConsumer(destination);
         connection.start();
 
         Runnable r = new Runnable()
@@ -68,14 +58,16 @@ public class CloseWithBlockingReceiveTest extends QpidBrokerTestCase
             }
         };
         long startTime = System.currentTimeMillis();
-        new Thread(r).start();
-        consumer.receive(10000);
-        assertTrue(System.currentTimeMillis() - startTime < 10000);
+        Thread thread = new Thread(r);
+        thread.start();
+        try
+        {
+            consumer.receive(10000);
+            assertTrue(System.currentTimeMillis() - startTime < 10000);
+        }
+        finally
+        {
+            thread.join();
+        }
     }
-
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(CloseWithBlockingReceiveTest.class);
-    }
-
 }
