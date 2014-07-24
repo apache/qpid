@@ -147,7 +147,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
     }
 
-    public String getMechanisms()
+    public List<String> getMechanisms()
     {
         return _principalDatabase.getMechanisms();
     }
@@ -158,7 +158,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     }
 
     /**
-     * @see org.apache.qpid.server.security.auth.manager.AuthenticationManager#authenticate(SaslServer, byte[])
+     * @see org.apache.qpid.server.model.AuthenticationProvider#authenticate(SaslServer, byte[])
      */
     public AuthenticationResult authenticate(SaslServer server, byte[] response)
     {
@@ -184,7 +184,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     }
 
     /**
-     * @see org.apache.qpid.server.security.auth.manager.AuthenticationManager#authenticate(String, String)
+     * @see org.apache.qpid.server.model.AuthenticationProvider#authenticate(String, String)
      */
     public AuthenticationResult authenticate(final String username, final String password)
     {

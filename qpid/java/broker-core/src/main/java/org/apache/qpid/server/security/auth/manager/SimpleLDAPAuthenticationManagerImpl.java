@@ -24,7 +24,9 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.AuthenticationException;
@@ -111,11 +113,13 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
 
 
     @Override
-    public void initialise()
+    protected void onOpen()
     {
+        super.onOpen();
+
         _sslSocketFactoryOverrideClass = createSslSocketFactoryOverrideClass();
 
-        validateInitialDirContext();
+      //  validateInitialDirContext();
     }
 
     @Override
@@ -168,9 +172,9 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
 
 
     @Override
-    public String getMechanisms()
+    public List<String> getMechanisms()
     {
-        return PlainSaslServer.MECHANISM;
+        return Collections.singletonList(PlainSaslServer.MECHANISM);
     }
 
     @Override

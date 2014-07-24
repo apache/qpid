@@ -21,11 +21,13 @@
 package org.apache.qpid.server.util;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.SocketAddress;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -78,13 +80,13 @@ public class BrokerTestHelper
         when(systemContext.getCategoryClass()).thenReturn(SystemContext.class);
 
         SubjectCreator subjectCreator = mock(SubjectCreator.class);
-        when(subjectCreator.getMechanisms()).thenReturn("");
+        when(subjectCreator.getMechanisms()).thenReturn(Collections.<String>emptyList());
 
         Broker broker = mock(Broker.class);
         when(broker.getConnection_sessionCountLimit()).thenReturn(1);
         when(broker.getConnection_closeWhenNoRoute()).thenReturn(false);
         when(broker.getId()).thenReturn(UUID.randomUUID());
-        when(broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
+        when(broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(subjectCreator);
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(broker, false));
         when(broker.getObjectFactory()).thenReturn(objectFactory);
         when(broker.getModel()).thenReturn(objectFactory.getModel());

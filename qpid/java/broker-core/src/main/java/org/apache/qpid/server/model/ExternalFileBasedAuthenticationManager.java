@@ -26,4 +26,6 @@ public interface ExternalFileBasedAuthenticationManager<X extends ExternalFileBa
 
     @ManagedAttribute( mandatory = true, description = "File location")
     public String getPath();
+
+
 }

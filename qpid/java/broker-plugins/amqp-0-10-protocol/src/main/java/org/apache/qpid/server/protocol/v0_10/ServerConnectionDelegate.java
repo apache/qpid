@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
@@ -84,12 +83,12 @@ public class ServerConnectionDelegate extends ServerDelegate
     }
 
     private ServerConnectionDelegate(Map<String, Object> properties,
-                                    List<Object> locales,
-                                    Broker broker,
-                                    String localFQDN,
-                                    SubjectCreator subjectCreator)
+                                     List<Object> locales,
+                                     Broker broker,
+                                     String localFQDN,
+                                     SubjectCreator subjectCreator)
     {
-        super(properties, parseToList(subjectCreator.getMechanisms()), locales);
+        super(properties, (List) subjectCreator.getMechanisms(), locales);
 
         _broker = broker;
         _localFQDN = localFQDN;
@@ -126,17 +125,6 @@ public class ServerConnectionDelegate extends ServerDelegate
         map.put(ServerPropertyNames.QPID_INSTANCE_NAME, broker.getName());
 
         return map;
-    }
-
-    private static List<Object> parseToList(String mechanisms)
-    {
-        List<Object> list = new ArrayList<Object>();
-        StringTokenizer tokenizer = new StringTokenizer(mechanisms, " ");
-        while(tokenizer.hasMoreTokens())
-        {
-            list.add(tokenizer.nextToken());
-        }
-        return list;
     }
 
     public ServerSession getSession(Connection conn, SessionAttach atc)

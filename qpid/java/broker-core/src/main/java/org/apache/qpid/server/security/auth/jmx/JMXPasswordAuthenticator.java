@@ -25,13 +25,13 @@ import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
 import java.security.PrivilegedAction;
 
+import javax.management.remote.JMXAuthenticator;
+import javax.security.auth.Subject;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
-
-import javax.management.remote.JMXAuthenticator;
-import javax.security.auth.Subject;
 
 public class JMXPasswordAuthenticator implements JMXAuthenticator
 {
@@ -45,11 +45,13 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
 
     private final Broker _broker;
     private final SocketAddress _address;
+    private final boolean _secure;
 
-    public JMXPasswordAuthenticator(Broker broker, SocketAddress address)
+    public JMXPasswordAuthenticator(Broker broker, SocketAddress address, final boolean secure)
     {
         _broker = broker;
         _address = address;
+        _secure = secure;
     }
 
     public Subject authenticate(Object credentials) throws SecurityException
@@ -95,7 +97,7 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
 
-        SubjectCreator subjectCreator = _broker.getSubjectCreator(_address);
+        SubjectCreator subjectCreator = _broker.getSubjectCreator(_address, _secure);
         if (subjectCreator == null)
         {
             throw new SecurityException("Can't get subject creator for " + _address);

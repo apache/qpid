@@ -21,45 +21,47 @@
 package org.apache.qpid.server.security;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 
 /**
  * Creates a {@link Subject} formed by the {@link Principal}'s returned from:
  * <ol>
- * <li>Authenticating using an {@link AuthenticationManager}</li>
- * <li>A {@link GroupPrincipalAccessor}</li>
+ * <li>Authenticating using an {@link AuthenticationProvider}</li>
  * </ol>
  *
  * <p>
- * SubjectCreator is a facade to the {@link AuthenticationManager}, and is intended to be
+ * SubjectCreator is a facade to the {@link AuthenticationProvider}, and is intended to be
  * the single place that {@link Subject}'s are created in the broker.
  * </p>
  */
 public class SubjectCreator
 {
-    private AuthenticationManager _authenticationManager;
+    private final boolean _secure;
+    private AuthenticationProvider<?> _authenticationProvider;
     private Collection<GroupProvider> _groupProviders;
 
-    public SubjectCreator(AuthenticationManager authenticationManager, Collection<GroupProvider> groupProviders)
+    public SubjectCreator(AuthenticationProvider<?> authenticationProvider,
+                          Collection<GroupProvider> groupProviders,
+                          final boolean secure)
     {
-        _authenticationManager = authenticationManager;
+        _authenticationProvider = authenticationProvider;
         _groupProviders = groupProviders;
+        _secure = secure;
     }
 
    /**
@@ -67,17 +69,27 @@ public class SubjectCreator
     *
     * @return SASL mechanism names, space separated.
     */
-    public String getMechanisms()
+    public List<String> getMechanisms()
     {
-        return _authenticationManager.getMechanisms();
+        List<String> mechanisms = _authenticationProvider.getMechanisms();
+        if(!_secure)
+        {
+            mechanisms = new ArrayList<>(mechanisms);
+            mechanisms.removeAll(_authenticationProvider.getSecureOnlyMechanisms());
+        }
+        return mechanisms;
     }
 
     /**
-     * @see AuthenticationManager#createSaslServer(String, String, Principal)
+     * @see AuthenticationProvider#createSaslServer(String, String, Principal)
      */
     public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException
     {
-        return _authenticationManager.createSaslServer(mechanism, localFQDN, externalPrincipal);
+        if(!getMechanisms().contains(mechanism))
+        {
+            throw new SaslException("Unsupported mechanism: " + mechanism + ".\nSupported mechanisms: " + getMechanisms());
+        }
+        return _authenticationProvider.createSaslServer(mechanism, localFQDN, externalPrincipal);
     }
 
     /**
@@ -88,7 +100,7 @@ public class SubjectCreator
      */
     public SubjectAuthenticationResult authenticate(SaslServer server, byte[] response)
     {
-        AuthenticationResult authenticationResult = _authenticationManager.authenticate(server, response);
+        AuthenticationResult authenticationResult = _authenticationProvider.authenticate(server, response);
         if(server.isComplete())
         {
             String username = server.getAuthorizationID();
@@ -106,7 +118,7 @@ public class SubjectCreator
      */
     public SubjectAuthenticationResult authenticate(String username, String password)
     {
-        final AuthenticationResult authenticationResult = _authenticationManager.authenticate(username, password);
+        final AuthenticationResult authenticationResult = _authenticationProvider.authenticate(username, password);
 
         return createResultWithGroups(username, authenticationResult);
     }
@@ -141,18 +153,7 @@ public class SubjectCreator
         return authenticationSubject;
     }
 
-    public Subject createSubjectWithGroups(String username)
-    {
-        Subject authenticationSubject = new Subject();
-
-        authenticationSubject.getPrincipals().add(new AuthenticatedPrincipal(username));
-        authenticationSubject.getPrincipals().addAll(getGroupPrincipals(username));
-        authenticationSubject.setReadOnly();
-
-        return authenticationSubject;
-    }
-
-    public Set<Principal> getGroupPrincipals(String username)
+    Set<Principal> getGroupPrincipals(String username)
     {
         Set<Principal> principals = new HashSet<Principal>();
         for (GroupProvider groupProvider : _groupProviders)
@@ -167,13 +168,4 @@ public class SubjectCreator
         return Collections.unmodifiableSet(principals);
     }
 
-    public boolean isAnonymousAuthenticationAllowed()
-    {
-        return _authenticationManager instanceof AnonymousAuthenticationManager;
-    }
-
-    public boolean isExternalAuthenticationAllowed()
-    {
-        return _authenticationManager instanceof ExternalAuthenticationManager;
-    }
 }

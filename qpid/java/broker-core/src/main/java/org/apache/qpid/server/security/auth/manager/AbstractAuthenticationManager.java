@@ -24,6 +24,7 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,6 +37,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
@@ -48,13 +50,16 @@ import org.apache.qpid.server.security.access.Operation;
 
 public abstract class AbstractAuthenticationManager<T extends AbstractAuthenticationManager<T>>
     extends AbstractConfiguredObject<T>
-    implements AuthenticationProvider<T>, AuthenticationManager
+    implements AuthenticationProvider<T>
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractAuthenticationManager.class);
 
     private final Broker _broker;
     private PreferencesProvider _preferencesProvider;
     private AtomicReference<State> _state = new AtomicReference<State>(State.UNINITIALIZED);
+
+    @ManagedAttributeField
+    private List<String> _secureOnlyMechanisms;
 
     protected AbstractAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
     {
@@ -111,9 +116,9 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @Override
-    public SubjectCreator getSubjectCreator()
+    public SubjectCreator getSubjectCreator(final boolean secure)
     {
-        return new SubjectCreator(this, _broker.getGroupProviders());
+        return new SubjectCreator(this, _broker.getGroupProviders(), secure);
     }
 
     @Override
@@ -247,5 +252,11 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
             return getState();
         }
         return super.getAttribute(name);
+    }
+
+    @Override
+    public final List<String> getSecureOnlyMechanisms()
+    {
+        return _secureOnlyMechanisms;
     }
 }

@@ -32,19 +32,19 @@ import javax.security.sasl.SaslServer;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 public class SubjectCreatorTest extends TestCase
 {
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
 
-    private AuthenticationManager _authenticationManager = mock(AuthenticationManager.class);
+    private AuthenticationProvider _authenticationProvider = mock(AuthenticationProvider.class);
 
     private GroupProvider _groupManager1 = mock(GroupProvider.class);
     private GroupProvider _groupManager2 = mock(GroupProvider.class);
@@ -64,9 +64,10 @@ public class SubjectCreatorTest extends TestCase
         when(_groupManager1.getGroupPrincipalsForUser(USERNAME)).thenReturn(Collections.singleton(_group1));
         when(_groupManager2.getGroupPrincipalsForUser(USERNAME)).thenReturn(Collections.singleton(_group2));
 
-        _subjectCreator = new SubjectCreator(_authenticationManager, new HashSet<GroupProvider>(Arrays.asList(_groupManager1, _groupManager2)));
+        _subjectCreator = new SubjectCreator(_authenticationProvider, new HashSet<GroupProvider>(Arrays.asList(_groupManager1, _groupManager2)),
+                                             false);
         _authenticationResult = new AuthenticationResult(_userPrincipal);
-        when(_authenticationManager.authenticate(USERNAME, PASSWORD)).thenReturn(_authenticationResult);
+        when(_authenticationProvider.authenticate(USERNAME, PASSWORD)).thenReturn(_authenticationResult);
     }
 
     public void testAuthenticateUsernameAndPasswordReturnsSubjectWithUserAndGroupPrincipals()
@@ -88,7 +89,7 @@ public class SubjectCreatorTest extends TestCase
 
     public void testSaslAuthenticationSuccessReturnsSubjectWithUserAndGroupPrincipals() throws Exception
     {
-        when(_authenticationManager.authenticate(_testSaslServer, _saslResponseBytes)).thenReturn(_authenticationResult);
+        when(_authenticationProvider.authenticate(_testSaslServer, _saslResponseBytes)).thenReturn(_authenticationResult);
         when(_testSaslServer.isComplete()).thenReturn(true);
         when(_testSaslServer.getAuthorizationID()).thenReturn(USERNAME);
 
@@ -114,7 +115,7 @@ public class SubjectCreatorTest extends TestCase
     {
         AuthenticationResult failedAuthenticationResult = new AuthenticationResult(expectedStatus);
 
-        when(_authenticationManager.authenticate(USERNAME, PASSWORD)).thenReturn(failedAuthenticationResult);
+        when(_authenticationProvider.authenticate(USERNAME, PASSWORD)).thenReturn(failedAuthenticationResult);
 
         SubjectAuthenticationResult subjectAuthenticationResult = _subjectCreator.authenticate(USERNAME, PASSWORD);
 
@@ -132,7 +133,8 @@ public class SubjectCreatorTest extends TestCase
     {
         AuthenticationResult failedAuthenticationResult = new AuthenticationResult(expectedStatus);
 
-        when(_authenticationManager.authenticate(_testSaslServer, _saslResponseBytes)).thenReturn(failedAuthenticationResult);
+        when(_authenticationProvider.authenticate(_testSaslServer, _saslResponseBytes)).thenReturn(
+                failedAuthenticationResult);
         when(_testSaslServer.isComplete()).thenReturn(false);
 
         SubjectAuthenticationResult subjectAuthenticationResult = _subjectCreator.authenticate(_testSaslServer, _saslResponseBytes);

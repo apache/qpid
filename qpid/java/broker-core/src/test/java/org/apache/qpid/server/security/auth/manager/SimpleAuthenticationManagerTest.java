@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -41,7 +42,7 @@ public class SimpleAuthenticationManagerTest extends QpidTestCase
 {
     private static final String TEST_USER = "testUser";
     private static final String TEST_PASSWORD = "testPassword";
-    private AuthenticationManager _authenticationManager;
+    private AuthenticationProvider _authenticationManager;
 
     public void setUp() throws Exception
     {
@@ -58,7 +59,10 @@ public class SimpleAuthenticationManagerTest extends QpidTestCase
 
     public void testGetMechanisms()
     {
-        assertEquals("Unexpected mechanisms", "PLAIN CRAM-MD5", _authenticationManager.getMechanisms());
+        List<String> mechanisms = _authenticationManager.getMechanisms();
+        assertEquals("Unexpected number of mechanisms", 2, mechanisms.size());
+        assertTrue("PLAIN was not present", mechanisms.contains("PLAIN"));
+        assertTrue("CRAM-MD5 was not present", mechanisms.contains("CRAM-MD5"));
     }
 
     public void testCreateSaslServerForUnsupportedMechanisms() throws Exception

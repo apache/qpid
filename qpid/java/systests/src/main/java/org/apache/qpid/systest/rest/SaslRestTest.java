@@ -67,7 +67,7 @@ public class SaslRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<String> mechanisms = (List<String>) saslData.get("mechanisms");
-        String[] expectedMechanisms = { "AMQPLAIN", "PLAIN", "CRAM-MD5" };
+        String[] expectedMechanisms = { "CRAM-MD5" };
         for (String mechanism : expectedMechanisms)
         {
             assertTrue("Mechanism " + mechanism + " is not found", mechanisms.contains(mechanism));

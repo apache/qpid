@@ -77,7 +77,8 @@ public class ProtocolEngineCreator_0_10 implements ProtocolEngineCreator
             fqdn = ((InetSocketAddress) address).getHostName();
         }
         final ConnectionDelegate connDelegate = new ServerConnectionDelegate(broker,
-                fqdn, broker.getSubjectCreator(address));
+                fqdn, broker.getSubjectCreator(address, transport.isSecure())
+        );
 
         ServerConnection conn = new ServerConnection(id,broker);
 

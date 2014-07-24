@@ -19,6 +19,8 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.security.Principal;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.security.sasl.SaslException;
@@ -45,13 +47,6 @@ public class ExternalAuthenticationManagerImpl extends AbstractAuthenticationMan
         super(attributes, broker);
     }
 
-
-    @Override
-    public void initialise()
-    {
-
-    }
-
     @Override
     public boolean getUseFullDN()
     {
@@ -59,9 +54,9 @@ public class ExternalAuthenticationManagerImpl extends AbstractAuthenticationMan
     }
 
     @Override
-    public String getMechanisms()
+    public List<String> getMechanisms()
     {
-        return EXTERNAL;
+        return Collections.singletonList(EXTERNAL);
     }
 
     @Override

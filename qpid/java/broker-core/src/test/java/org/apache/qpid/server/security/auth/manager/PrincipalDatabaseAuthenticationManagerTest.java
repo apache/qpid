@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +92,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
     {
         _principalDatabase = mock(PrincipalDatabase.class);
 
-        when(_principalDatabase.getMechanisms()).thenReturn(MOCK_MECH_NAME);
+        when(_principalDatabase.getMechanisms()).thenReturn(Collections.singletonList(MOCK_MECH_NAME));
         when(_principalDatabase.createSaslServer(MOCK_MECH_NAME, LOCALHOST, null)).thenReturn(new MySaslServer(false, true));
 
         setupManager(false);

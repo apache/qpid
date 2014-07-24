@@ -29,6 +29,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,6 +50,7 @@ import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.sasl.plain.PlainAdapterSaslServer;
 import org.apache.qpid.server.security.auth.sasl.scram.ScramSaslServer;
 
 public abstract class AbstractScramAuthenticationManager<X extends AbstractScramAuthenticationManager<X>>
@@ -57,6 +59,7 @@ public abstract class AbstractScramAuthenticationManager<X extends AbstractScram
 {
 
     static final Charset ASCII = Charset.forName("ASCII");
+    public static final String PLAIN = "PLAIN";
     private final SecureRandom _random = new SecureRandom();
 
     private int _iterationCount = 4096;
@@ -70,15 +73,9 @@ public abstract class AbstractScramAuthenticationManager<X extends AbstractScram
     }
 
     @Override
-    public void initialise()
+    public List<String> getMechanisms()
     {
-
-    }
-
-    @Override
-    public String getMechanisms()
-    {
-        return getMechanismName();
+        return Collections.unmodifiableList(Arrays.asList(getMechanismName(), PLAIN));
     }
 
     protected abstract String getMechanismName();
@@ -89,7 +86,18 @@ public abstract class AbstractScramAuthenticationManager<X extends AbstractScram
                                        final Principal externalPrincipal)
             throws SaslException
     {
-        return new ScramSaslServer(this, getMechanismName(), getHmacName(), getDigestName());
+        if(getMechanismName().equals(mechanism))
+        {
+            return new ScramSaslServer(this, getMechanismName(), getHmacName(), getDigestName());
+        }
+        else if(PLAIN.equals(mechanism))
+        {
+            return new PlainAdapterSaslServer(this);
+        }
+        else
+        {
+            throw new SaslException("Unknown mechanism: " + mechanism);
+        }
     }
 
     protected abstract String getDigestName();

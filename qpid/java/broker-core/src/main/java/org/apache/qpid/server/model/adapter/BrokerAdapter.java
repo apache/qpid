@@ -848,7 +848,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
-    public SubjectCreator getSubjectCreator(SocketAddress localAddress)
+    public SubjectCreator getSubjectCreator(SocketAddress localAddress, final boolean secure)
     {
         AuthenticationProvider provider = getAuthenticationProvider(localAddress);
 
@@ -857,7 +857,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             throw new IllegalConfigurationException("Unable to determine authentication provider for address: " + localAddress);
         }
 
-        return provider.getSubjectCreator();
+        return provider.getSubjectCreator(secure);
     }
 
     @Override

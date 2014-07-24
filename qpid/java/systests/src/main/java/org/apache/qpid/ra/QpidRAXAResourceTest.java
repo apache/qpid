@@ -20,30 +20,18 @@
  */
 package org.apache.qpid.ra;
 
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Message;
-import javax.jms.Session;
-
 import javax.jms.XAConnection;
 import javax.jms.XAConnectionFactory;
 import javax.jms.XASession;
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
 
 import org.apache.qpid.client.AMQXAResource;
-
-import org.apache.qpid.ra.QpidRAConnectionFactoryImpl;
-import org.apache.qpid.ra.QpidRAManagedConnectionFactory;
-import org.apache.qpid.ra.QpidResourceAdapter;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class QpidRAXAResourceTest extends QpidBrokerTestCase
 {
     private static final String FACTORY_NAME = "default";
     private static final String BROKER_PORT = "15672";
-    private static final String URL = "amqp://guest:guest@client/test?brokerlist='tcp://localhost:" + BROKER_PORT + "?sasl_mechs='PLAIN''";
+    private static final String URL = "amqp://guest:guest@client/test?brokerlist='tcp://localhost:" + BROKER_PORT + "?sasl_mechs='PLAIN%2520CRAM-MD5''";
 
     public void testXAResourceIsSameRM() throws Exception
     {

@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.ra;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import javax.jms.Session;
 
-import org.apache.qpid.ra.QpidRAConnectionFactoryImpl;
-import org.apache.qpid.ra.QpidRAManagedConnectionFactory;
-import org.apache.qpid.ra.QpidResourceAdapter;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class QpidRAConnectionTest extends QpidBrokerTestCase
 {
@@ -38,7 +35,7 @@ public class QpidRAConnectionTest extends QpidBrokerTestCase
 
     private static final String BROKER_PORT = "15672";
 
-    private static final String URL = "amqp://guest:guest@client/test?brokerlist='tcp://localhost:" + BROKER_PORT + "?sasl_mechs='PLAIN''";
+    private static final String URL = "amqp://guest:guest@client/test?brokerlist='tcp://localhost:" + BROKER_PORT + "?sasl_mechs='PLAIN%25252520CRAM-MD5''";
 
     public void testSessionCommitOnClosedConnectionThrowsException() throws Exception
     {

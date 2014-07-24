@@ -21,8 +21,10 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.callback.Callback;
@@ -66,14 +68,9 @@ public class SimpleAuthenticationManager extends AbstractAuthenticationManager<S
     }
 
     @Override
-    public void initialise()
+    public List<String> getMechanisms()
     {
-    }
-
-    @Override
-    public String getMechanisms()
-    {
-        return PLAIN_MECHANISM + " " + CRAM_MD5_MECHANISM;
+        return Collections.unmodifiableList(Arrays.asList(PLAIN_MECHANISM, CRAM_MD5_MECHANISM));
     }
 
     @Override

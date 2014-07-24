@@ -90,7 +90,7 @@ public class TestPrincipalDatabase implements PrincipalDatabase
     }
 
     @Override
-    public String getMechanisms()
+    public List<String> getMechanisms()
     {
         // TODO Auto-generated method stub
         return null;
