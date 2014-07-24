@@ -24,3 +24,9 @@ qpid.tests.messaging.message.MessageEchoTests.testReplyTo
 qpid.tests.messaging.message.MessageEchoTests.testReplyToQueue
 qpid.tests.messaging.message.MessageEchoTests.testReplyToQueueSubject
 qpid.tests.messaging.message.MessageEchoTests.testProperties
+
+# The following test fails because the swig client throws an error
+# when creating a sender with a node name that is ambiguous and no
+# type specified. By contrast the pure python client defaults to the
+# queue in this case.
+qpid_tests.broker_0_10.new_api.GeneralTests.test_node_disambiguation_2
