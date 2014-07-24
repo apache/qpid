@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -43,24 +44,29 @@ import org.apache.qpid.server.util.Action;
 public final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter> implements Connection<ConnectionAdapter>,
                                                                                              SessionModelListener
 {
-    private AMQConnectionModel _connection;
+    private final Action _underlyingConnectionDeleteTask;
+    private final AtomicBoolean _underlyingClosed = new AtomicBoolean(false);
+    private AMQConnectionModel _underlyingConnection;
 
     private State _state = State.ACTIVE;
 
     public ConnectionAdapter(final AMQConnectionModel conn)
     {
         super(parentsMap(conn.getVirtualHost()),createAttributes(conn));
-        _connection = conn;
+        _underlyingConnection = conn;
 
-        conn.addDeleteTask(new Action()
+        // Used to allow the protocol layers to tell the model they have been deleted
+        _underlyingConnectionDeleteTask = new Action()
         {
             @Override
             public void performAction(final Object object)
             {
                 conn.removeDeleteTask(this);
+                _underlyingClosed.set(true);
                 deleted();
             }
-        });
+        };
+        conn.addDeleteTask(_underlyingConnectionDeleteTask);
 
         conn.addSessionListener(this);
     }
@@ -77,13 +83,13 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public String getClientId()
     {
-        return _connection.getClientId();
+        return _underlyingConnection.getClientId();
     }
 
     @Override
     public String getClientVersion()
     {
-        return _connection.getClientVersion();
+        return _underlyingConnection.getClientVersion();
     }
 
     @Override
@@ -101,14 +107,14 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public String getPrincipal()
     {
-        final Principal authorizedPrincipal = _connection.getAuthorizedPrincipal();
+        final Principal authorizedPrincipal = _underlyingConnection.getAuthorizedPrincipal();
         return authorizedPrincipal == null ? null : authorizedPrincipal.getName();
     }
 
     @Override
     public String getRemoteAddress()
     {
-        return _connection.getRemoteAddressString();
+        return _underlyingConnection.getRemoteAddressString();
     }
 
     @Override
@@ -126,19 +132,19 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public long getSessionCountLimit()
     {
-        return _connection.getSessionCountLimit();
+        return _underlyingConnection.getSessionCountLimit();
     }
 
     @Override
     public Transport getTransport()
     {
-        return _connection.getTransport();
+        return _underlyingConnection.getTransport();
     }
 
     @Override
     public Port getPort()
     {
-        return _connection.getPort();
+        return _underlyingConnection.getPort();
     }
 
     public Collection<Session> getSessions()
@@ -149,16 +155,21 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @StateTransition( currentState = State.ACTIVE, desiredState = State.DELETED)
     private void doDelete()
     {
-        _connection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        closeUnderlyingConnection();
         deleted();
         _state = State.DELETED;
+    }
+
+    @Override
+    protected void onClose()
+    {
+        closeUnderlyingConnection();
     }
 
     public State getState()
     {
         return _state;
     }
-
 
     @Override
     public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
@@ -177,37 +188,37 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public long getBytesIn()
     {
-        return _connection.getDataReceiptStatistics().getTotal();
+        return _underlyingConnection.getDataReceiptStatistics().getTotal();
     }
 
     @Override
     public long getBytesOut()
     {
-        return _connection.getDataDeliveryStatistics().getTotal();
+        return _underlyingConnection.getDataDeliveryStatistics().getTotal();
     }
 
     @Override
     public long getMessagesIn()
     {
-        return _connection.getMessageReceiptStatistics().getTotal();
+        return _underlyingConnection.getMessageReceiptStatistics().getTotal();
     }
 
     @Override
     public long getMessagesOut()
     {
-        return _connection.getMessageDeliveryStatistics().getTotal();
+        return _underlyingConnection.getMessageDeliveryStatistics().getTotal();
     }
 
     @Override
     public long getLastIoTime()
     {
-        return _connection.getLastIoTime();
+        return _underlyingConnection.getLastIoTime();
     }
 
     @Override
     public int getSessionCount()
     {
-        return _connection.getSessionModels().size();
+        return _underlyingConnection.getSessionModels().size();
     }
 
     @Override
@@ -223,4 +234,14 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     {
         // SessionAdapter installs delete task to cause session model object to delete
     }
+
+    private void closeUnderlyingConnection()
+    {
+        if (_underlyingClosed.compareAndSet(false, true))
+        {
+            _underlyingConnection.removeDeleteTask(_underlyingConnectionDeleteTask);
+            _underlyingConnection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        }
+    }
+
 }

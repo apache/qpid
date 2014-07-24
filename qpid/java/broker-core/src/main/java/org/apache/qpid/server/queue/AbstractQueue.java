@@ -1727,13 +1727,13 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
     }
 
-    private QueueRunner _queueRunner = new QueueRunner(this);
+    private final QueueRunner _queueRunner = new QueueRunner(this);
 
     public void deliverAsync()
     {
         _stateChangeCount.incrementAndGet();
 
-        _queueRunner.execute(_asyncDelivery);
+        _queueRunner.execute();
 
     }
 
@@ -1746,7 +1746,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         else
         {
             SubFlushRunner flusher = sub.getRunner();
-            flusher.execute(_asyncDelivery);
+            flusher.execute();
         }
 
     }

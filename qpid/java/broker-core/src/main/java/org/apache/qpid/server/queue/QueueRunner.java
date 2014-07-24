@@ -114,12 +114,12 @@ public class QueueRunner implements Runnable
         return "QueueRunner-" + _queue.getLogSubject();
     }
 
-    public void execute(Executor executor)
+    public void execute()
     {
         _stateChange.set(true);
         if(_scheduled.compareAndSet(IDLE, SCHEDULED))
         {
-            executor.execute(this);
+            _queue.execute(this);
         }
     }
 

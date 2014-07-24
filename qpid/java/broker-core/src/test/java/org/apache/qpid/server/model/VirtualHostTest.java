@@ -31,14 +31,19 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.security.AccessControlException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import org.mockito.ArgumentMatcher;
 
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.connection.IConnectionRegistry;
+import org.apache.qpid.server.connection.IConnectionRegistry.RegistryChangeListener;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -150,6 +155,57 @@ public class VirtualHostTest extends QpidTestCase
 
         verify(_configStore, times(1)).create(matchesRecord(virtualHost.getId(), virtualHost.getType()));
         verify(_configStore, times(2)).update(eq(false), matchesRecord(virtualHost.getId(), virtualHost.getType()));
+    }
+
+    public void testStopVirtualHost_ClosesConnections()
+    {
+        String virtualHostName = getName();
+
+        VirtualHost<?, ?, ?> virtualHost = createVirtualHost(virtualHostName);
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
+
+        AMQConnectionModel connection = createMockProtocolConnection(virtualHost);
+
+        assertEquals("Unexpected number of connections before connection registered", 0, virtualHost.getChildren(Connection.class).size());
+
+        ((RegistryChangeListener)virtualHost).connectionRegistered(connection);
+
+        assertEquals("Unexpected number of connections after connection registered", 1, virtualHost.getChildren(
+                Connection.class).size());
+
+        virtualHost.stop();
+        assertEquals("Unexpected state", State.STOPPED, virtualHost.getState());
+
+        assertEquals("Unexpected number of connections after virtualhost stopped",
+                     0,
+                     virtualHost.getChildren(Connection.class).size());
+
+        verify(connection).close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+    }
+
+    public void testDeleteVirtualHost_ClosesConnections()
+    {
+        String virtualHostName = getName();
+
+        VirtualHost<?, ?, ?> virtualHost = createVirtualHost(virtualHostName);
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
+
+        AMQConnectionModel connection = createMockProtocolConnection(virtualHost);
+
+        assertEquals("Unexpected number of connections before connection registered", 0, virtualHost.getChildren(Connection.class).size());
+
+        ((RegistryChangeListener)virtualHost).connectionRegistered(connection);
+
+        assertEquals("Unexpected number of connections after connection registered", 1, virtualHost.getChildren(Connection.class).size());
+
+        virtualHost.delete();
+        assertEquals("Unexpected state", State.DELETED, virtualHost.getState());
+
+        assertEquals("Unexpected number of connections after virtualhost deleted",
+                     0,
+                     virtualHost.getChildren(Connection.class).size());
+
+        verify(connection).close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
     }
 
     public void testCreateDurableQueue()
@@ -271,6 +327,14 @@ public class VirtualHostTest extends QpidTestCase
         TestMemoryVirtualHost host = new TestMemoryVirtualHost(attributes, _virtualHostNode);
         host.create();
         return host;
+    }
+
+    private AMQConnectionModel createMockProtocolConnection(final VirtualHost<?, ?, ?> virtualHost)
+    {
+        final AMQConnectionModel connection = mock(AMQConnectionModel.class);
+        when(connection.getVirtualHost()).thenReturn(virtualHost);
+        when(connection.getRemoteAddressString()).thenReturn("peer:1234");
+        return connection;
     }
 
     private static ConfiguredObjectRecord matchesRecord(UUID id, String type)

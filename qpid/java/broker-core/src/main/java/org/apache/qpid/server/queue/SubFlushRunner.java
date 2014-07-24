@@ -112,12 +112,12 @@ class SubFlushRunner implements Runnable
         return "SubFlushRunner-" + _sub.toLogString();
     }
 
-    public void execute(Executor executor)
+    public void execute()
     {
         _stateChange.set(true);
         if(_scheduled.compareAndSet(IDLE,SCHEDULED))
         {
-            executor.execute(this);
+            getQueue().execute(this);
         }
     }
 }
