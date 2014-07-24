@@ -119,7 +119,7 @@ public class QueueInformation
 
         _mbsc = con.getMBeanServerConnection();
 
-        Set<ObjectName> names = _mbsc.queryNames(new ObjectName("org.apache.qpid:type=VirtualHost.Queue,VirtualHost=" + _vhost + ",*"), null);
+        Set<ObjectName> names = _mbsc.queryNames(new ObjectName("org.apache.qpid:type=VirtualHost.Queue,VirtualHost=" + ObjectName.quote(_vhost) + ",*"), null);
 
         // Print header
         if (names.size() > 0)
@@ -248,7 +248,7 @@ public class QueueInformation
 
     private static void getDetails(boolean printRates) throws Exception
     {
-        for (ObjectName object : getMatchingObjects())
+        for (ObjectName object : getMatchingObjects(_queueNames))
         {
             try
             {
@@ -334,26 +334,32 @@ public class QueueInformation
         return con;
     }
 
-    public static ObjectName[] getMatchingObjects() throws IOException, MalformedObjectNameException
+    public static ObjectName[] getMatchingObjects(Set<String> queueNames) throws IOException, MalformedObjectNameException
     {
+        Set<ObjectName> requestedObjects = new HashSet<>();
 
-        // Gets all Queues names
-        if (_queueNames == null)
+        if (queueNames == null)
         {
-            _queueNames = new HashSet<String>();
-            _queueNames.add("*");
-        }
-
-        Set<ObjectName> requestedObjects = new HashSet<ObjectName>();
-
-        for (String queue : _queueNames)
-        {
-            Set<ObjectName> matchingObjects = _mbsc.queryNames(new ObjectName("org.apache.qpid:type=VirtualHost.Queue,VirtualHost=" + _vhost + ",name=" + queue + ",*"), null);
+            // Gets all Queues names
+            Set<ObjectName> matchingObjects = _mbsc.queryNames(new ObjectName("org.apache.qpid:type=VirtualHost.Queue,VirtualHost=" + ObjectName.quote(_vhost) + ",name=*,*"), null);
 
             if (!matchingObjects.isEmpty())
             {
                 requestedObjects.addAll(matchingObjects);
             }
+        }
+        else
+        {
+            for (String queue : queueNames)
+            {
+                Set<ObjectName> matchingObjects = _mbsc.queryNames(new ObjectName("org.apache.qpid:type=VirtualHost.Queue,VirtualHost=" + ObjectName.quote(_vhost) + ",name=" + ObjectName.quote(queue) + ",*"), null);
+
+                if (!matchingObjects.isEmpty())
+                {
+                    requestedObjects.addAll(matchingObjects);
+                }
+            }
+
         }
 
         return requestedObjects.toArray(new ObjectName[requestedObjects.size()]);
