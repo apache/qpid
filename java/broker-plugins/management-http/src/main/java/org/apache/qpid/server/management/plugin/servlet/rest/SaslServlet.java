@@ -20,18 +20,15 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.qpid.server.management.plugin.servlet.ServletConnectionPrincipal;
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
-import org.apache.qpid.server.management.plugin.HttpManagementUtil;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.SocketAddress;
+import java.security.Principal;
+import java.security.SecureRandom;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
@@ -40,14 +37,19 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.SocketAddress;
-import java.security.Principal;
-import java.security.SecureRandom;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Random;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+
+import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
+import org.apache.qpid.server.management.plugin.HttpManagementUtil;
+import org.apache.qpid.server.management.plugin.servlet.ServletConnectionPrincipal;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.security.SubjectCreator;
+import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 public class SaslServlet extends AbstractServlet
 {
@@ -81,7 +83,8 @@ public class SaslServlet extends AbstractServlet
         getRandom(session);
 
         SubjectCreator subjectCreator = getSubjectCreator(request);
-        String[] mechanisms = subjectCreator.getMechanisms().split(" ");
+        List<String> mechanismsList = subjectCreator.getMechanisms();
+        String[] mechanisms = mechanismsList.toArray(new String[mechanismsList.size()]);
         Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
 
         final Subject subject = getAuthorisedSubject(request);
@@ -237,7 +240,7 @@ public class SaslServlet extends AbstractServlet
 
         if(saslServer.isComplete())
         {
-            Subject originalSubject = subjectCreator.createSubjectWithGroups(saslServer.getAuthorizationID());
+            Subject originalSubject = subjectCreator.createSubjectWithGroups(new AuthenticatedPrincipal(saslServer.getAuthorizationID()));
             Subject subject = new Subject(false,
                                           originalSubject.getPrincipals(),
                                           originalSubject.getPublicCredentials(),
@@ -298,7 +301,8 @@ public class SaslServlet extends AbstractServlet
     private SubjectCreator getSubjectCreator(HttpServletRequest request)
     {
         SocketAddress localAddress = HttpManagementUtil.getSocketAddress(request);
-        return HttpManagementUtil.getManagementConfiguration(getServletContext()).getAuthenticationProvider(localAddress).getSubjectCreator();
+        return HttpManagementUtil.getManagementConfiguration(getServletContext()).getAuthenticationProvider(localAddress).getSubjectCreator(
+                request.isSecure());
     }
 
     @Override

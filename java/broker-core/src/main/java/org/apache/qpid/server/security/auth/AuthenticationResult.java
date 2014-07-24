@@ -25,10 +25,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 /**
- * Encapsulates the result of an attempt to authenticate using an {@link AuthenticationManager}.
+ * Encapsulates the result of an attempt to authenticate using an {@link org.apache.qpid.server.model.AuthenticationProvider}.
  * <p>
  * The authentication status describes the overall outcome.
  * <p>

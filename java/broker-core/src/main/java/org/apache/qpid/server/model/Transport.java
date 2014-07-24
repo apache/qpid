@@ -24,11 +24,29 @@ import java.util.EnumSet;
 
 public enum Transport
 {
+
     TCP,
-    SSL,
+    SSL(true),
     WS,
-    WSS,
+    WSS(true),
     SCTP;
+
+    Transport()
+    {
+        this(false);
+    }
+
+    Transport(boolean secure)
+    {
+        _secure = secure;
+    }
+
+    private boolean _secure;
+
+    public final boolean isSecure()
+    {
+        return _secure;
+    }
 
     public static Transport valueOfObject(Object transportObject)
     {

@@ -93,6 +93,11 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         anonymousProviderAttributes.put(AuthenticationProvider.NAME, ANONYMOUS_AUTHENTICATION_PROVIDER);
         config.addObjectConfiguration(AuthenticationProvider.class, anonymousProviderAttributes);
 
+        config.setObjectAttribute(AuthenticationProvider.class, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER,
+                                  "secureOnlyMechanisms",
+                                  "{}");
+
+
         // set password authentication provider on http port for the tests
         config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
                 TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);

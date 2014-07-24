@@ -22,6 +22,7 @@ package org.apache.qpid.server.model;
 
 import java.security.Principal;
 import java.util.Collection;
+import java.util.List;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
@@ -39,8 +40,9 @@ public interface AuthenticationProvider<X extends AuthenticationProvider<X>> ext
      * A temporary method to create SubjectCreator.
      *
      * TODO: move all the functionality from SubjectCreator into AuthenticationProvider
+     * @param secure
      */
-    SubjectCreator getSubjectCreator();
+    SubjectCreator getSubjectCreator(final boolean secure);
 
     /**
      * Returns the preferences provider associated with this authentication provider
@@ -61,8 +63,12 @@ public interface AuthenticationProvider<X extends AuthenticationProvider<X>> ext
      *
      * @return SASL mechanism names, space separated.
      */
-    String getMechanisms();
+    @DerivedAttribute
+    List<String> getMechanisms();
 
+
+    @ManagedAttribute( defaultValue = "[ \"PLAIN\" ]")
+    List<String> getSecureOnlyMechanisms();
     /**
      * Creates a SASL server for the specified mechanism name for the given
      * fully qualified domain name.

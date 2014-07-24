@@ -45,6 +45,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.ExternalAuthenticationManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
@@ -146,14 +147,14 @@ public class HttpManagementUtil
         Subject subject = null;
         SocketAddress localAddress = getSocketAddress(request);
         final AuthenticationProvider authenticationProvider = managementConfig.getAuthenticationProvider(localAddress);
-        SubjectCreator subjectCreator = authenticationProvider.getSubjectCreator();
+        SubjectCreator subjectCreator = authenticationProvider.getSubjectCreator(request.isSecure());
         String remoteUser = request.getRemoteUser();
 
-        if (remoteUser != null || subjectCreator.isAnonymousAuthenticationAllowed())
+        if (remoteUser != null || authenticationProvider instanceof AnonymousAuthenticationManager)
         {
             subject = authenticateUser(subjectCreator, remoteUser, null);
         }
-        else if(subjectCreator.isExternalAuthenticationAllowed()
+        else if(authenticationProvider instanceof ExternalAuthenticationManager
                 && Collections.list(request.getAttributeNames()).contains("javax.servlet.request.X509Certificate"))
         {
             Principal principal = null;

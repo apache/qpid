@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.security.auth.jmx;
 
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -66,7 +67,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
     protected void setUp() throws Exception
     {
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
-        _rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(8999));
+        _rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(8999), false);
     }
 
     /**
@@ -74,7 +75,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
      */
     public void testAuthenticationSuccess()
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySubjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(_usernamePasswordOkaySubjectCreator);
 
         Subject newSubject = _rmipa.authenticate(_credentials);
         assertSame("Subject must be unchanged", _loginSubject, newSubject);
@@ -85,7 +86,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
      */
     public void testUsernameOrPasswordInvalid()
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_badPasswordSubjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(_badPasswordSubjectCreator);
 
         try
         {
@@ -101,7 +102,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
 
     public void testAuthorisationFailure()
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(_usernamePasswordOkaySubjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(_usernamePasswordOkaySubjectCreator);
         doThrow(new AccessControlException(USER_NOT_AUTHORISED_FOR_MANAGEMENT)).when(_securityManager).accessManagement();
 
         try
@@ -120,7 +121,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
     {
         final Exception mockAuthException = new Exception("Mock Auth system failure");
         SubjectCreator subjectCreator = createMockSubjectCreator(false, mockAuthException);
-        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(subjectCreator);
+        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(subjectCreator);
 
         try
         {
@@ -138,7 +139,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
      */
     public void testNullSubjectCreator() throws Exception
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class))).thenReturn(null);
+        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(null);
 
         try
         {

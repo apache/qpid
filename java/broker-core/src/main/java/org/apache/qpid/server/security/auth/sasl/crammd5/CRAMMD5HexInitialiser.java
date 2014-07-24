@@ -133,7 +133,7 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
         }
 
         @Override
-        public String getMechanisms()
+        public List<String> getMechanisms()
         {
             return _realPrincipalDatabase.getMechanisms();
         }

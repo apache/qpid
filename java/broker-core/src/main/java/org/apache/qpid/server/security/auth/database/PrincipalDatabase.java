@@ -20,18 +20,15 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import java.io.File;
+import java.io.IOException;
+import java.security.Principal;
+import java.util.List;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-
-import java.io.File;
-import java.io.IOException;
-import java.security.Principal;
-import java.util.List;
-import java.util.Map;
 
 /** Represents a "user database" which is really a way of storing principals (i.e. usernames) and passwords. */
 public interface PrincipalDatabase
@@ -108,7 +105,7 @@ public interface PrincipalDatabase
      * Get the list of mechanisms supported for use with the PrincipalDatabase
      * @return space separated list of supported Sasl mechanisms
      */
-    public String getMechanisms();
+    public List<String> getMechanisms();
 
     public SaslServer createSaslServer(String mechanism, String localFQDN, Principal externalPrincipal) throws SaslException;
 }

@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.server.protocol.v0_8.state;
 
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+
+import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -36,11 +41,6 @@ import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
-import javax.security.auth.Subject;
-
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 /**
  * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
@@ -147,6 +147,6 @@ public class AMQStateManager implements AMQMethodListener
 
     public SubjectCreator getSubjectCreator()
     {
-        return _broker.getSubjectCreator(getProtocolSession().getLocalAddress());
+        return _broker.getSubjectCreator(getProtocolSession().getLocalAddress(), getProtocolSession().getTransport().isSecure());
     }
 }

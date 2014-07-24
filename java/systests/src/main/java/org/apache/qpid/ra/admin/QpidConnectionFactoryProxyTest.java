@@ -22,17 +22,10 @@ package org.apache.qpid.ra.admin;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.naming.NamingException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
-import javax.naming.Reference;
-import javax.naming.Referenceable;
-import javax.naming.spi.ObjectFactory;
 import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
-
-import junit.framework.TestCase;
 
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -40,7 +33,7 @@ public class QpidConnectionFactoryProxyTest extends QpidBrokerTestCase
 {
     private static final String BROKER_PORT = "15672";
 
-    private static final String URL = "amqp://guest:guest@client/test?brokerlist='tcp://localhost:" + BROKER_PORT + "?sasl_mechs='PLAIN''";
+    private static final String URL = "amqp://guest:guest@client/test?brokerlist='tcp://localhost:" + BROKER_PORT + "?sasl_mechs='PLAIN%2520CRAM-MD5''";
 
     public void testQueueConnectionFactory() throws Exception
     {

@@ -20,6 +20,7 @@ package org.apache.qpid.server.security.auth.manager;
 
 import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -60,7 +61,7 @@ public class ExternalAuthenticationManagerTest extends QpidTestCase
 
     public void testGetMechanisms() throws Exception
     {
-        assertEquals("EXTERNAL", _manager.getMechanisms());
+        assertEquals(Collections.singletonList("EXTERNAL"), _manager.getMechanisms());
     }
 
     public void testCreateSaslServer() throws Exception

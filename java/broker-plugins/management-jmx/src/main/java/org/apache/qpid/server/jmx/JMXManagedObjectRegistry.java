@@ -20,28 +20,6 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
-
-import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
-import javax.management.JMException;
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnectorServer;
-import javax.management.remote.JMXServiceURL;
-import javax.management.remote.MBeanServerForwarder;
-import javax.management.remote.rmi.RMIConnectorServer;
-import javax.net.ssl.SSLContext;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -58,6 +36,29 @@ import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.GeneralSecurityException;
 import java.util.HashMap;
+
+import javax.management.JMException;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.MBeanServerForwarder;
+import javax.management.remote.rmi.RMIConnectorServer;
+import javax.net.ssl.SSLContext;
+import javax.rmi.ssl.SslRMIClientSocketFactory;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent has been enabled then there are no
@@ -157,7 +158,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         int jmxPortConnectorServer = _connectorPort.getPort();
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
-        JMXPasswordAuthenticator rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(jmxPortConnectorServer));
+        JMXPasswordAuthenticator rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(jmxPortConnectorServer), connectorSslEnabled);
         HashMap<String,Object> connectorEnv = new HashMap<String,Object>();
         connectorEnv.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 

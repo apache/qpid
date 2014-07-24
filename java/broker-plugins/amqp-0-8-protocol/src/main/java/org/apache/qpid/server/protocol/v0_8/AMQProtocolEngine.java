@@ -496,7 +496,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             // This sets the protocol version (and hence framing classes) for this session.
             setProtocolVersion(pv);
 
-            String mechanisms = _broker.getSubjectCreator(getLocalAddress()).getMechanisms();
+            StringBuilder mechanismBuilder = new StringBuilder();
+            for(String mechanismName : _broker.getSubjectCreator(getLocalAddress(), _transport.isSecure()).getMechanisms())
+            {
+                if(mechanismBuilder.length() != 0)
+                {
+                    mechanismBuilder.append(' ');
+                }
+                mechanismBuilder.append(mechanismName);
+            }
+            String mechanisms = mechanismBuilder.toString();
 
             String locales = "en_US";
 

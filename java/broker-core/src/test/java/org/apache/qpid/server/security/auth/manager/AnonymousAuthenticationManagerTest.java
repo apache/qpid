@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth.manager;
 
 import static org.apache.qpid.server.security.auth.AuthenticatedPrincipalTestHelper.assertOnlyContainsWrapped;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -36,7 +37,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AnonymousAuthenticationManagerTest extends QpidTestCase
 {
-    private AuthenticationManager _manager;
+    private AuthenticationProvider _manager;
 
     @Override
     public void setUp() throws Exception
@@ -59,7 +60,7 @@ public class AnonymousAuthenticationManagerTest extends QpidTestCase
 
     public void testGetMechanisms() throws Exception
     {
-        assertEquals("ANONYMOUS", _manager.getMechanisms());
+        assertEquals(Collections.singletonList("ANONYMOUS"), _manager.getMechanisms());
     }
 
     public void testCreateSaslServer() throws Exception

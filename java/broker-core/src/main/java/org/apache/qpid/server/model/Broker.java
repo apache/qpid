@@ -170,8 +170,9 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
      * TODO: move the authentication related functionality into host aliases and AuthenticationProviders
      *
      * @param localAddress The (listening) socket address for which the AuthenticationManager is required
+     * @param secure
      */
-    SubjectCreator getSubjectCreator(SocketAddress localAddress);
+    SubjectCreator getSubjectCreator(SocketAddress localAddress, final boolean secure);
 
     Collection<KeyStore<?>> getKeyStores();
 

@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.security.auth.login.AccountNotFoundException;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -36,6 +38,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -61,6 +64,7 @@ public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
         attributesMap.put(AuthenticationProvider.NAME, getTestName());
         attributesMap.put(AuthenticationProvider.ID, UUID.randomUUID());
         _authManager = new ScramSHA1AuthenticationManager(attributesMap, _broker);
+        _authManager.open();
     }
 
     @Override
@@ -68,6 +72,35 @@ public class ScramSHA1AuthenticationManagerTest extends QpidTestCase
     {
         _executor.stop();
         super.tearDown();
+    }
+
+    public void testMechanisms()
+    {
+        SubjectCreator insecureCreator = _authManager.getSubjectCreator(false);
+        assertFalse("PLAIN authentication should not be available on an insecure connection", insecureCreator.getMechanisms().contains("PLAIN"));
+        SubjectCreator secureCreator = _authManager.getSubjectCreator(true);
+        assertTrue("PLAIN authentication should be available on a secure connection", secureCreator.getMechanisms().contains("PLAIN"));
+
+        try
+        {
+            SaslServer saslServer = secureCreator.createSaslServer("PLAIN", "127.0.0.1", null);
+            assertNotNull(saslServer);
+        }
+        catch (SaslException e)
+        {
+            fail("Unable to create a SaslServer for PLAIN authentication on a secure connection" + e.getMessage());
+        }
+
+        try
+        {
+            SaslServer saslServer = insecureCreator.createSaslServer("PLAIN", "127.0.0.1", null);
+            fail("Erroneously created a SaslServer for PLAIN authentication on an insecure connection");
+        }
+        catch (SaslException e)
+        {
+            // Pass
+        }
+
     }
 
     public void testAddChildAndThenDelete()

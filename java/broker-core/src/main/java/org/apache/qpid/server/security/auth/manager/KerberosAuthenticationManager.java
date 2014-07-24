@@ -20,7 +20,9 @@ package org.apache.qpid.server.security.auth.manager;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.callback.Callback;
@@ -50,17 +52,10 @@ public class KerberosAuthenticationManager extends AbstractAuthenticationManager
         super(attributes, broker);
     }
 
-
     @Override
-    public void initialise()
+    public List<String> getMechanisms()
     {
-
-    }
-
-    @Override
-    public String getMechanisms()
-    {
-        return GSSAPI_MECHANISM;
+        return Collections.singletonList(GSSAPI_MECHANISM);
     }
 
     @Override

@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.Subject;
@@ -184,7 +185,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         Container container = new Container(_broker.getId().toString());
 
-        SubjectCreator subjectCreator = _broker.getSubjectCreator(getLocalAddress());
+        SubjectCreator subjectCreator = _broker.getSubjectCreator(getLocalAddress(), _transport.isSecure());
         _endpoint = new ConnectionEndpoint(container, asSaslServerProvider(subjectCreator));
         _endpoint.setLogger(new ConnectionEndpoint.FrameReceiptLogger()
         {
@@ -236,7 +237,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         _sender.send(HEADER.duplicate());
         _sender.flush();
 
-        _endpoint.initiateSASL(subjectCreator.getMechanisms().split(" "));
+        List<String> mechanisms = subjectCreator.getMechanisms();
+        _endpoint.initiateSASL(mechanisms.toArray(new String[mechanisms.size()]));
 
 
     }

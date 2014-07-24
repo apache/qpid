@@ -21,7 +21,10 @@
 package org.apache.qpid.server.security.auth.database;
 
 import java.security.Principal;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.callback.CallbackHandler;
@@ -30,10 +33,13 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedSaslServer;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexSaslServer;
+import org.apache.qpid.server.security.auth.sasl.plain.PlainAdapterSaslServer;
+import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -45,7 +51,9 @@ import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexSaslServer;
 public class Base64MD5PasswordFilePrincipalDatabase extends AbstractPasswordFilePrincipalDatabase<HashedUser>
 {
     private final Logger _logger = Logger.getLogger(Base64MD5PasswordFilePrincipalDatabase.class);
-    private String _mechanismsString;
+    private List<String> _mechanisms = Collections.unmodifiableList(Arrays.asList(CRAMMD5HashedSaslServer.MECHANISM,
+                                                                                  CRAMMD5HexSaslServer.MECHANISM,
+                                                                                  PlainSaslServer.MECHANISM));
     private final Map<String, CallbackHandler> _callbackHandlerMap = new HashMap<String, CallbackHandler>();
 
     public Base64MD5PasswordFilePrincipalDatabase()
@@ -58,7 +66,6 @@ public class Base64MD5PasswordFilePrincipalDatabase extends AbstractPasswordFile
         crammd5HexInitialiser.initialise(this);
         _callbackHandlerMap.put(CRAMMD5HexSaslServer.MECHANISM, crammd5HexInitialiser.getCallbackHandler());
 
-        _mechanismsString = CRAMMD5HashedSaslServer.MECHANISM + " " + CRAMMD5HexSaslServer.MECHANISM;
     }
 
 
@@ -127,9 +134,9 @@ public class Base64MD5PasswordFilePrincipalDatabase extends AbstractPasswordFile
     }
 
     @Override
-    public String getMechanisms()
+    public List<String> getMechanisms()
     {
-        return _mechanismsString;
+        return _mechanisms;
     }
 
     @Override
@@ -149,6 +156,24 @@ public class Base64MD5PasswordFilePrincipalDatabase extends AbstractPasswordFile
         else if(CRAMMD5HexSaslServer.MECHANISM.equals(mechanism))
         {
             return new CRAMMD5HexSaslServer(mechanism, "AMQP", localFQDN, null, callbackHandler);
+        }
+        else if(PlainSaslServer.MECHANISM.equals(mechanism))
+        {
+            return new PlainAdapterSaslServer(new PlainAdapterSaslServer.PasswordValidator()
+            {
+                @Override
+                public boolean validatePassword(final String user, final String password)
+                {
+                    try
+                    {
+                        return verifyPassword(user, password.toCharArray());
+                    }
+                    catch (AccountNotFoundException e)
+                    {
+                        return false;
+                    }
+                }
+            });
         }
 
         throw new SaslException("Unsupported mechanism: " + mechanism);

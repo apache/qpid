@@ -21,6 +21,8 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import java.security.Principal;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.Subject;
@@ -59,15 +61,9 @@ public class AnonymousAuthenticationManager extends AbstractAuthenticationManage
     }
 
     @Override
-    public void initialise()
+    public List<String> getMechanisms()
     {
-
-    }
-
-    @Override
-    public String getMechanisms()
-    {
-        return ANONYMOUS;
+        return Collections.singletonList(ANONYMOUS);
     }
 
     @Override
