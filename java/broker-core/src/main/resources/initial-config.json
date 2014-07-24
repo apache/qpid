@@ -26,11 +26,11 @@
   "authenticationproviders" : [ {
     "name" : "passwordFile",
     "type" : "PlainPasswordFile",
-    "path" : "${qpid.home_dir}/etc/passwd",
+    "path" : "${qpid.home_dir}${file.separator}etc${file.separator}passwd",
     "preferencesproviders" : [{
         "name": "fileSystemPreferences",
         "type": "FileSystemPreferences",
-        "path" : "${qpid.work_dir}/user.preferences.json"
+        "path" : "${qpid.work_dir}${file.separator}user.preferences.json"
     }]
   } ],
   "ports" : [  {
@@ -55,9 +55,9 @@
   "virtualhostnodes" : [ {
     "name" : "default",
     "type" : "JSON",
-    "storePath" : "${qpid.work_dir}/default/config",
+    "storePath" : "${qpid.work_dir}${file.separator}default${file.separator}config",
     "context" : {
-        "virtualhostBlueprint" : "{ \"type\" : \"DERBY\", \"storePath\" : \"${json:qpid.work_dir}/default/messages\" }"
+        "virtualhostBlueprint" : "{ \"type\" : \"DERBY\", \"storePath\" : \"${json:qpid.work_dir}${json:file.separator}default${json:file.separator}messages\" }"
     }
   } ],
   "plugins" : [ {
