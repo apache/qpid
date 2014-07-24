@@ -26,16 +26,16 @@
   "authenticationproviders" : [ {
     "name" : "plain",
     "type" : "PlainPasswordFile",
-    "path" : "${QPID_HOME}/etc/passwd"
+    "path" : "${QPID_HOME}${file.separator}etc${file.separator}passwd"
   } ],
   "keystores" : [ {
     "name" : "systestsKeyStore",
-    "path" : "${QPID_HOME}/../test-profiles/test_resources/ssl/java_broker_keystore.jks",
+    "path" : "${QPID_HOME}${file.separator}..${file.separator}test-profiles${file.separator}test_resources${file.separator}ssl${file.separator}java_broker_keystore.jks",
     "password" : "password"
   } ],
   "truststores" : [ {
     "name" : "systestsTrustStore",
-    "path" : "${QPID_HOME}/../test-profiles/test_resources/ssl/java_broker_truststore.jks",
+    "path" : "${QPID_HOME}${file.separator}..${file.separator}test-profiles${file.separator}test_resources${file.separator}ssl${file.separator}java_broker_truststore.jks",
     "password" : "password"
   } ],
   "ports" : [  {
@@ -60,7 +60,7 @@
   "virtualhostnodes" : [ {
     "name" : "test",
     "type" : "${virtualhostnode.type}",
-    "storePath" : "${QPID_WORK}/${test.port}/test/config",
+    "storePath" : "${QPID_WORK}${file.separator}${test.port}${file.separator}test${file.separator}config",
     "context" : {
       "virtualhostBlueprint" : "${virtualhostnode.context.blueprint}"
     }
