@@ -936,7 +936,8 @@ class Engine:
           lnk.closed = True
         if _lnk.options.get("delete") in ("always", dir.DIR_NAME):
           dir.do_unlink(sst, lnk, _lnk)
-          self.delete(sst, _lnk.name, unlinked)
+          requested_type = _lnk.options.get("node", {}).get("type")
+          self.delete(sst, _lnk.name, unlinked, node_type=requested_type)
         else:
           dir.do_unlink(sst, lnk, _lnk, unlinked)
         _lnk.closing = True
@@ -1078,7 +1079,7 @@ class Engine:
 
     sst.write_cmds(cmds, declared)
 
-  def delete(self, sst, name, action):
+  def delete(self, sst, name, action, node_type=None):
     def deleted():
       del self.address_cache[name]
       action()
@@ -1092,7 +1093,7 @@ class Engine:
         action()
       else:
         raise ValueError(type)
-    self.resolve(sst, name, do_delete, force=True)
+    self.resolve(sst, name, do_delete, force=True, node_type=node_type)
 
   def process(self, ssn):
     if ssn.closed or ssn.closing: return
