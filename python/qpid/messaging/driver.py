@@ -1028,6 +1028,11 @@ class Engine:
           type, subtype = None, None
         else:
           type, subtype = "queue", None
+      elif not er.not_found:
+        if node_type == "queue" and force:
+          type, subtype = None, None
+        else:
+          type, subtype = "topic", er.type
       else:
         type, subtype = "topic", er.type
       if type is not None:
