@@ -44,11 +44,14 @@ import java.util.concurrent.TimeUnit;
  * This class tests a number of commits and roll back scenarios
  *
  * Assumptions; - Assumes empty Queue
+ *
+ * @see org.apache.qpid.test.client.RollbackOrderTest
  */
 public class CommitRollbackTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(CommitRollbackTest.class);
-    private static final int POSIITIVE_TIMEOUT = 2000;
+    private static final int POSITIVE_TIMEOUT = 2000;
+    private static final int NEGATIVE_TIMEOUT = 250;
 
     protected AMQConnection _conn;
     private Session _session;
@@ -56,15 +59,6 @@ public class CommitRollbackTest extends QpidBrokerTestCase
     private Session _pubSession;
     private MessageConsumer _consumer;
     private Queue _jmsQueue;
-
-    private boolean _gotone = false;
-    private boolean _gottwo = false;
-    private boolean _gottwoRedelivered = false;
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-    }
 
     private void newConnection() throws Exception
     {
@@ -106,7 +100,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         newConnection();
 
         _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(NEGATIVE_TIMEOUT);
 
         // commit to ensure message is removed from queue
         _session.commit();
@@ -114,38 +108,6 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         assertNull("test message was put and disconnected before commit, but is still present", result);
     }
 
-    /**
-     * PUT a text message, disconnect before commit, confirm it is gone.
-     *
-     * @throws Exception On error
-     */
-    public void testPutThenCloseDisconnect() throws Exception
-    {
-        newConnection();
-
-        assertTrue("session is not transacted", _session.getTransacted());
-        assertTrue("session is not transacted", _pubSession.getTransacted());
-
-        _logger.info("sending test message");
-        String MESSAGE_TEXT = "testPutThenDisconnect";
-        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
-
-        _logger.info("closing publisher without commit");
-        _publisher.close();
-
-        _logger.info("reconnecting without commit");
-        _conn.close();
-
-        newConnection();
-
-        _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
-
-        // commit to ensure message is removed from queue
-        _session.commit();
-
-        assertNull("test message was put and disconnected before commit, but is still present", result);
-    }
 
     /**
      * PUT a text message, rollback, confirm message is gone. The consumer is on the same connection but different
@@ -168,7 +130,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         _pubSession.rollback();
 
         _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(NEGATIVE_TIMEOUT);
 
         assertNull("test message was put and rolled back, but is still present", result);
     }
@@ -193,7 +155,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _logger.info("getting test message");
 
-        Message msg = _consumer.receive(1000);
+        Message msg = _consumer.receive(POSITIVE_TIMEOUT);
         assertNotNull("retrieved message is null", msg);
 
         _logger.info("closing connection");
@@ -202,7 +164,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         newConnection();
 
         _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(NEGATIVE_TIMEOUT);
 
         _session.commit();
 
@@ -231,7 +193,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _logger.info("getting test message");
 
-        Message msg = _consumer.receive(1000);
+        Message msg = _consumer.receive(POSITIVE_TIMEOUT);
         assertNotNull("retrieved message is null", msg);
         assertEquals("test message was correct message", MESSAGE_TEXT, ((TextMessage) msg).getText());
 
@@ -242,7 +204,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         newConnection();
 
         _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(POSITIVE_TIMEOUT);
 
         _session.commit();
 
@@ -271,7 +233,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _logger.info("getting test message");
 
-        Message msg = _consumer.receive(1000);
+        Message msg = _consumer.receive(POSITIVE_TIMEOUT);
 
         assertNotNull("retrieved message is null", msg);
         assertEquals("test message was correct message", MESSAGE_TEXT, ((TextMessage) msg).getText());
@@ -282,7 +244,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _logger.info("receiving result");
 
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(POSITIVE_TIMEOUT);
 
         _session.commit();
         assertNotNull("test message was consumed and rolled back, but is gone", result);
@@ -311,7 +273,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _logger.info("getting test message");
 
-        Message msg = _consumer.receive(1000);
+        Message msg = _consumer.receive(POSITIVE_TIMEOUT);
 
         assertNotNull("retrieved message is null", msg);
         assertEquals("test message was correct message", MESSAGE_TEXT, ((TextMessage) msg).getText());
@@ -326,7 +288,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _consumer = _session.createConsumer(_jmsQueue);
 
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(POSITIVE_TIMEOUT);
 
         _session.commit();
         assertNotNull("test message was consumed and rolled back, but is gone", result);
@@ -335,107 +297,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
     }
 
     /**
-     * Test that rolling back a session purges the dispatcher queue, and the messages arrive in the correct order
-     *
-     * @throws Exception On error
-     */
-    public void testSend2ThenRollback() throws Exception
-    {
-        newConnection();
-
-        int run = 0;
-        while (run < 10)
-        {
-            run++;
-            _logger.info("Run:" + run);
-            assertTrue("session is not transacted", _session.getTransacted());
-            assertTrue("session is not transacted", _pubSession.getTransacted());
-
-            _logger.info("sending two test messages");
-            _publisher.send(_pubSession.createTextMessage("1"));
-            _publisher.send(_pubSession.createTextMessage("2"));
-            _pubSession.commit();
-
-            _logger.info("getting test message");
-            assertEquals("1", ((TextMessage) _consumer.receive(1000)).getText());
-
-            _logger.info("rolling back");
-            _session.rollback();
-
-            _logger.info("receiving result");
-            Message result = _consumer.receive(1000);
-
-            assertNotNull("test message was consumed and rolled back, but is gone", result);
-
-            // Message Order is:
-
-            // Send 1 , 2
-            // Retrieve 1 and then rollback
-            // Receieve 1 (redelivered) , 2 (may or may not be redelivered??)
-
-            verifyMessages(result);
-
-            // Occassionally get message 2 first!
-//            assertEquals("Should get message one first", "1", ((TextMessage) result).getText());
-//            assertTrue("Message is not marked as redelivered", result.getJMSRedelivered());
-//
-//            result = _consumer.receive(1000);
-//            assertEquals("Second message should be message 2", "2", ((TextMessage) result).getText());
-//            assertTrue("Message is not marked as redelivered", result.getJMSRedelivered());
-//
-//            result = _consumer.receive(1000);
-//            assertNull("There should be no more messages", result);
-
-            _session.commit();
-        }
-    }
-
-    private void verifyMessages(Message result) throws JMSException
-    {
-
-        if (result == null)
-        {
-            assertTrue("Didn't receive redelivered message one", _gotone);
-            assertTrue("Didn't receive message two at all", _gottwo | _gottwoRedelivered);
-            _gotone = false;
-            _gottwo = false;
-            _gottwoRedelivered = false;
-            return;
-        }
-
-        if (((TextMessage) result).getText().equals("1"))
-        {
-            _logger.info("Got 1 redelivered");
-            assertTrue("Message is not marked as redelivered", result.getJMSRedelivered());
-            assertFalse("Already received message one", _gotone);
-            _gotone = true;
-
-        }
-        else
-        {
-            assertEquals("2", ((TextMessage) result).getText());
-
-            if (result.getJMSRedelivered())
-            {
-                _logger.info("Got 2 redelivered, message was prefetched");
-                assertFalse("Already received message redelivered two", _gottwoRedelivered);
-
-                _gottwoRedelivered = true;
-            }
-            else
-            {
-                _logger.warn("Got 2, message prefetched wasn't cleared or messages was in transit when rollback occured");
-                assertFalse("Already received message two", _gottwo);
-                assertFalse("Already received message redelivered two", _gottwoRedelivered);
-                _gottwo = true;
-            }
-        }
-
-        verifyMessages(_consumer.receive(1000));
-    }
-
-    /**
-     * This test sends two messages receives on of them but doesn't ack it.
+     * This test sends two messages receives one of them but doesn't ack it.
      * The consumer is then closed
      * the first message should be returned as redelivered.
      *  the second message should be delivered normally.
@@ -454,11 +316,11 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         _pubSession.commit();
 
         _logger.info("getting test message");
-        Message result = _consumer.receive(5000);
+        Message result = _consumer.receive(POSITIVE_TIMEOUT);
 
         assertNotNull("Message received should not be null", result);
         assertEquals("1", ((TextMessage) result).getText());
-        assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
+        assertTrue("Message is marked as redelivered" + result, !result.getJMSRedelivered());
 
         _logger.info("Closing Consumer");
         
@@ -471,7 +333,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
 
         // Message 2 may be marked as redelivered if it was prefetched.
-        result = _consumer.receive(5000);
+        result = _consumer.receive(POSITIVE_TIMEOUT);
         assertNotNull("Second message was not consumed, but is gone", result);
 
         // The first message back will be 2, message 1 has been received but not committed
@@ -480,10 +342,10 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         // if this is message 1 then it should be marked as redelivered
         if("1".equals(((TextMessage) result).getText()))
         {
-            fail("First message was recieved again");
+            fail("First message was received again");
         }
 
-        result = _consumer.receive(1000);
+        result = _consumer.receive(NEGATIVE_TIMEOUT);
         assertNull("test message should be null:" + result, result);
 
         _session.commit();
@@ -502,7 +364,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
         _pubSession.commit();
 
-        assertNotNull(_consumer.receive(1000));
+        assertNotNull(_consumer.receive(POSITIVE_TIMEOUT));
 
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
@@ -510,14 +372,14 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         _pubSession.rollback();
 
         _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(NEGATIVE_TIMEOUT);
         assertNull("test message was put and rolled back, but is still present", result);
 
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
         _pubSession.commit();
 
-        assertNotNull(_consumer.receive(100));
+        assertNotNull(_consumer.receive(POSITIVE_TIMEOUT));
 
         _session.commit();
     }
@@ -600,7 +462,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         for (int i=0 ;i< maxPrefetch; i++)
         {
-            final Message message = _consumer.receive(POSIITIVE_TIMEOUT);
+            final Message message = _consumer.receive(POSITIVE_TIMEOUT);
             assertNotNull("Received:" + i, message);
             assertEquals("Unexpected message received", i, message.getIntProperty(INDEX));
         }
@@ -610,7 +472,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _logger.info("Receiving messages");
 
-        Message result = _consumer.receive(POSIITIVE_TIMEOUT);;
+        Message result = _consumer.receive(POSITIVE_TIMEOUT);;
         assertNotNull("Message expected", result);
         // Expect the first message
         assertEquals("Unexpected message received", 0, result.getIntProperty(INDEX));
@@ -667,15 +529,15 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _pubSession.commit();
 
-        assertNotNull("two messages were sent, but none has been received", _consumer.receive(1000));
+        assertNotNull("two messages were sent, but none has been received", _consumer.receive(POSITIVE_TIMEOUT));
 
         _session.rollback();
 
         _logger.info("receiving result");
 
-        assertNotNull("two messages were sent, but none has been received", _consumer.receive(1000));
-        assertNotNull("two messages were sent, but only one has been received", _consumer.receive(1000));
-        assertNull("Only two messages were sent, but more have been received", _consumer.receive(100));
+        assertNotNull("two messages were sent, but none has been received", _consumer.receive(POSITIVE_TIMEOUT));
+        assertNotNull("two messages were sent, but only one has been received", _consumer.receive(POSITIVE_TIMEOUT));
+        assertNull("Only two messages were sent, but more have been received", _consumer.receive(NEGATIVE_TIMEOUT));
 
         _session.commit();
     }
