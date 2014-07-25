@@ -82,6 +82,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * the race condition occurred. However, performing that check will only validate
  * the problem exists and will not be suitable as part of a system test.
  *
+ * @see org.apache.qpid.test.unit.transacted.CommitRollbackTest
  */
 public class RollbackOrderTest extends QpidBrokerTestCase
 {
@@ -118,13 +119,12 @@ public class RollbackOrderTest extends QpidBrokerTestCase
             assertEquals("Incorrect Message Received", 0, msg.getIntProperty(INDEX));
 
             // Pull additional messages through so we have some reject work to do
-            for (int m=0; m < 5 ; m++)
+            for (int m=1; m <= 5 ; m++)
             {
-                _consumer.receive();
+                msg = _consumer.receive();
+                assertEquals("Incorrect Message Received (message " + m + ")", m, msg.getIntProperty(INDEX));
             }
 
-            System.err.println("ROT-Rollback");
-            _logger.warn("ROT-Rollback");
             _session.rollback();
         }
     }
@@ -183,7 +183,7 @@ public class RollbackOrderTest extends QpidBrokerTestCase
         }
 
         _connection.close();
-        
+
         assertFalse("Exceptions thrown during test run, Check Std.err.", failed.get());
     }
 }
