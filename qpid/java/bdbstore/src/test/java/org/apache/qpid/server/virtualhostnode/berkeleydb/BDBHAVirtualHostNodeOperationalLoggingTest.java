@@ -21,12 +21,10 @@
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.logging.EventLogger;
@@ -36,6 +34,7 @@ import org.apache.qpid.server.logging.messages.HighAvailabilityMessages;
 import org.apache.qpid.server.model.SystemContext;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.hamcrest.Description;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 
 /**
@@ -244,6 +243,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
         _helper.awaitRemoteNodes(node1, 1);
 
+        // make sure that task executor thread finishes all scheduled tasks
+        node2.stop();
+
         // Verify ADDED message from node2 when its created
         String expectedMessage = HighAvailabilityMessages.ADDED(node2.getName(), groupName).toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node2.getVirtualHostNodeLogSubject())),
@@ -278,6 +280,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         node2.delete();
         _helper.awaitRemoteNodes(node1, 0);
+
+        // make sure that task executor thread finishes all scheduled tasks
+        node1.stop();
 
         String expectedMessage = HighAvailabilityMessages.DELETED(node2.getName(), groupName).toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
@@ -329,6 +334,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
+        resetEventLogger();
         int node2PortNumber = getNextAvailable(node1PortNumber + 1);
         Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress);
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
@@ -336,23 +342,29 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         BDBHARemoteReplicationNodeImpl remoteNode = (BDBHARemoteReplicationNodeImpl)node1.getRemoteReplicationNodes().iterator().next();
 
-        // stop remote node
-        node2.stop();
+        node2.close();
 
         waitForNodeDetachedField(remoteNode, true);
 
         reset(_eventLogger);
-        resetEventLogger();
 
         node2 = (BDBHAVirtualHostNodeImpl)_helper.recoverHaVHN(node2.getId(), node2Attributes);
         _helper.assertNodeRole(node2, "REPLICA");
 
         waitForNodeDetachedField(remoteNode, false);
 
-        // verify that remaining node issues the ATTACHED operational logging for remote node
+        ArgumentCaptor<LogSubject> subjectArgument = ArgumentCaptor.forClass(LogSubject.class);
+        ArgumentCaptor<LogMessage> messageArgument = ArgumentCaptor.forClass(LogMessage.class);
+        verify(_eventLogger, times(2)).message(subjectArgument.capture(), messageArgument.capture());
+
+        assertEquals("Unexpected subject", node1.getVirtualHostNodeLogSubject(), subjectArgument.getValue());
+
         String expectedMessage = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "REPLICA").toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.ATTACHED_LOG_HIERARCHY)));
+        String expectedMessage2 = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "UNKNOWN").toString();
+
+        List<LogMessage> capturedValues = messageArgument.getAllValues();
+        String m = capturedValues.get(0).toString();
+        assertTrue("Unexpected attached message :" + m, m.equals(expectedMessage) || m.equals(expectedMessage2));
     }
 
     private void waitForNodeDetachedField(BDBHARemoteReplicationNodeImpl remoteNode, boolean expectedDetached) throws InterruptedException {
