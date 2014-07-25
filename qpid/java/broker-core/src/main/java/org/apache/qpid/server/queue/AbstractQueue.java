@@ -77,6 +77,7 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.store.MessageDurability;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
@@ -175,6 +176,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @ManagedAttributeField
     private ExclusivityPolicy _exclusive;
 
+    @ManagedAttributeField
+    private MessageDurability _messageDurability;
+
     private Object _exclusiveOwner; // could be connection, session, Principal or a String for the container name
 
     private final Set<NotificationCheck> _notificationChecks =
@@ -245,11 +249,37 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         super.onCreate();
 
+        if(isDurable() && (getLifetimePolicy()  == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
+                            || getLifetimePolicy() == LifetimePolicy.DELETE_ON_SESSION_END))
+        {
+            Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(),
+                         new PrivilegedAction<Object>()
+                         {
+                             @Override
+                             public Object run()
+                             {
+                                 setAttribute(AbstractConfiguredObject.DURABLE, true, false);
+                                 return null;
+                             }
+                         });
+        }
 
-        if (isDurable() && !(getLifetimePolicy()  == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
-                             || getLifetimePolicy() == LifetimePolicy.DELETE_ON_SESSION_END))
+        if (isDurable())
         {
             _virtualHost.getDurableConfigurationStore().create(asObjectRecord());
+        }
+        else if(getMessageDurability() != MessageDurability.NEVER)
+        {
+            Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(),
+                         new PrivilegedAction<Object>()
+                         {
+                             @Override
+                             public Object run()
+                             {
+                                 setAttribute(Queue.MESSAGE_DURABILITY, getMessageDurability(), MessageDurability.NEVER);
+                                 return null;
+                             }
+                         });
         }
 
         _recovering.set(false);
@@ -510,6 +540,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
     }
 
+    @Override
+    public final MessageDurability getMessageDurability()
+    {
+        return _messageDurability;
+    }
 
     @Override
     public Collection<String> getAvailableAttributes()

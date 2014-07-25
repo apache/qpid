@@ -52,6 +52,9 @@ public class QueueArgumentsConverter
     public static final String QPID_GROUP_HEADER_KEY = "qpid.group_header_key";
     public static final String QPID_SHARED_MSG_GROUP = "qpid.shared_msg_group";
     public static final String QPID_DEFAULT_MESSAGE_GROUP_ARG = "qpid.default-message-group";
+
+    public static final String QPID_MESSAGE_DURABILITY = "qpid.message_durability";
+
     public static final String QPID_TRACE_EXCLUDE = "qpid.trace.exclude";
     public static final String QPID_TRACE_ID = "qpid.trace.id";
 
@@ -91,6 +94,7 @@ public class QueueArgumentsConverter
         ATTRIBUTE_MAPPINGS.put(QPID_DEFAULT_MESSAGE_GROUP_ARG, Queue.MESSAGE_GROUP_DEFAULT_GROUP);
 
         ATTRIBUTE_MAPPINGS.put(QPID_NO_LOCAL, Queue.NO_LOCAL);
+        ATTRIBUTE_MAPPINGS.put(QPID_MESSAGE_DURABILITY, Queue.MESSAGE_DURABILITY);
 
     }
 
@@ -138,7 +142,12 @@ public class QueueArgumentsConverter
         {
             if(modelArguments.containsKey(entry.getValue()))
             {
-                wireArguments.put(entry.getKey(), modelArguments.get(entry.getValue()));
+                Object value = modelArguments.get(entry.getValue());
+                if(value instanceof Enum)
+                {
+                    value = ((Enum) value).name();
+                }
+                wireArguments.put(entry.getKey(), value);
             }
         }
 

@@ -33,6 +33,17 @@
                     <td><input type="checkbox" name="durable" id="formAddQueue.durable" value="durable" checked="checked" dojoType="dijit.form.CheckBox" /></td>
                 </tr>
                 <tr>
+                    <td valign="top"><strong>Persist Messages? </strong></td>
+                    <td>
+                        <select id="formAddQueue.messageDurability" name="messageDurability" data-dojo-type="dijit.form.FilteringSelect"
+                                data-dojo-props="name: 'messageDurability', value: '', searchAttr: 'name', placeHolder: '', value: '', required: false ">
+                            <option value="ALWAYS">Always</option>
+                            <option value="DEFAULT">Default</option>
+                            <option value="NEVER">Never</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
                     <td valign="top"><strong>Queue Type: </strong></td>
                     <td>
                     <input type="radio" id="formAddQueueTypeStandard" name="type" value="standard" checked="checked" dojoType="dijit.form.RadioButton" />

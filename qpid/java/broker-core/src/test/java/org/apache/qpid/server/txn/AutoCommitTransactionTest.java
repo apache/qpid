@@ -20,21 +20,22 @@
  */
 package org.apache.qpid.server.txn;
 
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.MockMessageInstance;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.server.txn.MockStoreTransaction.TransactionState;
-import org.apache.qpid.test.utils.QpidTestCase;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.MockMessageInstance;
+import org.apache.qpid.server.store.MessageDurability;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.txn.MockStoreTransaction.TransactionState;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * A unit test ensuring that AutoCommitTransaction creates a separate transaction for
@@ -428,6 +429,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
     {
         BaseQueue queue = mock(BaseQueue.class);
         when(queue.isDurable()).thenReturn(durable);
+        when(queue.getMessageDurability()).thenReturn(durable ? MessageDurability.DEFAULT : MessageDurability.NEVER);
         return queue;
     }
 

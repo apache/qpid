@@ -193,3 +193,7 @@ org.apache.qpid.client.HeartbeatTest#testHeartbeatsEnabledBrokerSide
 
 // Exclude java broker specific behavior allowing queue re-bind to topic exchanges on 0.8/0-10 paths
 org.apache.qpid.server.queue.QueueBindTest#testQueueCanBeReboundOnTopicExchange
+
+// Tests queue message durability settings which are a Java Broker specific feature
+org.apache.qpid.server.queue.QueueMessageDurabilityTest#*
+

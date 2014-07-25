@@ -59,6 +59,7 @@ import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
+import org.apache.qpid.server.store.MessageDurability;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -1010,9 +1011,9 @@ class ManagementNode implements MessageSource, MessageDestination
     }
 
     @Override
-    public boolean isDurable()
+    public MessageDurability getMessageDurability()
     {
-        return false;
+        return MessageDurability.NEVER;
     }
 
     private class ConsumedMessageInstance implements MessageInstance

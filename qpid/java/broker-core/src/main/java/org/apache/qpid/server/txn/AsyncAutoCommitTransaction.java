@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.txn;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
@@ -30,9 +33,6 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
-
-import java.util.Collection;
-import java.util.List;
 
 /**
  * An implementation of ServerTransaction where each enqueue/dequeue
@@ -93,7 +93,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
         try
         {
             StoreFuture future;
-            if(message.isPersistent() && queue.isDurable())
+            if(queue.getMessageDurability().persist(message.isPersistent()))
             {
                 if (_logger.isDebugEnabled())
                 {
@@ -162,7 +162,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                 ServerMessage message = entry.getMessage();
                 TransactionLogResource queue = entry.getOwningResource();
 
-                if(message.isPersistent() && queue.isDurable())
+                if(queue.getMessageDurability().persist(message.isPersistent()))
                 {
                     if (_logger.isDebugEnabled())
                     {
@@ -205,7 +205,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
         try
         {
             StoreFuture future;
-            if(message.isPersistent() && queue.isDurable())
+            if(queue.getMessageDurability().persist(message.isPersistent()))
             {
                 if (_logger.isDebugEnabled())
                 {
@@ -237,28 +237,24 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
         try
         {
 
-            if(message.isPersistent())
+            for(BaseQueue queue : queues)
             {
-                for(BaseQueue queue : queues)
+                if (queue.getMessageDurability().persist(message.isPersistent()))
                 {
-                    if (queue.isDurable())
+                    if (_logger.isDebugEnabled())
                     {
-                        if (_logger.isDebugEnabled())
-                        {
-                            _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getName());
-                        }
-                        if (txn == null)
-                        {
-                            txn = _messageStore.newTransaction();
-                        }
-
-                        txn.enqueueMessage(queue, message);
-
-
+                        _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getName());
                     }
-                }
+                    if (txn == null)
+                    {
+                        txn = _messageStore.newTransaction();
+                    }
+                    txn.enqueueMessage(queue, message);
 
+
+                }
             }
+
             StoreFuture future;
             if (txn != null)
             {

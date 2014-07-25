@@ -381,7 +381,7 @@ public class DtxBranch
 
         public boolean isDurable()
         {
-            return _message.isPersistent() && _resource.isDurable();
+            return _resource.getMessageDurability().persist(_message.isPersistent());
         }
     }
 

@@ -235,12 +235,6 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
                 }
 
                 @Override
-                public StoreFuture flushToStore()
-                {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
                 public void remove()
                 {
                     throw new UnsupportedOperationException();

@@ -64,6 +64,12 @@ public class MemoryMessageStore implements MessageStore
         @Override
         public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
+
+            if(message.getStoredMessage() instanceof StoredMemoryMessage)
+            {
+                _messages.putIfAbsent(message.getMessageNumber(), (StoredMemoryMessage) message.getStoredMessage());
+            }
+
             Set<Long> messageIds = _localEnqueueMap.get(queue.getId());
             if (messageIds == null)
             {
@@ -196,31 +202,20 @@ public class MemoryMessageStore implements MessageStore
     {
         long id = getNextMessageId();
 
-        if(metaData.isPersistent())
+        StoredMemoryMessage<T> storedMemoryMessage = new StoredMemoryMessage<T>(id, metaData)
         {
-            return new StoredMemoryMessage<T>(id, metaData)
+
+            @Override
+            public void remove()
             {
+                _messages.remove(getMessageNumber());
+                super.remove();
+            }
 
-                @Override
-                public StoreFuture flushToStore()
-                {
-                    _messages.putIfAbsent(getMessageNumber(), this) ;
-                    return super.flushToStore();
-                }
+        };
 
-                @Override
-                public void remove()
-                {
-                    _messages.remove(getMessageNumber());
-                    super.remove();
-                }
+        return storedMemoryMessage;
 
-            };
-        }
-        else
-        {
-            return new StoredMemoryMessage<T>(id, metaData);
-        }
     }
 
     @Override

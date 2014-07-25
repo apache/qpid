@@ -34,8 +34,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -93,7 +91,6 @@ import org.apache.qpid.server.protocol.CapacityChecker;
 import org.apache.qpid.server.protocol.ConsumerListener;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
@@ -151,9 +148,6 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     private final LinkedList<AsyncCommand> _unfinishedCommandsQueue = new LinkedList<AsyncCommand>();
 
     private UnacknowledgedMessageMap _unacknowledgedMessageMap = new UnacknowledgedMessageMapImpl(DEFAULT_PREFETCH);
-
-    // Set of messages being acknowledged in the current transaction
-    private SortedSet<QueueEntry> _acknowledgedMessages = new TreeSet<QueueEntry>();
 
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
 
@@ -422,7 +416,6 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                         else
                         {
                             incrementOutstandingTxnsIfNecessary();
-                            handle.flushToStore();
                         }
                     }
                 }
@@ -1412,7 +1405,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
             }
             finally
             {
-                _acknowledgedMessages.clear();
+                _ackedMessages.clear();
             }
 
         }
@@ -1435,7 +1428,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 }
                 finally
                 {
-                    _acknowledgedMessages.clear();
+                    _ackedMessages.clear();
                 }
             }
 

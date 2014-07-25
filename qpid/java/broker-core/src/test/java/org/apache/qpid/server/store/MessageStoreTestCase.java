@@ -28,12 +28,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.hamcrest.Description;
+import org.mockito.ArgumentMatcher;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -44,9 +45,6 @@ import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 import org.apache.qpid.test.utils.QpidTestCase;
-
-import org.hamcrest.Description;
-import org.mockito.ArgumentMatcher;
 
 public abstract class MessageStoreTestCase extends QpidTestCase
 {
@@ -117,8 +115,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         long messageId = 1;
         int contentSize = 0;
         final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize));
-        StoreFuture flushFuture = message.flushToStore();
-        flushFuture.waitForCompletion();
+        enqueueMessage(message, "dummyQ");
 
         MessageHandler handler = mock(MessageHandler.class);
         _store.visitMessages(handler);
@@ -127,14 +124,60 @@ public abstract class MessageStoreTestCase extends QpidTestCase
 
     }
 
+    public void enqueueMessage(final StoredMessage<TestMessageMetaData> message, final String queueName)
+    {
+        Transaction txn = _store.newTransaction();
+        txn.enqueueMessage(new TransactionLogResource()
+        {
+            private final UUID _id = UUID.nameUUIDFromBytes(queueName.getBytes());
+
+            @Override
+            public String getName()
+            {
+                return queueName;
+            }
+
+            @Override
+            public UUID getId()
+            {
+                return _id;
+            }
+
+            @Override
+            public MessageDurability getMessageDurability()
+            {
+                return MessageDurability.DEFAULT;
+            }
+        }, new EnqueueableMessage()
+        {
+            @Override
+            public long getMessageNumber()
+            {
+                return message.getMessageNumber();
+            }
+
+            @Override
+            public boolean isPersistent()
+            {
+                return true;
+            }
+
+            @Override
+            public StoredMessage getStoredMessage()
+            {
+                return message;
+            }
+        });
+        txn.commitTran();
+    }
+
     public void testVisitMessagesAborted() throws Exception
     {
         int contentSize = 0;
         for (int i = 0; i < 3; i++)
         {
             final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(i + 1, contentSize));
-            StoreFuture flushFuture = message.flushToStore();
-            flushFuture.waitForCompletion();
+            enqueueMessage(message, "dummyQ");
         }
 
         MessageHandler handler = mock(MessageHandler.class);
@@ -151,16 +194,16 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         for (int i = 0; i < 3; i++)
         {
             final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(i + 1, contentSize));
-            StoreFuture flushFuture = message.flushToStore();
-            flushFuture.waitForCompletion();
+            enqueueMessage(message, "dummyQ");
+
         }
 
         reopenStore();
 
         final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(4, contentSize));
 
-        StoreFuture flushFuture = message.flushToStore();
-        flushFuture.waitForCompletion();
+        enqueueMessage(message, "dummyQ");
+
 
         assertTrue("Unexpected message id " + message.getMessageNumber(), message.getMessageNumber() >= 4);
     }
@@ -170,8 +213,6 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         long messageId = 1;
         int contentSize = 0;
         final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize));
-        StoreFuture flushFuture = message.flushToStore();
-        flushFuture.waitForCompletion();
 
         EnqueueableMessage enqueueableMessage = createMockEnqueueableMessage(messageId, message);
 
@@ -305,8 +346,6 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         long messageId = 1;
         int contentSize = 0;
         final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize, false));
-        StoreFuture flushFuture = message.flushToStore();
-        flushFuture.waitForCompletion();
 
         MessageHandler handler = mock(MessageHandler.class);
         _store.visitMessages(handler);
@@ -319,8 +358,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         long messageId = 1;
         int contentSize = 0;
         final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize));
-        StoreFuture flushFuture = message.flushToStore();
-        flushFuture.waitForCompletion();
+        enqueueMessage(message, "dummyQ");
 
         final AtomicReference<StoredMessage<?>> retrievedMessageRef = new AtomicReference<StoredMessage<?>>();
         _store.visitMessages(new MessageHandler()
@@ -360,7 +398,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         TransactionLogResource queue = mock(TransactionLogResource.class);
         when(queue.getId()).thenReturn(queueId);
         when(queue.getName()).thenReturn("testQueue");
-        when(queue.isDurable()).thenReturn(true);
+        when(queue.getMessageDurability()).thenReturn(MessageDurability.DEFAULT);
         return queue;
     }
 
@@ -391,8 +429,6 @@ public abstract class MessageStoreTestCase extends QpidTestCase
     private EnqueueableMessage createEnqueueableMessage(long messageId1)
     {
         final StoredMessage<TestMessageMetaData> message1 = _store.addMessage(new TestMessageMetaData(messageId1, 0));
-        StoreFuture flushFuture = message1.flushToStore();
-        flushFuture.waitForCompletion();
         EnqueueableMessage enqueueableMessage1 = createMockEnqueueableMessage(messageId1, message1);
         return enqueueableMessage1;
     }

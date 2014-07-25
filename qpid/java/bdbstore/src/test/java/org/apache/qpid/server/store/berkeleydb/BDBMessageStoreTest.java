@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -50,9 +53,6 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.util.FileUtils;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Subclass of MessageStoreTestCase which runs the standard tests from the superclass against
@@ -113,7 +113,7 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
 
         storedMessage_0_8.addContent(0, firstContentBytes_0_8);
         storedMessage_0_8.addContent(firstContentBytes_0_8.limit(), secondContentBytes_0_8);
-        storedMessage_0_8.flushToStore();
+        ((AbstractBDBMessageStore.StoredBDBMessage)storedMessage_0_8).flushToStore();
 
         /*
          * Create and insert a 0-10 message (metadata and content)
@@ -132,7 +132,7 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
         long messageid_0_10 = storedMessage_0_10.getMessageNumber();
 
         storedMessage_0_10.addContent(0, completeContentBody_0_10);
-        storedMessage_0_10.flushToStore();
+        ((AbstractBDBMessageStore.StoredBDBMessage)storedMessage_0_10).flushToStore();
 
         /*
          * reload the store only (read-only)
@@ -387,7 +387,7 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
         StoredMessage<MessageMetaData> storedMessage_0_8 = store.addMessage(messageMetaData_0_8);
 
         storedMessage_0_8.addContent(0, chunk1);
-        storedMessage_0_8.flushToStore();
+        ((AbstractBDBMessageStore.StoredBDBMessage)storedMessage_0_8).flushToStore();
 
         return storedMessage_0_8;
     }

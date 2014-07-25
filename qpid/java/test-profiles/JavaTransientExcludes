@@ -33,6 +33,8 @@ org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
 org.apache.qpid.test.unit.xa.TopicTest#testDurSubCrash
 org.apache.qpid.test.unit.xa.TopicTest#testRecover
 
+org.apache.qpid.server.queue.QueueMessageDurabilityTest#*
+
 org.apache.qpid.server.store.VirtualHostMessageStoreTest#testMessagePersistence
 org.apache.qpid.server.store.VirtualHostMessageStoreTest#testMessageRemoval
 org.apache.qpid.server.store.VirtualHostMessageStoreTest#testBindingPersistence

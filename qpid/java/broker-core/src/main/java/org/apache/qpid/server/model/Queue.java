@@ -23,6 +23,7 @@ package org.apache.qpid.server.model;
 import java.util.Collection;
 
 import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.store.MessageDurability;
 
 @ManagedObject( defaultType = "standard" )
 public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
@@ -35,6 +36,7 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     String ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES = "alertThresholdQueueDepthMessages";
     String ALTERNATE_EXCHANGE = "alternateExchange";
     String EXCLUSIVE = "exclusive";
+    String MESSAGE_DURABILITY = "messageDurability";
     String MESSAGE_GROUP_KEY = "messageGroupKey";
     String MESSAGE_GROUP_SHARED_GROUPS = "messageGroupSharedGroups";
     String MESSAGE_GROUP_DEFAULT_GROUP = "messageGroupDefaultGroup";
@@ -129,6 +131,10 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 
     @ManagedAttribute( defaultValue = "${queue.alertRepeatGap}")
     long getAlertRepeatGap();
+
+    @ManagedAttribute( defaultValue = "DEFAULT" )
+    MessageDurability getMessageDurability();
+
 
 
     //children

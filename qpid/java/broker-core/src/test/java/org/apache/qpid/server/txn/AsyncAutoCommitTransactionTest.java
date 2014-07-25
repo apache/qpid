@@ -25,6 +25,7 @@ import java.util.Collections;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.store.MessageDurability;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.Transaction;
@@ -53,6 +54,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         when(_messageStore.newTransaction()).thenReturn(_storeTransaction);
         when(_storeTransaction.commitTranAsync()).thenReturn(_future);
         when(_queue.isDurable()).thenReturn(true);
+        when(_queue.getMessageDurability()).thenReturn(MessageDurability.DEFAULT);
     }
 
     public void testEnqueuePersistentMessagePostCommitNotCalledWhenFutureAlreadyComplete() throws Exception
