@@ -148,54 +148,6 @@ public class ConsumerLoggingTest extends AbstractTestLogging
 
     /**
      * Description:
-     * The creation of a QueueBrowser will provides a number arguments and so should form part of the SUB-1001 Create message.
-     * Input:
-     *
-     * 1. Running Broker
-     * 2. Java Client creates a QueueBroweser
-     * Output:
-     *
-     * <date> SUB-1001 : Create : Arguments : <key=value>
-     *
-     * Validation Steps:
-     * 3. The SUB ID is correct
-     * 4. The Arguments are present in the message
-     * 5. Arguments keys include AutoClose and Browser.
-     *
-     * @throws java.io.IOException    - if there is a problem getting the matches
-     * @throws javax.jms.JMSException - if there is a problem creating the consumer
-     */
-    public void testSubscriptionCreateQueueBrowser() throws JMSException, IOException
-    {
-        _connection.start();
-        QueueBrowser browser = _session.createBrowser(_queue);
-
-        browser.getEnumeration();
-        //Validate
-        //Ensure that we wait for the SUB log message
-        waitAndFindMatches("SUB-1002");
-
-        List<String> results = findMatches(SUB_PREFIX);
-
-        final int expected = isBroker010() ? 5 : 2;
-        assertEquals("Result set larger than expected.", expected, results.size());
-
-        String log = getLogMessage(results, 0);
-
-        validateMessageID("SUB-1001", log);
-
-        String message = getMessageString(fromMessage(log));
-        assertTrue("Browser not on log message:" + message, message.contains("Browser"));
-
-        // Beacause it is an auto close and we have no messages on the queue we
-        // will get a close message
-        log = getLogMessage(results, expected-1);
-        validateMessageID("SUB-1002", log);
-
-    }
-
-    /**
-     * Description:
      * The creation of a Subscriber with a JMS Selector will result in the Argument field being populated. These argument key/value pairs are then shown in the log message.
      * Input:
      *
