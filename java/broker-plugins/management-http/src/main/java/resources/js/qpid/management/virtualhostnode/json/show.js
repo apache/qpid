@@ -18,35 +18,22 @@
  * under the License.
  *
  */
-define(["dojo/_base/xhr",
-        "dojo/_base/lang",
-        "dojo/_base/connect",
-        "dojo/parser",
-        "dojo/string",
-        "dojox/html/entities",
-        "dojo/query",
-        "dojo/json",
-        "dojo/domReady!"],
-  function (xhr, lang, connect, parser, json, entities, query, json)
-  {
-    function JsonNode(data)
-    {
-      var containerNode = data.containerNode;
-      this.parent = data.parent;
-      var that = this;
-      xhr.get({url: "virtualhostnode/json/show.html",
-        sync: true,
-        load:  function(template) {
-          containerNode.innerHTML = template;
-          parser.parse(containerNode);
-        }});
-      this.storePath = query(".storePath", containerNode)[0];
-    }
+ define(["qpid/common/util",
+         "dojo/domReady!"],
+   function (util)
+   {
+     var fields = ["storePath"];
 
-    JsonNode.prototype.update=function(data)
-    {
-      this.storePath.innerHTML = entities.encode(String(data.storePath));
-    };
+     function JSON(data)
+     {
+         util.buildUI(data.containerNode, data.parent, "virtualhostnode/json/show.html", fields, this);
+     }
 
-    return JsonNode;
-});
+     JSON.prototype.update = function(data)
+     {
+         util.updateUI(data, fields, this);
+     }
+
+     return JSON;
+   }
+ );

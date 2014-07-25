@@ -18,36 +18,16 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.jdbc;
-
-import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
-import org.apache.qpid.server.plugin.PluggableService;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-
-@PluggableService
-public class DefaultConnectionProviderFactory implements JDBCConnectionProviderFactory
-{
-    public static final String TYPE = "NONE";
-
-    @Override
-    public String getType()
+define([],
+  function ()
+  {
+    function NonePool(data)
     {
-        return TYPE;
     }
 
-    @Override
-    public ConnectionProvider getConnectionProvider(String connectionUrl, String username, String password, Map<String, String> providerAttributes)
+    NonePool.prototype.update=function(data)
     {
-        return new DefaultConnectionProvider(connectionUrl, username, password);
-    }
+    };
 
-    @Override
-    public Set<String> getProviderAttributeNames()
-    {
-        return Collections.emptySet();
-    }
-
-}
+    return NonePool;
+});

@@ -242,7 +242,19 @@ public class BrokerStoreUpgraderAndRecoverer
                         addAttributeTransformer("createdBy", copyAttribute()).
                         addAttributeTransformer("storePath", mutateAttributeName("connectionURL")).
                         addAttributeTransformer("connectionURL", mutateAttributeName("connectionUrl")).
-                        addAttributeTransformer("connectionPool", mutateAttributeName("connectionPoolType")).
+                        addAttributeTransformer("connectionPool", new AttributeTransformer()
+                        {
+                            @Override
+                            public MutableEntry transform(MutableEntry entry)
+                            {
+                               Object value = entry.getValue();
+                                if ("DEFAULT".equals(value))
+                                {
+                                    value = "NONE";
+                                }
+                                return new MutableEntry("connectionPoolType", value);
+                            }
+                        }).
                         addAttributeTransformer("jdbcBigIntType", addContextVar("qpid.jdbcstore.bigIntType")).
                         addAttributeTransformer("jdbcBytesForBlob", addContextVar("qpid.jdbcstore.useBytesForBlob")).
                         addAttributeTransformer("jdbcBlobType", addContextVar("qpid.jdbcstore.blobType")).

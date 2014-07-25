@@ -19,10 +19,7 @@
  *
  */
 define(["dojo/_base/xhr",
-        "dojo/_base/lang",
         "dojo/_base/connect",
-        "dojo/parser",
-        "dojo/string",
         "dojox/html/entities",
         "dojo/query",
         "dojo/json",
@@ -31,11 +28,12 @@ define(["dojo/_base/xhr",
         "qpid/common/UpdatableStore",
         "qpid/management/UserPreferences",
         "qpid/management/virtualhostnode/bdb_ha/edit",
+        "qpid/common/util",
         "dojo/domReady!"],
-  function (xhr, lang, connect, parser, json, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences, edit)
+  function (xhr, connect, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences, edit, util)
   {
     var priorityNames = {'_0': 'Never', '_1': 'Default', '_2': 'Normal', '_3': 'High'};
-    var nodeFields = ["storePath", "groupName", "role", "address", "designatedPrimary", "durability", "priority", "quorumOverride"];
+    var nodeFields = ["storePath", "groupName", "role", "address", "designatedPrimary", "priority", "quorumOverride"];
 
     function findNode(nodeClass, containerNode)
     {
@@ -88,36 +86,11 @@ define(["dojo/_base/xhr",
       var containerNode = data.containerNode;
       this.parent = data.parent;
       var that = this;
-      xhr.get({url: "virtualhostnode/bdb_ha/show.html",
-        sync: true,
-        load:  function(template) {
-          containerNode.innerHTML = template;
-          parser.parse(containerNode);
-        }});
-
-      for(var i=0; i<nodeFields.length;i++)
-      {
-        var fieldName = nodeFields[i];
-        this[fieldName]= findNode(fieldName, containerNode);
-      }
+      util.buildUI(data.containerNode, data.parent, "virtualhostnode/bdb_ha/show.html", nodeFields, this);
 
       this.designatedPrimaryContainer = findNode("designatedPrimaryContainer", containerNode);
       this.priorityContainer = findNode("priorityContainer", containerNode);
       this.quorumOverrideContainer = findNode("quorumOverrideContainer", containerNode);
-      this.environmentConfigurationPanel = registry.byNode(query(".environmentConfigurationPanel", containerNode)[0]),
-      this.environmentConfigurationGrid = new UpdatableStore([],
-          query(".environmentConfiguration", containerNode)[0],
-          [ {name: 'Name', field: 'id', width: '50%'}, {name: 'Value', field: 'value', width: '50%'} ],
-          null,
-          null,
-          null, true );
-      this.replicatedEnvironmentConfigurationPanel = registry.byNode(query(".replicatedEnvironmentConfigurationPanel", containerNode)[0]);
-      this.replicatedEnvironmentConfigurationGrid = new UpdatableStore([],
-          query(".replicatedEnvironmentConfiguration", containerNode)[0],
-          [ {name: 'Name', field: 'id', width: '50%'}, {name: 'Value', field: 'value', width: '50%'} ],
-          null,
-          null,
-          null, true );
 
       this.membersGridPanel = registry.byNode(query(".membersGridPanel", containerNode)[0]);
       this.membersGrid = new UpdatableStore([],
@@ -182,6 +155,7 @@ define(["dojo/_base/xhr",
           }
       );
       this.parent.editNodeButton.set("disabled", false);
+      this.parent.editNodeButton.domNode.style.display = "inline";
       this.parent.editNodeButton.on("click",
           function(e)
           {
@@ -209,9 +183,6 @@ define(["dojo/_base/xhr",
           this[name].innerHTML = entities.encode(String(data[name]));
         }
       }
-
-      this._updateGrid(this._convertConfig(data.environmentConfiguration), this.environmentConfigurationPanel, this.environmentConfigurationGrid );
-      this._updateGrid(this._convertConfig(data.replicatedEnvironmentConfiguration), this.replicatedEnvironmentConfigurationPanel, this.replicatedEnvironmentConfigurationGrid );
 
       var members = data.remotereplicationnodes;
       if (members)
@@ -259,20 +230,5 @@ define(["dojo/_base/xhr",
       }
     }
 
-    BDBHA.prototype._convertConfig=function(conf)
-    {
-      var settings = [];
-      if (conf)
-      {
-        for(var propName in conf)
-        {
-          if(conf.hasOwnProperty(propName))
-          {
-            settings.push({"id": propName, "value": conf[propName]});
-          }
-        }
-      }
-      return settings;
-    }
     return BDBHA;
 });

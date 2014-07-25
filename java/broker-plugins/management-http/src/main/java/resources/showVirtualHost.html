@@ -27,6 +27,10 @@
             <div class="name" style="float:left;"></div>
         </div>
         <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 100px;">Type:</div>
+            <div class="type" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
             <div class="formLabel-labelCell" style="float:left; width: 100px;">State:</div>
             <div class="state" style="float:left;"></div>
         </div>
@@ -38,6 +42,65 @@
             <div class="formLabel-labelCell" style="float:left; width: 100px;">Lifespan:</div>
             <div class="lifetimePolicy" style="float:left;"></div>
         </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell" style="float:left; width: 300px;">Dead letter queue enabled:</div>
+            <div class="deadLetterQueueEnabled" style="float:left;"></div>
+        </div>
+        <div style="clear:both" class="virtualHostDetailsContainer"></div>
+        <div style="clear:both"></div>
+
+        <br/>
+
+        <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Store Transaction Settings',  open: false">
+            <div style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 300px;">Idle timeout before a warning (ms) :</div>
+                <div class="storeTransactionIdleTimeoutWarn" style="float:left;"></div>
+                <div class="formLabel-description">The time a transaction can be idle for after which a warning alert will be issued</div>
+            </div>
+            <div style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 300px;">Idle timeout before closing (ms) :</div>
+                <div class="storeTransactionIdleTimeoutClose" style="float:left;"></div>
+                <div class="formLabel-description">The time a transaction can be idle for before the connection it is on is closed</div>
+            </div>
+            <div style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 300px;" >Open timeout before warning (ms) :</div>
+                <div class="storeTransactionOpenTimeoutWarn" style="float:left;"></div>
+                <div class="formLabel-description">The time a transaction can be open for after which a warning alert will be issued</div>
+            </div>
+            <div style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 300px;">Open timeout before closing (ms) :</div>
+                <div class="storeTransactionOpenTimeoutClose" style="float:left;"></div>
+                <div class="formLabel-description">The time a transaction can be open for before the connection it is on is closed</div>
+            </div>
+            <div style="clear:both"></div>
+        </div>
+
+        <br/>
+
+        <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'House Keeping Settings',  open: false">
+            <div style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 300px;">House keeping check period (ms):</div>
+                <div class="housekeepingCheckPeriod" style="float:left;"></div>
+            </div>
+            <div style="clear:both">
+                <div class="formLabel-labelCell" style="float:left; width: 300px;">House keeping thread count:</div>
+                <div class="housekeepingThreadCount" style="float:left;"></div>
+            </div>
+            <div style="clear:both"></div>
+        </div>
+
+    </div>
+
+    <div class="dijitDialogPaneActionBar">
+        <button data-dojo-type="dijit.form.Button" class="startButton" type="button" data-dojo-props="disabled: true">Start</button>
+        <button data-dojo-type="dijit.form.Button" class="stopButton" type="button" data-dojo-props="disabled: true">Stop</button>
+        <button data-dojo-type="dijit.form.Button" class="editButton" type="button" data-dojo-props="disabled: true">Edit</button>
+        <button data-dojo-type="dijit.form.Button" class="deleteButton" data-dojo-props="iconClass: 'dijitIconDelete'">Delete</button>
+    </div>
+
+    <br/>
+
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Statistics',  open: true">
         <div style="clear:both">
             <div class="formLabel-labelCell" style="float:left; width: 100px;">Inbound:</div>
             <div style="float:left;">
@@ -56,20 +119,9 @@
                 <span class="bytesOutRateUnits"></span>
             </div>
         </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Store Type:</div>
-            <div class="storeType" style="float:left;"></div>
-        </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Store Path:</div>
-            <div class="storePath" style="float:left;"></div>
-        </div>
-        <div class="configPathDiv" style="clear:both">
-            <div class="formLabel-labelCell" style="float:left; width: 100px;">Config Path:</div>
-            <div class="configPath" style="float:left;"></div>
-        </div>
         <div style="clear:both"></div>
-      </div>
+    </div>
+
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Exchanges'">
         <div class="exchanges"></div>

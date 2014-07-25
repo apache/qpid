@@ -18,46 +18,43 @@
  * under the License.
  *
  */
-define(["dojo/_base/xhr",
-        "dojo/_base/lang",
-        "dojo/_base/connect",
-        "dojo/parser",
-        "dojo/string",
-        "dojox/html/entities",
-        "dojo/query",
-        "dojo/json",
-        "dojo/domReady!"],
-  function (xhr, lang, connect, parser, json, entities, query, json)
-  {
-    var fieldNames = ["connectionUrl", "bigIntType", "varBinaryType", "blobType", "bytesForBlob", "connectionPoolType"];
 
-    function JdbcNode(data)
+define(["qpid/common/util",
+        "dojo/query",
+        "dojo/domReady!"],
+  function (util, query)
+  {
+    var fieldNames = ["connectionUrl", "username", "connectionPoolType"];
+
+    function Jdbc(data)
     {
-      var containerNode = data.containerNode;
-      this.parent = data.parent;
-      var that = this;
-      xhr.get({url: "virtualhostnode/jdbc/show.html",
-        sync: true,
-        load:  function(template) {
-          containerNode.innerHTML = template;
-          parser.parse(containerNode);
-        }});
-      for(var i=0; i<fieldNames.length;i++)
-      {
-        var fieldName = fieldNames[i];
-        this[fieldName]= query("." + fieldName, containerNode)[0];
-      }
+      util.buildUI(data.containerNode, data.parent, "virtualhostnode/jdbc/show.html", fieldNames, this);
+
+      this.usernameAttributeContainer=query(".usernameAttributeContainer", data.containerNode)[0];
+      this.connectionPoolTypeAttributeContainer=query(".connectionPoolTypeAttributeContainer", data.containerNode)[0];
     }
 
-    JdbcNode.prototype.update=function(data)
+    Jdbc.prototype.update=function(data)
     {
-      for(var i=0; i<fieldNames.length;i++)
+      util.updateUI(data, fieldNames, this);
+
+      this.usernameAttributeContainer.style.display = data.username ? "block" : "none";
+      if (!this.poolDetails)
       {
-        var fieldName = fieldNames[i];
-        var value = data[fieldName];
-        this[fieldName].innerHTML= value?entities.encode(String(value)):"";
+        var that = this;
+        require(["qpid/management/store/pool/" + data.connectionPoolType.toLowerCase() + "/show"],
+          function(PoolDetails)
+          {
+            that.poolDetails = new PoolDetails({containerNode:that.connectionPoolTypeAttributeContainer, parent: that});
+            that.poolDetails.update(data);
+          }
+        );
+      }
+      else
+      {
+        this.poolDetails.update(data);
       }
     };
 
-    return JdbcNode;
+    return Jdbc;
 });

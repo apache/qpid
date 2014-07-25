@@ -26,6 +26,9 @@ define(["dojo/_base/xhr",
         "dojo/dom-construct",
         "dojo/dom-geometry",
         "dojo/window",
+        "dojo/query",
+        "dojo/parser",
+        "dojox/html/entities",
         "dijit/TitlePane",
         "dijit/Dialog",
         "dijit/form/Form",
@@ -38,7 +41,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/web",
         "dojo/domReady!"
         ],
-       function (xhr, event, json, lang, dom, geometry, win) {
+       function (xhr, event, json, lang, dom, geometry, win, query, parser, entities) {
            var util = {};
            if (Array.isArray) {
                util.isArray = function (object) {
@@ -489,6 +492,74 @@ define(["dojo/_base/xhr",
                }
              }
              return object1 === object2;
+           }
+
+           util.buildUI = function(containerNode, parent, htmlTemplateLocation, fieldNames, obj)
+           {
+                xhr.get({url: htmlTemplateLocation,
+                   sync: true,
+                   load:  function(template) {
+                     containerNode.innerHTML = template;
+                     parser.parse(containerNode);
+                   }});
+                for(var i=0; i<fieldNames.length;i++)
+                {
+                   var fieldName = fieldNames[i];
+                   obj[fieldName]= query("." + fieldName, containerNode)[0];
+                }
+           }
+
+           util.updateUI = function(data, fieldNames, obj)
+           {
+             for(var i=0; i<fieldNames.length;i++)
+             {
+               var fieldName = fieldNames[i];
+               var value = data[fieldName];
+               obj[fieldName].innerHTML= (value == undefined || value == null) ? "" : entities.encode(String(value));
+             }
+           }
+
+           util.getFormWidgetValues = function (form)
+           {
+               var values = {};
+               var formWidgets = form.getChildren();
+               for(var i in formWidgets)
+               {
+                   var widget = formWidgets[i];
+                   var value = widget.value;
+                   var propName = widget.name;
+                   if (propName && (widget.required || value ))
+                   {
+                       if (widget instanceof dijit.form.CheckBox)
+                       {
+                           values[ propName ] = widget.checked;
+                       }
+                       else if (widget instanceof dijit.form.RadioButton && value)
+                       {
+                           var currentValue = values[propName];
+                           if (currentValue)
+                           {
+                               if (lang.isArray(currentValue))
+                               {
+                                   currentValue.push(value)
+                               }
+                               else
+                               {
+                                   values[ propName ] = [currentValue, value];
+                               }
+                           }
+                           else
+                           {
+                               values[ propName ] = value;
+                           }
+                       }
+                       else
+                       {
+                           values[ propName ] = value ? value: null;
+                       }
+                   }
+               }
+               return values;
            }
 
            return util;

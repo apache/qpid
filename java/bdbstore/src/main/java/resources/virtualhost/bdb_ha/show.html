@@ -1,0 +1,75 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 100px;">Store Overfull Limit:</div>
+      <div style="float:left;"><span class="storeOverfullSize" ></span> bytes</div>
+  </div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 100px;">Store Underfull Limit:</div>
+      <div style="float:left;"><span class="storeUnderfullSize"></span> bytes</div>
+  </div>
+  <div style="clear:both">
+      <div class="formLabel-labelCell" style="float:left; width: 100px;">Permitted Nodes:</div>
+      <div class="permittedNodes" style="float:left;"></div>
+  </div>
+  <div style="clear:both"></div>
+  <br/>
+
+  <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'High Availability Durability',  open: true">
+      <div>Before each transaction commit returns to the caller the following will be true:</div>
+      <div>
+           <div>At the master node, the node will have received the required minimum number of acknowledgements from the replica nodes and the transaction will have been:</div>
+          <div>
+              <input type="radio" disabled="true" class="localTransactionSynchronizationPolicy-sync" name="localTransactionSynchronizationPolicy" value="SYNC"/>
+              <label>written and synchronized to the disk [default - highest durability],</label>
+          </div>
+
+          <div>
+              <input type="radio" disabled="true" class="localTransactionSynchronizationPolicy-write_no_sync"  name="localTransactionSynchronizationPolicy" value="WRITE_NO_SYNC"/>
+              <label>written only; the synchronization will be performed later,</label>
+          </div>
+
+          <div>
+              <input type="radio" class="localTransactionSynchronizationPolicy-no_sync" disabled="true" name="localTransactionSynchronizationPolicy" value="NO_SYNC"/>
+              <label>write later; the transaction will be written and synchronized later [lowest durability],</label>
+          </div>
+      </div>
+      <div>
+          <div>At the required minimum number od replica nodes, the transaction will have been:</div>
+          <div>
+              <input type="radio" disabled="true" class="remoteTransactionSynchronizationPolicy-sync" name="remoteTransactionSynchronizationPolicy" value="SYNC"/>
+              <label>written and synchronized to the disk [default - highest durability],</label>
+          </div>
+
+          <div>
+              <input type="radio" disabled="true" class="remoteTransactionSynchronizationPolicy-write_no_sync"  name="remoteTransactionSynchronizationPolicy"  value="WRITE_NO_SYNC"/>
+              <label>written only; the synchronization will be performed later,</label>
+          </div>
+
+          <div>
+              <input type="radio" class="remoteTransactionSynchronizationPolicy-no_sync" disabled="true" name="remoteTransactionSynchronizationPolicy" value="NO_SYNC"/>
+              <label>write later; the transaction will be written and synchronized later [lowest durability],</label>
+          </div>
+      </div>
+  </div>
+
+
+</div>

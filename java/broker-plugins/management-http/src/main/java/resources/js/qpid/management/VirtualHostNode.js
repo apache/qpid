@@ -138,7 +138,7 @@ define(["dojo/_base/xhr",
                    }
                }
 
-               storeNodes(["name", "state", "type", "messageStoreProviderYes","messageStoreProviderNo"]);
+               storeNodes(["name", "state", "type"]);
                this.detailsDiv = findNode("virtualhostnodedetails");
 
                this.query = "api/latest/virtualhostnode/" + encodeURIComponent(nodeObject.name);
@@ -163,8 +163,6 @@ define(["dojo/_base/xhr",
              this.name.innerHTML = entities.encode(String(data[ "name" ]));
              this.state.innerHTML = entities.encode(String(data[ "state" ]));
              this.type.innerHTML = entities.encode(String(data[ "type" ]));
-             this.messageStoreProviderYes.style.display = data.messageStoreProvider? "block" : "none";
-             this.messageStoreProviderNo.style.display = data.messageStoreProvider? "none" : "block";
              if (!this.details)
              {
                var that = this;

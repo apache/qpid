@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,38 +15,24 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.store.jdbc;
 
-import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
-import org.apache.qpid.server.plugin.PluggableService;
+define(["qpid/common/util",
+        "dojo/domReady!"],
+  function (util)
+  {
+    var fields = ["storePath", "storeUnderfullSize", "storeOverfullSize"];
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-
-@PluggableService
-public class DefaultConnectionProviderFactory implements JDBCConnectionProviderFactory
-{
-    public static final String TYPE = "NONE";
-
-    @Override
-    public String getType()
+    function Derby(data)
     {
-        return TYPE;
+        util.buildUI(data.containerNode, data.parent, "virtualhost/sizemonitoring/show.html", fields, this);
     }
 
-    @Override
-    public ConnectionProvider getConnectionProvider(String connectionUrl, String username, String password, Map<String, String> providerAttributes)
+    Derby.prototype.update = function(data)
     {
-        return new DefaultConnectionProvider(connectionUrl, username, password);
+        util.updateUI(data, fields, this);
     }
 
-    @Override
-    public Set<String> getProviderAttributeNames()
-    {
-        return Collections.emptySet();
-    }
-
-}
+    return Derby;
+  }
+);
