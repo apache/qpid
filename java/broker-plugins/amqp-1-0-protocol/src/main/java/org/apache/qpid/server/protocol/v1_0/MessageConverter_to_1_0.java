@@ -261,12 +261,6 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
                         }
 
                         @Override
-                        public StoreFuture flushToStore()
-                        {
-                            throw new UnsupportedOperationException();
-                        }
-
-                        @Override
                         public void remove()
                         {
                             throw new UnsupportedOperationException();

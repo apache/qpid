@@ -104,11 +104,6 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
         return  buf;
     }
 
-    public StoreFuture flushToStore()
-    {
-        return StoreFuture.IMMEDIATE_FUTURE;
-    }
-
     public void remove()
     {
     }

@@ -1,4 +1,4 @@
-package org.apache.qpid.server.plugin;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,14 +18,25 @@ package org.apache.qpid.server.plugin;/*
  * under the License.
  *
  */
+package org.apache.qpid.server.store;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.CLASS)
-@Target(ElementType.TYPE)
-public @interface PluggableService
+public enum MessageDurability
 {
+    DEFAULT(false,true),
+    ALWAYS(true,true),
+    NEVER(false,false);
+
+    private final boolean _nonPersistent;
+    private final boolean _persistent;
+
+    MessageDurability(final boolean nonPersistent, final boolean persistent)
+    {
+        _nonPersistent = nonPersistent;
+        _persistent = persistent;
+    }
+
+    public boolean persist(final boolean persistent)
+    {
+        return persistent ? _persistent : _nonPersistent;
+    }
 }

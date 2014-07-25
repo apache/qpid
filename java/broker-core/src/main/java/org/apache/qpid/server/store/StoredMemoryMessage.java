@@ -122,12 +122,6 @@ public class StoredMemoryMessage<T extends StorableMessageMetaData> implements S
         return buf;
     }
 
-    public StoreFuture flushToStore()
-    {
-        return StoreFuture.IMMEDIATE_FUTURE;
-    }
-
-
     public T getMetaData()
     {
         return _metaData;

@@ -334,11 +334,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         int enqueues = serverSession.enqueue(message, instanceProperties, exchange);
 
-        if(enqueues != 0)
-        {
-            storeMessage.flushToStore();
-        }
-        else
+        if(enqueues == 0)
         {
             if((delvProps == null || !delvProps.getDiscardUnroutable()) && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
             {

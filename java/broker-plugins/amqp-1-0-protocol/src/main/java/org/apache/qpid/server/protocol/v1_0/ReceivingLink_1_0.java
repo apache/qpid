@@ -159,8 +159,6 @@ public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, Deliv
                 offset += bareMessageBuf.remaining();
             }
 
-            storedMessage.flushToStore();
-
             Message_1_0 message = new Message_1_0(storedMessage, fragments, getSession().getConnection().getReference());
             MessageReference<Message_1_0> reference = message.newReference();
 

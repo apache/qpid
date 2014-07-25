@@ -20,16 +20,14 @@
  */
 package org.apache.qpid.server.store;
 
-import static org.mockito.Mockito.mock;
-
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.VirtualHost;
@@ -148,12 +146,6 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         return _transactionResource;
     }
 
-    @Override
-    public boolean isDurable()
-    {
-        return true;
-    }
-
     private static class TestMessage implements EnqueueableMessage
     {
         private final StoredMessage<?> _handle;
@@ -179,5 +171,11 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
         {
             return _handle;
         }
+    }
+
+    @Override
+    public MessageDurability getMessageDurability()
+    {
+        return MessageDurability.DEFAULT;
     }
 }

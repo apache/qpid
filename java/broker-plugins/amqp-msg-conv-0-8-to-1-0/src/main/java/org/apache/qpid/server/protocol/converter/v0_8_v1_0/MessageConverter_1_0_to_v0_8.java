@@ -115,12 +115,6 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
             }
 
             @Override
-            public StoreFuture flushToStore()
-            {
-                return StoreFuture.IMMEDIATE_FUTURE;
-            }
-
-            @Override
             public void remove()
             {
                 throw new UnsupportedOperationException();

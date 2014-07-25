@@ -118,7 +118,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Immediate message prefetch default. */
     public static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
 
-    private final boolean _delareQueues =
+    private final boolean _declareQueues =
         Boolean.parseBoolean(System.getProperty(ClientProperties.QPID_DECLARE_QUEUES_PROP_NAME, "true"));
 
     private final boolean _declareExchanges =
@@ -2871,7 +2871,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 declareExchange(amqd, nowait);
             }
 
-            if ((_delareQueues || amqd.isNameRequired()) && !amqd.neverDeclare())
+            if ((_declareQueues || amqd.isNameRequired()) && !amqd.neverDeclare())
             {
                 declareQueue(amqd, consumer.isNoLocal(), nowait);
             }

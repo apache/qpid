@@ -20,21 +20,21 @@
  */
 package org.apache.qpid.server.txn;
 
-import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.store.StoreFuture;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.Transaction;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 /**
  * A concrete implementation of ServerTransaction where enqueue/dequeue
@@ -97,7 +97,7 @@ public class LocalTransaction implements ServerTransaction
         _postTransactionActions.add(postTransactionAction);
         initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
-        if(message.isPersistent() && queue.isDurable())
+        if(queue.getMessageDurability().persist(message.isPersistent()))
         {
             try
             {
@@ -129,7 +129,7 @@ public class LocalTransaction implements ServerTransaction
                 ServerMessage message = entry.getMessage();
                 TransactionLogResource queue = entry.getOwningResource();
 
-                if(message.isPersistent() && queue.isDurable())
+                if(queue.getMessageDurability().persist(message.isPersistent()))
                 {
                     if (_logger.isDebugEnabled())
                     {
@@ -186,7 +186,7 @@ public class LocalTransaction implements ServerTransaction
         _postTransactionActions.add(postTransactionAction);
         initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
-        if(message.isPersistent() && queue.isDurable())
+        if(queue.getMessageDurability().persist(message.isPersistent()))
         {
             try
             {
@@ -211,29 +211,26 @@ public class LocalTransaction implements ServerTransaction
         _postTransactionActions.add(postTransactionAction);
         initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
-        if(message.isPersistent())
+        try
         {
-            try
+            for(BaseQueue queue : queues)
             {
-                for(BaseQueue queue : queues)
+                if(queue.getMessageDurability().persist(message.isPersistent()))
                 {
-                    if(queue.isDurable())
+                    if (_logger.isDebugEnabled())
                     {
-                        if (_logger.isDebugEnabled())
-                        {
-                            _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getName() );
-                        }
-
-                        beginTranIfNecessary();
-                        _transaction.enqueueMessage(queue, message);
-
+                        _logger.debug("Enqueue of message number " + message.getMessageNumber() + " to transaction log. Queue : " + queue.getName() );
                     }
+
+                    beginTranIfNecessary();
+                    _transaction.enqueueMessage(queue, message);
+
                 }
             }
-            catch(RuntimeException e)
-            {
-                tidyUpOnError(e);
-            }
+        }
+        catch(RuntimeException e)
+        {
+            tidyUpOnError(e);
         }
     }
 

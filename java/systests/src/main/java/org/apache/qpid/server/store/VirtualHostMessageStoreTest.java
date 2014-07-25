@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,6 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.security.auth.Subject;
+
+import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -77,7 +78,6 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
-import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  *
@@ -604,7 +604,6 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         MessageMetaData mmd = new MessageMetaData(messageInfo, headerBody, System.currentTimeMillis());
 
         final StoredMessage<MessageMetaData> storedMessage = _virtualHost.getMessageStore().addMessage(mmd);
-        storedMessage.flushToStore();
         final AMQMessage currentMessage = new AMQMessage(storedMessage);
 
 

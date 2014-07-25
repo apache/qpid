@@ -42,6 +42,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.MessageDurability;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.NullMessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -379,6 +380,7 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
     {
         AMQQueue<?> queue = mock(AMQQueue.class);
         final UUID queueId = UUID.randomUUID();
+        when(queue.getMessageDurability()).thenReturn(MessageDurability.DEFAULT);
         when(queue.getId()).thenReturn(queueId);
         when(queue.getName()).thenReturn("test-queue");
         when(_virtualHost.getQueue(queueId)).thenReturn(queue);

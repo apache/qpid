@@ -447,14 +447,8 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     {
         checkMessageStoreOpen();
 
-        if(metaData.isPersistent())
-        {
-            return new StoredJDBCMessage(getNextMessageId(), metaData);
-        }
-        else
-        {
-            return new StoredMemoryMessage(getNextMessageId(), metaData);
-        }
+        return new StoredJDBCMessage(getNextMessageId(), metaData);
+
     }
 
     @Override
@@ -970,9 +964,9 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
 
         @Override
-        public boolean isDurable()
+        public MessageDurability getMessageDurability()
         {
-            return true;
+            return MessageDurability.DEFAULT;
         }
     }
 
@@ -1122,7 +1116,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     {
         private final ConnectionWrapper _connWrapper;
         private int _storeSizeIncrease;
-
+        private final List<Runnable> _onCommitActions = new ArrayList<>();
 
         protected JDBCTransaction()
         {
@@ -1144,16 +1138,23 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             final StoredMessage storedMessage = message.getStoredMessage();
             if(storedMessage instanceof StoredJDBCMessage)
             {
-                try
+                _onCommitActions.add(new Runnable()
                 {
-                    ((StoredJDBCMessage) storedMessage).store(_connWrapper.getConnection());
-                }
-                catch (SQLException e)
-                {
-                    throw new StoreException("Exception on enqueuing message into message store" + _messageId, e);
-                }
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            ((StoredJDBCMessage) storedMessage).store(_connWrapper.getConnection());
+                            _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new StoreException("Exception on enqueuing message into message store" + _messageId, e);
+                        }
+                    }
+                });
             }
-            _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
             AbstractJDBCMessageStore.this.enqueueMessage(_connWrapper, queue, message.getMessageNumber());
 
         }
@@ -1170,7 +1171,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         public void commitTran()
         {
             checkMessageStoreOpen();
-
+            doPreCommitActions();
             AbstractJDBCMessageStore.this.commitTran(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
         }
@@ -1179,17 +1180,26 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         public StoreFuture commitTranAsync()
         {
             checkMessageStoreOpen();
-
+            doPreCommitActions();
             StoreFuture storeFuture = AbstractJDBCMessageStore.this.commitTranAsync(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
             return storeFuture;
+        }
+
+        private void doPreCommitActions()
+        {
+            for(Runnable action : _onCommitActions)
+            {
+                action.run();
+            }
+            _onCommitActions.clear();
         }
 
         @Override
         public void abortTran()
         {
             checkMessageStoreOpen();
-
+            _onCommitActions.clear();
             AbstractJDBCMessageStore.this.abortTran(_connWrapper);
         }
 
@@ -1215,7 +1225,6 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
         private final long _messageId;
         private final boolean _isRecovered;
-
         private StorableMessageMetaData _metaData;
         private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
         private byte[] _data;
@@ -1317,39 +1326,6 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             buf.position(0);
             buf.limit(length);
             return  buf;
-        }
-
-        @Override
-        public synchronized StoreFuture flushToStore()
-        {
-            checkMessageStoreOpen();
-
-            Connection conn = null;
-            try
-            {
-                if(!stored())
-                {
-                    conn = newConnection();
-
-                    store(conn);
-
-                    conn.commit();
-                    storedSizeChange(getMetaData().getContentSize());
-                }
-            }
-            catch (SQLException e)
-            {
-                if(getLogger().isDebugEnabled())
-                {
-                    getLogger().debug("Error when trying to flush message " + _messageId + " to store: " + e);
-                }
-                throw new StoreException(e);
-            }
-            finally
-            {
-                JdbcUtils.closeConnection(conn, AbstractJDBCMessageStore.this.getLogger());
-            }
-            return StoreFuture.IMMEDIATE_FUTURE;
         }
 
         @Override

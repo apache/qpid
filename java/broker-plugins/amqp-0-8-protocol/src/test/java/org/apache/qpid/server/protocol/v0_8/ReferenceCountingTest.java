@@ -20,15 +20,21 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import java.util.UUID;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.store.MessageCounter;
+import org.apache.qpid.server.store.MessageDurability;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
+import org.apache.qpid.server.store.Transaction;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
@@ -85,8 +91,9 @@ public class ReferenceCountingTest extends QpidTestCase
         final MessageMetaData mmd = new MessageMetaData(info, chb);
 
         StoredMessage storedMessage = _store.addMessage(mmd);
-        storedMessage.flushToStore();
-
+        Transaction txn = _store.newTransaction();
+        txn.enqueueMessage(createTransactionLogResource("dummyQ"), createEnqueueableMessage(storedMessage));
+        txn.commitTran();
         AMQMessage message = new AMQMessage(storedMessage);
 
         MessageReference ref = message.newReference();
@@ -151,19 +158,66 @@ public class ReferenceCountingTest extends QpidTestCase
         final MessageMetaData mmd = new MessageMetaData(info, chb);
 
         StoredMessage storedMessage = _store.addMessage(mmd);
-        storedMessage.flushToStore();
-
+        Transaction txn = _store.newTransaction();
+        txn.enqueueMessage(createTransactionLogResource("dummyQ"), createEnqueueableMessage(storedMessage));
+        txn.commitTran();
         AMQMessage message = new AMQMessage(storedMessage);
 
 
         MessageReference ref = message.newReference();
-        // we call routing complete to set up the handle
-     //   message.routingComplete(_store, _storeContext, new MessageHandleFactory());
 
         assertEquals(1, getStoreMessageCount());
         MessageReference ref2 = message.newReference();
         ref.release();
         assertEquals(1, getStoreMessageCount());
+    }
+
+    private TransactionLogResource createTransactionLogResource(final String queueName)
+    {
+        return new TransactionLogResource()
+        {
+            @Override
+            public String getName()
+            {
+                return queueName;
+            }
+
+            @Override
+            public UUID getId()
+            {
+                return UUID.nameUUIDFromBytes(queueName.getBytes());
+            }
+
+            @Override
+            public MessageDurability getMessageDurability()
+            {
+                return MessageDurability.DEFAULT;
+            }
+        };
+    }
+
+    private EnqueueableMessage createEnqueueableMessage(final StoredMessage storedMessage)
+    {
+        return new EnqueueableMessage()
+        {
+            @Override
+            public long getMessageNumber()
+            {
+                return storedMessage.getMessageNumber();
+            }
+
+            @Override
+            public boolean isPersistent()
+            {
+                return true;
+            }
+
+            @Override
+            public StoredMessage getStoredMessage()
+            {
+                return storedMessage;
+            }
+        };
     }
 
     public static junit.framework.Test suite()

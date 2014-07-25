@@ -99,12 +99,6 @@ public class MessageConverter_0_8_to_0_10  implements MessageConverter<AMQMessag
             }
 
             @Override
-            public StoreFuture flushToStore()
-            {
-                return StoreFuture.IMMEDIATE_FUTURE;
-            }
-
-            @Override
             public void remove()
             {
                 throw new UnsupportedOperationException();

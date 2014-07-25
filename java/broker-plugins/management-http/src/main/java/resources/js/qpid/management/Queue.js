@@ -277,6 +277,7 @@ define(["dojo/_base/xhr",
                storeNodes(["name",
                            "state",
                            "durable",
+                           "messageDurability",
                            "exclusive",
                            "owner",
                            "lifetimePolicy",
@@ -351,6 +352,7 @@ define(["dojo/_base/xhr",
                this.exclusive.innerHTML = entities.encode(String(this.queueData[ "exclusive" ]));
                this.owner.innerHTML = this.queueData[ "owner" ] ? entities.encode(String(this.queueData[ "owner" ])) : "" ;
                this.lifetimePolicy.innerHTML = entities.encode(String(this.queueData[ "lifetimePolicy" ]));
+               this.messageDurability.innerHTML = entities.encode(String(this.queueData[ "messageDurability" ]));
                this.alternateExchange.innerHTML = this.queueData[ "alternateExchange" ] ? entities.encode(String(this.queueData[ "alternateExchange" ])) : "" ;
 
                this.queueDepthMessages.innerHTML = entities.encode(String(this.queueData["queueDepthMessages"]));

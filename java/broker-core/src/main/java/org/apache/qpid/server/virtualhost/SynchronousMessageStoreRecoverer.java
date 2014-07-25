@@ -38,6 +38,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.MessageDurability;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
@@ -220,9 +221,9 @@ public class SynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                             }
 
                             @Override
-                            public boolean isDurable()
+                            public MessageDurability getMessageDurability()
                             {
-                                return false;
+                                return MessageDurability.DEFAULT;
                             }
                         };
                 txn.dequeueMessage(mockQueue, new DummyMessage(messageId));

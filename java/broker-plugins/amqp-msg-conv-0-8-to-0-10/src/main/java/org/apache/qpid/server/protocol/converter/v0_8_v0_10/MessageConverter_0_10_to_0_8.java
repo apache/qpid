@@ -210,12 +210,6 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
             }
 
             @Override
-            public StoreFuture flushToStore()
-            {
-                return StoreFuture.IMMEDIATE_FUTURE;
-            }
-
-            @Override
             public void remove()
             {
                 throw new UnsupportedOperationException();

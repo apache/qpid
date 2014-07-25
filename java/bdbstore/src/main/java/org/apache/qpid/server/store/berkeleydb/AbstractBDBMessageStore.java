@@ -55,7 +55,6 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
-import org.apache.qpid.server.store.StoredMemoryMessage;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.Xid;
@@ -123,14 +122,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
         long newMessageId = getNextMessageId();
 
-        if (metaData.isPersistent())
-        {
-            return (StoredMessage<T>) new StoredBDBMessage(newMessageId, metaData);
-        }
-        else
-        {
-            return new StoredMemoryMessage<T>(newMessageId, metaData);
-        }
+        return new StoredBDBMessage<T>(newMessageId, metaData);
     }
 
     public long getNextMessageId()
@@ -1049,7 +1041,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     protected abstract Logger getLogger();
 
-    private class StoredBDBMessage<T extends StorableMessageMetaData> implements StoredMessage<T>
+    class StoredBDBMessage<T extends StorableMessageMetaData> implements StoredMessage<T>
     {
 
         private final long _messageId;
@@ -1177,8 +1169,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
         }
 
-        @Override
-        public synchronized StoreFuture flushToStore()
+        synchronized StoreFuture flushToStore()
         {
             if(!stored())
             {
@@ -1229,6 +1220,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
     {
         private Transaction _txn;
         private int _storeSizeIncrease;
+        private final List<Runnable> _onCommitActions = new ArrayList<>();
 
         private BDBTransaction() throws StoreException
         {
@@ -1250,8 +1242,16 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             if(message.getStoredMessage() instanceof StoredBDBMessage)
             {
                 final StoredBDBMessage storedMessage = (StoredBDBMessage) message.getStoredMessage();
-                storedMessage.store(_txn);
-                _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
+                _onCommitActions.add(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        storedMessage.store(_txn);
+                        _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
+                    }
+                });
+
             }
 
             AbstractBDBMessageStore.this.enqueueMessage(_txn, queue, message.getMessageNumber());
@@ -1269,16 +1269,25 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         public void commitTran() throws StoreException
         {
             checkMessageStoreOpen();
-
+            doPreCommitActions();
             AbstractBDBMessageStore.this.commitTranImpl(_txn, true);
             AbstractBDBMessageStore.this.storedSizeChangeOccurred(_storeSizeIncrease);
+        }
+
+        private void doPreCommitActions()
+        {
+            for(Runnable action : _onCommitActions)
+            {
+                action.run();
+            }
+            _onCommitActions.clear();
         }
 
         @Override
         public StoreFuture commitTranAsync() throws StoreException
         {
             checkMessageStoreOpen();
-
+            doPreCommitActions();
             AbstractBDBMessageStore.this.storedSizeChangeOccurred(_storeSizeIncrease);
             return AbstractBDBMessageStore.this.commitTranImpl(_txn, false);
         }
@@ -1287,7 +1296,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         public void abortTran() throws StoreException
         {
             checkMessageStoreOpen();
-
+            _onCommitActions.clear();
             AbstractBDBMessageStore.this.abortTran(_txn);
         }
 
