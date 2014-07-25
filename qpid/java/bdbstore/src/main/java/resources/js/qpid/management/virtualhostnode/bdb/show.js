@@ -18,65 +18,19 @@
  * under the License.
  *
  */
-define(["dojo/_base/xhr",
-        "dojo/_base/lang",
-        "dojo/_base/connect",
-        "dojo/parser",
-        "dojo/string",
-        "dojox/html/entities",
-        "dojo/query",
-        "dojo/json",
-        "dijit/registry",
-        "qpid/common/UpdatableStore",
-        "dojo/domReady!"],
-  function (xhr, lang, connect, parser, json, entities, query, json, registry, UpdatableStore)
+define(["qpid/common/util", "dojo/domReady!"],
+  function (util)
   {
+    var fieldNames = ["storePath"];
+
     function BdbNode(data)
     {
-      var containerNode = data.containerNode;
-      this.parent = data.parent;
-      var that = this;
-      xhr.get({url: "virtualhostnode/bdb/show.html",
-        sync: true,
-        load:  function(template) {
-          containerNode.innerHTML = template;
-          parser.parse(containerNode);
-        }});
-      this.storePath = query(".storePath", containerNode)[0];
-      this.environmentConfigurationPanel = registry.byNode(query(".environmentConfigurationPanel", containerNode)[0]);
-      this.environmentConfigurationGrid = new UpdatableStore([],
-          query(".environmentConfiguration", containerNode)[0],
-          [ {name: 'Name', field: 'id', width: '50%'}, {name: 'Value', field: 'value', width: '50%'} ],
-          null,
-          null,
-          null, true );
+       util.buildUI(data.containerNode, data.parent, "virtualhostnode/bdb/show.html", fieldNames, this);
     }
 
     BdbNode.prototype.update=function(data)
     {
-      this.storePath.innerHTML = entities.encode(String(data.storePath));
-      if (data.environmentConfiguration)
-      {
-        this.environmentConfigurationPanel.domNode.style.display="block";
-        var conf = data.environmentConfiguration;
-        var settings = [];
-        for(var propName in conf)
-        {
-          if(conf.hasOwnProperty(propName))
-          {
-            settings.push({"id": propName, "value": conf[propName]});
-          }
-        }
-        var changed = this.environmentConfigurationGrid.update(settings);
-        if (changed)
-        {
-          this.environmentConfigurationGrid.grid._refresh();
-        }
-      }
-      else
-      {
-        this.environmentConfigurationPanel.domNode.style.display="none";
-      }
+       util.updateUI(data, fieldNames, this);
     };
 
     return BdbNode;

@@ -63,7 +63,7 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
                                                mock(BrokerOptions.class));
     }
 
-    public void testUpgradeVirtualHostWithJDBCStore()
+    public void testUpgradeVirtualHostWithJDBCStoreAndBoneCPPool()
     {
         Map<String, Object> hostAttributes = new HashMap<>();
         hostAttributes.put("name", "test");
@@ -109,6 +109,51 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         context.put("qpid.jdbcstore.bonecp.maxConnectionsPerPartition", 7);
         context.put("qpid.jdbcstore.bonecp.minConnectionsPerPartition", 6);
         context.put("qpid.jdbcstore.bonecp.partitionCount", 2);
+        expectedAttributes.put("context", context);
+
+        assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
+    }
+
+    public void testUpgradeVirtualHostWithJDBCStoreAndDefaultPool()
+    {
+        Map<String, Object> hostAttributes = new HashMap<>();
+        hostAttributes.put("name", "test");
+        hostAttributes.put("modelVersion", "0.4");
+        hostAttributes.put("connectionPool", "DEFAULT");
+        hostAttributes.put("connectionURL", "jdbc:derby://localhost:1527/tmp/vh/test;create=true");
+        hostAttributes.put("createdBy", "webadmin");
+        hostAttributes.put("createdTime", 1401385905260l);
+        hostAttributes.put("storeType", "jdbc");
+        hostAttributes.put("type", "STANDARD");
+        hostAttributes.put("jdbcBigIntType", "mybigint");
+        hostAttributes.put("jdbcBlobType", "myblob");
+        hostAttributes.put("jdbcVarbinaryType", "myvarbinary");
+        hostAttributes.put("jdbcBytesForBlob", true);
+
+
+        ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
+                hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
+        DurableConfigurationStore dcs = new DurableConfigurationStoreStub(_brokerRecord, virtualHostRecord);
+
+        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        List<ConfiguredObjectRecord> records = recoverer.upgrade(dcs);
+
+        ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
+        assertEquals("Unexpected type", "VirtualHostNode", upgradedVirtualHostNodeRecord.getType());
+        Map<String,Object> expectedAttributes = new HashMap<>();
+        expectedAttributes.put("connectionPoolType", "NONE");
+        expectedAttributes.put("connectionUrl", "jdbc:derby://localhost:1527/tmp/vh/test;create=true");
+        expectedAttributes.put("createdBy", "webadmin");
+        expectedAttributes.put("createdTime", 1401385905260l);
+        expectedAttributes.put("name", "test");
+        expectedAttributes.put("type", "JDBC");
+
+        final Map<String, Object> context = new HashMap<>();
+        context.put("qpid.jdbcstore.bigIntType", "mybigint");
+        context.put("qpid.jdbcstore.varBinaryType", "myvarbinary");
+        context.put("qpid.jdbcstore.blobType", "myblob");
+        context.put("qpid.jdbcstore.useBytesForBlob", true);
+
         expectedAttributes.put("context", context);
 
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());

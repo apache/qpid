@@ -1,0 +1,118 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<div class="dijitHidden">
+  <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit Virtual Host'" id="editVirtualHostDialog">
+      <form id="editVirtualHostForm" method="post" data-dojo-type="dijit/form/Form">
+
+          <div id="editVirtualHost.typeFields"></div>
+
+          <div style="clear:both">
+              <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Dead letter queue enabled:</div>
+              <div style="float:left;" class="tableContainer-valueCell formLabel-controlCell">
+                  <input type="checkbox" id="editVirtualHost.queue.deadLetterQueueEnabled"
+                         data-dojo-type="dijit/form/CheckBox"
+                         data-dojo-props="name: 'queue.deadLetterQueueEnabled'">
+                  </input>
+              </div>
+          </div>
+
+          <div style="clear:both">
+              <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Store Transaction Idle Timeout Warn:</div>
+              <div style="float:left;" class="tableContainer-valueCell formLabel-controlCell">
+                  <input data-dojo-type="dijit/form/NumberSpinner"
+                         id="editVirtualHost.storeTransactionIdleTimeoutWarn"
+                         name="storeTransactionIdleTimeoutWarn"
+                         smallDelta="1000"
+                         constraints="{min: 0, places: 0, pattern: '#'}"
+                         placeHolder="idle timeout warn time in ms"
+                         missingMessage="An idle timeout warn time in ms must be supplied"/>
+              </div>
+          </div>
+          <div style="clear:both">
+              <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Store Transaction Idle Timeout Close:</div>
+              <div style="float:left;" class="tableContainer-valueCell formLabel-controlCell">
+                  <input data-dojo-type="dijit/form/NumberSpinner"
+                         id="editVirtualHost.storeTransactionIdleTimeoutClose"
+                         name="storeTransactionIdleTimeoutClose"
+                         smallDelta="1000"
+                         constraints="{min: 0, places: 0, pattern: '#'}"
+                         placeHolder="idle timeout close time in ms"
+                         missingMessage="An idle timeout close time in ms must be supplied"/>
+              </div>
+          </div>
+          <div style="clear:both">
+              <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Store Transaction Open Timeout Warn:</div>
+              <div style="float:left;" class="tableContainer-valueCell formLabel-controlCell">
+                  <input data-dojo-type="dijit/form/NumberSpinner"
+                         id="editVirtualHost.storeTransactionOpenTimeoutWarn"
+                         name="storeTransactionOpenTimeoutWarn"
+                         smallDelta="1000"
+                         constraints="{min: 0, places: 0, pattern: '#'}"
+                         placeHolder="open timeout warn time in ms"
+                         missingMessage="An open timeout warn time in ms must be supplied"/>
+              </div>
+          </div>
+          <div style="clear:both">
+              <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">Store Transaction Open Timeout Close:</div>
+              <div style="float:left;" class="tableContainer-valueCell formLabel-controlCell">
+                  <input data-dojo-type="dijit/form/NumberSpinner"
+                         id="editVirtualHost.storeTransactionOpenTimeoutClose"
+                         name="storeTransactionOpenTimeoutClose"
+                         smallDelta="1000"
+                         constraints="{min: 0, places: 0, pattern: '#'}"
+                         placeHolder="open timeout close time in ms"
+                         missingMessage="An open timeout close time in ms must be supplied"/>
+              </div>
+          </div>
+
+          <div style="clear:both">
+              <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">House keeping check period (ms):</div>
+              <div style="float:left;" class="tableContainer-valueCell formLabel-controlCell">
+                  <input data-dojo-type="dijit/form/NumberSpinner"
+                          id="editVirtualHost.housekeepingCheckPeriod"
+                          name="housekeepingCheckPeriod"
+                          smallDelta="1000"
+                          constraints="{min: 1, places: 0, pattern: '#'}"
+                          placeHolder="house keeping check period in ms"
+                          missingMessage="A house keeping check period must be supplied"/>
+              </div>
+          </div>
+
+          <div style="clear:both">
+              <div class="formLabel-labelCell tableContainer-labelCell" style="float:left; width: 300px;">House keeping thread count:</div>
+              <div style="float:left;" class="tableContainer-valueCell formLabel-controlCell">
+                  <input data-dojo-type="dijit/form/NumberSpinner"
+                         id="editVirtualHost.housekeepingThreadCount"
+                         name="housekeepingThreadCount"
+                         smallDelta="1"
+                         constraints="{min: 1, places: 0, pattern: '#'}"
+                         placeHolder="house keeping thread count"
+                         missingMessage="A house keeping thread count must be supplied"/>
+              </div>
+          </div>
+
+          <div style="clear:both"></div>
+
+          <div class="dijitDialogPaneActionBar">
+              <button data-dojo-type="dijit/form/Button" id="editVirtualHost.saveButton" data-dojo-props="label: 'Save'">Save</button>
+              <button data-dojo-type="dijit/form/Button" id="editVirtualHost.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+          </div>
+      </form>
+  </div>
+</div>

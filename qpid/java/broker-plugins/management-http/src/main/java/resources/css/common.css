@@ -205,4 +205,9 @@ div .messages {
     font-style: italic;
 }
 
+.dijitDialogPaneActionBar .editNodeButton
+{
+    display: none
+}
+
 
