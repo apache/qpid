@@ -43,6 +43,7 @@ import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
+import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 import org.apache.qpid.server.txn.DtxBranch;
 import org.apache.qpid.server.txn.DtxRegistry;
@@ -141,10 +142,26 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
         private synchronized void completeRecovery()
         {
             // at this point nothing should be writing to the map of recovered messages
-            for (MessageReference<? extends ServerMessage<?>> entry : _recoveredMessages.values())
+            for (Map.Entry<Long,MessageReference<? extends ServerMessage<?>>> entry : _recoveredMessages.entrySet())
             {
-                entry.release();
+                entry.getValue().release();
+                entry.setValue(null); // free up any memory associated with the reference object
             }
+            getStore().visitMessages(new MessageHandler()
+            {
+                @Override
+                public boolean handle(final StoredMessage<?> storedMessage)
+                {
+
+                    long messageNumber = storedMessage.getMessageNumber();
+                    if(!_recoveredMessages.containsKey(messageNumber))
+                    {
+                        _logger.info("Message id " + messageNumber + " in store, but not in any queue - removing....");
+                        storedMessage.remove();
+                    }
+                    return messageNumber <_maxMessageId-1;
+                }
+            });
             _recoveredMessages.clear();
         }
 
