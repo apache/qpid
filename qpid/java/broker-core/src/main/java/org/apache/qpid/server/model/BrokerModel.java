@@ -58,9 +58,9 @@ public final class BrokerModel extends Model
 
     private BrokerModel()
     {
-        setRootCategory(SystemContext.class);
+        setRootCategory(SystemConfig.class);
 
-        addRelationship(SystemContext.class, Broker.class);
+        addRelationship(SystemConfig.class, Broker.class);
 
         addRelationship(Broker.class, VirtualHostNode.class);
         addRelationship(Broker.class, Port.class);

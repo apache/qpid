@@ -107,12 +107,11 @@ public class VirtualHostStoreUpgraderAndRecoverer
 
         private boolean isTopicExchange(ConfiguredObjectRecord entry)
         {
-            ConfiguredObjectRecord exchangeRecord = entry.getParents().get("Exchange");
-            if (exchangeRecord == null)
+            UUID exchangeId = entry.getParents().get("Exchange");
+            if (exchangeId == null)
             {
                 return false;
             }
-            UUID exchangeId = exchangeRecord.getId();
 
             if(_records.containsKey(exchangeId))
             {
@@ -201,10 +200,10 @@ public class VirtualHostStoreUpgraderAndRecoverer
             {
                 Map.Entry<UUID, ConfiguredObjectRecord> entry = iterator.next();
                 final ConfiguredObjectRecord record = entry.getValue();
-                final ConfiguredObjectRecord exchangeParent = record.getParents().get(Exchange.class.getSimpleName());
-                final ConfiguredObjectRecord queueParent = record.getParents().get(Queue.class.getSimpleName());
-                if(isBinding(record.getType()) && (exchangeParent == null || unknownExchange(exchangeParent.getId())
-                                                   || queueParent == null || unknownQueue(queueParent.getId())))
+                final UUID exchangeParent = record.getParents().get(Exchange.class.getSimpleName());
+                final UUID queueParent = record.getParents().get(Queue.class.getSimpleName());
+                if(isBinding(record.getType()) && (exchangeParent == null || unknownExchange(exchangeParent)
+                                                   || queueParent == null || unknownQueue(queueParent)))
                 {
                     getDeleteMap().put(entry.getKey(), entry.getValue());
                     iterator.remove();
@@ -363,7 +362,7 @@ public class VirtualHostStoreUpgraderAndRecoverer
                 Map<String, Object> virtualHostAttributes = new HashMap<String, Object>(record.getAttributes());
                 virtualHostAttributes.put("name", _virtualHostNode.getName());
                 virtualHostAttributes.put("modelVersion", getToVersion());
-                record = new ConfiguredObjectRecordImpl(record.getId(), "VirtualHost", virtualHostAttributes, Collections.<String, ConfiguredObjectRecord>emptyMap());
+                record = new ConfiguredObjectRecordImpl(record.getId(), "VirtualHost", virtualHostAttributes, Collections.<String, UUID>emptyMap());
                 _virtualHostRecord = record;
             }
             else if("Exchange".equals(record.getType()))
@@ -389,7 +388,7 @@ public class VirtualHostStoreUpgraderAndRecoverer
                 attributes.put("type", type);
                 attributes.put("lifetimePolicy", "PERMANENT");
 
-                ConfiguredObjectRecord record = new ConfiguredObjectRecordImpl(id, Exchange.class.getSimpleName(), attributes, Collections.singletonMap(_virtualHostRecord.getType(), _virtualHostRecord));
+                ConfiguredObjectRecord record = new ConfiguredObjectRecordImpl(id, Exchange.class.getSimpleName(), attributes, Collections.singletonMap(_virtualHostRecord.getType(), _virtualHostRecord.getId()));
                 getUpdateMap().put(id, record);
 
                 getNextUpgrader().configuredObject(record);

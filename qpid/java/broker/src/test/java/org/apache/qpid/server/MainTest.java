@@ -48,7 +48,7 @@ public class MainTest extends QpidTestCase
 
         BrokerOptions options = startDummyMain("");
 
-        assertEquals("json", options.getConfigurationStoreType());
+        assertEquals("JSON", options.getConfigurationStoreType());
         assertEquals(expectedStorePath, options.getConfigurationStoreLocation());
         assertEquals(expectedLogConfigPath, options.getLogConfigFileLocation());
         assertEquals(0, options.getLogWatchFrequency());

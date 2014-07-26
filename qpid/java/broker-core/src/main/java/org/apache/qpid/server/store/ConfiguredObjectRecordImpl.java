@@ -30,20 +30,26 @@ public class ConfiguredObjectRecordImpl implements ConfiguredObjectRecord
     private UUID _id;
     private String _type;
     private final Map<String,Object> _attributes;
-    private final Map<String,ConfiguredObjectRecord> _parents;
+    private final Map<String,UUID> _parents;
+
+
+    public ConfiguredObjectRecordImpl(ConfiguredObjectRecord record)
+    {
+        this(record.getId(), record.getType(), record.getAttributes(), record.getParents());
+    }
 
     public ConfiguredObjectRecordImpl(UUID id, String type, Map<String, Object> attributes)
     {
-        this(id,type,attributes,Collections.<String,ConfiguredObjectRecord>emptyMap());
+        this(id,type,attributes,Collections.<String,UUID>emptyMap());
     }
 
-    public ConfiguredObjectRecordImpl(UUID id, String type, Map<String, Object> attributes, Map<String,ConfiguredObjectRecord> parents)
+    public ConfiguredObjectRecordImpl(UUID id, String type, Map<String, Object> attributes, Map<String,UUID> parents)
     {
         super();
         _id = id;
         _type = type;
-        _attributes = Collections.unmodifiableMap(new LinkedHashMap<String,Object>(attributes));
-        _parents = Collections.unmodifiableMap(new LinkedHashMap<String, ConfiguredObjectRecord>(parents));
+        _attributes = Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
+        _parents = Collections.unmodifiableMap(new LinkedHashMap<>(parents));
     }
 
     @Override
@@ -65,7 +71,7 @@ public class ConfiguredObjectRecordImpl implements ConfiguredObjectRecord
     }
 
     @Override
-    public Map<String, ConfiguredObjectRecord> getParents()
+    public Map<String, UUID> getParents()
     {
         return _parents;
     }

@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 
 public class JsonFileConfigStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
@@ -44,6 +45,6 @@ public class JsonFileConfigStoreConfigurationTest extends AbstractDurableConfigu
     @Override
     protected DurableConfigurationStore createConfigStore() throws Exception
     {
-        return new JsonFileConfigStore();
+        return new JsonFileConfigStore(VirtualHost.class);
     }
 }

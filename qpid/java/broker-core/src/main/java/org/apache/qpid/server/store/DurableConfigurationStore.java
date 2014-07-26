@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -30,10 +29,14 @@ public interface DurableConfigurationStore
 {
     /**
      * Initializes and opens the configuration store.
-     *  @param parent
+     * @param parent
+     * @param overwrite
+     * @param initialRecords
      *
      */
-    void openConfigurationStore(ConfiguredObject<?> parent) throws StoreException;
+    void openConfigurationStore(ConfiguredObject<?> parent,
+                                final boolean overwrite,
+                                final ConfiguredObjectRecord... initialRecords) throws StoreException;
 
     /**
      * Requests that the store performs any upgrade work on the store's structure. If there is no

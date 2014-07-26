@@ -27,8 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
-import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.util.StringUtil;
 
 public class BrokerOptions
@@ -50,7 +49,7 @@ public class BrokerOptions
     public static final String QPID_HOME_DIR  = "qpid.home_dir";
 
     public static final String DEFAULT_INITIAL_CONFIG_NAME = "initial-config.json";
-    public static final String DEFAULT_STORE_TYPE = "json";
+    public static final String DEFAULT_STORE_TYPE = "JSON";
     public static final String DEFAULT_CONFIG_NAME_PREFIX = "config";
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String DEFAULT_INITIAL_CONFIG_LOCATION =
@@ -77,6 +76,16 @@ public class BrokerOptions
     private boolean _skipLoggingConfiguration;
     private boolean _overwriteConfigurationStore;
     private Map<String, String> _configProperties = new HashMap<String,String>();
+
+    public Map<String, Object> convertToSystemAttributes()
+    {
+        Map<String,Object> attributes = new HashMap<String, Object>();
+
+        attributes.put("storePath", getConfigurationStoreLocation());
+        attributes.put("storeTye", getConfigurationStoreType());
+        attributes.put(ConfiguredObject.CONTEXT, getConfigProperties());
+        return attributes;
+    }
 
     public String getManagementModePassword()
     {
@@ -197,7 +206,7 @@ public class BrokerOptions
             String workDir = getWorkDir();
             String storeType = getConfigurationStoreType();
 
-            return new File(workDir, DEFAULT_CONFIG_NAME_PREFIX + "." + storeType).getAbsolutePath();
+            return new File(workDir, DEFAULT_CONFIG_NAME_PREFIX + "." + storeType.toLowerCase()).getAbsolutePath();
         }
 
         return _configurationStoreLocation;
@@ -250,7 +259,7 @@ public class BrokerOptions
 
     /**
      * Set the absolute path or URL to use for the initial JSON configuration, which is loaded with the
-     * {@link MemoryConfigurationEntryStore} in order to initialise any new {@link ConfigurationEntryStore} for the broker.
+     * in order to initialise any new store for the broker.
      *
      * Passing null clears any previously set value and returns to the default.
      */

@@ -97,7 +97,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     @ManagedObjectFactoryConstructor
     public BrokerAdapter(Map<String, Object> attributes,
-                         SystemContext parent)
+                         SystemConfig parent)
     {
         super(parentsMap(parent), attributes);
 
@@ -675,81 +675,16 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return true;
     }
 
-   /* @StateTransition(currentState = State.STOPPED, desiredState = State.ACTIVE)
-    private void restart()
-    {
-        initialiseStatisticsReporting();
-        changeChildState(State.ACTIVE, false);
-        if (isManagementMode())
-        {
-            _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
-                                                                _brokerOptions.getManagementModePassword()));
-        }
-        _state = State.ACTIVE;
-    }
-*/
     @Override
     protected void onClose()
     {
+
         if (_reportingTimer != null)
         {
             _reportingTimer.cancel();
         }
-
     }
-/*
 
-    @StateTransition(currentState = State.ACTIVE, desiredState = State.STOPPED)
-    private void doStop()
-    {
-        changeChildState(State.STOPPED, true);
-        close();
-        _state = State.STOPPED;
-    }
-*/
-
-   /* private void changeChildState(final State desiredState,
-                                  final boolean swallowException)
-    {
-        runTask(new VoidTask()
-        {
-            @Override
-            public void execute()
-            {
-                for (Class<? extends ConfiguredObject> clazz : getModel().getChildTypes(getCategoryClass()))
-                {
-                    for (ConfiguredObject configuredObject : getChildren(clazz))
-                    {
-                        if (State.ACTIVE.equals(desiredState) && State.QUIESCED.equals(configuredObject.getState()))
-                        {
-                            if (LOGGER.isDebugEnabled())
-                            {
-                                LOGGER.debug(configuredObject + " cannot be activated as it is " + State.QUIESCED);
-                            }
-                            continue;
-                        }
-                        try
-                        {
-                            configuredObject.setDesiredState(desiredState);
-                        }
-                        catch (RuntimeException e)
-                        {
-                            if (swallowException)
-                            {
-                                LOGGER.error("Failed to stop " + configuredObject, e);
-                            }
-                            else
-                            {
-                                throw e;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-    }
-*/
     @Override
     public void stateChanged(ConfiguredObject object, State oldState, State newState)
     {
@@ -1077,6 +1012,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             }
         }
     }
+
+
 
     public AuthenticationProvider<?> getManagementModeAuthenticationProvider()
     {

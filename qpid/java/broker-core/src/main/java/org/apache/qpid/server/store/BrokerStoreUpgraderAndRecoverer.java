@@ -31,19 +31,19 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.util.Action;
 
 public class BrokerStoreUpgraderAndRecoverer
 {
-    private final SystemContext<?> _systemContext;
+    private final SystemConfig<?> _systemConfig;
     private final Map<String, StoreUpgraderPhase> _upgraders = new HashMap<String, StoreUpgraderPhase>();
 
     // Note: don't use externally defined constants in upgraders in case they change, the values here MUST stay the same
     // no matter what changes are made to the code in the future
-    public BrokerStoreUpgraderAndRecoverer(SystemContext<?> systemContext)
+    public BrokerStoreUpgraderAndRecoverer(SystemConfig<?> systemConfig)
     {
-        _systemContext = systemContext;
+        _systemConfig = systemConfig;
 
         register(new Upgrader_1_0_to_1_1());
         register(new Upgrader_1_1_to_1_2());
@@ -477,10 +477,10 @@ public class BrokerStoreUpgraderAndRecoverer
     public Broker<?> perform(final DurableConfigurationStore store)
     {
         List<ConfiguredObjectRecord> upgradedRecords = upgrade(store);
-        new GenericRecoverer(_systemContext, Broker.class.getSimpleName()).recover(upgradedRecords);
+        new GenericRecoverer(_systemConfig, Broker.class.getSimpleName()).recover(upgradedRecords);
 
         final StoreConfigurationChangeListener configChangeListener = new StoreConfigurationChangeListener(store);
-        applyRecursively(_systemContext.getBroker(), new Action<ConfiguredObject<?>>()
+        applyRecursively(_systemConfig.getBroker(), new Action<ConfiguredObject<?>>()
         {
             @Override
             public void performAction(final ConfiguredObject<?> object)
@@ -489,7 +489,7 @@ public class BrokerStoreUpgraderAndRecoverer
             }
         });
 
-        return _systemContext.getBroker();
+        return _systemConfig.getBroker();
     }
 
     List<ConfiguredObjectRecord> upgrade(final DurableConfigurationStore store)

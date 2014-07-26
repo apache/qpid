@@ -18,18 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.model;
 
+import org.apache.qpid.server.store.FileBasedSettings;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-
-/** A simple message store that stores the messages in a thread-safe structure in memory. */
-public class MemoryConfigurationStore extends AbstractMemoryStore
+public interface JsonSystemConfig<X extends JsonSystemConfig<X>> extends SystemConfig<X>, FileBasedSettings
 {
-    public static final String TYPE = "Memory";
-
-    public MemoryConfigurationStore(final Class<? extends ConfiguredObject> rootClass)
-    {
-        super(rootClass);
-    }
+    @ManagedAttribute( mandatory = true )
+    public String getStorePath();
 }

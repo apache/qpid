@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.server.store.derby;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.AbstractDurableConfigurationStoreTestCase;
 import org.apache.qpid.server.virtualhostnode.derby.DerbyVirtualHostNode;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class DerbyMessageStoreConfigurationTest extends AbstractDurableConfigurationStoreTestCase
 {
@@ -42,7 +43,7 @@ public class DerbyMessageStoreConfigurationTest extends AbstractDurableConfigura
     @Override
     protected DerbyConfigurationStore createConfigStore() throws Exception
     {
-        return new DerbyConfigurationStore();
+        return new DerbyConfigurationStore(VirtualHost.class);
     }
 
 }

@@ -21,6 +21,10 @@
 package org.apache.qpid.server;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -30,9 +34,11 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.server.configuration.store.ConfigurationEntryStoreUtil;
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.util.FileUtils;
 
 /**
  * Main entry point for AMQPD.
@@ -189,8 +195,7 @@ public class Main
                 destinationFile = new File(System.getProperty("user.dir"), BrokerOptions.DEFAULT_INITIAL_CONFIG_NAME);
             }
 
-            ConfigurationEntryStoreUtil util = new ConfigurationEntryStoreUtil();
-            util.copyInitialConfigFile(options.getInitialConfigurationLocation(), destinationFile);
+            copyInitialConfigFile(options, destinationFile);
 
             System.out.println("Initial config written to: " + destinationFile.getAbsolutePath());
         }
@@ -296,6 +301,53 @@ public class Main
             setExceptionHandler();
 
             startBroker(options);
+        }
+    }
+
+    private void copyInitialConfigFile(final BrokerOptions options, final File destinationFile)
+    {
+        String initialConfigLocation = options.getInitialConfigurationLocation();
+        URL url = null;
+        try
+        {
+            url = new URL(initialConfigLocation);
+        }
+        catch (MalformedURLException e)
+        {
+            File locationFile = new File(initialConfigLocation);
+            try
+            {
+                url = locationFile.toURI().toURL();
+            }
+            catch (MalformedURLException e1)
+            {
+                throw new IllegalConfigurationException("Cannot create URL for file " + locationFile, e1);
+            }
+        }
+        InputStream in =  null;
+        try
+        {
+            in = url.openStream();
+            FileUtils.copy(in, destinationFile);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot create file " + destinationFile
+                                                    + " by copying initial config from " + initialConfigLocation, e);
+        }
+        finally
+        {
+            if (in != null)
+            {
+                try
+                {
+                    in.close();
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalConfigurationException("Cannot close initial config input stream: " + initialConfigLocation, e);
+                }
+            }
         }
     }
 

@@ -93,8 +93,7 @@ public class GenericRecoverer
                 records = new ArrayList<ConfiguredObjectRecord>(records);
 
                 String parentOfRootCategory = _parentOfRoot.getCategoryClass().getSimpleName();
-                ConfiguredObjectRecord parentRecord = new ConfiguredObjectRecordImpl(_parentOfRoot.getId(), parentOfRootCategory, Collections.<String, Object>emptyMap());
-                Map<String, ConfiguredObjectRecord> rootParents = Collections.<String, ConfiguredObjectRecord>singletonMap(parentOfRootCategory, parentRecord);
+                Map<String, UUID> rootParents = Collections.singletonMap(parentOfRootCategory, _parentOfRoot.getId());
                 records.remove(rootRecord);
                 records.add(new ConfiguredObjectRecordImpl(rootRecord.getId(), _rootCategory, rootRecord.getAttributes(), rootParents));
             }
@@ -124,16 +123,16 @@ public class GenericRecoverer
                 ConfiguredObjectRecord record = iter.next();
                 Collection<ConfiguredObject<?>> parents = new ArrayList<ConfiguredObject<?>>();
                 boolean foundParents = true;
-                for (ConfiguredObjectRecord parent : record.getParents().values())
+                for (UUID parentId : record.getParents().values())
                 {
-                    if (!resolvedObjects.containsKey(parent.getId()))
+                    if (!resolvedObjects.containsKey(parentId))
                     {
                         foundParents = false;
                         break;
                     }
                     else
                     {
-                        parents.add(resolvedObjects.get(parent.getId()));
+                        parents.add(resolvedObjects.get(parentId));
                     }
                 }
                 if (foundParents)

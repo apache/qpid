@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.server.model;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,47 +33,44 @@ import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordConverter;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 
-public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImpl> implements SystemContext<SystemContextImpl>
+public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
+        extends AbstractConfiguredObject<X> implements SystemConfig<X>
 {
     private static final UUID SYSTEM_ID = new UUID(0l, 0l);
     private final EventLogger _eventLogger;
     private final LogRecorder _logRecorder;
     private final BrokerOptions _brokerOptions;
 
-    @ManagedAttributeField
-    private String _storePath;
+    private DurableConfigurationStore _configurationStore;
 
-    @ManagedAttributeField
-    private String _storeType;
-
-    public SystemContextImpl(final TaskExecutor taskExecutor,
-                             final EventLogger eventLogger,
-                             final LogRecorder logRecorder,
-                             final BrokerOptions brokerOptions)
+    public AbstractSystemConfig(final TaskExecutor taskExecutor,
+                                final EventLogger eventLogger,
+                                final LogRecorder logRecorder,
+                                final BrokerOptions brokerOptions)
     {
         super(parentsMap(),
-              createAttributes(brokerOptions),
+              updateAttributes(brokerOptions.convertToSystemAttributes()),
               taskExecutor, BrokerModel.getInstance());
         _eventLogger = eventLogger;
         getTaskExecutor().start();
         _logRecorder = logRecorder;
         _brokerOptions = brokerOptions;
-        open();
     }
 
-    public static Map<String, Object> createAttributes(final BrokerOptions brokerOptions)
+    private static Map<String, Object> updateAttributes(Map<String, Object> attributes)
     {
-        Map<String,Object> attributes = new HashMap<String, Object>();
+        attributes = new HashMap<>(attributes);
+        attributes.put(ConfiguredObject.NAME, "System");
         attributes.put(ID, SYSTEM_ID);
-        attributes.put(NAME, "System");
-        attributes.put("storePath", brokerOptions.getConfigurationStoreLocation());
-        attributes.put("storeTye", brokerOptions.getConfigurationStoreType());
-        attributes.put(ConfiguredObject.CONTEXT, brokerOptions.getConfigProperties());
         return attributes;
     }
 
@@ -101,18 +104,6 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
     }
 
     @Override
-    public String getStorePath()
-    {
-        return _storePath;
-    }
-
-    @Override
-    public String getStoreType()
-    {
-        return _storeType;
-    }
-
-    @Override
     protected void onClose()
     {
         try
@@ -126,6 +117,8 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
             _eventLogger.message(BrokerMessages.STOPPED());
 
             _logRecorder.closeLogRecorder();
+
+            _configurationStore.closeConfigurationStore();
 
         }
         finally
@@ -152,4 +145,61 @@ public class SystemContextImpl extends AbstractConfiguredObject<SystemContextImp
         }
         return children.iterator().next();
     }
+
+    @Override
+    protected void onOpen()
+    {
+        super.onOpen();
+        _configurationStore = createStoreObject();
+
+        if (_brokerOptions.isManagementMode())
+        {
+            _configurationStore = new ManagementModeStoreHandler(_configurationStore, _brokerOptions);
+        }
+
+        try
+        {
+            _configurationStore.openConfigurationStore(this,
+                                          false,
+                                          convertToConfigurationRecords(_brokerOptions.getInitialConfigurationLocation(),
+                                                                        this));
+            _configurationStore.upgradeStoreStructure();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException(e);
+        }
+
+    }
+
+    abstract protected DurableConfigurationStore createStoreObject();
+
+    @Override
+    public DurableConfigurationStore getConfigurationStore()
+    {
+        return _configurationStore;
+    }
+
+    private ConfiguredObjectRecord[] convertToConfigurationRecords(final String initialConfigurationLocation,
+                                                                   final SystemConfig systemConfig) throws IOException
+    {
+        ConfiguredObjectRecordConverter converter = new ConfiguredObjectRecordConverter(BrokerModel.getInstance());
+
+        Reader reader;
+        try
+        {
+            URL url = new URL(initialConfigurationLocation);
+            reader = new InputStreamReader(url.openStream());
+        }
+        catch (MalformedURLException e)
+        {
+            reader = new FileReader(initialConfigurationLocation);
+        }
+
+        Collection<ConfiguredObjectRecord> records = converter.readFromJson(org.apache.qpid.server.model.Broker.class,
+                                                                            systemConfig, reader);
+        return records.toArray(new ConfiguredObjectRecord[records.size()]);
+
+    }
+
 }

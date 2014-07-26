@@ -37,7 +37,7 @@ import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
@@ -67,8 +67,8 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         super.setUp();
 
         _broker = BrokerTestHelper.createBrokerMock();
-        SystemContext<?> systemContext = _broker.getParent(SystemContext.class);
-        when(systemContext.getObjectFactory()).thenReturn(new ConfiguredObjectFactoryImpl(mock(Model.class)));
+        SystemConfig<?> systemConfig = _broker.getParent(SystemConfig.class);
+        when(systemConfig.getObjectFactory()).thenReturn(new ConfiguredObjectFactoryImpl(mock(Model.class)));
 
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();

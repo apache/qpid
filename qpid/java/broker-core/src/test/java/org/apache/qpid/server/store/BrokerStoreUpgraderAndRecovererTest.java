@@ -33,8 +33,8 @@ import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.model.SystemContextImpl;
+import org.apache.qpid.server.model.JsonSystemConfigImpl;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -43,7 +43,7 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
 {
     private ConfiguredObjectRecord _brokerRecord;
     private CurrentThreadTaskExecutor _taskExecutor;
-    private SystemContext<?> _systemContext;
+    private SystemConfig<?> _systemConfig;
 
     public void setUp() throws Exception
     {
@@ -57,10 +57,10 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         _brokerRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "Broker", brokerAttributes);
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
-        _systemContext = new SystemContextImpl(_taskExecutor,
+        _systemConfig = new JsonSystemConfigImpl(_taskExecutor,
                                                mock(EventLogger.class),
                                                mock(LogRecorder.class),
-                                               mock(BrokerOptions.class));
+                                               new BrokerOptions());
     }
 
     public void testUpgradeVirtualHostWithJDBCStoreAndBoneCPPool()
@@ -84,10 +84,10 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
 
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
-                hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
+                hostAttributes, Collections.singletonMap("Broker", _brokerRecord.getId()));
         DurableConfigurationStore dcs = new DurableConfigurationStoreStub(_brokerRecord, virtualHostRecord);
 
-        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
         List<ConfiguredObjectRecord> records = recoverer.upgrade(dcs);
 
         ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
@@ -132,10 +132,10 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
 
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
-                hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
+                hostAttributes, Collections.singletonMap("Broker", _brokerRecord.getId()));
         DurableConfigurationStore dcs = new DurableConfigurationStoreStub(_brokerRecord, virtualHostRecord);
 
-        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
         List<ConfiguredObjectRecord> records = recoverer.upgrade(dcs);
 
         ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
@@ -171,10 +171,10 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         hostAttributes.put("type", "STANDARD");
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
-                hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
+                hostAttributes, Collections.singletonMap("Broker", _brokerRecord.getId()));
         DurableConfigurationStore dcs = new DurableConfigurationStoreStub(_brokerRecord, virtualHostRecord);
 
-        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
         List<ConfiguredObjectRecord> records = recoverer.upgrade(dcs);
 
         ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
@@ -202,10 +202,10 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
 
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
-                hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
+                hostAttributes, Collections.singletonMap("Broker", _brokerRecord.getId()));
         DurableConfigurationStore dcs = new DurableConfigurationStoreStub(_brokerRecord, virtualHostRecord);
 
-        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
         List<ConfiguredObjectRecord> records = recoverer.upgrade(dcs);
 
         ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
@@ -240,10 +240,10 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
 
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
-                hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
+                hostAttributes, Collections.singletonMap("Broker", _brokerRecord.getId()));
         DurableConfigurationStore dcs = new DurableConfigurationStoreStub(_brokerRecord, virtualHostRecord);
 
-        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
         List<ConfiguredObjectRecord> records = recoverer.upgrade(dcs);
 
         ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
@@ -278,10 +278,10 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         hostAttributes.put("type", "STANDARD");
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
-                hostAttributes, Collections.<String,ConfiguredObjectRecord>singletonMap("Broker", _brokerRecord));
+                hostAttributes, Collections.singletonMap("Broker", _brokerRecord.getId()));
         DurableConfigurationStore dcs = new DurableConfigurationStoreStub(_brokerRecord, virtualHostRecord);
 
-        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        BrokerStoreUpgraderAndRecoverer recoverer = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
         List<ConfiguredObjectRecord> records = recoverer.upgrade(dcs);
 
         ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
@@ -317,7 +317,9 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         }
 
         @Override
-        public void openConfigurationStore(ConfiguredObject<?> parent) throws StoreException
+        public void openConfigurationStore(ConfiguredObject<?> parent,
+                                           final boolean overwrite,
+                                           final ConfiguredObjectRecord... initialRecords) throws StoreException
         {
         }
 

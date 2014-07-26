@@ -39,7 +39,7 @@ import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
@@ -58,19 +58,19 @@ public class VirtualHostCreationTest extends TestCase
         EventLogger eventLogger = mock(EventLogger.class);
         SecurityManager securityManager = mock(SecurityManager.class);
         TaskExecutor executor = CurrentThreadTaskExecutor.newStartedInstance();
-        SystemContext systemContext = mock(SystemContext.class);
+        SystemConfig systemConfig = mock(SystemConfig.class);
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
-        when(systemContext.getObjectFactory()).thenReturn(objectFactory);
-        when(systemContext.getModel()).thenReturn(objectFactory.getModel());
-        when(systemContext.getEventLogger()).thenReturn(eventLogger);
-        when(systemContext.getTaskExecutor()).thenReturn(executor);
+        when(systemConfig.getObjectFactory()).thenReturn(objectFactory);
+        when(systemConfig.getModel()).thenReturn(objectFactory.getModel());
+        when(systemConfig.getEventLogger()).thenReturn(eventLogger);
+        when(systemConfig.getTaskExecutor()).thenReturn(executor);
 
         Broker broker = mock(Broker.class);
         when(broker.getObjectFactory()).thenReturn(objectFactory);
         when(broker.getModel()).thenReturn(objectFactory.getModel());
         when(broker.getSecurityManager()).thenReturn(securityManager);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
-        when(broker.getParent(eq(SystemContext.class))).thenReturn(systemContext);
+        when(broker.getParent(eq(SystemConfig.class))).thenReturn(systemConfig);
         when(broker.getTaskExecutor()).thenReturn(executor);
 
         _virtualHostNode = mock(VirtualHostNode.class);

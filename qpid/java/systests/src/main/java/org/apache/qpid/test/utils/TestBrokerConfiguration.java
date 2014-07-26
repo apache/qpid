@@ -23,35 +23,55 @@ package org.apache.qpid.test.utils;
 import static org.mockito.Mockito.mock;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.store.MemoryConfigurationEntryStore;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.AbstractSystemConfig;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.JsonSystemConfigImpl;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.SystemContextImpl;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProvider;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProviderImpl;
+import org.apache.qpid.server.plugin.PluggableFactoryLoader;
+import org.apache.qpid.server.plugin.SystemConfigFactory;
 import org.apache.qpid.server.security.access.FileAccessControlProviderConstants;
+import org.apache.qpid.server.store.AbstractMemoryStore;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordConverter;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.util.Strings;
 
 public class TestBrokerConfiguration
 {
+    private static final Logger LOGGER = Logger.getLogger(TestBrokerConfiguration.class);
+
     public static final String ENTRY_NAME_HTTP_PORT = "http";
     public static final String ENTRY_NAME_AMQP_PORT = "amqp";
     public static final String ENTRY_NAME_RMI_PORT = "rmi";
@@ -69,20 +89,49 @@ public class TestBrokerConfiguration
     public static final String ENTRY_NAME_SSL_TRUSTSTORE = "systestsTrustStore";
     public static final String ENTRY_NAME_GROUP_FILE = "groupFile";
     public static final String ENTRY_NAME_ACL_FILE = "aclFile";
+    private final TaskExecutor _taskExecutor;
+    private final String _storeType;
 
-    private MemoryConfigurationEntryStore _store;
+    private DurableConfigurationStore _store;
     private boolean _saved;
 
     public TestBrokerConfiguration(String storeType, String initialStoreLocation, final TaskExecutor taskExecutor)
     {
-        _store = new MemoryConfigurationEntryStore(
-                new SystemContextImpl(taskExecutor,
-                                      mock(EventLogger.class),
-                                      mock(LogRecorder.class),
-                                      mock(BrokerOptions.class)),
-                initialStoreLocation,
-                null,
-                Collections.<String,String>emptyMap());
+        BrokerOptions brokerOptions = new BrokerOptions();
+        _taskExecutor = taskExecutor;
+        _storeType = storeType;
+        brokerOptions.setInitialConfigurationLocation(initialStoreLocation);
+        final AbstractSystemConfig parentObject = new JsonSystemConfigImpl(taskExecutor,
+                                                               mock(EventLogger.class),
+                                                               mock(LogRecorder.class),
+                                                               brokerOptions);
+
+        ConfiguredObjectRecordConverter converter = new ConfiguredObjectRecordConverter(BrokerModel.getInstance());
+
+        Reader reader;
+        try
+        {
+            try
+            {
+                URL url = new URL(initialStoreLocation);
+                reader = new InputStreamReader(url.openStream());
+            }
+            catch (MalformedURLException e)
+            {
+                reader = new FileReader(initialStoreLocation);
+            }
+
+            Collection<ConfiguredObjectRecord> records = converter.readFromJson(org.apache.qpid.server.model.Broker.class, parentObject, reader);
+            _store = new AbstractMemoryStore(Broker.class){};
+
+            ConfiguredObjectRecord[] initialRecords = records.toArray(new ConfiguredObjectRecord[records.size()]);
+            _store.openConfigurationStore(parentObject,false, initialRecords);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Unable to load initial store", e);
+        }
+
         _store.visitConfiguredObjectRecords(new ConfiguredObjectRecordHandler()
         {
             @Override
@@ -151,7 +200,47 @@ public class TestBrokerConfiguration
 
     public boolean save(File configFile)
     {
-        _store.copyTo(configFile.getAbsolutePath());
+        BrokerOptions brokerOptions = new BrokerOptions();
+        brokerOptions.setConfigurationStoreLocation(configFile.getAbsolutePath());
+
+        SystemConfigFactory configFactory =
+                (new PluggableFactoryLoader<>(SystemConfigFactory.class)).get(_storeType);
+
+        final SystemConfig parentObject = configFactory.newInstance(_taskExecutor,
+                                                                   mock(EventLogger.class),
+                                                                   mock(LogRecorder.class),
+                                                                   brokerOptions);
+
+        parentObject.open();
+        DurableConfigurationStore configurationStore = parentObject.getConfigurationStore();
+        configurationStore.closeConfigurationStore();
+
+        final List<ConfiguredObjectRecord> initialRecords = new ArrayList<>();
+        _store.visitConfiguredObjectRecords(new ConfiguredObjectRecordHandler()
+        {
+            @Override
+            public void begin()
+            {
+
+            }
+
+            @Override
+            public boolean handle(final ConfiguredObjectRecord record)
+            {
+                initialRecords.add(record);
+                return true;
+            }
+
+            @Override
+            public void end()
+            {
+
+            }
+        });
+
+
+        configurationStore.openConfigurationStore(parentObject,true,initialRecords.toArray(new ConfiguredObjectRecord[initialRecords.size()]));
+        configurationStore.closeConfigurationStore();
         return true;
     }
 
@@ -228,7 +317,7 @@ public class TestBrokerConfiguration
 
     private void addObjectConfiguration(UUID id, String type, Map<String, Object> attributes)
     {
-        ConfiguredObjectRecord entry = new ConfiguredObjectRecordImpl(id, type, attributes, Collections.singletonMap(Broker.class.getSimpleName(), findObject(Broker.class,null)));
+        ConfiguredObjectRecord entry = new ConfiguredObjectRecordImpl(id, type, attributes, Collections.singletonMap(Broker.class.getSimpleName(), findObject(Broker.class,null).getId()));
 
         _store.update(true, entry);
     }
@@ -256,7 +345,7 @@ public class TestBrokerConfiguration
     {
         ConfiguredObjectRecord authProviderRecord = findObject(AuthenticationProvider.class, authenticationProvider);
         ConfiguredObjectRecord pp = new ConfiguredObjectRecordImpl(UUIDGenerator.generateRandomUUID(),
-                                                                   PreferencesProvider.class.getSimpleName(), attributes, Collections.<String, ConfiguredObjectRecord>singletonMap(AuthenticationProvider.class.getSimpleName(),authProviderRecord));
+                                                                   PreferencesProvider.class.getSimpleName(), attributes, Collections.singletonMap(AuthenticationProvider.class.getSimpleName(),authProviderRecord.getId()));
 
         _store.create(pp);
     }

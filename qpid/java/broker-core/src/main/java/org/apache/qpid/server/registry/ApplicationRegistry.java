@@ -32,7 +32,7 @@ import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.store.BrokerStoreUpgraderAndRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.util.SystemUtils;
@@ -48,16 +48,16 @@ public class ApplicationRegistry implements IApplicationRegistry
 {
     private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
-    private final SystemContext _systemContext;
+    private final SystemConfig _systemConfig;
 
     private Broker _broker;
 
     private DurableConfigurationStore _store;
 
-    public ApplicationRegistry(DurableConfigurationStore store, SystemContext systemContext)
+    public ApplicationRegistry(DurableConfigurationStore store, SystemConfig systemConfig)
     {
         _store = store;
-        _systemContext = systemContext;
+        _systemConfig = systemConfig;
     }
 
     public void initialise(BrokerOptions brokerOptions) throws Exception
@@ -65,7 +65,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         // Create the RootLogger to be used during broker operation
         boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
         MessageLogger messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
-        final EventLogger eventLogger = _systemContext.getEventLogger();
+        final EventLogger eventLogger = _systemConfig.getEventLogger();
         eventLogger.setMessageLogger(messageLogger);
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
@@ -76,7 +76,7 @@ public class ApplicationRegistry implements IApplicationRegistry
 
         logStartupMessages(startupLogger);
 
-        BrokerStoreUpgraderAndRecoverer upgrader = new BrokerStoreUpgraderAndRecoverer(_systemContext);
+        BrokerStoreUpgraderAndRecoverer upgrader = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
         _broker = upgrader.perform(_store);
 
         _broker.setEventLogger(startupLogger);
@@ -96,7 +96,6 @@ public class ApplicationRegistry implements IApplicationRegistry
         {
             _logger.info("Shutting down ApplicationRegistry:" + this);
         }
-
         try
         {
             if (_broker != null)
@@ -106,7 +105,7 @@ public class ApplicationRegistry implements IApplicationRegistry
         }
         finally
         {
-            _systemContext.close();
+            _systemConfig.close();
         }
         _store = null;
         _broker = null;

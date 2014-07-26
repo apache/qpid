@@ -18,18 +18,22 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.store.derby;
 
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.SystemConfig;
+import org.apache.qpid.server.store.FileBasedSettings;
+import org.apache.qpid.server.store.SizeMonitoringSettings;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-
-/** A simple message store that stores the messages in a thread-safe structure in memory. */
-public class MemoryConfigurationStore extends AbstractMemoryStore
+public interface DerbySystemConfig<X extends DerbySystemConfig<X>> extends SystemConfig<X>, FileBasedSettings,
+                                                                           SizeMonitoringSettings
 {
-    public static final String TYPE = "Memory";
+    @ManagedAttribute(mandatory = true)
+    String getStorePath();
 
-    public MemoryConfigurationStore(final Class<? extends ConfiguredObject> rootClass)
-    {
-        super(rootClass);
-    }
+    @ManagedAttribute(mandatory = true, defaultValue = "0")
+    Long getStoreUnderfullSize();
+
+    @ManagedAttribute(mandatory = true, defaultValue = "0")
+    Long getStoreOverfullSize();
 }

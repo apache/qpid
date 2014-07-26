@@ -38,7 +38,7 @@ public class BrokerOptionsTest extends QpidTestCase
 
     public void testDefaultConfigurationStoreType()
     {
-        assertEquals("json", _options.getConfigurationStoreType());
+        assertEquals("JSON", _options.getConfigurationStoreType());
     }
 
     public void testOverriddenConfigurationStoreType()
@@ -52,7 +52,7 @@ public class BrokerOptionsTest extends QpidTestCase
         String qpidWork = "/test/value";
         setTestSystemProperty("QPID_WORK", qpidWork);
 
-        String expectedPath = new File(qpidWork, BrokerOptions.DEFAULT_CONFIG_NAME_PREFIX + "." + BrokerOptions.DEFAULT_STORE_TYPE).getAbsolutePath();
+        String expectedPath = new File(qpidWork, BrokerOptions.DEFAULT_CONFIG_NAME_PREFIX + "." + BrokerOptions.DEFAULT_STORE_TYPE.toLowerCase()).getAbsolutePath();
         assertEquals (expectedPath, _options.getConfigurationStoreLocation());
     }
 
@@ -61,7 +61,7 @@ public class BrokerOptionsTest extends QpidTestCase
         setTestSystemProperty("QPID_WORK", null);
         String userDir = System.getProperty("user.dir");
 
-        String expectedPath = new File(userDir, "work/" + BrokerOptions.DEFAULT_CONFIG_NAME_PREFIX + "." + BrokerOptions.DEFAULT_STORE_TYPE).getAbsolutePath();
+        String expectedPath = new File(userDir, "work/" + BrokerOptions.DEFAULT_CONFIG_NAME_PREFIX + "." + BrokerOptions.DEFAULT_STORE_TYPE.toLowerCase()).getAbsolutePath();
         assertEquals (expectedPath, _options.getConfigurationStoreLocation());
     }
 

@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
-import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,6 +35,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.sleepycat.je.rep.ReplicationConfig;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.model.Broker;
@@ -45,7 +45,6 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -199,8 +198,8 @@ public class BDBHAVirtualHostNodeTestHelper
 
     public BDBHAVirtualHostNode<?> recoverHaVHN(UUID id, Map<String, Object> attributes)
     {
-        Map<String,ConfiguredObjectRecord> parents = new HashMap<>();
-        parents.put(Broker.class.getSimpleName(),new ConfiguredObjectRecordImpl(_broker.getId(), Broker.class.getSimpleName(), Collections.<String, Object>singletonMap(Broker.NAME, _broker.getName()) ));
+        Map<String,UUID> parents = new HashMap<>();
+        parents.put(Broker.class.getSimpleName(),_broker.getId());
         ConfiguredObjectRecordImpl record = new ConfiguredObjectRecordImpl(id, VirtualHostNode.class.getSimpleName(), attributes, parents );
 
         @SuppressWarnings("unchecked")

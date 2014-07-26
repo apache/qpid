@@ -42,7 +42,7 @@ import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -74,13 +74,13 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
 
-        SystemContext<?> context = mock(SystemContext.class);
+        SystemConfig<?> context = mock(SystemConfig.class);
         when(context.getEventLogger()).thenReturn(eventLogger);
 
         Broker broker = mock(Broker.class);
         when(broker.getObjectFactory()).thenReturn(objectFactory);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
-        when(broker.getParent(SystemContext.class)).thenReturn(context);
+        when(broker.getParent(SystemConfig.class)).thenReturn(context);
         when(broker.getSecurityManager()).thenReturn(securityManager);
         when(broker.getModel()).thenReturn(objectFactory.getModel());
         when(broker.getTaskExecutor()).thenReturn(_taskExecutor);

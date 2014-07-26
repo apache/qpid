@@ -31,7 +31,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.access.Operation;
@@ -65,8 +65,8 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, parent),
               attributes);
         _broker = parent;
-        SystemContext<?> systemContext = _broker.getParent(SystemContext.class);
-        _eventLogger = systemContext.getEventLogger();
+        SystemConfig<?> systemConfig = _broker.getParent(SystemConfig.class);
+        _eventLogger = systemConfig.getEventLogger();
         _virtualHostNodeLogSubject = new VirtualHostNodeLogSubject(getName());
     }
 

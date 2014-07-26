@@ -36,7 +36,9 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent)
+    public void openConfigurationStore(ConfiguredObject<?> parent,
+                                       final boolean overwrite,
+                                       final ConfiguredObjectRecord... initialRecords)
     {
     }
 
