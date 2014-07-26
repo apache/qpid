@@ -275,6 +275,15 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         return cachedHandle;
     }
 
+
+    @Override
+    public Database clearDatabase(String name, DatabaseConfig databaseConfig)
+    {
+        closeDatabase(name);
+        _environment.removeDatabase(null, name);
+        return openDatabase(name, databaseConfig);
+    }
+
     @Override
     public Sequence openSequence(final Database database,
                                  final DatabaseEntry sequenceKey,

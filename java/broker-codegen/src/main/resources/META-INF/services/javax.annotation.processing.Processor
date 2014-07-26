@@ -17,6 +17,7 @@
 # under the License.
 #
 org.apache.qpid.server.model.ConfiguredObjectFactoryGenerator
+org.apache.qpid.server.model.SystemConfigFactoryGenerator
 org.apache.qpid.server.plugin.PluggableProcessor
 org.apache.qpid.server.model.ConfiguredObjectRegistrationGenerator
 org.apache.qpid.server.model.validation.AttributeAnnotationValidator

@@ -1045,15 +1045,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
 
             @Override
-            public Map<String, ConfiguredObjectRecord> getParents()
+            public Map<String, UUID> getParents()
             {
-                Map<String, ConfiguredObjectRecord> parents = new LinkedHashMap<String, ConfiguredObjectRecord>();
+                Map<String, UUID> parents = new LinkedHashMap<>();
                 for(Class<? extends ConfiguredObject> parentClass : getModel().getParentTypes(getCategoryClass()))
                 {
                     ConfiguredObject parent = getParent(parentClass);
                     if(parent != null)
                     {
-                        parents.put(parentClass.getSimpleName(), parent.asObjectRecord());
+                        parents.put(parentClass.getSimpleName(), parent.getId());
                     }
                 }
                 return parents;

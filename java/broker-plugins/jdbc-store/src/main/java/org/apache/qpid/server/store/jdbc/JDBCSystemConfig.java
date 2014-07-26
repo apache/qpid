@@ -18,18 +18,22 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.store.jdbc;
 
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.SystemConfig;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-
-/** A simple message store that stores the messages in a thread-safe structure in memory. */
-public class MemoryConfigurationStore extends AbstractMemoryStore
+public interface JDBCSystemConfig<X extends JDBCSystemConfig<X>> extends SystemConfig<X>, JDBCSettings
 {
-    public static final String TYPE = "Memory";
+    @ManagedAttribute(mandatory=true, defaultValue = "${systemConfig.connectionUrl}")
+    String getConnectionUrl();
 
-    public MemoryConfigurationStore(final Class<? extends ConfiguredObject> rootClass)
-    {
-        super(rootClass);
-    }
+    @ManagedAttribute(defaultValue=DefaultConnectionProviderFactory.TYPE)
+    String getConnectionPoolType();
+
+    @ManagedAttribute(defaultValue = "${systemConfig.username}")
+    String getUsername();
+
+    @ManagedAttribute(secure=true, defaultValue = "${systemConfig.password}")
+    String getPassword();
 }

@@ -45,11 +45,11 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.JsonSystemConfigImpl;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.model.SystemContextImpl;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
@@ -65,7 +65,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     private ConfiguredObjectRecord _root;
     private ConfiguredObjectRecord _portEntry;
     private UUID _rootId, _portEntryId;
-    private SystemContext _systemContext;
+    private SystemConfig _systemConfig;
     private TaskExecutor _taskExecutor;
 
     protected void setUp() throws Exception
@@ -77,19 +77,19 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
 
-        _systemContext = new SystemContextImpl(_taskExecutor, mock(EventLogger.class),
+        _systemConfig = new JsonSystemConfigImpl(_taskExecutor, mock(EventLogger.class),
                                                mock(LogRecorder.class), new BrokerOptions());
 
 
-        ConfiguredObjectRecord systemContextRecord = _systemContext.asObjectRecord();
+        ConfiguredObjectRecord systemContextRecord = _systemConfig.asObjectRecord();
 
 
 
-        _root = new ConfiguredObjectRecordImpl(_rootId, Broker.class.getSimpleName(), Collections.<String,Object>emptyMap(), Collections.singletonMap(SystemContext.class.getSimpleName(), systemContextRecord));
+        _root = new ConfiguredObjectRecordImpl(_rootId, Broker.class.getSimpleName(), Collections.<String,Object>emptyMap(), Collections.singletonMap(SystemConfig.class.getSimpleName(), systemContextRecord.getId()));
 
         _portEntry = mock(ConfiguredObjectRecord.class);
         when(_portEntry.getId()).thenReturn(_portEntryId);
-        when(_portEntry.getParents()).thenReturn(Collections.singletonMap(Broker.class.getSimpleName(), _root));
+        when(_portEntry.getParents()).thenReturn(Collections.singletonMap(Broker.class.getSimpleName(), _root.getId()));
         when(_portEntry.getType()).thenReturn(Port.class.getSimpleName());
 
         final ArgumentCaptor<ConfiguredObjectRecordHandler> recovererArgumentCaptor = ArgumentCaptor.forClass(ConfiguredObjectRecordHandler.class);
@@ -111,7 +111,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _options = new BrokerOptions();
         _handler = new ManagementModeStoreHandler(_store, _options);
 
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
     }
 
     @Override
@@ -153,7 +153,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeHttpPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
         ConfiguredObjectRecord root = getRootEntry();
         assertEquals("Unexpected root id", _rootId, root.getId());
         Collection<UUID> childrenIds = getChildrenIds(root);
@@ -165,7 +165,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeRmiPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         ConfiguredObjectRecord root = getRootEntry();
         assertEquals("Unexpected root id", _rootId, root.getId());
@@ -178,7 +178,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeJmxPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         ConfiguredObjectRecord root = getRootEntry();
         assertEquals("Unexpected root id", _rootId, root.getId());
@@ -193,7 +193,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _options.setManagementModeRmiPortOverride(2000);
         _options.setManagementModeJmxPortOverride(3000);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         ConfiguredObjectRecord root = getRootEntry();
         assertEquals("Unexpected root id", _rootId, root.getId());
@@ -221,7 +221,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeJmxPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
 
         UUID optionsPort = getOptionsPortId();
@@ -233,7 +233,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeHttpPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
 
         UUID optionsPort = getOptionsPortId();
@@ -248,7 +248,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         when(_portEntry.getAttributes()).thenReturn(attributes);
         _options.setManagementModeHttpPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
 
         ConfiguredObjectRecord portEntry = getEntry(_portEntryId);
@@ -262,7 +262,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         when(_portEntry.getAttributes()).thenReturn(attributes);
         _options.setManagementModeRmiPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
 
         ConfiguredObjectRecord portEntry = getEntry(_portEntryId);
@@ -276,7 +276,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         when(_portEntry.getAttributes()).thenReturn(attributes);
         _options.setManagementModeRmiPortOverride(9090);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
 
         ConfiguredObjectRecord portEntry = getEntry(_portEntryId);
@@ -299,7 +299,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(VirtualHost.TYPE, "STANDARD");
 
-        final ConfiguredObjectRecord virtualHost = new ConfiguredObjectRecordImpl(virtualHostId, VirtualHost.class.getSimpleName(), attributes, Collections.singletonMap(Broker.class.getSimpleName(), _root));
+        final ConfiguredObjectRecord virtualHost = new ConfiguredObjectRecordImpl(virtualHostId, VirtualHost.class.getSimpleName(), attributes, Collections.singletonMap(Broker.class.getSimpleName(), _root.getId()));
         final ArgumentCaptor<ConfiguredObjectRecordHandler> recovererArgumentCaptor = ArgumentCaptor.forClass(ConfiguredObjectRecordHandler.class);
         doAnswer(
                 new Answer()
@@ -327,7 +327,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         }
 
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         ConfiguredObjectRecord hostEntry = getEntry(virtualHostId);
         Map<String, Object> hostAttributes = new HashMap<String, Object>(hostEntry.getAttributes());
@@ -353,13 +353,13 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _options.setManagementModeRmiPortOverride(2000);
         _options.setManagementModeJmxPortOverride(3000);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, "TEST");
         ConfiguredObjectRecord
                 configurationEntry = new ConfiguredObjectRecordImpl(_portEntryId, Port.class.getSimpleName(), attributes,
-                Collections.singletonMap(Broker.class.getSimpleName(), getRootEntry()));
+                Collections.singletonMap(Broker.class.getSimpleName(), getRootEntry().getId()));
         _handler.create(configurationEntry);
         verify(_store).create(any(ConfiguredObjectRecord.class));
     }
@@ -370,7 +370,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _options.setManagementModeRmiPortOverride(2000);
         _options.setManagementModeJmxPortOverride(3000);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         ConfiguredObjectRecord root = getRootEntry();
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -385,7 +385,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeHttpPortOverride(1000);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         UUID portId = getOptionsPortId();
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -393,7 +393,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         ConfiguredObjectRecord
                 configurationEntry = new ConfiguredObjectRecordImpl(portId, Port.class.getSimpleName(), attributes,
                                                                     Collections.singletonMap(Broker.class.getSimpleName(),
-                                                                                             getRootEntry()));
+                                                                                             getRootEntry().getId()));
         try
         {
             _handler.update(false, configurationEntry);
@@ -409,7 +409,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeHttpPortOverride(1000);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         ConfiguredObjectRecord record = new ConfiguredObjectRecord()
         {
@@ -432,7 +432,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
             }
 
             @Override
-            public Map<String, ConfiguredObjectRecord> getParents()
+            public Map<String, UUID> getParents()
             {
                 return null;
             }
@@ -445,7 +445,7 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     {
         _options.setManagementModeHttpPortOverride(1000);
         _handler = new ManagementModeStoreHandler(_store, _options);
-        _handler.openConfigurationStore(_systemContext);
+        _handler.openConfigurationStore(_systemConfig, false);
 
         UUID portId = getOptionsPortId();
         ConfiguredObjectRecord record = mock(ConfiguredObjectRecord.class);
@@ -563,9 +563,9 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
             if(object.getParents() != null)
             {
-                for(ConfiguredObjectRecord parent : object.getParents().values())
+                for(UUID parent : object.getParents().values())
                 {
-                    if(parent.getId().equals(_parent.getId()))
+                    if(parent.equals(_parent.getId()))
                     {
                         _childIds.add(object.getId());
                     }

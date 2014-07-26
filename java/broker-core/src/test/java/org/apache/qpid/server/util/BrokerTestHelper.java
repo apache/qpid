@@ -44,7 +44,7 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -73,11 +73,11 @@ public class BrokerTestHelper
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         EventLogger eventLogger = new EventLogger();
 
-        SystemContext systemContext = mock(SystemContext.class);
-        when(systemContext.getEventLogger()).thenReturn(eventLogger);
-        when(systemContext.getObjectFactory()).thenReturn(objectFactory);
-        when(systemContext.getModel()).thenReturn(objectFactory.getModel());
-        when(systemContext.getCategoryClass()).thenReturn(SystemContext.class);
+        SystemConfig systemConfig = mock(SystemConfig.class);
+        when(systemConfig.getEventLogger()).thenReturn(eventLogger);
+        when(systemConfig.getObjectFactory()).thenReturn(objectFactory);
+        when(systemConfig.getModel()).thenReturn(objectFactory.getModel());
+        when(systemConfig.getCategoryClass()).thenReturn(SystemConfig.class);
 
         SubjectCreator subjectCreator = mock(SubjectCreator.class);
         when(subjectCreator.getMechanisms()).thenReturn(Collections.<String>emptyList());
@@ -92,10 +92,10 @@ public class BrokerTestHelper
         when(broker.getModel()).thenReturn(objectFactory.getModel());
         when(broker.getEventLogger()).thenReturn(eventLogger);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
-        when(broker.getParent(SystemContext.class)).thenReturn(systemContext);
+        when(broker.getParent(SystemConfig.class)).thenReturn(systemConfig);
 
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
-        when(systemContext.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
+        when(systemConfig.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         return broker;
     }
 

@@ -22,11 +22,13 @@ package org.apache.qpid.server.store;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,11 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.Version;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.JsonSerializer;
 import org.codehaus.jackson.map.Module;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -50,11 +51,12 @@ import org.codehaus.jackson.map.module.SimpleModule;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public class JsonFileConfigStore implements DurableConfigurationStore
 {
+    private static final Logger _logger = Logger.getLogger(JsonFileConfigStore.class);
+
     private final Map<UUID, ConfiguredObjectRecord> _objectsById = new HashMap<UUID, ConfiguredObjectRecord>();
     private final Map<String, List<UUID>> _idsByType = new HashMap<String, List<UUID>>();
     private final ObjectMapper _objectMapper = new ObjectMapper();
@@ -66,6 +68,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     private FileLock _fileLock;
     private String _configFileName;
     private String _backupFileName;
+    private String _lockFileName;
 
     private static final Module _module;
     static
@@ -90,11 +93,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
     private ConfiguredObject<?> _parent;
 
-    public JsonFileConfigStore()
-    {
-        this(VirtualHost.class);
-    }
-
     public JsonFileConfigStore(Class<? extends ConfiguredObject> rootClass)
     {
         _objectMapper.registerModule(_module);
@@ -109,14 +107,16 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent)
+    public void openConfigurationStore(ConfiguredObject<?> parent,
+                                       final boolean overwrite,
+                                       final ConfiguredObjectRecord... initialRecords)
     {
         _parent = parent;
         _name = parent.getName();
         _classNameMapping = generateClassNameMap(_parent.getModel(), _rootClass);
         FileBasedSettings fileBasedSettings = (FileBasedSettings)_parent;
         setup(fileBasedSettings);
-        load();
+        load(overwrite, initialRecords);
     }
 
     @Override
@@ -142,9 +142,23 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             throw new StoreException("Cannot determine path for configuration storage");
         }
-        _directoryName = configurationStoreSettings.getStorePath();
-        _configFileName = _name + ".json";
-        _backupFileName = _name + ".bak";
+        File fileFromSettings = new File(configurationStoreSettings.getStorePath());
+        if(fileFromSettings.isFile() || (!fileFromSettings.exists() && (new File(fileFromSettings.getParent())).isDirectory()))
+        {
+            _directoryName = fileFromSettings.getParent();
+            _configFileName = fileFromSettings.getName();
+            _backupFileName = fileFromSettings.getName() + ".bak";
+            _lockFileName = fileFromSettings.getName() + ".lck";
+        }
+        else
+        {
+            _directoryName = configurationStoreSettings.getStorePath();
+            _configFileName = _name + ".json";
+            _backupFileName = _name + ".bak";
+            _lockFileName = _name + ".lck";
+        }
+
+
         checkDirectoryIsWritable(_directoryName);
         getFileLock();
 
@@ -195,7 +209,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
     private void getFileLock()
     {
-        File lockFile = new File(_directoryName, _name + ".lck");
+        File lockFile = new File(_directoryName, _lockFileName);
         try
         {
             lockFile.createNewFile();
@@ -245,102 +259,47 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
     }
 
-    protected void load()
+    protected void load(final boolean overwrite, final ConfiguredObjectRecord[] initialRecords)
     {
         final File configFile = new File(_directoryName, _configFileName);
         try
         {
-            Map data = _objectMapper.readValue(configFile,Map.class);
-            loadFromMap(data);
-        }
-        catch (JsonMappingException e)
-        {
-            throw new StoreException("Cannot parse the configuration file " + configFile, e);
-        }
-        catch (JsonParseException e)
-        {
-            throw new StoreException("Cannot parse the configuration file " + configFile, e);
+            boolean updated = false;
+            Collection<ConfiguredObjectRecord> records = Collections.emptyList();
+            if(!overwrite)
+            {
+                ConfiguredObjectRecordConverter configuredObjectRecordConverter =
+                        new ConfiguredObjectRecordConverter(_parent.getModel());
+
+                records = configuredObjectRecordConverter.readFromJson(_rootClass, _parent, new FileReader(configFile));
+            }
+
+            if(records.isEmpty())
+            {
+                records = Arrays.asList(initialRecords);
+                updated = true;
+            }
+
+            for(ConfiguredObjectRecord record : records)
+            {
+                _objectsById.put(record.getId(), record);
+                List<UUID> idsForType = _idsByType.get(record.getType());
+                if (idsForType == null)
+                {
+                    idsForType = new ArrayList<>();
+                    _idsByType.put(record.getType(), idsForType);
+                }
+                idsForType.add(record.getId());
+            }
+            if(updated)
+            {
+                save();
+            }
         }
         catch (IOException e)
         {
-            throw new StoreException("Could not load the configuration file " + configFile, e);
+            throw new StoreException("Cannot construct configuration from the configuration file " + configFile, e);
         }
-
-    }
-
-    protected void loadFromMap(final Map<String,Object> data)
-    {
-        if (!data.isEmpty())
-        {
-            loadChild(_rootClass, data, null, null);
-        }
-    }
-
-
-    private void loadChild(final Class<? extends ConfiguredObject> clazz,
-                           final Map<String,Object> data,
-                           final Class<? extends ConfiguredObject> parentClass,
-                           final UUID parentId)
-    {
-        String idStr = (String) data.remove("id");
-        final UUID id = UUID.fromString(idStr);
-        final String type = clazz.getSimpleName();
-        Map<String,UUID> parentMap = new HashMap<String, UUID>();
-
-        Collection<Class<? extends ConfiguredObject>> childClasses = _parent.getModel().getChildTypes(clazz);
-        for(Class<? extends ConfiguredObject> childClass : childClasses)
-        {
-            final String childType = childClass.getSimpleName();
-            String attrName = childType.toLowerCase() + "s";
-            Object children = data.remove(attrName);
-            if(children != null)
-            {
-                if(children instanceof Collection)
-                {
-                    for(Object child : (Collection)children)
-                    {
-                        if(child instanceof Map)
-                        {
-                            loadChild(childClass, (Map)child, clazz, id);
-                        }
-                    }
-                }
-            }
-
-        }
-        if(parentId != null)
-        {
-            parentMap.put(parentClass.getSimpleName(),parentId);
-            for(Class<? extends ConfiguredObject> otherParent : _parent.getModel().getParentTypes(clazz))
-            {
-                if(otherParent != parentClass)
-                {
-                    final String otherParentAttr = otherParent.getSimpleName().toLowerCase();
-                    Object otherParentId = data.remove(otherParentAttr);
-                    if(otherParentId instanceof String)
-                    {
-                        try
-                        {
-                            parentMap.put(otherParent.getSimpleName(), UUID.fromString((String) otherParentId));
-                        }
-                        catch(IllegalArgumentException e)
-                        {
-                            //
-                        }
-                    }
-                }
-
-            }
-        }
-
-        _objectsById.put(id, new ConfiguredObjectRecordImpl(id, type, data, parentMap));
-        List<UUID> idsForType = _idsByType.get(type);
-        if(idsForType == null)
-        {
-            idsForType = new ArrayList<UUID>();
-            _idsByType.put(type, idsForType);
-        }
-        idsForType.add(id);
     }
 
     @Override
@@ -440,7 +399,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             while(iter.hasNext())
             {
                 String parentType = iter.next().getSimpleName();
-                map.put(parentType.toLowerCase(), record.getParents().get(parentType).getId());
+                map.put(parentType.toLowerCase(), record.getParents().get(parentType));
             }
         }
 
@@ -461,8 +420,8 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                     {
                         ConfiguredObjectRecord childRecord = _objectsById.get(childId);
 
-                        final ConfiguredObjectRecord parent = childRecord.getParents().get(type.getSimpleName());
-                        String parentId = parent.getId().toString();
+                        final UUID parent = childRecord.getParents().get(type.getSimpleName());
+                        String parentId = parent.toString();
                         if(id.toString().equals(parentId))
                         {
                             entities.add(build(childClass,childId));
@@ -558,6 +517,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     @Override
     public void closeConfigurationStore()
     {
+        _logger.info("Close Config Store called", new Exception());
         try
         {
             releaseFileLock();
@@ -615,88 +575,5 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
         return map;
     }
-
-    private class ConfiguredObjectRecordImpl implements ConfiguredObjectRecord
-    {
-
-        private final UUID _id;
-        private final String _type;
-        private final Map<String, Object> _attributes;
-        private final Map<String, UUID> _parents;
-
-        private ConfiguredObjectRecordImpl(ConfiguredObjectRecord record)
-        {
-            this(record.getId(), record.getType(), record.getAttributes(), convertParents(record.getParents()));
-        }
-
-        private ConfiguredObjectRecordImpl(final UUID id, final String type, final Map<String, Object> attributes,
-                                           final Map<String, UUID> parents)
-        {
-            _id = id;
-            _type = type;
-            _attributes = attributes;
-            _parents = parents;
-        }
-
-        @Override
-        public UUID getId()
-        {
-            return _id;
-        }
-
-        @Override
-        public String getType()
-        {
-            return _type;
-        }
-
-        @Override
-        public Map<String, Object> getAttributes()
-        {
-            return _attributes;
-        }
-
-        @Override
-        public Map<String, ConfiguredObjectRecord> getParents()
-        {
-            Map<String,ConfiguredObjectRecord> parents = new HashMap<String, ConfiguredObjectRecord>();
-            for(Map.Entry<String,UUID> entry : _parents.entrySet())
-            {
-                ConfiguredObjectRecord value = _objectsById.get(entry.getValue());
-
-                if(value == null && entry.getKey().equals("Exchange"))
-                {
-                    // TODO - remove this hack for the defined exchanges
-                    value = new ConfiguredObjectRecordImpl(entry.getValue(),entry.getKey(),Collections.<String,Object>emptyMap(), Collections.<String,UUID>emptyMap());
-                }
-
-                parents.put(entry.getKey(), value);
-            }
-            return parents;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "ConfiguredObjectRecordImpl [_id=" + _id + ", _type=" + _type + ", _attributes=" + _attributes + ", _parents="
-                    + _parents + "]";
-        }
-
-    }
-
-    private static Map<String, UUID> convertParents(final Map<String, ConfiguredObjectRecord> parents)
-    {
-        if(parents == null || parents.isEmpty())
-        {
-            return Collections.emptyMap();
-        }
-        Map<String,UUID> parentMap = new HashMap<>();
-        for(Map.Entry<String,ConfiguredObjectRecord> entry : parents.entrySet())
-        {
-            parentMap.put(entry.getKey(), entry.getValue().getId());
-        }
-        return parentMap;
-    }
-
 
 }

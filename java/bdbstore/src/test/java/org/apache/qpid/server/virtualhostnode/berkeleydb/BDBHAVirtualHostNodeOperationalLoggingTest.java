@@ -31,7 +31,7 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.HighAvailabilityMessages;
-import org.apache.qpid.server.model.SystemContext;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.hamcrest.Description;
 import org.mockito.ArgumentCaptor;
@@ -51,7 +51,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         super.setUp();
         _helper = new BDBHAVirtualHostNodeTestHelper(getTestName());
         _eventLogger = mock(EventLogger.class);
-        SystemContext<?> context = (SystemContext<?>) _helper.getBroker().getParent(SystemContext.class);
+        SystemConfig<?> context = (SystemConfig<?>) _helper.getBroker().getParent(SystemConfig.class);
         when(context.getEventLogger()).thenReturn(_eventLogger);
     }
 
@@ -379,7 +379,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
     private EventLogger resetEventLogger()
     {
         EventLogger eventLogger = mock(EventLogger.class);
-        SystemContext<?> context = (SystemContext<?>) _helper.getBroker().getParent(SystemContext.class);
+        SystemConfig<?> context = (SystemConfig<?>) _helper.getBroker().getParent(SystemConfig.class);
         when(context.getEventLogger()).thenReturn(eventLogger);
         return eventLogger;
     }

@@ -18,28 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration;
+package org.apache.qpid.server.model;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface ConfigurationEntry
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.CONSTRUCTOR)
+public @interface SystemConfigFactoryConstructor
 {
-    String ATTRIBUTE_NAME = "name";
-
-    UUID getId();
-
-    String getType();
-
-    Map<String, Object> getAttributes();
-
-    Set<UUID> getChildrenIds();
-
-    ConfigurationEntryStore getStore();
-
-    Map<String, Collection<ConfigurationEntry>> getChildren();
-
-    boolean hasChild(UUID id);
 }

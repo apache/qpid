@@ -18,31 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration;
+package org.apache.qpid.server.plugin;
 
-import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.SystemConfig;
 
-public interface ConfigurationEntryStore extends DurableConfigurationStore
+public interface SystemConfigFactory<X extends SystemConfig<X>> extends Pluggable
 {
-
-    /**
-     * Return the store location for the opened store or null if store has not been opened.
-     *
-     * @return store location for the opened store or null if store has not been opened
-     */
-    String getStoreLocation();
-
-    /**
-     * Returns the version of the store
-     *
-     * @return store version
-     */
-    int getVersion();
-
-    /**
-     * Returns the type of the store
-     *
-     * @return store type
-     */
-    String getType();
+    public X newInstance(final TaskExecutor taskExecutor,
+                         final EventLogger eventLogger,
+                         final LogRecorder logRecorder,
+                         final BrokerOptions brokerOptions);
 }

@@ -114,7 +114,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         _parent = createVirtualHostNode(_storePath, _factory);
 
         _configStore = createConfigStore();
-        _configStore.openConfigurationStore(_parent);
+        _configStore.openConfigurationStore(_parent, false);
         _rootRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), VirtualHost.class.getSimpleName(), Collections.<String, Object>emptyMap());
         _configStore.create(_rootRecord);
     }
@@ -263,14 +263,14 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
         private boolean matchesParents(ConfiguredObjectRecord binding)
         {
-            Map<String, ConfiguredObjectRecord> bindingParents = binding.getParents();
+            Map<String, UUID> bindingParents = binding.getParents();
             if(bindingParents.size() != _parents.size())
             {
                 return false;
             }
             for(Map.Entry<String,UUID> entry : _parents.entrySet())
             {
-                if(!bindingParents.get(entry.getKey()).getId().equals(entry.getValue()))
+                if(!bindingParents.get(entry.getKey()).equals(entry.getValue()))
                 {
                     return false;
                 }
@@ -490,7 +490,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(objectRecord.getId()).thenReturn(_queueId);
         when(objectRecord.getType()).thenReturn(Queue.class.getSimpleName());
         when(objectRecord.getAttributes()).thenReturn(attributes);
-        when(objectRecord.getParents()).thenReturn(Collections.singletonMap(_rootRecord.getType(), _rootRecord));
+        when(objectRecord.getParents()).thenReturn(Collections.singletonMap(_rootRecord.getType(), _rootRecord.getId()));
         when(queue.asObjectRecord()).thenReturn(objectRecord);
         return queue;
     }
@@ -516,7 +516,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(exchangeRecord.getId()).thenReturn(_exchangeId);
         when(exchangeRecord.getType()).thenReturn(Exchange.class.getSimpleName());
         when(exchangeRecord.getAttributes()).thenReturn(actualAttributes);
-        when(exchangeRecord.getParents()).thenReturn(Collections.singletonMap(_rootRecord.getType(), _rootRecord));
+        when(exchangeRecord.getParents()).thenReturn(Collections.singletonMap(_rootRecord.getType(), _rootRecord.getId()));
         when(exchange.asObjectRecord()).thenReturn(exchangeRecord);
         when(exchange.getEventLogger()).thenReturn(new EventLogger());
         return exchange;
@@ -526,7 +526,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
     {
         closeConfigStore();
         _configStore = createConfigStore();
-        _configStore.openConfigurationStore(_parent);
+        _configStore.openConfigurationStore(_parent, false);
     }
 
     protected abstract DurableConfigurationStore createConfigStore() throws Exception;

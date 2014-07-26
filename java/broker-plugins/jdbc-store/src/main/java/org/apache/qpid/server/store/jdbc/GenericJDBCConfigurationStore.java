@@ -29,14 +29,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.*;
-
-import javax.security.auth.Subject;
+import org.apache.qpid.server.store.AbstractJDBCConfigurationStore;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreProvider;
+import org.apache.qpid.server.store.StoreException;
 
 /**
  * Implementation of a DurableConfigurationStore backed by Generic JDBC Database
@@ -60,9 +64,17 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
     private boolean _useBytesMethodsForBlob;
 
     private ConfiguredObject<?> _parent;
+    private final Class<? extends ConfiguredObject> _rootClass;
+
+    public GenericJDBCConfigurationStore(final Class<? extends ConfiguredObject> rootClass)
+    {
+        _rootClass = rootClass;
+    }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent)
+    public void openConfigurationStore(ConfiguredObject<?> parent,
+                                       final boolean overwrite,
+                                       final ConfiguredObjectRecord... initialRecords)
             throws StoreException
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
@@ -117,7 +129,11 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
             _useBytesMethodsForBlob = details.isUseBytesMethodsForBlob();
             _bigIntType = details.getBigintType();
 
-            createOrOpenConfigurationStoreDatabase();
+            createOrOpenConfigurationStoreDatabase(overwrite);
+            if(hasNoConfigurationEntries())
+            {
+                update(true, initialRecords);
+            }
         }
     }
 

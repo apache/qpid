@@ -48,9 +48,17 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     private String _storeLocation;
 
     private ConfiguredObject<?> _parent;
+    private final Class<? extends ConfiguredObject> _rootClass;
+
+    public DerbyConfigurationStore(final Class<? extends ConfiguredObject> rootClass)
+    {
+        _rootClass = rootClass;
+    }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent)
+    public void openConfigurationStore(ConfiguredObject<?> parent,
+                                       final boolean overwrite,
+                                       final ConfiguredObjectRecord... initialRecords)
             throws StoreException
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
@@ -62,7 +70,12 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
             _storeLocation = settings.getStorePath();
             _connectionURL = DerbyUtils.createConnectionUrl(parent.getName(), _storeLocation);
 
-            createOrOpenConfigurationStoreDatabase();
+            createOrOpenConfigurationStoreDatabase(overwrite);
+
+            if(hasNoConfigurationEntries())
+            {
+                update(true, initialRecords);
+            }
         }
     }
 

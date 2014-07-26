@@ -24,8 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.store.StoreFuture;
-
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
@@ -35,6 +33,8 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
+
+import org.apache.qpid.server.store.StoreFuture;
 
 public interface EnvironmentFacade
 {
@@ -49,6 +49,7 @@ public interface EnvironmentFacade
     Environment getEnvironment();
 
     Database openDatabase(String databaseName, DatabaseConfig databaseConfig);
+    Database clearDatabase(String databaseName, DatabaseConfig databaseConfig);
 
     Sequence openSequence(Database database, DatabaseEntry sequenceKey, SequenceConfig sequenceConfig);
 

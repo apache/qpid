@@ -42,9 +42,9 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.JsonSystemConfigImpl;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.model.SystemContextImpl;
+import org.apache.qpid.server.model.SystemConfig;
 
 public class BrokerRecovererTest extends TestCase
 {
@@ -53,7 +53,7 @@ public class BrokerRecovererTest extends TestCase
     private UUID _brokerId = UUID.randomUUID();
     private AuthenticationProvider<?> _authenticationProvider1;
     private UUID _authenticationProvider1Id = UUID.randomUUID();
-    private SystemContext<?> _systemContext;
+    private SystemConfig<?> _systemConfig;
     private TaskExecutor _taskExecutor;
 
     @Override
@@ -63,8 +63,8 @@ public class BrokerRecovererTest extends TestCase
 
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
-        _systemContext = new SystemContextImpl(_taskExecutor,
-                                               mock(EventLogger.class), mock(LogRecorder.class), mock(BrokerOptions.class));
+        _systemConfig = new JsonSystemConfigImpl(_taskExecutor,
+                                               mock(EventLogger.class), mock(LogRecorder.class), new BrokerOptions());
 
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getType()).thenReturn(Broker.class.getSimpleName());
@@ -73,7 +73,8 @@ public class BrokerRecovererTest extends TestCase
         attributesMap.put(Broker.NAME, getName());
 
         when(_brokerEntry.getAttributes()).thenReturn(attributesMap);
-        when(_brokerEntry.getParents()).thenReturn(Collections.singletonMap(SystemContext.class.getSimpleName(), _systemContext.asObjectRecord()));
+        when(_brokerEntry.getParents()).thenReturn(Collections.singletonMap(SystemConfig.class.getSimpleName(), _systemConfig
+                .getId()));
 
         //Add a base AuthenticationProvider for all tests
         _authenticationProvider1 = mock(AuthenticationProvider.class);
@@ -115,7 +116,7 @@ public class BrokerRecovererTest extends TestCase
         when(_brokerEntry.getAttributes()).thenReturn(entryAttributes);
 
         resolveObjects(_brokerEntry);
-        Broker<?> broker = _systemContext.getBroker();
+        Broker<?> broker = _systemConfig.getBroker();
 
         assertNotNull(broker);
 
@@ -137,7 +138,7 @@ public class BrokerRecovererTest extends TestCase
         authProviderAttrs.put(AuthenticationProvider.TYPE, "Anonymous");
 
         return new ConfiguredObjectRecordImpl(id, AuthenticationProvider.class.getSimpleName(), authProviderAttrs, Collections
-                .singletonMap(Broker.class.getSimpleName(), _brokerEntry));
+                .singletonMap(Broker.class.getSimpleName(), _brokerEntry.getId()));
     }
 
 
@@ -149,7 +150,7 @@ public class BrokerRecovererTest extends TestCase
         groupProviderAttrs.put("path", "/no-such-path");
 
         return new ConfiguredObjectRecordImpl(id, GroupProvider.class.getSimpleName(), groupProviderAttrs, Collections
-                .singletonMap(Broker.class.getSimpleName(), _brokerEntry));
+                .singletonMap(Broker.class.getSimpleName(), _brokerEntry.getId()));
     }
 
     public ConfiguredObjectRecord createPortRecord(UUID id, int port, Object authProviderRef)
@@ -161,7 +162,7 @@ public class BrokerRecovererTest extends TestCase
         portAttrs.put(Port.AUTHENTICATION_PROVIDER, authProviderRef);
 
         return new ConfiguredObjectRecordImpl(id, Port.class.getSimpleName(), portAttrs, Collections
-                .singletonMap(Broker.class.getSimpleName(), _brokerEntry));
+                .singletonMap(Broker.class.getSimpleName(), _brokerEntry.getId()));
     }
 
 
@@ -174,7 +175,7 @@ public class BrokerRecovererTest extends TestCase
                 portId,
                 5672,
                 "authProvider"));
-        Broker<?> broker = _systemContext.getBroker();
+        Broker<?> broker = _systemConfig.getBroker();
 
 
         assertNotNull(broker);
@@ -188,7 +189,7 @@ public class BrokerRecovererTest extends TestCase
         UUID authProviderId = UUID.randomUUID();
 
         resolveObjects(_brokerEntry, createAuthProviderRecord(authProviderId, "authProvider"));
-        Broker<?> broker = _systemContext.getBroker();
+        Broker<?> broker = _systemConfig.getBroker();
 
 
         assertNotNull(broker);
@@ -210,7 +211,7 @@ public class BrokerRecovererTest extends TestCase
                                       createPortRecord(portId, 5672, "authProvider"),
                                       createAuthProviderRecord(authProvider2Id, "authProvider2"),
                                       createPortRecord(port2Id, 5673, "authProvider2"));
-        Broker<?> broker = _systemContext.getBroker();
+        Broker<?> broker = _systemConfig.getBroker();
 
 
         assertNotNull(broker);
@@ -228,7 +229,7 @@ public class BrokerRecovererTest extends TestCase
         UUID authProviderId = UUID.randomUUID();
 
         resolveObjects(_brokerEntry, createGroupProviderRecord(authProviderId, "groupProvider"));
-        Broker<?> broker = _systemContext.getBroker();
+        Broker<?> broker = _systemConfig.getBroker();
 
 
         assertNotNull(broker);
@@ -253,7 +254,7 @@ public class BrokerRecovererTest extends TestCase
             try
             {
                 resolveObjects(_brokerEntry);
-                Broker<?> broker = _systemContext.getBroker();
+                Broker<?> broker = _systemConfig.getBroker();
                 broker.open();
                 fail("The broker creation should fail due to unsupported model version");
             }
@@ -278,7 +279,7 @@ public class BrokerRecovererTest extends TestCase
         try
         {
             UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
-                    _systemContext.getObjectFactory().recover(_brokerEntry, _systemContext);
+                    _systemConfig.getObjectFactory().recover(_brokerEntry, _systemConfig);
 
             Broker<?> broker = (Broker<?>) recover.resolve();
             broker.open();
@@ -305,7 +306,7 @@ public class BrokerRecovererTest extends TestCase
             try
             {
                 UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
-                        _systemContext.getObjectFactory().recover(_brokerEntry, _systemContext);
+                        _systemConfig.getObjectFactory().recover(_brokerEntry, _systemConfig);
                 Broker<?> broker = (Broker<?>) recover.resolve();
                 broker.open();
                 fail("The broker creation should fail due to unsupported model version");
@@ -324,7 +325,7 @@ public class BrokerRecovererTest extends TestCase
 
     private void resolveObjects(ConfiguredObjectRecord... records)
     {
-        GenericRecoverer recoverer = new GenericRecoverer(_systemContext, Broker.class.getSimpleName());
+        GenericRecoverer recoverer = new GenericRecoverer(_systemConfig, Broker.class.getSimpleName());
         recoverer.recover(Arrays.asList(records));
     }
 

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import static org.apache.qpid.server.store.berkeleydb.BDBUtils.DEFAULT_DATABASE_CONFIG;
 import static org.apache.qpid.server.store.berkeleydb.BDBUtils.abortTransactionSafely;
 import static org.apache.qpid.server.store.berkeleydb.BDBUtils.closeCursorSafely;
-import static org.apache.qpid.server.store.berkeleydb.BDBUtils.DEFAULT_DATABASE_CONFIG;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -78,19 +78,25 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
     private String _storeLocation;
     private ConfiguredObject<?> _parent;
+    private final Class<? extends ConfiguredObject> _rootClass;
+    private boolean _overwrite;
+    private ConfiguredObjectRecord[] _initialRecords;
 
-    public BDBConfigurationStore()
+    public BDBConfigurationStore(final Class<? extends ConfiguredObject> rootClass)
     {
-        this(new StandardEnvironmentFacadeFactory());
+        this(new StandardEnvironmentFacadeFactory(), rootClass);
     }
 
-    public BDBConfigurationStore(EnvironmentFacadeFactory environmentFacadeFactory)
+    public BDBConfigurationStore(EnvironmentFacadeFactory environmentFacadeFactory, Class<? extends ConfiguredObject> rootClass)
     {
         _environmentFacadeFactory = environmentFacadeFactory;
+        _rootClass = rootClass;
     }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent)
+    public void openConfigurationStore(ConfiguredObject<?> parent,
+                                       final boolean overwrite,
+                                       final ConfiguredObjectRecord... initialRecords)
     {
         if (_configurationStoreOpen.compareAndSet(false,  true))
         {
@@ -100,6 +106,8 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             {
                 _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent);
                 _storeLocation = _environmentFacade.getStoreLocation();
+                _overwrite = overwrite;
+                _initialRecords = initialRecords;
             }
             else
             {
@@ -108,12 +116,30 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         }
     }
 
+    private void clearConfigurationRecords()
+    {
+        checkConfigurationStoreOpen();
+
+        _environmentFacade.clearDatabase(CONFIGURED_OBJECTS_DB_NAME, DEFAULT_DATABASE_CONFIG);
+        _environmentFacade.clearDatabase(CONFIGURED_OBJECT_HIERARCHY_DB_NAME, DEFAULT_DATABASE_CONFIG);
+    }
+
     @Override
     public void upgradeStoreStructure() throws StoreException
     {
         try
         {
             new Upgrader(_environmentFacade.getEnvironment(), _parent).upgradeIfNecessary();
+            if(_overwrite)
+            {
+                clearConfigurationRecords();
+                _overwrite = false;
+            }
+            if(getConfiguredObjectsDb().count() == 0l)
+            {
+                update(true, _initialRecords);
+            }
+            _initialRecords = new ConfiguredObjectRecord[0];
         }
         catch(DatabaseException e)
         {
@@ -397,11 +423,11 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         DatabaseEntry hierarchyKey = new DatabaseEntry();
         DatabaseEntry hierarchyValue = new DatabaseEntry();
 
-        for(Map.Entry<String, ConfiguredObjectRecord> parent : configuredObject.getParents().entrySet())
+        for(Map.Entry<String, UUID> parent : configuredObject.getParents().entrySet())
         {
 
             hierarchyBinding.objectToEntry(new HierarchyKey(configuredObject.getId(), parent.getKey()), hierarchyKey);
-            UUIDTupleBinding.getInstance().objectToEntry(parent.getValue().getId(), hierarchyValue);
+            UUIDTupleBinding.getInstance().objectToEntry(parent.getValue(), hierarchyValue);
             status = getConfiguredObjectHierarchyDb().put(txn, hierarchyKey, hierarchyValue);
             if (status != OperationStatus.SUCCESS)
             {
@@ -414,7 +440,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     private OperationStatus removeConfiguredObject(Transaction tx, ConfiguredObjectRecord record) throws StoreException
     {
         UUID id = record.getId();
-        Map<String, ConfiguredObjectRecord> parents = record.getParents();
+        Map<String, UUID> parents = record.getParents();
 
         if (LOGGER.isDebugEnabled())
         {

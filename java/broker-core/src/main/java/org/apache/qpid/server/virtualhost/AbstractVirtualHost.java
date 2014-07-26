@@ -167,7 +167,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _dtxRegistry = new DtxRegistry();
 
-        _eventLogger = _broker.getParent(SystemContext.class).getEventLogger();
+        _eventLogger = _broker.getParent(SystemConfig.class).getEventLogger();
 
         _eventLogger.message(VirtualHostMessages.CREATED(getName()));
 

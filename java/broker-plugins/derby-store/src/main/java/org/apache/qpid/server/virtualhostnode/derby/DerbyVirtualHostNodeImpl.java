@@ -28,6 +28,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.derby.DerbyConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
@@ -55,7 +56,7 @@ public class DerbyVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<De
     @Override
     protected DurableConfigurationStore createConfigurationStore()
     {
-        return new DerbyConfigurationStore();
+        return new DerbyConfigurationStore(VirtualHost.class);
     }
 
     @Override

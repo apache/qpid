@@ -28,12 +28,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
-abstract class AbstractMemoryStore implements DurableConfigurationStore, MessageStoreProvider
+public abstract class AbstractMemoryStore implements DurableConfigurationStore, MessageStoreProvider
 {
     private final MessageStore _messageStore = new MemoryMessageStore();
+    private final Class<? extends ConfiguredObject> _rootClass;
 
 
     private final ConcurrentHashMap<UUID, ConfiguredObjectRecord> _configuredObjectRecords = new ConcurrentHashMap<UUID, ConfiguredObjectRecord>();
+
+    protected AbstractMemoryStore(final Class<? extends ConfiguredObject> rootClass)
+    {
+        _rootClass = rootClass;
+    }
 
     @Override
     public void create(ConfiguredObjectRecord record)
@@ -49,10 +55,17 @@ abstract class AbstractMemoryStore implements DurableConfigurationStore, Message
     {
         for (ConfiguredObjectRecord record : records)
         {
-            ConfiguredObjectRecord previousValue = _configuredObjectRecords.replace(record.getId(), record);
-            if (previousValue == null && !createIfNecessary)
+            if(createIfNecessary)
             {
-                throw new StoreException("Record with id " + record.getId() + " does not exist");
+                _configuredObjectRecords.put(record.getId(), record);
+            }
+            else
+            {
+                ConfiguredObjectRecord previousValue = _configuredObjectRecords.replace(record.getId(), record);
+                if (previousValue == null)
+                {
+                    throw new StoreException("Record with id " + record.getId() + " does not exist");
+                }
             }
         }
     }
@@ -72,8 +85,14 @@ abstract class AbstractMemoryStore implements DurableConfigurationStore, Message
     }
 
     @Override
-    public void openConfigurationStore(ConfiguredObject<?> parent)
+    public void openConfigurationStore(ConfiguredObject<?> parent,
+                                       final boolean overwrite,
+                                       final ConfiguredObjectRecord... initialRecords)
     {
+        for(ConfiguredObjectRecord record : initialRecords)
+        {
+            _configuredObjectRecords.put(record.getId(), record);
+        }
     }
 
     @Override

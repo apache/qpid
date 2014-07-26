@@ -59,7 +59,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
 
     private final DurableConfigurationStore _store;
     private Map<UUID, ConfiguredObjectRecord> _cliEntries;
-    private final Map<UUID, Object> _quiescedEntriesOriginalState;
+    private Map<UUID, Object> _quiescedEntriesOriginalState;
     private final BrokerOptions _options;
     private ConfiguredObject<?> _parent;
     private HashMap<UUID, ConfiguredObjectRecord> _records;
@@ -69,15 +69,18 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     {
         _options = options;
         _store = store;
-        _quiescedEntriesOriginalState = quiesceEntries(options);
     }
 
     @Override
-    public void openConfigurationStore(final ConfiguredObject<?> parent)
+    public void openConfigurationStore(final ConfiguredObject<?> parent,
+                                       final boolean overwrite,
+                                       final ConfiguredObjectRecord... initialRecords)
             throws StoreException
     {
         _parent = parent;
-        _store.openConfigurationStore(parent);
+        _store.openConfigurationStore(parent, overwrite, initialRecords);
+
+        _quiescedEntriesOriginalState = quiesceEntries(_options);
 
 
         _records = new HashMap<UUID, ConfiguredObjectRecord>();
@@ -342,7 +345,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
             attributes.put(Port.AUTHENTICATION_PROVIDER, BrokerAdapter.MANAGEMENT_MODE_AUTHENTICATION);
         }
         ConfiguredObjectRecord portEntry = new ConfiguredObjectRecordImpl(UUID.randomUUID(), PORT_TYPE, attributes,
-                Collections.singletonMap(parent.getType(),parent));
+                Collections.singletonMap(parent.getType(),parent.getId()));
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug("Add management mode port configuration " + portEntry + " for port " + port + " and protocol "

@@ -18,51 +18,46 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.virtualhostnode.jdbc;
+package org.apache.qpid.server.store.jdbc;
 
-import java.util.Map;
-
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.AbstractSystemConfig;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.SystemConfigFactoryConstructor;
 import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.server.store.jdbc.GenericJDBCConfigurationStore;
-import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
-@ManagedObject(type = JDBCVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false )
-public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDBCVirtualHostNodeImpl> implements JDBCVirtualHostNode<JDBCVirtualHostNodeImpl>
+@ManagedObject( category = false, type = JDBCSystemConfigImpl.SYSTEM_CONFIG_TYPE)
+public class JDBCSystemConfigImpl extends AbstractSystemConfig<JDBCSystemConfigImpl> implements JDBCSystemConfig<JDBCSystemConfigImpl>
 {
-    public static final String VIRTUAL_HOST_NODE_TYPE = "JDBC";
+    public static final String SYSTEM_CONFIG_TYPE = "JDBC";
 
     @ManagedAttributeField
     private String _connectionUrl;
-
     @ManagedAttributeField
     private String _connectionPoolType;
-
     @ManagedAttributeField
     private String _username;
-
     @ManagedAttributeField
     private String _password;
 
-    @ManagedObjectFactoryConstructor
-    public JDBCVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> parent)
+    @SystemConfigFactoryConstructor
+    public JDBCSystemConfigImpl(final TaskExecutor taskExecutor,
+                                final EventLogger eventLogger,
+                                final LogRecorder logRecorder,
+                                final BrokerOptions brokerOptions)
     {
-        super(attributes, parent);
+        super(taskExecutor, eventLogger, logRecorder, brokerOptions);
     }
 
     @Override
-    protected void writeLocationEventLog()
+    protected DurableConfigurationStore createStoreObject()
     {
-    }
-
-    @Override
-    protected DurableConfigurationStore createConfigurationStore()
-    {
-        return new GenericJDBCConfigurationStore(VirtualHost.class);
+        return new GenericJDBCConfigurationStore(Broker.class);
     }
 
     @Override
@@ -87,14 +82,5 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
     public String getPassword()
     {
         return _password;
-    }
-
-    @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() +
-                                        ", connectionUrl=" + getConnectionUrl() +
-                                        ", connectionPoolType=" + getConnectionPoolType() +
-                                        ", username=" + getUsername() + "]";
     }
 }

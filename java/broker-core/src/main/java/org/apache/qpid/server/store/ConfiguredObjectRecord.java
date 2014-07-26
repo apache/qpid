@@ -31,5 +31,5 @@ public interface ConfiguredObjectRecord
 
     Map<String,Object> getAttributes();
 
-    Map<String, ConfiguredObjectRecord> getParents();
+    Map<String, UUID> getParents();
 }

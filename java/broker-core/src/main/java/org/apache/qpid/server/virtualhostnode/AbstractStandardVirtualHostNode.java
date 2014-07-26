@@ -71,7 +71,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
             LOGGER.debug("Activating virtualhost node " + this);
         }
 
-        getConfigurationStore().openConfigurationStore(this);
+        getConfigurationStore().openConfigurationStore(this, false);
         getConfigurationStore().upgradeStoreStructure();
 
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CREATED());

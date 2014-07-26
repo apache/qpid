@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.store.ConfiguredObjectRecord;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
 public class BDBConfiguredObjectRecord implements ConfiguredObjectRecord
 {
     private final UUID _id;
     private final String _type;
     private final Map<String,Object> _attributes;
-    private Map<String, ConfiguredObjectRecord> _parents = new HashMap<String, ConfiguredObjectRecord>();
+    private Map<String, UUID> _parents = new HashMap<>();
 
     public BDBConfiguredObjectRecord(final UUID id, final String type, final Map<String, Object> attributes)
     {
@@ -58,11 +58,11 @@ public class BDBConfiguredObjectRecord implements ConfiguredObjectRecord
 
     void addParent(String parentType, ConfiguredObjectRecord parent)
     {
-        _parents.put(parentType, parent);
+        _parents.put(parentType, parent.getId());
     }
 
     @Override
-    public Map<String, ConfiguredObjectRecord> getParents()
+    public Map<String, UUID> getParents()
     {
         return Collections.unmodifiableMap(_parents);
     }

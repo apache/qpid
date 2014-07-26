@@ -44,46 +44,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.Sequence;
-import com.sleepycat.je.SequenceConfig;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.store.StoreFuture;
-import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
-import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
-import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
-import org.apache.qpid.server.util.DaemonThreadFactory;
-import org.codehaus.jackson.map.ObjectMapper;
-
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
+import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Durability.ReplicaAckPolicy;
 import com.sleepycat.je.Durability.SyncPolicy;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
+import com.sleepycat.je.Sequence;
+import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.TransactionConfig;
-import com.sleepycat.je.rep.AppStateMonitor;
-import com.sleepycat.je.rep.InsufficientLogException;
-import com.sleepycat.je.rep.InsufficientAcksException;
-import com.sleepycat.je.rep.InsufficientReplicasException;
-import com.sleepycat.je.rep.NetworkRestore;
-import com.sleepycat.je.rep.NetworkRestoreConfig;
-import com.sleepycat.je.rep.NodeType;
-import com.sleepycat.je.rep.NodeState;
-import com.sleepycat.je.rep.RepInternal;
-import com.sleepycat.je.rep.ReplicatedEnvironment;
-import com.sleepycat.je.rep.ReplicationConfig;
-import com.sleepycat.je.rep.ReplicationGroup;
-import com.sleepycat.je.rep.ReplicationMutableConfig;
-import com.sleepycat.je.rep.ReplicationNode;
-import com.sleepycat.je.rep.RestartRequiredException;
-import com.sleepycat.je.rep.StateChangeEvent;
-import com.sleepycat.je.rep.StateChangeListener;
+import com.sleepycat.je.rep.*;
 import com.sleepycat.je.rep.util.DbPing;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
@@ -91,6 +65,15 @@ import com.sleepycat.je.rep.utilint.ServiceDispatcher.ServiceConnectFailedExcept
 import com.sleepycat.je.rep.vlsn.VLSNRange;
 import com.sleepycat.je.utilint.PropUtil;
 import com.sleepycat.je.utilint.VLSN;
+import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
+import org.apache.qpid.server.util.DaemonThreadFactory;
 
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
@@ -399,6 +382,15 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             }
         }
         return cachedHandle;
+    }
+
+
+    @Override
+    public Database clearDatabase(String name, DatabaseConfig databaseConfig)
+    {
+        closeDatabase(name);
+        _environment.removeDatabase(null, name);
+        return openDatabase(name, databaseConfig);
     }
 
     @Override

@@ -25,9 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
-import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import javax.security.auth.Subject;
 
@@ -35,8 +33,6 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
-import org.apache.qpid.server.configuration.BrokerConfigurationStoreCreator;
-import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -44,8 +40,9 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.model.SystemContext;
-import org.apache.qpid.server.model.SystemContextImpl;
+import org.apache.qpid.server.model.SystemConfig;
+import org.apache.qpid.server.plugin.PluggableFactoryLoader;
+import org.apache.qpid.server.plugin.SystemConfigFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
@@ -126,6 +123,14 @@ public class Broker
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
+        PluggableFactoryLoader<SystemConfigFactory> configFactoryLoader = new PluggableFactoryLoader<>(SystemConfigFactory.class);
+        SystemConfigFactory configFactory = configFactoryLoader.get(storeType);
+        if(configFactory == null)
+        {
+            LOGGER.fatal("Unknown config store type '"+storeType+"', only the following types are supported: " + configFactoryLoader.getSupportedTypes());
+            throw new IllegalArgumentException("Unknown config store type '"+storeType+"', only the following types are supported: " + configFactoryLoader.getSupportedTypes());
+        }
+
         _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
 
         //Allow skipping the logging configuration for people who are
@@ -138,20 +143,11 @@ public class Broker
         LogRecorder logRecorder = new LogRecorder();
 
         _taskExecutor.start();
-        SystemContext systemContext = new SystemContextImpl(_taskExecutor, _eventLogger, logRecorder, options);
+        SystemConfig systemConfig = configFactory.newInstance(_taskExecutor, _eventLogger, logRecorder, options);
+        systemConfig.open();
+        DurableConfigurationStore store = systemConfig.getConfigurationStore();
 
-        BrokerConfigurationStoreCreator storeCreator = new BrokerConfigurationStoreCreator();
-        DurableConfigurationStore store = storeCreator.createStore(systemContext, storeType, options.getInitialConfigurationLocation(),
-                                                                 options.isOverwriteConfigurationStore(), options.getConfigProperties());
-
-        if (options.isManagementMode())
-        {
-            store = new ManagementModeStoreHandler(store, options);
-        }
-
-        store.openConfigurationStore(systemContext);
-
-        _applicationRegistry = new ApplicationRegistry(store,systemContext);
+        _applicationRegistry = new ApplicationRegistry(store, systemConfig);
         try
         {
             _applicationRegistry.initialise(options);
@@ -170,24 +166,6 @@ public class Broker
             throw e;
         }
 
-    }
-
-    public static void parsePortList(Set<Integer> output, List<?> ports) throws InitException
-    {
-        if(ports != null)
-        {
-            for(Object o : ports)
-            {
-                try
-                {
-                    output.add(Integer.parseInt(String.valueOf(o)));
-                }
-                catch (NumberFormatException e)
-                {
-                    throw new InitException("Invalid port: " + o, e);
-                }
-            }
-        }
     }
 
     private void configureLogging(File logConfigFile, int logWatchTime) throws InitException, IOException

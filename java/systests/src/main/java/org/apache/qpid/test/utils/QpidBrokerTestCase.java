@@ -95,7 +95,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected final static String QpidHome = System.getProperty("QPID_HOME");
     private final File _configFile = new File(System.getProperty("broker.config"));
     private File _logConfigFile;
-    protected final String _brokerStoreType = System.getProperty("broker.config-store-type", "json");
+    protected final String _brokerStoreType = System.getProperty("broker.config-store-type", "JSON");
     protected static final Logger _logger = Logger.getLogger(QpidBrokerTestCase.class);
     protected static final int LOGMONITOR_TIMEOUT = 5000;
 
@@ -238,7 +238,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             _taskExecutor = new TaskExecutorImpl();
             _taskExecutor.start();
         }
-        TestBrokerConfiguration  configuration = new TestBrokerConfiguration(System.getProperty(_brokerStoreType), _configFile.getAbsolutePath(), _taskExecutor);
+        TestBrokerConfiguration  configuration = new TestBrokerConfiguration(_brokerStoreType, _configFile.getAbsolutePath(), _taskExecutor);
         synchronized (_brokerConfigurations)
         {
             _brokerConfigurations.put(actualPort, configuration);

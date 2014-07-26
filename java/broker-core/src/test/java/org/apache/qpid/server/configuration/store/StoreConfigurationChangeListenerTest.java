@@ -21,32 +21,32 @@
 package org.apache.qpid.server.configuration.store;
 
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
-import org.apache.qpid.server.configuration.ConfigurationEntryStore;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class StoreConfigurationChangeListenerTest extends QpidTestCase
 {
-    private ConfigurationEntryStore _store;
+    private DurableConfigurationStore _store;
     private StoreConfigurationChangeListener _listener;
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        _store = mock(ConfigurationEntryStore.class);
+        _store = mock(DurableConfigurationStore.class);
         _listener = new StoreConfigurationChangeListener(_store);
     }
 
