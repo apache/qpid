@@ -27,6 +27,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
@@ -84,7 +85,7 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
             JDBCSettings settings = (JDBCSettings)parent;
             _connectionURL = settings.getConnectionUrl();
 
-            JDBCDetails details = JDBCDetails.getDetailsForJdbcUrl(_connectionURL, parent.getContext());
+            JDBCDetails details = JDBCDetails.getDetailsForJdbcUrl(_connectionURL, parent);
 
             if (!details.isKnownVendor() && getLogger().isInfoEnabled())
             {
@@ -111,8 +112,13 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
 
             try
             {
-                Map<String, String> providerAttributes = new HashMap(_parent.getContext());
-                providerAttributes.keySet().retainAll(connectionProviderFactory.getProviderAttributeNames());
+                Map<String, String> providerAttributes = new HashMap<>();
+                Set<String> providerAttributeNames = connectionProviderFactory.getProviderAttributeNames();
+                providerAttributeNames.retainAll(parent.getContextKeys());
+                for(String attr : providerAttributeNames)
+                {
+                    providerAttributes.put(attr, parent.getContextValue(String.class, attr));
+                }
 
                 _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL,
                                                                                       settings.getUsername(),

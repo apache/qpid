@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.server.message;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageImpl<X,T>, T extends StorableMessageMetaData> implements ServerMessage<T>
 {
 
     private static final AtomicIntegerFieldUpdater<AbstractServerMessageImpl> _refCountUpdater =
             AtomicIntegerFieldUpdater.newUpdater(AbstractServerMessageImpl.class, "_referenceCount");
+
 
     private volatile int _referenceCount = 0;
     private final StoredMessage<T> _handle;
@@ -113,7 +113,7 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
     @Override
     final public MessageReference<X> newReference()
     {
-        return new Reference();
+        return new Reference(this);
     }
 
     @Override
@@ -148,26 +148,32 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
         return "Message[" + debugIdentity() + "]";
     }
 
-    private final class Reference implements MessageReference<X>
+    private static class Reference<X extends AbstractServerMessageImpl<X,T>, T extends StorableMessageMetaData>
+            implements MessageReference<X>
     {
 
-        private final AtomicBoolean _released = new AtomicBoolean(false);
+        private static final AtomicIntegerFieldUpdater<Reference> _releasedUpdater =
+                AtomicIntegerFieldUpdater.newUpdater(Reference.class, "_released");
 
-        private Reference()
+        private AbstractServerMessageImpl<X, T> _message;
+        private volatile int _released;
+
+        private Reference(final AbstractServerMessageImpl<X, T> message)
         {
-            incrementReference();
+            _message = message;
+            _message.incrementReference();
         }
 
         public X getMessage()
         {
-            return (X) AbstractServerMessageImpl.this;
+            return (X) _message;
         }
 
-        public void release()
+        public synchronized void release()
         {
-            if(!_released.getAndSet(true))
+            if(_releasedUpdater.compareAndSet(this,0,1))
             {
-                decrementReference();
+                _message.decrementReference();
             }
         }
 

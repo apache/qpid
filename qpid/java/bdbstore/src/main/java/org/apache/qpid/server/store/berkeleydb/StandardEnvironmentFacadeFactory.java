@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.sleepycat.je.config.ConfigParam;
 import com.sleepycat.je.config.EnvironmentParams;
@@ -65,16 +66,15 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
 
     private Map<String, String> buildEnvironmentConfiguration(ConfiguredObject<?> parent)
     {
-        final Map<String, String> context = parent.getContext();
         Map<String, String> envConfigMap = new HashMap<>();
 
         for (ConfigParam cp : EnvironmentParams.SUPPORTED_PARAMS.values())
         {
             final String parameterName = cp.getName();
-            if (context.containsKey(parameterName) && !cp.isForReplication())
+            Set<String> contextKeys = parent.getContextKeys();
+            if (!cp.isForReplication() && contextKeys.contains(parameterName))
             {
-                String contextValue = context.get(parameterName);
-                envConfigMap.put(parameterName, contextValue);
+                envConfigMap.put(parameterName, parent.getContextValue(String.class, parameterName));
             }
         }
         return Collections.unmodifiableMap(envConfigMap);

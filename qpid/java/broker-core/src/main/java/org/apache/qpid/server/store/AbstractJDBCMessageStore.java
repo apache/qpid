@@ -716,8 +716,8 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
     }
 
-    private void recordXid(ConnectionWrapper connWrapper, long format, byte[] globalId, byte[] branchId,
-                           Transaction.Record[] enqueues, Transaction.Record[] dequeues) throws StoreException
+    private List<Runnable> recordXid(ConnectionWrapper connWrapper, long format, byte[] globalId, byte[] branchId,
+                                     Transaction.Record[] enqueues, Transaction.Record[] dequeues) throws StoreException
     {
         Connection conn = connWrapper.getConnection();
 
@@ -737,6 +737,17 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             {
                 stmt.close();
             }
+
+            List<Runnable> postActions = new ArrayList<>();
+            for(org.apache.qpid.server.store.Transaction.Record enqueue : enqueues)
+            {
+                StoredMessage storedMessage = enqueue.getMessage().getStoredMessage();
+                if(storedMessage instanceof StoredJDBCMessage)
+                {
+                    postActions.add(((StoredJDBCMessage) storedMessage).store(conn));
+                }
+            }
+
 
             stmt = conn.prepareStatement(INSERT_INTO_XID_ACTIONS);
 
@@ -773,7 +784,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             {
                 stmt.close();
             }
-
+            return postActions;
         }
         catch (SQLException e)
         {
@@ -1105,6 +1116,47 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
     }
 
+
+    private byte[] getAllContent(long messageId)
+    {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+
+        try
+        {
+            conn = newAutoCommitConnection();
+
+            stmt = conn.prepareStatement(SELECT_FROM_MESSAGE_CONTENT);
+            stmt.setLong(1,messageId);
+            ResultSet rs = stmt.executeQuery();
+
+            int written = 0;
+
+            if (rs.next())
+            {
+
+                byte[] dataAsBytes = getBlobAsBytes(rs, 1);
+                return dataAsBytes;
+            }
+
+            throw new StoreException("No such message, id: " + messageId);
+
+        }
+        catch (SQLException e)
+        {
+            throw new StoreException("Error retrieving content for message " + messageId + ": " + e.getMessage(), e);
+        }
+        finally
+        {
+            JdbcUtils.closePreparedStatement(stmt, getLogger());
+            JdbcUtils.closeConnection(conn, getLogger());
+        }
+
+
+    }
+
+
+
     @Override
     public boolean isPersistent()
     {
@@ -1116,7 +1168,8 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     {
         private final ConnectionWrapper _connWrapper;
         private int _storeSizeIncrease;
-        private final List<Runnable> _onCommitActions = new ArrayList<>();
+        private final List<Runnable> _preCommitActions = new ArrayList<>();
+        private final List<Runnable> _postCommitActions = new ArrayList<>();
 
         protected JDBCTransaction()
         {
@@ -1138,19 +1191,20 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             final StoredMessage storedMessage = message.getStoredMessage();
             if(storedMessage instanceof StoredJDBCMessage)
             {
-                _onCommitActions.add(new Runnable()
+                _preCommitActions.add(new Runnable()
                 {
                     @Override
                     public void run()
                     {
                         try
                         {
-                            ((StoredJDBCMessage) storedMessage).store(_connWrapper.getConnection());
+                            _postCommitActions.add(((StoredJDBCMessage) storedMessage).store(_connWrapper.getConnection()));
                             _storeSizeIncrease += storedMessage.getMetaData().getContentSize();
                         }
                         catch (SQLException e)
                         {
-                            throw new StoreException("Exception on enqueuing message into message store" + _messageId, e);
+                            throw new StoreException("Exception on enqueuing message into message store" + _messageId,
+                                                     e);
                         }
                     }
                 });
@@ -1174,6 +1228,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             doPreCommitActions();
             AbstractJDBCMessageStore.this.commitTran(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
+            doPostCommitActions();
         }
 
         @Override
@@ -1183,23 +1238,33 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             doPreCommitActions();
             StoreFuture storeFuture = AbstractJDBCMessageStore.this.commitTranAsync(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
+            doPostCommitActions();
             return storeFuture;
         }
 
         private void doPreCommitActions()
         {
-            for(Runnable action : _onCommitActions)
+            for(Runnable action : _preCommitActions)
             {
                 action.run();
             }
-            _onCommitActions.clear();
+            _preCommitActions.clear();
+        }
+
+        private void doPostCommitActions()
+        {
+            for(Runnable action : _postCommitActions)
+            {
+                action.run();
+            }
+            _postCommitActions.clear();
         }
 
         @Override
         public void abortTran()
         {
             checkMessageStoreOpen();
-            _onCommitActions.clear();
+            _preCommitActions.clear();
             AbstractJDBCMessageStore.this.abortTran(_connWrapper);
         }
 
@@ -1216,56 +1281,171 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         {
             checkMessageStoreOpen();
 
-            AbstractJDBCMessageStore.this.recordXid(_connWrapper, format, globalId, branchId, enqueues, dequeues);
+            _postCommitActions.addAll(AbstractJDBCMessageStore.this.recordXid(_connWrapper, format, globalId, branchId, enqueues, dequeues));
         }
     }
 
-    private class StoredJDBCMessage implements StoredMessage
+
+    static interface MessageDataRef<T extends StorableMessageMetaData>
+    {
+        T getMetaData();
+        byte[] getData();
+        void setData(byte[] data);
+        boolean isHardRef();
+    }
+
+    private static final class MessageDataHardRef<T extends StorableMessageMetaData> implements MessageDataRef<T>
+    {
+        private final T _metaData;
+        private byte[] _data;
+
+        private MessageDataHardRef(final T metaData)
+        {
+            _metaData = metaData;
+        }
+
+        @Override
+        public T getMetaData()
+        {
+            return _metaData;
+        }
+
+        @Override
+        public byte[] getData()
+        {
+            return _data;
+        }
+
+        @Override
+        public void setData(final byte[] data)
+        {
+            _data = data;
+        }
+
+        @Override
+        public boolean isHardRef()
+        {
+            return true;
+        }
+    }
+
+    private static final class MessageData<T extends StorableMessageMetaData>
+    {
+        private T _metaData;
+        private SoftReference<byte[]> _data;
+
+        private MessageData(final T metaData, final byte[] data)
+        {
+            _metaData = metaData;
+
+            if(data != null)
+            {
+                _data = new SoftReference<>(data);
+            }
+        }
+
+        public T getMetaData()
+        {
+            return _metaData;
+        }
+
+        public byte[] getData()
+        {
+            return _data == null ? null : _data.get();
+        }
+
+        public void setData(final byte[] data)
+        {
+            _data = new SoftReference<>(data);
+        }
+
+
+    }
+    private static final class MessageDataSoftRef<T extends StorableMessageMetaData> extends SoftReference<MessageData<T>> implements MessageDataRef<T>
+    {
+
+        public MessageDataSoftRef(final T metadata, byte[] data)
+        {
+            super(new MessageData<T>(metadata, data));
+        }
+
+        @Override
+        public T getMetaData()
+        {
+            MessageData<T> ref = get();
+            return ref == null ? null : ref.getMetaData();
+        }
+
+        @Override
+        public byte[] getData()
+        {
+            MessageData<T> ref = get();
+
+            return ref == null ? null : ref.getData();
+        }
+
+        @Override
+        public void setData(final byte[] data)
+        {
+            MessageData<T> ref = get();
+            if(ref != null)
+            {
+                ref.setData(data);
+            }
+        }
+
+        @Override
+        public boolean isHardRef()
+        {
+            return false;
+        }
+    }
+
+    private class StoredJDBCMessage<T extends StorableMessageMetaData> implements StoredMessage<T>
     {
 
         private final long _messageId;
-        private final boolean _isRecovered;
-        private StorableMessageMetaData _metaData;
-        private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
-        private byte[] _data;
-        private volatile SoftReference<byte[]> _dataRef;
+
+        private volatile MessageDataRef<T> _messageDataRef;
 
 
-        StoredJDBCMessage(long messageId, StorableMessageMetaData metaData)
+        StoredJDBCMessage(long messageId, T metaData)
         {
             this(messageId, metaData, false);
         }
 
 
         StoredJDBCMessage(long messageId,
-                          StorableMessageMetaData metaData, boolean isRecovered)
+                          T metaData, boolean isRecovered)
         {
             _messageId = messageId;
-            _isRecovered = isRecovered;
 
-            if(!_isRecovered)
+            if(!isRecovered)
             {
-                _metaData = metaData;
+                _messageDataRef = new MessageDataHardRef<>(metaData);
             }
-            _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
+            else
+            {
+                _messageDataRef = new MessageDataSoftRef<>(metaData, null);
+            }
         }
 
         @Override
-        public StorableMessageMetaData getMetaData()
+        public T getMetaData()
         {
-            StorableMessageMetaData metaData = _metaData == null ? _metaDataRef.get() : _metaData;
+            T metaData = _messageDataRef.getMetaData();
             if(metaData == null)
             {
                 checkMessageStoreOpen();
                 try
                 {
-                    metaData = AbstractJDBCMessageStore.this.getMetaData(_messageId);
+                    metaData = (T) AbstractJDBCMessageStore.this.getMetaData(_messageId);
+                    _messageDataRef = new MessageDataSoftRef<>(metaData,null);
                 }
                 catch (SQLException e)
                 {
                     throw new StoreException(e);
                 }
-                _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
             }
 
             return metaData;
@@ -1281,21 +1461,23 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         public void addContent(int offsetInMessage, ByteBuffer src)
         {
             src = src.slice();
+            byte[] data = _messageDataRef.getData();
 
-            if(_data == null)
+            if(data == null)
             {
-                _data = new byte[src.remaining()];
-                _dataRef = new SoftReference<byte[]>(_data);
-                src.duplicate().get(_data);
+                data = new byte[src.remaining()];
+                src.duplicate().get(data);
+                _messageDataRef.setData(data);
             }
             else
             {
-                byte[] oldData = _data;
-                _data = new byte[oldData.length + src.remaining()];
-                _dataRef = new SoftReference<byte[]>(_data);
+                byte[] oldData = data;
+                data = new byte[oldData.length + src.remaining()];
 
-                System.arraycopy(oldData,0,_data,0,oldData.length);
-                src.duplicate().get(_data, oldData.length, src.remaining());
+                System.arraycopy(oldData,0,data,0,oldData.length);
+                src.duplicate().get(data, oldData.length, src.remaining());
+
+                _messageDataRef.setData(data);
             }
 
         }
@@ -1303,34 +1485,90 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         @Override
         public int getContent(int offsetInMessage, ByteBuffer dst)
         {
-            byte[] data = _dataRef == null ? null : _dataRef.get();
-            if(data != null)
+            byte[] data = _messageDataRef.getData();
+
+            if(data == null)
             {
-                int length = Math.min(dst.remaining(), data.length - offsetInMessage);
-                dst.put(data, offsetInMessage, length);
-                return length;
+                if(stored())
+                {
+                    checkMessageStoreOpen();
+                    getLogger().debug("GET CONTENT for message id " + _messageId);
+                    data = AbstractJDBCMessageStore.this.getAllContent(_messageId);
+                    T metaData = _messageDataRef.getMetaData();
+                    if (metaData == null)
+                    {
+                        try
+                        {
+                            metaData = (T) AbstractJDBCMessageStore.this.getMetaData(_messageId);
+                            _messageDataRef = new MessageDataSoftRef<>(metaData, data);
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new StoreException(e);
+                        }
+                    }
+                    else
+                    {
+                        _messageDataRef.setData(data);
+                    }
+                }
+                else
+                {
+                    data = new byte[0];
+                }
             }
-            else
-            {
-                checkMessageStoreOpen();
-                return AbstractJDBCMessageStore.this.getContent(_messageId, offsetInMessage, dst);
-            }
+
+            int length = Math.min(dst.remaining(), data.length - offsetInMessage);
+            dst.put(data, offsetInMessage, length);
+            return length;
+
         }
 
 
         @Override
         public ByteBuffer getContent(int offsetInMessage, int size)
         {
-            ByteBuffer buf = ByteBuffer.allocate(size);
-            int length = getContent(offsetInMessage, buf);
-            buf.position(0);
-            buf.limit(length);
-            return  buf;
+            byte[] data = _messageDataRef.getData();
+
+            if(data == null)
+            {
+
+                if(stored())
+                {
+                    checkMessageStoreOpen();
+
+                    data = AbstractJDBCMessageStore.this.getAllContent(_messageId);
+                    T metaData = _messageDataRef.getMetaData();
+                    if (metaData == null)
+                    {
+                        try
+                        {
+                            metaData = (T) AbstractJDBCMessageStore.this.getMetaData(_messageId);
+                            _messageDataRef = new MessageDataSoftRef<>(metaData, data);
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new StoreException(e);
+                        }
+                    }
+                    else
+                    {
+                        _messageDataRef.setData(data);
+                    }
+                }
+                else
+                {
+                    data = new byte[0];
+                }
+            }
+            return ByteBuffer.wrap(data,offsetInMessage,size);
+
         }
 
         @Override
         public void remove()
         {
+            getLogger().debug("REMOVE called on message: " + _messageId);
             checkMessageStoreOpen();
 
             int delta = getMetaData().getContentSize();
@@ -1338,32 +1576,69 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             storedSizeChange(-delta);
         }
 
-        private synchronized void store(final Connection conn) throws SQLException
+        private synchronized Runnable store(final Connection conn) throws SQLException
         {
             if (!stored())
             {
-                try
-                {
-                    storeMetaData(conn, _messageId, _metaData);
-                    AbstractJDBCMessageStore.this.addContent(conn, _messageId,
-                                                                   _data == null ? ByteBuffer.allocate(0) : ByteBuffer.wrap(_data));
-                }
-                finally
-                {
-                    _metaData = null;
-                    _data = null;
-                }
+                getLogger().debug("STORING message id " + _messageId);
+                storeMetaData(conn, _messageId, _messageDataRef.getMetaData());
+                AbstractJDBCMessageStore.this.addContent(conn, _messageId,
+                                                               _messageDataRef.getData() == null
+                                                                       ? ByteBuffer.allocate(0)
+                                                                       : ByteBuffer.wrap(_messageDataRef.getData()));
+
 
                 if(getLogger().isDebugEnabled())
                 {
                     getLogger().debug("Storing message " + _messageId + " to store");
                 }
+
+                MessageDataRef<T> hardRef = _messageDataRef;
+                MessageDataSoftRef<T> messageDataSoftRef;
+                MessageData<T> ref;
+                do
+                {
+                    messageDataSoftRef = new MessageDataSoftRef<>(hardRef.getMetaData(), hardRef.getData());
+                    ref = messageDataSoftRef.get();
+                }
+                while (ref == null);
+
+                _messageDataRef = messageDataSoftRef;
+
+                class Pointer implements Runnable
+                {
+                    private MessageData<T> _ref;
+
+                    Pointer(final MessageData<T> ref)
+                    {
+                        getLogger().debug("POST COMMIT for message id " + _messageId);
+                        _ref = ref;
+                    }
+
+                    @Override
+                    public void run()
+                    {
+                        _ref = null;
+                    }
+                }
+                return new Pointer(ref);
+            }
+            else
+            {
+                return new Runnable()
+                {
+
+                    @Override
+                    public void run()
+                    {
+                    }
+                };
             }
         }
 
         private boolean stored()
         {
-            return _metaData == null || _isRecovered;
+            return !_messageDataRef.isHardRef();
         }
     }
 

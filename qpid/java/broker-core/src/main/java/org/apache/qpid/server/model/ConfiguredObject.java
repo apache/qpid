@@ -23,6 +23,7 @@ package org.apache.qpid.server.model;
 import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -77,6 +78,8 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     Map<String, String> getContext();
 
     <T> T getContextValue(Class<T> clazz, String propertyName);
+
+    Set<String> getContextKeys();
 
     @DerivedAttribute( persist = true )
     String getLastUpdatedBy();

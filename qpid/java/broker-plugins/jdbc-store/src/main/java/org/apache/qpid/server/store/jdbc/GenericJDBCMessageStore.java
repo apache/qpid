@@ -28,6 +28,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+
+import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 
@@ -35,8 +38,6 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.StoreException;
-
-import javax.security.auth.Subject;
 
 /**
  * Implementation of a MessageStore backed by a Generic JDBC Database.
@@ -60,7 +61,7 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
         JDBCSettings settings = (JDBCSettings)parent;
         _connectionURL = settings.getConnectionUrl();
 
-        JDBCDetails details = JDBCDetails.getDetailsForJdbcUrl(_connectionURL, parent.getContext());
+        JDBCDetails details = JDBCDetails.getDetailsForJdbcUrl(_connectionURL, parent);
 
         if (!details.isKnownVendor() && getLogger().isInfoEnabled())
         {
@@ -90,9 +91,13 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
 
         try
         {
-            Map<String, String> providerAttributes = new HashMap(parent.getContext());
-            providerAttributes.keySet().retainAll(connectionProviderFactory.getProviderAttributeNames());
-
+            Map<String, String> providerAttributes = new HashMap<>();
+            Set<String> providerAttributeNames = connectionProviderFactory.getProviderAttributeNames();
+            providerAttributeNames.retainAll(parent.getContextKeys());
+            for(String attr : providerAttributeNames)
+            {
+                providerAttributes.put(attr, parent.getContextValue(String.class, attr));
+            }
 
             _connectionProvider = connectionProviderFactory.getConnectionProvider(_connectionURL,
                                                                                   settings.getUsername(),

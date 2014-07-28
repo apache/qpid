@@ -22,6 +22,7 @@ package org.apache.qpid.server.virtualhost.berkeleydb;
 
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.SizeMonitoringSettings;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -30,6 +31,12 @@ public interface BDBVirtualHost<X extends BDBVirtualHost<X>> extends VirtualHost
 {
 
     String STORE_PATH = "storePath";
+
+    // Default the JE cache to 5% of total memory, but no less than 10Mb and no more than 200Mb
+    @ManagedContextDefault(name="je.maxMemory")
+    long DEFAULT_JE_CACHE_SIZE = Math.max(10l*1024l*1024l,
+                                          Math.min(200l*1024l*1024l,
+                                                   Runtime.getRuntime().maxMemory()/20l));
 
     @ManagedAttribute(mandatory = true)
     String getStorePath();

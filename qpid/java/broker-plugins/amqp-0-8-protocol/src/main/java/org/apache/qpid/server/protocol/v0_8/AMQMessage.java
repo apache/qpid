@@ -29,8 +29,6 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AbstractServerMessageImpl;
 import org.apache.qpid.server.store.StoredMessage;
 
-import java.nio.ByteBuffer;
-
 /**
  * A deliverable message.
  */
@@ -38,10 +36,6 @@ public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMet
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
-
-    /** Flag to indicate that this message requires 'immediate' delivery. */
-
-    private long _expiration;
 
     private final long _size;
 
@@ -54,11 +48,6 @@ public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMet
     {
         super(handle, connectionReference);
         _size = handle.getMetaData().getContentSize();
-    }
-
-    public void setExpiration(final long expiration)
-    {
-        _expiration = expiration;
     }
 
     public MessageMetaData getMessageMetaData()
@@ -110,16 +99,14 @@ public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMet
         return getMessagePublishInfo().isImmediate();
     }
 
-
     public boolean isMandatory()
     {
         return getMessagePublishInfo().isMandatory();
     }
 
-
     public long getExpiration()
     {
-        return _expiration;
+        return getMessageHeader().getExpiration();
     }
 
 

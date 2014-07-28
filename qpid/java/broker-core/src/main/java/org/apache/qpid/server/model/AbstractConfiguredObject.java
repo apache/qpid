@@ -1339,6 +1339,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return converter.convert("${" + propertyName + "}", this);
     }
 
+    @Override
+    public Set<String> getContextKeys()
+    {
+        Map<String,String> inheritedContext = new HashMap<>();
+        generateInheritedContext(getModel(), this, inheritedContext);
+        return Collections.unmodifiableSet(inheritedContext.keySet());
+    }
+
     private OwnAttributeResolver getOwnAttributeResolver()
     {
         return _attributeResolver;

@@ -19,9 +19,15 @@
 
 package org.apache.qpid.server.store.jdbc;
 
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 
 public abstract class JDBCDetails
 {
@@ -216,7 +222,75 @@ public abstract class JDBCDetails
         return result;
     }
 
+    public static JDBCDetails getDetailsForJdbcUrl(String jdbcUrl, final ConfiguredObject<?> object)
+    {
+        final Set<String> contextKeys = object.getContextKeys();
+        Map<String,String> mapConversion = new AbstractMap<String, String>()
+        {
+            @Override
+            public Set<Entry<String, String>> entrySet()
+            {
+                return new AbstractSet<Entry<String, String>>()
+                {
+                    @Override
+                    public Iterator<Entry<String, String>> iterator()
+                    {
+                        final Iterator<String> underlying = contextKeys.iterator();
+                        return new Iterator<Entry<String, String>>()
+                        {
+                            @Override
+                            public boolean hasNext()
+                            {
+                                return underlying.hasNext();
+                            }
 
+                            @Override
+                            public Entry<String, String> next()
+                            {
+                                final String key = underlying.next();
+                                final String value = object.getContextValue(String.class, key);
+                                return new Entry<String,String>()
+                                {
+
+                                    @Override
+                                    public String getKey()
+                                    {
+                                        return key;
+                                    }
+
+                                    @Override
+                                    public String getValue()
+                                    {
+                                        return value;
+                                    }
+
+                                    @Override
+                                    public String setValue(final String value)
+                                    {
+                                        throw new UnsupportedOperationException();
+                                    }
+                                };
+
+                            }
+
+                            @Override
+                            public void remove()
+                            {
+                                throw new UnsupportedOperationException();
+                            }
+                        };
+                    }
+
+                    @Override
+                    public int size()
+                    {
+                        return contextKeys.size();
+                    }
+                };
+            }
+        };
+        return getDetailsForJdbcUrl(jdbcUrl, mapConversion);
+    }
     public static JDBCDetails getDetailsForJdbcUrl(String jdbcUrl, final Map<String, String> contextMap)
     {
         String[] components = jdbcUrl.split(":", 3);
