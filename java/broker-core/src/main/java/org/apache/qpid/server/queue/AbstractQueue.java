@@ -230,6 +230,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private String _messageGroupDefaultGroup;
     @ManagedAttributeField
     private int _maximumDistinctGroups;
+    @ManagedAttributeField
+    private long _minimumMessageTtl;
+    @ManagedAttributeField
+    private long _maximumMessageTtl;
+
 
     private State _state = State.UNINITIALIZED;
     private final AtomicBoolean _recovering = new AtomicBoolean(true);
@@ -544,6 +549,18 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     public final MessageDurability getMessageDurability()
     {
         return _messageDurability;
+    }
+
+    @Override
+    public long getMinimumMessageTtl()
+    {
+        return _minimumMessageTtl;
+    }
+
+    @Override
+    public long getMaximumMessageTtl()
+    {
+        return _maximumMessageTtl;
     }
 
     @Override
@@ -967,6 +984,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         final QueueConsumer<?> exclusiveSub = _exclusiveSubscriber;
         final QueueEntry entry = getEntries().add(message);
+        updateExpiration(entry);
 
         try
         {
@@ -1009,6 +1027,40 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             }
         }
 
+    }
+
+    private void updateExpiration(final QueueEntry entry)
+    {
+        long expiration = entry.getMessage().getExpiration();
+        long arrivalTime = entry.getMessage().getArrivalTime();
+        if(_minimumMessageTtl != 0l)
+        {
+            if(arrivalTime == 0)
+            {
+                arrivalTime = System.currentTimeMillis();
+            }
+            if(expiration != 0l)
+            {
+                long calculatedExpiration = arrivalTime+_minimumMessageTtl;
+                if(calculatedExpiration > expiration)
+                {
+                    entry.setExpiration(calculatedExpiration);
+                    expiration = calculatedExpiration;
+                }
+            }
+        }
+        if(_maximumMessageTtl != 0l)
+        {
+            if(arrivalTime == 0)
+            {
+                arrivalTime = System.currentTimeMillis();
+            }
+            long calculatedExpiration = arrivalTime+_maximumMessageTtl;
+            if(expiration == 0l || expiration > calculatedExpiration)
+            {
+                entry.setExpiration(calculatedExpiration);
+            }
+        }
     }
 
     /**

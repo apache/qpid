@@ -278,6 +278,8 @@ define(["dojo/_base/xhr",
                            "state",
                            "durable",
                            "messageDurability",
+                           "maximumMessageTtl",
+                           "minimumMessageTtl",
                            "exclusive",
                            "owner",
                            "lifetimePolicy",
@@ -353,6 +355,9 @@ define(["dojo/_base/xhr",
                this.owner.innerHTML = this.queueData[ "owner" ] ? entities.encode(String(this.queueData[ "owner" ])) : "" ;
                this.lifetimePolicy.innerHTML = entities.encode(String(this.queueData[ "lifetimePolicy" ]));
                this.messageDurability.innerHTML = entities.encode(String(this.queueData[ "messageDurability" ]));
+               this.minimumMessageTtl.innerHTML = entities.encode(String(this.queueData[ "minimumMessageTtl" ]));
+               this.maximumMessageTtl.innerHTML = entities.encode(String(this.queueData[ "maximumMessageTtl" ]));
+
                this.alternateExchange.innerHTML = this.queueData[ "alternateExchange" ] ? entities.encode(String(this.queueData[ "alternateExchange" ])) : "" ;
 
                this.queueDepthMessages.innerHTML = entities.encode(String(this.queueData["queueDepthMessages"]));

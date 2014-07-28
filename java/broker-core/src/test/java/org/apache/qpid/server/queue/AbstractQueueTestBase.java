@@ -21,32 +21,41 @@
 
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.contains;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Matchers.contains;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.Queue;
-import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.server.consumer.MockConsumer;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AbstractQueue.QueueEntryFilter;
-import org.apache.qpid.server.consumer.MockConsumer;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -857,6 +866,101 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _queue.checkMessageStatus();
 
         verify(listener, atLeastOnce()).notifyClients(eq(NotificationCheck.MESSAGE_COUNT_ALERT), eq(_queue), contains("Maximum count on queue threshold"));
+    }
+
+
+    public void testMaximumMessageTtl() throws Exception
+    {
+
+        // Test scenarios where only the maximum TTL has been set
+
+        Map<String,Object> attributes = new HashMap<>(_arguments);
+        attributes.put(Queue.NAME,"testTtlOverrideMaximumTTl");
+        attributes.put(Queue.MAXIMUM_MESSAGE_TTL, 10000l);
+
+        AMQQueue queue = _virtualHost.createQueue(attributes);
+
+        assertEquals("TTL has not been overriden", 60000l, getExpirationOnQueue(queue, 50000l, 0l));
+
+        assertEquals("TTL has not been overriden", 60000l, getExpirationOnQueue(queue, 50000l, 65000l));
+
+        assertEquals("TTL has been incorrectly overriden", 55000l, getExpirationOnQueue(queue, 50000l, 55000l));
+
+        long tooLateExpiration = System.currentTimeMillis() + 20000l;
+
+        assertTrue("TTL has not been overriden", tooLateExpiration != getExpirationOnQueue(queue, 0l, tooLateExpiration));
+
+        long acceptableExpiration = System.currentTimeMillis() + 5000l;
+
+        assertEquals("TTL has been incorrectly overriden", acceptableExpiration, getExpirationOnQueue(queue, 0l, acceptableExpiration));
+
+        // Test the scenarios where only the minimum TTL has been set
+
+        attributes = new HashMap<>(_arguments);
+        attributes.put(Queue.NAME,"testTtlOverrideMinimumTTl");
+        attributes.put(Queue.MINIMUM_MESSAGE_TTL, 10000l);
+
+        queue = _virtualHost.createQueue(attributes);
+
+        assertEquals("TTL has been overriden incorrectly", 0l, getExpirationOnQueue(queue, 50000l, 0l));
+
+        assertEquals("TTL has been overriden incorrectly", 65000l, getExpirationOnQueue(queue, 50000l, 65000l));
+
+        assertEquals("TTL has not been overriden", 60000l, getExpirationOnQueue(queue, 50000l, 55000l));
+
+        long unacceptableExpiration = System.currentTimeMillis() + 5000l;
+
+        assertTrue("TTL has not been overriden", unacceptableExpiration != getExpirationOnQueue(queue, 0l, tooLateExpiration));
+
+        acceptableExpiration = System.currentTimeMillis() + 20000l;
+
+        assertEquals("TTL has been incorrectly overriden", acceptableExpiration, getExpirationOnQueue(queue, 0l, acceptableExpiration));
+
+
+        // Test the scenarios where both the minimum and maximum TTL have been set
+
+        attributes = new HashMap<>(_arguments);
+        attributes.put(Queue.NAME,"testTtlOverrideBothTTl");
+        attributes.put(Queue.MINIMUM_MESSAGE_TTL, 10000l);
+        attributes.put(Queue.MAXIMUM_MESSAGE_TTL, 20000l);
+
+        queue = _virtualHost.createQueue(attributes);
+
+        assertEquals("TTL has not been overriden", 70000l, getExpirationOnQueue(queue, 50000l, 0l));
+
+        assertEquals("TTL has been overriden incorrectly", 65000l, getExpirationOnQueue(queue, 50000l, 65000l));
+
+        assertEquals("TTL has not been overriden", 60000l, getExpirationOnQueue(queue, 50000l, 55000l));
+
+
+
+    }
+
+    private long getExpirationOnQueue(final AMQQueue queue, long arrivalTime, long expiration)
+    {
+        final List<QueueEntry> entries = new ArrayList<>();
+
+        ServerMessage message = createMessage(1l);
+        when(message.getArrivalTime()).thenReturn(arrivalTime);
+        when(message.getExpiration()).thenReturn(expiration);
+        queue.enqueue(message,null);
+        queue.visit(new QueueEntryVisitor()
+        {
+            @Override
+            public boolean visit(final QueueEntry entry)
+            {
+                entries.add(entry);
+                return true;
+            }
+        });
+        assertEquals("Expected only one entry in the queue", 1, entries.size());
+
+        Long entryExpiration =
+                (Long) entries.get(0).getInstanceProperties().getProperty(InstanceProperties.Property.EXPIRATION);
+
+        queue.clearQueue();
+        entries.clear();
+        return entryExpiration;
     }
 
     /**
