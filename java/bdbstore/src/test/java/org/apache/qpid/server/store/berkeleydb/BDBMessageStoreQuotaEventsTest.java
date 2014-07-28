@@ -20,15 +20,17 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.Collections;
+import java.util.Map;
 
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBVirtualHost;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestBase
 {
@@ -60,7 +62,10 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
     protected VirtualHost createVirtualHost(String storeLocation)
     {
         final BDBVirtualHost parent = mock(BDBVirtualHost.class);
-        when(parent.getContext()).thenReturn(Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE));
+        Map<String, String> contextMap = Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
+        when(parent.getContext()).thenReturn(contextMap);
+        when(parent.getContextKeys()).thenReturn(contextMap.keySet());
+        when(parent.getContextValue(eq(String.class),eq("je.log.fileMax"))).thenReturn(MAX_BDB_LOG_SIZE);
         when(parent.getStorePath()).thenReturn(storeLocation);
         when(parent.getStoreOverfullSize()).thenReturn(OVERFULL_SIZE);
         when(parent.getStoreUnderfullSize()).thenReturn(UNDERFULL_SIZE);

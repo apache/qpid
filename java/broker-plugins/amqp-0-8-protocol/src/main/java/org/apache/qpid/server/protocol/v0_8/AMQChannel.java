@@ -1249,8 +1249,6 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         final BasicContentHeaderProperties properties =
                   incomingMessage.getContentHeader().getProperties();
 
-        long expiration = properties.getExpiration();
-        message.setExpiration(expiration);
         return message;
     }
 

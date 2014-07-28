@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.store.derby;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.Collections;
 import java.util.Map;
 
@@ -27,9 +30,6 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreQuotaEventsTestBase;
 import org.apache.qpid.server.virtualhost.derby.DerbyVirtualHost;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestBase
 {
@@ -54,6 +54,7 @@ public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTes
     {
         final DerbyVirtualHost parent = mock(DerbyVirtualHost.class);
         when(parent.getContext()).thenReturn(createContextSettings());
+        when(parent.getContextKeys()).thenReturn(Collections.emptySet());
         when(parent.getStorePath()).thenReturn(storeLocation);
         when(parent.getStoreOverfullSize()).thenReturn(OVERFULL_SIZE);
         when(parent.getStoreUnderfullSize()).thenReturn(UNDERFULL_SIZE);

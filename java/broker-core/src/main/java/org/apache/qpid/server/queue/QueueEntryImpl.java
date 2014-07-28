@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -80,13 +79,17 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     private volatile long _entryId;
 
-    private final EntryInstanceProperties _instanceProperties = new EntryInstanceProperties();
+    private static int REDELIVERED_FLAG = 1;
+    private static int PERSISTENT_FLAG = 2;
+    private static int MANDATORY_FLAG = 4;
+    private static int IMMEDIATE_FLAG = 8;
+    private int _flags;
+    private long _expiration;
 
     /** Number of times this message has been delivered */
-    private volatile int _deliveryCount = 0;
+    private volatile int _deliveryCount = -1;
     private static final AtomicIntegerFieldUpdater<QueueEntryImpl> _deliveryCountUpdater = AtomicIntegerFieldUpdater
                     .newUpdater(QueueEntryImpl.class, "_deliveryCount");
-    private boolean _deliveredToConsumer;
 
 
     public QueueEntryImpl(QueueEntryList queueEntryList)
@@ -117,14 +120,17 @@ public abstract class QueueEntryImpl implements QueueEntry
     {
         if(_message != null)
         {
-            _instanceProperties.setProperty(InstanceProperties.Property.PERSISTENT, _message.getMessage().isPersistent());
-            _instanceProperties.setProperty(InstanceProperties.Property.EXPIRATION, _message.getMessage().getExpiration());
+            if(_message.getMessage().isPersistent())
+            {
+                setPersistent();
+            }
+            _expiration = _message.getMessage().getExpiration();
         }
     }
 
     public InstanceProperties getInstanceProperties()
     {
-        return _instanceProperties;
+        return new EntryInstanceProperties();
     }
 
     protected void setEntryId(long entryId)
@@ -154,21 +160,17 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public boolean getDeliveredToConsumer()
     {
-        return _deliveredToConsumer;
+        return _deliveryCountUpdater.get(this) != -1;
     }
 
     public boolean expired()
     {
-        ServerMessage message = getMessage();
-        if(message != null)
+        long expiration = _expiration;
+        if (expiration != 0L)
         {
-            long expiration = message.getExpiration();
-            if (expiration != 0L)
-            {
-                long now = System.currentTimeMillis();
+            long now = System.currentTimeMillis();
 
-                return (now > expiration);
-            }
+            return (now > expiration);
         }
         return false;
 
@@ -206,7 +208,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         final boolean acquired = acquire(((QueueConsumer<?>)sub).getOwningState());
         if(acquired)
         {
-            _deliveredToConsumer = true;
+            _deliveryCountUpdater.compareAndSet(this,-1,0);
         }
         return acquired;
     }
@@ -253,15 +255,6 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     }
 
-    public void setRedelivered()
-    {
-        _instanceProperties.setProperty(InstanceProperties.Property.REDELIVERED, Boolean.TRUE);
-    }
-
-    public boolean isRedelivered()
-    {
-        return Boolean.TRUE.equals(_instanceProperties.getProperty(InstanceProperties.Property.REDELIVERED));
-    }
 
     public QueueConsumer getDeliveredConsumer()
     {
@@ -459,7 +452,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public int getDeliveryCount()
     {
-        return _deliveryCount;
+        return _deliveryCount == -1 ? 0 : _deliveryCount;
     }
 
     @Override
@@ -470,6 +463,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public void incrementDeliveryCount()
     {
+        _deliveryCountUpdater.compareAndSet(this,-1,0);
         _deliveryCountUpdater.incrementAndGet(this);
     }
 
@@ -509,20 +503,45 @@ public abstract class QueueEntryImpl implements QueueEntry
         return getQueue();
     }
 
-    private static class EntryInstanceProperties implements InstanceProperties
+    public void setRedelivered()
     {
-        private final EnumMap<Property, Object> _properties = new EnumMap<Property, Object>(Property.class);
+        _flags |= REDELIVERED_FLAG;
+    }
+
+    private void setPersistent()
+    {
+        _flags |= PERSISTENT_FLAG;
+    }
+
+    public boolean isRedelivered()
+    {
+        return (_flags & REDELIVERED_FLAG) != 0;
+    }
+
+    private class EntryInstanceProperties implements InstanceProperties
+    {
 
         @Override
         public Object getProperty(final Property prop)
         {
-            return _properties.get(prop);
+            switch(prop)
+            {
+
+                case REDELIVERED:
+                    return (_flags & REDELIVERED_FLAG) != 0;
+                case PERSISTENT:
+                    return (_flags & PERSISTENT_FLAG) != 0;
+                case MANDATORY:
+                    return (_flags & MANDATORY_FLAG) != 0;
+                case IMMEDIATE:
+                    return (_flags & IMMEDIATE_FLAG) != 0;
+                case EXPIRATION:
+                    return _expiration;
+                default:
+                    throw new IllegalArgumentException("Unknown property " + prop);
+            }
         }
 
-        private void setProperty(Property prop, Object value)
-        {
-            _properties.put(prop, value);
-        }
     }
 
 }
