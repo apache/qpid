@@ -452,6 +452,52 @@ namespace acl {
             // Given that the broker will be calling with this property,
             // determine what user rule settings are allowed.
             switch (prop) {
+                // Cases where broker and Acl file share property name and meaning
+                case PROP_NAME:
+                    spm[SPECPROP_NAME]="";
+                    break;
+                case PROP_DURABLE:
+                    spm[SPECPROP_DURABLE]="";
+                    break;
+                case PROP_OWNER:
+                    spm[SPECPROP_OWNER]="";
+                    break;
+                case PROP_ROUTINGKEY:
+                    spm[SPECPROP_ROUTINGKEY]="";
+                    break;
+                case PROP_AUTODELETE:
+                    spm[SPECPROP_AUTODELETE]="";
+                    break;
+                case PROP_EXCLUSIVE:
+                    spm[SPECPROP_EXCLUSIVE]="";
+                    break;
+                case PROP_TYPE:
+                    spm[SPECPROP_TYPE]="";
+                    break;
+                case PROP_ALTERNATE:
+                    spm[SPECPROP_ALTERNATE]="";
+                    break;
+                case PROP_QUEUENAME:
+                    spm[SPECPROP_QUEUENAME]="";
+                    break;
+                case PROP_EXCHANGENAME:
+                    spm[SPECPROP_EXCHANGENAME]="";
+                    break;
+                case PROP_SCHEMAPACKAGE:
+                    spm[SPECPROP_SCHEMAPACKAGE]="";
+                    break;
+                case PROP_SCHEMACLASS:
+                    spm[SPECPROP_SCHEMACLASS]="";
+                    break;
+                case PROP_POLICYTYPE:
+                    spm[SPECPROP_POLICYTYPE]="";
+                    break;
+                case PROP_PAGING:
+                    spm[SPECPROP_PAGING]="";
+                    break;
+                case PROP_HOST:
+                    spm[SPECPROP_HOST]="";
+                    break;
                 // Cases where broker supplies a property but Acl has upper/lower limit for it
                 case PROP_MAXPAGES:
                     spm[SPECPROP_MAXPAGESLOWERLIMIT]="";
@@ -478,10 +524,8 @@ namespace acl {
                     spm[SPECPROP_MAXFILECOUNTUPPERLIMIT]="";
                     break;
                 default:
-                    // Cases where broker supplies a property and Acl matches it directly
-                    SpecProperty sp = SpecProperty(prop);
-                    spm[ sp ]="";
-                    break;
+                    throw Exception( "acl::RegisterProperties no case for property: " +
+                        AclHelper::getPropertyStr(prop) );
             }
         }
         AclData::Rule someProps(propertyIndex, acl::ALLOW, spm, source, description);
