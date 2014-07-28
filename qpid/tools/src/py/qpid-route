@@ -336,7 +336,7 @@ class RouteManager:
             print "Creating inter-broker binding..."
         res = link.bridge(config._durable, exchange, exchange, routingKey, tag,
                           excludes, False, config._srclocal, dynamic,
-                          config._ack, config._credit)
+                          config._ack, credit=config._credit)
         if res.status != 0:
             raise Exception(res.text)
         if config._verbose:
@@ -359,7 +359,7 @@ class RouteManager:
         if config._verbose:
             print "Creating inter-broker binding..."
         res = link.bridge(config._durable, queue, exchange, "", "", "", True,
-                          config._srclocal, False, config._ack, config._credit)
+                          config._srclocal, False, config._ack, credit=config._credit)
         if res.status != 0:
             raise Exception(res.text)
         if config._verbose:
