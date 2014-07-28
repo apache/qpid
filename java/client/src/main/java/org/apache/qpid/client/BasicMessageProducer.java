@@ -527,7 +527,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
                               UUID messageId, int deliveryMode, int priority, long timeToLive, boolean mandatory,
                               boolean immediate) throws JMSException;
 
-    private void checkTemporaryDestination(AMQDestination destination) throws JMSException
+    private void checkTemporaryDestination(AMQDestination destination) throws InvalidDestinationException
     {
         if (destination instanceof TemporaryDestination)
         {
@@ -536,13 +536,13 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             if (tempDest.getSession().isClosed())
             {
                 _logger.debug("session is closed");
-                throw new JMSException("Session for temporary destination has been closed");
+                throw new InvalidDestinationException("Session for temporary destination has been closed");
             }
 
             if (tempDest.isDeleted())
             {
                 _logger.debug("destination is deleted");
-                throw new JMSException("Cannot send to a deleted temporary destination");
+                throw new InvalidDestinationException("Cannot send to a deleted temporary destination");
             }
         }
     }
