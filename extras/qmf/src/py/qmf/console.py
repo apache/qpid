@@ -128,7 +128,6 @@ class BrokerURL(URL):
   def match(self, host, port):
     return socket.getaddrinfo(self.host, self.port)[0][4] == socket.getaddrinfo(host, port)[0][4]
 
-
 #===================================================================================================
 # Object
 #===================================================================================================
@@ -349,6 +348,41 @@ class Object(object):
         return
     super.__setattr__(self, name, value)
 
+  def _parseDefault(self, typ, val):
+    try:
+      if typ in (2, 3, 4): # 16, 32, 64 bit numbers
+        val = int(val, 0)
+      elif typ == 11: # bool
+        val = val.lower() in ("t", "true", "1", "yes", "y")
+      elif typ == 15: # map
+        val = eval(val)
+    except:
+      pass
+    return val
+
+  def _handleDefaultArguments(self, method, args, kwargs):
+    count = len([x for x in method.arguments if x.dir.find("I") != -1])
+    for kwarg in kwargs.keys():
+      if not [x for x in method.arguments if x.dir.find("I") != -1 and \
+                 x.name == kwarg]:
+        del kwargs[kwarg]
+
+    # If there were not enough args supplied, add any defaulted arguments
+    # from the schema (starting at the end) until we either get enough
+    # arguments or run out of defaults
+    while count > len(args) + len(kwargs):
+      for arg in reversed(method.arguments):
+        if arg.dir.find("I") != -1 and getattr(arg, "default") is not None and \
+                arg.name not in kwargs:
+          # add missing defaulted value to the kwargs dict
+          kwargs[arg.name] = self._parseDefault(arg.type, arg.default)
+          break
+      else:
+        # no suitable defaulted args found, end the while loop
+        break
+
+    return count
+
   def _sendMethodRequest(self, name, args, kwargs, synchronous=False, timeWait=None):
     for method in self._schema.getMethods():
       if name == method.name:
@@ -356,10 +390,7 @@ class Object(object):
         sendCodec = Codec()
         seq = self._session.seqMgr._reserve((method, synchronous))
 
-        count = 0
-        for arg in method.arguments:
-          if arg.dir.find("I") != -1:
-            count += 1
+        count = self._handleDefaultArguments(method, args, kwargs)
         if count != len(args) + len(kwargs):
           raise Exception("Incorrect number of arguments: expected %d, got %d" % (count, len(args) + len(kwargs)))
 
@@ -373,11 +404,12 @@ class Object(object):
           argMap = {}
           for arg in method.arguments:
             if arg.dir.find("I") != -1:
-              if aIdx < len(args):
+              # If any kwargs match this schema arg, insert them in the proper place
+              if arg.name in kwargs:
+                argMap[arg.name] = kwargs[arg.name]
+              elif aIdx < len(args):
                 argMap[arg.name] = args[aIdx]
-              else:
-                argMap[arg.name] = kwargs[arg.name]              
-              aIdx += 1
+                aIdx += 1
           call['_arguments'] = argMap
 
           dp = self._broker.amqpSession.delivery_properties()
@@ -1472,83 +1504,12 @@ class Session:
     
 
   def _sendMethodRequest(self, broker, schemaKey, objectId, name, argList):
-    """ This function can be used to send a method request to an object given only the
-    broker, schemaKey, and objectId.  This is an uncommon usage pattern as methods are
-    normally invoked on the object itself.
+    """ This is a legacy function that is used by qpid-tool to invoke methods
+    using the broker, objectId and schema.
+    Methods are now invoked on the object itself.
     """
-    schema = self.getSchema(schemaKey)
-    if not schema:
-      raise Exception("Schema not present (Key=%s)" % str(schemaKey))
-    for method in schema.getMethods():
-      if name == method.name:
-        #
-        # Count the arguments supplied and validate that the number is what is expected
-        # based on the schema.
-        #
-        count = 0
-        for arg in method.arguments:
-          if arg.dir.find("I") != -1:
-            count += 1
-        if count != len(argList):
-          raise Exception("Incorrect number of arguments: expected %d, got %d" % (count, len(argList)))
-
-        aIdx = 0
-        sendCodec = Codec()
-        seq = self.seqMgr._reserve((method, False))
-
-        if objectId.isV2:
-          #
-          # Compose and send a QMFv2 method request
-          #
-          call = {}
-          call['_object_id'] = objectId.asMap()
-          call['_method_name'] = name
-          args = {}
-          for arg in method.arguments:
-            if arg.dir.find("I") != -1:
-              args[arg.name] = argList[aIdx]
-              aIdx += 1
-          call['_arguments'] = args
-
-          dp = broker.amqpSession.delivery_properties()
-          dp.routing_key = objectId.getV2RoutingKey()
-          mp = broker.amqpSession.message_properties()
-          mp.content_type = "amqp/map"
-          if broker.saslUser:
-            mp.user_id = broker.saslUser
-          mp.correlation_id = str(seq)
-          mp.app_id = "qmf2"
-          mp.reply_to = broker.amqpSession.reply_to("qmf.default.direct", broker.v2_direct_queue)
-          mp.application_headers = {'qmf.opcode':'_method_request'}
-          sendCodec.write_map(call)
-          msg = Message(dp, mp, sendCodec.encoded)
-          broker._send(msg, "qmf.default.direct")
-
-        else:
-          #
-          # Associate this sequence with the agent hosting the object so we can correctly
-          # route the method-response
-          #
-          agent = broker.getAgent(broker.getBrokerBank(), objectId.getAgentBank())
-          broker._setSequence(seq, agent)
-
-          #
-          # Compose and send a QMFv1 method request
-          #
-          broker._setHeader(sendCodec, 'M', seq)
-          objectId.encode(sendCodec)
-          schemaKey.encode(sendCodec)
-          sendCodec.write_str8(name)
-
-          for arg in method.arguments:
-            if arg.dir.find("I") != -1:
-              self._encodeValue(sendCodec, argList[aIdx], arg.type)
-              aIdx += 1
-          smsg = broker._message(sendCodec.encoded, "agent.%d.%s" %
-                                 (objectId.getBrokerBank(), objectId.getAgentBank()))
-          broker._send(smsg)
-        return seq
-    return None
+    objs = self.getObjects(_objectId=objectId)
+    return objs[0]._sendMethodRequest(name, argList, {}) if objs else None
 
   def _newPackageCallback(self, pname):
     """
