@@ -44,6 +44,22 @@
                     </td>
                 </tr>
                 <tr>
+                    <td valign="top"><strong>Max Ttl:  </strong></td>
+                    <td><input type="text" required="false" name="maximumMessageTtl" id="formAddQueue.maximumMessageTtl" placeholder="Ttl in ms."
+                               dojoType="dijit.form.ValidationTextBox"
+                               trim="true"
+                               regexp="[0-9]+"
+                               invalidMessage= "Invalid value" /></td>
+                </tr>
+                <tr>
+                    <td valign="top"><strong>Min Ttl:  </strong></td>
+                    <td><input type="text" required="false" name="minimumMessageTtl" id="formAddQueue.minimumMessageTtl" placeholder="Ttl in ms."
+                               dojoType="dijit.form.ValidationTextBox"
+                               trim="true"
+                               regexp="[0-9]+"
+                               invalidMessage= "Invalid value" /></td>
+                </tr>
+                <tr>
                     <td valign="top"><strong>Queue Type: </strong></td>
                     <td>
                     <input type="radio" id="formAddQueueTypeStandard" name="type" value="standard" checked="checked" dojoType="dijit.form.RadioButton" />

@@ -128,6 +128,11 @@ public abstract class QueueEntryImpl implements QueueEntry
         }
     }
 
+    public void setExpiration(long expiration)
+    {
+        _expiration = expiration;
+    }
+
     public InstanceProperties getInstanceProperties()
     {
         return new EntryInstanceProperties();
