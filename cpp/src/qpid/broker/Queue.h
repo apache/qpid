@@ -431,8 +431,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     // Increment the rejected-by-consumer counter.
     QPID_BROKER_EXTERN void countRejected() const;
-    QPID_BROKER_EXTERN void countFlowedToDisk(uint64_t size) const;
-    QPID_BROKER_EXTERN void countLoadedFromDisk(uint64_t size) const;
 
     // Manageable entry points
     QPID_BROKER_EXTERN management::ManagementObject::shared_ptr GetManagementObject(void) const;

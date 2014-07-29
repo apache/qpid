@@ -1387,39 +1387,6 @@ void Queue::countRejected() const
     }
 }
 
-void Queue::countFlowedToDisk(uint64_t size) const
-{
-    if (mgmtObject) {
-        _qmf::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
-        qStats->msgFtdEnqueues += 1;
-        qStats->byteFtdEnqueues += size;
-        mgmtObject->statisticsUpdated();
-        if (brokerMgmtObject) {
-            _qmf::Broker::PerThreadStats *bStats = brokerMgmtObject->getStatistics();
-            bStats->msgFtdEnqueues += 1;
-            bStats->byteFtdEnqueues += size;
-            brokerMgmtObject->statisticsUpdated();
-        }
-    }
-}
-
-void Queue::countLoadedFromDisk(uint64_t size) const
-{
-    if (mgmtObject) {
-        _qmf::Queue::PerThreadStats *qStats = mgmtObject->getStatistics();
-        qStats->msgFtdDequeues += 1;
-        qStats->byteFtdDequeues += size;
-        mgmtObject->statisticsUpdated();
-        if (brokerMgmtObject) {
-            _qmf::Broker::PerThreadStats *bStats = brokerMgmtObject->getStatistics();
-            bStats->msgFtdDequeues += 1;
-            bStats->byteFtdDequeues += size;
-            brokerMgmtObject->statisticsUpdated();
-        }
-    }
-}
-
-
 ManagementObject::shared_ptr Queue::GetManagementObject(void) const
 {
     return mgmtObject;

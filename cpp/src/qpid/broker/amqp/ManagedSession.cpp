@@ -43,7 +43,6 @@ ManagedSession::ManagedSession(Broker& broker, ManagedConnection& p, const std::
         session = _qmf::Session::shared_ptr(new _qmf::Session(agent, this, broker.GetVhostObject(), name));
         session->set_fullName(fullName);
         session->set_attached(true);
-        session->set_detachedLifespan(0);
         session->clr_expireTime();
         session->set_connectionRef(parent.GetManagementObject()->getObjectId());
         agent->addObject(session);

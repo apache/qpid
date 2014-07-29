@@ -83,7 +83,7 @@
     <property name="workerThreads"    type="uint16" access="RO" desc="Thread pool size"/>
     <property name="maxConns"         type="uint16" access="RO" desc="Maximum allowed connections"/>
     <property name="connBacklog"      type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
-    <property name="stagingThreshold" type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
+    <property name="stagingThreshold" type="uint32" access="RO" desc="Deprecated"/>
     <property name="mgmtPublish"      type="bool"   access="RO" desc="Broker's management agent sends unsolicited data on the publish interval"/>
     <property name="mgmtPubInterval"  type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
     <property name="version"          type="sstr"   access="RO" desc="Running software version"/>
@@ -277,8 +277,8 @@
 
     <statistic name="consumerCount"       type="hilo32"   unit="consumer"    desc="Current consumers on queue"/>
     <statistic name="bindingCount"        type="hilo32"   unit="binding"     desc="Current bindings"/>
-    <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Messages consumed but not yet acked"/>
-    <statistic name="messageLatency"      type="mmaTime"  unit="nanosecond"  desc="Broker latency through this queue"/>
+    <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Deprecated"/>
+    <statistic name="messageLatency"      type="mmaTime"  unit="nanosecond"  desc="Deprecated"/>
     <statistic name="flowStopped"         type="bool"     desc="Flow control active."/>
     <statistic name="flowStoppedCount"    type="count32"  desc="Number of times flow control was activated for this queue"/>
 
@@ -313,7 +313,7 @@
     <property name="altExchange" type="objId" references="Exchange" access="RO" optional="y"/>
     <property name="arguments"   type="map"   access="RO" desc="Arguments supplied in exchange.declare"/>
 
-    <statistic name="producerCount" type="hilo32"  desc="Current producers on exchange"/>
+    <statistic name="producerCount" type="hilo32"  desc="Unused"/>
     <statistic name="bindingCount"  type="hilo32"  desc="Current bindings"/>
     <statistic name="msgReceives"   type="count64" desc="Total messages received"/>
     <statistic name="msgDrops"      type="count64" desc="Total messages dropped (no matching key)"/>
@@ -364,14 +364,14 @@
     <property name="vhostRef" type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
     <property name="address"  type="sstr"   access="RC" index="y"/>
     <property name="incoming" type="bool"   access="RC"/>
-    <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastructure/ Inter-system connection (Cluster, Federation, ...)"/>
-    <property name="userProxyAuth"      type="bool"   access="RO" desc="Authorization to proxy for users not on broker"/>
-    <property name="federationLink"     type="bool"   access="RO" desc="Is this a federation link"/>
+    <property name="SystemConnection"   type="bool"   access="RC" desc="Deprecated"/>
+    <property name="userProxyAuth"      type="bool"   access="RO" desc="Deprecated"/>
+    <property name="federationLink"     type="bool"   access="RO" desc="Deprecated"/>
     <property name="authIdentity"       type="sstr"   access="RO" desc="authId of connection if authentication enabled"/>
     <property name="remoteProcessName"  type="lstr"   access="RO" optional="y" desc="Name of executable running as remote client"/>
     <property name="remotePid"          type="uint32" access="RO" optional="y" desc="Process ID of remote client"/>
     <property name="remoteParentPid"    type="uint32" access="RO" optional="y" desc="Parent Process ID of remote client"/>
-    <property name="shadow"             type="bool"   access="RO" desc="True for shadow connections"/>
+    <property name="shadow"             type="bool"   access="RO" desc="Deprecated"/>
     <property name="saslMechanism"      type="sstr"   access="RO" desc="SASL mechanism"/>
     <property name="saslSsf"            type="uint16"   access="RO" desc="SASL security strength factor"/>
     <property name="remoteProperties"   type="map"    access="RO" desc="optional map of identifying information sent by the remote"/>
@@ -533,10 +533,10 @@
     <property name="fullName"         type="lstr"    access="RO" optional="y"/>
     <property name="channelId"        type="uint16"  access="RO"/>
     <property name="connectionRef"    type="objId"   references="Connection" access="RO"/>
-    <property name="detachedLifespan" type="uint32"  access="RO" unit="second"/>
+    <property name="detachedLifespan" type="uint32"  access="RO" unit="second" desc="Deprecated"/>
     <property name="attached"         type="bool"    access="RO"/>
     <property name="expireTime"       type="absTime" access="RO" optional="y"/>
-    <property name="maxClientRate"    type="uint32"  access="RO" unit="msgs/sec" optional="y"/>
+    <property name="maxClientRate"    type="uint32"  access="RO" unit="msgs/sec" optional="y" desc="Deprecated"/>
 
     <statistic name="unackedMessages" type="uint64" unit="message" desc="Unacknowledged messages in the session"/>
 
@@ -545,7 +545,7 @@
     <statistic name="TxnRejects"   type="count64"  unit="transaction" desc="Total transactions rejected"/>
     <statistic name="TxnCount"     type="count32"  unit="transaction" desc="Current pending transactions"/>
 
-    <statistic name="clientCredit" type="count32" unit="message" desc="Client message credit"/>
+    <statistic name="clientCredit" type="count32" unit="message" desc="Deprecated"/>
 
     <statistic name="framesOutstanding" type="count32" desc="Deprecated"/>
 
@@ -572,8 +572,8 @@
     access="RO" to get accessor methods defined.  RC or RW don't do
     it.  Probably this is documented someplace, but I couldn't find
     it. -jrd -->
-    <property name="objectNum" type="uint64" access="RO"/>
-    <property name="bootSequence" type="uint16" access="RO"/>
+    <property name="objectNum" type="uint64" access="RO" desc="Deprecated"/>
+    <property name="bootSequence" type="uint16" access="RO" desc="Deprecated"/>
   </class>
 
   <eventArguments>

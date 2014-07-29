@@ -83,7 +83,7 @@ SemanticState::SemanticState(SessionState& ss)
     : session(ss),
       tagGenerator("sgen"),
       dtxSelected(false),
-      authMsg(getSession().getBroker().isAuthenticating() && !getSession().getConnection().isUserProxyAuth()),
+      authMsg(getSession().getBroker().isAuthenticating() && !getSession().getConnection().isFederationLink()),
       userID(getSession().getConnection().getUserId()),
       closeComplete(false),
       connectionId(getSession().getConnection().getMgmtId())
