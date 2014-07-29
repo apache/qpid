@@ -83,8 +83,6 @@ class Connection : public sys::ConnectionInputHandler, public qpid::broker::Conn
     const management::ObjectId getObjectId() const { return GetManagementObject()->getObjectId(); };
     const std::string& getUserId() const { return userId; }
 
-    void setUserProxyAuth(const bool b);
-    bool isUserProxyAuth() const { return userProxyAuth || federationPeerTag.size() > 0; } // links can proxy msgs with non-matching auth ids
     bool isFederationLink() const { return federationPeerTag.size() > 0; }
     void setFederationPeerTag(const std::string& tag) { federationPeerTag = std::string(tag); }
     const std::string& getFederationPeerTag() const { return federationPeerTag; }
@@ -194,7 +192,6 @@ class Connection : public sys::ConnectionInputHandler, public qpid::broker::Conn
     uint16_t heartbeat;
     uint16_t heartbeatmax;
     std::string userId;
-    bool userProxyAuth;
     std::string federationPeerTag;
     std::vector<Url> knownHosts;
     std::string userName;

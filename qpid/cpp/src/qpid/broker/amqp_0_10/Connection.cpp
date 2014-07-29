@@ -138,7 +138,6 @@ Connection::Connection(ConnectionOutputHandler* out_,
     framemax(65535),
     heartbeat(0),
     heartbeatmax(120),
-    userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links)
     isDefaultRealm(false),
     securitySettings(external),
     link(link_),
@@ -328,13 +327,6 @@ void Connection::raiseConnectEvent() {
 
     QPID_LOG_CAT(debug, model, "Create connection. user:" << userId
         << " rhost:" << mgmtId );
-}
-
-void Connection::setUserProxyAuth(bool b)
-{
-    userProxyAuth = b;
-    if (mgmtObject != 0)
-        mgmtObject->set_userProxyAuth(b);
 }
 
 void Connection::close(connection::CloseCode code, const string& text)

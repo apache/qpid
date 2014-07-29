@@ -36,18 +36,18 @@
     <statistic name="tplTxnPrepares"         type="count64" unit="record" desc="Total transaction prepares on transaction prepared list"/>
     <statistic name="tplTxnCommits"          type="count64" unit="record" desc="Total transaction commits on transaction prepared list"/>
     <statistic name="tplTxnAborts"           type="count64" unit="record" desc="Total transaction aborts on transaction prepared list"/>
-    <statistic name="tplOutstandingAIOs"     type="hilo32"  unit="aio_op" desc="Number of currently outstanding AIO requests in Async IO system"/>
+    <statistic name="tplOutstandingAIOs"     type="hilo32"  unit="aio_op" desc="Deprecated"/>
   </class>
 
   <class name="Journal">
     <property name="queueRef"           type="objId"  access="RO" references="qpid.Queue" isGeneralReference="y"/>
     <property name="name"               type="sstr"   access="RO" index="y"/>
     <property name="directory"          type="sstr"   access="RO"              desc="Directory containing journal files"/>
-    <property name="baseFileName"       type="sstr"   access="RO"              desc="Base filename prefix for journal"/>
-    <property name="writePageSize"      type="uint32" access="RO" unit="byte"  desc="Page size in write-page-cache"/>
-    <property name="writePages"         type="uint32" access="RO" unit="wpage" desc="Number of pages in write-page-cache"/>
-    <property name="readPageSize"       type="uint32" access="RO" unit="byte"  desc="Page size in read-page-cache"/>
-    <property name="readPages"          type="uint32" access="RO" unit="rpage" desc="Number of pages in read-page-cache"/>
+    <property name="baseFileName"       type="sstr"   access="RO"              desc="Deprecated"/>
+    <property name="writePageSize"      type="uint32" access="RO" unit="byte"  desc="Deprecated"/>
+    <property name="writePages"         type="uint32" access="RO" unit="wpage" desc="Deprecated"/>
+    <property name="readPageSize"       type="uint32" access="RO" unit="byte"  desc="Deprecated"/>
+    <property name="readPages"          type="uint32" access="RO" unit="rpage" desc="Deprecated"/>
     <!--property name="initialFileCount"   type="uint16" access="RO" unit="file"  desc="Number of files initially allocated to this journal"/-->
     <!--property name="autoExpand"         type="bool"   access="RO"              desc="Auto-expand enabled"/-->
     <!--property name="currentFileCount"   type="uint16" access="RO" unit="file"  desc="Number of files currently allocated to this journal"/-->
@@ -67,14 +67,14 @@
 <!--
     The following are not yet "wired up" in JournalImpl.cpp
 -->
-    <statistic name="freeFileCount"       type="hilo32"  unit="file"   desc="Number of files free on this journal. Includes free files trapped in holes."/>
-    <statistic name="availableFileCount"  type="hilo32"  unit="file"   desc="Number of files available to be written.  Excluding holes"/>
-    <statistic name="writeWaitFailures"   type="count64" unit="record" desc="AIO Wait failures on write"/>
-    <statistic name="writeBusyFailures"   type="count64" unit="record" desc="AIO Busy failures on write"/>
-    <statistic name="readRecordCount"     type="count64" unit="record" desc="Records read from the journal"/>
-    <statistic name="readBusyFailures"    type="count64" unit="record" desc="AIO Busy failures on read"/>
-    <statistic name="writePageCacheDepth" type="hilo32"  unit="wpage"  desc="Current depth of write-page-cache"/>
-    <statistic name="readPageCacheDepth"  type="hilo32"  unit="rpage"  desc="Current depth of read-page-cache"/>
+    <statistic name="freeFileCount"       type="hilo32"  unit="file"   desc="Deprecated"/>
+    <statistic name="availableFileCount"  type="hilo32"  unit="file"   desc="Deprecated"/>
+    <statistic name="writeWaitFailures"   type="count64" unit="record" desc="Deprecated"/>
+    <statistic name="writeBusyFailures"   type="count64" unit="record" desc="Deprecated"/>
+    <statistic name="readRecordCount"     type="count64" unit="record" desc="Deprecated"/>
+    <statistic name="readBusyFailures"    type="count64" unit="record" desc="Deprecated"/>
+    <statistic name="writePageCacheDepth" type="hilo32"  unit="wpage"  desc="Deprecated"/>
+    <statistic name="readPageCacheDepth"  type="hilo32"  unit="rpage"  desc="Deprecated"/>
 
     <!--method name="expand" desc="Increase number of files allocated for this journal">
       <arg name="by" type="uint32" dir="I" desc="Number of files to increase journal size by"/>

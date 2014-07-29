@@ -76,7 +76,6 @@ void SessionState::addManagementObject() {
             mgmtObject = _qmf::Session::shared_ptr(new _qmf::Session                           (agent, this, parent, name));
             mgmtObject->set_fullName (fullName);
             mgmtObject->set_attached (0);
-            mgmtObject->set_detachedLifespan (0);
             mgmtObject->clr_expireTime();
             agent->addObject(mgmtObject);
         }

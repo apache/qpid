@@ -53,9 +53,7 @@ ManagedConnection::ManagedConnection(Broker& broker, const std::string i, bool b
     agent = broker.getManagementAgent();
     if (agent != 0) {
         qpid::management::Manageable* parent = broker.GetVhostObject();
-        // TODO set last bool true if system connection
-        connection = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, id, !brokerInitiated, brokerInitiated, "AMQP 1.0"));
-        connection->set_shadow(false);
+        connection = _qmf::Connection::shared_ptr(new _qmf::Connection(agent, this, parent, id, !brokerInitiated, false, "AMQP 1.0"));
         agent->addObject(connection);
     }
 }
