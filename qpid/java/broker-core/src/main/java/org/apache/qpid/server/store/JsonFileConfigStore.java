@@ -517,7 +517,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     @Override
     public void closeConfigurationStore()
     {
-        _logger.info("Close Config Store called", new Exception());
         try
         {
             releaseFileLock();
