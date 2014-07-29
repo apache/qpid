@@ -1428,7 +1428,8 @@ class TransactionTests(HaBrokerTest):
             for b in cluster: self.assert_simple_rollback_outcome(b, tx_queues)
             self.assertRaises(qm.TransactionAborted, tx.sync)
             self.assertRaises(qm.TransactionAborted, tx.commit)
-            tx.connection.close()
+            try: tx.connection.close()
+            except qm.TransactionAborted: pass # Occasionally get exception on close.
             for b in cluster: self.assert_simple_rollback_outcome(b, tx_queues)
         finally: l.restore()
 
