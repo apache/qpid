@@ -1509,7 +1509,9 @@ class Session:
     Methods are now invoked on the object itself.
     """
     objs = self.getObjects(_objectId=objectId)
-    return objs[0]._sendMethodRequest(name, argList, {}) if objs else None
+    if objs:
+      return objs[0]._sendMethodRequest(name, argList, {})
+    return None
 
   def _newPackageCallback(self, pname):
     """
