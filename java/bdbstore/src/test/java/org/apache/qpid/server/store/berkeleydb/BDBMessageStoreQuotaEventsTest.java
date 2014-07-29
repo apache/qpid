@@ -64,7 +64,7 @@ public class BDBMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTestB
         final BDBVirtualHost parent = mock(BDBVirtualHost.class);
         Map<String, String> contextMap = Collections.singletonMap("je.log.fileMax", MAX_BDB_LOG_SIZE);
         when(parent.getContext()).thenReturn(contextMap);
-        when(parent.getContextKeys()).thenReturn(contextMap.keySet());
+        when(parent.getContextKeys(false)).thenReturn(contextMap.keySet());
         when(parent.getContextValue(eq(String.class),eq("je.log.fileMax"))).thenReturn(MAX_BDB_LOG_SIZE);
         when(parent.getStorePath()).thenReturn(storeLocation);
         when(parent.getStoreOverfullSize()).thenReturn(OVERFULL_SIZE);

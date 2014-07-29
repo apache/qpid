@@ -71,7 +71,7 @@ public class StandardEnvironmentFacadeFactory implements EnvironmentFacadeFactor
         for (ConfigParam cp : EnvironmentParams.SUPPORTED_PARAMS.values())
         {
             final String parameterName = cp.getName();
-            Set<String> contextKeys = parent.getContextKeys();
+            Set<String> contextKeys = parent.getContextKeys(false);
             if (!cp.isForReplication() && contextKeys.contains(parameterName))
             {
                 envConfigMap.put(parameterName, parent.getContextValue(String.class, parameterName));

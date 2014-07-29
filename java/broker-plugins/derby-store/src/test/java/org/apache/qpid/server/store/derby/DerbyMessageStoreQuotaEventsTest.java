@@ -54,7 +54,7 @@ public class DerbyMessageStoreQuotaEventsTest extends MessageStoreQuotaEventsTes
     {
         final DerbyVirtualHost parent = mock(DerbyVirtualHost.class);
         when(parent.getContext()).thenReturn(createContextSettings());
-        when(parent.getContextKeys()).thenReturn(Collections.emptySet());
+        when(parent.getContextKeys(false)).thenReturn(Collections.emptySet());
         when(parent.getStorePath()).thenReturn(storeLocation);
         when(parent.getStoreOverfullSize()).thenReturn(OVERFULL_SIZE);
         when(parent.getStoreUnderfullSize()).thenReturn(UNDERFULL_SIZE);

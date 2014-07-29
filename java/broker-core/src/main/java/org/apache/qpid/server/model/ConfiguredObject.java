@@ -79,7 +79,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
 
     <T> T getContextValue(Class<T> clazz, String propertyName);
 
-    Set<String> getContextKeys();
+    Set<String> getContextKeys(final boolean includeSystem);
 
     @DerivedAttribute( persist = true )
     String getLastUpdatedBy();

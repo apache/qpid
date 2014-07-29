@@ -93,7 +93,7 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
         {
             Map<String, String> providerAttributes = new HashMap<>();
             Set<String> providerAttributeNames = connectionProviderFactory.getProviderAttributeNames();
-            providerAttributeNames.retainAll(parent.getContextKeys());
+            providerAttributeNames.retainAll(parent.getContextKeys(false));
             for(String attr : providerAttributeNames)
             {
                 providerAttributes.put(attr, parent.getContextValue(String.class, attr));
