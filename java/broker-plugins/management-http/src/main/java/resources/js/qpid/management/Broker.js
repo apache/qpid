@@ -498,13 +498,13 @@ define(["dojo/_base/xhr",
 
                              that.portsGrid =
                                 new UpdatableStore(that.brokerData.ports, query(".broker-ports")[0],
-                                                [   { name: "Name", field: "name", width: "150px"},
-                                                    { name: "State", field: "state", width: "60px"},
-                                                    { name: "Auth Provider", field: "authenticationProvider", width: "100px"},
-                                                    { name: "Address",    field: "bindingAddress",      width: "70px"},
-                                                    { name: "Port", field: "port", width: "50px"},
-                                                    { name: "Transports", field: "transports", width: "100px"},
-                                                    { name: "Protocols", field: "protocols", width: "100%"}
+                                                [   { name: "Name", field: "name", width: "15%"},
+                                                    { name: "State", field: "state", width: "15%"},
+                                                    { name: "Auth Provider", field: "authenticationProvider", width: "15%"},
+                                                    { name: "Address",    field: "bindingAddress",      width: "15%"},
+                                                    { name: "Port", field: "port", width: "10%"},
+                                                    { name: "Transports", field: "transports", width: "15%"},
+                                                    { name: "Protocols", field: "protocols", width: "15%"}
                                                 ], function(obj) {
                                                         connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                         function(evt){
