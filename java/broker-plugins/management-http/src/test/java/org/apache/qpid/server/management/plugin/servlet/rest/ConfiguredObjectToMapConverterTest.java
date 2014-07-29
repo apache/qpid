@@ -20,6 +20,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import static org.apache.qpid.server.management.plugin.servlet.rest.ConfiguredObjectToMapConverter.STATISTICS_MAP_KEY;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -136,7 +137,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         when(_configuredObject.getAttributeNames()).thenReturn(Collections.singletonList(ConfiguredObject.CONTEXT));
         when(_configuredObject.getContextValue(eq(String.class), eq("key"))).thenReturn("value");
         when(_configuredObject.getContextValue(eq(String.class),eq("inheritedkey"))).thenReturn("foo");
-        when(_configuredObject.getContextKeys(false)).thenReturn(inheritedKeys);
+        when(_configuredObject.getContextKeys(anyBoolean())).thenReturn(inheritedKeys);
         when(_configuredObject.getContext()).thenReturn(actualContext);
         when(mockChild.getAttributeNames()).thenReturn(Arrays.asList(childAttributeName, ConfiguredObject.CONTEXT));
         when(mockChild.getAttribute(childAttributeName)).thenReturn(childAttributeValue);
@@ -161,7 +162,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         Map<String, Object> inheritedContext = new HashMap<>();
         inheritedContext.put("key","value");
         inheritedContext.put("inheritedkey","foo");
-        assertEquals("Incorrect context", resultMap.get(ConfiguredObject.CONTEXT), inheritedContext);
+        assertEquals("Incorrect context", inheritedContext, resultMap.get(ConfiguredObject.CONTEXT));
         childList = (List<Map<String, Object>>) resultMap.get("testchilds");
         assertEquals("Unexpected number of children", 1, childList.size());
         childMap = childList.get(0);
