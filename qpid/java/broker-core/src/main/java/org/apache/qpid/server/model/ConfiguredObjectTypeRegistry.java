@@ -99,6 +99,10 @@ public class ConfiguredObjectTypeRegistry
                     {
                         categories.add(configuredObjectClass);
                     }
+                    else
+                    {
+                        categories.add(getCategory(configuredObjectClass));
+                    }
                     if (!"".equals(annotation.type()))
                     {
                         types.add(configuredObjectClass);
@@ -188,13 +192,16 @@ public class ConfiguredObjectTypeRegistry
         {
             Class<? extends ConfiguredObject> category = getCategory(clazz);
             Set<Class<? extends ConfiguredObject>> types = _knownTypes.get(category);
-            for(Class<? extends ConfiguredObject> type : types)
+            if(types != null)
             {
-                ManagedObject annotation = type.getAnnotation(ManagedObject.class);
-                if(typeName.equals(annotation.type()))
+                for (Class<? extends ConfiguredObject> type : types)
                 {
-                    typeClass = type;
-                    break;
+                    ManagedObject annotation = type.getAnnotation(ManagedObject.class);
+                    if (typeName.equals(annotation.type()))
+                    {
+                        typeClass = type;
+                        break;
+                    }
                 }
             }
             if(typeClass == null && typeName.equals(category.getSimpleName()))
@@ -214,7 +221,12 @@ public class ConfiguredObjectTypeRegistry
         {
             throw new IllegalArgumentException("Cannot locate ManagedObject information for " + clazz.getName());
         }
-        return Collections.unmodifiableCollection(_knownTypes.get(categoryClass));
+        Set<Class<? extends ConfiguredObject>> classes = _knownTypes.get(categoryClass);
+        if(classes == null)
+        {
+            classes = (Set<Class<? extends ConfiguredObject>>) ((Set)Collections.singleton(clazz));
+        }
+        return Collections.unmodifiableCollection(classes);
 
     }
 
@@ -225,7 +237,8 @@ public class ConfiguredObjectTypeRegistry
         {
             throw new IllegalArgumentException("Cannot locate ManagedObject information for " + clazz.getName());
         }
-        return Collections.unmodifiableCollection(_typeSpecificAttributes.get(typeClass));
+        Collection<ConfiguredObjectAttribute<?, ?>> typeAttrs = _typeSpecificAttributes.get(typeClass);
+        return Collections.unmodifiableCollection(typeAttrs == null ? Collections.<ConfiguredObjectAttribute<?, ?>>emptySet() : typeAttrs);
     }
 
     public static String getType(final Class<? extends ConfiguredObject> clazz)
@@ -711,7 +724,7 @@ public class ConfiguredObjectTypeRegistry
     }
 
 
-    static Map<String, ConfiguredObjectAttribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
+    public static Map<String, ConfiguredObjectAttribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
     {
         if(!_allAttributes.containsKey(clazz))
         {
