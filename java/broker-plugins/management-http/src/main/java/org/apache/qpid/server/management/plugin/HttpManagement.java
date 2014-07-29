@@ -60,6 +60,7 @@ import org.apache.qpid.server.management.plugin.servlet.rest.LoggedOnUserPrefere
 import org.apache.qpid.server.management.plugin.servlet.rest.LogoutServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageContentServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.MessageServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.MetaDataServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.SaslServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.StructureServlet;
@@ -266,6 +267,8 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         root.addServlet(new ServletHolder(new MessageContentServlet()), "/service/message-content/*");
 
         root.addServlet(new ServletHolder(new LogRecordsServlet()), "/service/logrecords");
+
+        root.addServlet(new ServletHolder(new MetaDataServlet()), "/service/metadata");
 
         root.addServlet(new ServletHolder(new SaslServlet()), "/service/sasl");
 
