@@ -126,7 +126,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         String nodeName = "node" + getName();
         String hostName = "host" + getName();
-        _storePath = System.getProperty("QPID_WORK", TMP_FOLDER + File.separator + getTestName()) + File.separator + hostName;
+        _storePath = System.getProperty("QPID_WORK", TMP_FOLDER + File.separator + getTestName()) + File.separator + nodeName;
         cleanup(new File(_storePath));
 
         Broker<?> broker = BrokerTestHelper.createBrokerMock();
