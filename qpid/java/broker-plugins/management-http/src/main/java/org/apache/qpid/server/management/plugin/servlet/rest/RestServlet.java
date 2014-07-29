@@ -53,9 +53,11 @@ public class RestServlet extends AbstractServlet
     private static final String HIERARCHY_INIT_PARAMETER = "hierarchy";
 
     public static final String DEPTH_PARAM = "depth";
+    public static final String ACTUALS_PARAM = "actuals";
     public static final String SORT_PARAM = "sort";
+    public static final String INCLUDE_SYS_CONTEXT_PARAM = "includeSysContext";
 
-    public static final Set<String> RESERVED_PARAMS = new HashSet<String>(Arrays.asList(DEPTH_PARAM, SORT_PARAM));
+    public static final Set<String> RESERVED_PARAMS = new HashSet<String>(Arrays.asList(DEPTH_PARAM, SORT_PARAM, ACTUALS_PARAM, INCLUDE_SYS_CONTEXT_PARAM));
 
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
@@ -311,12 +313,14 @@ public class RestServlet extends AbstractServlet
 
         // TODO - sort special params, everything else should act as a filter
         int depth = getDepthParameterFromRequest(request);
+        boolean actuals = getBooleanParameterFromRequest(request, ACTUALS_PARAM);
+        boolean includeSystemContext = getBooleanParameterFromRequest(request, INCLUDE_SYS_CONTEXT_PARAM);
 
         List<Map<String, Object>> output = new ArrayList<Map<String, Object>>();
         for(ConfiguredObject configuredObject : allObjects)
         {
             output.add(_objectConverter.convertObjectToMap(configuredObject, getConfiguredClass(),
-                    depth));
+                    depth, actuals, includeSystemContext));
         }
 
         final Writer writer = new BufferedWriter(response.getWriter());
@@ -576,5 +580,22 @@ public class RestServlet extends AbstractServlet
         return depth;
     }
 
+    private boolean getBooleanParameterFromRequest(HttpServletRequest request, final String paramName)
+    {
+        boolean value = false;
+        final String stringValue = request.getParameter(paramName);
+        if(stringValue!=null)
+        {
+            try
+            {
+                value = Boolean.parseBoolean(stringValue);
+            }
+            catch (NumberFormatException e)
+            {
+                LOGGER.warn("Could not parse " + stringValue + " as integer");
+            }
+        }
+        return value;
+    }
 
 }

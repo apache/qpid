@@ -1340,9 +1340,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     @Override
-    public Set<String> getContextKeys()
+    public Set<String> getContextKeys(final boolean excludeSystem)
     {
         Map<String,String> inheritedContext = new HashMap<>();
+        if(!excludeSystem)
+        {
+            inheritedContext.putAll(System.getenv());
+            inheritedContext.putAll((Map) System.getProperties());
+        }
         generateInheritedContext(getModel(), this, inheritedContext);
         return Collections.unmodifiableSet(inheritedContext.keySet());
     }

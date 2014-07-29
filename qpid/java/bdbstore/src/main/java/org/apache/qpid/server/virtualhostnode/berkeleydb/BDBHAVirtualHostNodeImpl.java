@@ -418,7 +418,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     LOGGER.debug("Creating new virtualhost with name : " + getGroupName());
                 }
 
-                boolean hasBlueprint = getContextKeys().contains(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
+                boolean hasBlueprint = getContextKeys(false).contains(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
                 boolean blueprintUtilised = getContext().containsKey(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)
                                             && Boolean.parseBoolean(String.valueOf(getContext().get(
                         VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)));

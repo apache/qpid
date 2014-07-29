@@ -224,7 +224,7 @@ public abstract class JDBCDetails
 
     public static JDBCDetails getDetailsForJdbcUrl(String jdbcUrl, final ConfiguredObject<?> object)
     {
-        final Set<String> contextKeys = object.getContextKeys();
+        final Set<String> contextKeys = object.getContextKeys(false);
         Map<String,String> mapConversion = new AbstractMap<String, String>()
         {
             @Override

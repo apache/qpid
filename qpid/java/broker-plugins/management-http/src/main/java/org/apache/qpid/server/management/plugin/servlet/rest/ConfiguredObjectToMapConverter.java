@@ -21,6 +21,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,31 +34,53 @@ public class ConfiguredObjectToMapConverter
     public static final String STATISTICS_MAP_KEY = "statistics";
 
     public Map<String, Object> convertObjectToMap(final ConfiguredObject<?> confObject,
-                                                  Class<? extends  ConfiguredObject> clazz,
-                                                  int depth)
+                                                  Class<? extends ConfiguredObject> clazz,
+                                                  int depth,
+                                                  final boolean useActualValues,
+                                                  final boolean includeSystemContext)
     {
         Map<String, Object> object = new LinkedHashMap<String, Object>();
 
-        incorporateAttributesIntoMap(confObject, object);
+        incorporateAttributesIntoMap(confObject, object, useActualValues, includeSystemContext);
         incorporateStatisticsIntoMap(confObject, object);
 
         if(depth > 0)
         {
-            incorporateChildrenIntoMap(confObject, clazz, depth, object);
+            incorporateChildrenIntoMap(confObject, clazz, depth, object, useActualValues, includeSystemContext);
         }
         return object;
     }
 
 
     private void incorporateAttributesIntoMap(
-            final ConfiguredObject<?> confObject, Map<String, Object> object)
+            final ConfiguredObject<?> confObject,
+            Map<String, Object> object,
+            final boolean useActualValues,
+            final boolean includeSystemContext)
     {
+
         for(String name : confObject.getAttributeNames())
         {
-            Object value = confObject.getAttribute(name);
+            Object value = useActualValues ? confObject.getActualAttributes().get(name) : confObject.getAttribute(name);
             if(value instanceof ConfiguredObject)
             {
                 object.put(name, ((ConfiguredObject) value).getName());
+            }
+            else if(ConfiguredObject.CONTEXT.equals(name))
+            {
+                Map<String,Object> contextValues = new HashMap<>();
+                if(useActualValues)
+                {
+                    contextValues.putAll(confObject.getContext());
+                }
+                else
+                {
+                    for(String contextName : confObject.getContextKeys(!includeSystemContext))
+                    {
+                        contextValues.put(contextName, confObject.getContextValue(String.class, contextName));
+                    }
+                }
+                object.put(ConfiguredObject.CONTEXT, contextValues);
             }
             else if(value instanceof Collection)
             {
@@ -98,7 +121,7 @@ public class ConfiguredObjectToMapConverter
     private void incorporateChildrenIntoMap(
             final ConfiguredObject confObject,
             Class<? extends ConfiguredObject> clazz, int depth,
-            Map<String, Object> object)
+            Map<String, Object> object, final boolean useActualValues, final boolean includeSystemContext)
     {
         for(Class<? extends ConfiguredObject> childClass : confObject.getModel().getChildTypes(clazz))
         {
@@ -109,7 +132,7 @@ public class ConfiguredObjectToMapConverter
 
                 for(ConfiguredObject child : children)
                 {
-                    childObjects.add(convertObjectToMap(child, childClass, depth-1));
+                    childObjects.add(convertObjectToMap(child, childClass, depth-1, useActualValues, includeSystemContext));
                 }
 
                 if(!childObjects.isEmpty())

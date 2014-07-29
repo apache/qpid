@@ -126,7 +126,7 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
     private Map<String, String> buildConfig(ConfiguredObject<?> parent, Pattern paramName)
     {
         Map<String, String> targetMap = new HashMap<>();
-        for (String name : parent.getContextKeys())
+        for (String name : parent.getContextKeys(false))
         {
             if (paramName.matcher(name).matches())
             {
