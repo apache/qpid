@@ -82,16 +82,16 @@
     </target>
 
     <target name="stop-broker" depends="init">
-        <get-pid port="${qpid.port}" targetProperty="pid"/>
-        <echo>Stopping Qpid ${pid}</echo>
+        <get-pid port="${qpid.port}" targetProperty="pid" resultproperty="stopresultproperty"/>
+        <echo>Stopping Qpid with pid '${pid}'</echo>
         <kill-pid pid="${pid}" signo="-15"/>
 
         <await-port-free port="${qpid.port}" maxwait="${stop.maxwait}" checkevery="${socket.checkevery}" timeoutproperty="stop.timeout"/>
     </target>
 
     <target name="kill-broker" depends="init" if="stop.timeout">
-        <get-pid port="${qpid.port}" targetProperty="pid"/>
-        <echo>Killing Qpid ${pid}</echo>
+        <get-pid port="${qpid.port}" targetProperty="pid" resultproperty="killresultproperty"/>
+        <echo>Killing Qpid with pid '${pid}'</echo>
         <kill-pid pid="${pid}" signo="-9"/>
     </target>
 
@@ -117,11 +117,19 @@
     <macrodef name="get-pid">
         <attribute name="targetProperty"/>
         <attribute name="port"/>
+        <attribute name="resultproperty"/>
         <sequential>
-            <exec executable="lsof" outputproperty="@{targetProperty}">
+            <exec executable="lsof" outputproperty="@{targetProperty}" resultproperty="@{resultproperty}">
                <arg value="-t"/> <!-- Terse output -->
                <arg value="-i"/> <arg value=":@{port}"/>
             </exec>
+            <fail message="lsof failed to determine the pid using port @{port}, exit status ${@{resultproperty}}">
+               <condition>
+		  <not>
+		    <equals arg1="${@{resultproperty}}" arg2="0"/>
+		  </not>
+               </condition>
+            </fail>
         </sequential>
     </macrodef>
 
