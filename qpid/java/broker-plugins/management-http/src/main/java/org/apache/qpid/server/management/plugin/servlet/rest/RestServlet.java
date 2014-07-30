@@ -36,6 +36,8 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -43,6 +45,7 @@ import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 
 public class RestServlet extends AbstractServlet
 {
@@ -85,6 +88,7 @@ public class RestServlet extends AbstractServlet
         {
             doInitialization();
         }
+        Handler.register();
     }
 
     @SuppressWarnings("unchecked")
@@ -342,21 +346,54 @@ public class RestServlet extends AbstractServlet
     {
         response.setContentType("application/json");
 
-        ObjectMapper mapper = new ObjectMapper();
-        @SuppressWarnings("unchecked")
-        Map<String,Object> providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
-
-
         List<String> names = new ArrayList<String>();
         String[] pathInfoElements = getPathInfoElements(request);
-        if(pathInfoElements != null )
+        if (pathInfoElements != null)
         {
-            if(pathInfoElements.length != _hierarchy.length)
+            if (pathInfoElements.length != _hierarchy.length)
             {
                 throw new IllegalArgumentException("Path to object to create must be fully specified. "
-                       + "Found " + names + " of size " + names.size() + " expecting " + _hierarchy.length);
+                                                   + "Found "
+                                                   + names
+                                                   + " of size "
+                                                   + names.size()
+                                                   + " expecting "
+                                                   + _hierarchy.length);
             }
             names.addAll(Arrays.asList(pathInfoElements));
+        }
+
+        Map<String, Object> providedObject;
+
+        ArrayList<String> headers = Collections.list(request.getHeaderNames());
+        ObjectMapper mapper = new ObjectMapper();
+
+        if(headers.contains("Content-Type") && request.getHeader("Content-Type").startsWith("multipart/form-data"))
+        {
+            providedObject = new HashMap<>();
+            Map<String,String> fileUploads = new HashMap<>();
+            Collection<Part> parts = request.getParts();
+            for(Part part : parts)
+            {
+                if("data".equals(part.getName()) && "application/json".equals(part.getContentType()))
+                {
+                    providedObject = mapper.readValue(part.getInputStream(), LinkedHashMap.class);
+                }
+                else
+                {
+                    byte[] data = new byte[(int) part.getSize()];
+                    part.getInputStream().read(data);
+                    StringBuilder inlineURL = new StringBuilder("data:;base64,");
+                    inlineURL.append(DatatypeConverter.printBase64Binary(data));
+                    fileUploads.put(part.getName(),inlineURL.toString());
+                }
+            }
+            providedObject.putAll(fileUploads);
+        }
+        else
+        {
+
+            providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
         }
 
         if (names.isEmpty())
@@ -368,7 +405,7 @@ public class RestServlet extends AbstractServlet
                     doUpdate(getBroker(), providedObject);
                     response.setStatus(HttpServletResponse.SC_OK);
                 }
-                catch(RuntimeException e)
+                catch (RuntimeException e)
                 {
                     setResponseStatus(response, e);
                 }
@@ -380,24 +417,24 @@ public class RestServlet extends AbstractServlet
             }
         }
 
-        providedObject.put("name", names.get(names.size()-1));
+        providedObject.put("name", names.get(names.size() - 1));
 
         @SuppressWarnings("unchecked")
         Collection<ConfiguredObject>[] objects = new Collection[_hierarchy.length];
-        if(_hierarchy.length == 1)
+        if (_hierarchy.length == 1)
         {
             createOrUpdate(providedObject, _hierarchy[0], getBroker(), null, response);
         }
         else
         {
-            for(int i = 0; i < _hierarchy.length-1; i++)
+            for (int i = 0; i < _hierarchy.length - 1; i++)
             {
                 objects[i] = new HashSet<ConfiguredObject>();
-                if(i == 0)
+                if (i == 0)
                 {
-                    for(ConfiguredObject object : getBroker().getChildren(_hierarchy[0]))
+                    for (ConfiguredObject object : getBroker().getChildren(_hierarchy[0]))
                     {
-                        if(object.getName().equals(names.get(0)))
+                        if (object.getName().equals(names.get(0)))
                         {
                             objects[0].add(object);
                             break;
@@ -406,15 +443,15 @@ public class RestServlet extends AbstractServlet
                 }
                 else
                 {
-                    for(int j = i-1; j >=0; j--)
+                    for (int j = i - 1; j >= 0; j--)
                     {
-                        if(getBroker().getModel().getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
+                        if (getBroker().getModel().getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
                         {
-                            for(ConfiguredObject<?> parent : objects[j])
+                            for (ConfiguredObject<?> parent : objects[j])
                             {
-                                for(ConfiguredObject<?> object : parent.getChildren(_hierarchy[i]))
+                                for (ConfiguredObject<?> object : parent.getChildren(_hierarchy[i]))
                                 {
-                                    if(object.getName().equals(names.get(i)))
+                                    if (object.getName().equals(names.get(i)))
                                     {
                                         objects[i].add(object);
                                     }
@@ -428,19 +465,20 @@ public class RestServlet extends AbstractServlet
             }
             List<ConfiguredObject> parents = new ArrayList<ConfiguredObject>();
             Class<? extends ConfiguredObject> objClass = getConfiguredClass();
-            Collection<Class<? extends ConfiguredObject>> parentClasses = getBroker().getModel().getParentTypes(objClass);
-            for(int i = _hierarchy.length-2; i >=0 ; i--)
+            Collection<Class<? extends ConfiguredObject>> parentClasses =
+                    getBroker().getModel().getParentTypes(objClass);
+            for (int i = _hierarchy.length - 2; i >= 0; i--)
             {
-                if(parentClasses.contains(_hierarchy[i]))
+                if (parentClasses.contains(_hierarchy[i]))
                 {
-                    if(objects[i].size() == 1)
+                    if (objects[i].size() == 1)
                     {
                         parents.add(objects[i].iterator().next());
                     }
                     else
                     {
                         throw new IllegalArgumentException("Cannot deduce parent of class "
-                                + _hierarchy[i].getSimpleName());
+                                                           + _hierarchy[i].getSimpleName());
                     }
                 }
 
@@ -450,6 +488,7 @@ public class RestServlet extends AbstractServlet
 
             createOrUpdate(providedObject, objClass, theParent, otherParents, response);
         }
+
     }
 
     private void createOrUpdate(Map<String, Object> providedObject, Class<? extends ConfiguredObject> objClass,

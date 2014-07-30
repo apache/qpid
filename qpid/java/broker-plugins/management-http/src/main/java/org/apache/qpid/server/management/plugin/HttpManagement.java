@@ -34,6 +34,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.servlet.DispatcherType;
+import javax.servlet.MultipartConfigElement;
 
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
@@ -385,8 +386,14 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
     private void addRestServlet(ServletContextHandler root, String name, Class<? extends ConfiguredObject>... hierarchy)
     {
-        root.addServlet(new ServletHolder(name, new RestServlet(hierarchy)), "/api/latest/" + name + "/*");
-        root.addServlet(new ServletHolder(name, new RestServlet(hierarchy)), "/api/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name + "/*");
+        ServletHolder servletHolder = new ServletHolder(name, new RestServlet(hierarchy));
+        servletHolder.getRegistration().setMultipartConfig(
+                new MultipartConfigElement("",
+                                           getContextValue(Long.class, MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME),
+                                           -1l,
+                                           getContextValue(Integer.class, MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME)));
+        root.addServlet(servletHolder, "/api/latest/" + name + "/*");
+        root.addServlet(servletHolder, "/api/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name + "/*");
     }
 
     private void logOperationalListenMessages(Server server)
