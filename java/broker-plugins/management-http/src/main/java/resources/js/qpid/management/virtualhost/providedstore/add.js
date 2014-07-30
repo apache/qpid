@@ -33,6 +33,11 @@ define(["dojo/_base/xhr",
         {
             this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
             parser.parse(this.containerNode);
+
+            if (data.parent.virtualHostNodeType.value == "JDBC")
+            {
+                dom.byId("addVirtualHost.diskFlowControls").style.display = "none";
+            }
         }
     };
   }

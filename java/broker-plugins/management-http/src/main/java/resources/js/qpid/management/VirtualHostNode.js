@@ -101,10 +101,30 @@ define(["dojo/_base/xhr",
                              "PUT", {desiredState: "STOPPED"});
                  }
                });
+
+            this.vhostsGrid = new UpdatableStore([], query(".virtualHost", containerNode)[0],
+            [
+              { name: "Name", field: "name", width: "40%"},
+              { name: "State", field: "state", width: "30%"},
+              { name: "Type", field: "type", width: "30%"}
+            ], function(obj) {
+                    connect.connect(obj.grid, "onRowDblClick", obj.grid,
+                        function(evt){
+                            var idx = evt.rowIndex,
+                            theItem = this.getItem(idx);
+                            that.showVirtualHost(theItem);
+                        });
+                    }, {height: 200, canSort : function(col) {return false;} });
+
              this.vhostNodeUpdater = new Updater(containerNode, this.modelObj, this);
              this.vhostNodeUpdater.update();
 
              updater.add( this.vhostNodeUpdater );
+           }
+
+           VirtualHostNode.prototype.showVirtualHost=function(item)
+           {
+             this.controller.show("virtualhost", item.name, this.modelObj, item.id);
            }
 
            VirtualHostNode.prototype.close = function()
@@ -177,6 +197,11 @@ define(["dojo/_base/xhr",
              else
              {
                this.details.update(data);
+             }
+
+             if (data.virtualhosts)
+             {
+                this.virtualHostNode.vhostsGrid.update(data.virtualhosts);
              }
            }
 

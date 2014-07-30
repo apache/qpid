@@ -28,6 +28,20 @@
               <fieldset>
                 <legend>Virtual Host Node</legend>
                     <div style="clear:both">
+                      <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
+                      <div class="formLabel-controlCell tableContainer-valueCell">
+                          <input type="text" id="addVirtualHostNode.nodeName"
+                                 data-dojo-type="dijit/form/ValidationTextBox"
+                                 data-dojo-props="
+                              name: 'name',
+                              placeHolder: 'unique node name per broker',
+                              required: true,
+                              missingMessage: 'A node name must be supplied',
+                              title: 'Enter a unique node name per broker',
+                              pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
+                      </div>
+                    </div>
+                    <div style="clear:both">
                         <div class="formLabel-labelCell tableContainer-labelCell">Type*:</div>
                         <div class="tableContainer-valueCell formLabel-controlCell">
                             <select id="addVirtualHostNode.type" data-dojo-type="dijit/form/FilteringSelect"

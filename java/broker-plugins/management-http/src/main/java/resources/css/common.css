@@ -218,4 +218,12 @@ div .messages {
     display: none
 }
 
-
+.alignLeft {
+    float: left;
+}
+.alignRight {
+    float: right;
+}
+.multiLineValue {
+    display: inline-block;
+}
