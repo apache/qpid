@@ -107,6 +107,7 @@ define(["dojo/_base/xhr",
 
         this.virtualHostForm.reset();
         this.virtualHostType.set("value", null);
+
         this.dialog.show();
       },
       destroy: function()
@@ -170,14 +171,12 @@ define(["dojo/_base/xhr",
         }
         else
         {
-          if (this.virtualHostType.value == "BDB_HA")
+          if (this.virtualHostTypeStore.get("BDB_HA"))
           {
-            if (this.virtualHostTypeStore.get("BDB_HA"))
-            {
-              this.virtualHostTypeStore.remove("BDB_HA");
-            }
-            this.virtualHostType.set("value", "");
+            this.virtualHostTypeStore.remove("BDB_HA");
           }
+          this.virtualHostType.set("value", "");
+
           this.virtualHostType.set("disabled", false);
         }
       },

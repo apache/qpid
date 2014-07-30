@@ -41,7 +41,7 @@
                     <input type="text" id="addVirtualHostNode.helperNodeName"
                            data-dojo-type="dijit/form/ValidationTextBox"
                            data-dojo-props="
-                                  name: 'name',
+                                  name: 'helperNodeName',
                                   placeHolder: 'node name from group',
                                   required: true,
                                   missingMessage: 'A node name must be supplied',
@@ -70,20 +70,6 @@
     <div class="formBox">
         <fieldset>
             <legend>New node details</legend>
-            <div style="clear:both">
-                <div class="formLabel-labelCell tableContainer-labelCell">Node Name*:</div>
-                <div class="formLabel-controlCell tableContainer-valueCell">
-                    <input type="text" id="addVirtualHostNode.nodeName"
-                           data-dojo-type="dijit/form/ValidationTextBox"
-                           data-dojo-props="
-                              name: 'name',
-                              placeHolder: 'unique node name per broker',
-                              required: true,
-                              missingMessage: 'A node name must be supplied',
-                              title: 'Enter a unique node name per broker',
-                              pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
-                </div>
-            </div>
             <div style="clear:both">
                 <div class="formLabel-labelCell tableContainer-labelCell">Address*:</div>
                 <div class="formLabel-controlCell tableContainer-valueCell">

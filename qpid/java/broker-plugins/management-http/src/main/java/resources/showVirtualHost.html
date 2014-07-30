@@ -22,14 +22,37 @@
 
 <div class="virtualhost">
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Virtual Host Attributes',  open: true">
-        <div style="clear:both">
-            <div class="formLabel-labelCell">Name:</div>
-            <div class="name" style="float:left;"></div>
+        <div class="alignLeft">
+            <div style="clear:both">
+                <div class="formLabel-labelCell">Name:</div>
+                <div class="name" style="float:left;"></div>
+            </div>
+            <div style="clear:both">
+                <div class="formLabel-labelCell">Type:</div>
+                <div class="type" style="float:left;"></div>
+            </div>
         </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell">Type:</div>
-            <div class="type" style="float:left;"></div>
+        <div class="alignRight">
+            <div>
+                <div class="formLabel-labelCell">Inbound:</div>
+                <div class="alignRight">
+                    <span class="msgInRate"></span>
+                    <span> msg/s</span>
+                    <span class="bytesInRate"></span>
+                    <span class="bytesInRateUnits"></span>
+                </div>
+            </div>
+            <div>
+                <div class="formLabel-labelCell">Outbound:</div>
+                <div class="alignRight">
+                    <span class="msgOutRate"></span>
+                    <span> msg/s</span>
+                    <span class="bytesOutRate"></span>
+                    <span class="bytesOutRateUnits"></span>
+                </div>
+            </div>
         </div>
+        <div style="clear:both"></div>
         <div style="clear:both">
             <div class="formLabel-labelCell">State:</div>
             <div class="state" style="float:left;"></div>
@@ -55,22 +78,18 @@
             <div style="clear:both">
                 <div class="formLabel-labelCell">Idle timeout before a warning (ms) :</div>
                 <div class="storeTransactionIdleTimeoutWarn" style="float:left;"></div>
-                <div class="formLabel-description">The time a transaction can be idle for after which a warning alert will be issued</div>
             </div>
             <div style="clear:both">
                 <div class="formLabel-labelCell">Idle timeout before closing (ms) :</div>
                 <div class="storeTransactionIdleTimeoutClose" style="float:left;"></div>
-                <div class="formLabel-description">The time a transaction can be idle for before the connection it is on is closed</div>
             </div>
             <div style="clear:both">
                 <div class="formLabel-labelCell" >Open timeout before warning (ms) :</div>
                 <div class="storeTransactionOpenTimeoutWarn" style="float:left;"></div>
-                <div class="formLabel-description">The time a transaction can be open for after which a warning alert will be issued</div>
             </div>
             <div style="clear:both">
                 <div class="formLabel-labelCell">Open timeout before closing (ms) :</div>
                 <div class="storeTransactionOpenTimeoutClose" style="float:left;"></div>
-                <div class="formLabel-description">The time a transaction can be open for before the connection it is on is closed</div>
             </div>
             <div style="clear:both"></div>
         </div>
@@ -96,30 +115,6 @@
         <button data-dojo-type="dijit.form.Button" class="stopButton" type="button" data-dojo-props="disabled: true">Stop</button>
         <button data-dojo-type="dijit.form.Button" class="editButton" type="button" data-dojo-props="disabled: true">Edit</button>
         <button data-dojo-type="dijit.form.Button" class="deleteButton" data-dojo-props="iconClass: 'dijitIconDelete'">Delete</button>
-    </div>
-
-    <br/>
-
-    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Statistics',  open: true">
-        <div style="clear:both">
-            <div class="formLabel-labelCell">Inbound:</div>
-            <div style="float:left;">
-                <span class="msgInRate"></span>
-                <span> msg/s</span>
-                <span class="bytesInRate"></span>
-                <span class="bytesInRateUnits"></span>
-            </div>
-        </div>
-        <div style="clear:both">
-            <div class="formLabel-labelCell">Outbound:</div>
-            <div style="float:left;">
-                <span class="msgOutRate"></span>
-                <span> msg/s</span>
-                <span class="bytesOutRate"></span>
-                <span class="bytesOutRateUnits"></span>
-            </div>
-        </div>
-        <div style="clear:both"></div>
     </div>
 
     <br/>

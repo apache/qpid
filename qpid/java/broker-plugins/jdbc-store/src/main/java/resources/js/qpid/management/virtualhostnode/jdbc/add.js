@@ -49,6 +49,7 @@ define(["dojo/_base/xhr",
             var poolTypesStore = new Memory({ data: poolTypesData });
             var poolTypeControl = registry.byId("addVirtualHostNode.connectionPoolType");
             poolTypeControl.set("store", poolTypesStore);
+            poolTypeControl.set("value", "NONE");
 
             var poolTypeFieldsDiv = dom.byId("addVirtualHostNode.poolSpecificDiv");
             poolTypeControl.on("change",

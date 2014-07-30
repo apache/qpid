@@ -20,47 +20,60 @@
 define(["qpid/common/util", "dojo/query", "dojo/domReady!"],
   function (util, query)
   {
-    var fields = [ "storeUnderfullSize", "storeOverfullSize", "permittedNodes"];
-    var syncPolicies = ["sync", "no_sync", "write_no_sync"];
     var localTransactionSynchronizationPolicy = "localTransactionSynchronizationPolicy";
     var remoteTransactionSynchronizationPolicy = "remoteTransactionSynchronizationPolicy";
+
+    var fields = [ "storeUnderfullSize", "storeOverfullSize"];
 
     function BDB(data)
     {
         util.buildUI(data.containerNode, data.parent, "virtualhost/bdb_ha/show.html", fields, this);
-        for(var i=0; i<syncPolicies.length;i++)
-        {
-           var policyName = syncPolicies[i];
-           this[localTransactionSynchronizationPolicy + "-" + policyName]= query("." + localTransactionSynchronizationPolicy + "-" +  policyName, data.containerNode)[0];
-           this[remoteTransactionSynchronizationPolicy +"-" + policyName]= query("." + remoteTransactionSynchronizationPolicy + "-" +  policyName, data.containerNode)[0];
-        }
+        this["permittedNodes"]= query(".permittedNodes", data.containerNode)[0];
+        this[localTransactionSynchronizationPolicy]= query("." + localTransactionSynchronizationPolicy, data.containerNode)[0];
+        this[remoteTransactionSynchronizationPolicy]= query("."+ remoteTransactionSynchronizationPolicy, data.containerNode)[0];
     }
 
     BDB.prototype.update = function(data)
     {
         util.updateUI(data, fields, this);
+
+        var permittedNodesMarkup = "";
+        if (data.permittedNodes)
+        {
+            for(var i=0;i<data.permittedNodes.length;i++)
+            {
+                permittedNodesMarkup+="<div>" + data.permittedNodes[i] + "</div>";
+            }
+        }
+        this["permittedNodes"].innerHTML = permittedNodesMarkup ;
+
         var localSyncPolicy =  data[localTransactionSynchronizationPolicy].toLowerCase();
         var remoteSyncPolicy =  data[remoteTransactionSynchronizationPolicy].toLowerCase();
-        for(var i=0; i<syncPolicies.length;i++)
-        {
-           var policyName = syncPolicies[i];
-           if (policyName==localSyncPolicy)
-           {
-            this[localTransactionSynchronizationPolicy + "-" + policyName].checked = true
-           }
-           else
-           {
-            this[localTransactionSynchronizationPolicy + "-" + policyName].checked = false
-           }
 
-           if (policyName==remoteSyncPolicy)
-           {
-             this[remoteTransactionSynchronizationPolicy + "-" + policyName].checked = true
-           }
-           else
-           {
-             this[remoteTransactionSynchronizationPolicy + "-" + policyName].checked = false
-           }
+        for(var i=0; i<this[localTransactionSynchronizationPolicy].children.length;i++)
+        {
+            var child = this[localTransactionSynchronizationPolicy].children[i];
+            if (child.className == localTransactionSynchronizationPolicy + "-" + localSyncPolicy)
+            {
+                child.style.display = "block";
+            }
+            else
+            {
+                child.style.display = "none";
+            }
+        }
+
+        for(var j=0; j<this[remoteTransactionSynchronizationPolicy].children.length;j++)
+        {
+            var child = this[remoteTransactionSynchronizationPolicy].children[j];
+            if (child.className == remoteTransactionSynchronizationPolicy + "-" + remoteSyncPolicy)
+            {
+                child.style.display = "block";
+            }
+            else
+            {
+                child.style.display = "none";
+            }
         }
     }
 

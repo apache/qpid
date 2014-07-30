@@ -28,48 +28,28 @@
   </div>
   <div style="clear:both">
       <div class="formLabel-labelCell">Permitted Nodes:</div>
-      <div class="permittedNodes"></div>
+      <div class="permittedNodes multiLineValue"></div>
   </div>
   <div style="clear:both"></div>
   <br/>
 
   <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'High Availability Durability',  open: true">
-      <div>Before each transaction commit returns to the caller the following will be true:</div>
-      <div>
-           <div>At the master node, the node will have received the required minimum number of acknowledgements from the replica nodes and the transaction will have been:</div>
-          <div>
-              <input type="radio" disabled="true" class="localTransactionSynchronizationPolicy-sync" name="localTransactionSynchronizationPolicy" value="SYNC"/>
-              <label>written and synchronized to the disk [default - highest durability],</label>
-          </div>
-
-          <div>
-              <input type="radio" disabled="true" class="localTransactionSynchronizationPolicy-write_no_sync"  name="localTransactionSynchronizationPolicy" value="WRITE_NO_SYNC"/>
-              <label>written only; the synchronization will be performed later,</label>
-          </div>
-
-          <div>
-              <input type="radio" class="localTransactionSynchronizationPolicy-no_sync" disabled="true" name="localTransactionSynchronizationPolicy" value="NO_SYNC"/>
-              <label>write later; the transaction will be written and synchronized later [lowest durability],</label>
+      <div style="clear:both">
+          <div class="formLabel-labelCell">Local Transaction Sync Policy:</div>
+          <div class="localTransactionSynchronizationPolicy">
+            <span class="localTransactionSynchronizationPolicy-sync">SYNC (the transaction will be written and synchronized to the disk; highest durability)</span>
+            <span class="localTransactionSynchronizationPolicy-write_no_sync">WRITE_NO_SYNC (the transaction will be written only; the synchronization will be performed later)</span>
+            <span class="localTransactionSynchronizationPolicy-no_sync">NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</span>
           </div>
       </div>
-      <div>
-          <div>At the required minimum number od replica nodes, the transaction will have been:</div>
-          <div>
-              <input type="radio" disabled="true" class="remoteTransactionSynchronizationPolicy-sync" name="remoteTransactionSynchronizationPolicy" value="SYNC"/>
-              <label>written and synchronized to the disk [default - highest durability],</label>
-          </div>
-
-          <div>
-              <input type="radio" disabled="true" class="remoteTransactionSynchronizationPolicy-write_no_sync"  name="remoteTransactionSynchronizationPolicy"  value="WRITE_NO_SYNC"/>
-              <label>written only; the synchronization will be performed later,</label>
-          </div>
-
-          <div>
-              <input type="radio" class="remoteTransactionSynchronizationPolicy-no_sync" disabled="true" name="remoteTransactionSynchronizationPolicy" value="NO_SYNC"/>
-              <label>write later; the transaction will be written and synchronized later [lowest durability],</label>
+      <div style="clear:both">
+          <div class="formLabel-labelCell">Remote Transaction Sync Policy:</div>
+          <div class="remoteTransactionSynchronizationPolicy">
+              <span class="remoteTransactionSynchronizationPolicy-sync">SYNC (the transaction will be written and synchronized to the disk; highest durability)</span>
+              <span class="remoteTransactionSynchronizationPolicy-write_no_sync">WRITE_NO_SYNC (the transaction will be written only; the synchronization will be performed later)</span>
+              <span class="remoteTransactionSynchronizationPolicy-no_sync">NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</span>
           </div>
       </div>
   </div>
-
 
 </div>
