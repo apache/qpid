@@ -35,8 +35,8 @@ import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 
 public class MessagesRestTest extends QpidRestTestCase
@@ -161,8 +161,7 @@ public class MessagesRestTest extends QpidRestTestCase
         messagesData.put("destinationQueue", queueName2);
         messagesData.put("move", Boolean.TRUE);
 
-        int status = getRestTestHelper().submitRequest("/service/message/test/" + queueName, "POST", messagesData);
-        assertEquals("Unexpected response code", 200, status);
+        getRestTestHelper().submitRequest("/service/message/test/" + queueName, "POST", messagesData, HttpServletResponse.SC_OK);
 
         // check messages on target queue
         List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/service/message/test/" + queueName2);
@@ -213,8 +212,7 @@ public class MessagesRestTest extends QpidRestTestCase
         messagesData.put("messages", copyMessageIds);
         messagesData.put("destinationQueue", queueName2);
 
-        int responseCode = getRestTestHelper().submitRequest("/service/message/test/" + queueName, "POST", messagesData);
-        assertEquals("Unexpected response code", 200, responseCode);
+        getRestTestHelper().submitRequest("/service/message/test/" + queueName, "POST", messagesData, HttpServletResponse.SC_OK);
 
         // check messages on target queue
         List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/service/message/test/" + queueName2);
@@ -252,7 +250,7 @@ public class MessagesRestTest extends QpidRestTestCase
         // delete half of the messages
         int deleteNumber = ids.size() / 2;
         StringBuilder queryString = new StringBuilder();
-        List<Long> deleteMessageIds = new ArrayList<Long>();
+        List<Long> deleteMessageIds = new ArrayList<>();
         for (int i = 0; i < deleteNumber; i++)
         {
             Long id = ids.remove(i);
@@ -265,8 +263,7 @@ public class MessagesRestTest extends QpidRestTestCase
         }
 
         // delete messages
-        int responseCode = getRestTestHelper().submitRequest("/service/message/test/" + queueName + "?" + queryString.toString(), "DELETE");
-        assertEquals("Unexpected response code", 200, responseCode);
+        getRestTestHelper().submitRequest("/service/message/test/" + queueName + "?" + queryString.toString(), "DELETE", HttpServletResponse.SC_OK);
 
         // check messages on queue
         List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/service/message/test/" + queueName);
@@ -284,7 +281,21 @@ public class MessagesRestTest extends QpidRestTestCase
         }
     }
 
-    private List<Long> getMesssageIds(String queueName) throws IOException, JsonParseException, JsonMappingException
+    public void testClearQueue() throws Exception
+    {
+        String queueName = getTestQueueName();
+
+        // clear queue
+        getRestTestHelper().submitRequest("/service/message/test/" + queueName + "?clear=true", "DELETE", HttpServletResponse.SC_OK);
+
+        // check messages on queue
+        List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/service/message/test/" + queueName);
+        assertNotNull("Messages are not found", messages);
+        assertEquals("Unexpected number of messages", 0, messages.size());
+    }
+
+
+    private List<Long> getMesssageIds(String queueName) throws IOException, JsonMappingException
     {
         List<Map<String, Object>> messages = getRestTestHelper().getJsonAsList("/service/message/test/" + queueName);
         List<Long> ids = new ArrayList<Long>();

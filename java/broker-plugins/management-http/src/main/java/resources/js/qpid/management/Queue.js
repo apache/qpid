@@ -135,6 +135,13 @@ define(["dojo/_base/xhr",
                                                 event.stop(evt);
                                                 that.deleteMessages();
                                             });
+                            var clearQueueButton = query(".clearQueueButton", contentPane.containerNode)[0];
+                            var clearQueueWidget = registry.byNode(clearQueueButton);
+                            connect.connect(clearQueueWidget, "onClick",
+                                function(evt){
+                                    event.stop(evt);
+                                    that.clearQueue();
+                                });
                             var moveMessagesButton = query(".moveMessagesButton", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(moveMessagesButton), "onClick",
                                             function(evt){
@@ -203,7 +210,24 @@ define(["dojo/_base/xhr",
                    }
                }
            };
-
+           Queue.prototype.clearQueue = function() {
+               var that = this;
+               if(confirm("Clear all messages from queue?")) {
+                   var query = "service/message/"+ encodeURIComponent(that.getVirtualHostName())
+                       + "/" + encodeURIComponent(that.getQueueName()) + "?clear=true";
+                   that.success = true
+                   xhr.del({url: query, sync: true, handleAs: "json"}).then(
+                       function(data) {
+                           that.grid.setQuery({id: "*"});
+                           that.grid.selection.deselectAll();
+                           that.queueUpdater.update();
+                       },
+                       function(error) {that.success = false; that.failureReason = error;});
+                   if(!that.success ) {
+                       alert("Error:" + this.failureReason);
+                   }
+               }
+           };
            Queue.prototype.moveOrCopyMessages = function(obj) {
                var that = this;
                var move = obj.move;

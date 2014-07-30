@@ -617,7 +617,7 @@ ACL ALLOW-LOG webadmins CREATE USER
 ACL ALLOW-LOG webadmins DELETE USER
 ACL ALLOW-LOG webadmins UPDATE USER
 
-# allow to the users from webadmins group to move, copy and delete messagaes
+# allow to the users from webadmins group to move, copy, delete messagaes, and clear the queue
 # using REST management interfaces
 ACL ALLOW-LOG webadmins UPDATE METHOD
 
@@ -625,6 +625,7 @@ ACL ALLOW-LOG webadmins UPDATE METHOD
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="moveMessages"
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="copyMessages"
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="deleteMessages"
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="clearQueue"
 
 ACL DENY-LOG all all
       </programlisting>
