@@ -116,31 +116,6 @@ def OptionsAndArguments(argv):
 
     return args
 
-class IpAddr:
-    def __init__(self, text):
-        if text.find("@") != -1:
-            tokens = text.split("@")
-            text = tokens[1]
-        if text.find(":") != -1:
-            tokens = text.split(":")
-            text = tokens[0]
-            self.port = int(tokens[1])
-        else:
-            self.port = 5672
-        self.dottedQuad = socket.gethostbyname(text)
-        nums = self.dottedQuad.split(".")
-        self.addr = (int(nums[0]) << 24) + (int(nums[1]) << 16) + (int(nums[2]) << 8) + int(nums[3])
-
-    def bestAddr(self, addrPortList):
-        bestDiff = 0xFFFFFFFFL
-        bestAddr = None
-        for addrPort in addrPortList:
-            diff = IpAddr(addrPort[0]).addr ^ self.addr
-            if diff < bestDiff:
-                bestDiff = diff
-                bestAddr = addrPort
-        return bestAddr
-
 class BrokerManager:
     def __init__(self):
         self.brokerName = None
@@ -161,42 +136,6 @@ class BrokerManager:
             self.connection.close()
         except:
             pass
-
-    def _getCluster(self):
-        packages = self.qmf.getPackages()
-        if "org.apache.qpid.cluster" not in packages:
-            return None
-
-        clusters = self.qmf.getObjects(_class="cluster", _agent=self.brokerAgent)
-        if len(clusters) == 0:
-            print "Clustering is installed but not enabled on the broker."
-            return None
-
-        self.cluster = clusters[0]
-
-    def _getHostList(self, urlList):
-        hosts = []
-        hostAddr = IpAddr(config._host)
-        for url in urlList:
-            if url.find("amqp:") != 0:
-                raise Exception("Invalid URL 1")
-            url = url[5:]
-            addrs = str(url).split(",")
-            addrList = []
-            for addr in addrs:
-                tokens = addr.split(":")
-                if len(tokens) != 3:
-                    raise Exception("Invalid URL 2")
-                addrList.append((tokens[1], tokens[2]))
-
-            # Find the address in the list that is most likely to be in the same subnet as the address
-            # with which we made the original QMF connection.  This increases the probability that we will
-            # be able to reach the cluster member.
-
-            best = hostAddr.bestAddr(addrList)
-            bestUrl = best[0] + ":" + best[1]
-            hosts.append(bestUrl)
-        return hosts
 
     def displayBroker(self):
         disp = Display(prefix="  ")
