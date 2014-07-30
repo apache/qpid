@@ -71,4 +71,6 @@ public interface FileTrustStore<X extends FileTrustStore<X>> extends TrustStore<
 
     @ManagedAttribute( secure = true, mandatory = true )
     String getPassword();
+
+    void setPassword(String password);
 }

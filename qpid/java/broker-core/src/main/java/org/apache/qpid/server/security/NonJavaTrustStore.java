@@ -18,14 +18,33 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model;
+package org.apache.qpid.server.security;
 
-import java.security.GeneralSecurityException;
-import javax.net.ssl.TrustManager;
+import java.util.List;
+import java.util.Map;
 
-@ManagedObject( defaultType = "FileTrustStore" )
-public interface TrustStore<X extends TrustStore<X>> extends ConfiguredObject<X>
+import org.apache.qpid.server.model.DerivedAttribute;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.TrustStore;
+
+@ManagedObject( category = false, type = "NonJavaTrustStore" )
+public interface NonJavaTrustStore<X extends NonJavaTrustStore<X>> extends TrustStore<X>
 {
-    public TrustManager[] getTrustManagers() throws GeneralSecurityException;
+
+    @ManagedAttribute( mandatory = true )
+    String getCertificatesUrl();
+
+    enum CertificateDetails
+    {
+        SUBJECT_NAME,
+        ISSUER_NAME,
+        VALID_START,
+        VALID_END
+
+    }
+
+    @DerivedAttribute
+    List<Map<CertificateDetails,Object>> getCertificateDetails();
 
 }
