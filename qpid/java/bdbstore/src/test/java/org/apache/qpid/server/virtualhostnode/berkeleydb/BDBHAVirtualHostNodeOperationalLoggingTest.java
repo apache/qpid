@@ -180,6 +180,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PRIORITY, 10));
 
+        // make sure that task executor thread finishes all scheduled tasks
+        node1.stop();
+
         String expectedMessage = HighAvailabilityMessages.PRIORITY_CHANGED(node1.getName(), node1.getGroupName(), "10").toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.PRIORITY_CHANGED_LOG_HIERARCHY)));
@@ -200,6 +203,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.QUORUM_OVERRIDE, 1));
 
+        // make sure that task executor thread finishes all scheduled tasks
+        node1.stop();
+
         String expectedMessage = HighAvailabilityMessages.QUORUM_OVERRIDE_CHANGED(node1.getName(), node1.getGroupName(), "1").toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.QUORUM_OVERRIDE_CHANGED_LOG_HIERARCHY)));
@@ -219,6 +225,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         reset(_eventLogger);
 
         node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true));
+
+        // make sure that task executor thread finishes all scheduled tasks
+        node1.stop();
 
         String expectedMessage = HighAvailabilityMessages.DESIGNATED_PRIMARY_CHANGED(node1.getName(), node1.getGroupName(), "true").toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
