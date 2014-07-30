@@ -82,6 +82,15 @@ Replication levels:
 REPLICATE_LEVELS= ["none", "configuration", "all"]
 DEFAULT_PROPERTIES = {"exchange":["name", "type", "durable"], "queue":["name", "durable", "autoDelete"]}
 
+def get_value(r):
+    if len(r) == 2:
+        try:
+            value = int(r[1])
+        except:
+            value = r[1]
+    else: value = None
+    return value
+
 class Config:
     def __init__(self):
         self._recursive         = False
@@ -118,9 +127,7 @@ class Config:
         options = {}
         for a in self._extra_arguments:
             r = a.split("=", 1)
-            if len(r) == 2: value = r[1]
-            else: value = None
-            options[r[0]] = value
+            options[r[0]] = get_value(r)
         return options
 
 
@@ -560,9 +567,7 @@ class BrokerManager:
         declArgs = {}
         for a in config._extra_arguments:
             r = a.split("=", 1)
-            if len(r) == 2: value = r[1]
-            else: value = None
-            declArgs[r[0]] = value
+            declArgs[r[0]] = get_value(r)
 
         if config._msgSequence:
             declArgs[MSG_SEQUENCE] = 1
@@ -591,9 +596,7 @@ class BrokerManager:
         declArgs = {}
         for a in config._extra_arguments:
             r = a.split("=", 1)
-            if len(r) == 2: value = r[1]
-            else: value = None
-            declArgs[r[0]] = value
+            declArgs[r[0]] = get_value(r)
 
         if config._durable:
             # allow the default fileCount and fileSize specified 
