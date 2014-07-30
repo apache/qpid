@@ -137,6 +137,7 @@ jcntl::recover_complete()
 {
     if (!_readonly_flag)
         throw jexception(jerrno::JERR_JCNTL_NOTRECOVERED, "jcntl", "recover_complete");
+    _recoveryManager.recoveryComplete();
     _readonly_flag = false;
 }
 

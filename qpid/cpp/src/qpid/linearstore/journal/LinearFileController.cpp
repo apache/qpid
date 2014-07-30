@@ -73,7 +73,6 @@ void LinearFileController::addJournalFile(JournalFile* journalFilePtr,
     }
     if (makeCurrentFlag) {
         currentJournalFilePtr_ = journalFilePtr;
-        currentJournalFilePtr_->open();
     }
 }
 
