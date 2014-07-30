@@ -101,7 +101,11 @@ public class ConfiguredObjectTypeRegistry
                     }
                     else
                     {
-                        categories.add(getCategory(configuredObjectClass));
+                        Class<? extends ConfiguredObject> category = getCategory(configuredObjectClass);
+                        if(category != null)
+                        {
+                            categories.add(category);
+                        }
                     }
                     if (!"".equals(annotation.type()))
                     {
