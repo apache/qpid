@@ -284,6 +284,12 @@ bool RecoveryManager::readNextRemainingRecord(void** const dataPtrPtr,
     return true;
 }
 
+void RecoveryManager::recoveryComplete() {
+    if(inFileStream_.is_open()) {
+        inFileStream_.close();
+    }
+}
+
 void RecoveryManager::setLinearFileControllerJournals(lfcAddJournalFileFn fnPtr,
                                                       LinearFileController* lfcPtr) {
     if (journalEmptyFlag_) {

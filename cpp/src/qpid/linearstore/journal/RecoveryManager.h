@@ -122,6 +122,7 @@ public:
                                  bool& external,
                                  data_tok* const dtokp,
                                  bool ignore_pending_txns);
+    void recoveryComplete();
     void setLinearFileControllerJournals(lfcAddJournalFileFn fnPtr,
                                          LinearFileController* lfcPtr);
     std::string toString(const std::string& jid);

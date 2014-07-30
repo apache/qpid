@@ -169,6 +169,7 @@ void JournalFile::asyncFileHeaderWrite(io_context_t ioContextPtr,
                     queueName_.size(),
                     queueName_.data());
     const std::size_t wr_size = QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB * 1024;
+    if (!isOpen()) open();
     aio::prep_pwrite(aioControlBlockPtr_, fileHandle_, (void*)fileHeaderBasePtr_, wr_size, 0UL);
     if (!aio::is_aligned(aioControlBlockPtr_->u.c.buf, QLS_AIO_ALIGN_BOUNDARY_BYTES)) {
         std::ostringstream oss;
@@ -190,6 +191,7 @@ void JournalFile::asyncPageWrite(io_context_t ioContextPtr,
                                  uint32_t dataSize_dblks) {
     const std::size_t wr_size = dataSize_dblks * QLS_DBLK_SIZE_BYTES;
     const uint64_t foffs = submittedDblkCount_.get() * QLS_DBLK_SIZE_BYTES;
+    if (!isOpen()) open();
     aio::prep_pwrite_2(aioControlBlockPtr, fileHandle_, data, wr_size, foffs);
     if (!aio::is_aligned(aioControlBlockPtr->u.c.buf, QLS_AIO_ALIGN_BOUNDARY_BYTES)) {
         std::ostringstream oss;
