@@ -125,13 +125,13 @@ define(["dojo/_base/xhr",
                      var addGroupButton = query(".addGroupButton", node)[0];
                      connect.connect(registry.byNode(addGroupButton), "onClick", function(evt){ addGroup.show(groupProviderObj.name) });
 
-                     var deleteMessagesButton = query(".deleteGroupButton", node)[0];
-                                                var deleteWidget = registry.byNode(deleteMessagesButton);
-                                                connect.connect(deleteWidget, "onClick",
-                                                                function(evt){
-                                                                    event.stop(evt);
-                                                                    that.deleteGroups();
-                                                                });
+                     var deleteGroupButton = query(".deleteGroupButton", node)[0];
+                     var deleteWidget = registry.byNode(deleteGroupButton);
+                     connect.connect(deleteWidget, "onClick",
+                                    function(evt){
+                                        event.stop(evt);
+                                        that.deleteGroups();
+                                    });
                 });
         }
 

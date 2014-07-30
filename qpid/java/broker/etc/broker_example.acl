@@ -83,6 +83,7 @@ ACL ALLOW webadmins ACCESS_LOGS BROKER
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="moveMessages"
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="copyMessages"
 #ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="deleteMessages"
+#ACL ALLOW-LOG webadmins UPDATE METHOD component="VirtualHost.Queue" name="clearQueue"
 
 ### MESSAGING ###
 # The 'ACCESS VIRTUALHOST' rules below apply to messaging operations (as opposed to management operations)

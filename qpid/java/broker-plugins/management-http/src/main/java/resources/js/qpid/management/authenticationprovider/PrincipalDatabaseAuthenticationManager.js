@@ -109,14 +109,14 @@ define(["dojo/_base/xhr",
                      var addUserButton = query(".addUserButton", node)[0];
                      connect.connect(registry.byNode(addUserButton), "onClick", function(evt){ addUser.show(that.name) });
 
-                     var deleteMessagesButton = query(".deleteUserButton", node)[0];
-                                                var deleteWidget = registry.byNode(deleteMessagesButton);
-                                                connect.connect(deleteWidget, "onClick",
-                                                                function(evt){
-                                                                    event.stop(evt);
-                                                                    that.deleteUsers();
-                                                                });
-        }
+                     var deleteUserButton = query(".deleteUserButton", node)[0];
+                     var deleteWidget = registry.byNode(deleteUserButton);
+                     connect.connect(deleteWidget, "onClick",
+                                    function(evt){
+                                        event.stop(evt);
+                                        that.deleteUsers();
+                                    });
+}
 
         DatabaseAuthManager.prototype.deleteUsers = function()
         {

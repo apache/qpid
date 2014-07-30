@@ -170,7 +170,7 @@ public class MessageServlet extends AbstractServlet
             _messageIds = messageIds;
         }
 
-
+        @Override
         public void withinTransaction(final VirtualHost.Transaction txn)
         {
 
@@ -208,6 +208,7 @@ public class MessageServlet extends AbstractServlet
             _destinationQueue = destinationQueue;
         }
 
+        @Override
         protected void updateEntry(QueueEntry entry, VirtualHost.Transaction txn)
         {
             txn.move(entry, _destinationQueue);
@@ -224,6 +225,7 @@ public class MessageServlet extends AbstractServlet
             _destinationQueue = destinationQueue;
         }
 
+        @Override
         protected void updateEntry(QueueEntry entry, VirtualHost.Transaction txn)
         {
             txn.copy(entry, _destinationQueue);
@@ -237,6 +239,7 @@ public class MessageServlet extends AbstractServlet
             super(sourceQueue, messageIds);
         }
 
+        @Override
         protected void updateEntry(QueueEntry entry, VirtualHost.Transaction txn)
         {
             txn.dequeue(entry);
@@ -244,6 +247,34 @@ public class MessageServlet extends AbstractServlet
     }
 
 
+    private static class ClearQueueTransaction implements VirtualHost.TransactionalOperation
+    {
+        private final Queue _queue;
+
+        protected ClearQueueTransaction(Queue queue)
+        {
+            _queue = queue;
+        }
+
+        @Override
+        public void withinTransaction(final VirtualHost.Transaction txn)
+        {
+            _queue.visit(new QueueEntryVisitor()
+            {
+
+                public boolean visit(final QueueEntry entry)
+                {
+                    final ServerMessage message = entry.getMessage();
+                    if(message != null)
+                    {
+                        txn.dequeue(entry);
+                    }
+                    return false;
+                }
+            });
+
+        }
+    }
 
     private class MessageCollector implements QueueEntryVisitor
     {
@@ -426,7 +457,7 @@ public class MessageServlet extends AbstractServlet
 
 
             final Queue destinationQueue = getQueueFromVirtualHost(destQueueName, vhost);
-            final List messageIds = new ArrayList((List) providedObject.get("messages"));
+            final List<Long> messageIds = new ArrayList<Long>((List<Long>) providedObject.get("messages"));
             QueueEntryTransaction txn =
                     isMoveTransaction
                             ? new MoveTransaction(sourceQueue, messageIds, destinationQueue)
@@ -446,31 +477,33 @@ public class MessageServlet extends AbstractServlet
         }
     }
 
-
     /*
-     * DELETE removes messages from the queue
+     * DELETE removes specified messages from, or clears the queue
      */
     @Override
-    protected void doDeleteWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response)
+    protected void doDeleteWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
+        final Queue<?> queue = getQueueFromRequest(request);
 
-        final Queue<?> sourceQueue = getQueueFromRequest(request);
+        final VirtualHost<?,?,?> vhost = queue.getParent(VirtualHost.class);
+        boolean clearQueue = Boolean.parseBoolean(request.getParameter("clear"));
 
-        final VirtualHost<?,?,?> vhost = sourceQueue.getParent(VirtualHost.class);
-
-
-        final List<Long> messageIds = new ArrayList<Long>();
-        for(String idStr : request.getParameterValues("id"))
-        {
-            messageIds.add(Long.valueOf(idStr));
-        }
-
-        // FIXME: added temporary authorization check until we introduce management layer
-        // and review current ACL rules to have common rules for all management interfaces
         try
         {
-            authorizeMethod("deleteMessages", vhost);
-            vhost.executeTransaction(new DeleteTransaction(sourceQueue, messageIds));
+            if (clearQueue)
+            {
+                clearQueue(queue, vhost);
+            }
+            else
+            {
+                final List<Long> messageIds = new ArrayList<>();
+                for(String idStr : request.getParameterValues("id"))
+                {
+                    messageIds.add(Long.valueOf(idStr));
+                }
+
+                deleteMessages(queue, vhost, messageIds);
+            }
             response.setStatus(HttpServletResponse.SC_OK);
         }
         catch (AccessControlException e)
@@ -478,6 +511,22 @@ public class MessageServlet extends AbstractServlet
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
 
+    }
+
+    private void deleteMessages(final Queue<?> queue, final VirtualHost<?, ?, ?> vhost, final List<Long> messageIds)
+    {
+        // FIXME: added temporary authorization check until we introduce management layer
+        // and review current ACL rules to have common rules for all management interfaces
+        authorizeMethod("deleteMessages", vhost);
+        vhost.executeTransaction(new DeleteTransaction(queue, messageIds));
+    }
+
+    private void clearQueue(final Queue<?> queue, final VirtualHost<?, ?, ?> vhost)
+    {
+        // FIXME: added temporary authorization check until we introduce management layer
+        // and review current ACL rules to have common rules for all management interfaces
+        authorizeMethod("clearQueue", vhost);
+        vhost.executeTransaction(new ClearQueueTransaction(queue));
     }
 
     private void authorizeMethod(String methodName, VirtualHost<?,?,?> vhost)
