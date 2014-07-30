@@ -24,6 +24,7 @@ import java.net.SocketAddress;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.Plugin;
 
 public interface HttpManagementConfiguration<X extends HttpManagementConfiguration<X>> extends Plugin<X>
@@ -42,6 +43,10 @@ public interface HttpManagementConfiguration<X extends HttpManagementConfigurati
 
     @ManagedAttribute( defaultValue = "600" )
     public int getSessionTimeout();
+
+    String MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME = "maxHttpFileUploadSize";
+    @ManagedContextDefault( name = MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME)
+    static final long DEFAULT_MAX_UPLOAD_SIZE = 100 * 1024;
 
     AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);
 }
