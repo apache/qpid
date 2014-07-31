@@ -255,4 +255,26 @@ sub get_session {
     return $self->{_session};
 }
 
+=pod
+
+=head2 ADDRESS
+
+Returns the address for this sender.
+
+=over
+
+=item $address = $sender->get_address
+
+=back
+
+=cut
+
+sub get_address {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+    my $address = $impl->getAddress;
+
+    return new qpid::messaging::Address($address);
+}
+
 1;

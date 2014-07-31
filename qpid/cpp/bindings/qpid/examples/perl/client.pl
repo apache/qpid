@@ -38,10 +38,8 @@ eval {
     # create an address and receiver for incoming messages
     # the queue will be created always, and will be deleted
     # when the receive disconnects
-    my $responseQueue = new qpid::messaging::Address(
-        "#response-queue; {create:always, delete:always}");
-    my $receiver = $session->create_receiver($responseQueue);
-
+    my $receiver = $session->create_receiver("#");
+    my $responseQueue = $receiver->get_address();
     # Now send some messages...
 
     my @s = (
