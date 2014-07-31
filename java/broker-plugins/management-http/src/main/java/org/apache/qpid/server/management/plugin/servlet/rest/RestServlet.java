@@ -621,20 +621,7 @@ public class RestServlet extends AbstractServlet
 
     private boolean getBooleanParameterFromRequest(HttpServletRequest request, final String paramName)
     {
-        boolean value = false;
-        final String stringValue = request.getParameter(paramName);
-        if(stringValue!=null)
-        {
-            try
-            {
-                value = Boolean.parseBoolean(stringValue);
-            }
-            catch (NumberFormatException e)
-            {
-                LOGGER.warn("Could not parse " + stringValue + " as integer");
-            }
-        }
-        return value;
+        return Boolean.parseBoolean(request.getParameter(paramName));
     }
 
 }
