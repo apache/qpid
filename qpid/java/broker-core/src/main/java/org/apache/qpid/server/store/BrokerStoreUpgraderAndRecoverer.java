@@ -477,7 +477,7 @@ public class BrokerStoreUpgraderAndRecoverer
     public Broker<?> perform(final DurableConfigurationStore store)
     {
         List<ConfiguredObjectRecord> upgradedRecords = upgrade(store);
-        new GenericRecoverer(_systemConfig, Broker.class.getSimpleName()).recover(upgradedRecords);
+        new GenericRecoverer(_systemConfig).recover(upgradedRecords);
 
         final StoreConfigurationChangeListener configChangeListener = new StoreConfigurationChangeListener(store);
         applyRecursively(_systemConfig.getBroker(), new Action<ConfiguredObject<?>>()

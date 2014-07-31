@@ -574,7 +574,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private void applyToChildren(Action<ConfiguredObject<?>> action)
+    protected void applyToChildren(Action<ConfiguredObject<?>> action)
     {
         for (Class<? extends ConfiguredObject> childClass : getModel().getChildTypes(getCategoryClass()))
         {

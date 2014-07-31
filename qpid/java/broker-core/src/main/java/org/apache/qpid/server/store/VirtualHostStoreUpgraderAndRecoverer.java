@@ -406,6 +406,6 @@ public class VirtualHostStoreUpgraderAndRecoverer
         GenericStoreUpgrader upgraderHandler = new GenericStoreUpgrader(virtualHostCategory, VirtualHost.MODEL_VERSION, durableConfigurationStore, _upgraders);
         upgraderHandler.upgrade();
 
-        new GenericRecoverer(_virtualHostNode, virtualHostCategory).recover(upgraderHandler.getRecords());
+        new GenericRecoverer(_virtualHostNode).recover(upgraderHandler.getRecords());
     }
 }

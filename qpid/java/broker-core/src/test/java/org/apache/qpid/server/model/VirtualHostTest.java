@@ -20,34 +20,40 @@
  */
 package org.apache.qpid.server.model;
 
+import static java.util.Arrays.asList;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.security.AccessControlException;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
 import org.mockito.ArgumentMatcher;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry.RegistryChangeListener;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -156,6 +162,60 @@ public class VirtualHostTest extends QpidTestCase
         verify(_configStore, times(1)).create(matchesRecord(virtualHost.getId(), virtualHost.getType()));
         verify(_configStore, times(2)).update(eq(false), matchesRecord(virtualHost.getId(), virtualHost.getType()));
     }
+
+    public void testRestartingVirtualHostRecoversChildren()
+    {
+        String virtualHostName = getName();
+
+        VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
+        final ConfiguredObjectRecord virtualHostCor = virtualHost.asObjectRecord();
+
+        // Give virtualhost a queue and an exchange
+        Queue queue = virtualHost.createChild(Queue.class, Collections.<String, Object>singletonMap(Queue.NAME, "myQueue"));
+        final ConfiguredObjectRecord queueCor = queue.asObjectRecord();
+
+        Map<String, Object> exchangeArgs = new HashMap<>();
+        exchangeArgs.put(Exchange.NAME, "myExchange");
+        exchangeArgs.put(Exchange.TYPE, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
+
+        Exchange exchange = virtualHost.createChild(Exchange.class, exchangeArgs);
+        final ConfiguredObjectRecord exchangeCor = exchange.asObjectRecord();
+
+        assertEquals("Unexpected number of queues before stop", 1, virtualHost.getChildren(Queue.class).size());
+        assertEquals("Unexpected number of exchanges before stop", 5, virtualHost.getChildren(Exchange.class).size());
+
+        virtualHost.stop();
+        assertEquals("Unexpected state", State.STOPPED, virtualHost.getState());
+        assertEquals("Unexpected number of queues after stop", 0, virtualHost.getChildren(Queue.class).size());
+        assertEquals("Unexpected number of exchanges after stop", 0, virtualHost.getChildren(Exchange.class).size());
+
+        // Setup an answer that will return the configured object records
+        doAnswer(new Answer()
+        {
+            final Iterator<ConfiguredObjectRecord> corIterator = asList(queueCor, exchangeCor, virtualHostCor).iterator();
+
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                ConfiguredObjectRecordHandler handler = (ConfiguredObjectRecordHandler) invocation.getArguments()[0];
+                boolean handlerContinue = true;
+                while(corIterator.hasNext() && handlerContinue)
+                {
+                    handlerContinue = handler.handle(corIterator.next());
+                }
+
+                return null;
+            }
+        }).when(_configStore).visitConfiguredObjectRecords(any(ConfiguredObjectRecordHandler.class));
+
+        virtualHost.start();
+        assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
+
+        assertEquals("Unexpected number of queues after restart", 1, virtualHost.getChildren(Queue.class).size());
+        assertEquals("Unexpected number of exchanges after restart", 5, virtualHost.getChildren(Exchange.class).size());
+    }
+
 
     public void testStopVirtualHost_ClosesConnections()
     {

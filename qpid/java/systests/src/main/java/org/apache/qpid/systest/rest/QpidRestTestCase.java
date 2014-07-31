@@ -112,14 +112,15 @@ public class QpidRestTestCase extends QpidBrokerTestCase
     public Map<String, Object> waitForAttributeChanged(String url, String attributeName, Object newValue) throws Exception
     {
         List<Map<String, Object>> nodeAttributes = getRestTestHelper().getJsonAsList(url);
-        long limit = System.currentTimeMillis() + 5000;
+        int timeout = 5000;
+        long limit = System.currentTimeMillis() + timeout;
         while(System.currentTimeMillis() < limit && (nodeAttributes.size() == 0 || !newValue.equals(nodeAttributes.get(0).get(attributeName))))
         {
             Thread.sleep(100l);
             nodeAttributes = getRestTestHelper().getJsonAsList(url);
         }
         Map<String, Object> nodeData = nodeAttributes.get(0);
-        assertEquals("Unexpected attribute " + attributeName, newValue, nodeData.get(attributeName));
+        assertEquals("Attribute " + attributeName + " did not reach expected value within permitted timeout "  + timeout + "ms.", newValue, nodeData.get(attributeName));
         return nodeData;
     }
 }
