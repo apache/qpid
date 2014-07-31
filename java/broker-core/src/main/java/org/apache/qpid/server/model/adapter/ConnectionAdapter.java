@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -44,6 +46,8 @@ import org.apache.qpid.server.util.Action;
 public final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter> implements Connection<ConnectionAdapter>,
                                                                                              SessionModelListener
 {
+    private static final Logger LOGGER = Logger.getLogger(ConnectionAdapter.class);
+
     private final Action _underlyingConnectionDeleteTask;
     private final AtomicBoolean _underlyingClosed = new AtomicBoolean(false);
     private AMQConnectionModel _underlyingConnection;
@@ -61,6 +65,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
             @Override
             public void performAction(final Object object)
             {
+                System.out.println("Got underlying delete");
                 conn.removeDeleteTask(this);
                 _underlyingClosed.set(true);
                 deleted();
@@ -240,7 +245,18 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         if (_underlyingClosed.compareAndSet(false, true))
         {
             _underlyingConnection.removeDeleteTask(_underlyingConnectionDeleteTask);
-            _underlyingConnection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+            try
+            {
+                _underlyingConnection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+            }
+            catch (Exception e)
+            {
+                LOGGER.warn("Exception closing connection "
+                             + _underlyingConnection.getConnectionId()
+                             + " from "
+                             + _underlyingConnection.getRemoteAddressString(), e);
+            }
+
         }
     }
 
