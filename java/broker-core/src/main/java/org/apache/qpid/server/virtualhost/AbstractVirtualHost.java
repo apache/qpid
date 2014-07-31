@@ -75,6 +75,7 @@ import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
+import org.apache.qpid.server.store.GenericRecoverer;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreProvider;
 import org.apache.qpid.server.store.StoreException;
@@ -82,6 +83,7 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.MapValueConverter;
 
@@ -341,7 +343,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public Collection<Connection> getConnections()
     {
         return getChildren(Connection.class);
-
     }
 
     @Override
@@ -1317,7 +1318,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         getDurableConfigurationStore().create(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes()));
     }
 
-    @StateTransition( currentState = { State.UNINITIALIZED, State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
+    @StateTransition( currentState = { State.UNINITIALIZED }, desiredState = State.ACTIVE )
     private void onActivate()
     {
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());
@@ -1339,9 +1340,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
 
         MessageStoreRecoverer messageStoreRecoverer;
-
-
-
         if(getContextValue(Boolean.class, USE_ASYNC_RECOVERY))
         {
             messageStoreRecoverer = new AsynchronousMessageStoreRecoverer();
@@ -1364,7 +1362,58 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             _state.set(finalState);
             reportIfError(_state.get());
         }
+    }
 
+    @StateTransition( currentState = { State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
+    private void onRestart()
+    {
+        resetStatistics();
+
+        final List<ConfiguredObjectRecord> records = new ArrayList<>();
+
+        // Transitioning to STOPPED will have closed all our children.  Now we are transition
+        // back to ACTIVE, we need to recover and re-open them.
+
+        getDurableConfigurationStore().visitConfiguredObjectRecords(new ConfiguredObjectRecordHandler()
+        {
+            @Override
+            public void begin()
+            {
+            }
+
+            @Override
+            public boolean handle(final ConfiguredObjectRecord record)
+            {
+                records.add(record);
+                return true;
+            }
+
+            @Override
+            public void end()
+            {
+            }
+        });
+
+        new GenericRecoverer(this).recover(records);
+
+        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                applyToChildren(new Action<ConfiguredObject<?>>()
+                {
+                    @Override
+                    public void performAction(final ConfiguredObject<?> object)
+                    {
+                        object.open();
+                    }
+                });
+                return null;
+            }
+        });
+
+        onActivate();
     }
 
     private class StoreUpdatingChangeListener implements ConfigurationChangeListener

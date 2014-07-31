@@ -29,11 +29,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.systest.rest.Asserts;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.util.FileUtils;
@@ -99,7 +102,7 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
         assertEquals("Unexpected synchronization policy before change", "SYNC", hostAttributes.get(LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY));
 
         Map<String, Object> newPolicy = Collections.<String, Object>singletonMap(LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY, "NO_SYNC");
-        getRestTestHelper().submitRequest(_virtualhostUrl, "PUT", newPolicy, 200);
+        getRestTestHelper().submitRequest(_virtualhostUrl, "PUT", newPolicy, HttpServletResponse.SC_OK);
 
         hostAttributes = getRestTestHelper().getJsonAsSingletonList(_virtualhostUrl);
         assertEquals("Unexpected synchronization policy after change", "NO_SYNC", hostAttributes.get(LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY));
@@ -111,9 +114,36 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
         assertEquals("Unexpected synchronization policy before change", "NO_SYNC", hostAttributes.get(REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY));
 
         Map<String, Object> newPolicy = Collections.<String, Object>singletonMap(REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY, "SYNC");
-        getRestTestHelper().submitRequest(_virtualhostUrl, "PUT", newPolicy, 200);
+        getRestTestHelper().submitRequest(_virtualhostUrl, "PUT", newPolicy, HttpServletResponse.SC_OK);
 
         hostAttributes = getRestTestHelper().getJsonAsSingletonList(_virtualhostUrl);
         assertEquals("Unexpected synchronization policy after change", "SYNC", hostAttributes.get(REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY));
     }
+
+    public void testMutateState() throws Exception
+    {
+        waitForAttributeChanged(_virtualhostUrl, VirtualHost.STATE, "ACTIVE");
+        assertActualAndDesireStates(_virtualhostUrl, "ACTIVE", "ACTIVE");
+
+        Map<String, Object> newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, "STOPPED");
+        getRestTestHelper().submitRequest(_virtualhostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
+
+        waitForAttributeChanged(_virtualhostUrl, VirtualHost.STATE, "STOPPED");
+        assertActualAndDesireStates(_virtualhostUrl, "STOPPED", "STOPPED");
+
+        newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, "ACTIVE");
+        getRestTestHelper().submitRequest(_virtualhostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
+
+        waitForAttributeChanged(_virtualhostUrl, VirtualHost.STATE, "ACTIVE");
+        assertActualAndDesireStates(_virtualhostUrl, "ACTIVE", "ACTIVE");
+    }
+
+    private void assertActualAndDesireStates(final String restUrl,
+                                             final String expectedDesiredState,
+                                             final String expectedActualState) throws IOException
+    {
+        Map<String, Object> virtualhost = getRestTestHelper().getJsonAsSingletonList(restUrl);
+        Asserts.assertActualAndDesiredState(expectedDesiredState, expectedActualState, virtualhost);
+    }
+
 }

@@ -27,11 +27,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.Session;
 import javax.servlet.http.HttpServletResponse;
-
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
 
 import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
@@ -163,20 +162,58 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
     public void testMutateState() throws Exception
     {
-        String hostToUpdate = TEST3_VIRTUALHOST;
-        String restHostUrl = "virtualhost/" + hostToUpdate + "/" + hostToUpdate;
+        String restHostUrl = "virtualhost/" + TEST1_VIRTUALHOST + "/" + TEST1_VIRTUALHOST;
 
+        waitForAttributeChanged(restHostUrl, VirtualHost.STATE, "ACTIVE");
         assertActualAndDesireStates(restHostUrl, "ACTIVE", "ACTIVE");
 
         Map<String, Object> newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, "STOPPED");
         getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
 
+        waitForAttributeChanged(restHostUrl, VirtualHost.STATE, "STOPPED");
         assertActualAndDesireStates(restHostUrl, "STOPPED", "STOPPED");
 
         newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, "ACTIVE");
         getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
 
+        waitForAttributeChanged(restHostUrl, VirtualHost.STATE, "ACTIVE");
+
         assertActualAndDesireStates(restHostUrl, "ACTIVE", "ACTIVE");
+    }
+
+    public void testMutateStateOfVirtualHostWithQueuesAndMessages() throws Exception
+    {
+        String testQueueName = getTestQueueName();
+        String restHostUrl = "virtualhost/" + TEST1_VIRTUALHOST + "/" + TEST1_VIRTUALHOST;
+        String restQueueUrl = "queue/" + TEST1_VIRTUALHOST + "/" + TEST1_VIRTUALHOST + "/" + testQueueName;
+
+        waitForAttributeChanged(restHostUrl, VirtualHost.STATE, "ACTIVE");
+        assertActualAndDesireStates(restHostUrl, "ACTIVE", "ACTIVE");
+
+        Connection connection = getConnection();
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Destination dest = session.createQueue(testQueueName);
+        session.createConsumer(dest).close();
+        session.createProducer(dest).send(session.createTextMessage("My test message"));
+        session.commit();
+        connection.close();
+
+        assertQueueDepth(restQueueUrl, "Unexpected number of messages before stopped", 1);
+
+        Map<String, Object> newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, "STOPPED");
+        getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
+
+        waitForAttributeChanged(restHostUrl, VirtualHost.STATE, "STOPPED");
+        assertActualAndDesireStates(restHostUrl, "STOPPED", "STOPPED");
+
+        newAttributes = Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, "ACTIVE");
+        getRestTestHelper().submitRequest(restHostUrl, "PUT", newAttributes, HttpServletResponse.SC_OK);
+
+        waitForAttributeChanged(restHostUrl, VirtualHost.STATE, "ACTIVE");
+
+        assertActualAndDesireStates(restHostUrl, "ACTIVE", "ACTIVE");
+
+        assertQueueDepth(restQueueUrl, "Unexpected number of messages after restart", 1);
     }
 
     public void testRecoverVirtualHostInDesiredStateStoppedWithDescription() throws Exception
@@ -502,15 +539,13 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code", 201, statusCode);
     }
 
-    private void createQueue(String queueName, String queueType, Map<String, Object> attributes) throws IOException,
-            JsonGenerationException, JsonMappingException
+    private void createQueue(String queueName, String queueType, Map<String, Object> attributes) throws Exception
     {
         int responseCode = tryCreateQueue(queueName, queueType, attributes);
         assertEquals("Unexpected response code", 201, responseCode);
     }
 
-    private int tryCreateQueue(String queueName, String queueType, Map<String, Object> attributes) throws IOException,
-            JsonGenerationException, JsonMappingException
+    private int tryCreateQueue(String queueName, String queueType, Map<String, Object> attributes) throws Exception
     {
         Map<String, Object> queueData = new HashMap<String, Object>();
         queueData.put(Queue.NAME, queueName);
@@ -580,11 +615,21 @@ public class VirtualHostRestTest extends QpidRestTestCase
     }
 
     private void assertActualAndDesireStates(final String restUrl,
-                                                            final String expectedDesiredState,
-                                                            final String expectedActualState) throws IOException
+                                             final String expectedDesiredState,
+                                             final String expectedActualState) throws IOException
     {
         Map<String, Object> virtualhost = getRestTestHelper().getJsonAsSingletonList(restUrl);
         Asserts.assertActualAndDesiredState(expectedDesiredState, expectedActualState, virtualhost);
+    }
+
+    private void assertQueueDepth(String restQueueUrl, String message, int expectedDepth) throws IOException
+    {
+        Map<String, Object> queueDetails = getRestTestHelper().getJsonAsSingletonList(restQueueUrl);
+        assertNotNull(queueDetails);
+        Map<String, Object> statistics = (Map<String, Object>) queueDetails.get(Asserts.STATISTICS_ATTRIBUTE);
+        assertNotNull(statistics);
+
+        assertEquals(message, expectedDepth, statistics.get("queueDepthMessages"));
     }
 
 }

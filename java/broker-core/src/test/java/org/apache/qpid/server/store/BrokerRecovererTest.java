@@ -325,7 +325,7 @@ public class BrokerRecovererTest extends TestCase
 
     private void resolveObjects(ConfiguredObjectRecord... records)
     {
-        GenericRecoverer recoverer = new GenericRecoverer(_systemConfig, Broker.class.getSimpleName());
+        GenericRecoverer recoverer = new GenericRecoverer(_systemConfig);
         recoverer.recover(Arrays.asList(records));
     }
 

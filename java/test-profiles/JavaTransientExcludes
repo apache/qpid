@@ -57,6 +57,7 @@ org.apache.qpid.test.unit.client.MaxDeliveryCountTest#testWhenBrokerIsRestartedA
 
 org.apache.qpid.systest.rest.VirtualHostRestTest#testPutCreateVirtualHostUsingProfileNodeType
 org.apache.qpid.systest.rest.VirtualHostRestTest#testRecoverVirtualHostInDesiredStateStoppedWithDescription
+org.apache.qpid.systest.rest.VirtualHostRestTest#testMutateStateOfVirtualHostWithQueuesAndMessages
 
 org.apache.qpid.systest.rest.VirtualHostNodeRestTest#testCreateAndDeleteVirtualHostNode
 

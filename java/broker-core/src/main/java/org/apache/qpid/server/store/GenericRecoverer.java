@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,18 +41,16 @@ public class GenericRecoverer
 {
     private static final Logger LOGGER = Logger.getLogger(GenericRecoverer.class);
 
-    private final ConfiguredObject<?> _parentOfRoot;
-    private final String _rootCategory;
+    private final ConfiguredObject<?> _root;
 
-    public GenericRecoverer(ConfiguredObject<?> parentOfRoot, String rootCategory)
+    public GenericRecoverer(ConfiguredObject<?> root)
     {
-        _parentOfRoot = parentOfRoot;
-        _rootCategory = rootCategory;
+        _root = root;
     }
 
     public void recover(final List<ConfiguredObjectRecord> records)
     {
-        _parentOfRoot.getTaskExecutor().run(new VoidTask()
+        _root.getTaskExecutor().run(new VoidTask()
         {
             @Override
             public void execute()
@@ -62,44 +61,70 @@ public class GenericRecoverer
             @Override
             public String toString()
             {
-                return _rootCategory + " recovery";
+                return  "RecoveringChildrenOf_" + _root.getCategoryClass().getSimpleName();
             }
         });
-
     }
 
     private void performRecover(List<ConfiguredObjectRecord> records)
     {
-        ConfiguredObjectRecord rootRecord = null;
-        for (ConfiguredObjectRecord record : records)
-        {
-            if (_rootCategory.equals(record.getType()))
-            {
-                rootRecord = record;
-                break;
-            }
-        }
-
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("Root record " + rootRecord);
+            LOGGER.debug("Recovering the children of " + _root);
         }
 
-        if (rootRecord != null)
+        records = resolveDiscontinuity(records);
+        resolveObjects(_root, records);
+    }
+
+    private List<ConfiguredObjectRecord> resolveDiscontinuity(final List<ConfiguredObjectRecord> records)
+    {
+        Collection<Class<? extends ConfiguredObject>> childTypesOfRoot = _root.getModel().getChildTypes(_root.getCategoryClass());
+        List<ConfiguredObjectRecord> newRecords = new ArrayList<>(records.size());
+
+        for (ConfiguredObjectRecord record : records)
         {
-
-            if (rootRecord.getParents() == null || rootRecord.getParents().isEmpty())
+            if (record.getId().equals(_root.getId()))
             {
-                records = new ArrayList<ConfiguredObjectRecord>(records);
-
-                String parentOfRootCategory = _parentOfRoot.getCategoryClass().getSimpleName();
-                Map<String, UUID> rootParents = Collections.singletonMap(parentOfRootCategory, _parentOfRoot.getId());
-                records.remove(rootRecord);
-                records.add(new ConfiguredObjectRecordImpl(rootRecord.getId(), _rootCategory, rootRecord.getAttributes(), rootParents));
+                // If the parent is already in the records, we skip it, this supports partial recovery
+                // (required when restarting a virtualhost).  In the long term, when the objects take responsibility
+                // for the recovery of immediate descendants only, this will disappear.
             }
-
-            resolveObjects(_parentOfRoot, records);
+            else if ((record.getParents() == null || record.getParents().size() == 0))
+            {
+                if (containsCategory(childTypesOfRoot, record.getType()))
+                {
+                    String parentOfRootCategory = _root.getCategoryClass().getSimpleName();
+                    Map<String, UUID> rootParents = Collections.singletonMap(parentOfRootCategory, _root.getId());
+                    newRecords.add(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes(), rootParents));
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Recovered configured object record " + record
+                                                       + " has no recorded parents and is not a valid child type"
+                                                       + " [" + Arrays.toString(childTypesOfRoot.toArray()) + "]"
+                                                       + " for the root " + _root);
+                }
+            }
+            else
+            {
+                newRecords.add(record);
+            }
         }
+
+        return newRecords;
+    }
+
+    private boolean containsCategory(Collection<Class<? extends ConfiguredObject>> childCategories, String categorySimpleName)
+    {
+        for (Class<? extends ConfiguredObject> child : childCategories)
+        {
+            if (child.getSimpleName().equals(categorySimpleName))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void resolveObjects(ConfiguredObject<?> parentObject, List<ConfiguredObjectRecord> records)
