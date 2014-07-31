@@ -115,6 +115,8 @@ sub get {
     } else {
         $message = $impl->get;
     }
+
+    return new qpid::messaging::Message(undef, $message);
 }
 
 =pod
