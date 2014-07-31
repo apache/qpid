@@ -193,7 +193,7 @@ void Daemon::ready(uint16_t port) { // child
      */
      int desired_write = sizeof(uint16_t);
      if ( desired_write > ::write(pipeFds[1], & port, desired_write) ) {
-       throw Exception("Error writing to parent." );
+       throw ErrnoException("Error writing to parent" );
      }
 
      QPID_LOG(debug, "Daemon ready on port: " << port);

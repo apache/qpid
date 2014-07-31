@@ -65,24 +65,35 @@ status() {
     fi
 }
 
+# Ensure no concurrent start/stop of services.
+lock() {
+    export QPID_HA_LOCK_HELD=1	# For calls to the qpidd script
+    exec 9< $QPID_INIT
+    flock 9
+}
+
 start() {
-    $QPID_INIT start
-    echo -n $"Promoting qpid daemon to cluster primary: "
-    $QPID_HA promote
-    [ "$?" -eq 0 ] && success || failure
+    lock
+    $QPID_INIT start primary || return $?
+    echo -n $"Promoting to primary: "
+    err=$($QPID_HA promote 2>&1)
+    RETVAL=$?
+    [ $RETVAL = 0 ] && success || { echo -n "$err: "; failure; }
+    echo
+    return $RETVAL
 }
 
 stop() {
-    $QPID_INIT stop
+    $QPID_INIT stop primary
 }
 
 reload() {
     echo 1>&2 $"$0: reload not supported"
-    exit 3
+    return 3
 }
 
 restart() {
-    $QPID_INIT restart && start
+    stop && start
 }
 
 # See how we were called.

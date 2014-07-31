@@ -236,8 +236,10 @@ Broker::Broker(const BrokerOptions& conf) :
     queueCleaner(queues, poller, timer.get()),
     recoveryInProgress(false),
     timestampRcvMsgs(conf.timestampRcvMsgs),
+    logPrefix(Msg() << "Broker " << sys::SystemInfo::getProcessId()),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
+    QPID_LOG(notice, logPrefix << " initializing");
     if (!dataDir.isEnabled()) {
         QPID_LOG (info, "No data directory - Disabling persistent configuration");
     }
@@ -388,6 +390,7 @@ Broker::Broker(const BrokerOptions& conf) :
         finalize();
         throw;
     }
+    QPID_LOG(notice, logPrefix << " initialized");
 }
 
 void Broker::declareStandardExchange(const std::string& name, const std::string& type)
@@ -499,7 +502,7 @@ void Broker::setStore () {
 
 void Broker::run() {
     if (config.workerThreads > 0) {
-        QPID_LOG(notice, "Broker running");
+        QPID_LOG(notice, logPrefix << " running");
         Dispatcher d(poller);
         int numIOThreads = config.workerThreads;
         std::vector<Thread> t(numIOThreads-1);
@@ -515,6 +518,7 @@ void Broker::run() {
         for (int i=0; i<numIOThreads-1; ++i) {
             t[i].join();
         }
+        QPID_LOG(notice, logPrefix << " stopped");
     } else {
         throw Exception((boost::format("Invalid value for worker-threads: %1%") % config.workerThreads).str());
     }
@@ -528,6 +532,7 @@ void Broker::shutdown() {
 }
 
 Broker::~Broker() {
+    QPID_LOG(notice, logPrefix << " shutting down");
     if (mgmtObject != 0)
         mgmtObject->debugStats("destroying");
     shutdown();
@@ -536,7 +541,7 @@ Broker::~Broker() {
         SaslAuthenticator::fini();
     timer->stop();
     managementAgent.reset();
-    QPID_LOG(notice, "Shut down");
+    QPID_LOG(notice, logPrefix << " shutdown complete");
 }
 
 ManagementObject::shared_ptr Broker::GetManagementObject(void) const

@@ -19,7 +19,7 @@
 # under the License.
 #
 
-import optparse, sys, time, os, re
+import optparse, sys, time, os, re, math
 from qpid.messaging import Connection
 from qpid.messaging import Message as QpidMessage
 from qpid.util import URL
@@ -100,7 +100,7 @@ class Command:
         conn_options['client_properties'] = {'qpid.ha-admin' : 1}
         if opts.timeout:
             conn_options['timeout'] = opts.timeout
-            conn_options['heartbeat'] = int(opts.timeout)
+            conn_options['heartbeat'] = int(math.ceil(opts.timeout/2))
         connection = Connection.establish(opts.broker, **conn_options)
         qmf_broker = self.connect_agent and BrokerAgent(connection)
         ha_broker = self.connect_agent and qmf_broker.getHaBroker()
@@ -152,7 +152,7 @@ class PromoteCmd(Command):
     def __init__(self):
         Command.__init__(self, "promote","Promote a backup broker to primary. Note this command will not detect if another broker is already primary, and creating a second primary will make the cluster inconsistent. It is up to the caller (normally the cluster resource manager) to ensure there is only one primary.")
     def do_execute(self, qmf_broker, ha_broker, opts, args):
-        qmf_broker._method("promote", {}, HA_BROKER)
+        qmf_broker._method("promote", {}, HA_BROKER, timeout=opts.timeout)
 PromoteCmd()
 
 
@@ -172,13 +172,15 @@ class StatusCmd(Command):
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         if opts.is_primary:
             if not ha_broker.status in ["active", "recovering"]: raise ExitStatus(1)
+            return
         if opts.expect:
             if opts.expect != ha_broker.status: raise ExitStatus(1)
+            return
+
         def status(hb, b=None, ex=None):
             if ex: print b, ex
             elif b: print b, hb.status
             else: print hb.status
-
         self.all_brokers(ha_broker, opts, status)
 
 StatusCmd()
@@ -187,7 +189,7 @@ class ReplicateCmd(Command):
     def __init__(self):
         Command.__init__(self, "replicate", "Set up replication from <queue> on <remote-broker> to <queue> on the current broker.", ["<queue>", "<remote-broker>"])
     def do_execute(self, qmf_broker, ha_broker, opts, args):
-        qmf_broker._method("replicate", {"broker":args[1], "queue":args[2]}, HA_BROKER)
+        qmf_broker._method("replicate", {"broker":args[1], "queue":args[2]}, HA_BROKER, timeout=opts.timeout)
 ReplicateCmd()
 
 class QueryCmd(Command):
