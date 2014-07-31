@@ -65,7 +65,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
             @Override
             public void performAction(final Object object)
             {
-                System.out.println("Got underlying delete");
                 conn.removeDeleteTask(this);
                 _underlyingClosed.set(true);
                 deleted();
