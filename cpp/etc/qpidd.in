@@ -40,6 +40,7 @@ lockfile=/var/lock/subsys/$prog
 pidfile=/var/run/qpidd.pid
 
 # The following variables can be overridden in @sysconfdir@/sysconfig/$prog
+QPID_INIT=@initdir@/$prog
 QPID_BIN=@sbindir@/$prog
 QPID_DATA_DIR=/var/lib/qpidd
 QPID_CONFIG=@confdir@/qpidd.conf
@@ -59,10 +60,13 @@ for f in $QPID_BIN; do
 done
 
 qpid_ping() {
-    # Only do ping test if qpid-ha is installed.
-    if test -x  $QPID_HA; then
-	$QPID_HA $QPID_HA_OPTIONS ping
-    fi
+    test -x  $QPID_HA || return 0 # Only if qpid-ha installed
+    $QPID_HA $QPID_HA_OPTIONS ping >/dev/null 2>&1
+}
+
+qpid_is_primary() {
+    # Only if qpid-ha is installed.
+    test -x  $QPID_HA && $QPID_HA $QPID_HA_OPTIONS status --is-primary >/dev/null 2>&1
 }
 
 RETVAL=0
@@ -76,67 +80,86 @@ fi
 
 do_status() {
     # Check PID file and ping for liveness
-    MESSAGE=$(status $prog) || {
-	RC=$?
-	echo $MESSAGE
-	return $RC
+    MESSAGE=$(status -p $pidfile $prog) && {
+	qpid_ping || return 1
     }
-    qpid_ping || {
-	return 1
-    }
+    RC=$?
     echo $MESSAGE
-    return 0
+    return $RC
+}
+
+FLOCK_FD=9
+# Ensure no concurrent start/stop of services.
+lock() {
+    [ "$QPID_HA_LOCK_HELD" ] || { # Held by caller
+	exec 9< $QPID_INIT
+	flock $FLOCK_FD
+    }
 }
 
 start() {
-        echo -n $"Starting Qpid AMQP daemon: "
-	daemon --pidfile $pidfile --check $prog --user qpidd $QPID_BIN --config $QPID_CONFIG --daemon $QPIDD_OPTIONS
-	RETVAL=$?
-	echo
-	[ $RETVAL = 0 ] && touch $lockfile
-	if [ $RETVAL = 0 ]; then
-	    touch $pidfile
-	    chown qpidd.qpidd $pidfile
-            [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
-	    runuser - -s /bin/sh qpidd -c "$QPID_BIN --config $QPID_CONFIG --check > $pidfile"
-	fi
-	return $RETVAL
+    lock
+    echo -n $"Starting Qpid AMQP daemon: "
+    daemon --pidfile $pidfile --check $prog --user qpidd $QPID_BIN --config $QPID_CONFIG --daemon $QPIDD_OPTIONS --close-fd $FLOCK_FD
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && touch $lockfile
+    if [ $RETVAL = 0 ]; then
+	touch $pidfile
+	chown qpidd.qpidd $pidfile
+        [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
+	runuser - -s /bin/sh qpidd -c "$QPID_BIN --config $QPID_CONFIG --check > $pidfile"
+    fi
+    return $RETVAL
 }
 
 stop() {
+    lock
+    # Primary script does not stop backup brokers and vice versa.
+    if qpid_is_primary; then
+	[ "$1" != primary ] && SKIP="Not stopping Qpid daemon, primary"
+    else
+	[ "$1" = primary ] && SKIP="Not stopping Qpid daemon, not primary"
+    fi
+    if [ -n "$SKIP" ]; then
+	echo -n "$SKIP: "
+	success
+	RETVAL=0
+    else
 	echo -n $"Stopping Qpid AMQP daemon: "
 	killproc -p ${pidfile} $prog
 	RETVAL=$?
-	echo
 	[ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+    fi
+    echo
+    return $RETVAL
 }
 
 reload() {
-	echo 1>&2 $"$0: reload not supported"
-	exit 3
+    echo 1>&2 $"$0: reload not supported"
+    return 3
 }
 
 restart() {
-	stop
-	start
+    stop && start
 }
 
 # See how we were called.
 case "$1" in
-  start|stop|restart|reload)
-	$1
+    start|stop|restart|reload)
+	$1 $2
 	;;
-  status)
+    status)
 	do_status
 	RETVAL=$?
 	;;
-  force-reload)
+    force-reload)
 	restart
 	;;
-  try-restart|condrestart)
+    try-restart|condrestart)
 	[ -e $lockfile ] && restart || :
 	;;
-  *)
+    *)
 	echo 1>&2 $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|force-reload}"
 	exit 2
 esac

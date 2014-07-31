@@ -160,6 +160,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     mutable sys::Mutex linkClientPropertiesLock;
     framing::FieldTable linkClientProperties;
     bool timestampRcvMsgs;
+    std::string logPrefix;
 
   public:
     QPID_BROKER_EXTERN virtual ~Broker();
