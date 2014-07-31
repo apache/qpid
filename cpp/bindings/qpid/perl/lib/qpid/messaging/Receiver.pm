@@ -298,6 +298,26 @@ sub get_session {
 
 =pod
 
+Returns the address for this receiver.
+
+=over
+
+=item $address = $receiver->get_address
+
+=back
+
+=cut
+
+sub get_address {
+    my ($self) = @_;
+    my $impl = $self->{_impl};
+    my $address = $impl->getAddress;
+
+    return new qpid::messaging::Address($address);
+}
+
+=pod
+
 =over
 
 =item $receiver->is_closed
