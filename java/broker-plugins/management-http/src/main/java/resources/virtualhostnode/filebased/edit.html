@@ -18,17 +18,21 @@
   -->
 
 <div>
+
     <div style="clear:both">
-        <div class="formLabel-labelCell">Message store path:</div>
-        <div class="storePath"></div>
+        <div class="formLabel-labelCell tableContainer-labelCell">Configuration store path*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" id="editVirtualHostNode.storePath"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'storePath',
+                              placeHolder: 'path/to/store',
+                              required: true,
+                              missingMessage: 'Store path must be supplied',
+                              title: 'Enter configuration store path'" />
+        </div>
     </div>
-    <div style="clear:both">
-        <div class="formLabel-labelCell">Store overfull size:</div>
-        <div><span class="storeOverfullSize"></span> bytes</div>
-    </div>
-    <div style="clear:both">
-        <div class="formLabel-labelCell">Store underfull size:</div>
-        <div><span class="storeUnderfullSize"></span> bytes</div>
-    </div>
+
     <div style="clear:both"></div>
+
 </div>

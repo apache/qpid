@@ -18,163 +18,47 @@
  * under the License.
  *
  */
-define(["dojo/_base/xhr",
-        "dojo/_base/array",
-        "dojo/_base/event",
-        "dojo/_base/lang",
-        "dojo/_base/window",
-        "dojo/dom",
-        "dojo/dom-construct",
+define(["qpid/common/util",
         "dijit/registry",
-        "dojo/parser",
-        'dojo/json',
-        "dojo/query",
         "dojo/store/Memory",
         "dojo/data/ObjectStore",
-        "dojo/text!virtualhostnode/bdb_ha/edit.html",
-        "dijit/Dialog",
-        "dijit/form/CheckBox",
-        "dijit/form/FilteringSelect",
-        "dijit/form/ValidationTextBox",
-        "dijit/form/Button",
-        "dijit/form/Form",
-        "dojox/validate/us",
-        "dojox/validate/web",
         "dojo/domReady!"],
-  function (xhr, array, event, lang, win, dom, domConstruct, registry, parser, json, query, Memory, ObjectStore, template)
-  {
-    var fields = [ "storePath", "name", "groupName", "address",
-                   "designatedPrimary", "priority",  "quorumOverride"];
+   function (util, registry, Memory, ObjectStore)
+   {
+       var fields = [ "storePath", "name", "groupName", "address",
+                      "designatedPrimary", "priority",  "quorumOverride"];
 
-    var bdbHaNodeEditor =
-    {
-      init: function()
-      {
-        var that=this;
-        this.containerNode = domConstruct.create("div", {innerHTML: template});
-        parser.parse(this.containerNode);
-        this.dialog = registry.byId("editBDBHANodeDialog")
-        this.saveButton = registry.byId("editBDBHANode.saveButton");
-        this.cancelButton = registry.byId("editBDBHANode.cancelButton");
-        this.cancelButton.on("click", function(e){that._cancel(e);});
-        this.saveButton.on("click", function(e){that._save(e);});
-        for(var i = 0; i < fields.length; i++)
-        {
-            var fieldName = fields[i];
-            this[fieldName] = registry.byId("editBDBHANode." + fieldName);
-        }
-        this.form = registry.byId("editBDBHANodeForm");
-      },
-      show: function(nodeName)
-      {
-        var that=this;
-        this.nodeName = nodeName;
-        this.query = "api/latest/virtualhostnode/" + encodeURIComponent(nodeName);
-        xhr.get(
-            {
-              url: this.query,
-              sync: true,
-              handleAs: "json",
-              load: function(data)
+       return {
+           show: function(data)
+           {
+              var node = data.data;
+              util.buildEditUI(data.containerNode, "virtualhostnode/bdb_ha/edit.html", "editVirtualHostNode.", fields, node);
+              if ( !(data.data.state == "ERRORED" || data.data.state == "STOPPED"))
               {
-                that._show(data[0]);
+                  registry.byId("editVirtualHostNode.storePath").set("disabled", true);
               }
-            }
-        );
-      },
-      destroy: function()
-      {
-        if (this.dialog)
-        {
-            this.dialog.destroyRecursive();
-            this.dialog = null;
-        }
 
-        if (this.containerNode)
-        {
-            domConstruct.destroy(this.containerNode);
-            this.containerNode = null;
-        }
-      },
-      _cancel: function(e)
-      {
-          this.dialog.hide();
-      },
-      _save: function(e)
-      {
-        event.stop(e);
-        if(this.form.validate())
-        {
-          var data = {};
-          for(var i = 0; i < fields.length; i++)
-          {
-              var fieldName = fields[i];
-              var widget = this[fieldName];
-              if (!widget.get("disabled"))
+              var overrideData = [{id: '0', name: 'Majority', selected: '1'}];
+              if (node.remotereplicationnodes && node.remotereplicationnodes.length>1)
               {
-                  data[fieldName] = widget.hasOwnProperty("checked")? widget.get("checked"):widget.get("value");
+                  registry.byId("editVirtualHostNode.designatedPrimary").set("disabled", true);
+                  registry.byId("editVirtualHostNode.priority").set("disabled", false);
+                  registry.byId("editVirtualHostNode.quorumOverride").set("disabled", false);
+                  var overrideLimit = Math.floor((node.remotereplicationnodes.length + 1)/2);
+                  for(var i = 1; i <= overrideLimit; i++)
+                  {
+                    overrideData.push({id: i, name: i + ""});
+                  }
               }
-          }
-          var success = false,failureReason=null;
-          xhr.put({
-              url: this.query,
-              sync: true,
-              handleAs: "json",
-              headers: { "Content-Type": "application/json"},
-              putData: json.stringify(data),
-              load: function(x) {success = true; },
-              error: function(error) {success = false; failureReason = error;}
-          });
-
-          if(success === true)
-          {
-              this.dialog.hide();
-          }
-          else
-          {
-              alert("Error:" + failureReason);
-          }
-          }
-          else
-          {
-              alert('Form contains invalid data.  Please correct first');
-          }
-        },
-        _show:function(node)
-        {
-          for(var i = 0; i < fields.length; i++)
-          {
-            var fieldName = fields[i];
-            this[fieldName].set("value", node[fieldName]);
-          }
-
-          var overrideData = [{id: '0', name: 'Majority', selected: '1'}];
-
-          if (node.remotereplicationnodes && node.remotereplicationnodes.length>1)
-          {
-            this["designatedPrimary"].set("disabled", true);
-            this["priority"].set("disabled", false);
-            this["quorumOverride"].set("disabled", false);
-            var overrideLimit = Math.floor((node.remotereplicationnodes.length + 1)/2);
-            for(var i = 1; i <= overrideLimit; i++)
-            {
-              overrideData.push({id: i, name: i + ""});
-            }
-          }
-          else
-          {
-            this["designatedPrimary"].set("disabled", false);
-            this["priority"].set("disabled", true);
-            this["quorumOverride"].set("disabled", true);
-          }
-          var store = new Memory({data :overrideData, idProperty: "id" });
-          this["quorumOverride"].set("store", new ObjectStore({objectStore: store}));
-          this.dialog.show();
-        }
-    };
-
-    bdbHaNodeEditor.init();
-
-    return bdbHaNodeEditor;
-  }
+              else
+              {
+                  registry.byId("editVirtualHostNode.designatedPrimary").set("disabled", false);
+                  registry.byId("editVirtualHostNode.priority").set("disabled", true);
+                  registry.byId("editVirtualHostNode.quorumOverride").set("disabled", true);
+              }
+              var store = new Memory({data :overrideData, idProperty: "id" });
+              registry.byId("editVirtualHostNode.quorumOverride").set("store", new ObjectStore({objectStore: store}));
+           }
+       };
+   }
 );

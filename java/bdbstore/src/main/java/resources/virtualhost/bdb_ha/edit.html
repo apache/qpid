@@ -1,0 +1,131 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<div>
+
+    <div style="clear:both">
+        <div class="formLabel-labelCell tableContainer-labelCell">Store overfull size (bytes):</div>
+        <div class="tableContainer-valueCell formLabel-controlCell">
+            <input data-dojo-type="dijit/form/NumberSpinner"
+                   id="editVirtualHost.storeOverfullSize"
+                   data-dojo-props="
+                              name: 'storeOverfullSize',
+                              placeHolder: 'size in bytes',
+                              required: false,
+                              title: 'Enter ceiling (in bytes) at which store will begin to throttle sessions producing messages',
+                              constraints:{min:0,places:0}"/>
+        </div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell tableContainer-labelCell">Store underfull size (bytes):</div>
+        <div class="tableContainer-valueCell formLabel-controlCell">
+            <input data-dojo-type="dijit/form/NumberSpinner"
+                   id="editVirtualHost.storeUnderfullSize"
+                   data-dojo-props="
+                              name: 'storeUnderfullSize',
+                              placeHolder: 'size in bytes',
+                              required: false,
+                              title: 'Enter floor (in bytes) at which store will cease to throttle sessions producing messages',
+                              constraints:{min:0,places:0}"/>
+        </div>
+    </div>
+
+     <div class="formBox" style="clear:both">
+        <fieldset>
+            <legend>Permitted group nodes</legend>
+            <div style="clear:both">
+                <div class="formLabel-labelCell tableContainer-labelCell">Permitted addresses*:</div>
+                <div class="formLabel-controlCell tableContainer-valueCell addPermittedNodeList">
+                    <select type="text" id="editVirtualHost.permittedNodesList"
+                            data-dojo-type="dijit/form/MultiSelect"
+                            data-dojo-props="
+                                      multiple: true,
+                                      name: 'permittedNodeList',
+                                      readOnly : 'true',
+                                      excluded: true,
+                                      title: 'Enter permitted nodes'">
+                    </select> <!-- must use closing tag rather than shorthand - dojo bug? -->
+                    <input type="hidden" id="editVirtualHost.permittedNodes"
+                           data-dojo-type="dijit/form/ValidationTextBox"
+                           name="permittedNodes"/>
+                </div>
+                <button data-dojo-type="dijit/form/Button" id="editVirtualHost.permittedNodeRemove" data-dojo-props="label: '-'" ></button>
+            </div>
+
+            <div style="clear:both"></div>
+            <div style="clear:both">
+                <div class="formLabel-labelCell tableContainer-labelCell">Address:</div>
+                <div class="formLabel-controlCell tableContainer-valueCell">
+                    <input type="text" id="editVirtualHost.permittedNode"
+                           data-dojo-type="dijit/form/ValidationTextBox"
+                           data-dojo-props="
+                                      name: 'permittedNode',
+                                      placeHolder: 'host:port',
+                                      title: 'Enter address',
+                                      intermediateChanges: true,
+                                      pattern: '([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}'" />
+                </div>
+                <button data-dojo-type="dijit/form/Button" id="editVirtualHost.permittedNodeAdd" data-dojo-props="label: '+'"></button>
+            </div>
+        </fieldset>
+    </div>
+
+    <div style="clear:both"></div>
+
+    <div class="formBox" style="clear:both">
+        <fieldset>
+        <legend>High availability durability</legend>
+        <div>
+            <div class="haOptionLabel">Master transaction sync policy</div>
+            <div>
+                <input data-dojo-type="dijit/form/RadioButton" type="radio" name="localTransactionSynchronizationPolicy" value="SYNC" id="editVirtualHost.localTransactionSynchronizationPolicy-SYNC"/>
+                <label>SYNC (the transaction will be written and synchronized to the disk; highest durability)</label>
+            </div>
+
+            <div>
+                <input data-dojo-type="dijit/form/RadioButton" type="radio" name="localTransactionSynchronizationPolicy" value="WRITE_NO_SYNC" id="editVirtualHost.localTransactionSynchronizationPolicy-WRITE_NO_SYNC"/>
+                <label>WRITE_NO_SYNC (the transaction will be written only; the synchronization will be performed later)</label>
+            </div>
+
+            <div>
+                <input data-dojo-type="dijit/form/RadioButton" type="radio" name="localTransactionSynchronizationPolicy" value="NO_SYNC" id="editVirtualHost.localTransactionSynchronizationPolicy-NO_SYNC"/>
+                <label>NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</label>
+            </div>
+        </div>
+        <br/>
+        <div>
+            <div class="haOptionLabel">Replica transaction sync policy</div>
+            <div>
+                <input data-dojo-type="dijit/form/RadioButton" type="radio" name="remoteTransactionSynchronizationPolicy" value="SYNC"  id="editVirtualHost.remoteTransactionSynchronizationPolicy-SYNC"/>
+                <label>SYNC (the transaction will be written and synchronized to the disk; highest durability)</label>
+            </div>
+
+            <div>
+                <input data-dojo-type="dijit/form/RadioButton" type="radio" name="remoteTransactionSynchronizationPolicy"  value="WRITE_NO_SYNC"  id="editVirtualHost.remoteTransactionSynchronizationPolicy-WRITE_NO_SYNC"/>
+                <label>WRITE_NO_SYNC (the transaction will be written only; the synchronization will be performed later)</label>
+            </div>
+
+            <div>
+                <input data-dojo-type="dijit/form/RadioButton" type="radio" name="remoteTransactionSynchronizationPolicy" value="NO_SYNC"  id="editVirtualHost.remoteTransactionSynchronizationPolicy-NO_SYNC"/>
+                <label>NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</label>
+            </div>
+        </div>
+        </fieldset>
+    </div>
+
+</div>

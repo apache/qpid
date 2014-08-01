@@ -25,11 +25,13 @@ define(["qpid/common/util", "dojo/domReady!"],
 
     function BdbNode(data)
     {
+       this.parent = data.parent;
        util.buildUI(data.containerNode, data.parent, "virtualhostnode/bdb/show.html", fieldNames, this);
     }
 
     BdbNode.prototype.update=function(data)
     {
+       this.parent.editNodeButton.set("disabled", !(data.state == "STOPPED" || data.state == "ERRORED"));
        util.updateUI(data, fieldNames, this);
     };
 

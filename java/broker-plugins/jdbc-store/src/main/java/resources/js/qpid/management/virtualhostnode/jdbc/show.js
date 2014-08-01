@@ -19,15 +19,14 @@
  *
  */
 
-define(["qpid/common/util",
-        "dojo/query",
-        "dojo/domReady!"],
-  function (util, query)
+define(["qpid/common/util", "dojo/query", "dojo/_base/array", "dojo/dom-construct", "dijit/registry", "dojo/domReady!"],
+  function (util, query, array, domConstruct, registry)
   {
     var fieldNames = ["connectionUrl", "username", "connectionPoolType"];
 
     function Jdbc(data)
     {
+      this.parent = data.parent;
       util.buildUI(data.containerNode, data.parent, "virtualhostnode/jdbc/show.html", fieldNames, this);
 
       this.usernameAttributeContainer=query(".usernameAttributeContainer", data.containerNode)[0];
@@ -36,15 +35,21 @@ define(["qpid/common/util",
 
     Jdbc.prototype.update=function(data)
     {
+      var previousConnectionPoolType = this.connectionPoolType ? this.connectionPoolType.innerHTML : null;
+      this.parent.editNodeButton.set("disabled", !(data.state == "STOPPED" || data.state == "ERRORED"));
       util.updateUI(data, fieldNames, this);
 
       this.usernameAttributeContainer.style.display = data.username ? "block" : "none";
-      if (!this.poolDetails)
+      if (!this.poolDetails || previousConnectionPoolType != data.connectionPoolType)
       {
         var that = this;
         require(["qpid/management/store/pool/" + data.connectionPoolType.toLowerCase() + "/show"],
           function(PoolDetails)
           {
+            var widgets = registry.findWidgets(that.connectionPoolTypeAttributeContainer);
+            array.forEach(widgets, function(item) { item.destroyRecursive();});
+            domConstruct.empty(that.connectionPoolTypeAttributeContainer);
+
             that.poolDetails = new PoolDetails({containerNode:that.connectionPoolTypeAttributeContainer, parent: that});
             that.poolDetails.update(data);
           }

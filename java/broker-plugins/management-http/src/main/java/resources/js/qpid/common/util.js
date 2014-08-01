@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 define(["dojo/_base/xhr",
         "dojo/_base/event",
         "dojo/json",
@@ -29,6 +28,7 @@ define(["dojo/_base/xhr",
         "dojo/query",
         "dojo/parser",
         "dojox/html/entities",
+        "dijit/registry",
         "dijit/TitlePane",
         "dijit/Dialog",
         "dijit/form/Form",
@@ -41,7 +41,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/web",
         "dojo/domReady!"
         ],
-       function (xhr, event, json, lang, dom, geometry, win, query, parser, entities) {
+       function (xhr, event, json, lang, dom, geometry, win, query, parser, entities, registry) {
            var util = {};
            if (Array.isArray) {
                util.isArray = function (object) {
@@ -494,19 +494,40 @@ define(["dojo/_base/xhr",
              return object1 === object2;
            }
 
-           util.buildUI = function(containerNode, parent, htmlTemplateLocation, fieldNames, obj)
+           util.parseHtmlIntoDiv = function(containerNode, htmlTemplateLocation)
            {
                 xhr.get({url: htmlTemplateLocation,
-                   sync: true,
-                   load:  function(template) {
-                     containerNode.innerHTML = template;
-                     parser.parse(containerNode);
-                   }});
-                for(var i=0; i<fieldNames.length;i++)
+                                  sync: true,
+                                  load:  function(template) {
+                                    containerNode.innerHTML = template;
+                                    parser.parse(containerNode);
+                                  }});
+           }
+           util.buildUI = function(containerNode, parent, htmlTemplateLocation, fieldNames, obj)
+           {
+                this.parseHtmlIntoDiv(containerNode, htmlTemplateLocation);
+                if (fieldNames && obj)
                 {
-                   var fieldName = fieldNames[i];
-                   obj[fieldName]= query("." + fieldName, containerNode)[0];
+                    for(var i=0; i<fieldNames.length;i++)
+                    {
+                       var fieldName = fieldNames[i];
+                       obj[fieldName]= query("." + fieldName, containerNode)[0];
+                    }
                 }
+           }
+
+           util.buildEditUI = function(containerNode, htmlTemplateLocation, fieldNamePrefix, fieldNames, data)
+           {
+               this.parseHtmlIntoDiv(containerNode, htmlTemplateLocation);
+               if (fieldNames)
+               {
+                   for(var i = 0; i < fieldNames.length; i++)
+                   {
+                     var fieldName = fieldNames[i];
+                     var widget = registry.byId(fieldNamePrefix + fieldName);
+                     widget.set("value", data[fieldName]);
+                   }
+               }
            }
 
            util.updateUI = function(data, fieldNames, obj)
@@ -519,7 +540,7 @@ define(["dojo/_base/xhr",
              }
            }
 
-           util.getFormWidgetValues = function (form)
+           util.getFormWidgetValues = function (form, initialData)
            {
                var values = {};
                var formWidgets = form.getChildren();
@@ -530,34 +551,71 @@ define(["dojo/_base/xhr",
                    var propName = widget.name;
                    if (propName && (widget.required || value ))
                    {
-                       if (widget instanceof dijit.form.CheckBox)
+                       if (widget.excluded)
                        {
-                           values[ propName ] = widget.checked;
+                          continue;
                        }
-                       else if (widget instanceof dijit.form.RadioButton && value)
+                       if (widget.contextvar)
                        {
-                           var currentValue = values[propName];
-                           if (currentValue)
+                         var context = values["context"];
+                         if (!context)
+                         {
+                            context = {};
+                            values["context"] = context;
+                         }
+                         context[propName]=String(value);
+                       }
+                       else if (widget instanceof dijit.form.RadioButton)
+                       {
+                           if (widget.checked)
                            {
-                               if (lang.isArray(currentValue))
+                               var currentValue = values[propName];
+                               if (currentValue)
                                {
-                                   currentValue.push(value)
+                                   if (lang.isArray(currentValue))
+                                   {
+                                       currentValue.push(value)
+                                   }
+                                   else
+                                   {
+                                       values[ propName ] = [currentValue, value];
+                                   }
                                }
                                else
                                {
-                                   values[ propName ] = [currentValue, value];
+                                   values[ propName ] = value;
                                }
                            }
-                           else
-                           {
-                               values[ propName ] = value;
-                           }
+                       }
+                       else if (widget instanceof dijit.form.CheckBox)
+                       {
+                           values[ propName ] = widget.checked;
                        }
                        else
                        {
-                           values[ propName ] = value ? value: null;
+                           if (widget.get("type") == "password")
+                           {
+                                if (value)
+                                {
+                                    values[ propName ] = value;
+                                }
+                           }
+                           else
+                           {
+                              values[ propName ] = value ? value: null;
+                           }
                        }
                    }
+               }
+               if (initialData)
+               {
+                for(var propName in values)
+                {
+                     if (values[propName] == initialData[propName])
+                     {
+                        delete values[propName];
+                     }
+                }
                }
                return values;
            }

@@ -325,7 +325,7 @@ define(["dojo/_base/xhr",
 
                        thisObj.virtualHost.startButton.set("disabled", thisObj.vhostData.state != "STOPPED");
                        thisObj.virtualHost.stopButton.set("disabled", thisObj.vhostData.state != "ACTIVE");
-                       thisObj.virtualHost.editButton.set("disabled", false);
+                       thisObj.virtualHost.editButton.set("disabled", thisObj.vhostData.state == "UNAVAILABLE");
 
                        util.flattenStatistics( thisObj.vhostData );
                        var connections = thisObj.vhostData[ "connections" ];

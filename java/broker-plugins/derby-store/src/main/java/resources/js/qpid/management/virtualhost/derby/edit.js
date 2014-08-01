@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,24 +15,16 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 define(["qpid/common/util", "dojo/domReady!"],
-  function (util)
-  {
-    var fields = ["storePath"];
-
-    function DerbyNode(data)
-    {
-      this.parent = data.parent;
-      util.buildUI(data.containerNode, data.parent, "virtualhostnode/derby/show.html", fields, this);
-    }
-
-    DerbyNode.prototype.update=function(data)
-    {
-      this.parent.editNodeButton.set("disabled", !(data.state == "STOPPED" || data.state == "ERRORED"));
-      util.updateUI(data, fields, this);
-    };
-
-    return DerbyNode;
-});
+   function (util)
+   {
+       var fieldNames = ["storeUnderfullSize", "storeOverfullSize", "storePath"];
+       return {
+           show: function(data)
+           {
+              util.buildEditUI(data.containerNode, "virtualhost/sizemonitoring/edit.html", "editVirtualHost.", fieldNames, data.data);
+           }
+       };
+   }
+);

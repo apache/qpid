@@ -128,10 +128,6 @@ div .messages {
     width: 100%;
 }
 
-.formBoxButtons {
-    float : right;
-}
-
 .formLabel-controlCell {
   padding: 1px;
   float: left;
@@ -213,11 +209,6 @@ div .messages {
     font-style: italic;
 }
 
-.dijitDialogPaneActionBar .editNodeButton
-{
-    display: none
-}
-
 .alignLeft {
     float: left;
 }
@@ -226,4 +217,12 @@ div .messages {
 }
 .multiLineValue {
     display: inline-block;
+}
+.haOptionLabel {
+    font-weight: bold;
+    margin-left: 5px;
+}
+.editNoteBanner {
+    font-style: italic;
+    margin: 0px 0px 10px 5px;
 }

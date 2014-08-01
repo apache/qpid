@@ -31,9 +31,10 @@ define(["dojo/_base/xhr",
         "qpid/common/UpdatableStore",
         "qpid/management/addQueue",
         "qpid/management/addExchange",
+        "qpid/management/editVirtualHostNode",
         "dojox/grid/EnhancedGrid",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange, EnhancedGrid) {
+       function (xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, UpdatableStore, addQueue, addExchange, editVirtualHostNode, EnhancedGrid) {
 
            function VirtualHostNode(name, parent, controller)
            {
@@ -101,6 +102,13 @@ define(["dojo/_base/xhr",
                              "PUT", {desiredState: "STOPPED"});
                  }
                });
+
+               this.editNodeButton.on("click",
+                function(event)
+                {
+                    editVirtualHostNode.show(that.name);
+                }
+               );
 
             this.vhostsGrid = new UpdatableStore([], query(".virtualHost", containerNode)[0],
             [
@@ -177,7 +185,7 @@ define(["dojo/_base/xhr",
 
            Updater.prototype.updateUI = function(data)
            {
-             this.virtualHostNode.startNodeButton.set("disabled", data.state != "STOPPED");
+             this.virtualHostNode.startNodeButton.set("disabled", !(data.state == "STOPPED" || data.state == "ERRORED"));
              this.virtualHostNode.stopNodeButton.set("disabled", data.state != "ACTIVE");
 
              this.name.innerHTML = entities.encode(String(data[ "name" ]));
@@ -199,10 +207,7 @@ define(["dojo/_base/xhr",
                this.details.update(data);
              }
 
-             if (data.virtualhosts)
-             {
-                this.virtualHostNode.vhostsGrid.update(data.virtualhosts);
-             }
+             this.virtualHostNode.vhostsGrid.update(data.virtualhosts || []);
            }
 
            return VirtualHostNode;
