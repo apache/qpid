@@ -219,8 +219,21 @@ define(["dojo/_base/xhr",
                    that.updateHeader();
                    that.queuesGrid = new UpdatableStore(that.vhostData.queues, findNode("queues"),
                                                         [ { name: "Name",    field: "name",      width: "90px"},
-                                                            { name: "Messages", field: "queueDepthMessages", width: "90px"},
-                                                            { name: "Arguments",   field: "arguments",     width: "100%"}
+                                                          { name: "Type",    field: "type",      width: "90px"},
+                                                          { name: "Consumers", field: "consumerCount", width: "90px"},
+                                                          { name: "Depth (msgs)", field: "queueDepthMessages", width: "90px"},
+                                                          { name: "Depth (bytes)", field: "queueDepthBytes", width: "100%",
+                                                            get: function(rowIndex, item)
+                                                             {
+                                                               if(!item){
+                                                                 return;
+                                                               }
+                                                               var store = this.grid.store;
+                                                               var qdb = store.getValue(item, "queueDepthBytes");
+                                                               var bytesFormat = formatter.formatBytes( qdb );
+                                                               return bytesFormat.value + " " + bytesFormat.units;
+                                                             }
+                                                          }
                                                         ],
                                                         function(obj)
                                                         {

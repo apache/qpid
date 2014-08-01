@@ -31,7 +31,7 @@ define(["dojo/json",
         var GridType = DataGrid;
 
         that.memoryStore = new Memory({data: data, idProperty: "id"});
-        that.store = notObservable? that.memoryStore : new Observable(that.memoryStore);
+        that.store = notObservable ? that.memoryStore : new Observable(that.memoryStore);
         that.dataStore = ObjectStore({objectStore: that.store});
 
         var gridProperties = {  store: that.dataStore,
@@ -86,19 +86,37 @@ define(["dojo/json",
 
         // iterate over data...
         if(data) {
-            for(var i=0; i < data.length; i++) {
-                if(theItem = store.get(data[i].id)) {
-                    var modified = !util.equals(theItem, data[i]);
-                    if(modified) {
-                        store.put(data[i], {overwrite: true});
-                        if (store.notify)
+            for(var i=0; i < data.length; i++)
+            {
+                if(theItem = store.get(data[i].id))
+                {
+                  var modified = !util.equals(theItem, data[i]);
+                  if(modified)
+                  {
+                    if (store.notify)
+                    {
+                      // Seems that we are required to update the item that the store already holds
+                      for(var propName in data[i])
+                      {
+                        if(data[i].hasOwnProperty(propName))
                         {
-                          store.notify(theItem, data[i].id);
+                          if(theItem[ propName ] != data[i][ propName ])
+                          {
+                            theItem[ propName ] = data[i][ propName ];
+                          }
                         }
-                        changed = true;
+                      }
+                      // and tell it we have done so
+                      store.notify(theItem, data[i].id);
                     }
+                    else
+                    {
+                      store.put(data[i], {overwrite: true});
+                    }
+                    changed = true;
+                  }
                 } else {
-                    // ,,, if not in the store then add
+                    // if not in the store then add
                     store.put(data[i]);
                     changed = true;
                 }
