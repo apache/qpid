@@ -33,7 +33,7 @@ define(["dojo/_base/xhr",
         "dojo/store/Memory",
         "dojo/data/ObjectStore",
         "qpid/common/util",
-        "dojo/text!editVirtualHost.html",
+        "dojo/text!editVirtualHostNode.html",
         "dijit/Dialog",
         "dijit/form/CheckBox",
         "dijit/form/FilteringSelect",
@@ -46,33 +46,27 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
   function (xhr, entities, array, event, lang, win, dom, domConstruct, registry, parser, json, query, Memory, ObjectStore, util, template)
   {
-    var fields = [ "name", "queue.deadLetterQueueEnabled", "storeTransactionIdleTimeoutWarn", "storeTransactionIdleTimeoutClose", "storeTransactionOpenTimeoutWarn", "storeTransactionOpenTimeoutClose", "housekeepingCheckPeriod", "housekeepingThreadCount"];
-
-    var virtualHostEditor =
+    var virtualHostNodeEditor =
     {
       init: function()
       {
         var that=this;
         this.containerNode = domConstruct.create("div", {innerHTML: template});
         parser.parse(this.containerNode);
-        this.typeFieldsContainer = dom.byId("editVirtualHost.typeFields");
-        this.dialog = registry.byId("editVirtualHostDialog");
-        this.saveButton = registry.byId("editVirtualHost.saveButton");
-        this.cancelButton = registry.byId("editVirtualHost.cancelButton");
+        this.typeFieldsContainer = dom.byId("editVirtualHostNode.typeFields");
+        this.dialog = registry.byId("editVirtualHostNodeDialog");
+        this.saveButton = registry.byId("editVirtualHostNode.saveButton");
+        this.cancelButton = registry.byId("editVirtualHostNode.cancelButton");
         this.cancelButton.on("click", function(e){that._cancel(e);});
         this.saveButton.on("click", function(e){that._save(e);});
-        for(var i = 0; i < fields.length; i++)
-        {
-            var fieldName = fields[i];
-            this[fieldName] = registry.byId("editVirtualHost." + fieldName);
-        }
-        this.form = registry.byId("editVirtualHostForm");
+        this.name = registry.byId("editVirtualHostNode.name");
+        this.form = registry.byId("editVirtualHostNodeForm");
       },
-      show: function(hostData)
+      show: function(nodeName)
       {
         var that=this;
-        this.query = "api/latest/virtualhost/" + encodeURIComponent(hostData.nodeName) + "/" + encodeURIComponent(hostData.hostName);
-        this.dialog.set("title", "Edit Virtual Host - " + entities.encode(String(hostData.hostName)));
+        this.query = "api/latest/virtualhostnode/" + encodeURIComponent(nodeName);
+        this.dialog.set("title", "Edit Virtual Host Node - " + entities.encode(String(nodeName)));
         xhr.get(
             {
               url: this.query,
@@ -135,21 +129,10 @@ define(["dojo/_base/xhr",
               alert('Form contains invalid data.  Please correct first');
           }
       },
-      _show:function(virtualHostData)
+      _show:function(nodeData)
       {
-          this.initialData = virtualHostData;
-          for(var i = 0; i < fields.length; i++)
-          {
-            var fieldName = fields[i];
-            if (this[fieldName] instanceof dijit.form.CheckBox)
-            {
-                this[fieldName].set("checked", virtualHostData[fieldName]);
-            }
-            else
-            {
-             this[fieldName].set("value", virtualHostData[fieldName]);
-            }
-          }
+          this.initialData = nodeData;
+          this.name.set("value", nodeData.name);
 
           var that = this;
 
@@ -157,12 +140,12 @@ define(["dojo/_base/xhr",
           array.forEach(widgets, function(item) { item.destroyRecursive();});
           domConstruct.empty(this.typeFieldsContainer);
 
-          require(["qpid/management/virtualhost/" + virtualHostData.type.toLowerCase() + "/edit"],
+          require(["qpid/management/virtualhostnode/" + nodeData.type.toLowerCase() + "/edit"],
              function(TypeUI)
              {
                 try
                 {
-                    TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: virtualHostData});
+                    TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: nodeData});
                     that.form.connectChildren();
                 }
                 catch(e)
@@ -180,8 +163,8 @@ define(["dojo/_base/xhr",
       }
     };
 
-    virtualHostEditor.init();
+    virtualHostNodeEditor.init();
 
-    return virtualHostEditor;
+    return virtualHostNodeEditor;
   }
 );

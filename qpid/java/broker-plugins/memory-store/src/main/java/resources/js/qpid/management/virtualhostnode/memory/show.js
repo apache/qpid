@@ -22,10 +22,15 @@ define([],
   {
     function Memory(data)
     {
+        this.parent = data.parent;
+        this.parent.editNodeButton.set("disabled",true);
+        this.parent.editNodeButton.domNode.style.display = "none";
     }
 
     Memory.prototype.update = function(data)
     {
+        this.parent.editNodeButton.set("disabled", true);
+        this.parent.editNodeButton.domNode.style.display = "none";
     }
 
     return Memory;

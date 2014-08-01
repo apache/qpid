@@ -27,10 +27,9 @@ define(["dojo/_base/xhr",
         "dojox/grid/EnhancedGrid",
         "qpid/common/UpdatableStore",
         "qpid/management/UserPreferences",
-        "qpid/management/virtualhostnode/bdb_ha/edit",
         "qpid/common/util",
         "dojo/domReady!"],
-  function (xhr, connect, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences, edit, util)
+  function (xhr, connect, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences, util)
   {
     var priorityNames = {'_0': 'Never', '_1': 'Default', '_2': 'Normal', '_3': 'High'};
     var nodeFields = ["storePath", "groupName", "role", "address", "designatedPrimary", "priority", "quorumOverride"];
@@ -154,18 +153,11 @@ define(["dojo/_base/xhr",
             }
           }
       );
-      this.parent.editNodeButton.set("disabled", false);
-      this.parent.editNodeButton.domNode.style.display = "inline";
-      this.parent.editNodeButton.on("click",
-          function(e)
-          {
-            edit.show(that.data.name);
-          }
-      );
     }
 
     BDBHA.prototype.update=function(data)
     {
+      this.parent.editNodeButton.set("disabled", false);
       this.data = data;
       for(var i = 0; i < nodeFields.length; i++)
       {
