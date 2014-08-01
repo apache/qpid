@@ -26,6 +26,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -113,7 +114,7 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
             try
             {
                 Map<String, String> providerAttributes = new HashMap<>();
-                Set<String> providerAttributeNames = connectionProviderFactory.getProviderAttributeNames();
+                Set<String> providerAttributeNames = new HashSet<String>(connectionProviderFactory.getProviderAttributeNames());
                 providerAttributeNames.retainAll(parent.getContextKeys(false));
                 for(String attr : providerAttributeNames)
                 {
