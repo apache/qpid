@@ -73,9 +73,8 @@
                 </select>
             </div>
             <div id="formAddPort:transport" >
-                 <select id="formAddPort.transports" data-dojo-type="dijit.form.FilteringSelect"
-                    data-dojo-props="name: 'transports',label: 'Transport:',searchAttr: 'name',required:false,placeHolder: 'TCP', value: '' "
-                    style="margin: 0;">
+                 <select id="formAddPort.transports" name="transports" data-dojo-type="dijit.form.MultiSelect" multiple="true"
+                    data-dojo-props="name: 'transports',label: 'Transport:',placeHolder: 'TCP', value: '' ">
                     <option value="TCP">TCP</option>
                     <option value="SSL">SSL</option>
                 </select>
