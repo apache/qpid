@@ -136,6 +136,17 @@ public class TcpAndSslSelectChannelConnector extends SelectChannelConnector
         super.doStart();
     }
 
+    @Override
+    public boolean isConfidential(final Request request)
+    {
+        if(request.getScheme().equals(HttpSchemes.HTTPS))
+        {
+            final int confidentialPort=getConfidentialPort();
+            return confidentialPort==0||confidentialPort==request.getServerPort();
+        }
+        return super.isConfidential(request);
+    }
+
     enum Protocol { UNKNOWN, TCP , SSL }
 
     private class ProtocolIdentifyingEndpoint extends SelectChannelEndPoint
