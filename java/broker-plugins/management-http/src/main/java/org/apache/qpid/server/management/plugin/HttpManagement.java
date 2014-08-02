@@ -41,6 +41,7 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -49,6 +50,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.management.plugin.connector.TcpAndSslSelectChannelConnector;
 import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFilter;
 import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
@@ -380,7 +382,9 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         {
             throw new ServerScopedRuntimeException("Cannot configure port " + port.getName() + " for transport " + Transport.SSL, e);
         }
-        connector = new SslSocketConnector(factory);
+        connector = port.getTransports().contains(Transport.TCP)
+                ? new TcpAndSslSelectChannelConnector(factory)
+                : new SslSelectChannelConnector(factory);
         return connector;
     }
 
