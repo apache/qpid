@@ -55,5 +55,19 @@ public interface Session<X extends Session<X>> extends ConfiguredObject<X>
     @ManagedStatistic
     long getUnacknowledgedMessages();
 
-    void delete();
+    /**
+     * Return the time the current transaction started.
+     *
+     * @return the time this transaction started or 0 if not in a transaction
+     */
+    @ManagedStatistic
+    long getTransactionStartTime();
+
+    /**
+     * Return the time of the last activity on the current transaction.
+     *
+     * @return the time of the last activity or 0 if not in a transaction
+     */
+    @ManagedStatistic
+    long getTransactionUpdateTime();
 }

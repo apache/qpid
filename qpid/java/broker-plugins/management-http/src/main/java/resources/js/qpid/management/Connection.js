@@ -27,9 +27,10 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "qpid/common/formatter",
         "qpid/common/UpdatableStore",
+        "qpid/management/UserPreferences",
         "dojox/html/entities",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore, entities) {
+       function (xhr, parser, query, connect, properties, updater, util, formatter, UpdatableStore, UserPreferences, entities) {
 
            function Connection(name, parent, controller) {
                this.name = name;
@@ -105,12 +106,35 @@ define(["dojo/_base/xhr",
 
                                    that.updateHeader();
                                    that.sessionsGrid = new UpdatableStore(that.connectionData.sessions, findNode("sessions"),
-                                                            [ { name: "Name",    field: "name",      width: "70px"},
-                                                              { name: "Mode", field: "distributionMode", width: "70px"},
-                                                              { name: "Msgs Rate", field: "msgRate",
-                                                              width: "150px"},
-                                                              { name: "Bytes Rate", field: "bytesRate",
-                                                                 width: "100%"}
+                                                            [ { name: "Name", field: "name", width: "70px"},
+                                                              { name: "Consumers", field: "consumerCount", width: "90px"},
+                                                              { name: "Unacknowledged messages", field: "unacknowledgedMessages", width: "110px"},
+                                                              { name: "Current store transaction start", field: "transactionStartTime", width: "200px",
+                                                                formatter: function (transactionStartTime)
+                                                                {
+                                                                    if (transactionStartTime > 0)
+                                                                    {
+                                                                        return UserPreferences.formatDateTime(transactionStartTime, {selector: "time", addOffset: true, appendTimeZone: true});
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        return "N/A";
+                                                                    }
+                                                                }
+                                                             },
+                                                             {  name: "Current store transaction update", field: "transactionUpdateTime", width: "100%",
+                                                                formatter: function (transactionUpdateTime)
+                                                                {
+                                                                    if (transactionUpdateTime > 0)
+                                                                    {
+                                                                        return UserPreferences.formatDateTime(transactionUpdateTime, {selector: "time", addOffset: true, appendTimeZone: true});
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        return "N/A";
+                                                                    }
+                                                                }
+                                                              }
                                                             ]);
 
 

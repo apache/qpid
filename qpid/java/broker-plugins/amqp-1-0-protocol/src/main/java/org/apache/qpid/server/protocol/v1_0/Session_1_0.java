@@ -95,7 +95,6 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     private static final Logger _logger = Logger.getLogger(Session_1_0.class);
     private static final Symbol LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     private final SessionEndpoint _endpoint;
-    private VirtualHostImpl _vhost;
     private AutoCommitTransaction _transaction;
 
     private final LinkedHashMap<Integer, ServerTransaction> _openTransactions =
@@ -864,6 +863,18 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     public Session<?> getModelObject()
     {
         return _modelObject;
+    }
+
+    @Override
+    public long getTransactionStartTime()
+    {
+        return 0L;
+    }
+
+    @Override
+    public long getTransactionUpdateTime()
+    {
+        return 0L;
     }
 
     private void consumerAdded(Consumer<?> consumer)
