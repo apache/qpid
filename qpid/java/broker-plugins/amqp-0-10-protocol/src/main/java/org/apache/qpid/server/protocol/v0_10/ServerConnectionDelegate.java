@@ -367,6 +367,11 @@ public class ServerConnectionDelegate extends ServerDelegate
         return _clientProperties == null ? null : (String) _clientProperties.get(ConnectionStartProperties.PRODUCT);
     }
 
+    public String getRemoteProcessPid()
+    {
+        return (_clientProperties == null || _clientProperties.get(ConnectionStartProperties.PID) == null) ? null : String.valueOf(_clientProperties.get(ConnectionStartProperties.PID));
+    }
+
     @Override
     protected int getHeartbeatMax()
     {

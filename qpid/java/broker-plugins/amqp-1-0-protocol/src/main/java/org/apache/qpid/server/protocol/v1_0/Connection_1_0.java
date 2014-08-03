@@ -304,6 +304,12 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
     @Override
+    public String getRemoteProcessPid()
+    {
+        return null;  // TODO
+    }
+
+    @Override
     public String getClientId()
     {
         return _conn.getRemoteContainerId();

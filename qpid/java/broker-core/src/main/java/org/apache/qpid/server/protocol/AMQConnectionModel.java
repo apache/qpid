@@ -75,6 +75,8 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
 
     SocketAddress getRemoteAddress();
 
+    String getRemoteProcessPid();
+
     String getClientId();
 
     String getClientVersion();
@@ -104,4 +106,5 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
     void addSessionListener(SessionModelListener listener);
 
     void removeSessionListener(SessionModelListener listener);
+
 }

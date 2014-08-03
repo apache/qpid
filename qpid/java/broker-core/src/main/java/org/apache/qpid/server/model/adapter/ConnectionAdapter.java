@@ -130,7 +130,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @Override
     public String getRemoteProcessPid()
     {
-        return null;
+        return _underlyingConnection.getRemoteProcessPid();
     }
 
     @Override

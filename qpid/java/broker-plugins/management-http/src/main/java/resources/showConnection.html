@@ -19,30 +19,73 @@
  -
  -->
 <div class="connection">
-    <span style="">Name:</span><span class="name" style="position:absolute; left:8em"></span>
+    <div class="alignLeft">
+        <div style="clear:both">
+            <div class="formLabel-labelCell">Name:</div>
+            <div class="name" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell">User:</div>
+            <div class="principal" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell">Client ID:</div>
+            <div class="clientId" style="float:left;"></div>
+        </div>
+        <div style="clear:both">
+            <div class="formLabel-labelCell">Client Version:</div>
+            <div class="clientVersion" style="float:left;"></div>
+        </div>
+    </div>
+    <div class="alignRight">
+        <div>
+            <div class="formLabel-labelCell">Inbound:</div>
+            <div class="alignRight">
+                <span class="msgInRate"></span>
+                <span> msg/s</span>
+                <span class="bytesInRate"></span>
+                <span class="bytesInRateUnits"></span>
+            </div>
+        </div>
+        <div>
+            <div class="formLabel-labelCell">Outbound:</div>
+            <div class="alignRight">
+                <span class="msgOutRate"></span>
+                <span> msg/s</span>
+                <span class="bytesOutRate"></span>
+                <span class="bytesOutRateUnits"></span>
+            </div>
+        </div>
+        <div>
+            <div class="formLabel-labelCell">Connect Time:</div>
+            <div class="alignRight">
+                <div class="createdTime"></div>
+            </div>
+        </div>
+        <div>
+            <div class="formLabel-labelCell">Last I/O Time:</div>
+            <div class="alignRight">
+                <div class="lastIoTime"></div>
+            </div>
+        </div>
+    </div>
+    <div style="clear:both"></div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell">Remote Process (PID):</div>
+        <div class="remoteProcessPid" style="float:left;"></div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell">Port:</div>
+        <div class="port" style="float:left;"></div>
+    </div>
+    <div style="clear:both">
+        <div class="formLabel-labelCell">Transport:</div>
+        <div class="transport" style="float:left;"></div>
+    </div>
+    <div style="clear:both"/>
+
     <br/>
-    <span style="">User:</span><span class="principal" style="position:absolute; left:8em"></span>
-    <span style="position:absolute; left:26em">Pre-fetched:</span>
-    <br/>
-    <span style="">ClientID:</span><span class="clientId" style="position:absolute; left:8em"></span>
-    <span style="position:absolute; left:26em">Inbound:</span>
-    <span class="msgInRate" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-    <span class="bytesInRate" style="position:absolute; right: 3.3em"></span>
-    <span class="bytesInRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
-    <span style="">Client Version:</span><span style="position:absolute; left:8em" class="clientVersion"></span>
-    <span style="position:absolute; left:26em">Outbound:</span>
-    <span class="msgOutRate" style="position:absolute; right:9.5em"></span>
-    <span style="position:absolute; right: 5em; width: 4em"> msg/s</span>
-    <span class="bytesOutRate" style="position:absolute; right: 3.3em"></span>
-    <span class="bytesOutRateUnits" style="position:absolute; right: 0em; width: 3em"></span>
-    <br/>
-    <span style="">Port:</span><span style="position:absolute; left:8em" class="port"></span>
-    <br/>
-    <span style="">Transport:</span><span style="position:absolute; left:8em" class="transport"></span>
-    <br/>
-    <br/>
+
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Sessions'">
         <div class="sessions"></div>
     </div>

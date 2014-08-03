@@ -230,7 +230,6 @@ public class Asserts
                                 Connection.LIFETIME_POLICY,
                                 Connection.INCOMING,
                                 Connection.REMOTE_PROCESS_NAME,
-                                Connection.REMOTE_PROCESS_PID,
                                 Connection.LOCAL_ADDRESS,
                                 Connection.PROPERTIES,
                                 ConfiguredObject.TYPE,
