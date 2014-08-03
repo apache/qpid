@@ -32,6 +32,8 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.servlet.http.HttpServletResponse;
 
+import org.junit.Assert;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -88,6 +90,8 @@ public class ConnectionRestTest extends QpidRestTestCase
             m = consumer.receive(1000l);
             assertNotNull("Message was not received after rollback", m);
         }
+
+        // Session left open
     }
 
     public void testGetAllConnections() throws Exception
@@ -175,6 +179,34 @@ public class ConnectionRestTest extends QpidRestTestCase
         assertSession(sessions.get(0), (AMQSession<?, ?>) _session);
     }
 
+    public void testProducerSessionOpenHasTransactionStartAndUpdateTimes() throws Exception
+    {
+        Destination queue = _session.createQueue(getTestQueueName());
+        MessageProducer producer = _session.createProducer(queue);
+        producer.send(_session.createMessage());
+        // session left open
+
+        String connectionName = getConnectionName();
+
+        List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session/test/test/"
+                                                                               + URLDecoder.decode(connectionName, "UTF-8") + "/" + ((AMQSession<?, ?>) _session).getChannelId());
+        assertEquals("Unexpected number of sessions", 1, sessions.size());
+
+        final Map<String, Object> sessionData = sessions.get(0);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> statistics = (Map<String, Object>) sessionData.get(Asserts.STATISTICS_ATTRIBUTE);
+
+        long transactionStartTime = ((Number) statistics.get("transactionStartTime")).longValue();
+        long transactionUpdateTime = ((Number) statistics.get("transactionUpdateTime")).longValue();
+
+        assertTrue("Unexpected transaction start value for open transaction " + transactionStartTime, transactionStartTime > 0);
+        assertTrue("Unexpected transaction update value for open transaction " + transactionUpdateTime, transactionUpdateTime > 0);
+        assertTrue("Expected transaction update value " + transactionUpdateTime + " to be greater than transaction start time " + transactionStartTime, transactionUpdateTime >= transactionStartTime);
+
+
+    }
+
     private void assertConnection(Map<String, Object> connectionDetails) throws JMSException
     {
         Asserts.assertConnection(connectionDetails, (AMQConnection) _connection);
@@ -212,27 +244,28 @@ public class ConnectionRestTest extends QpidRestTestCase
                                         Session.STATE,
                                         Session.DURABLE,
                                         Session.LIFETIME_POLICY);
-        assertEquals("Unexpecte value of attribute " + Session.NAME, session.getChannelId() + "",
+        assertEquals("Unexpected value of attribute " + Session.NAME, session.getChannelId() + "",
                 sessionData.get(Session.NAME));
-        assertEquals("Unexpecte value of attribute " + Session.PRODUCER_FLOW_BLOCKED, Boolean.FALSE,
+        assertEquals("Unexpected value of attribute " + Session.PRODUCER_FLOW_BLOCKED, Boolean.FALSE,
                 sessionData.get(Session.PRODUCER_FLOW_BLOCKED));
-        assertEquals("Unexpecte value of attribute " + Session.CHANNEL_ID, session.getChannelId(),
+        assertEquals("Unexpected value of attribute " + Session.CHANNEL_ID, session.getChannelId(),
                 sessionData.get(Session.CHANNEL_ID));
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) sessionData.get(Asserts.STATISTICS_ATTRIBUTE);
         Asserts.assertAttributesPresent(statistics, "consumerCount",
                                         "localTransactionBegins", "localTransactionOpen",
-                                        "localTransactionRollbacks", "unacknowledgedMessages");
+                                        "localTransactionRollbacks", "unacknowledgedMessages",
+                                        "transactionStartTime", "transactionUpdateTime");
 
-        assertEquals("Unexpecte value of statistic attribute " + "unacknowledgedMessages", MESSAGE_NUMBER - 1,
+        assertEquals("Unexpected value of statistic attribute " + "unacknowledgedMessages", MESSAGE_NUMBER - 1,
                 statistics.get("unacknowledgedMessages"));
-        assertEquals("Unexpecte value of statistic attribute " + "localTransactionBegins", 4,
-                statistics.get("localTransactionBegins"));
-        assertEquals("Unexpecte value of statistic attribute " + "localTransactionRollbacks", 1,
-                statistics.get("localTransactionRollbacks"));
-        assertEquals("Unexpecte value of statistic attribute " + "consumerCount", 1,
-                statistics.get("consumerCount"));
+        assertEquals("Unexpected value of statistic attribute " + "localTransactionBegins", 4,
+                     statistics.get("localTransactionBegins"));
+        assertEquals("Unexpected value of statistic attribute " + "localTransactionRollbacks", 1,
+                     statistics.get("localTransactionRollbacks"));
+        assertEquals("Unexpected value of statistic attribute " + "consumerCount", 1,
+                     statistics.get("consumerCount"));
     }
 
     private String getConnectionName() throws IOException

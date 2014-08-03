@@ -41,9 +41,7 @@ import org.apache.qpid.server.util.Action;
 final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> implements Session<SessionAdapter>
 {
     // Attributes
-
-
-    private AMQSessionModel _session;
+    private final AMQSessionModel _session;
     private State _state = State.ACTIVE;
 
 
@@ -173,6 +171,18 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     public long getUnacknowledgedMessages()
     {
         return _session.getUnacknowledgedMessageCount();
+    }
+
+    @Override
+    public long getTransactionStartTime()
+    {
+        return _session.getTransactionStartTime();
+    }
+
+    @Override
+    public long getTransactionUpdateTime()
+    {
+        return _session.getTransactionUpdateTime();
     }
 
     @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)

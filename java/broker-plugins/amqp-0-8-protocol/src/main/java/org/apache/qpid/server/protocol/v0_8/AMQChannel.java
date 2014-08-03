@@ -1764,4 +1764,32 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     {
         return _modelObject;
     }
+
+    @Override
+    public long getTransactionStartTime()
+    {
+        ServerTransaction serverTransaction = _transaction;
+        if (serverTransaction.isTransactional())
+        {
+            return serverTransaction.getTransactionStartTime();
+        }
+        else
+        {
+            return 0L;
+        }
+    }
+
+    @Override
+    public long getTransactionUpdateTime()
+    {
+        ServerTransaction serverTransaction = _transaction;
+        if (serverTransaction.isTransactional())
+        {
+            return serverTransaction.getTransactionUpdateTime();
+        }
+        else
+        {
+            return 0L;
+        }
+    }
 }

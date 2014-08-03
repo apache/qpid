@@ -99,4 +99,18 @@ public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQCo
     void setModelObject(Session<?> session);
 
     Session<?> getModelObject();
+
+    /**
+     * Return the time the current transaction started.
+     *
+     * @return the time this transaction started or 0 if not in a transaction
+     */
+    long getTransactionStartTime();
+
+    /**
+     * Return the time of the last activity on the current transaction.
+     *
+     * @return the time of the last activity or 0 if not in a transaction
+     */
+    long getTransactionUpdateTime();
 }
