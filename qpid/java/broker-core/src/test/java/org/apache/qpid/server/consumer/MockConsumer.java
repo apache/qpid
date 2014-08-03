@@ -383,6 +383,18 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
+        public long getTransactionStartTime()
+        {
+            return 0;
+        }
+
+        @Override
+        public long getTransactionUpdateTime()
+        {
+            return 0;
+        }
+
+        @Override
         public void removeConsumerListener(final ConsumerListener listener)
         {
 
@@ -507,6 +519,12 @@ public class MockConsumer implements ConsumerTarget
         }
 
         public SocketAddress getRemoteAddress()
+        {
+            return null;
+        }
+
+        @Override
+        public String getRemoteProcessPid()
         {
             return null;
         }
