@@ -57,6 +57,9 @@ public interface FileKeyStore<X extends FileKeyStore<X>> extends KeyStore<X>
                 }
             };
 
+    @ManagedAttribute(defaultValue = "${this:path}")
+    String getDescription();
+
     @ManagedAttribute(  mandatory = true)
     String getPath();
 

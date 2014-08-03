@@ -26,8 +26,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessControlException;
@@ -38,7 +40,9 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -393,12 +397,102 @@ public class NonJavaKeyStoreImpl extends AbstractConfiguredObject<NonJavaKeyStor
                 content = DatatypeConverter.parseBase64Binary(keyBuilder.toString());
             }
         }
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(content);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        PrivateKey key = kf.generatePrivate(keySpec);
+        PrivateKey key;
+        try
+        {
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(content);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            key = kf.generatePrivate(keySpec);
+        }
+        catch(InvalidKeySpecException e)
+        {
+            // not in PCKS#8 format - try parsing as PKCS#1
+            RSAPrivateCrtKeySpec keySpec = getRSAKeySpec(content);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            try
+            {
+                key = kf.generatePrivate(keySpec);
+            }
+            catch(InvalidKeySpecException e2)
+            {
+                throw new InvalidKeySpecException("Cannot parse the provided key as either PKCS#1 or PCKS#8 format");
+            }
+
+        }
         return key;
     }
 
 
+    private static RSAPrivateCrtKeySpec getRSAKeySpec(byte[] keyBytes) throws InvalidKeySpecException
+    {
+
+        ByteBuffer buffer = ByteBuffer.wrap(keyBytes);
+        try
+        {
+            // PKCS#1 is encoded as a DER sequence of:
+            // (version, modulus, publicExponent, privateExponent, primeP, primeQ,
+            //  primeExponentP, primeExponentQ, crtCoefficient)
+
+            int tag = ((int)buffer.get()) & 0xff;
+
+            // check tag is that of a sequence
+            if(((tag & 0x20) != 0x20) || ((tag & 0x1F) != 0x10))
+            {
+                throw new InvalidKeySpecException("Unable to parse key as PKCS#1 format");
+            }
+
+            int length = getLength(buffer);
+
+            buffer = buffer.slice();
+            buffer.limit(length);
+
+            // first tlv is version - which we'll ignore
+            byte versionTag = buffer.get();
+            int versionLength = getLength(buffer);
+            buffer.position(buffer.position()+versionLength);
+
+
+            RSAPrivateCrtKeySpec keySpec = new RSAPrivateCrtKeySpec(
+                    getInteger(buffer), getInteger(buffer), getInteger(buffer), getInteger(buffer), getInteger(buffer),
+                    getInteger(buffer), getInteger(buffer), getInteger(buffer));
+
+            return keySpec;
+        }
+        catch(BufferUnderflowException e)
+        {
+            throw new InvalidKeySpecException("Unable to parse key as PKCS#1 format");
+        }
+    }
+
+    private static int getLength(ByteBuffer buffer)
+    {
+
+        int i = ((int) buffer.get()) & 0xff;
+
+        // length 0 <= i <= 127 encoded as a single byte
+        if ((i & ~0x7F) == 0)
+        {
+            return i;
+        }
+
+        // otherwise the first octet gives us the number of octets needed to read the length
+        byte[] bytes = new byte[i & 0x7f];
+        buffer.get(bytes);
+
+        return new BigInteger(1, bytes).intValue();
+    }
+
+    private static BigInteger getInteger(ByteBuffer buffer) throws InvalidKeySpecException
+    {
+        int tag = ((int) buffer.get()) & 0xff;
+        // 0x02 indicates an integer type
+        if((tag & 0x1f) != 0x02)
+        {
+            throw new InvalidKeySpecException("Unable to parse key as PKCS#1 format");
+        }
+        byte[] num = new byte[getLength(buffer)];
+        buffer.get(num);
+        return new BigInteger(num);
+    }
 
 }

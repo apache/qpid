@@ -57,6 +57,10 @@ public interface FileTrustStore<X extends FileTrustStore<X>> extends TrustStore<
                 }
             };
 
+
+    @ManagedAttribute(defaultValue = "${this:path}")
+    String getDescription();
+
     @ManagedAttribute( mandatory = true )
     String getPath();
 

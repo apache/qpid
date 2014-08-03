@@ -595,21 +595,81 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected void onResolve()
     {
+        Set<ConfiguredObjectAttribute<?,?>> unresolved = new HashSet<>();
+        Set<ConfiguredObjectAttribute<?,?>> derived = new HashSet<>();
+
+
+        for (ConfiguredObjectAttribute<?, ?> attr : _attributeTypes.values())
+        {
+            if (attr.isAutomated())
+            {
+                unresolved.add(attr);
+            }
+            else if(attr.isDerived())
+            {
+                derived.add(attr);
+            }
+        }
+
         // If there is a context attribute, resolve it first, so that other attribute values
         // may support values containing references to context keys.
         ConfiguredObjectAttribute<?, ?> contextAttribute = _attributeTypes.get("context");
         if (contextAttribute != null && contextAttribute.isAutomated())
         {
             resolveAutomatedAttribute((ConfiguredAutomatedAttribute<?, ?>) contextAttribute);
+            unresolved.remove(contextAttribute);
         }
 
-        for (ConfiguredObjectAttribute<?, ?> attr : _attributeTypes.values())
+        boolean changed = true;
+        while(!unresolved.isEmpty() || !changed)
         {
-            if (attr != contextAttribute && attr.isAutomated())
+            changed = false;
+            Iterator<ConfiguredObjectAttribute<?,?>> attrIter = unresolved.iterator();
+
+            while (attrIter.hasNext())
             {
-                resolveAutomatedAttribute((ConfiguredAutomatedAttribute<?, ?>) attr);
+                ConfiguredObjectAttribute<?, ?> attr = attrIter.next();
+
+                if(!(dependsOn(attr, unresolved) || (!derived.isEmpty() && dependsOn(attr, derived))))
+                {
+                    resolveAutomatedAttribute((ConfiguredAutomatedAttribute<?, ?>) attr);
+                    attrIter.remove();
+                    changed = true;
+                }
+            }
+            // TODO - really we should define with meta data which attributes any given derived attr is dependent upon
+            //        and only remove the derived attr as an obstacle when those fields are themselves resolved
+            if(!changed && !derived.isEmpty())
+            {
+                changed = true;
+                derived.clear();
             }
         }
+    }
+
+    private boolean dependsOn(final ConfiguredObjectAttribute<?, ?> attr,
+                              final Set<ConfiguredObjectAttribute<?, ?>> unresolved)
+    {
+        Object value = _attributes.get(attr.getName());
+        if(value == null && !"".equals(((ConfiguredAutomatedAttribute)attr).defaultValue()))
+        {
+            value = ((ConfiguredAutomatedAttribute)attr).defaultValue();
+        }
+        if(value instanceof String)
+        {
+            String interpolated = interpolate(this, (String)value);
+            if(interpolated.contains("${this:"))
+            {
+                for(ConfiguredObjectAttribute<?,?> unresolvedAttr : unresolved)
+                {
+                    if(interpolated.contains("${this:"+unresolvedAttr.getName()))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void resolveAutomatedAttribute(final ConfiguredAutomatedAttribute<?, ?> autoAttr)

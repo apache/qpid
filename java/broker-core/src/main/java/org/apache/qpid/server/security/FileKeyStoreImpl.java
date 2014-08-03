@@ -21,7 +21,6 @@
 package org.apache.qpid.server.security;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
@@ -29,8 +28,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,16 +53,6 @@ import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 @ManagedObject( category = false )
 public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl> implements FileKeyStore<FileKeyStoreImpl>
 {
-    @SuppressWarnings("serial")
-    public static final Map<String, Type> ATTRIBUTE_TYPES = Collections.unmodifiableMap(new HashMap<String, Type>(){{
-        put(NAME, String.class);
-        put(PATH, String.class);
-        put(PASSWORD, String.class);
-        put(KEY_STORE_TYPE, String.class);
-        put(CERTIFICATE_ALIAS, String.class);
-        put(KEY_MANAGER_FACTORY_ALGORITHM, String.class);
-    }});
-
 
     @ManagedAttributeField
     private String _type;
