@@ -544,10 +544,8 @@ define(["dojo/_base/xhr",
                              that.keyStoresGrid =
                                new UpdatableStore(that.brokerData.keystores, query(".broker-key-stores")[0],
                                                [ { name: "Name",    field: "name",      width: "20%"},
-                                                 { name: "Path", field: "path", width: "40%"},
-                                                 { name: "Type", field: "keyStoreType", width: "5%"},
-                                                 { name: "Key Manager Algorithm", field: "keyManagerFactoryAlgorithm", width: "20%"},
-                                                 { name: "Alias", field: "certificateAlias", width: "15%"}
+                                                 { name: "Type", field: "type", width: "20%"},
+                                                 { name: "Description", field: "description", width: "60%"}
                                                ], function(obj) {
                                                        connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                        function(evt){

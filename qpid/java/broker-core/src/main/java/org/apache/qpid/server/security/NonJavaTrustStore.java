@@ -31,6 +31,8 @@ import org.apache.qpid.server.model.TrustStore;
 @ManagedObject( category = false, type = "NonJavaTrustStore" )
 public interface NonJavaTrustStore<X extends NonJavaTrustStore<X>> extends TrustStore<X>
 {
+    @ManagedAttribute(defaultValue = "${this:certificateDetails}")
+    String getDescription();
 
     @ManagedAttribute( mandatory = true )
     String getCertificatesUrl();

@@ -101,15 +101,18 @@ public class NonJavaTrustStoreImpl
     public List<Map<CertificateDetails,Object>> getCertificateDetails()
     {
         List<Map<CertificateDetails,Object>> certificateDetails = new ArrayList<>();
-        for(X509Certificate certificate : _certificates)
+        if(_certificates != null)
         {
-            Map<CertificateDetails,Object> details = new EnumMap<>(CertificateDetails.class);
+            for (X509Certificate certificate : _certificates)
+            {
+                Map<CertificateDetails, Object> details = new EnumMap<>(CertificateDetails.class);
 
-            details.put(CertificateDetails.SUBJECT_NAME, getNameFromCertificate(certificate));
-            details.put(CertificateDetails.ISSUER_NAME, certificate.getIssuerX500Principal().getName());
-            details.put(CertificateDetails.VALID_START, certificate.getNotBefore());
-            details.put(CertificateDetails.VALID_END, certificate.getNotAfter());
-            certificateDetails.add(details);
+                details.put(CertificateDetails.SUBJECT_NAME, getNameFromCertificate(certificate));
+                details.put(CertificateDetails.ISSUER_NAME, certificate.getIssuerX500Principal().getName());
+                details.put(CertificateDetails.VALID_START, certificate.getNotBefore());
+                details.put(CertificateDetails.VALID_END, certificate.getNotAfter());
+                certificateDetails.add(details);
+            }
         }
         return certificateDetails;
     }
