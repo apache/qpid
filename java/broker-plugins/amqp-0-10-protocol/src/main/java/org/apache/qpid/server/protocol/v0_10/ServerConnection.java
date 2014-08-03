@@ -507,6 +507,12 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     }
 
     @Override
+    public String getRemoteProcessPid()
+    {
+        return getConnectionDelegate().getRemoteProcessPid();
+    }
+
+    @Override
     public void closed()
     {
         performDeleteTasks();

@@ -99,6 +99,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private String _clientVersion = null;
     private String _clientProduct = null;
+    private String _remoteProcessPid = null;
 
     private VirtualHostImpl _virtualHost;
 
@@ -1117,6 +1118,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
             _clientVersion = clientProperties.getString(ConnectionStartProperties.VERSION_0_8);
             _clientProduct = clientProperties.getString(ConnectionStartProperties.PRODUCT);
+            _remoteProcessPid = clientProperties.getString(ConnectionStartProperties.PID);
 
             String clientId = clientProperties.getString(ConnectionStartProperties.CLIENT_ID_0_8);
             if (clientId != null)
@@ -1218,6 +1220,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public SocketAddress getRemoteAddress()
     {
         return _network.getRemoteAddress();
+    }
+
+    @Override
+    public String getRemoteProcessPid()
+    {
+        return _remoteProcessPid;
     }
 
     public SocketAddress getLocalAddress()

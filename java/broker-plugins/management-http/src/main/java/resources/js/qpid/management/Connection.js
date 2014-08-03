@@ -86,6 +86,9 @@ define(["dojo/_base/xhr",
                            "principal",
                            "port",
                            "transport",
+                           "remoteProcessPid",
+                           "createdTime",
+                           "lastIoTime",
                            "msgInRate",
                            "bytesInRate",
                            "bytesInRateUnits",
@@ -150,7 +153,9 @@ define(["dojo/_base/xhr",
               this.principal.innerHTML = entities.encode(String(this.connectionData[ "principal" ]));
               this.port.innerHTML = entities.encode(String(this.connectionData[ "port" ]));
               this.transport.innerHTML = entities.encode(String(this.connectionData[ "transport" ]));
-
+              this.remoteProcessPid.innerHTML = entities.encode(String(this.connectionData[ "remoteProcessPid" ]));
+              this.createdTime.innerHTML = UserPreferences.formatDateTime(this.connectionData[ "createdTime" ], {addOffset: true, appendTimeZone: true});
+              this.lastIoTime.innerHTML = UserPreferences.formatDateTime(this.connectionData[ "lastIoTime" ], {addOffset: true, appendTimeZone: true});
            };
 
            ConnectionUpdater.prototype.update = function()
