@@ -150,6 +150,9 @@ void EncodedMessage::populate(qpid::types::Variant::Map& map) const
         if (to) {
             map["x-amqp-to"] = to.str();
         }
+        if (contentEncoding) {
+            map["x-amqp-content-encoding"] = contentEncoding.str();
+        }
         if (!!absoluteExpiryTime) {
             map["x-amqp-absolute-expiry-time"] = absoluteExpiryTime.get();
         }
