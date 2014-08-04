@@ -230,6 +230,13 @@ under the License.
     </para>
     <note>
       <para>
+	Broker management is required for HA to operate, it is enabled by
+	default. The option <literal>mgmt-enable</literal> must not be set to
+	"no"
+      </para>
+    </note>
+    <note>
+      <para>
 	Incorrect security settings are a common cause of problems when
 	getting started, see <xref linkend="ha-security"/>.
       </para>
