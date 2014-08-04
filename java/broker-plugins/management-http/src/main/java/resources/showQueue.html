@@ -20,100 +20,100 @@
  -->
 <div class="queue">
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Queue Attributes',  open: true">
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Name:</div>
-            <div class="name" style="float:left;"></div>
+            <div class="name"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">State:</div>
-            <div class="state" style="float:left;"></div>
+            <div class="state"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Durable:</div>
-            <div class="durable" style="float:left;"></div>
+            <div class="durable"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Persist Messages:</div>
-            <div class="messageDurability" style="float:left;"></div>
+            <div class="messageDurability"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Enforced Max. Ttl(ms):</div>
-            <div class="maximumMessageTtl" style="float:left;"></div>
+            <div class="maximumMessageTtl"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Enforced Min. Ttl(ms):</div>
-            <div class="minimumMessageTtl" style="float:left;"></div>
+            <div class="minimumMessageTtl"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Exclusive:</div>
-            <div class="exclusive" style="float:left;"></div>
+            <div class="exclusive"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Owner:</div>
-            <div class="owner" style="float:left;"></div>
+            <div class="owner"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Lifespan:</div>
-            <div class="lifetimePolicy" style="float:left;"></div>
+            <div class="lifetimePolicy"></div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Type:</div>
-            <div style="float:left;">
+            <div>
                 <span class="type"></span>
                 <span class="typeQualifier"></span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Size:</div>
-            <div style="float:left;">
+            <div>
                 <span class="queueDepthMessages"></span>
                 <span> msgs</span>
                 <span class="queueDepthBytes">(</span>
                 <span class="queueDepthBytesUnits">)</span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Pre-fetched:</div>
-            <div style="float:left;">
+            <div>
                 <span class="unacknowledgedMessages"></span>
                 <span> msgs</span>
                 <span class="unacknowledgedBytes">(</span>
                 <span class="unacknowledgedBytesUnits">)</span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Inbound:</div>
-            <div style="float:left;">
+            <div>
                 <span class="msgInRate"></span>
                 <span> msg/s</span>
                 <span class="bytesInRate">(</span>
                 <span class="bytesInRateUnits">)</span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Outbound:</div>
-            <div style="float:left;">
+            <div>
                 <span class="msgOutRate"></span>
                 <span> msg/s</span>
                 <span class="bytesOutRate">(</span>
                 <span class="bytesOutRateUnits">)</span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">AlternateExchange:</div>
-            <div class="alternateExchange" style="float:left;"></div>
+            <div class="alternateExchange"></div>
         </div>
-        <div class="messageGroups" style="clear:both">
-          <div style="clear:both">
+        <div class="clear messageGroups">
+          <div class="clear">
             <div class="messageGroupKeyLabel formLabel-labelCell ">Message Group Key:</div>
-            <div style="float:left;" class="messageGroupKey"></div>
+            <div class="messageGroupKey"></div>
           </div>
-          <div style="clear:both">
+          <div class="clear">
             <div class="messageGroupSharedGroupsLabel formLabel-labelCell">Shared Message Groups:</div>
-            <div style="float:left;" class="messageGroupSharedGroups"></div>
+            <div class="messageGroupSharedGroups"></div>
           </div>
         </div>
-        <div style="clear:both"></div>
+        <div class="clear"></div>
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Bindings'">
@@ -134,42 +134,42 @@
     </div>
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds', open: false">
-      <div style="clear:both">
+      <div class="clear">
             <div class="formLabel-labelCell">Queue Depth:</div>
-            <div style="float:left;">
+            <div>
                 <span class="alertThresholdQueueDepthMessages"></span>
                 <span>msgs</span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Queue Depth:</div>
-            <div style="float:left;">
+            <div>
                 <span class="alertThresholdQueueDepthBytes"></span>
                 <span class="alertThresholdQueueDepthBytesUnits"></span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Message Age:</div>
-            <div style="float:left;">
+            <div>
                 <span class="alertThresholdMessageAge"></span>
                 <span class="alertThresholdMessageAgeUnits"></span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Message Size:</div>
-            <div style="float:left;">
+            <div>
                 <span class="alertThresholdMessageSize"></span>
                 <span class="alertThresholdMessageSizeUnits"></span>
             </div>
         </div>
-        <div style="clear:both">
+        <div class="clear">
             <div class="formLabel-labelCell">Alert frequency:</div>
-            <div style="float:left;">
+            <div>
                 <span class="alertRepeatGap"></span>
                 <span class="alertRepeatGapUnits"></span>
             </div>
         </div>
-        <div style="clear:both"></div>
+        <div class="clear"></div>
     </div>
 
     <div class="dijitDialogPaneActionBar">

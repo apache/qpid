@@ -95,10 +95,10 @@ define(["dojo/_base/xhr",
                                 autoHeight: 10,
                                 keepSelection: true,
                                 structure: [
-                                    {name:"Size", field:"size", width: "60px"},
-                                    {name:"State", field:"state", width: "120px"},
+                                    {name:"Size", field:"size", width: "40%"},
+                                    {name:"State", field:"state", width: "30%"},
 
-                                    {name:"Arrival", field:"arrivalTime", width: "100%",
+                                    {name:"Arrival", field:"arrivalTime", width: "30%",
                                         formatter: function(val) {
                                             return UserPreferences.formatDateTime(val, {addOffset: true, appendTimeZone: true});
                                         } }
@@ -347,18 +347,18 @@ define(["dojo/_base/xhr",
 
                                    that.updateHeader();
                                    that.bindingsGrid = new UpdatableStore(that.queueData.bindings, findNode("bindings"),
-                                                            [ { name: "Exchange",    field: "exchange",      width: "90px"},
-                                                              { name: "Binding Key", field: "name",          width: "120px"},
-                                                              { name: "Arguments",   field: "argumentString",     width: "100%"}
+                                                            [ { name: "Exchange",    field: "exchange",      width: "40%"},
+                                                              { name: "Binding Key", field: "name",          width: "30%"},
+                                                              { name: "Arguments",   field: "argumentString",     width: "30%"}
                                                             ]);
 
                                    that.consumersGrid = new UpdatableStore(that.queueData.consumers, findNode("consumers"),
-                                                            [ { name: "Name",    field: "name",      width: "70px"},
-                                                              { name: "Mode", field: "distributionMode", width: "70px"},
+                                                            [ { name: "Name",    field: "name",      width: "40%"},
+                                                              { name: "Mode", field: "distributionMode", width: "20%"},
                                                               { name: "Msgs Rate", field: "msgRate",
-                                                              width: "150px"},
+                                                              width: "20%"},
                                                               { name: "Bytes Rate", field: "bytesRate",
-                                                                 width: "100%"}
+                                                                 width: "20%"}
                                                             ]);
 
 

@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 <div>
-    <div style="clear:both">
+    <div class="clear">
         <div class="formLabel-labelCell tableContainer-labelCell">Replication Group*:</div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <input type="text" id="editVirtualHostNode.groupName"
@@ -30,7 +30,7 @@
                                     pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
         </div>
     </div>
-    <div style="clear:both">
+    <div class="clear">
         <div class="formLabel-labelCell tableContainer-labelCell">Address*:</div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <input type="text" id="editVirtualHostNode.address"
@@ -46,7 +46,7 @@
                                     pattern: '^([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}$'" />
         </div>
     </div>
-    <div style="clear:both">
+    <div class="clear">
         <div class="formLabel-labelCell tableContainer-labelCell">Configuration store path*:</div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <input type="text" id="editVirtualHostNode.storePath"
@@ -59,7 +59,7 @@
                                   title: 'Enter configuration store path'" />
         </div>
     </div>
-    <div style="clear:both">
+    <div class="clear">
         <div class="formLabel-labelCell tableContainer-labelCell">Allow this node to operate solo: </div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <input type="checkbox" id="editVirtualHostNode.designatedPrimary" checked="checked"
@@ -70,7 +70,7 @@
                                     title: 'Designate node as primary. It is applicable only to 2-nodes cluster'" />
         </div>
     </div>
-    <div style="clear:both">
+    <div class="clear">
         <div class="formLabel-labelCell tableContainer-labelCell">Election priority of this node: </div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <div data-dojo-type="dojo/store/Memory" data-dojo-id="nodePriorityStore"
@@ -89,7 +89,7 @@
                                 searchAttr: 'name'" />
         </div>
     </div>
-    <div style="clear:both">
+    <div class="clear">
         <div class="formLabel-labelCell tableContainer-labelCell">Required minimum number of nodes: </div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <div data-dojo-type="dojo/store/Memory" data-dojo-id="nodeQuorumOverrideStore"
@@ -105,5 +105,5 @@
         </div>
     </div>
 
-    <div style="clear:both"></div>
+    <div class="clear"></div>
 </div>

@@ -22,7 +22,7 @@
     <div data-dojo-type="dijit.Dialog" data-dojo-props="title:'Port'" id="addPort">
         <form id="formAddPort" method="post" dojoType="dijit.form.Form">
             <div style="height:320px; width:420px; overflow: auto">
-            <div style="display:none;" id="portEditWarning">NOTE: changes will only take effect after Broker restart.</div>
+            <div class="hidden" id="portEditWarning">NOTE: changes will only take effect after Broker restart.</div>
             <div id="formAddPort:fields">
                 <input type="text" required="true" name="name" id="formAddPort.name" placeholder="Name"
                     data-dojo-props="label: 'Name*:'" dojoType="dijit.form.ValidationTextBox"
