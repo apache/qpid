@@ -91,6 +91,12 @@ public class ScramSaslServer implements SaslServer
                 challenge = generateServerFinalMessage(response);
                 _state = State.COMPLETE;
                 break;
+            case COMPLETE:
+                if(response == null || response.length == 0)
+                {
+                    challenge = new byte[0];
+                    break;
+                }
             default:
                 throw new SaslException("No response expected in state " + _state);
 
