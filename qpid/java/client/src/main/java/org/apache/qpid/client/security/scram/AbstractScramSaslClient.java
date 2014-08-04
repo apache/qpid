@@ -112,7 +112,7 @@ public abstract class AbstractScramSaslClient implements SaslClient
                 break;
             case CLIENT_PROOF_SENT:
                 evaluateOutcome(challenge);
-                response = null;
+                response = new byte[0];
                 _state = State.COMPLETE;
                 break;
             default:

@@ -1414,7 +1414,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                     break;
                 case CLIENT_PROOF_SENT:
                     evaluateOutcome(challenge);
-                    response = null;
+                    response = new byte[0];
                     _state = State.COMPLETE;
                     break;
                 default:

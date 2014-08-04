@@ -110,7 +110,7 @@ public abstract class AbstractScramAuthenticationManager<X extends AbstractScram
             // Process response from the client
             byte[] challenge = server.evaluateResponse(response != null ? response : new byte[0]);
 
-            if (server.isComplete())
+            if (server.isComplete() && (challenge == null || challenge.length == 0))
             {
                 final String userId = server.getAuthorizationID();
                 return new AuthenticationResult(new UsernamePrincipal(userId));
