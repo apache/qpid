@@ -118,20 +118,22 @@
     </div>
 
     <br/>
-    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Exchanges'">
-        <div class="exchanges"></div>
-        <button data-dojo-type="dijit.form.Button" class="addExchangeButton">Add Exchange</button>
-        <button data-dojo-type="dijit.form.Button" class="deleteExchangeButton">Delete Exchange</button>
-    </div>
-    <br/>
-    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Queues'">
-        <div class="queues"></div>
-        <button data-dojo-type="dijit.form.Button" class="addQueueButton">Add Queue</button>
-        <button data-dojo-type="dijit.form.Button" class="deleteQueueButton">Delete Queue</button>
-    </div>
-    <br/>
-    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Connections'">
-        <div class="connections"></div>
+    <div class="virtualHostChildren">
+        <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Exchanges'">
+            <div class="exchanges"></div>
+            <button data-dojo-type="dijit.form.Button" class="addExchangeButton">Add Exchange</button>
+            <button data-dojo-type="dijit.form.Button" class="deleteExchangeButton">Delete Exchange</button>
+        </div>
+        <br/>
+        <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Queues'">
+            <div class="queues"></div>
+            <button data-dojo-type="dijit.form.Button" class="addQueueButton">Add Queue</button>
+            <button data-dojo-type="dijit.form.Button" class="deleteQueueButton">Delete Queue</button>
+        </div>
+        <br/>
+        <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Connections'" class="virtualHostConnections">
+            <div class="connections"></div>
+        </div>
     </div>
 </div>
 

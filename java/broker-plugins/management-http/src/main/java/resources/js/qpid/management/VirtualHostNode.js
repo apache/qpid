@@ -69,6 +69,7 @@ define(["dojo/_base/xhr",
              this.startNodeButton = registry.byNode(query(".startNodeButton", containerNode)[0]);
              this.editNodeButton = registry.byNode(query(".editNodeButton", containerNode)[0]);
              this.deleteNodeButton = registry.byNode(query(".deleteNodeButton", containerNode)[0]);
+             this.virtualHostGridPanel = registry.byNode(query(".virtualHostGridPanel", containerNode)[0]);
              this.deleteNodeButton.on("click",
                  function(e)
                  {
@@ -122,7 +123,7 @@ define(["dojo/_base/xhr",
                             theItem = this.getItem(idx);
                             that.showVirtualHost(theItem);
                         });
-                    }, {height: 200, canSort : function(col) {return false;} });
+                    }, {height: 200, canSort : function(col) {return false;} }, EnhancedGrid);
 
              this.vhostNodeUpdater = new Updater(containerNode, this.modelObj, this);
              this.vhostNodeUpdater.update();
@@ -207,7 +208,9 @@ define(["dojo/_base/xhr",
                this.details.update(data);
              }
 
-             this.virtualHostNode.vhostsGrid.update(data.virtualhosts || []);
+
+             this.virtualHostNode.virtualHostGridPanel.domNode.style.display = data.virtualhosts? "block" : "none";
+             util.updateUpdatableStore(this.virtualHostNode.vhostsGrid, data.virtualhosts);
            }
 
            return VirtualHostNode;
