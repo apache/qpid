@@ -18,7 +18,7 @@
   -->
 <div>
 
-    <div style="clear:both">
+    <div class="clear">
       <div class="formLabel-labelCell tableContainer-labelCell">Group name*:</div>
       <div class="formLabel-controlCell tableContainer-valueCell">
           <input type="text" id="addVirtualHostNode.groupName"
@@ -32,7 +32,7 @@
                               pattern: '^[\x20-\x2e\x30-\x7F]{1,255}$'" />
       </div>
     </div>
-    <div style="clear:both">
+    <div class="clear">
       <div class="formLabel-labelCell tableContainer-labelCell">Address*:</div>
       <div class="formLabel-controlCell tableContainer-valueCell">
           <input type="text" id="addVirtualHostNode.address"
@@ -46,7 +46,7 @@
                               pattern: '([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}'" />
       </div>
     </div>
-    <div style="clear:both">
+    <div class="clear">
       <div class="formLabel-labelCell tableContainer-labelCell">Store path*:</div>
       <div class="formLabel-controlCell tableContainer-valueCell">
           <input type="text" id="addVirtualHostNode.storePath"
@@ -59,10 +59,10 @@
                               title: 'Enter store path'" />
       </div>
     </div>
-    <div class="formBox" style="clear:both">
+    <div class="clear formBox">
         <fieldset>
             <legend>Permitted group nodes</legend>
-            <div style="clear:both">
+            <div class="clear">
                 <div class="formLabel-labelCell tableContainer-labelCell">Permitted addresses*:</div>
                 <div class="formLabel-controlCell tableContainer-valueCell addPermittedNodeList">
                     <select type="text" id="addVirtualHostNode.permittedNodesList"
@@ -76,8 +76,8 @@
                 <button data-dojo-type="dijit/form/Button" id="addVirtualHostNode.permittedNodeRemove" data-dojo-props="label: '-'" ></button>
             </div>
 
-            <div style="clear:both"></div>
-            <div style="clear:both">
+            <div class="clear"></div>
+            <div class="clear">
                 <div class="formLabel-labelCell tableContainer-labelCell">Address:</div>
                 <div class="formLabel-controlCell tableContainer-valueCell">
                     <input type="text" id="addVirtualHostNode.permittedNode"
@@ -103,5 +103,5 @@
            data-dojo-type="dijit/form/ValidationTextBox"
            data-dojo-props="name: 'helperAddress'" />
 
-    <div style="clear:both"></div>
+    <div class="clear"></div>
 </div>

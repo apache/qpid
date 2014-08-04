@@ -34,6 +34,14 @@ html, body {
     color: #333;
 }
 
+.clear {
+    clear: both;
+}
+
+.hidden {
+    display: none;
+}
+
 #pageLayout {
     height: 100%;
 }
@@ -117,6 +125,10 @@ div .messages {
 
 .formLabel-labelCell {
     margin-left: 5px;
+    float: left;
+   }
+
+.formValue-valueCell {
     float: left;
 }
 

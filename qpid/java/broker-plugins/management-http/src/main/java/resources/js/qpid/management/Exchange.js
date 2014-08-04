@@ -171,9 +171,9 @@ define(["dojo/_base/xhr",
 
                                   that.updateHeader();
                                   that.bindingsGrid = new UpdatableStore(that.exchangeData.bindings, findNode("bindings"),
-                                                           [ { name: "Queue",    field: "queue",      width: "90px"},
-                                                             { name: "Binding Key", field: "name",          width: "120px"},
-                                                             { name: "Arguments",   field: "argumentString",     width: "100%"}
+                                                           [ { name: "Queue",    field: "queue",      width: "40%"},
+                                                             { name: "Binding Key", field: "name",          width: "30%"},
+                                                             { name: "Arguments",   field: "argumentString",     width: "30%"}
                                                            ], null, {
                                                                keepSelection: true,
                                                                plugins: {

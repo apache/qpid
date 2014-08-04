@@ -218,11 +218,11 @@ define(["dojo/_base/xhr",
 
                    that.updateHeader();
                    that.queuesGrid = new UpdatableStore(that.vhostData.queues, findNode("queues"),
-                                                        [ { name: "Name",    field: "name",      width: "90px"},
-                                                          { name: "Type",    field: "type",      width: "90px"},
-                                                          { name: "Consumers", field: "consumerCount", width: "90px"},
-                                                          { name: "Depth (msgs)", field: "queueDepthMessages", width: "90px"},
-                                                          { name: "Depth (bytes)", field: "queueDepthBytes", width: "100%",
+                                                        [ { name: "Name",    field: "name",      width: "20%"},
+                                                          { name: "Type",    field: "type",      width: "20%"},
+                                                          { name: "Consumers", field: "consumerCount", width: "20%"},
+                                                          { name: "Depth (msgs)", field: "queueDepthMessages", width: "20%"},
+                                                          { name: "Depth (bytes)", field: "queueDepthBytes", width: "20%",
                                                             get: function(rowIndex, item)
                                                              {
                                                                if(!item){
@@ -248,9 +248,9 @@ define(["dojo/_base/xhr",
 
                    that.exchangesGrid = new UpdatableStore(that.vhostData.exchanges, findNode("exchanges"),
                                                            [
-                                                             { name: "Name",    field: "name", width: "120px"},
-                                                             { name: "Type", field: "type", width: "120px"},
-                                                             { name: "Binding Count", field: "bindingCount", width: "100%"}
+                                                             { name: "Name",    field: "name", width: "40%"},
+                                                             { name: "Type", field: "type", width: "30%"},
+                                                             { name: "Binding Count", field: "bindingCount", width: "30%"}
                                                            ],
                                                            function(obj)
                                                            {
@@ -266,19 +266,19 @@ define(["dojo/_base/xhr",
 
                    that.connectionsGrid = new UpdatableStore(that.vhostData.connections,
                                                              findNode("connections"),
-                                                             [ { name: "Name",    field: "name",      width: "150px"},
-                                                                 { name: "User", field: "principal", width: "120px"},
-                                                                 { name: "Port",    field: "port",      width: "70px"},
-                                                                 { name: "Transport",    field: "transport",      width: "70px"},
-                                                                 { name: "Sessions", field: "sessionCount", width: "70px"},
+                                                             [ { name: "Name",    field: "name",      width: "20%"},
+                                                                 { name: "User", field: "principal", width: "10%"},
+                                                                 { name: "Port",    field: "port",      width: "10%"},
+                                                                 { name: "Transport",    field: "transport",      width: "10%"},
+                                                                 { name: "Sessions", field: "sessionCount", width: "10%"},
                                                                  { name: "Msgs In", field: "msgInRate",
-                                                                     width: "80px"},
+                                                                     width: "10%"},
                                                                  { name: "Bytes In", field: "bytesInRate",
-                                                                     width: "80px"},
+                                                                     width: "10%"},
                                                                  { name: "Msgs Out", field: "msgOutRate",
-                                                                     width: "80px"},
+                                                                     width: "10%"},
                                                                  { name: "Bytes Out", field: "bytesOutRate",
-                                                                     width: "100%"}
+                                                                     width: "10%"}
                                                              ],
                                                              function(obj)
                                                              {

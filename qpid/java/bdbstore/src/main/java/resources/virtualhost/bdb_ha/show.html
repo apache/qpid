@@ -18,23 +18,23 @@
   -->
 
 <div>
-  <div style="clear:both">
+  <div class="clear">
       <div class="formLabel-labelCell">Store overfull size:</div>
       <div><span class="storeOverfullSize" ></span> bytes</div>
   </div>
-  <div style="clear:both">
+  <div class="clear">
       <div class="formLabel-labelCell">Store underfull size:</div>
       <div><span class="storeUnderfullSize"></span> bytes</div>
   </div>
-  <div style="clear:both">
+  <div class="clear">
       <div class="formLabel-labelCell">Permitted nodes:</div>
       <div class="permittedNodes multiLineValue"></div>
   </div>
-  <div style="clear:both"></div>
+  <div class="clear"></div>
   <br/>
 
   <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'High Availability Durability',  open: true">
-      <div style="clear:both">
+      <div class="clear">
           <div class="formLabel-labelCell">Master transaction sync policy:</div>
           <div class="localTransactionSynchronizationPolicy">
             <span class="localTransactionSynchronizationPolicy-sync">SYNC (the transaction will be written and synchronized to the disk; highest durability)</span>
@@ -42,7 +42,7 @@
             <span class="localTransactionSynchronizationPolicy-no_sync">NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</span>
           </div>
       </div>
-      <div style="clear:both">
+      <div class="clear">
           <div class="formLabel-labelCell">Replica transaction sync policy:</div>
           <div class="remoteTransactionSynchronizationPolicy">
               <span class="remoteTransactionSynchronizationPolicy-sync">SYNC (the transaction will be written and synchronized to the disk; highest durability)</span>

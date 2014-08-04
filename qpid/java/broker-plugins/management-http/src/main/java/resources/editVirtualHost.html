@@ -20,7 +20,7 @@
   <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit Virtual Host'" id="editVirtualHostDialog">
       <form id="editVirtualHostForm" method="post" data-dojo-type="dijit/form/Form">
           <div class="editNoteBanner">NOTE: All changes will only take effect after Virtual Host restart.</div>
-          <div style="clear:both">
+          <div class="clear">
               <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
               <div class="formLabel-controlCell tableContainer-valueCell">
                   <input type="text" id="editVirtualHost.name"
@@ -37,10 +37,10 @@
 
           <div id="editVirtualHost.typeFields"></div>
 
-          <div class="formBox" style="clear:both">
+          <div class="clear formBox">
               <fieldset>
                   <legend>Store transaction settings</legend>
-                  <div style="clear:both">
+                  <div class="clear">
                       <div class="formLabel-labelCell tableContainer-labelCell">Idle Timeout Warn:</div>
                       <div class="tableContainer-valueCell formLabel-controlCell">
                           <input data-dojo-type="dijit/form/NumberSpinner"
@@ -52,7 +52,7 @@
                                  missingMessage="An idle timeout warn time in ms must be supplied"/>
                       </div>
                   </div>
-                  <div style="clear:both">
+                  <div class="clear">
                       <div class="formLabel-labelCell tableContainer-labelCell">Idle Timeout Close:</div>
                       <div class="tableContainer-valueCell formLabel-controlCell">
                           <input data-dojo-type="dijit/form/NumberSpinner"
@@ -64,7 +64,7 @@
                                  missingMessage="An idle timeout close time in ms must be supplied"/>
                       </div>
                   </div>
-                  <div style="clear:both">
+                  <div class="clear">
                       <div class="formLabel-labelCell tableContainer-labelCell">Open Timeout Warn:</div>
                       <div class="tableContainer-valueCell formLabel-controlCell">
                           <input data-dojo-type="dijit/form/NumberSpinner"
@@ -76,7 +76,7 @@
                                  missingMessage="An open timeout warn time in ms must be supplied"/>
                       </div>
                   </div>
-                  <div style="clear:both">
+                  <div class="clear">
                       <div class="formLabel-labelCell tableContainer-labelCell">Open Timeout Close:</div>
                       <div class="tableContainer-valueCell formLabel-controlCell">
                           <input data-dojo-type="dijit/form/NumberSpinner"
@@ -91,10 +91,10 @@
               </fieldset>
           </div>
 
-          <div class="formBox" style="clear:both">
+          <div class="clear formBox">
               <fieldset>
                   <legend>House keeping settings</legend>
-                  <div style="clear:both">
+                  <div class="clear">
                       <div class="formLabel-labelCell tableContainer-labelCell">Check period (ms):</div>
                       <div class="tableContainer-valueCell formLabel-controlCell">
                           <input data-dojo-type="dijit/form/NumberSpinner"
@@ -106,7 +106,7 @@
                                   missingMessage="A house keeping check period must be supplied"/>
                       </div>
                   </div>
-                  <div style="clear:both">
+                  <div class="clear">
                       <div class="formLabel-labelCell tableContainer-labelCell">Thread count:</div>
                       <div class="tableContainer-valueCell formLabel-controlCell">
                           <input data-dojo-type="dijit/form/NumberSpinner"
@@ -120,9 +120,9 @@
                   </div>
               </fieldset>
           </div>
-          <div style="clear:both"></div>
+          <div class="clear"></div>
 
-          <div style="clear:both">
+          <div class="clear">
               <div class="formLabel-labelCell tableContainer-labelCell">Dead letter queue enabled:</div>
               <div class="tableContainer-valueCell formLabel-controlCell">
                   <input type="checkbox" id="editVirtualHost.queue.deadLetterQueueEnabled"
@@ -131,7 +131,7 @@
                   </input>
               </div>
           </div>
-          <div style="clear:both"></div>
+          <div class="clear"></div>
 
           <div class="dijitDialogPaneActionBar">
               <button data-dojo-type="dijit/form/Button" id="editVirtualHost.saveButton" data-dojo-props="label: 'Save'">Save</button>
