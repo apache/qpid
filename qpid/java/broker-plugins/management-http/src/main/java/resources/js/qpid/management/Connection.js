@@ -109,10 +109,10 @@ define(["dojo/_base/xhr",
 
                                    that.updateHeader();
                                    that.sessionsGrid = new UpdatableStore(that.connectionData.sessions, findNode("sessions"),
-                                                            [ { name: "Name", field: "name", width: "70px"},
-                                                              { name: "Consumers", field: "consumerCount", width: "90px"},
-                                                              { name: "Unacknowledged messages", field: "unacknowledgedMessages", width: "110px"},
-                                                              { name: "Current store transaction start", field: "transactionStartTime", width: "200px",
+                                                            [ { name: "Name", field: "name", width: "20%"},
+                                                              { name: "Consumers", field: "consumerCount", width: "15%"},
+                                                              { name: "Unacknowledged messages", field: "unacknowledgedMessages", width: "15%"},
+                                                              { name: "Current store transaction start", field: "transactionStartTime", width: "25%",
                                                                 formatter: function (transactionStartTime)
                                                                 {
                                                                     if (transactionStartTime > 0)
@@ -125,7 +125,7 @@ define(["dojo/_base/xhr",
                                                                     }
                                                                 }
                                                              },
-                                                             {  name: "Current store transaction update", field: "transactionUpdateTime", width: "100%",
+                                                             {  name: "Current store transaction update", field: "transactionUpdateTime", width: "25%",
                                                                 formatter: function (transactionUpdateTime)
                                                                 {
                                                                     if (transactionUpdateTime > 0)
@@ -153,7 +153,8 @@ define(["dojo/_base/xhr",
               this.principal.innerHTML = entities.encode(String(this.connectionData[ "principal" ]));
               this.port.innerHTML = entities.encode(String(this.connectionData[ "port" ]));
               this.transport.innerHTML = entities.encode(String(this.connectionData[ "transport" ]));
-              this.remoteProcessPid.innerHTML = entities.encode(String(this.connectionData[ "remoteProcessPid" ]));
+              var remoteProcessPid = this.connectionData[ "remoteProcessPid" ];
+              this.remoteProcessPid.innerHTML = entities.encode(String(remoteProcessPid ? remoteProcessPid : "N/A"));
               this.createdTime.innerHTML = UserPreferences.formatDateTime(this.connectionData[ "createdTime" ], {addOffset: true, appendTimeZone: true});
               this.lastIoTime.innerHTML = UserPreferences.formatDateTime(this.connectionData[ "lastIoTime" ], {addOffset: true, appendTimeZone: true});
            };
