@@ -620,5 +620,21 @@ define(["dojo/_base/xhr",
                return values;
            }
 
+           util.updateUpdatableStore = function(updatableStore, data)
+           {
+               var currentRowCount = updatableStore.grid.rowCount;
+               updatableStore.grid.domNode.style.display = data ? "block" : "none";
+               updatableStore.update(data || []);
+               if (data)
+               {
+                   if (currentRowCount == 0 && data.length == 1)
+                   {
+                       // grid with a single row is not rendering properly after being hidden
+                       // force rendering
+                       updatableStore.grid.render();
+                   }
+               }
+           }
+
            return util;
        });

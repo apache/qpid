@@ -187,7 +187,9 @@ define(["dojo/_base/xhr",
                            "storeTransactionIdleTimeoutClose",
                            "storeTransactionIdleTimeoutWarn",
                            "storeTransactionOpenTimeoutClose",
-                           "storeTransactionOpenTimeoutWarn"
+                           "storeTransactionOpenTimeoutWarn",
+                           "virtualHostConnections",
+                           "virtualHostChildren"
                            ]);
 
                this.query = "api/latest/virtualhost/"+ encodeURIComponent(vhost.parent.name) + "/" + encodeURIComponent(vhost.name);
@@ -204,7 +206,7 @@ define(["dojo/_base/xhr",
                                keepSelection: true,
                                plugins: {
                                          pagination: {
-                                             pageSizes: ["10", "25", "50", "100"],
+                                             pageSizes: [10, 25, 50, 100],
                                              description: true,
                                              sizeSwitch: true,
                                              pageStepper: true,
@@ -218,9 +220,9 @@ define(["dojo/_base/xhr",
 
                    that.updateHeader();
                    that.queuesGrid = new UpdatableStore(that.vhostData.queues, findNode("queues"),
-                                                        [ { name: "Name",    field: "name",      width: "20%"},
+                                                        [ { name: "Name",    field: "name",      width: "30%"},
                                                           { name: "Type",    field: "type",      width: "20%"},
-                                                          { name: "Consumers", field: "consumerCount", width: "20%"},
+                                                          { name: "Consumers", field: "consumerCount", width: "10%"},
                                                           { name: "Depth (msgs)", field: "queueDepthMessages", width: "20%"},
                                                           { name: "Depth (bytes)", field: "queueDepthBytes", width: "20%",
                                                             get: function(rowIndex, item)
@@ -248,9 +250,9 @@ define(["dojo/_base/xhr",
 
                    that.exchangesGrid = new UpdatableStore(that.vhostData.exchanges, findNode("exchanges"),
                                                            [
-                                                             { name: "Name",    field: "name", width: "40%"},
+                                                             { name: "Name",    field: "name", width: "50%"},
                                                              { name: "Type", field: "type", width: "30%"},
-                                                             { name: "Binding Count", field: "bindingCount", width: "30%"}
+                                                             { name: "Binding Count", field: "bindingCount", width: "20%"}
                                                            ],
                                                            function(obj)
                                                            {
@@ -321,11 +323,28 @@ define(["dojo/_base/xhr",
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
                    .then(function(data) {
-                       thisObj.vhostData = data[0];
+                       thisObj.vhostData = data[0] || {name: thisObj.virtualHost.name,statistics:{messagesIn:0,bytesIn:0,messagesOut:0,bytesOut:0}};
+                       try
+                       {
+                            thisObj._update();
+                       }
+                       catch(e)
+                       {
+                            if (console && console.error)
+                            {
+                                console.error(e);
+                            }
+                       }
+                   });
+           }
 
-                       thisObj.virtualHost.startButton.set("disabled", thisObj.vhostData.state != "STOPPED");
-                       thisObj.virtualHost.stopButton.set("disabled", thisObj.vhostData.state != "ACTIVE");
-                       thisObj.virtualHost.editButton.set("disabled", thisObj.vhostData.state == "UNAVAILABLE");
+           Updater.prototype._update = function()
+           {
+                var thisObj = this;
+                this.virtualHost.startButton.set("disabled", !this.vhostData.state || this.vhostData.state != "STOPPED");
+                this.virtualHost.stopButton.set("disabled", !this.vhostData.state || this.vhostData.state != "ACTIVE");
+                this.virtualHost.editButton.set("disabled", !this.vhostData.state || this.vhostData.state == "UNAVAILABLE");
+                this.virtualHost.deleteButton.set("disabled", !this.vhostData.state);
 
                        util.flattenStatistics( thisObj.vhostData );
                        var connections = thisObj.vhostData[ "connections" ];
@@ -405,26 +424,7 @@ define(["dojo/_base/xhr",
                        thisObj.bytesOut = bytesOut;
                        thisObj.connections = connections;
 
-                       // update queues
-                       thisObj.queuesGrid.update(thisObj.vhostData.queues);
-
-                       // update exchanges
-                       thisObj.exchangesGrid.update(thisObj.vhostData.exchanges);
-
-                       var exchangesGrid = thisObj.exchangesGrid.grid;
-                       for(var i=0; i< thisObj.vhostData.exchanges.length; i++)
-                       {
-                           var data = exchangesGrid.getItem(i);
-                           var isStandard = false;
-                           if (data && data.name)
-                           {
-                               isStandard = util.isReservedExchangeName(data.name);
-                           }
-                           exchangesGrid.rowSelectCell.setDisabled(i, isStandard);
-                       }
-
-                       // update connections
-                       thisObj.connectionsGrid.update(thisObj.vhostData.connections)
+                        this._updateGrids(thisObj.vhostData)
 
                         if (thisObj.details)
                         {
@@ -440,8 +440,28 @@ define(["dojo/_base/xhr",
                                  }
                                );
                         }
-                   });
+
            };
+
+            Updater.prototype._updateGrids = function(data)
+            {
+                this.virtualHostChildren.style.display = data.state == "ACTIVE" ? "block" : "none";
+                if (data.state == "ACTIVE" )
+                {
+                    util.updateUpdatableStore(this.queuesGrid, data.queues);
+                    util.updateUpdatableStore(this.exchangesGrid, data.exchanges);
+
+                    var exchangesGrid = this.exchangesGrid.grid;
+                    for(var i=0; i< data.exchanges.length; i++)
+                    {
+                        var item = exchangesGrid.getItem(i);
+                        var isStandard = item && item.name && util.isReservedExchangeName(item.name);
+                        exchangesGrid.rowSelectCell.setDisabled(i, isStandard);
+                    }
+                    this.virtualHostConnections.style.display = data.connections ? "block" : "none";
+                    util.updateUpdatableStore(this.connectionsGrid, data.connections);
+                }
+            };
 
 
            return VirtualHost;
