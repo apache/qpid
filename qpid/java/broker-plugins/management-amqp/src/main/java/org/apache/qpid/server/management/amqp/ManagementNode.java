@@ -52,7 +52,6 @@ import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.message.internal.InternalMessageHeader;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.plugin.MessageConverter;
@@ -236,7 +235,7 @@ class ManagementNode implements MessageSource, MessageDestination
                 }
             }
             managedEntityType = new ManagedEntityType(clazz.getName(), parentSet.toArray(new ManagedEntityType[parentSet.size()]),
-                                                      (String[])(ConfiguredObjectTypeRegistry.getAttributeNames(
+                                                      (String[])(_managedObject.getModel().getTypeRegistry().getAttributeNames(
                                                               clazz).toArray(new String[0])),
                                                       opsList.toArray(new String[opsList.size()]));
             _entityTypes.put(clazz.getName(),managedEntityType);

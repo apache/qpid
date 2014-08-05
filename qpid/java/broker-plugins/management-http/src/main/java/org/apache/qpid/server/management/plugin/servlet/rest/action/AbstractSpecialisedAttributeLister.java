@@ -42,15 +42,16 @@ abstract class AbstractSpecialisedAttributeLister<T extends ConfiguredObject>  i
     @Override
     final public Object perform(Map<String, Object> request, Broker broker)
     {
+        ConfiguredObjectTypeRegistry typeRegistry = broker.getModel().getTypeRegistry();
         Collection<Class<? extends ConfiguredObject>> groupProviderTypes =
-                ConfiguredObjectTypeRegistry.getTypeSpecialisations(getCategoryClass());
+                typeRegistry.getTypeSpecialisations(getCategoryClass());
 
         Map<String, Object> attributes = new TreeMap<String, Object>();
 
         for (Class<? extends ConfiguredObject> groupProviderType : groupProviderTypes)
         {
             Collection<ConfiguredObjectAttribute<?, ?>> typeSpecificAttributes =
-                    ConfiguredObjectTypeRegistry.getTypeSpecificAttributes(groupProviderType);
+                    typeRegistry.getTypeSpecificAttributes(groupProviderType);
 
             Map<String, Object> data = new HashMap<String, Object>();
 

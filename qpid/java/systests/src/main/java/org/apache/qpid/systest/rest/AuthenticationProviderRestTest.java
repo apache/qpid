@@ -28,8 +28,8 @@ import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.ExternalFileBasedAuthenticationManager;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
@@ -307,7 +307,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
 
     private void assertProvider(boolean managesPrincipals, String type, Map<String, Object> provider)
     {
-        Asserts.assertAttributesPresent(provider, ConfiguredObjectTypeRegistry.getAttributeNames(
+        Asserts.assertAttributesPresent(provider, BrokerModel.getInstance().getTypeRegistry().getAttributeNames(
                                                 AuthenticationProvider.class),
                 AuthenticationProvider.DESCRIPTION, ConfiguredObject.CONTEXT,
                 ConfiguredObject.DESIRED_STATE, ConfiguredObject.CREATED_BY,

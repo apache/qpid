@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.ExternalFileBasedAuthenticationManager;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.PreferencesProvider;
@@ -163,7 +163,8 @@ public class PreferencesProviderRestTest extends QpidRestTestCase
     public void assertProviderCommonAttributes(Map<String, Object> provider)
     {
         Asserts.assertAttributesPresent(provider,
-                                        ConfiguredObjectTypeRegistry.getAttributeNames(PreferencesProvider.class),
+                                        BrokerModel.getInstance().getTypeRegistry().getAttributeNames(
+                                                PreferencesProvider.class),
                                         ConfiguredObject.CREATED_BY,
                                         ConfiguredObject.CREATED_TIME,
                                         ConfiguredObject.LAST_UPDATED_BY,

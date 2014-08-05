@@ -145,6 +145,7 @@ public abstract class Model
         return allDescendants.contains(descendantClass);
     }
 
+
     public abstract Collection<Class<? extends ConfiguredObject>> getSupportedCategories();
     public abstract Collection<Class<? extends ConfiguredObject>> getChildTypes(Class<? extends ConfiguredObject> parent);
 
@@ -155,5 +156,7 @@ public abstract class Model
     public abstract int getMinorVersion();
 
     public abstract ConfiguredObjectFactory getObjectFactory();
+
+    public abstract ConfiguredObjectTypeRegistry getTypeRegistry();
 
 }
