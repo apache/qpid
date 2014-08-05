@@ -50,8 +50,8 @@ size_t  Connection::decode(const char* buffer, size_t size) {
                 throw Exception(QPID_MSG("Unsupported version: " << pi
                                          << " supported version " << version));
             QPID_LOG(trace, "RECV [" << identifier << "]: INIT(" << pi << ")");
+            initialized = true;
         }
-        initialized = true;
     }
     framing::AMQFrame frame;
     while(frame.decode(in)) {
