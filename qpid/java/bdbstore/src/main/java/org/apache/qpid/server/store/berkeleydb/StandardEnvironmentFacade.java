@@ -49,6 +49,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
 
     private Environment _environment;
     private final Committer _committer;
+    private final File _environmentPath;
 
     public StandardEnvironmentFacade(StandardEnvironmentConfiguration configuration)
     {
@@ -59,12 +60,12 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
             LOGGER.info("Creating environment at environment path " + _storePath);
         }
 
-        File environmentPath = new File(_storePath);
-        if (!environmentPath.exists())
+        _environmentPath = new File(_storePath);
+        if (!_environmentPath.exists())
         {
-            if (!environmentPath.mkdirs())
+            if (!_environmentPath.mkdirs())
             {
-                throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
+                throw new IllegalArgumentException("Environment path " + _environmentPath + " could not be read or created. "
                                                    + "Ensure the path is correct and that the permissions are correct.");
             }
         }
@@ -92,7 +93,20 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
 
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
 
-        _environment = new Environment(environmentPath, envConfig);
+        EnvHomeRegistry.getInstance().registerHome(_environmentPath);
+        boolean success = false;
+        try
+        {
+            _environment = new Environment(_environmentPath, envConfig);
+            success = true;
+        }
+        finally
+        {
+            if (!success)
+            {
+                EnvHomeRegistry.getInstance().deregisterHome(_environmentPath);
+            }
+        }
 
         _committer =  new CoalescingCommiter(name, this);
         _committer.start();
@@ -135,7 +149,14 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         }
         finally
         {
-            closeEnvironment();
+            try
+            {
+                closeEnvironment();
+            }
+            finally
+            {
+                EnvHomeRegistry.getInstance().deregisterHome(_environmentPath);
+            }
         }
     }
 

@@ -73,6 +73,26 @@ public class StandardEnvironmentFacadeTest extends QpidTestCase
         assertTrue("Environment is not valid", e.isValid());
     }
 
+    public void testSecondEnvironmentFacadeUsingSamePathRejected() throws Exception
+    {
+        EnvironmentFacade ef = createEnvironmentFacade();
+        assertNotNull("Environment should not be null", ef);
+        try
+        {
+            createEnvironmentFacade();
+            fail("Exception not thrown");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            // PASS
+        }
+
+        ef.close();
+
+        EnvironmentFacade ef2 = createEnvironmentFacade();
+        assertNotNull("Environment should not be null", ef2);
+    }
+
     public void testClose() throws Exception
     {
         EnvironmentFacade ef = createEnvironmentFacade();

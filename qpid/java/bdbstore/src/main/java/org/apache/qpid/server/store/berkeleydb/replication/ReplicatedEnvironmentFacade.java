@@ -57,7 +57,23 @@ import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.TransactionConfig;
-import com.sleepycat.je.rep.*;
+import com.sleepycat.je.rep.AppStateMonitor;
+import com.sleepycat.je.rep.InsufficientAcksException;
+import com.sleepycat.je.rep.InsufficientLogException;
+import com.sleepycat.je.rep.InsufficientReplicasException;
+import com.sleepycat.je.rep.NetworkRestore;
+import com.sleepycat.je.rep.NetworkRestoreConfig;
+import com.sleepycat.je.rep.NodeState;
+import com.sleepycat.je.rep.NodeType;
+import com.sleepycat.je.rep.RepInternal;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
+import com.sleepycat.je.rep.ReplicationConfig;
+import com.sleepycat.je.rep.ReplicationGroup;
+import com.sleepycat.je.rep.ReplicationMutableConfig;
+import com.sleepycat.je.rep.ReplicationNode;
+import com.sleepycat.je.rep.RestartRequiredException;
+import com.sleepycat.je.rep.StateChangeEvent;
+import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.DbPing;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
@@ -71,6 +87,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
+import org.apache.qpid.server.store.berkeleydb.EnvHomeRegistry;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
 import org.apache.qpid.server.util.DaemonThreadFactory;
@@ -132,7 +149,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         put(ReplicationConfig.LOG_FLUSH_TASK_INTERVAL, "1 min");
     }});
 
-    public static final String TYPE = "BDB-HA";
     private static final String PERMITTED_NODE_LIST = "permittedNodes";
 
     private final ReplicatedEnvironmentConfiguration _configuration;
@@ -183,7 +199,20 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
 
         // create environment in a separate thread to avoid renaming of the current thread by JE
-        _environment = createEnvironment(true);
+        EnvHomeRegistry.getInstance().registerHome(_environmentDirectory);
+        boolean success = false;
+        try
+        {
+            _environment = createEnvironment(true);
+            success = true;
+        }
+        finally
+        {
+            if (!success)
+            {
+                EnvHomeRegistry.getInstance().deregisterHome(_environmentDirectory);
+            }
+        }
         populateExistingRemoteReplicationNodes();
         _groupChangeExecutor.submit(new RemoteNodeStateLearner());
     }
@@ -234,8 +263,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     public void close()
     {
         if (_state.compareAndSet(State.OPENING, State.CLOSING) ||
-                _state.compareAndSet(State.OPEN, State.CLOSING) ||
-                _state.compareAndSet(State.RESTARTING, State.CLOSING) )
+            _state.compareAndSet(State.OPEN, State.CLOSING) ||
+            _state.compareAndSet(State.RESTARTING, State.CLOSING) )
         {
             try
             {
@@ -258,7 +287,14 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 }
                 finally
                 {
-                    closeEnvironment();
+                    try
+                    {
+                        closeEnvironment();
+                    }
+                    finally
+                    {
+                        EnvHomeRegistry.getInstance().deregisterHome(_environmentDirectory);
+                    }
                 }
             }
             finally
@@ -714,13 +750,13 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     String newMaster = admin.transferMaster(Collections.singleton(nodeName), MASTER_TRANSFER_TIMEOUT, TimeUnit.MILLISECONDS, true);
                     if (LOGGER.isDebugEnabled())
                     {
-                        LOGGER.debug("The mastership has been transfered to " + newMaster);
+                        LOGGER.debug("The mastership has been transferred to " + newMaster);
                     }
                 }
                 catch (DatabaseException e)
                 {
-                    LOGGER.warn("Exception on transfering the mastership to " + _prettyGroupNodeName
-                            + " Master transfer timeout : " + MASTER_TRANSFER_TIMEOUT, e);
+                    LOGGER.warn("Exception on transferring the mastership to " + _prettyGroupNodeName
+                                + " Master transfer timeout : " + MASTER_TRANSFER_TIMEOUT, e);
                     throw e;
                 }
                 return null;
