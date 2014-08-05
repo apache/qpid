@@ -375,6 +375,50 @@ namespace Org.Apache.Qpid.Messaging.UnitTest
             gotThis = message.GetContentObject();
             StringAssert.IsMatch("System.Guid", gotThis.GetType().ToString());
             StringAssert.IsMatch("03020100-0504-0706-0809-0a0b0c0d0e0f", gotThis.ToString());
+
+            Dictionary<string, object> content = new Dictionary<string, object>();
+            Dictionary<string, object> subMap = new Dictionary<string, object>();
+            Collection<object> colors = new Collection<object>();
+
+            // Test object map
+            // add simple types
+            content["id"] = 987654321;
+            content["name"] = "Widget";
+            content["percent"] = 0.99;
+
+            // add nested amqp/map
+            subMap["name"] = "Smith";
+            subMap["number"] = 354;
+            content["nestedMap"] = subMap;
+
+            // add an amqp/list
+            colors.Add("red");
+            colors.Add("green");
+            colors.Add("white");
+            // list contains null value
+            colors.Add(null);
+            content["colorsList"] = colors;
+
+            // add one of each supported amqp data type
+            bool mybool2 = true;
+            content["mybool"] = mybool2;
+
+            message.SetContentObject(content);
+            gotThis = message.GetContentObject();
+            StringAssert.Contains("System.Collections.Generic.Dictionary`2[System.String,System.Object]", gotThis.GetType().ToString());
+            // Can't compare objects as strings since the maps get reordered
+            // so compare each item
+            foreach (KeyValuePair<string, object> kvp in content)
+            {
+                object gotObj = ((Dictionary<string, object>)(gotThis))[kvp.Key];
+                StringAssert.Contains(kvp.Value.ToString(), gotObj.ToString());
+            }
+
+            // test object list
+            message.SetContentObject(colors);
+            gotThis = message.GetContentObject();
+            StringAssert.Contains("System.Collections.ObjectModel.Collection`1[System.Object]", gotThis.GetType().ToString());
+            StringAssert.Contains(message.ListAsString(colors), message.ListAsString((Collection<object>)gotThis));
         }
     }
 }

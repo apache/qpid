@@ -571,12 +571,13 @@ namespace Messaging {
         ThrowIfDisposed();
 
         System::Exception ^ newException = nullptr;
+        System::Object ^ result = nullptr;
 
         try
         {
             ::qpid::types::Variant nativeObject = nativeObjPtr->getContentObject();
 
-            return TypeTranslator::NativeToManagedObject(nativeObject);
+            result = TypeTranslator::NativeToManagedObject(nativeObject);
         }
         catch (const ::qpid::types::Exception & error)
         {
@@ -588,6 +589,8 @@ namespace Messaging {
         {
             throw newException;
         }
+
+        return result;
     }
     
     System::String ^ Message::MapAsString(System::Collections::Generic::Dictionary<

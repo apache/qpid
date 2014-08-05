@@ -242,6 +242,18 @@ namespace Messaging {
                     ::qpid::types::Uuid newUuid = ::qpid::types::Uuid(pinnedBuf);
                     qpidVariant = newUuid;
                 }
+                else if (QpidTypeCheck::ObjectIsMap(managedValue))
+                {
+                    ::qpid::types::Variant::Map newMap;
+                    ManagedToNative((QpidMap ^)managedValue, newMap);
+                    qpidVariant = newMap;
+                }
+                else if (QpidTypeCheck::ObjectIsList(managedValue))
+                {
+                    ::qpid::types::Variant::List newList;
+                    ManagedToNative((QpidList ^)managedValue, newList);
+                    qpidVariant = newList;
+                }
                 else
                 {
                     throw gcnew System::NotImplementedException();
