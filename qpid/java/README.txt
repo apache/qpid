@@ -25,10 +25,12 @@ https://cwiki.apache.org/confluence/display/qpid/Qpid+Java+Build+How+To
 
 ==== Running client examples =====
 
-Use maven to copy the dependencies for the examples:
+Use maven to build the modules, and additionally copy the dependencies alongside their output:
 
   mvn clean package dependency:copy-dependencies -DskipTests
 
-Now you can run the examples as follows:
+Now you can then run the examples as follows:
 
   java -cp "client/example/target/classes/:client/example/target/dependency/*" org.apache.qpid.example.Drain
+
+  java -cp "amqp-1-0-client-jms/example/target/classes/:amqp-1-0-client-jms/example/target/dependency/*" org.apache.qpid.amqp_1_0.jms.example.Hello
