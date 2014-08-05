@@ -27,7 +27,9 @@ import java.util.Collections;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
 
 public class TestModel extends Model
 {
@@ -38,6 +40,7 @@ public class TestModel extends Model
             };
 
     private final ConfiguredObjectFactory _objectFactory;
+    private ConfiguredObjectTypeRegistry _registry;
 
     private TestModel()
     {
@@ -47,6 +50,21 @@ public class TestModel extends Model
     public TestModel(final ConfiguredObjectFactory objectFactory)
     {
         _objectFactory = objectFactory == null ? new ConfiguredObjectFactoryImpl(this) : objectFactory;
+        ConfiguredObjectRegistration configuredObjectRegistration = new ConfiguredObjectRegistration()
+        {
+            @Override
+            public Collection<Class<? extends ConfiguredObject>> getConfiguredObjectClasses()
+            {
+                return Arrays.<Class<? extends ConfiguredObject>>asList(TestRootCategoryImpl.class, Test2RootCategoryImpl.class);
+            }
+
+            @Override
+            public String getType()
+            {
+                return "test";
+            }
+        };
+        _registry = new ConfiguredObjectTypeRegistry(Arrays.asList(configuredObjectRegistration), getSupportedCategories());
     }
 
 
@@ -90,6 +108,12 @@ public class TestModel extends Model
     public ConfiguredObjectFactory getObjectFactory()
     {
         return _objectFactory;
+    }
+
+    @Override
+    public ConfiguredObjectTypeRegistry getTypeRegistry()
+    {
+        return _registry;
     }
 
     public static Model getInstance()

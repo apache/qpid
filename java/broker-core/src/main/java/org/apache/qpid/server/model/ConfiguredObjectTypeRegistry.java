@@ -36,8 +36,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
-import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.util.Strings;
 
@@ -56,65 +56,70 @@ public class ConfiguredObjectTypeRegistry
     };
 
 
-    private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _allAttributes =
+    private final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _allAttributes =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?, ?>>>());
 
-    private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?,?>>> _allStatistics =
+    private final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?,?>>> _allStatistics =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectStatistic<?, ?>>>());
 
-    private static final Map<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?,?>>> _allAttributeTypes =
+    private final Map<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?,?>>> _allAttributeTypes =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, ConfiguredObjectAttribute<?, ?>>>());
 
-    private static final Map<Class<? extends ConfiguredObject>, Map<String, AutomatedField>> _allAutomatedFields =
+    private final Map<Class<? extends ConfiguredObject>, Map<String, AutomatedField>> _allAutomatedFields =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, AutomatedField>>());
 
-    private static final Map<String, String> _defaultContext =
+    private final Map<String, String> _defaultContext =
             Collections.synchronizedMap(new HashMap<String, String>());
 
-    private static final Map<Class<? extends ConfiguredObject>,Set<Class<? extends ConfiguredObject>>> _knownTypes =
+    private final Map<Class<? extends ConfiguredObject>,Set<Class<? extends ConfiguredObject>>> _knownTypes =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Set<Class<? extends ConfiguredObject>>>());
 
-    private static final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _typeSpecificAttributes =
+    private final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _typeSpecificAttributes =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?, ?>>>());
 
-    private static final Map<Class<? extends ConfiguredObject>, Map<State, Map<State, Method>>> _stateChangeMethods =
+    private final Map<Class<? extends ConfiguredObject>, Map<State, Map<State, Method>>> _stateChangeMethods =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<State, Map<State, Method>>>());
 
-    static
+    public ConfiguredObjectTypeRegistry(Iterable<ConfiguredObjectRegistration> configuredObjectRegistrations, Collection<Class<? extends ConfiguredObject>> categoriesRestriction)
     {
-        QpidServiceLoader<ConfiguredObjectRegistration> loader = new QpidServiceLoader<>();
 
         Set<Class<? extends ConfiguredObject>> categories = new HashSet<>();
         Set<Class<? extends ConfiguredObject>> types = new HashSet<>();
 
-        for (ConfiguredObjectRegistration registration : loader.instancesOf(ConfiguredObjectRegistration.class))
+        for (ConfiguredObjectRegistration registration : configuredObjectRegistrations)
         {
             for (Class<? extends ConfiguredObject> configuredObjectClass : registration.getConfiguredObjectClasses())
             {
-                try
+                if(categoriesRestriction.isEmpty() || categoriesRestriction.contains(getCategory(configuredObjectClass)))
                 {
-                    process(configuredObjectClass);
-                    ManagedObject annotation = configuredObjectClass.getAnnotation(ManagedObject.class);
-                    if (annotation.category())
+                    try
                     {
-                        categories.add(configuredObjectClass);
-                    }
-                    else
-                    {
-                        Class<? extends ConfiguredObject> category = getCategory(configuredObjectClass);
-                        if(category != null)
+                        process(configuredObjectClass);
+                        ManagedObject annotation = configuredObjectClass.getAnnotation(ManagedObject.class);
+                        if (annotation.category())
                         {
-                            categories.add(category);
+                            categories.add(configuredObjectClass);
+                        }
+                        else
+                        {
+                            Class<? extends ConfiguredObject> category = getCategory(configuredObjectClass);
+                            if (category != null)
+                            {
+                                categories.add(category);
+                            }
+                        }
+                        if (!"".equals(annotation.type()))
+                        {
+                            types.add(configuredObjectClass);
                         }
                     }
-                    if (!"".equals(annotation.type()))
+                    catch (NoClassDefFoundError ncdfe)
                     {
-                        types.add(configuredObjectClass);
+                        LOGGER.warn("A class definition could not be found while processing the model for '"
+                                    + configuredObjectClass.getName()
+                                    + "': "
+                                    + ncdfe.getMessage());
                     }
-                }
-                catch(NoClassDefFoundError ncdfe)
-                {
-                    LOGGER.warn("A class definition could not be found while processing the model for '" + configuredObjectClass.getName() + "': " + ncdfe.getMessage());
                 }
             }
         }
@@ -188,7 +193,7 @@ public class ConfiguredObjectTypeRegistry
         return null;
     }
 
-    public static Class<? extends ConfiguredObject> getTypeClass(final Class<? extends ConfiguredObject> clazz)
+    private Class<? extends ConfiguredObject> getTypeClass(final Class<? extends ConfiguredObject> clazz)
     {
         String typeName = getType(clazz);
         Class<? extends ConfiguredObject> typeClass = null;
@@ -218,7 +223,7 @@ public class ConfiguredObjectTypeRegistry
 
     }
 
-    public static Collection<Class<? extends ConfiguredObject>> getTypeSpecialisations(Class<? extends ConfiguredObject> clazz)
+    public Collection<Class<? extends ConfiguredObject>> getTypeSpecialisations(Class<? extends ConfiguredObject> clazz)
     {
         Class<? extends ConfiguredObject> categoryClass = getCategory(clazz);
         if(categoryClass == null)
@@ -234,7 +239,7 @@ public class ConfiguredObjectTypeRegistry
 
     }
 
-    public static Collection<ConfiguredObjectAttribute<?,?>> getTypeSpecificAttributes(Class<? extends ConfiguredObject> clazz)
+    public Collection<ConfiguredObjectAttribute<?,?>> getTypeSpecificAttributes(Class<? extends ConfiguredObject> clazz)
     {
         Class<? extends ConfiguredObject> typeClass = getTypeClass(clazz);
         if(typeClass == null)
@@ -308,7 +313,7 @@ public class ConfiguredObjectTypeRegistry
         return "";
     }
 
-    public static Strings.Resolver getDefaultContextResolver()
+    public Strings.Resolver getDefaultContextResolver()
     {
         return new Strings.MapResolver(_defaultContext);
     }
@@ -345,7 +350,7 @@ public class ConfiguredObjectTypeRegistry
 
 
 
-    private static <X extends ConfiguredObject> void process(final Class<X> clazz)
+    private <X extends ConfiguredObject> void process(final Class<X> clazz)
     {
         synchronized (_allAttributes)
         {
@@ -451,7 +456,7 @@ public class ConfiguredObjectTypeRegistry
         }
     }
 
-    private static void initialiseWithParentAttributes(final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
+    private void initialiseWithParentAttributes(final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
                                                        final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet,
                                                        final Class<? extends ConfiguredObject> parent)
     {
@@ -473,7 +478,7 @@ public class ConfiguredObjectTypeRegistry
         }
     }
 
-    private static <X extends ConfiguredObject> void processAttributesTypesAndFields(final Class<X> clazz)
+    private <X extends ConfiguredObject> void processAttributesTypesAndFields(final Class<X> clazz)
     {
         Map<String,ConfiguredObjectAttribute<?,?>> attrMap = new HashMap<String, ConfiguredObjectAttribute<?, ?>>();
         Map<String,AutomatedField> fieldMap = new HashMap<String, AutomatedField>();
@@ -493,7 +498,7 @@ public class ConfiguredObjectTypeRegistry
         _allAutomatedFields.put(clazz, fieldMap);
     }
 
-    private static <X extends ConfiguredObject> void processDefaultContext(final Class<X> clazz)
+    private <X extends ConfiguredObject> void processDefaultContext(final Class<X> clazz)
     {
         for(Field field : clazz.getDeclaredFields())
         {
@@ -520,7 +525,7 @@ public class ConfiguredObjectTypeRegistry
         }
     }
 
-    private static void processStateChangeMethods(Class<? extends ConfiguredObject> clazz)
+    private void processStateChangeMethods(Class<? extends ConfiguredObject> clazz)
     {
         Map<State, Map<State, Method>> map = new HashMap<>();
 
@@ -543,7 +548,7 @@ public class ConfiguredObjectTypeRegistry
         }
     }
 
-    private static void inheritTransitions(final Class<? extends ConfiguredObject> parent,
+    private void inheritTransitions(final Class<? extends ConfiguredObject> parent,
                                            final Map<State, Map<State, Method>> map)
     {
         Map<State, Map<State, Method>> parentMap = _stateChangeMethods.get(parent);
@@ -567,7 +572,7 @@ public class ConfiguredObjectTypeRegistry
         }
     }
 
-    private static void addStateTransitions(final Class<? extends ConfiguredObject> clazz,
+    private void addStateTransitions(final Class<? extends ConfiguredObject> clazz,
                                             final Map<State, Map<State, Method>> map)
     {
         for(Method m : clazz.getDeclaredMethods())
@@ -593,7 +598,7 @@ public class ConfiguredObjectTypeRegistry
         }
     }
 
-    private static void addStateTransition(final State fromState,
+    private void addStateTransition(final State fromState,
                                            final State toState,
                                            final Method method,
                                            final Map<State, Map<State, Method>> map)
@@ -614,7 +619,7 @@ public class ConfiguredObjectTypeRegistry
         }
     }
 
-    private static AutomatedField findField(final ConfiguredObjectAttribute<?, ?> attr, Class<?> objClass)
+    private AutomatedField findField(final ConfiguredObjectAttribute<?, ?> attr, Class<?> objClass)
     {
         Class<?> clazz = objClass;
         while(clazz != null)
@@ -665,7 +670,7 @@ public class ConfiguredObjectTypeRegistry
         throw new ServerScopedRuntimeException("Unable to find field definition for automated field " + attr.getName() + " in class " + objClass.getName());
     }
 
-    public static <X extends ConfiguredObject> Collection<String> getAttributeNames(Class<X> clazz)
+    public <X extends ConfiguredObject> Collection<String> getAttributeNames(Class<X> clazz)
     {
         final Collection<ConfiguredObjectAttribute<? super X, ?>> attrs = getAttributes(clazz);
 
@@ -706,7 +711,7 @@ public class ConfiguredObjectTypeRegistry
 
     }
 
-    protected static <X extends ConfiguredObject> Collection<ConfiguredObjectAttribute<? super X, ?>> getAttributes(final Class<X> clazz)
+    protected <X extends ConfiguredObject> Collection<ConfiguredObjectAttribute<? super X, ?>> getAttributes(final Class<X> clazz)
     {
         if(!_allAttributes.containsKey(clazz))
         {
@@ -717,7 +722,7 @@ public class ConfiguredObjectTypeRegistry
     }
 
 
-    protected static Collection<ConfiguredObjectStatistic> getStatistics(final Class<? extends ConfiguredObject> clazz)
+    protected Collection<ConfiguredObjectStatistic> getStatistics(final Class<? extends ConfiguredObject> clazz)
     {
         if(!_allAttributes.containsKey(clazz))
         {
@@ -728,7 +733,7 @@ public class ConfiguredObjectTypeRegistry
     }
 
 
-    public static Map<String, ConfiguredObjectAttribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
+    public Map<String, ConfiguredObjectAttribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
     {
         if(!_allAttributes.containsKey(clazz))
         {
@@ -737,7 +742,7 @@ public class ConfiguredObjectTypeRegistry
         return _allAttributeTypes.get(clazz);
     }
 
-    static Map<String, AutomatedField> getAutomatedFields(Class<? extends ConfiguredObject> clazz)
+    Map<String, AutomatedField> getAutomatedFields(Class<? extends ConfiguredObject> clazz)
     {
         if(!_allAttributes.containsKey(clazz))
         {
@@ -746,7 +751,7 @@ public class ConfiguredObjectTypeRegistry
         return _allAutomatedFields.get(clazz);
     }
 
-    static Map<State, Map<State, Method>> getStateChangeMethods(final Class<? extends ConfiguredObject> objectClass)
+    Map<State, Map<State, Method>> getStateChangeMethods(final Class<? extends ConfiguredObject> objectClass)
     {
         if(!_allAttributes.containsKey(objectClass))
         {

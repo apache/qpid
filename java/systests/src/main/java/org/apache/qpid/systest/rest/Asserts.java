@@ -35,8 +35,8 @@ import junit.framework.TestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
@@ -68,7 +68,7 @@ public class Asserts
     {
         assertNotNull("Virtualhost " + virtualHostName + " data are not found", virtualHost);
         assertAttributesPresent(virtualHost,
-                                ConfiguredObjectTypeRegistry.getAttributeNames(VirtualHost.class),
+                                BrokerModel.getInstance().getTypeRegistry().getAttributeNames(VirtualHost.class),
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,
                                 ConfiguredObject.LAST_UPDATED_BY,
@@ -117,7 +117,7 @@ public class Asserts
     {
         assertNotNull("Queue " + queueName + " is not found!", queueData);
         Asserts.assertAttributesPresent(queueData,
-                                        ConfiguredObjectTypeRegistry.getAttributeNames(Queue.class),
+                                        BrokerModel.getInstance().getTypeRegistry().getAttributeNames(Queue.class),
                                         Queue.CREATED_BY,
                                         Queue.CREATED_TIME,
                                         Queue.LAST_UPDATED_BY,
@@ -224,7 +224,7 @@ public class Asserts
     {
         assertNotNull("Unexpected connection data", connectionData);
         assertAttributesPresent(connectionData,
-                                ConfiguredObjectTypeRegistry.getAttributeNames(Connection.class),
+                                BrokerModel.getInstance().getTypeRegistry().getAttributeNames(Connection.class),
                                 Connection.STATE,
                                 Connection.DURABLE,
                                 Connection.LIFETIME_POLICY,
@@ -284,7 +284,7 @@ public class Asserts
         if ("AMQP".equals(port.get(ConfiguredObject.TYPE)))
         {
             assertAttributesPresent(port,
-                                    ConfiguredObjectTypeRegistry.getAttributeNames(Port.class),
+                                    BrokerModel.getInstance().getTypeRegistry().getAttributeNames(Port.class),
                                     ConfiguredObject.TYPE,
                                     ConfiguredObject.CREATED_BY,
                                     ConfiguredObject.CREATED_TIME,
@@ -302,7 +302,7 @@ public class Asserts
         else
         {
             assertAttributesPresent(port,
-                                    ConfiguredObjectTypeRegistry.getAttributeNames(Port.class),
+                                    BrokerModel.getInstance().getTypeRegistry().getAttributeNames(Port.class),
                                     ConfiguredObject.TYPE,
                                     ConfiguredObject.CREATED_BY,
                                     ConfiguredObject.CREATED_TIME,
@@ -340,7 +340,7 @@ public class Asserts
     public static void assertExchange(String exchangeName, String type, Map<String, Object> exchangeData)
     {
         assertNotNull("Exchange " + exchangeName + " is not found!", exchangeData);
-        assertAttributesPresent(exchangeData, ConfiguredObjectTypeRegistry.getAttributeNames(Exchange.class),
+        assertAttributesPresent(exchangeData, BrokerModel.getInstance().getTypeRegistry().getAttributeNames(Exchange.class),
                                 Exchange.ALTERNATE_EXCHANGE,
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,
@@ -376,7 +376,7 @@ public class Asserts
     {
         assertNotNull("Binding map should not be null", binding);
         assertAttributesPresent(binding,
-                                ConfiguredObjectTypeRegistry.getAttributeNames(Binding.class),
+                                BrokerModel.getInstance().getTypeRegistry().getAttributeNames(Binding.class),
                                 Binding.STATE,
                                 ConfiguredObject.TYPE,
                                 ConfiguredObject.CREATED_BY,

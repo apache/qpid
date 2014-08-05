@@ -34,8 +34,8 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
@@ -201,7 +201,8 @@ public class BrokerRestTest extends QpidRestTestCase
 
     protected void assertBrokerAttributes(Map<String, Object> brokerDetails)
     {
-        Asserts.assertAttributesPresent(brokerDetails, ConfiguredObjectTypeRegistry.getAttributeNames(Broker.class),
+        Asserts.assertAttributesPresent(brokerDetails, BrokerModel.getInstance().getTypeRegistry().getAttributeNames(
+                Broker.class),
                 Broker.PROCESS_PID,
                 ConfiguredObject.TYPE,
                 ConfiguredObject.CREATED_BY,

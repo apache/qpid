@@ -34,8 +34,8 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
@@ -206,7 +206,7 @@ public class QueueRestTest extends QpidRestTestCase
     {
         assertNotNull("Consumer map should not be null", consumer);
         Asserts.assertAttributesPresent(consumer,
-                                        ConfiguredObjectTypeRegistry.getAttributeNames(Consumer.class), Consumer.STATE,
+                                        BrokerModel.getInstance().getTypeRegistry().getAttributeNames(Consumer.class), Consumer.STATE,
                 Consumer.SETTLEMENT_MODE, Consumer.EXCLUSIVE, Consumer.SELECTOR,
                 Consumer.NO_LOCAL,
                 ConfiguredObject.TYPE,

@@ -82,7 +82,8 @@ public class MetaDataServlet extends AbstractServlet
     private Map<String,Map> processCategory(final Class<? extends ConfiguredObject> clazz)
     {
         Map<String, Map> typeToDataMap = new TreeMap<>();
-        for(Class<? extends ConfiguredObject> type : ConfiguredObjectTypeRegistry.getTypeSpecialisations(clazz))
+        ConfiguredObjectTypeRegistry typeRegistry = _instance.getTypeRegistry();
+        for(Class<? extends ConfiguredObject> type : typeRegistry.getTypeSpecialisations(clazz))
         {
             typeToDataMap.put(ConfiguredObjectTypeRegistry.getType(type), processType(type));
         }
@@ -99,7 +100,7 @@ public class MetaDataServlet extends AbstractServlet
     private Map<String,Map> processAttributes(final Class<? extends ConfiguredObject> type)
     {
         Collection<ConfiguredObjectAttribute<?, ?>> attributes =
-            ConfiguredObjectTypeRegistry.getAttributeTypes(type).values();
+            _instance.getTypeRegistry().getAttributeTypes(type).values();
 
         Map<String,Map> attributeDetails = new LinkedHashMap<>();
         for(ConfiguredObjectAttribute<?, ?> attribute : attributes)

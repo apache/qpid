@@ -28,6 +28,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
+
 public final class BrokerModel extends Model
 {
 
@@ -52,6 +55,7 @@ public final class BrokerModel extends Model
 
     private final Set<Class<? extends ConfiguredObject>> _supportedTypes =
             new HashSet<Class<? extends ConfiguredObject>>();
+    private final ConfiguredObjectTypeRegistry _typeRegistry;
 
     private Class<? extends ConfiguredObject> _rootCategory;
     private final ConfiguredObjectFactory _objectFactory;
@@ -101,7 +105,14 @@ public final class BrokerModel extends Model
         addRelationship(Session.class, Publisher.class);
 
         _objectFactory = new ConfiguredObjectFactoryImpl(this);
+        _typeRegistry = new ConfiguredObjectTypeRegistry((new QpidServiceLoader<ConfiguredObjectRegistration>()).instancesOf(ConfiguredObjectRegistration.class), getSupportedCategories());
     }
+
+    public final ConfiguredObjectTypeRegistry getTypeRegistry()
+    {
+        return _typeRegistry;
+    }
+
 
     public static Model getInstance()
     {

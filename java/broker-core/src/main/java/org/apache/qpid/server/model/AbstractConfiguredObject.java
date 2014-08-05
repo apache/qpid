@@ -197,9 +197,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         _category = ConfiguredObjectTypeRegistry.getCategory(getClass());
 
-        _attributeTypes = ConfiguredObjectTypeRegistry.getAttributeTypes(getClass());
-        _automatedFields = ConfiguredObjectTypeRegistry.getAutomatedFields(getClass());
-        _stateChangeMethods = ConfiguredObjectTypeRegistry.getStateChangeMethods(getClass());
+        _attributeTypes = model.getTypeRegistry().getAttributeTypes(getClass());
+        _automatedFields = model.getTypeRegistry().getAutomatedFields(getClass());
+        _stateChangeMethods = model.getTypeRegistry().getStateChangeMethods(getClass());
 
         Object idObj = attributes.get(ID);
 
@@ -1044,7 +1044,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public final Collection<String> getAttributeNames()
     {
-        return ConfiguredObjectTypeRegistry.getAttributeNames(getClass());
+        return _model.getTypeRegistry().getAttributeNames(getClass());
     }
 
     @Override
@@ -1369,7 +1369,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public Map<String,Number> getStatistics()
     {
-        Collection<ConfiguredObjectStatistic> stats = ConfiguredObjectTypeRegistry.getStatistics(getClass());
+        Collection<ConfiguredObjectStatistic> stats = _model.getTypeRegistry().getStatistics(getClass());
         Map<String,Number> map = new HashMap<String,Number>();
         for(ConfiguredObjectStatistic stat : stats)
         {
@@ -1439,7 +1439,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                               new Strings.MapResolver(inheritedContext),
                               Strings.JAVA_SYS_PROPS_RESOLVER,
                               Strings.ENV_VARS_RESOLVER,
-                              ConfiguredObjectTypeRegistry.getDefaultContextResolver());
+                              object.getModel().getTypeRegistry().getDefaultContextResolver());
     }
 
     private static OwnAttributeResolver getOwnAttributeResolver(final ConfiguredObject<?> object)
