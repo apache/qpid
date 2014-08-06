@@ -56,6 +56,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
     String CONNECTION_CLOSE_WHEN_NO_ROUTE = "connection.closeWhenNoRoute";
 
+    String BROKER_FLOW_TO_DISK_THRESHOLD = "broker.flowToDiskThreshold";
 
     String QPID_AMQP_PORT = "qpid.amqp_port";
     String QPID_HTTP_PORT = "qpid.http_port";
@@ -73,6 +74,9 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     public static final String DEFAULT_RMI_PORT_NUMBER  = "8999";
     @ManagedContextDefault(name = QPID_JMX_PORT)
     public static final String DEFAULT_JMX_PORT_NUMBER  = "9099";
+
+    @ManagedContextDefault(name = BROKER_FLOW_TO_DISK_THRESHOLD)
+    public static final long DEFAULT_FLOW_TO_DISK_THRESHOLD = (long)(0.4 * (double)Runtime.getRuntime().maxMemory());
 
     @DerivedAttribute
     String getBuildVersion();
@@ -189,5 +193,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     void setEventLogger(EventLogger eventLogger);
 
     AuthenticationProvider<?> getManagementModeAuthenticationProvider();
+
+    void assignTargetSizes();
 
 }

@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -147,6 +149,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                 entry.getValue().release();
                 entry.setValue(null); // free up any memory associated with the reference object
             }
+            final List<StoredMessage<?>> messagesToDelete = new ArrayList<>();
             getStore().visitMessages(new MessageHandler()
             {
                 @Override
@@ -156,12 +159,19 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                     long messageNumber = storedMessage.getMessageNumber();
                     if(!_recoveredMessages.containsKey(messageNumber))
                     {
-                        _logger.info("Message id " + messageNumber + " in store, but not in any queue - removing....");
-                        storedMessage.remove();
+                        messagesToDelete.add(storedMessage);
                     }
                     return messageNumber <_maxMessageId-1;
                 }
             });
+            for(StoredMessage<?> storedMessage : messagesToDelete)
+            {
+
+                _logger.info("Message id " + storedMessage.getMessageNumber() + " in store, but not in any queue - removing....");
+                storedMessage.remove();
+            }
+
+            messagesToDelete.clear();
             _recoveredMessages.clear();
         }
 

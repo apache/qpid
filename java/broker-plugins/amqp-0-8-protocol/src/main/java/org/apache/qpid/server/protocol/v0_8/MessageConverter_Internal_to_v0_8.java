@@ -37,7 +37,6 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.PluggableService;
-import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -117,6 +116,18 @@ public class MessageConverter_Internal_to_v0_8 implements MessageConverter<Inter
             public void remove()
             {
                 throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isInMemory()
+            {
+                return true;
+            }
+
+            @Override
+            public boolean flowToDisk()
+            {
+                return false;
             }
         };
     }

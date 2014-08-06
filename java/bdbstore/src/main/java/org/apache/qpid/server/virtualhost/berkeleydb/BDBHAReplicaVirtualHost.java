@@ -338,6 +338,18 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     }
 
     @Override
+    public void setTargetSize(final long targetSize)
+    {
+
+    }
+
+    @Override
+    public long getTotalQueueDepthBytes()
+    {
+        return 0l;
+    }
+
+    @Override
     public org.apache.qpid.server.security.SecurityManager getSecurityManager()
     {
         return null;

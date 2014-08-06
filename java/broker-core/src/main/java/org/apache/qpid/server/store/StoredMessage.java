@@ -35,4 +35,8 @@ public interface StoredMessage<M extends StorableMessageMetaData>
     ByteBuffer getContent(int offsetInMessage, int size);
 
     void remove();
+
+    boolean isInMemory();
+
+    boolean flowToDisk();
 }

@@ -79,6 +79,7 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.MessageDurability;
 import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -113,6 +114,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
     };
 
+    private static final long INITIAL_TARGET_QUEUE_SIZE = 102400l;
+
     private final VirtualHostImpl _virtualHost;
     private final DeletedChildListener _deletedChildListener = new DeletedChildListener();
 
@@ -129,6 +132,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private final AtomicInteger _atomicQueueCount = new AtomicInteger(0);
 
     private final AtomicLong _atomicQueueSize = new AtomicLong(0L);
+
+    private final AtomicLong _targetQueueSize = new AtomicLong(INITIAL_TARGET_QUEUE_SIZE);
 
     private final AtomicInteger _activeSubscriberCount = new AtomicInteger();
 
@@ -924,6 +929,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         incrementQueueCount();
         incrementQueueSize(message);
 
+        if((_atomicQueueSize.get() + _atomicQueueCount.get()*1024l) > _targetQueueSize.get() && message.getStoredMessage().isInMemory())
+        {
+            message.getStoredMessage().flowToDisk();
+        }
+
         _totalMessagesReceived.incrementAndGet();
 
         if(_recovering.get())
@@ -1204,6 +1214,12 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             _persistentMessageEnqueueSize.addAndGet(size);
             _persistentMessageEnqueueCount.incrementAndGet();
         }
+    }
+
+    @Override
+    public void setTargetSize(final long targetSize)
+    {
+        _targetQueueSize.set(targetSize);
     }
 
     public long getTotalDequeuedMessages()
@@ -2188,6 +2204,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         QueueEntryIterator queueListIterator = getEntries().iterator();
 
+        long totalSize = getContextValue(Long.class, QUEUE_ESTIMATED_MESSAGE_MEMORY_OVERHEAD) * getQueueDepthMessages();
+        long targetSize = _targetQueueSize.get();
+
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
@@ -2210,14 +2229,28 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                     // the time the check actually occurs. So verify we
                     // can actually get the message to perform the check.
                     ServerMessage msg = node.getMessage();
+
                     if (msg != null)
                     {
+                        totalSize += msg.getSize();
+                        StoredMessage storedMessage = msg.getStoredMessage();
+                        if(totalSize > targetSize && storedMessage.isInMemory())
+                        {
+                            storedMessage.flowToDisk();
+                        }
                         checkForNotification(msg);
                     }
                 }
             }
         }
 
+    }
+
+    @Override
+    public long getPotentialMemoryFootprint()
+    {
+        return Math.max(getContextValue(Long.class,QUEUE_MINIMUM_ESTIMATED_MEMORY_FOOTPRINT),
+                        getQueueDepthBytes() + getContextValue(Long.class, QUEUE_ESTIMATED_MESSAGE_MEMORY_OVERHEAD) * getQueueDepthMessages());
     }
 
     public long getAlertRepeatGap()

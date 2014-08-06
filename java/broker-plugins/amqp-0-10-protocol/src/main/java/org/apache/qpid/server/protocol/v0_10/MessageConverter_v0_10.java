@@ -31,7 +31,6 @@ import java.util.Map;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.PluggableService;
-import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -106,7 +105,19 @@ public class MessageConverter_v0_10 implements MessageConverter<ServerMessage, M
                     {
                         throw new UnsupportedOperationException();
                     }
-                };
+
+                    @Override
+                    public boolean isInMemory()
+                    {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean flowToDisk()
+                    {
+                        return false;
+                    }
+        };
     }
 
     private MessageMetaData_0_10 convertMetaData(ServerMessage serverMsg)

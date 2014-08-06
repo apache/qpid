@@ -130,4 +130,16 @@ public class StoredMemoryMessage<T extends StorableMessageMetaData> implements S
     public void remove()
     {
     }
+
+    @Override
+    public boolean isInMemory()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean flowToDisk()
+    {
+        return false;
+    }
 }

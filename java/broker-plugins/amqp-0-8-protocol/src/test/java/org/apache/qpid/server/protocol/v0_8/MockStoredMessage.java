@@ -20,14 +20,13 @@
 */
 package org.apache.qpid.server.protocol.v0_8;
 
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
-
-import java.nio.ByteBuffer;
 
 public class MockStoredMessage implements StoredMessage<MessageMetaData>
 {
@@ -106,5 +105,17 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
 
     public void remove()
     {
+    }
+
+    @Override
+    public boolean isInMemory()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean flowToDisk()
+    {
+        return false;
     }
 }

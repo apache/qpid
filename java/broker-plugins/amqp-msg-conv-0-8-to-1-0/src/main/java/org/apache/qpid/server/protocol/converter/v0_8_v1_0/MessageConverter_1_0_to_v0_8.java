@@ -36,7 +36,6 @@ import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.protocol.v1_0.MessageConverter_from_1_0;
 import org.apache.qpid.server.protocol.v1_0.MessageMetaData_1_0;
 import org.apache.qpid.server.protocol.v1_0.Message_1_0;
-import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -118,6 +117,18 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
             public void remove()
             {
                 throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isInMemory()
+            {
+                return true;
+            }
+
+            @Override
+            public boolean flowToDisk()
+            {
+                return false;
             }
         };
     }

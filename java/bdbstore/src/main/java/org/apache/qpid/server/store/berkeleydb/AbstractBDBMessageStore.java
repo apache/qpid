@@ -1424,9 +1424,22 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             storedSizeChangeOccurred(-delta);
         }
 
+        @Override
+        public boolean isInMemory()
+        {
+            return _messageDataRef.isHardRef();
+        }
+
         private boolean stored()
         {
             return !_messageDataRef.isHardRef();
+        }
+
+        @Override
+        public boolean flowToDisk()
+        {
+            flushToStore();
+            return true;
         }
 
         @Override
