@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
+import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.systest.rest.Asserts;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
@@ -48,6 +49,7 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
     private int _nodeHaPort;
     private Object _nodeName;
     private String _virtualhostUrl;
+    private String _bluePrint;
 
     @Override
     public void setUp() throws Exception
@@ -58,6 +60,7 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
         _storeBaseDir = new File(TMP_FOLDER, "store-" + _hostName + "-" + System.currentTimeMillis());
         _nodeHaPort = getNextAvailable(getRestTestHelper().getHttpPort() + 1);
         _virtualhostUrl = "virtualhost/" + _nodeName + "/" + _hostName;
+        _bluePrint = HATestClusterCreator.getBlueprint("localhost", _nodeHaPort);
 
         super.setUp();
     }
@@ -93,6 +96,11 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
         nodeAttributes.put(BDBHAVirtualHostNode.GROUP_NAME, _hostName);
         nodeAttributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + _nodeHaPort);
         nodeAttributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, "localhost:" + _nodeHaPort);
+        nodeAttributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, _nodeName);
+        Map<String, String> context = new HashMap<String,String>();
+        context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, _bluePrint);
+
+        nodeAttributes.put(BDBHAVirtualHostNode.CONTEXT, context);
         config.addObjectConfiguration(VirtualHostNode.class, nodeAttributes);
     }
 

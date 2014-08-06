@@ -21,8 +21,10 @@ package org.apache.qpid.server.store.berkeleydb;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,8 +49,11 @@ import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
+import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeImpl;
@@ -56,6 +61,8 @@ import org.apache.qpid.systest.rest.RestTestHelper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.junit.Assert;
 
 import com.sleepycat.je.rep.ReplicationConfig;
@@ -101,11 +108,22 @@ public class HATestClusterCreator
     {
         int brokerPort = _testcase.findFreePort();
 
+        int[] bdbPorts = new int[_numberOfNodes];
         for (int i = 0; i < _numberOfNodes; i++)
         {
             int bdbPort = _testcase.getNextAvailable(brokerPort + 1);
+            bdbPorts[i] = bdbPort;
             _brokerPortToBdbPortMap.put(brokerPort, bdbPort);
+            brokerPort = _testcase.getNextAvailable(bdbPort + 1);
+        }
 
+        String bluePrintJson =  getBlueprint(_ipAddressOfBroker, bdbPorts);
+
+        String helperName = null;
+        for (Map.Entry<Integer,Integer> entry: _brokerPortToBdbPortMap.entrySet())
+        {
+            brokerPort = entry.getKey();
+            int bdbPort = entry.getValue();
             LOGGER.debug("Cluster broker port " + brokerPort + ", bdb replication port " + bdbPort);
             if (_bdbHelperPort == 0)
             {
@@ -113,6 +131,10 @@ public class HATestClusterCreator
             }
 
             String nodeName = getNodeNameForNodeAt(bdbPort);
+            if (helperName == null)
+            {
+                helperName = nodeName;
+            }
 
             Map<String, Object> virtualHostNodeAttributes = new HashMap<String, Object>();
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.STORE_PATH, System.getProperty("QPID_WORK") + File.separator + brokerPort);
@@ -121,11 +143,13 @@ public class HATestClusterCreator
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.ADDRESS, getNodeHostPortForNodeAt(bdbPort));
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, getHelperHostPort());
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.TYPE, BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE);
+            virtualHostNodeAttributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, helperName);
 
-            Map<String, String> repSettings = new HashMap<>();
-            repSettings.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
-            repSettings.put(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES, "0");
-            virtualHostNodeAttributes.put(BDBHAVirtualHostNode.CONTEXT, repSettings);
+            Map<String, String> context = new HashMap<>();
+            context.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
+            context.put(ReplicationConfig.ELECTIONS_PRIMARY_RETRIES, "0");
+            context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, bluePrintJson);
+            virtualHostNodeAttributes.put(BDBHAVirtualHostNode.CONTEXT, context);
 
             TestBrokerConfiguration brokerConfiguration = _testcase.getBrokerConfiguration(brokerPort);
             brokerConfiguration.addJmxManagementConfiguration();
@@ -134,7 +158,6 @@ public class HATestClusterCreator
             brokerConfiguration.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _testcase.getHttpManagementPort(brokerPort));
             brokerConfiguration.setObjectAttributes(VirtualHostNode.class, _virtualHostName, virtualHostNodeAttributes);
 
-            brokerPort = _testcase.getNextAvailable(bdbPort + 1);
         }
         _primaryBrokerPort = getPrimaryBrokerPort();
     }
@@ -484,5 +507,23 @@ public class HATestClusterCreator
         RestTestHelper helper = new RestTestHelper(httpPort);
         helper.setUsernameAndPassword("webadmin", "webadmin");
         return helper;
+    }
+
+    public static String getBlueprint(String hostName, int... ports) throws Exception
+    {
+        List<String> permittedNodes = new ArrayList<String>();
+        for (int port:ports)
+        {
+            permittedNodes.add(hostName + ":" + port);
+        }
+        Map<String,Object> bluePrint = new HashMap<>();
+        bluePrint.put(VirtualHost.TYPE, BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE);
+        bluePrint.put(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes);
+
+        StringWriter writer = new StringWriter();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+        mapper.writeValue(writer, bluePrint);
+        return writer.toString();
     }
 }

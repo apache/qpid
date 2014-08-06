@@ -56,6 +56,6 @@ public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends Virtual
     @ManagedAttribute(mandatory = true, defaultValue = "0")
     Long getStoreOverfullSize();
 
-    @ManagedAttribute
+    @ManagedAttribute(mandatory = true)
     List<String> getPermittedNodes();
 }

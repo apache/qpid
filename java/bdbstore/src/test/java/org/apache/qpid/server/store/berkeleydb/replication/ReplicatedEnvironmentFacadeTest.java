@@ -24,11 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +51,7 @@ import com.sleepycat.je.rep.ReplicationConfig;
 import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
+import org.codehaus.jackson.map.ObjectMapper;
 
 public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 {
@@ -267,6 +264,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         String node2Name = TEST_NODE_NAME + "_2";
         String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        replicatedEnvironmentFacade.setPermittedNodes(Arrays.asList(replicatedEnvironmentFacade.getHostPort(), node2NodeHostPort));
         createReplica(node2Name, node2NodeHostPort, new NoopReplicationGroupListener());
 
         assertTrue("Listener not fired within timeout", nodeAddedLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
@@ -309,6 +307,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         String node2Name = TEST_NODE_NAME + "_2";
         String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        replicatedEnvironmentFacade.setPermittedNodes(Arrays.asList(replicatedEnvironmentFacade.getHostPort(), node2NodeHostPort));
         createReplica(node2Name, node2NodeHostPort, new NoopReplicationGroupListener());
 
         assertEquals("Unexpected number of nodes at start of test", 2, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
@@ -358,6 +357,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
         String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        replicatedEnvironmentFacade.setPermittedNodes(Arrays.asList(replicatedEnvironmentFacade.getHostPort(), node2NodeHostPort));
         createReplica(node2Name, node2NodeHostPort, new NoopReplicationGroupListener());
 
         assertEquals("Unexpected number of nodes at start of test", 2, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
@@ -434,7 +434,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
         String node1NodeHostPort = "localhost:" + replica1Port;
-
+        masterEnvironment.setPermittedNodes(Arrays.asList(masterEnvironment.getHostPort(), node1NodeHostPort));
         ReplicatedEnvironmentFacade replica = createReplica(replicaName, node1NodeHostPort, new NoopReplicationGroupListener());
 
         assertTrue("Node should be added", nodeAddedLatch.await(WAIT_STATE_CHANGE_TIMEOUT, TimeUnit.SECONDS));
@@ -658,7 +658,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         NodeState nodeState = firstNode.getRemoteNodeState(new ReplicatedEnvironmentFacade.ReplicationNodeImpl(TEST_NODE_NAME, TEST_NODE_HOST_PORT));
 
-        Collection<String> appStatePermittedNodes = firstNode.bytesToPermittedNodeList(nodeState.getAppState());
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        Map<String, Object> settings = objectMapper.readValue(nodeState.getAppState(), Map.class);
+        Collection<String> appStatePermittedNodes =  (Collection<String>)settings.get(ReplicatedEnvironmentFacade.PERMITTED_NODE_LIST);
         assertEquals("Unexpected permitted nodes", permittedNodes, new HashSet<String>(appStatePermittedNodes));
     }
 
@@ -682,33 +685,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                 stateChangeListener, new NoopReplicationGroupListener(), configuration);
         assertTrue("Environment was not created", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
         assertEquals("Unexpected state", State.REPLICA.name(), secondNode.getNodeState());
-    }
-
-    public void testNotPermittedNodeIsNotAllowedToConnect() throws Exception
-    {
-        ReplicatedEnvironmentFacade firstNode = createMaster();
-
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
-        String node1NodeHostPort = "localhost:" + replica1Port;
-
-        Set<String> permittedNodes = new HashSet<String>();
-        permittedNodes.add("localhost:" + TEST_NODE_PORT);
-
-        firstNode.setPermittedNodes(permittedNodes);
-
-        ReplicatedEnvironmentConfiguration configuration =  createReplicatedEnvironmentConfiguration(TEST_NODE_NAME + "_1", node1NodeHostPort, false);
-        when(configuration.getHelperNodeName()).thenReturn(TEST_NODE_NAME);
-
-        try
-        {
-            createReplicatedEnvironmentFacade(TEST_NODE_NAME + "_1", new TestStateChangeListener(State.REPLICA), new NoopReplicationGroupListener(), configuration);
-            fail("Node is not allowed to connect from " + node1NodeHostPort + " but environment was successfully created");
-        }
-        catch (IllegalConfigurationException e)
-        {
-            assertEquals("Unexpected exception message", String.format("Node from '%s' is not permitted!",
-                    node1NodeHostPort), e.getMessage());
-        }
     }
 
     public void testIntruderNodeIsDetected() throws Exception
@@ -820,6 +796,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         when(node.getPriority()).thenReturn(TEST_PRIORITY);
         when(node.getGroupName()).thenReturn(TEST_GROUP_NAME);
         when(node.getHelperHostPort()).thenReturn(TEST_NODE_HELPER_HOST_PORT);
+        when(node.getHelperNodeName()).thenReturn(TEST_NODE_NAME);
 
         Map<String, String> repConfig = new HashMap<String, String>();
         repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");

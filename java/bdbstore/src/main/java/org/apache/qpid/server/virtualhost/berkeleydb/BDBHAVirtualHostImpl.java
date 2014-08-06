@@ -134,26 +134,30 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
 
         if(changedAttributes.contains(PERMITTED_NODES))
         {
+            validatePermittedNodes(((BDBHAVirtualHost<?>)proxyForValidation).getPermittedNodes());
+        }
+    }
 
-            List<String> permittedNodes = ((BDBHAVirtualHost<?>)proxyForValidation).getPermittedNodes();
-            if (permittedNodes != null)
+    private void validatePermittedNodes(List<String> permittedNodes)
+    {
+        if (permittedNodes == null || permittedNodes.isEmpty())
+        {
+            throw new IllegalArgumentException(String.format("Attribute '%s' is mandatory and must be set", PERMITTED_NODES));
+        }
+        for (String permittedNode: permittedNodes)
+        {
+            String[] tokens = permittedNode.split(":");
+            if (tokens.length != 2)
             {
-                for (String permittedNode: permittedNodes)
-                {
-                    String[] tokens = permittedNode.split(":");
-                    if (tokens.length != 2)
-                    {
-                        throw new IllegalArgumentException(String.format("Invalid permitted node specified '%s'. ", permittedNode));
-                    }
-                    try
-                    {
-                        Integer.parseInt(tokens[1]);
-                    }
-                    catch(Exception e)
-                    {
-                        throw new IllegalArgumentException(String.format("Invalid port is specified in permitted node '%s'. ", permittedNode));
-                    }
-                }
+                throw new IllegalArgumentException(String.format("Invalid permitted node specified '%s'. ", permittedNode));
+            }
+            try
+            {
+                Integer.parseInt(tokens[1]);
+            }
+            catch(Exception e)
+            {
+                throw new IllegalArgumentException(String.format("Invalid port is specified in permitted node '%s'. ", permittedNode));
             }
         }
     }
@@ -191,6 +195,16 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     public List<String> getPermittedNodes()
     {
         return _permittedNodes;
+    }
+
+    @Override
+    public void onValidate()
+    {
+        super.onValidate();
+
+        validatePermittedNodes(this.getPermittedNodes());
+        validateTransactionSynchronizationPolicy(this.getLocalTransactionSynchronizationPolicy());
+        validateTransactionSynchronizationPolicy(this.getRemoteTransactionSynchronizationPolicy());
     }
 
     protected void applyPermittedNodes()

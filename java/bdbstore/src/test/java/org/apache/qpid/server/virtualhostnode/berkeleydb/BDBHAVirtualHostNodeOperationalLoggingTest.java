@@ -75,7 +75,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
 
         _helper.assertNodeRole(node1, "MASTER");
@@ -105,7 +105,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
         reset(_eventLogger);
@@ -128,7 +128,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
@@ -148,7 +148,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
@@ -172,7 +172,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
@@ -195,7 +195,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
@@ -218,7 +218,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
@@ -237,18 +237,19 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
     public void testRemoteNodeAdded() throws Exception
     {
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
         reset(_eventLogger);
 
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
-        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress);
+
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
         _helper.awaitRemoteNodes(node1, 1);
 
@@ -269,19 +270,19 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
     public void testRemoteNodeRemoved() throws Exception
     {
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
         resetEventLogger();
 
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
-        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress);
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
         _helper.awaitRemoteNodes(node1, 1);
 
@@ -301,17 +302,17 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
     public void testRemoteNodeDetached() throws Exception
     {
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
-        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress);
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
         _helper.awaitRemoteNodes(node1, 1);
 
@@ -334,18 +335,19 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
     public void testRemoteNodeReAttached() throws Exception
     {
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
         String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
         _helper.assertNodeRole(node1, "MASTER");
 
         resetEventLogger();
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
-        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress);
+
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
         _helper.awaitRemoteNodes(node1, 1);
 

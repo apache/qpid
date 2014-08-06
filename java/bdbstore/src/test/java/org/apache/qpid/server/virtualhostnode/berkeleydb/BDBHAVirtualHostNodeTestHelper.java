@@ -26,10 +26,13 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -38,18 +41,17 @@ import com.sleepycat.je.rep.ReplicationConfig;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ConfiguredObjectFactory;
-import org.apache.qpid.server.model.RemoteReplicationNode;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
+import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
+import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
 /**
  * Helper class to make the tests of BDB HA Virtual Host Nodes simpler and more concise.
@@ -258,7 +260,9 @@ public class BDBHAVirtualHostNodeTestHelper
         return _broker;
     }
 
-    Map<String, Object> createNodeAttributes(String nodeName, String groupName, String address, String helperAddress)
+    public Map<String, Object> createNodeAttributes(String nodeName, String groupName, String address,
+                                                    String helperAddress, String helperNodeNode, int... ports)
+            throws Exception
     {
         Map<String, Object> node1Attributes = new HashMap<String, Object>();
         node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
@@ -268,13 +272,39 @@ public class BDBHAVirtualHostNodeTestHelper
         node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, address);
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, getMessageStorePath() + File.separator + nodeName);
+        node1Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, helperNodeNode);
 
-        Map<String, String> repConfig = new HashMap<String, String>();
-        repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
-        repConfig.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
+        Map<String, String> context = new HashMap<String, String>();
+        context.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
+        context.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
 
-        node1Attributes.put(BDBHAVirtualHostNode.CONTEXT, repConfig);
+        if (ports != null)
+        {
+            String bluePrint = getBlueprint(ports);
+            context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, bluePrint);
+        }
+
+        node1Attributes.put(BDBHAVirtualHostNode.CONTEXT, context);
 
         return node1Attributes;
     }
+
+    public static String getBlueprint(int... ports) throws Exception
+    {
+        List<String> permittedNodes = new ArrayList<String>();
+        for (int port:ports)
+        {
+            permittedNodes.add("localhost:" + port);
+        }
+        Map<String,Object> bluePrint = new HashMap<>();
+        bluePrint.put(VirtualHost.TYPE, BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE);
+        bluePrint.put(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes);
+
+        StringWriter writer = new StringWriter();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+        mapper.writeValue(writer, bluePrint);
+        return writer.toString();
+    }
+
 }
