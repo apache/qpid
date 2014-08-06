@@ -384,6 +384,39 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return children;
     }
 
+    @Override
+    public synchronized void assignTargetSizes()
+    {
+        long totalTarget  = getContextValue(Long.class,BROKER_FLOW_TO_DISK_THRESHOLD);
+        long totalSize = 0l;
+        Collection<VirtualHostNode<?>> vhns = getVirtualHostNodes();
+        Map<VirtualHost<?,?,?>,Long> vhs = new HashMap<>();
+        for(VirtualHostNode<?> vhn : vhns)
+        {
+            VirtualHost<?, ?, ?> vh = vhn.getVirtualHost();
+            if(vh != null)
+            {
+                long totalQueueDepthBytes = vh.getTotalQueueDepthBytes();
+                vhs.put(vh,totalQueueDepthBytes);
+                totalSize += totalQueueDepthBytes;
+            }
+        }
+
+        for(Map.Entry<VirtualHost<?, ?, ?>,Long> entry : vhs.entrySet())
+        {
+
+            long size = (long) (entry.getValue().doubleValue() * ((double) totalTarget / (double) totalSize));
+            entry.getKey().setTargetSize(size);
+        }
+    }
+
+    @Override
+    protected void onOpen()
+    {
+        super.onOpen();
+        assignTargetSizes();
+    }
+
     public AuthenticationProvider<?> findAuthenticationProviderByName(String authenticationProviderName)
     {
         if (isManagementMode())

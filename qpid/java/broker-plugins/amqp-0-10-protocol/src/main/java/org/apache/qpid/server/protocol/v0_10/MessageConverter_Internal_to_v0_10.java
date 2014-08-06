@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.PluggableService;
-import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.DeliveryProperties;
@@ -106,7 +105,19 @@ public class MessageConverter_Internal_to_v0_10 implements MessageConverter<Inte
                     {
                         throw new UnsupportedOperationException();
                     }
-                };
+
+                    @Override
+                    public boolean isInMemory()
+                    {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean flowToDisk()
+                    {
+                        return false;
+                    }
+        };
     }
 
     private MessageMetaData_0_10 convertMetaData(InternalMessage serverMsg, final String bodyMimeType, final int size)

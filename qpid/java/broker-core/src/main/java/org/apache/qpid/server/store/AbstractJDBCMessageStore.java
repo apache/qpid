@@ -1576,6 +1576,31 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             storedSizeChange(-delta);
         }
 
+        @Override
+        public boolean isInMemory()
+        {
+            return _messageDataRef.isHardRef();
+        }
+
+        @Override
+        public boolean flowToDisk()
+        {
+            try(Connection conn = newConnection())
+            {
+                store(conn);
+                conn.commit();
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException(e);
+            }
+            finally
+            {
+
+            }
+            return true;
+        }
+
         private synchronized Runnable store(final Connection conn) throws SQLException
         {
             if (!stored())

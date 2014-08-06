@@ -24,6 +24,7 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
@@ -32,7 +33,6 @@ import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.protocol.v0_10.MessageTransferMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.DeliveryProperties;
@@ -102,6 +102,18 @@ public class MessageConverter_0_8_to_0_10  implements MessageConverter<AMQMessag
             public void remove()
             {
                 throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean isInMemory()
+            {
+                return true;
+            }
+
+            @Override
+            public boolean flowToDisk()
+            {
+                return false;
             }
         };
     }

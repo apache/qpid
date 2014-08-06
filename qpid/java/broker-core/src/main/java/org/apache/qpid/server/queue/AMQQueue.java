@@ -111,4 +111,8 @@ public interface AMQQueue<X extends AMQQueue<X>>
     void completeRecovery();
 
     void recover(ServerMessage<?> message);
+
+    void setTargetSize(long targetSize);
+
+    long getPotentialMemoryFootprint();
 }

@@ -36,6 +36,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
@@ -129,6 +130,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private final List<VirtualHostAlias> _aliases = new ArrayList<VirtualHostAlias>();
     private final AtomicBoolean _deleted = new AtomicBoolean();
     private final VirtualHostNode<?> _virtualHostNode;
+
+    private final AtomicLong _targetSize = new AtomicLong(1024*1024);
 
     private MessageStoreLogSubject _messageStoreLogSubject;
 
@@ -847,6 +850,10 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         public void execute()
         {
+            VirtualHostNode<?> virtualHostNode = getParent(VirtualHostNode.class);
+            Broker<?> broker = virtualHostNode.getParent(Broker.class);
+            broker.assignTargetSizes();
+
             for (AMQQueue<?> q : getQueues())
             {
                 if (q.getState() == State.ACTIVE)
@@ -1308,6 +1315,46 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public DurableConfigurationStore getDurableConfigurationStore()
     {
         return _virtualHostNode.getConfigurationStore();
+    }
+
+    @Override
+    public void setTargetSize(final long targetSize)
+    {
+        _targetSize.set(targetSize);
+        allocateTargetSizeToQueues();
+    }
+
+    private void allocateTargetSizeToQueues()
+    {
+        long targetSize = _targetSize.get();
+        Collection<AMQQueue<?>> queues = getQueues();
+        long totalSize = calculateTotalEnqueuedSize(queues);
+        if(targetSize > 0l)
+        {
+            for (AMQQueue<?> q : queues)
+            {
+                long size = (long) ((((double) q.getPotentialMemoryFootprint() / (double) totalSize))
+                                             * (double) targetSize);
+
+                q.setTargetSize(size);
+            }
+        }
+    }
+
+    @Override
+    public long getTotalQueueDepthBytes()
+    {
+        return calculateTotalEnqueuedSize(getQueues());
+    }
+
+    private long calculateTotalEnqueuedSize(final Collection<AMQQueue<?>> queues)
+    {
+        long total = 0;
+        for(AMQQueue<?> queue : queues)
+        {
+            total += queue.getPotentialMemoryFootprint();
+        }
+        return total;
     }
 
     @Override
