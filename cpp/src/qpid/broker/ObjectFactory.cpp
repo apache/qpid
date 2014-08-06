@@ -20,6 +20,7 @@
  */
 #include "ObjectFactory.h"
 #include "Broker.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace broker {
@@ -49,7 +50,11 @@ bool ObjectFactoryRegistry::recoverObject(Broker& broker, const std::string& typ
 {
     for (Factories::iterator i = factories.begin(); i != factories.end(); ++i)
     {
-        if ((*i)->recoverObject(broker, type, name, properties, persistenceId)) return true;
+        try {
+            if ((*i)->recoverObject(broker, type, name, properties, persistenceId)) return true;
+        } catch (const std::exception& e) {
+            QPID_LOG(warning, "Error while recovering object " << name << " of type " << type << ": " << e.what());
+        }
     }
     return false;
 }

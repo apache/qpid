@@ -63,6 +63,7 @@ Topic::Topic(Broker& broker, const std::string& n, boost::shared_ptr<Exchange> e
       alternateExchange(getProperty(ALTERNATE_EXCHANGE, properties))
 {
     if (exchange->getName().empty()) throw qpid::Exception("Exchange must be specified.");
+    if (durable && !exchange->isDurable()) throw qpid::Exception("Durable topic must be backed by durable exchange");
 
     qpid::types::Variant::Map unused;
     qpid::types::Variant::Map filtered = filter(properties, true);
