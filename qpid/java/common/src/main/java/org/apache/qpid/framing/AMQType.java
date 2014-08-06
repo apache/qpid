@@ -24,6 +24,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Collection;
 
 /**
  * AMQType is a type that represents the different possible AMQP field table types. It provides operations for each
@@ -281,7 +282,63 @@ public enum AMQType
             }
         }
     },
+    /**
+     * Implements the field table type. The native value of a field table type will be an instance of
+     * {@link FieldTable}, which itself may contain name/value pairs encoded as {@link AMQTypedValue}s.
+     */
+    FIELD_ARRAY('A')
+            {
+                public int getEncodingSize(Object value)
+                {
+                    if (!(value instanceof Collection))
+                    {
+                        throw new IllegalArgumentException("Value is not a Collection.");
+                    }
 
+                    FieldArray fieldArrayValue = FieldArray.asFieldArray((Collection)value);
+
+                    return 4 + fieldArrayValue.getEncodingSize();
+                }
+
+                public Object toNativeValue(Object value)
+                {
+                    // Ensure that the value is a FieldTable.
+                    if (!(value instanceof Collection))
+                    {
+                        throw new IllegalArgumentException("Value cannot be converted to a FieldArray.");
+                    }
+
+                    return FieldArray.asFieldArray((Collection)value);
+                }
+
+                public void writeValueImpl(Object value, DataOutput buffer) throws IOException
+                {
+
+                    if (!(value instanceof FieldArray))
+                    {
+                        throw new IllegalArgumentException("Value is not a FieldArray.");
+                    }
+
+                    FieldArray fieldArrayValue = (FieldArray) value;
+
+                    // Loop over all name/values writing out into buffer.
+                    fieldArrayValue.writeToBuffer(buffer);
+                }
+
+                /**
+                 * Reads an instance of the type from a specified byte buffer.
+                 *
+                 * @param buffer The byte buffer to write it to.
+                 *
+                 * @return An instance of the type.
+                 */
+                public Object readValueFromBuffer(DataInput buffer) throws IOException
+                {
+                    // Read size of field table then all name/value pairs.
+                    return FieldArray.readFromBuffer(buffer);
+
+                }
+            },
     VOID('V')
     {
         public int getEncodingSize(Object value)

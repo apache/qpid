@@ -20,16 +20,20 @@
  */
 package org.apache.qpid.framing;
 
-import org.junit.Assert;
-import junit.framework.TestCase;
-
-import org.apache.qpid.AMQPInvalidClassException;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+
+import junit.framework.TestCase;
+import org.junit.Assert;
+
+import org.apache.qpid.AMQPInvalidClassException;
 
 public class FieldTableTest extends TestCase
 {
@@ -458,6 +462,7 @@ public class FieldTableTest extends TestCase
         innerTable.setShort("short", Short.MAX_VALUE);
         innerTable.setString("string", "hello");
         innerTable.setString("null-string", null);
+        innerTable.setFieldArray("field-array",Arrays.asList("hello",Integer.valueOf(42), Collections.emptyList()));
 
         // Put the inner table in the outer one.
         outerTable.setFieldTable("innerTable", innerTable);
@@ -487,6 +492,12 @@ public class FieldTableTest extends TestCase
             Assert.assertEquals(Short.valueOf(Short.MAX_VALUE), extractedTable.getShort("short"));
             Assert.assertEquals("hello", extractedTable.getString("string"));
             Assert.assertNull(extractedTable.getString("null-string"));
+            Collection fieldArray = (Collection) extractedTable.get("field-array");
+            Assert.assertEquals(3, fieldArray.size());
+            Iterator iter = fieldArray.iterator();
+            assertEquals("hello",iter.next());
+            assertEquals(Integer.valueOf(42), iter.next());
+            assertTrue(((Collection)iter.next()).isEmpty());
         }
         catch (AMQFrameDecodingException e)
         {
