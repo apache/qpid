@@ -18,6 +18,17 @@
       <fileMode>0644</fileMode>
       <directoryMode>0755</directoryMode>
     </fileSet>
+    <fileSet>
+      <directory>${basedir}/example</directory>
+      <outputDirectory>example</outputDirectory>
+      <includes>
+        <include>src/**</include>
+        <include>pom.xml</include>
+        <include>README.txt</include>
+      </includes>
+      <fileMode>0644</fileMode>
+      <directoryMode>0755</directoryMode>
+    </fileSet>
   </fileSets>
   <dependencySets>
     <dependencySet>
