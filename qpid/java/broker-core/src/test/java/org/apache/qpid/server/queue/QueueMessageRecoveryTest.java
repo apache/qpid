@@ -32,6 +32,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -161,6 +162,7 @@ public class QueueMessageRecoveryTest extends QpidTestCase
         MessageReference ref = mock(MessageReference.class);
         when(ref.getMessage()).thenReturn(msg);
         when(msg.newReference()).thenReturn(ref);
+        when(msg.getStoredMessage()).thenReturn(mock(StoredMessage.class));
         return msg;
     }
 
