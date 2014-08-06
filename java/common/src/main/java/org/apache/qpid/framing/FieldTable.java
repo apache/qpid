@@ -20,18 +20,15 @@
  */
 package org.apache.qpid.framing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.AMQPInvalidClassException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,6 +36,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQPInvalidClassException;
 
 // extends FieldTable
 public class FieldTable
@@ -577,6 +579,15 @@ public class FieldTable
         return setProperty(string, AMQType.ASCII_CHARACTER.asTypedValue(c));
     }
 
+    public Object setFieldArray(String string, Collection<?> collection)
+    {
+        return setFieldArray(AMQShortString.valueOf(string), collection);
+    }
+    public Object setFieldArray(AMQShortString string, Collection<?> collection)
+    {
+        return setProperty(string, AMQType.FIELD_ARRAY.asTypedValue(collection));
+    }
+
     public Object setBytes(String string, byte[] b)
     {
         return setBytes(AMQShortString.valueOf(string), b);
@@ -614,12 +625,12 @@ public class FieldTable
     {
         if (decimal.longValue() > Integer.MAX_VALUE)
         {
-            throw new UnsupportedOperationException("AMQP doesnot support decimals larger than " + Integer.MAX_VALUE);
+            throw new UnsupportedOperationException("AMQP does not support decimals larger than " + Integer.MAX_VALUE);
         }
 
         if (decimal.scale() > Byte.MAX_VALUE)
         {
-            throw new UnsupportedOperationException("AMQP doesnot support decimal scales larger than " + Byte.MAX_VALUE);
+            throw new UnsupportedOperationException("AMQP does not support decimal scales larger than " + Byte.MAX_VALUE);
         }
 
         return setProperty(string, AMQType.DECIMAL.asTypedValue(decimal));
@@ -693,6 +704,26 @@ public class FieldTable
         else if (object instanceof Character)
         {
             return setChar(string, (Character) object);
+        }
+        else if (object instanceof Collection)
+        {
+            return setFieldArray(string, (Collection)object);
+        }
+        else if (object instanceof FieldTable)
+        {
+            return setFieldTable(string, (FieldTable) object);
+        }
+        else if (object instanceof Map)
+        {
+            return setFieldTable(string, FieldTable.convertToFieldTable((Map) object));
+        }
+        else if (object instanceof Date)
+        {
+            return setTimestamp(string, ((Date) object).getTime());
+        }
+        else if (object instanceof BigDecimal)
+        {
+            return setDecimal(string, (BigDecimal) object);
         }
         else if (object instanceof byte[])
         {

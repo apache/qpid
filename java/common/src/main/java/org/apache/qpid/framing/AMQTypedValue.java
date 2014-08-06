@@ -24,6 +24,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 
@@ -271,7 +272,7 @@ public abstract class AMQTypedValue
         Class klass = val.getClass();
         if(klass == String.class)
         {
-            return AMQType.ASCII_STRING.asTypedValue(val);
+            return AMQType.LONG_STRING.asTypedValue(val);
         }
         else if(klass == Character.class)
         {
@@ -317,6 +318,14 @@ public abstract class AMQTypedValue
         {
             return AMQType.FIELD_TABLE.asTypedValue(FieldTable.convertToFieldTable((Map)val));
         }
-        return null;
+        else if(klass == FieldTable.class)
+        {
+            return AMQType.FIELD_TABLE.asTypedValue(val);
+        }
+        else if(val instanceof Collection)
+        {
+            return AMQType.FIELD_ARRAY.asTypedValue(val);
+        }
+        throw new IllegalArgumentException("Cannot convert an object of class " + val.getClass().getName() + " to an AMQP typed value");
     }
 }
