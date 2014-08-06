@@ -34,6 +34,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.sleepycat.je.Durability;
+import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
 
@@ -80,25 +82,16 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testCreateAndActivateVirtualHostNode() throws Exception
     {
-        String messageStorePath = _helper.getMessageStorePath();
-        String repStreamTimeout = "2 h";
-        String nodeName = "node";
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
-        String nodeHostPort = "localhost:" + findFreePort();
-        String helperHostPort = nodeHostPort;
-        UUID id = UUID.randomUUID();
+        String nodeName = "node1";
 
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(BDBHAVirtualHostNode.TYPE, BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE);
-        attributes.put(BDBHAVirtualHostNode.ID, id);
-        attributes.put(BDBHAVirtualHostNode.NAME, nodeName);
-        attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        attributes.put(BDBHAVirtualHostNode.ADDRESS, nodeHostPort);
-        attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperHostPort);
-        attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath);
-        attributes.put(BDBHAVirtualHostNode.CONTEXT,
-                singletonMap(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout));
-
+        Map<String, Object> attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
+        String messageStorePath = (String)attributes.get(BDBHAVirtualHostNode.STORE_PATH);
+        String repStreamTimeout = "2 h";
+        Map<String,String> context = (Map<String,String>)attributes.get(BDBHAVirtualHostNode.CONTEXT);
+        context.put(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout);
         BDBHAVirtualHostNode<?> node = _helper.createHaVHN(attributes);
 
         final CountDownLatch virtualHostAddedLatch = new CountDownLatch(1);
@@ -117,6 +110,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         node.start();
         _helper.assertNodeRole(node, "MASTER", "REPLICA");
+
         assertEquals("Unexpected node state", State.ACTIVE, node.getState());
 
         DurableConfigurationStore store = node.getConfigurationStore();
@@ -128,8 +122,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         assertEquals(nodeName, environment.getNodeName());
         assertEquals(groupName, environment.getGroup().getName());
-        assertEquals(nodeHostPort, replicationConfig.getNodeHostPort());
-        assertEquals(helperHostPort, replicationConfig.getHelperHosts());
+        assertEquals(helperAddress, replicationConfig.getNodeHostPort());
+        assertEquals(helperAddress, replicationConfig.getHelperHosts());
 
         assertEquals("SYNC,NO_SYNC,SIMPLE_MAJORITY", environment.getConfig().getDurability().toString());
         assertEquals("Unexpected JE replication stream timeout", repStreamTimeout, replicationConfig.getConfigParam(ReplicationConfig.REP_STREAM_TIMEOUT));
@@ -155,18 +149,12 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testMutableAttributes() throws Exception
     {
-        UUID id = UUID.randomUUID();
-        String address = "localhost:" + findFreePort();
+        int node1PortNumber = findFreePort();
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+        String nodeName = "node1";
 
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        attributes.put(BDBHAVirtualHostNode.ID, id);
-        attributes.put(BDBHAVirtualHostNode.NAME, "node");
-        attributes.put(BDBHAVirtualHostNode.GROUP_NAME, "group");
-        attributes.put(BDBHAVirtualHostNode.ADDRESS, address);
-        attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, address);
-        attributes.put(BDBHAVirtualHostNode.STORE_PATH, _helper.getMessageStorePath());
-
+        Map<String, Object> attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNode<?> node = _helper.createAndStartHaVHN(attributes);
 
         BDBConfigurationStore bdbConfigurationStore = (BDBConfigurationStore) node.getConfigurationStore();
@@ -190,42 +178,21 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testTransferMasterToSelf() throws Exception
     {
-        String messageStorePath = _helper.getMessageStorePath();
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+        int node3PortNumber = getNextAvailable(node2PortNumber + 1);
+
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
+        String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = new HashMap<String, Object>();
-        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
-        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "1");
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber, node3PortNumber);
         _helper.createAndStartHaVHN(node1Attributes);
 
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-
-        Map<String, Object> node2Attributes = new HashMap<String, Object>();
-        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
-        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "2");
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         _helper.createAndStartHaVHN(node2Attributes);
 
-        int node3PortNumber = getNextAvailable(node2PortNumber+1);
-        Map<String, Object> node3Attributes = new HashMap<String, Object>();
-        node3Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node3Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node3Attributes.put(BDBHAVirtualHostNode.NAME, "node3");
-        node3Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
-        node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "3");
+        Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, "localhost:" + node3PortNumber, helperAddress, nodeName);
         _helper.createAndStartHaVHN(node3Attributes);
 
         BDBHAVirtualHostNode<?> replica = _helper.awaitAndFindNodeInRole("REPLICA");
@@ -238,19 +205,15 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
     public void testTransferMasterToRemoteReplica() throws Exception
     {
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+        int node3PortNumber = getNextAvailable(node2PortNumber + 1);
+
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
-        String messageStorePath = _helper.getMessageStorePath();
+        String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = new HashMap<String, Object>();
-        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
-        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "1");
-
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress,
+                helperAddress, nodeName, node1PortNumber, node2PortNumber, node3PortNumber);
         BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
 
         final AtomicReference<RemoteReplicationNode<?>> lastSeenReplica = new AtomicReference<>();
@@ -268,28 +231,10 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
             }
         });
 
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-
-        Map<String, Object> node2Attributes = new HashMap<String, Object>();
-        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
-        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "2");
-
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNode<?> node2 = _helper.createAndStartHaVHN(node2Attributes);
 
-        int node3PortNumber = getNextAvailable(node2PortNumber+1);
-        Map<String, Object> node3Attributes = new HashMap<String, Object>();
-        node3Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node3Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node3Attributes.put(BDBHAVirtualHostNode.NAME, "node3");
-        node3Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
-        node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "3");
+        Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, "localhost:" + node3PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNode<?> node3 = _helper.createAndStartHaVHN(node3Attributes);
 
         assertTrue("Replication nodes have not been seen during 5s", remoteNodeLatch.await(5, TimeUnit.SECONDS));
@@ -308,17 +253,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         int nodePortNumber = findFreePort();
         String helperAddress = "localhost:" + nodePortNumber;
         String groupName = "group";
-        String messageStorePath = _helper.getMessageStorePath();
+        String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = new HashMap<String, Object>();
-        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
-        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "1");
-
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, nodePortNumber);
         BDBHAVirtualHostNode<?> node = _helper.createAndStartHaVHN(node1Attributes);
         _helper.assertNodeRole(node, "MASTER");
 
@@ -336,42 +273,21 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testRemoveReplicaNode() throws Exception
     {
-        String messageStorePath = _helper.getMessageStorePath();
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+        int node3PortNumber = getNextAvailable(node2PortNumber + 1);
+
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
+        String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = new HashMap<String, Object>();
-        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
-        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "1");
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber, node3PortNumber);
         _helper.createAndStartHaVHN(node1Attributes);
 
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-
-        Map<String, Object> node2Attributes = new HashMap<String, Object>();
-        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
-        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "2");
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         _helper.createAndStartHaVHN(node2Attributes);
 
-        int node3PortNumber = getNextAvailable(node2PortNumber+1);
-        Map<String, Object> node3Attributes = new HashMap<String, Object>();
-        node3Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node3Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node3Attributes.put(BDBHAVirtualHostNode.NAME, "node3");
-        node3Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
-        node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "3");
+        Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, "localhost:" + node3PortNumber, helperAddress, nodeName);
         _helper.createAndStartHaVHN(node3Attributes);
 
         BDBHAVirtualHostNode<?> master = _helper.awaitAndFindNodeInRole("MASTER");
@@ -393,15 +309,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         int node1PortNumber = findFreePort();
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
+        String nodeName = "node1";
 
-        Map<String, Object> nodeAttributes = new HashMap<String, Object>();
-        nodeAttributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        nodeAttributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        nodeAttributes.put(BDBHAVirtualHostNode.NAME, "node1");
-        nodeAttributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        nodeAttributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
-        nodeAttributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        nodeAttributes.put(BDBHAVirtualHostNode.STORE_PATH, _helper.getMessageStorePath() + File.separator + "1");
+        Map<String, Object> nodeAttributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNode<?> node = _helper.createHaVHN(nodeAttributes);
 
         final CountDownLatch virtualHostAddedLatch = new CountDownLatch(1);
@@ -465,59 +375,23 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     }
 
-    public void testIntruderProtection() throws Exception
+    public void testNotPermittedNodeIsNotAllowedToConnect() throws Exception
     {
-        String messageStorePath = _helper.getMessageStorePath();
         int node1PortNumber = findFreePort();
         int node2PortNumber = getNextAvailable(node1PortNumber+1);
+        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
+        String nodeName = "node1";
 
-        List<String> permittedNodes = new ArrayList<>();
-        permittedNodes.add(helperAddress);
-        String node2Address = "localhost:" + node2PortNumber;
-        permittedNodes.add(node2Address);
-
-        String blueprint = String.format("{ \"%s\" : [ \"%s\", \"%s\" ] } ", BDBHAVirtualHost.PERMITTED_NODES, helperAddress, node2Address);
-
-        Map<String, Object> node1Attributes = new HashMap<>();
-        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
-        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "1");
-        Map<String, String> contextMap = singletonMap(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, blueprint);
-        node1Attributes.put(BDBHAVirtualHostNode.CONTEXT, contextMap);
-
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
 
-        Map<String, Object> node2Attributes = new HashMap<String, Object>();
-        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
-        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, node2Address);
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "2");
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
-        node2Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
-
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNode<?> node2 = _helper.createAndStartHaVHN(node2Attributes);
 
-        int node3PortNumber = getNextAvailable(node2PortNumber+1);
-        Map<String, Object> node3Attributes = new HashMap<String, Object>();
-        node3Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node3Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node3Attributes.put(BDBHAVirtualHostNode.NAME, "node3");
-        node3Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node3Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node3PortNumber);
-        node3Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node3Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "3");
-        node3Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
-        node3Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
-
+        Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, "localhost:" + node3PortNumber, helperAddress, nodeName);
         try
         {
             _helper.createHaVHN(node3Attributes);
@@ -527,59 +401,22 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         {
             assertEquals("Unexpected exception message", String.format("Node from '%s' is not permitted!", "localhost:" + node3PortNumber), e.getMessage());
         }
-
-        // join node by skipping a step retrieving node state and checking the permitted hosts
-        node3Attributes.remove(BDBHAVirtualHostNode.HELPER_NODE_NAME);
-
-        final CountDownLatch stopLatch = new CountDownLatch(1);
-        ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
-        {
-            @Override
-            public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
-            {
-                if (newState == State.ERRORED)
-                {
-                    stopLatch.countDown();
-                }
-            }
-        };
-        node1.addChangeListener(listener);
-
-        _helper.createHaVHN(node3Attributes);
-
-        assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
     }
 
     public void testIntruderProtectionInManagementMode() throws Exception
     {
-        String messageStorePath = _helper.getMessageStorePath();
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
+        String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = new HashMap<String, Object>();
-        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
-        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "1");
-
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
 
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-        Map<String, Object> node2Attributes = new HashMap<String, Object>();
-        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
-        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "2");
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         node2Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
-
         BDBHAVirtualHostNode<?> node2 = _helper.createAndStartHaVHN(node2Attributes);
 
         final CountDownLatch stopLatch = new CountDownLatch(1);
@@ -613,36 +450,17 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         remote.delete();
     }
 
-    public void testIntruderConnectedBeforePermittedNodesAreSet() throws Exception
+    public void testIntruderConnected() throws Exception
     {
-        String messageStorePath = _helper.getMessageStorePath();
         int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
+        String nodeName = "node1";
 
-        Map<String, Object> node1Attributes = new HashMap<String, Object>();
-        node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node1Attributes.put(BDBHAVirtualHostNode.NAME, "node1");
-        node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "1");
-
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
-
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-        Map<String, Object> node2Attributes = new HashMap<String, Object>();
-        node2Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node2Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        node2Attributes.put(BDBHAVirtualHostNode.NAME, "node2");
-        node2Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
-        node2Attributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + node2PortNumber);
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
-        node2Attributes.put(BDBHAVirtualHostNode.STORE_PATH, messageStorePath + File.separator + "2");
-        node2Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, "node1");
-
-        _helper.createAndStartHaVHN(node2Attributes);
 
         final CountDownLatch stopLatch = new CountDownLatch(1);
         ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
@@ -658,14 +476,28 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         };
         node1.addChangeListener(listener);
 
-        BDBHAVirtualHost<?> host = (BDBHAVirtualHost<?>)node1.getVirtualHost();
-        List<String> permittedNodes = new ArrayList<String>();
-        permittedNodes.add(helperAddress);
-        host.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes));
+        String node2Name = "node2";
+        File environmentPathFile = new File(_helper.getMessageStorePath() + File.separator + node2Name);
+        environmentPathFile.mkdirs();
+
+        ReplicationConfig replicationConfig = new ReplicationConfig(groupName, node2Name, "localhost:" + node2PortNumber );
+        replicationConfig.setHelperHosts(helperAddress);
+        EnvironmentConfig envConfig = new EnvironmentConfig();
+        envConfig.setAllowCreate(true);
+        envConfig.setTransactional(true);
+        envConfig.setDurability(Durability.parse((String) node1Attributes.get(BDBHAVirtualHostNode.DURABILITY)));
+
+        ReplicatedEnvironment intruder = null;
+        try
+        {
+            intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+        }
+        finally
+        {
+            intruder.close();
+        }
 
         assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(20, TimeUnit.SECONDS));
     }
 
 }
-
-

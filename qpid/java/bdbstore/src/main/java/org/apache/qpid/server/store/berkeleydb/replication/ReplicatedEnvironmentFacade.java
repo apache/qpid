@@ -105,7 +105,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private static final int DEFAULT_REMOTE_NODE_MONITOR_INTERVAL = 1000;
 
     private static final int MASTER_TRANSFER_TIMEOUT = Integer.getInteger(MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME, DEFAULT_MASTER_TRANSFER_TIMEOUT);
-    private static final int DB_PING_SOCKET_TIMEOUT = Integer.getInteger(DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME, DEFAULT_DB_PING_SOCKET_TIMEOUT);
+    public static final int DB_PING_SOCKET_TIMEOUT = Integer.getInteger(DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME, DEFAULT_DB_PING_SOCKET_TIMEOUT);
     private static final int REMOTE_NODE_MONITOR_INTERVAL = Integer.getInteger(REMOTE_NODE_MONITOR_INTERVAL_PROPERTY_NAME, DEFAULT_REMOTE_NODE_MONITOR_INTERVAL);
     private static final int RESTART_TRY_LIMIT = 3;
 
@@ -149,7 +149,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         put(ReplicationConfig.LOG_FLUSH_TASK_INTERVAL, "1 min");
     }});
 
-    private static final String PERMITTED_NODE_LIST = "permittedNodes";
+    public static final String PERMITTED_NODE_LIST = "permittedNodes";
 
     private final ReplicatedEnvironmentConfiguration _configuration;
     private final String _prettyGroupNodeName;
@@ -978,7 +978,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             LOGGER.info("Node name " + nodeName);
             LOGGER.info("Node host port " + hostPort);
             LOGGER.info("Helper host port " + helperHostPort);
-            LOGGER.info("Helper host name " + helperNodeName);
+            LOGGER.info("Helper node name " + helperNodeName);
             LOGGER.info("Durability " + _defaultDurability);
             LOGGER.info("Designated primary (applicable to 2 node case only) " + designatedPrimary);
             LOGGER.info("Node priority " + priority);
@@ -986,10 +986,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             LOGGER.info("Permitted node list " + _permittedNodes);
         }
 
-        if (helperNodeName != null && _permittedNodes.isEmpty() && !helperHostPort.equals(hostPort))
-        {
-            connectToHelperNodeAndCheckPermittedHosts(helperNodeName, helperHostPort, hostPort);
-        }
         Map<String, String> replicationEnvironmentParameters = new HashMap<>(ReplicatedEnvironmentFacade.REPCONFIG_DEFAULTS);
         replicationEnvironmentParameters.putAll(_configuration.getReplicationParameters());
 
@@ -1241,64 +1237,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return baos.toByteArray();
     }
 
-    Collection<String> bytesToPermittedNodeList(byte[] applicationState)
-    {
-        if (applicationState == null || applicationState.length == 0)
-        {
-            return Collections.emptySet();
-        }
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        try
-        {
-            Map<String, Object> settings = objectMapper.readValue(applicationState, Map.class);
-            return (Collection<String>)settings.get(PERMITTED_NODE_LIST);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Unexpected exception on de-serializing of application state", e);
-        }
-    }
-
-    private void connectToHelperNodeAndCheckPermittedHosts(String helperNodeName, String helperHostPort, String hostPort)
-    {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug(String.format("Requesting state of the node '%s' at '%s'", helperNodeName, helperHostPort));
-        }
-
-        Collection<String> permittedNodes = null;
-        try
-        {
-            NodeState state = getRemoteNodeState(new ReplicationNodeImpl(helperNodeName, helperHostPort));
-            byte[] applicationState = state.getAppState();
-            permittedNodes = bytesToPermittedNodeList(applicationState);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalConfigurationException(String.format("Cannot connect to '%s'", helperHostPort), e);
-        }
-        catch (ServiceConnectFailedException e)
-        {
-            throw new IllegalConfigurationException(String.format("Failure to connect to '%s'", helperHostPort), e);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(String.format("Unexpected exception on attempt to retrieve state from '%s' at '%s'",
-                    helperNodeName, helperHostPort), e);
-        }
-
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug(String.format("Attribute 'permittedNodes' on node '%s' is set to '%s'", helperNodeName, String.valueOf(permittedNodes)));
-        }
-
-        if (permittedNodes != null && !permittedNodes.isEmpty() && !permittedNodes.contains(hostPort))
-        {
-            throw new IllegalConfigurationException(String.format("Node from '%s' is not permitted!", hostPort));
-        }
-    }
-
     private void populateExistingRemoteReplicationNodes()
     {
         ReplicationGroup group = _environment.getGroup();
@@ -1542,7 +1480,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    static class ReplicationNodeImpl implements ReplicationNode
+    public static class ReplicationNodeImpl implements ReplicationNode
     {
 
         private final InetSocketAddress _address;

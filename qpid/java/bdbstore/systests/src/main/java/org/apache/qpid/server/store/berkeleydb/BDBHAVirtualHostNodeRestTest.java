@@ -41,6 +41,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
+import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.systest.rest.Asserts;
@@ -76,6 +77,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         _node1HaPort = findFreePort();
         _node2HaPort = getNextAvailable(_node1HaPort + 1);
         _node3HaPort = getNextAvailable(_node2HaPort + 1);
+
 
     }
 
@@ -302,7 +304,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code for virtual host node " + nodeName + " creation request", 201, responseCode);
     }
 
-    private Map<String, Object> createNodeAttributeMap(String nodeName, int nodePort, int helperPort)
+    private Map<String, Object> createNodeAttributeMap(String nodeName, int nodePort, int helperPort) throws Exception
     {
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(BDBHAVirtualHostNode.NAME, nodeName);
@@ -311,6 +313,11 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         nodeData.put(BDBHAVirtualHostNode.GROUP_NAME, _hostName);
         nodeData.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + nodePort);
         nodeData.put(BDBHAVirtualHostNode.HELPER_ADDRESS, "localhost:" + helperPort);
+        nodeData.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
+        Map<String,String> context = new HashMap<>();
+        nodeData.put(BDBHAVirtualHostNode.CONTEXT, context);
+        String bluePrint = HATestClusterCreator.getBlueprint("localhost", _node1HaPort, _node2HaPort, _node3HaPort);
+        context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, bluePrint);
         return nodeData;
     }
 
@@ -431,4 +438,6 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertNotNull("Could not find new master", newMasterData);
         return newMasterData;
     }
+
+
 }
