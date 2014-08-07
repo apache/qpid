@@ -21,11 +21,11 @@
   <parent>
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-java-build</artifactId>
-    <version>0.30-SNAPSHOT</version>
+    <version>0.32-SNAPSHOT</version>
   </parent>
 
   <artifactId>qpid-systests-parent</artifactId>
-  <version>0.30-SNAPSHOT</version>
+  <version>0.32-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Qpid Java System Test Parent</name>
   <description>Parent POM for Qpid system testing modules</description>
