@@ -18,21 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedContextDefault;
-import org.apache.qpid.server.model.ManagedObject;
-
-@ManagedObject( category = false, type= LastValueQueue.LAST_VALUE_QUEUE_TYPE)
-public interface LastValueQueue<X extends LastValueQueue<X>> extends AMQQueue<X>
+public class MessageDeletedException extends RuntimeException
 {
-    String LVQ_KEY = "lvqKey";
-
-    @ManagedContextDefault( name = "queue.lvqKey" )
-    String DEFAULT_LVQ_KEY = "qpid.LVQ_key";
-    String LAST_VALUE_QUEUE_TYPE = "lvq";
-
-    @ManagedAttribute(defaultValue = "${queue.lvqKey}")
-    String getLvqKey();
+    MessageDeletedException(final long messageNumber)
+    {
+        super("The message with id " + messageNumber + " has already been deleted, no new reference can be taken");
+    }
 }

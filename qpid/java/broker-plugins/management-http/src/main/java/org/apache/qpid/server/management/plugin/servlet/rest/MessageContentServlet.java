@@ -24,6 +24,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.qpid.server.message.MessageDeletedException;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
@@ -121,15 +122,27 @@ public class MessageContentServlet extends AbstractServlet
             {
                 if(_messageNumber == message.getMessageNumber())
                 {
-                    MessageReference reference = message.newReference();
-
-                    _mimeType = message.getMessageHeader().getMimeType();
-                    _size = message.getSize();
-                    _content = new byte[(int)_size];
-                    _found = true;
-                    message.getContent(ByteBuffer.wrap(_content),0);
-                    reference.release();
-                    return true;
+                    try
+                    {
+                        MessageReference reference = message.newReference();
+                        try
+                        {
+                            _mimeType = message.getMessageHeader().getMimeType();
+                            _size = message.getSize();
+                            _content = new byte[(int) _size];
+                            _found = true;
+                            message.getContent(ByteBuffer.wrap(_content), 0);
+                        }
+                        finally
+                        {
+                            reference.release();
+                        }
+                        return true;
+                    }
+                    catch (MessageDeletedException e)
+                    {
+                        // ignore - the message was deleted as we tried too look at it, treat as if no message found
+                    }
                 }
 
             }

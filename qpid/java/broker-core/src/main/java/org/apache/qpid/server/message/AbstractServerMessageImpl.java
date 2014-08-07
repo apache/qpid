@@ -161,7 +161,10 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
         private Reference(final AbstractServerMessageImpl<X, T> message)
         {
             _message = message;
-            _message.incrementReference();
+            if(!_message.incrementReference())
+            {
+                throw new MessageDeletedException(message.getMessageNumber());
+            }
         }
 
         public X getMessage()

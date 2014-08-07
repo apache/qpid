@@ -20,20 +20,21 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
-import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
-
-import javax.management.JMException;
-import javax.management.MBeanOperationInfo;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularData;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+
+import javax.management.JMException;
+import javax.management.MBeanOperationInfo;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularData;
+
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 /**
  * The management interface exposed to allow management of a queue.
@@ -91,6 +92,7 @@ public interface ManagedQueue
     static final String ATTR_ALT_EXCHANGE = "AlternateExchange";
     static final String ATTR_SHARED_MESSAGE_GROUP  = "MessageGroupSharedGroups";
     static final String ATTR_MESSAGE_GROUP_KEY = "MessageGroupKey";
+    static final String ATTR_OLDEST_MESSAGE_AGE = "OldestMessageAge";
 
     //All attribute names constant
     static final List<String> QUEUE_ATTRIBUTES
@@ -120,7 +122,8 @@ public interface ManagedQueue
                                     ATTR_EXCLUSIVE,
                                     ATTR_ALT_EXCHANGE,
                                     ATTR_SHARED_MESSAGE_GROUP,
-                                    ATTR_MESSAGE_GROUP_KEY
+                                    ATTR_MESSAGE_GROUP_KEY,
+                                    ATTR_OLDEST_MESSAGE_AGE
                                     ))));
 
     /**
@@ -317,7 +320,7 @@ public interface ManagedQueue
      * 
      * @since Qpid JMX API 1.6
      * @return Capacity below which flow resumes in bytes
-     * @throws IOExceptionm
+     * @throws IOException
      */
     Long getFlowResumeCapacity() throws IOException;
 
@@ -403,6 +406,13 @@ public interface ManagedQueue
      */
     @MBeanAttribute(name="MessageGroupSharedGroups", description="If set indicates that while two messages of the same group cannot be processed by different consumers concurrently, no guarantee is made that subsequent messages are always sent to the same consumer")
     boolean isMessageGroupSharedGroups();
+
+    /**
+     * Gets the arrival time of the oldest message in the queue
+     * @since Qpid JMX API 2.8
+     */
+    @MBeanAttribute(name= ATTR_OLDEST_MESSAGE_AGE, description="the age (in milliseconds since the epoch of the oldest message in the queue (or 0 if the queue is empty)")
+    Long getOldestMessageAge();
 
     //********** Operations *****************//
 

@@ -105,7 +105,7 @@ public enum NotificationCheck
                 final long thresholdTime = currentTime - maxMessageAge;
                 final long firstArrivalTime = queue.getOldestMessageArrivalTime();
 
-                if(firstArrivalTime < thresholdTime)
+                if(firstArrivalTime != 0 && firstArrivalTime < thresholdTime)
                 {
                     long oldestAge = currentTime - firstArrivalTime;
                     String notificationMsg = (oldestAge/1000) + "s : Maximum age on queue threshold ("+(maxMessageAge /1000)+"s) breached.";

@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
-import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import java.io.IOException;
 
 import javax.management.MBeanOperationInfo;
-import java.io.IOException;
+
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 
 /**
  * Interface for the ServerInformation MBean
@@ -46,7 +47,7 @@ public interface ServerInformation
      *  Qpid JMX API 1.1 can be assumed.
      */
     int QPID_JMX_API_MAJOR_VERSION = 2;
-    int QPID_JMX_API_MINOR_VERSION = 7;
+    int QPID_JMX_API_MINOR_VERSION = 8;
     
     
     /**

@@ -20,11 +20,11 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.message.ServerMessage;
-
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import org.apache.qpid.server.message.ServerMessage;
 
 public abstract class OrderedQueueEntryList implements QueueEntryList
 {
@@ -195,5 +195,10 @@ public abstract class OrderedQueueEntryList implements QueueEntryList
         return 0;
     }
 
+    @Override
+    public QueueEntry getOldestEntry()
+    {
+        return next(getHead());
+    }
 
 }
