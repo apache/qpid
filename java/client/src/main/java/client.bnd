@@ -17,7 +17,7 @@
 # under the License.
 #
 
-ver: 0.29.0
+ver: 0.31.0
 
 Bundle-SymbolicName: qpid-client
 Bundle-Version: ${ver}
