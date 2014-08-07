@@ -34,7 +34,7 @@ containing QMF commands to the Qpid broker.
 """
 
 setup(name="qpid-tools",
-      version="0.29",
+      version="0.30",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       package_dir={'' : 'src/py'},
