@@ -40,13 +40,14 @@ define(["dojo/_base/xhr",
         "dijit/form/ValidationTextBox",
         "dijit/form/Button",
         "dijit/form/Form",
-        "dijit/form/NumberSpinner",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
   function (xhr, entities, array, event, lang, win, dom, domConstruct, registry, parser, json, query, Memory, ObjectStore, util, template)
   {
     var fields = [ "name", "queue.deadLetterQueueEnabled", "storeTransactionIdleTimeoutWarn", "storeTransactionIdleTimeoutClose", "storeTransactionOpenTimeoutWarn", "storeTransactionOpenTimeoutClose", "housekeepingCheckPeriod", "housekeepingThreadCount"];
+    var numericFieldNames = ["storeTransactionIdleTimeoutWarn", "storeTransactionIdleTimeoutClose", "storeTransactionOpenTimeoutWarn", "storeTransactionOpenTimeoutClose", "housekeepingCheckPeriod", "housekeepingThreadCount"];
+
 
     var virtualHostEditor =
     {
@@ -77,6 +78,7 @@ define(["dojo/_base/xhr",
             {
               url: this.query,
               sync: true,
+              content: { actuals: true },
               handleAs: "json",
               load: function(data)
               {
@@ -137,18 +139,28 @@ define(["dojo/_base/xhr",
       },
       _show:function(virtualHostData)
       {
+
           this.initialData = virtualHostData;
           for(var i = 0; i < fields.length; i++)
           {
             var fieldName = fields[i];
-            if (this[fieldName] instanceof dijit.form.CheckBox)
+            var widget = this[fieldName];
+            widget.reset();
+
+            if (widget instanceof dijit.form.CheckBox)
             {
-                this[fieldName].set("checked", virtualHostData[fieldName]);
+              widget.set("checked", virtualHostData[fieldName]);
             }
             else
             {
-             this[fieldName].set("value", virtualHostData[fieldName]);
+              widget.set("value", virtualHostData[fieldName]);
             }
+          }
+
+          // Add regexp to the numeric fields
+          for(var i = 0; i < numericFieldNames.length; i++)
+          {
+            this[numericFieldNames[i]].set("regExpGen", util.numericOrContextVarRegexp);
           }
 
           var that = this;

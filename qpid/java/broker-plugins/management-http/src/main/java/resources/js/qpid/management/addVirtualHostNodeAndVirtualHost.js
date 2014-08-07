@@ -33,6 +33,7 @@ define(["dojo/_base/xhr",
         "dijit/form/Button",
         "dijit/form/FilteringSelect",
         "qpid/common/properties",
+        "qpid/common/util",
         "dojo/text!addVirtualHostNodeAndVirtualHost.html",
         "dijit/form/Form",
         "dijit/form/CheckBox",
@@ -40,7 +41,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, fobject, registry, Dialog, Button, FilteringSelect, properties, template)
+  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, fobject, registry, Dialog, Button, FilteringSelect, properties, util, template)
   {
 
     var addVirtualHostNodeAndVirtualHost =
@@ -50,6 +51,9 @@ define(["dojo/_base/xhr",
         var that=this;
         this.containerNode = domConstruct.create("div", {innerHTML: template});
         parser.parse(this.containerNode);
+
+        var virtualHostNodeName = registry.byId("addVirtualHostNode.nodeName");
+        virtualHostNodeName.set("regExpGen", util.nameOrContextVarRegexp);
 
         this.dialog = registry.byId("addVirtualHostNodeAndVirtualHost");
         this.addButton = registry.byId("addVirtualHostNodeAndVirtualHost.addButton");

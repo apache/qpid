@@ -31,9 +31,10 @@ define(["dojo/_base/xhr",
         "dojox/html/entities",
         "dojo/text!../../showPreferencesProviderFields.html",
         "dojo/text!service/helper?action=ListPreferencesProvidersTypes",
+        "qpid/common/util",
         "dojox/validate/us",
         "dojox/validate/web",
-        "dojo/domReady!"], function (xhr, dom, query, parser, string, json, Memory, registry, FilteringSelect, ValidationTextBox, entities, template, preferencesProvidersTypes) {
+        "dojo/domReady!"], function (xhr, dom, query, parser, string, json, Memory, registry, FilteringSelect, ValidationTextBox, entities, template, preferencesProvidersTypes, util) {
 
   var PreferencesProviderFields = {};
 
@@ -114,6 +115,7 @@ define(["dojo/_base/xhr",
     this.fieldsContainer = query(".preferencesProviderFieldsContainer", node)[0];
     this.type = registry.byNode(query(".preferencesProviderType", node)[0]);
     this.name = registry.byNode(query(".preferencesProviderName", node)[0]);
+    this.name.set("regExpGen", util.nameOrContextVarRegexp);
     this.id = query("input[name='preferencesProviderId']", node)[0];
     this.id.value = null;
     this.type.set("store", new Memory({ data: types, idProperty: "id"}));
@@ -132,6 +134,7 @@ define(["dojo/_base/xhr",
         xhr.get({
           url: "api/latest/preferencesprovider/"  +encodeURIComponent(authenticationProviderName) + "/" + encodeURIComponent(provider),
           sync: true,
+          content: { actuals: true },
           handleAs: "json"
         }).then(function(data){if (data && data[0]) { that.init(data[0]);}});
       }

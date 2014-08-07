@@ -636,5 +636,27 @@ define(["dojo/_base/xhr",
                }
            }
 
+           var singleContextVarRegexp = "(\\${[\\w\\.\\-]+})";
+
+           util.numericOrContextVarRegexp = function(constraints)
+           {
+             return "^(\\d+)|" + singleContextVarRegexp + "$";
+           }
+
+           util.nameOrContextVarRegexp = function(constraints)
+           {
+             return "^(\\w+)|" + singleContextVarRegexp + "$";
+           }
+
+           util.jdbcUrlOrContextVarRegexp = function(constraints)
+           {
+             return "^(jdbc:.*:.*)|" + singleContextVarRegexp + "$";
+           }
+
+           util.nodeAddressOrContextVarRegexp = function(constraints)
+           {
+             return "^(([0-9a-zA-Z.-_]|::)+:[0-9]{1,5})|" + singleContextVarRegexp + "$";
+           }
+
            return util;
        });

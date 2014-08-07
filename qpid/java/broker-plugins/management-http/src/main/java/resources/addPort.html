@@ -26,10 +26,11 @@
             <div id="formAddPort:fields">
                 <input type="text" required="true" name="name" id="formAddPort.name" placeholder="Name"
                     data-dojo-props="label: 'Name*:'" dojoType="dijit.form.ValidationTextBox"
-                    missingMessage="A name must be supplied" regexp="^[\x20-\x2e\x30-\x7F]{1,255}$"/>
-                <input data-dojo-type="dijit.form.NumberSpinner" id="formAddPort.port" required="true" data-dojo-props="label: 'Port Number*:', placeHolder: 'Enter port number'"
-                     name="port" smallDelta="1" constraints="{min:1,max:65535,places:0, pattern: '#####'}"
-                     missingMessage="A port number must be supplied"  />
+                    missingMessage="A name must be supplied"/>
+
+                <input type="text" required="true" id="formAddPort.port"
+                    data-dojo-props="label: 'Port Number*:', placeHolder: 'Enter port number'" dojoType="dijit.form.ValidationTextBox"
+                     name="port" missingMessage="A port number must be supplied"/>
                 <select id="formAddPort.type" data-dojo-type="dijit.form.FilteringSelect"
                     data-dojo-props="name: 'type', value: '',placeHolder: 'Select Port Type', label: 'Port Type*:'">
                     <option value="AMQP" selected="selected">AMQP</option>

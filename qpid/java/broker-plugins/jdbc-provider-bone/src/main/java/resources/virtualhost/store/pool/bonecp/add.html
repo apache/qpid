@@ -22,36 +22,30 @@
   <tr>
       <td class="tableContainer-labelCell"><strong>Partition Count:  </strong></td>
       <td class="tableContainer-valueCell">
-          <input data-dojo-type="dijit/form/NumberSpinner"
+          <input data-dojo-type="dijit/form/ValidationTextBox"
                                              id="formAddVirtualHost.qpid.jdbcstore.bonecp.partitionCount"
                                              name="qpid.jdbcstore.bonecp.partitionCount"
                                              value="4"
-                                             smallDelta="1"
-                                             constraints="{min:1,max:1000,places:0}"
                                              contextvar="true"/>
       </td>
   </tr>
   <tr>
       <td class="tableContainer-labelCell"><strong>Minimum connections per Partition:</strong></td>
       <td class="tableContainer-valueCell">
-          <input dojoType="dijit/form/NumberSpinner"
+          <input dojoType="dijit/form/ValidationTextBox"
                                              id="formAddVirtualHost.qpid.jdbcstore.bonecp.minConnectionsPerPartition"
                                              name="qpid.jdbcstore.bonecp.minConnectionsPerPartition"
                                              value="5"
-                                             smallDelta="1"
-                                             constraints="{min:1,max:1000,places:0}"
                                              contextvar="true"/>
       </td>
   </tr>
   <tr>
       <td class="tableContainer-labelCell"><strong>Maximum connections per Partition:  </strong></td>
       <td class="tableContainer-valueCell">
-          <input dojoType="dijit/form/NumberSpinner"
+          <input dojoType="dijit/form/ValidationTextBox"
                                              id="formAddVirtualHost.qpid.jdbcstore.bonecp.maxConnectionsPerPartition"
                                              name="qpid.jdbcstore.bonecp.maxConnectionsPerPartition"
                                              value="10"
-                                             smallDelta="1"
-                                             constraints="{min:1,max:1000,places:0}"
                                              contextvar="true"/>
       </td>
   </tr>

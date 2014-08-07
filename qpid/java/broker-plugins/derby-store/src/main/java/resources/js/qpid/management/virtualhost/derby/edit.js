@@ -24,6 +24,9 @@ define(["qpid/common/util", "dojo/domReady!"],
            show: function(data)
            {
               util.buildEditUI(data.containerNode, "virtualhost/sizemonitoring/edit.html", "editVirtualHost.", fieldNames, data.data);
+
+              registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+              registry.byId("editVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);
            }
        };
    }

@@ -24,16 +24,20 @@ define(["dojo/_base/xhr",
         "dojo/json",
         "dijit/registry",
         "dojo/text!virtualhost/sizemonitoring/add.html",
+        "qpid/common/util",
         "dijit/form/ValidationTextBox",
         "dijit/form/NumberTextBox",
         "dojo/domReady!"],
-  function (xhr, parser, dom, domConstruct, json, registry, template)
+  function (xhr, parser, dom, domConstruct, json, registry, template, util)
   {
     return {
         show: function (data)
         {
             this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
             parser.parse(this.containerNode);
+
+            registry.byId("addVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+            registry.byId("addVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);
         }
     };
   }

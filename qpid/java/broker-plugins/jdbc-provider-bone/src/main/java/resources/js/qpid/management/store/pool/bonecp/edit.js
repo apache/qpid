@@ -24,8 +24,9 @@ define(["dojo/_base/xhr",
         "dojo/_base/window",
         "dijit/registry",
         "dojo/parser",
+        "qpid/common/util",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser) {
+    function (xhr, dom, construct, win, registry, parser, util) {
         var fieldNames = ["maxConnectionsPerPartition", "minConnectionsPerPartition", "partitionCount"];
         return {
             show: function(data) {
@@ -47,7 +48,9 @@ define(["dojo/_base/xhr",
                         for ( var i = 0 ; i < fieldNames.length; i++ )
                         {
                           var widgetName = fieldNames[i];
-                          registry.byId("formAddVirtualHost.qpid.jdbcstore.bonecp." + widgetName).set("value", data.data.context["qpid.jdbcstore.bonecp." + widgetName]);
+                          var widget = registry.byId("formAddVirtualHost.qpid.jdbcstore.bonecp." + widgetName);
+                          widget.set("value", data.data.context["qpid.jdbcstore.bonecp." + widgetName]);
+                          widget.set("regExpGen", util.numericOrContextVarRegexp);
                         }
                      }});
             }

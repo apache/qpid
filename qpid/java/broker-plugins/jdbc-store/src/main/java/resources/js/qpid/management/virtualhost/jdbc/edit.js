@@ -35,6 +35,9 @@ define(["qpid/common/util",
            {
               util.buildEditUI(data.containerNode, "virtualhost/jdbc/edit.html", "editVirtualHost.", fieldNames, data.data);
 
+              registry.byId("editVirtualHost.connectionUrl").set("regExpGen", util.jdbcUrlOrContextVarRegexp);
+              registry.byId("editVirtualHost.username").set("regExpGen", util.nameOrContextVarRegexp);
+
               var poolTypes = json.parse(poolTypeJsonString);
               var poolTypesData = [];
               for (var i =0 ; i < poolTypes.length; i++)

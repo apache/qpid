@@ -23,16 +23,22 @@ define(["dojo/_base/xhr",
         "dojo/json",
         "dijit/registry",
         "dojo/text!virtualhostnode/bdb_ha/add/existinggroup/add.html",
+        "qpid/common/util",
         "dijit/form/ValidationTextBox",
         "dijit/form/CheckBox",
         "dojo/domReady!"],
-  function (xhr, parser, dom, domConstruct, json, registry, template)
+  function (xhr, parser, dom, domConstruct, json, registry, template, util)
   {
     return {
         show: function(data)
         {
             this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
             parser.parse(this.containerNode);
+
+            registry.byId("addVirtualHostNode.groupName").set("regExpGen", util.nameOrContextVarRegexp);
+            registry.byId("addVirtualHostNode.helperNodeName").set("regExpGen", util.nameOrContextVarRegexp);
+            registry.byId("addVirtualHostNode.helperAddress").set("regExpGen", util.nodeAddressOrContextVarRegexp);
+            registry.byId("addVirtualHostNode.address").set("regExpGen", util.nodeAddressOrContextVarRegexp);
         }
     };
   }

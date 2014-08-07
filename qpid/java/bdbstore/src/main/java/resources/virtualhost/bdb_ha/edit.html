@@ -21,27 +21,25 @@
     <div class="clear">
         <div class="formLabel-labelCell tableContainer-labelCell">Store overfull size (bytes):</div>
         <div class="tableContainer-valueCell formLabel-controlCell">
-            <input data-dojo-type="dijit/form/NumberSpinner"
+            <input data-dojo-type="dijit/form/ValidationTextBox"
                    id="editVirtualHost.storeOverfullSize"
                    data-dojo-props="
                               name: 'storeOverfullSize',
                               placeHolder: 'size in bytes',
                               required: false,
-                              title: 'Enter ceiling (in bytes) at which store will begin to throttle sessions producing messages',
-                              constraints:{min:0,places:0}"/>
+                              title: 'Enter ceiling (in bytes) at which store will begin to throttle sessions producing messages'"/>
         </div>
     </div>
     <div class="clear">
         <div class="formLabel-labelCell tableContainer-labelCell">Store underfull size (bytes):</div>
         <div class="tableContainer-valueCell formLabel-controlCell">
-            <input data-dojo-type="dijit/form/NumberSpinner"
+            <input data-dojo-type="dijit/form/ValidationTextBox"
                    id="editVirtualHost.storeUnderfullSize"
                    data-dojo-props="
                               name: 'storeUnderfullSize',
                               placeHolder: 'size in bytes',
                               required: false,
-                              title: 'Enter floor (in bytes) at which store will cease to throttle sessions producing messages',
-                              constraints:{min:0,places:0}"/>
+                              title: 'Enter floor (in bytes) at which store will cease to throttle sessions producing messages'"/>
         </div>
     </div>
 
@@ -77,8 +75,7 @@
                                       name: 'permittedNode',
                                       placeHolder: 'host:port',
                                       title: 'Enter address',
-                                      intermediateChanges: true,
-                                      pattern: '([0-9a-zA-Z.-_]|::)+:[0-9]{1,5}'" />
+                                      intermediateChanges: true" />
                 </div>
                 <button data-dojo-type="dijit/form/Button" id="editVirtualHost.permittedNodeAdd" data-dojo-props="label: '+'"></button>
             </div>

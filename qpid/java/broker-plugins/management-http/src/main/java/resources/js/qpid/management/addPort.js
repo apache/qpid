@@ -32,6 +32,7 @@ define(["dojo/_base/xhr",
         "dijit/form/FilteringSelect",
         "dojo/dom-style",
         "dojo/_base/lang",
+        "qpid/common/util",
         /* dojox/ validate resources */
         "dojox/validate/us",
         "dojox/validate/web",
@@ -54,7 +55,7 @@ define(["dojo/_base/xhr",
         "dojox/grid/EnhancedGrid",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, ObjectStore, FilteringSelect, domStyle, lang) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, ObjectStore, FilteringSelect, domStyle, lang, util) {
 
         var addPort = {};
 
@@ -314,7 +315,7 @@ define(["dojo/_base/xhr",
                                     var newPort = convertToPort(theForm.getValues());
                                     if ((newPort.needClientAuth || newPort.wantClientAuth) && (!newPort.hasOwnProperty("trustStores") || newPort.trustStores.length==0))
                                     {
-                                      alert("A trustore must be selected when requesting client certificates.");
+                                      alert("A trust store must be selected when requesting client certificates.");
                                       return false;
                                     }
                                     var that = this;
@@ -399,13 +400,15 @@ define(["dojo/_base/xhr",
 
                 xhr.get({
                     url: "api/latest/port/" + encodeURIComponent(portName),
+                    content: { actuals: true },
                     handleAs: "json"
                 }).then(
                    function(data){
                        var port = data[0];
-                       var nameField = registry.byId("formAddPort.name");
-                       nameField.set("value", port.name);
-                       nameField.set("disabled", true);
+                       var nameWidget = registry.byId("formAddPort.name");
+                       nameWidget.set("value", port.name);
+                       nameWidget.set("disabled", true);
+                       nameWidget.set("regExpGen", util.nameOrContextVarRegexp);
                        dom.byId("formAddPort.id").value=port.id;
                        providerWidget.set("value", port.authenticationProvider ? port.authenticationProvider : "");
                        keystoreWidget.set("value", port.keyStore ? port.keyStore : "");
@@ -430,7 +433,11 @@ define(["dojo/_base/xhr",
 
                        var transportWidget = registry.byId("formAddPort.transports");
                        transportWidget.set("value", port.transports);
-                       registry.byId("formAddPort.port").set("value", port.port);
+
+                       var portWidget = registry.byId("formAddPort.port");
+                       portWidget.set("value", port.port);
+                       portWidget.set("regExpGen", util.numericOrContextVarRegexp);
+
                        var protocols = port.protocols;
                        var typeWidget = registry.byId("formAddPort.type");
 

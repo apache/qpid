@@ -55,6 +55,7 @@ define(["dojo/_base/xhr",
                this.name = name;
                this.controller = controller;
                this.modelObj = { type: "broker", name: name };
+
                if(parent) {
                     this.modelObj.parent = {};
                     this.modelObj.parent[ parent.type] = parent;
@@ -64,6 +65,8 @@ define(["dojo/_base/xhr",
                      createWidget: function(brokerData) {
                         return new dijit.form.ValidationTextBox({
                           required: true,
+                          trim: true,
+                          regExpGen: util.nameOrContextVarRegexp,
                           value: brokerData.name,
                           label: "Name*:",
                           name: "name"})
@@ -93,7 +96,7 @@ define(["dojo/_base/xhr",
                        createWidget: function(brokerData) {
                          return new dijit.form.ValidationTextBox({
                            trim: "true",
-                           regexp: "[0-9]+",
+                           regExpGen: util.numericOrContextVarRegexp,
                            invalidMessage: "Invalid value",
                            required: false,
                            value: brokerData.statisticsReportingPeriod,
@@ -117,12 +120,12 @@ define(["dojo/_base/xhr",
                        groupName: "Global Connection Defaults",
                        createWidget: function(brokerData)
                        {
-                         return new dijit.form.NumberSpinner({
+                         return new dijit.form.ValidationTextBox({
+                           trim: "true",
+                           regExpGen: util.numericOrContextVarRegexp,
                            invalidMessage: "Invalid value",
                            required: false,
                            value: brokerData["connection.sessionCountLimit"],
-                           smallDelta: 1,
-                           constraints: {min:1,max:65535,places:0, pattern: "#####"},
                            label: "Maximum number of sessions:",
                            name: "connection.sessionCountLimit"
                          });
@@ -132,7 +135,7 @@ define(["dojo/_base/xhr",
                        createWidget: function(brokerData) {
                          return new dijit.form.ValidationTextBox({
                            trim: "true",
-                           regexp: "[0-9]+",
+                           regExpGen: util.numericOrContextVarRegexp,
                            invalidMessage: "Invalid value",
                            required: false,
                            value: brokerData["connection.heartBeatDelay"],
@@ -221,11 +224,19 @@ define(["dojo/_base/xhr",
                             var editButton = query(".editBroker", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(editButton), "onClick",
                                 function(evt){
-                                    util.showSetAttributesDialog(
-                                            that.attributeWidgetFactories,
-                                            that.brokerUpdater.brokerData,
-                                            "api/latest/broker",
-                                            "Set broker attributes");
+                                  var query = "api/latest/broker";
+
+                                  xhr.get({url: query, sync: properties.useSyncGet, handleAs: "json", content: { actuals: true, depth: 2 }})
+                                      .then(function(data)
+                                      {
+                                        var brokerData = data[0];
+
+                                        util.showSetAttributesDialog(
+                                          that.attributeWidgetFactories,
+                                          brokerData,
+                                          query,
+                                          "Set broker attributes");
+                                      });
                                 }
                             );
 

@@ -31,7 +31,6 @@ define(["qpid/common/util", "dojo/domReady!"],
 
     BdbNode.prototype.update=function(data)
     {
-       this.parent.editNodeButton.set("disabled", !(data.state == "STOPPED" || data.state == "ERRORED"));
        util.updateUI(data, fieldNames, this);
     };
 

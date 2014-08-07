@@ -16,14 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 define(["dijit/registry", "qpid/common/util", "dojo/domReady!"],
    function (registry, util)
    {
-       var fieldNames = ["storeUnderfullSize", "storeOverfullSize", "storePath"];
+       var fieldNames = ["storeUnderfullSize", "storeOverfullSize"];
        return {
            show: function(data)
            {
-              util.buildEditUI(data.containerNode, "virtualhost/sizemonitoring/edit.html", "editVirtualHost.", fieldNames, data.data);
+              util.buildEditUI(data.containerNode, "virtualhost/providedstore/edit.html", "editVirtualHost.", fieldNames, data.data);
 
               registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
               registry.byId("editVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);

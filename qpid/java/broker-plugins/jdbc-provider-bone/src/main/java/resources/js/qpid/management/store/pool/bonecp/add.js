@@ -32,6 +32,7 @@ define(["dojo/_base/xhr",
         "dijit/form/FilteringSelect",
         "dojo/domReady!"],
     function (xhr, dom, construct, win, registry, parser, array, event, json, string, Memory, FilteringSelect) {
+        var fieldNames = ["maxConnectionsPerPartition", "minConnectionsPerPartition", "partitionCount"];
         return {
             show: function(poolSpecificDivId, formFieldPrefix, htmlUrl) {
                 var node = dom.byId(poolSpecificDivId);
@@ -47,8 +48,16 @@ define(["dojo/_base/xhr",
                 xhr.get({url: htmlUrl,
                      sync: true,
                      load:  function(data) {
-                                node.innerHTML = data;
-                                parser.parse(node);
+
+                       node.innerHTML = data;
+                       parser.parse(node);
+
+                       for ( var i = 0 ; i < fieldNames.length; i++ )
+                       {
+                         var widgetName = fieldNames[i];
+                         var widget = registry.byId(formFieldPrefix + widgetName);
+                         widget.set("regExpGen", util.numericOrContextVarRegexp);
+                       }
 
                      }});
             }
