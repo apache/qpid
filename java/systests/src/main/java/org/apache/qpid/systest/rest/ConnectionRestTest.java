@@ -183,7 +183,7 @@ public class ConnectionRestTest extends QpidRestTestCase
         MessageProducer producer = _session.createProducer(queue);
         producer.send(_session.createMessage());
         // session left open
-
+        ((AMQSession)_session).sync();
         String connectionName = getConnectionName();
 
         List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session/test/test/"
