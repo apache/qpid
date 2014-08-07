@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.test.unit.client.BrokerDetails;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.url.URLSyntaxException;
 
-public class BrokerDetailsTest extends TestCase
+public class BrokerDetailsTest extends QpidTestCase
 {
     public void testDefaultTCP_NODELAY() throws URLSyntaxException
     {
@@ -189,5 +189,39 @@ public class BrokerDetailsTest extends TestCase
         assertEquals(60000, Integer.parseInt(broker.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT)));
 
         assertEquals(Integer.valueOf(60), broker.buildConnectionSettings().getHeartbeatInterval08());
+    }
+
+    public void testSslVerifyHostNameIsTurnedOnByDefault() throws Exception
+    {
+        String brokerURL = "tcp://localhost:5672?ssl='true'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+        ConnectionSettings connectionSettings = broker.buildConnectionSettings();
+        assertTrue(String.format("Unexpected '%s' option value", BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME),
+                connectionSettings.isVerifyHostname());
+        assertNull(String.format("Unexpected '%s' property value", BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME),
+                broker.getProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME));
+    }
+
+    public void testSslVerifyHostNameIsTurnedOff() throws Exception
+    {
+        String brokerURL = "tcp://localhost:5672?ssl='true'&ssl_verify_hostname='false'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+        ConnectionSettings connectionSettings = broker.buildConnectionSettings();
+        assertFalse(String.format("Unexpected '%s' option value", BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME),
+                connectionSettings.isVerifyHostname());
+        assertEquals(String.format("Unexpected '%s' property value", BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME),
+                "false", broker.getProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME));
+    }
+
+    public void testSslVerifyHostNameTurnedOffViaSystemProperty() throws Exception
+    {
+        setTestSystemProperty(ClientProperties.CONNECTION_OPTION_SSL_VERIFY_HOST_NAME, "false");
+        String brokerURL = "tcp://localhost:5672?ssl='true'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+        ConnectionSettings connectionSettings = broker.buildConnectionSettings();
+        assertFalse(String.format("Unexpected '%s' option value", BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME),
+                connectionSettings.isVerifyHostname());
+        assertNull(String.format("Unexpected '%s' property value", BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME),
+                broker.getProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME));
     }
 }

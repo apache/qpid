@@ -78,6 +78,15 @@
 						exception. <para>Setting this property to 'true' will disable that check and
 							allow you to set a client ID of your choice later on.</para></entry>
 				</row>
+                <row>
+                    <entry>qpid.connection_ssl_verify_hostname</entry>
+                    <entry>boolean</entry>
+                    <entry>true</entry>
+                    <entry>This property is used to turn on/off broker host name verification on SSL negotiation
+                        if SSL transport is used. It is set to 'true' by default.
+                        <para>Setting this property to 'false' will disable that check and
+                            allow you to ignore host name errors.</para></entry>
+                </row>
 			</tbody>
 		</tgroup>
 	</table>

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.url.URLHelper;
@@ -470,7 +471,10 @@ public class AMQBrokerDetails implements BrokerDetails, Serializable
         }
         // ----------------------------
 
-        conSettings.setVerifyHostname(getBooleanProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME));
+        boolean defaultSSLVerifyHostName = Boolean.parseBoolean(
+                System.getProperty(ClientProperties.CONNECTION_OPTION_SSL_VERIFY_HOST_NAME,
+                    String.valueOf(ClientProperties.DEFAULT_CONNECTION_OPTION_SSL_VERIFY_HOST_NAME)));
+        conSettings.setVerifyHostname(getBooleanProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME, defaultSSLVerifyHostName ));
 
         if (getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY) != null)
         {
