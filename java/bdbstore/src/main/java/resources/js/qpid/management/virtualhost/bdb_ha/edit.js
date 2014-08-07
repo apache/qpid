@@ -25,6 +25,9 @@ define(["qpid/common/util", "dijit/registry", "dojo/_base/window", "dojo/domRead
            {
               util.buildEditUI(data.containerNode, "virtualhost/bdb_ha/edit.html", "editVirtualHost.", fieldNames, data.data);
 
+              registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+              registry.byId("editVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+
               var widget = registry.byId("editVirtualHost.localTransactionSynchronizationPolicy-" + data.data["localTransactionSynchronizationPolicy"]);
               if (widget)
               {

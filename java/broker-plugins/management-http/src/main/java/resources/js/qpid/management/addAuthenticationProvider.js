@@ -32,6 +32,7 @@ define(["dojo/_base/xhr",
         "dojo/_base/connect",
         "dojo/dom-style",
         "qpid/management/PreferencesProviderFields",
+        "qpid/common/util",
         /* dojox/ validate resources */
         "dojox/validate/us", "dojox/validate/web",
         /* basic dijit classes */
@@ -45,7 +46,7 @@ define(["dojo/_base/xhr",
         "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, PreferencesProviderFields) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, PreferencesProviderFields, util) {
 
         var addAuthenticationProvider = {};
 
@@ -126,6 +127,7 @@ define(["dojo/_base/xhr",
             {
                 xhr.get({
                     url: "api/latest/authenticationprovider/" + encodeURIComponent(providerName),
+                    content: { actuals: true },
                     handleAs: "json"
                 }).then(
                    function(data) {
@@ -134,6 +136,7 @@ define(["dojo/_base/xhr",
                        var nameField = dijit.byId("formAddAuthenticationProvider.name");
                        nameField.set("value", provider.name);
                        nameField.set("disabled", true);
+                       nameField.set("regExpGen", util.nameOrContextVarRegexp);
                        dialog.providerChooser.set("value", providerType);
                        dialog.providerChooser.set("disabled", true);
                        dojo.byId("formAddAuthenticationProvider.id").value=provider.id;

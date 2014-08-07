@@ -24,11 +24,12 @@ define(["dojo/_base/xhr",
         "dojo/json",
         "dijit/registry",
         "dojo/text!virtualhostnode/bdb_ha/add/newgroup/add.html",
+        "qpid/common/util",
         "dijit/form/ValidationTextBox",
         "dijit/form/MultiSelect",
         "dijit/form/Button",
         "dojo/domReady!"],
-  function (xhr, win, parser, dom, domConstruct, json, registry, template)
+  function (xhr, win, parser, dom, domConstruct, json, registry, template, util)
   {
     return {
         show: function(data)
@@ -38,12 +39,14 @@ define(["dojo/_base/xhr",
           this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
           parser.parse(this.containerNode);
 
-          // lookup field
-          var virtualHostNodeAddress = registry.byId("addVirtualHostNode.address");
-          this.virtualHostNodeHelperAddress = registry.byId("addVirtualHostNode.helperAddress");
+          this.addVirtualHostNodeAddress = registry.byId("addVirtualHostNode.address");
+          this.addVirtualHostNodeAddress.set("regExpGen", util.nodeAddressOrContextVarRegexp);
 
-          // add callback
-          virtualHostNodeAddress.on("change", function(address){that._changeAddress(address, that.virtualHostNodeHelperAddress);});
+          this.addVirtualHostNodeAddress.on("change", function(address){that._changeAddress(address, that.virtualHostNodeHelperAddress);});
+          this.addVirtualHostNodeAddress.on("click", function(e){that._updatePermittedNodesJson();});
+
+          this.virtualHostNodeHelperAddress = registry.byId("addVirtualHostNode.helperAddress");
+          this.virtualHostNodeHelperAddress.set("regExpGen", util.nodeAddressOrContextVarRegexp);
 
           // list objects html node and dojo object
           this.addVirtualHostNodePermittedNodesList = dom.byId("addVirtualHostNode.permittedNodesList");
@@ -52,6 +55,7 @@ define(["dojo/_base/xhr",
 
           // permitted node text field
           this.addVirtualHostNodePermittedNode = registry.byId("addVirtualHostNode.permittedNode");
+          this.addVirtualHostNodePermittedNode.set("regExpGen", util.nodeAddressOrContextVarRegexp);
           this.addVirtualHostNodePermittedNode.on("change", function(value){that._changePermittedNode(value);});
 
           // add and remove buttons & click handlers
@@ -64,8 +68,8 @@ define(["dojo/_base/xhr",
 
           // This will contain the serialised form that will go to the server
           this.addVirtualHostNodeVirtualhostBlueprint = registry.byId("addVirtualHostNode.virtualhostBlueprint");
-          this.addVirtualHostNodeAddress = registry.byId("addVirtualHostNode.address");
-          this.addVirtualHostNodeAddress.on("click", function(e){that._updatePermittedNodesJson();});
+
+          registry.byId("addVirtualHostNode.groupName").set("regExpGen", util.nameOrContextVarRegexp);
         },
         _updatePermittedNodesJson: function ()
         {

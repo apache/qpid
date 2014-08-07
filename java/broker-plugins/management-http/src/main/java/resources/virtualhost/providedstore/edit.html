@@ -18,32 +18,34 @@
   -->
 
 <div>
-  <div id="addVirtualHost.diskFlowControls">
+
     <div class="clear">
-        <div class="formLabel-labelCell tableContainer-labelCell">Store overfull size:</div>
-        <div class="formLabel-controlCell tableContainer-valueCell">
-            <input type="text" id="addVirtualHost.storeOverfullSize"
-                   data-dojo-type="dijit/form/ValidationTextBox"
+        <div class="formLabel-labelCell tableContainer-labelCell">Store overfull size (bytes):</div>
+        <div class="tableContainer-valueCell formLabel-controlCell">
+            <input data-dojo-type="dijit/form/ValidationTextBox"
+                   id="editVirtualHost.storeOverfullSize"
                    data-dojo-props="
                               name: 'storeOverfullSize',
                               placeHolder: 'size in bytes',
                               required: false,
-                              title: 'Enter ceiling (in bytes) at which store will begin to throttle sessions producing messages'" />
+                              title: 'Enter ceiling (in bytes) at which store will begin to throttle sessions producing messages'"
+                   />
         </div>
     </div>
     <div class="clear">
-        <div class="formLabel-labelCell tableContainer-labelCell">Store underfull size:</div>
-        <div class="formLabel-controlCell tableContainer-valueCell">
-            <input type="text" id="addVirtualHost.storeUnderfullSize"
-                   data-dojo-type="dijit/form/ValidationTextBox"
+        <div class="formLabel-labelCell tableContainer-labelCell">Store underfull size (bytes):</div>
+        <div class="tableContainer-valueCell formLabel-controlCell">
+            <input data-dojo-type="dijit/form/ValidationTextBox"
+                   id="editVirtualHost.storeUnderfullSize"
                    data-dojo-props="
                               name: 'storeUnderfullSize',
                               placeHolder: 'size in bytes',
                               required: false,
-                              title: 'Enter floor (in bytes) at which store will cease to throttle sessions producing messages'" />
+                              title: 'Enter floor (in bytes) at which store will cease to throttle sessions producing messages'"
+                   />
         </div>
     </div>
-   </div>
+
     <div class="clear"></div>
-    <div class="infoMessage">The virtual host will have the same name as the node.</div>
+
 </div>

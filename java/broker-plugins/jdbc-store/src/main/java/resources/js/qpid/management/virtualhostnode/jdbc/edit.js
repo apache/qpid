@@ -33,14 +33,9 @@ define(["qpid/common/util",
             show: function(data)
             {
                 util.buildEditUI(data.containerNode, "virtualhostnode/jdbc/edit.html", "editVirtualHostNode.", fieldNames, data.data);
-                if (!(data.data.state == "STOPPED" || data.data.state == "ERRORED"))
-                {
-                   for( var i = 0 ; i < fieldNames.length ; i++ )
-                   {
-                      registry.byId("editVirtualHostNode." + fieldNames[i]).set("disabled", true);
-                   }
-                   registry.byId("editVirtualHostNode.password").set("disabled", true);
-                }
+
+                registry.byId("editVirtualHostNode.connectionUrl").set("regExpGen", util.jdbcUrlOrContextVarRegexp);
+                registry.byId("editVirtualHostNode.username").set("regExpGen", util.nameOrContextVarRegexp);
 
                 var poolTypes = json.parse(poolTypeJsonString);
                 var poolTypesData = [];

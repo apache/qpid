@@ -29,16 +29,20 @@ define(["dojo/_base/xhr",
         "dijit/registry",
         "dojo/text!virtualhostnode/jdbc/add.html",
         "dojo/text!service/helper?action=pluginList&plugin=JDBCConnectionProviderFactory",
+        "qpid/common/util",
         "dijit/form/ValidationTextBox",
         "dijit/form/CheckBox",
         "dojo/domReady!"],
-  function (xhr, array, parser, dom, domConstruct, json, string, Memory, registry, template, poolTypeJsonString)
+  function (xhr, array, parser, dom, domConstruct, json, string, Memory, registry, template, poolTypeJsonString, util)
   {
     return {
         show: function (data)
         {
             this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
             parser.parse(this.containerNode);
+
+            registry.byId("addVirtualHostNode.connectionUrl").set("regExpGen", util.jdbcUrlOrContextVarRegexp);
+            registry.byId("addVirtualHostNode.username").set("regExpGen", util.nameOrContextVarRegexp);
 
             var poolTypes = json.parse(poolTypeJsonString);
             var poolTypesData = [];

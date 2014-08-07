@@ -56,7 +56,7 @@ define(["dojo/_base/lang",
                       value: keystore.name,
                       disabled: keystore.name ? true : false,
                       label: "Name:",
-                      regexp: "^[\x20-\x2e\x30-\x7F]{1,255}$",
+                      regExpGen: util.nameOrContextVarRegexp,
                       name: "name"});
                 }
             }, {
@@ -140,23 +140,23 @@ define(["dojo/_base/lang",
             return fields;
         }
 
-        addKeystore.showKeystoreDialog = function(keystore) {
+        addKeystore.showKeystoreDialog = function(keystore, putURL) {
           var keystoreAttributeWidgetFactories = addKeystore.createWidgetFactories(true);
 
           util.showSetAttributesDialog(
               keystoreAttributeWidgetFactories,
               keystore ? keystore : {},
-              "api/latest/keystore" + (keystore ? "/" + encodeURIComponent(keystore.name) : ""),
+              keystore ? putURL : "api/latest/keystore",
               keystore ? "Edit keystore - " + keystore.name : "Add keystore",
               keystore ? false : true);
         };
 
-        addKeystore.showTruststoreDialog = function(truststore) {
+        addKeystore.showTruststoreDialog = function(truststore, putURL) {
           var truststoreAttributeWidgetFactories = addKeystore.createWidgetFactories(false);
           util.showSetAttributesDialog(
               truststoreAttributeWidgetFactories,
               truststore ? truststore : {},
-              "api/latest/truststore" + (truststore ? "/" + encodeURIComponent(truststore.name) : ""),
+              truststore ? putURL : "api/latest/truststore",
               truststore ? "Edit truststore - " + truststore.name : "Add truststore",
               truststore ? false : true);
         };

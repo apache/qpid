@@ -40,7 +40,6 @@ define(["dojo/_base/xhr",
         "dijit/form/ValidationTextBox",
         "dijit/form/Button",
         "dijit/form/Form",
-        "dijit/form/NumberSpinner",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
@@ -71,6 +70,7 @@ define(["dojo/_base/xhr",
             {
               url: this.query,
               sync: true,
+              content: { actuals: true },
               handleAs: "json",
               load: function(data)
               {

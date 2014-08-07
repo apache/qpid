@@ -71,7 +71,11 @@ define(["dojo/dom",
                             var node = registry.byNode(editKeyStoreButton);
                             connect.connect(node, "onClick",
                                 function(evt){
-                                  that.dialog(that.keyStoreUpdater.keyStoreData)
+                                  xhr.get({url: that.url, sync: properties.useSyncGet, handleAs: "json", content: { actuals: true }})
+                                    .then(function(data)
+                                    {
+                                      that.dialog(data[0], that.url);
+                                    });
                                 });
                         }});
            };
