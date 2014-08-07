@@ -287,8 +287,9 @@
 				<row>
 					<entry> ssl_verify_hostname </entry>
 					<entry> Boolean </entry>
-					<entry> When using SSL you can enable hostname verification by using
-							<literal>ssl_verify_hostname='true'</literal> in the broker URL.
+					<entry> This option is used for turning on/off hostname verification when using SSL.
+                        It is set to 'true' by default. You can disable verification by setting it to 'false':
+							<literal>ssl_verify_hostname='false'</literal>.
 					</entry>
 				</row>
 				<row id="JMS-Client-0-8-Connection-URL-BrokerOptions-Retries">

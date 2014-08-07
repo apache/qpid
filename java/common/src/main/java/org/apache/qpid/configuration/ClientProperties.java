@@ -248,7 +248,11 @@ public class ClientProperties
      */
     public static final String SET_EXPIRATION_AS_TTL = "qpid.set_expiration_as_ttl";
 
-
+    /**
+     * System property to set a default value for a connection option 'ssl_verify_hostname'
+     */
+    public static final String CONNECTION_OPTION_SSL_VERIFY_HOST_NAME = "qpid.connection_ssl_verify_hostname";
+    public static final boolean DEFAULT_CONNECTION_OPTION_SSL_VERIFY_HOST_NAME = true;
 
     private ClientProperties()
     {
