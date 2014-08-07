@@ -72,7 +72,7 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     long getStoreTransactionIdleTimeoutClose();
 
     @ManagedContextDefault( name = "virtualhost.storeTransactionIdleTimeoutWarn")
-    public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 0l;
+    public static final long DEFAULT_STORE_TRANSACTION_IDLE_TIMEOUT_WARN = 180000l;
 
     @ManagedAttribute( defaultValue = "${virtualhost.storeTransactionIdleTimeoutWarn}")
     long getStoreTransactionIdleTimeoutWarn();
@@ -84,7 +84,7 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     long getStoreTransactionOpenTimeoutClose();
 
     @ManagedContextDefault( name = "virtualhost.storeTransactionOpenTimeoutWarn")
-    public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 0l;
+    public static final long DEFAULT_STORE_TRANSACTION_OPEN_TIMEOUT_WARN = 300000l;
 
     @ManagedAttribute( defaultValue = "${virtualhost.storeTransactionOpenTimeoutWarn}")
     long getStoreTransactionOpenTimeoutWarn();
