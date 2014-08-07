@@ -700,4 +700,10 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
     {
         return _queue.isMessageGroupSharedGroups();
     }
+
+    @Override
+    public Long getOldestMessageAge()
+    {
+        return _queue.getOldestMessageAge();
+    }
 }

@@ -210,4 +210,8 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     @ManagedStatistic
     long getUnacknowledgedMessages();
 
+    @ManagedStatistic
+    long getOldestMessageAge();
+
+
 }

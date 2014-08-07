@@ -23,10 +23,11 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
 
-@ManagedObject( category = false, type="sorted" )
+@ManagedObject( category = false, type= SortedQueue.SORTED_QUEUE_TYPE)
 public interface SortedQueue<X extends SortedQueue<X>> extends AMQQueue<X>
 {
     String SORT_KEY = "sortKey";
+    String SORTED_QUEUE_TYPE = "sorted";
 
     @ManagedAttribute( mandatory = true )
     String getSortKey();

@@ -118,6 +118,12 @@ public class QueueMBeanTest extends QpidTestCase
         assertStatistic("consumerCount", 3);
     }
 
+    public void testOldestMessageAge() throws Exception
+    {
+        when(_mockQueue.getOldestMessageAge()).thenReturn(3l);
+        assertStatistic("oldestMessageAge", 3l);
+    }
+
     /**********  Simple Attributes **********/
 
     public void testGetQueueDescription() throws Exception

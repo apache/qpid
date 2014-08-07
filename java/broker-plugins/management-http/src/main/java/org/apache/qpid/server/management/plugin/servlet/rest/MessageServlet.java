@@ -35,6 +35,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.MessageDeletedException;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
@@ -328,10 +329,23 @@ public class MessageServlet extends AbstractServlet
             {
                 if(_messageNumber == message.getMessageNumber())
                 {
-                    MessageReference reference = message.newReference();
-                    _messageObject = convertToObject(entry, true);
-                    reference.release();
-                    return true;
+                    try
+                    {
+                        MessageReference reference = message.newReference();
+                        try
+                        {
+                            _messageObject = convertToObject(entry, true);
+                        }
+                        finally
+                        {
+                            reference.release();
+                        }
+                        return true;
+                    }
+                    catch (MessageDeletedException e)
+                    {
+                        // ignore - the message has been deleted before we got a chance to look at it
+                    }
                 }
             }
             return false;

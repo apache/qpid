@@ -319,6 +319,26 @@ public class SortedQueueEntryList implements QueueEntryList
         return _head;
     }
 
+    @Override
+    public QueueEntry getOldestEntry()
+    {
+        QueueEntry oldestEntry = null;
+        QueueEntryIterator iter = iterator();
+        while (iter.advance())
+        {
+            QueueEntry node = iter.getNode();
+            if (node != null && !node.isDeleted())
+            {
+                ServerMessage msg = node.getMessage();
+                if(msg != null && (oldestEntry == null || oldestEntry.getMessage().getMessageNumber() > msg.getMessageNumber()))
+                {
+                    oldestEntry = node;
+                }
+            }
+        }
+        return oldestEntry;
+    }
+
     protected SortedQueueEntry getRoot()
     {
         return _root;

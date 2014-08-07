@@ -34,6 +34,8 @@ public interface QueueEntryList
 
     QueueEntry getHead();
 
+    QueueEntry getOldestEntry();
+
     void entryDeleted(QueueEntry queueEntry);
     
     int getPriorities();

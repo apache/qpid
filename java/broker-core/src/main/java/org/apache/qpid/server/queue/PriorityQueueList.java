@@ -189,6 +189,21 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
         {
 
         }
+
+        @Override
+        public QueueEntry getOldestEntry()
+        {
+            QueueEntry oldest = null;
+            for(PriorityQueueEntrySubList subList : _priorityLists)
+            {
+                QueueEntry subListOldest = subList.getOldestEntry();
+                if(oldest == null || (subListOldest != null && subListOldest.getMessage().getMessageNumber() < oldest.getMessage().getMessageNumber()))
+                {
+                    oldest = subListOldest;
+                }
+            }
+            return oldest;
+        }
     }
 
     static class PriorityQueueEntrySubList extends PriorityQueueList

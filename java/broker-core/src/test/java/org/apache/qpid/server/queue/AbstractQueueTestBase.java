@@ -36,9 +36,13 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
@@ -936,6 +940,16 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
     }
 
+    public void testOldestMessage()
+    {
+        AMQQueue<?> queue = getQueue();
+        queue.enqueue(createMessage(1l, (byte)1, Collections.singletonMap("sortKey", (Object) "Z"), 10l), null);
+        queue.enqueue(createMessage(2l, (byte)4, Collections.singletonMap("sortKey", (Object) "M"), 100l), null);
+        queue.enqueue(createMessage(3l, (byte)9, Collections.singletonMap("sortKey", (Object) "A"), 1000l), null);
+
+        assertEquals(10l,queue.getOldestMessageArrivalTime());
+    }
+
     private long getExpirationOnQueue(final AMQQueue queue, long arrivalTime, long expiration)
     {
         final List<QueueEntry> entries = new ArrayList<>();
@@ -1087,6 +1101,48 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _arguments = arguments;
     }
 
+    protected ServerMessage createMessage(Long id, byte priority, final Map<String,Object> arguments, long arrivalTime)
+    {
+        ServerMessage message = createMessage(id);
+
+        AMQMessageHeader hdr = message.getMessageHeader();
+        when(hdr.getPriority()).thenReturn(priority);
+        when(message.getArrivalTime()).thenReturn(arrivalTime);
+        when(hdr.getHeaderNames()).thenReturn(arguments.keySet());
+        final ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
+        when(hdr.containsHeader(nameCaptor.capture())).thenAnswer(new Answer<Boolean>()
+        {
+            @Override
+            public Boolean answer(final InvocationOnMock invocationOnMock) throws Throwable
+            {
+                return arguments.containsKey(nameCaptor.getValue());
+            }
+        });
+
+        final ArgumentCaptor<Set> namesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(hdr.containsHeaders(namesCaptor.capture())).thenAnswer(new Answer<Boolean>()
+        {
+            @Override
+            public Boolean answer(final InvocationOnMock invocationOnMock) throws Throwable
+            {
+                return arguments.keySet().containsAll(namesCaptor.getValue());
+            }
+        });
+
+        final ArgumentCaptor<String> nameCaptor2 = ArgumentCaptor.forClass(String.class);
+        when(hdr.getHeader(nameCaptor2.capture())).thenAnswer(new Answer<Object>()
+        {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable
+            {
+                return arguments.get(nameCaptor2.getValue());
+            }
+        });
+
+
+        return message;
+
+    }
 
     protected ServerMessage createMessage(Long id)
     {

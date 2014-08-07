@@ -57,6 +57,7 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageDeletedException;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.MessageSource;
@@ -1413,15 +1414,53 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         return _totalMessagesReceived.get();
     }
 
+    @Override
     public long getOldestMessageArrivalTime()
     {
-        QueueEntry entry = getOldestQueueEntry();
-        return entry == null ? Long.MAX_VALUE : entry.getMessage().getArrivalTime();
+        long oldestMessageArrivalTime = -1l;
+
+        while(oldestMessageArrivalTime == -1l)
+        {
+            QueueEntry entry = getEntries().getOldestEntry();
+            if (entry != null)
+            {
+                ServerMessage message = entry.getMessage();
+
+                if(message != null)
+                {
+                    try
+                    {
+                        MessageReference reference = message.newReference();
+                        try
+                        {
+                            oldestMessageArrivalTime = reference.getMessage().getArrivalTime();
+                        }
+                        finally
+                        {
+                            reference.release();
+                        }
+
+
+                    }
+                    catch (MessageDeletedException e)
+                    {
+                        // ignore - the oldest message was deleted after it was discovered - we need to find the new oldest message
+                    }
+                }
+            }
+            else
+            {
+                oldestMessageArrivalTime = 0;
+            }
+        }
+        return oldestMessageArrivalTime;
     }
 
-    protected QueueEntry getOldestQueueEntry()
+    @Override
+    public long getOldestMessageAge()
     {
-        return getEntries().next(getEntries().getHead());
+        long oldestMessageArrivalTime = getOldestMessageArrivalTime();
+        return oldestMessageArrivalTime == 0 ? 0 : System.currentTimeMillis() - oldestMessageArrivalTime;
     }
 
     public boolean isDeleted()
