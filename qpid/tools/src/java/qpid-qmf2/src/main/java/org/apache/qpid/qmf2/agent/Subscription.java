@@ -45,7 +45,7 @@ import org.apache.qpid.qmf2.common.QmfQueryTarget;
  * <p>
  * The following diagram illustrates the Subscription relationships with the Agent and QmfAgentData.
  * <p>
- * <img src="doc-files/Subscriptions.png"/>
+ * <img alt="" src="doc-files/Subscriptions.png">
  * @author Fraser Adams
  */
 public final class Subscription extends TimerTask
@@ -241,7 +241,7 @@ public final class Subscription extends TimerTask
 
     /**
      * Set the Subscription refresh interval in seconds. If the value passed to this method is zero the interval gets
-     * set to the Agent's DEFAULT_INTERVAL otherwise the interval passed gets restricted to be >= the Agent's
+     * set to the Agent's DEFAULT_INTERVAL otherwise the interval passed gets restricted to be {@literal >= } the Agent's
      * MIN_INTERVAL.
      *
      * @param interval the time (in milliseconds) between periodic updates of data in this Subscription. 

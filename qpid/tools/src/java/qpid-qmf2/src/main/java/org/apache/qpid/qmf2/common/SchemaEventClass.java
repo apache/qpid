@@ -40,7 +40,7 @@ import java.util.Map;
  * these are actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe the
  * schema event's properties.
  * <p>
- * In this implementation getProperties() returns a List<SchemaProperty> reflecting the reality of the protocol
+ * In this implementation getProperties() returns a {@code List<SchemaProperty>} reflecting the reality of the protocol
  * rather than what is suggested by the API documentation.
  *
  * @author Fraser Adams
@@ -144,7 +144,7 @@ public final class SchemaEventClass extends SchemaClass
      * Note that <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a> suggests that
      * the properties are represented by an unordered map of SchemaProperty indexed by property name however it
      * is actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe the
-     * schema objects's properties. In this implementation getProperties() returns a List<SchemaProperty> 
+     * schema objects's properties. In this implementation getProperties() returns a {@code List<SchemaProperty>} 
      * reflecting the reality of the protocol rather than what is suggested by the API documentation.
      *
      * @return Schema Object's properties.

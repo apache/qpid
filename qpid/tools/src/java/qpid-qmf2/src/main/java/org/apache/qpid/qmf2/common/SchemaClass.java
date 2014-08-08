@@ -34,7 +34,7 @@ import java.util.UUID;
  * <p>
  * The following diagram illustrates the QMF2 Schema class hierarchy.
  * <p>
- * <img src="doc-files/Schema.png"/>
+ * <img alt="" src="doc-files/Schema.png">
  *
  * @author Fraser Adams
  */

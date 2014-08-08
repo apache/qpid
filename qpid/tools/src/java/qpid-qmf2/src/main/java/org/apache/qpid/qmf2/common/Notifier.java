@@ -48,7 +48,7 @@ package org.apache.qpid.qmf2.common;
  *  <li>It's generally not necessary to use a Notifier as the Console provides a blocking getNextWorkitem() method.</li>
  * </ol>
  * <p>
- * <img src="doc-files/WorkQueueEventModel.png"/>
+ * <img alt="" src="doc-files/WorkQueueEventModel.png">
  * 
  * @author Fraser Adams
  */

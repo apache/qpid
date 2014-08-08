@@ -33,7 +33,7 @@ import java.util.ArrayList;
  *
  * <p>
  * Example usage (paraphrased from QpidConfig):
- * <pre>
+ * <pre>{@code
  * String[] longOpts = {"help", "durable", "bindings", "broker-addr=", "file-count=",
  *                      "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
  *                      "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
@@ -90,6 +90,7 @@ import java.util.ArrayList;
  * {
  *     System.err.println(e.toString());
  *     usage();
+ * }
  * }
  * </pre>
  *

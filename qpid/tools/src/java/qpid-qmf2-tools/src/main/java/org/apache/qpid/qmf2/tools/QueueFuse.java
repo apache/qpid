@@ -160,7 +160,7 @@ public final class QueueFuse implements QmfEventListener
     private Console _console;
 
     /**
-     * Basic constructor. Creates JMS Session, Initialises Destinations, Producers & Consumers and starts connection.
+     * Basic constructor. Creates JMS Session, Initialises Destinations, Producers &amp; Consumers and starts connection.
      * @param url the connection URL.
      * @param connectionOptions the options String to pass to ConnectionHelper.
      * @param filter a list of regex Patterns used to choose the queues we wish to protect.

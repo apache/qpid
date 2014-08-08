@@ -41,7 +41,7 @@ import org.apache.qpid.qmf2.common.QmfException;
  * The following diagram illustrates the interactions between the Console, AgentProxy and the client side Agent
  * representation.
  * <p>
- * <img src="doc-files/Subscriptions.png"/>
+ * <img alt="" src="doc-files/Subscriptions.png">
  * @author Fraser Adams
  */
 public interface AgentProxy

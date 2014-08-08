@@ -54,7 +54,7 @@ import org.apache.qpid.qmf2.util.GetOpt;
  * It's vaguely pointless, as the python qpid-config is the "canonical" qpid-config :-)
  * Nonetheless, it's a useful intellectual exercise to illustrate using QMF2 from Java.
  * <p>
- * QpidConfig (unlike the python qpid-config) uses pure QMF2 for adding/deleting queues, exchanges & bindings
+ * QpidConfig (unlike the python qpid-config) uses pure QMF2 for adding/deleting queues, exchanges &amp; bindings
  * this provides useful illustration of how to do these things using the ManagementAgent method calls.
  * <p>
  * N.B. "create" and "delete" broker ManagementAgent methods were added in Qpid version 0.10, unfortunately these
@@ -64,7 +64,7 @@ import org.apache.qpid.qmf2.util.GetOpt;
  *         qpid-config [OPTIONS] exchanges [filter-string]
  *         qpid-config [OPTIONS] queues    [filter-string]
  *         qpid-config [OPTIONS] add exchange &lt;type&gt; &lt;name&gt; [AddExchangeOptions]
- *         qpid-config [OPTIONS] del exchange &ltname&gt;
+ *         qpid-config [OPTIONS] del exchange &lt;name&gt;
  *         qpid-config [OPTIONS] add queue &lt;name&gt; [AddQueueOptions]
  *         qpid-config [OPTIONS] del queue &lt;name&gt; [DelQueueOptions]
  *         qpid-config [OPTIONS] bind   &lt;exchange-name&gt; &lt;queue-name&gt; [binding-key]

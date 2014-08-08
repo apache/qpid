@@ -52,7 +52,7 @@ import org.apache.qpid.qmf2.common.QmfQuery;
  * <p>
  * The following diagram illustrates the Subscription relationships with the Console and local Agent proxy.
  * <p>
- * <img src="doc-files/Subscriptions.png"/>
+ * <img alt="" src="doc-files/Subscriptions.png">
  *
  * @author Fraser Adams
  */

@@ -149,7 +149,7 @@ public final class ConnectionAudit implements QmfEventListener
     private Set<String> _queueWhitelist = new HashSet<String>();
 
     /**
-     * Basic constructor. Creates JMS Session, Initialises Destinations, Producers & Consumers and starts connection.
+     * Basic constructor. Creates JMS Session, Initialises Destinations, Producers &amp; Consumers and starts connection.
      * @param url the connection URL.
      * @param connectionOptions the options String to pass to ConnectionHelper.
      * @param whitelist the path name of the whitelist XML file.

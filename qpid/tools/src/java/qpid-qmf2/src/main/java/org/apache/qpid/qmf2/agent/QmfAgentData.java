@@ -51,7 +51,7 @@ import org.apache.qpid.qmf2.common.SchemaObjectClass;
  * <p>
  * The diagram below shows the relationship between the Subscription and QmfAgentData.
  * <p>
- * <img src="doc-files/Subscriptions.png"/>
+ * <img alt="" src="doc-files/Subscriptions.png">
  * <p>
  * In particular the QmfAgentData maintains references to active subscriptions to allow agents to asynchronously
  * push data to subscribing Consoles immediately that data becomes available.

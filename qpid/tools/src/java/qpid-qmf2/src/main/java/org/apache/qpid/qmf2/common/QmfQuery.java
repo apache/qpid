@@ -83,7 +83,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  * </pre>
  * <p>
  * The Expression structure is illustrated below in the context of its relationship with QmfQuery. 
- * <img src="doc-files/QmfQuery.png"/>
+ * <img alt="" src="doc-files/QmfQuery.png">
  *
  *
  * @author Fraser Adams
@@ -212,7 +212,7 @@ public final class QmfQuery extends QmfData
      * Undefined by QMF2 API.
      * <p>
      * According to <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API Specification</a>
-     * "The value of the <target name string> map entry is ignored for now, its use is TBD."
+     * "The value of the &lt;target name string&gt; map entry is ignored for now, its use is TBD."
      * so this method returns a null Map.
      */
     public Map getTargetParam()

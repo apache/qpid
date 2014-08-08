@@ -36,7 +36,7 @@ import org.apache.qpid.qmf2.console.Agent;
  * The type of the Object returned by getParams is determined by the WorkItemType and described below.
  * <p>
  *
- * <table width="100%" border="1"><thead><tr><th>WorkItem Type</th><th>Description</th></tr></thead><tbody>
+ * <table width="100%" border="1" summary=""><thead><tr><th>WorkItem Type</th><th>Description</th></tr></thead><tbody>
  *
  *
  * <tr>
@@ -292,11 +292,12 @@ import org.apache.qpid.qmf2.console.Agent;
  * Use UnsubscribeRequestWorkItem to enable neater access.
  * </td>
  * </tr>
+ * </tbody>
  * </table>
  * <p>
  * The following diagram illustrates the QMF2 WorkItem class hierarchy.
  * <p>
- * <img src="doc-files/WorkItem.png"/>
+ * <img alt="" src="doc-files/WorkItem.png">
  * @author Fraser Adams
  */
 
