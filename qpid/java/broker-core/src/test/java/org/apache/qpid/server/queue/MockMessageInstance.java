@@ -65,6 +65,12 @@ public class MockMessageInstance implements MessageInstance
         return false;
     }
 
+    @Override
+    public boolean removeAcquisitionFromConsumer(final ConsumerImpl consumer)
+    {
+        return false;
+    }
+
     public void delete()
     {
 
@@ -77,6 +83,18 @@ public class MockMessageInstance implements MessageInstance
 
     @Override
     public boolean acquire(final ConsumerImpl sub)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean lockAcquisition()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean unlockAcquisition()
     {
         return false;
     }

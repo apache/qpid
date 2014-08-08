@@ -181,6 +181,12 @@ public class MockConsumer implements ConsumerTarget
 
     }
 
+    @Override
+    public void acquisitionRemoved(final MessageInstance node)
+    {
+
+    }
+
     public State getState()
     {
         return _state;

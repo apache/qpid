@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.nio.ByteBuffer;
+import java.util.List;
+
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
@@ -37,18 +40,15 @@ import org.apache.qpid.amqp_1_0.type.messaging.Released;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
-import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-
-import java.nio.ByteBuffer;
-import java.util.List;
 
 class ConsumerTarget_1_0 extends AbstractConsumerTarget
 {
@@ -378,6 +378,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
 
             if(outcome instanceof Accepted)
             {
+                _queueEntry.lockAcquisition();
                 txn.dequeue(_queueEntry.getOwningResource(), _queueEntry.getMessage(),
                         new ServerTransaction.Action()
                         {
@@ -412,6 +413,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
                                 modified.setDeliveryFailed(true);
                                 _link.getEndpoint().updateDisposition(_deliveryTag, modified, true);
                                 _link.getEndpoint().sendFlowConditional();
+                                _queueEntry.unlockAcquisition();
                             }
                         }
                     });
@@ -495,6 +497,11 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
     public AMQSessionModel getSessionModel()
     {
         return getSession();
+    }
+
+    @Override
+    public void acquisitionRemoved(final MessageInstance node)
+    {
     }
 
     @Override

@@ -1071,6 +1071,12 @@ class ManagementNode implements MessageSource, MessageDestination
         }
 
         @Override
+        public boolean removeAcquisitionFromConsumer(final ConsumerImpl consumer)
+        {
+            return false;
+        }
+
+        @Override
         public void setRedelivered()
         {
 
@@ -1114,6 +1120,18 @@ class ManagementNode implements MessageSource, MessageDestination
 
         @Override
         public boolean acquire(final ConsumerImpl sub)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean lockAcquisition()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean unlockAcquisition()
         {
             return false;
         }
