@@ -428,17 +428,22 @@ class Broker(Popen):
                 assert not error.search(line) or ignore.search(line), "Errors in log file %s: %s"%(log, line)
         finally: log.close()
 
+def receiver_iter(receiver, timeout=0):
+    """Make an iterator out of a receiver. Returns messages till Empty is raised."""
+    try:
+        while True:
+            yield receiver.fetch(timeout=timeout)
+    except qm.Empty:
+        pass
+
 def browse(session, queue, timeout=0, transform=lambda m: m.content):
     """Return a list with the contents of each message on queue."""
     r = session.receiver("%s;{mode:browse}"%(queue))
     r.capacity = 100
     try:
-        contents = []
-        try:
-            while True: contents.append(transform(r.fetch(timeout=timeout)))
-        except qm.Empty: pass
-    finally: r.close()
-    return contents
+        return [transform(m) for m in receiver_iter(r, timeout)]
+    finally:
+        r.close()
 
 def assert_browse(session, queue, expect_contents, timeout=0, transform=lambda m: m.content, msg="browse failed"):
     """Assert that the contents of messages on queue (as retrieved

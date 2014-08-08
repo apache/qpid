@@ -80,6 +80,10 @@ class QueueReplicator : public broker::Exchange,
 
     void route(broker::Deliverable&);
 
+    // Called via QueueObserver
+    void enqueued(const broker::Message&);
+    void dequeued(const broker::Message&);
+
     // Set if the queue has ever been subscribed to, used for auto-delete cleanup.
     void setSubscribed() { subscribed = true; }
 

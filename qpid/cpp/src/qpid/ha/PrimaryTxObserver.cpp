@@ -148,7 +148,7 @@ void PrimaryTxObserver::enqueue(const QueuePtr& q, const broker::Message& m)
 {
     Mutex::ScopedLock l(lock);
     if (replicationTest.useLevel(*q) == ALL) { // Ignore unreplicated queues.
-        QPID_LOG(trace, logPrefix << "Enqueue: " << LogMessageId(*q, m));
+        QPID_LOG(trace, logPrefix << "Enqueue: " << logMessageId(*q, m.getReplicationId()));
         checkState(SENDING, "Too late for enqueue");
         empty = false;
         enqueues[q] += m.getReplicationId();
@@ -163,7 +163,7 @@ void PrimaryTxObserver::dequeue(
     Mutex::ScopedLock l(lock);
     checkState(SENDING, "Too late for dequeue");
     if (replicationTest.useLevel(*q) == ALL) { // Ignore unreplicated queues.
-        QPID_LOG(trace, logPrefix << "Dequeue: " << LogMessageId(*q, pos, id));
+        QPID_LOG(trace, logPrefix << "Dequeue: " << logMessageId(*q, pos, id));
         empty = false;
         dequeues[q] += id;
         txQueue->deliver(TxDequeueEvent(q->getName(), id).message());

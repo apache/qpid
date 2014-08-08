@@ -205,7 +205,7 @@ struct Transfer : public TransactionalClient, public Runnable
                     }
                     session.commit();
                     t++;
-                    if (!opts.quiet && t % 10 == 0) std::cout << "Transaction " << t << " of " << opts.txCount << " committed successfully" << std::endl;
+                    if (!opts.quiet) std::cout << "Transaction " << t << " of " << opts.txCount << " committed successfully" << std::endl;
                 } catch (const TransactionAborted&) {
                     std::cout << "Transaction " << (t+1) << " of " << opts.txCount << " was aborted and will be retried" << std::endl;
                     session = connection.createTransactionalSession();
@@ -246,6 +246,16 @@ struct Controller : public Client
 
         for (StringSet::iterator i = queues.begin(); i != queues.end(); i++) {
             std::string address = *i + (opts.durable ? CREATE_DURABLE : CREATE_NON_DURABLE);
+
+            // Clear out any garbage on queues.
+            Receiver receiver = session.createReceiver(address);
+            Message rmsg;
+            uint count(0);
+            while (receiver.fetch(rmsg, Duration::IMMEDIATE)) ++count;
+            session.acknowledge();
+            receiver.close();
+            if (!opts.quiet) std::cout << "Cleaned up " << count << " messages from " << *i << std::endl;
+
             Sender sender = session.createSender(address);
             if (i == queues.begin()) {
                 for (StringSet::iterator i = ids.begin(); i != ids.end(); i++) {

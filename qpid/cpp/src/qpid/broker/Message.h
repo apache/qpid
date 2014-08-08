@@ -168,6 +168,7 @@ public:
 
     QPID_BROKER_EXTERN boost::intrusive_ptr<AsyncCompletion> getIngressCompletion() const;
     QPID_BROKER_EXTERN boost::intrusive_ptr<PersistableMessage> getPersistentContext() const;
+    QPID_BROKER_EXTERN bool hasReplicationId() const;
     QPID_BROKER_EXTERN uint64_t getReplicationId() const;
     QPID_BROKER_EXTERN void setReplicationId(framing::SequenceNumber id);
 
@@ -214,6 +215,7 @@ public:
     MessageState state;
     qpid::framing::SequenceNumber sequence;
     framing::SequenceNumber replicationId;
+    bool isReplicationIdSet:1;
 
     void annotationsChanged();
     bool getTtl(uint64_t&, uint64_t expiredValue) const;
