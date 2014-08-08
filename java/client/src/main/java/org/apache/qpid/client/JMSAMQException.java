@@ -28,11 +28,6 @@ import javax.jms.JMSException;
  * JMSException does not accept wrapped exceptions in its constructor. Presumably this is because it is a relatively old
  * Java exception class, before this was added as a default to Throwable. This exception class accepts wrapped exceptions
  * as well as error messages, through its constructor, but is a JMSException.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Accept wrapped exceptions as a JMSException.
- * </table>
  */
 public class JMSAMQException extends JMSException
 {

@@ -40,19 +40,16 @@ import java.util.TreeMap;
  * DynamicSaslRegistrar provides a collection of helper methods for reading a configuration file that contains a mapping
  * from SASL mechanism names to implementing client factory class names and registering a security provider with the
  * Java runtime system, that uses the configured client factory implementations.
- *
- * <p/>The sasl configuration should be specified in a properties file, refered to by the System property
+ * <p>
+ * The sasl configuration should be specified in a properties file, refered to by the System property
  * "amp.dynamicsaslregistrar.properties". The format of the properties file is:
- *
- * <p/><pre>
+ * <p>
+ * <pre>
  * mechanism=fully.qualified.class.name
  * </pre>
- *
- * <p/>Where mechanism is an IANA-registered mechanism name and the fully qualified class name refers to a class that
+ * <p>
+ * Where mechanism is an IANA-registered mechanism name and the fully qualified class name refers to a class that
  * implements javax.security.sasl.SaslClientFactory and provides the specified mechanism.
- *
- * <p><table id="crc"><caption>CRC Card</caption> <tr><th> Responsibilities <th> Collaborations <tr><td> Parse SASL
- * mechanism properties. <tr><td> Create and register security provider for SASL mechanisms. </table>
  */
 public class DynamicSaslRegistrar
 {

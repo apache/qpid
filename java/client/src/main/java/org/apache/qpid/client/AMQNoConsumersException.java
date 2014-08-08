@@ -25,11 +25,6 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQNoConsumersException indicates failure to pass an immediate message to a consumer.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents failure to pass an immediate message to a consumer.
- * <tr><td>
  */
 public class AMQNoConsumersException extends AMQUndeliveredException
 {

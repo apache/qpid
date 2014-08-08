@@ -36,13 +36,13 @@ import java.util.concurrent.CountDownLatch;
  * connections, failing over to a new connection if the transport connection fails. The procedure to establish a new
  * connection is expressed as a continuation, in order that it may be run in a seperate thread to the i/o thread that
  * detected the failure and is used to handle the communication to establish a new connection.
- *
- * </p>The reason this needs to be a separate thread is because this work cannot be done inside the i/o processor
+ * <p>
+ * The reason this needs to be a separate thread is because this work cannot be done inside the i/o processor
  * thread. The significant task is the connection setup which involves a protocol exchange until a particular state
  * is achieved. This procedure waits until the state is achieved which would prevent the i/o thread doing the work
  * it needs to do to achieve the new state.
- *
- * <p/>The failover procedure does the following:
+ * <p>
+ * The failover procedure does the following:
  *
  * <ol>
  * <li>Sets the failing over condition to true.</li>
@@ -57,21 +57,17 @@ import java.util.concurrent.CountDownLatch;
  * <li>Resets the failing over condition and releases the mutex.</li>
  * </ol>
  *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Update fail-over state <td> {@link AMQProtocolHandler}
- * </table>
- *
- * @todo The failover latch and mutex are used like a lock and condition. If the retrotranlator supports lock/condition
+ * <p>
+ * TODO  The failover latch and mutex are used like a lock and condition. If the retrotranlator supports lock/condition
  *       then could change over to using them. 1.4 support still needed.
- *
- * @todo If the condition is set to null on a vetoes fail-over and there are already other threads waiting on the
+ * <p>
+ * TODO  If the condition is set to null on a vetoes fail-over and there are already other threads waiting on the
  *       condition, they will never be released. It might be an idea to reset the condition in a finally block.
- *
- * @todo Creates a {@link AMQDisconnectedException} and passes it to the AMQConnection. No need to use an
+ * <p>
+ * TODO  Creates a {@link AMQDisconnectedException} and passes it to the AMQConnection. No need to use an
  *       exception-as-argument here, could just as easily call a specific method for this purpose on AMQConnection.
- *
- * @todo Creates a {@link FailoverException} and propagates it to the MethodHandlers. No need to use an
+ * <p>
+ * TODO  Creates a {@link FailoverException} and propagates it to the MethodHandlers. No need to use an
  *       exception-as-argument here, could just as easily call a specific method for this purpose on
  *       {@link org.apache.qpid.protocol.AMQMethodListener}.
  */

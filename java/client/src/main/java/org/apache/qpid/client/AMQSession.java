@@ -79,20 +79,15 @@ import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.TransportException;
 
-/**
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
- * </table>
- *
- * @todo Different FailoverSupport implementation are needed on the same method call, in different situations. For
+/*
+ * TODO  Different FailoverSupport implementation are needed on the same method call, in different situations. For
  * example, when failing-over and reestablishing the bindings, the bind cannot be interrupted by a second
  * fail-over, if it fails with an exception, the fail-over process should also fail. When binding outside of
  * the fail-over process, the retry handler could be used to automatically retry the operation once the connection
  * has been reestablished. All fail-over protected operations should be placed in private methods, with
  * FailoverSupport passed in by the caller to provide the correct support for the calling context. Sometimes the
  * fail-over process sets a nowait flag and uses an async method call instead.
- * @todo Two new objects created on every failover supported method call. Consider more efficient ways of doing this,
+ * TODO  Two new objects created on every failover supported method call. Consider more efficient ways of doing this,
  * after looking at worse bottlenecks first.
  */
 public abstract class AMQSession<C extends BasicMessageConsumer, P extends BasicMessageProducer> extends Closeable implements Session, QueueSession, TopicSession
@@ -613,14 +608,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param multiple    <tt>true</tt> to acknowledge all messages up to and including the one specified by the
      *                    delivery tag, <tt>false</tt> to just acknowledge that message.
      *
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     public abstract void acknowledgeMessage(long deliveryTag, boolean multiple);
 
     /**
      * Binds the named queue, with the specified routing key, to the named exchange.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      * @param queueName    The name of the queue to bind.
      * @param routingKey   The routing key to bind the queue with.
@@ -628,8 +623,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param exchangeName The exchange to bind the queue on.
      *
      * @throws AMQException If the queue cannot be bound for any reason.
-     * @todo Be aware of possible changes to parameter order as versions change.
-     * @todo Document the additional arguments that may be passed in the field table. Are these for headers exchanges?
+     * TODO  Be aware of possible changes to parameter order as versions change.
+     * TODO  Document the additional arguments that may be passed in the field table. Are these for headers exchanges?
      */
     public void bindQueue(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
                           final AMQShortString exchangeName, final AMQDestination destination) throws AMQException
@@ -666,18 +661,18 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Closes the session.
-     *
-     * <p/>Note that this operation succeeds automatically if a fail-over interrupts the synchronous request to close
+     * <p>
+     * Note that this operation succeeds automatically if a fail-over interrupts the synchronous request to close
      * the channel. This is because the channel is marked as closed before the request to close it is made, so the
      * fail-over should not re-open it.
      *
      * @param timeout The timeout in milliseconds to wait for the session close acknowledgement from the broker.
      *
      * @throws JMSException If the JMS provider fails to close the session due to some internal error.
-     * @todo Be aware of possible changes to parameter order as versions change.
-     * @todo Not certain about the logic of ignoring the failover exception, because the channel won't be
+     * TODO  Be aware of possible changes to parameter order as versions change.
+     * TODO Not certain about the logic of ignoring the failover exception, because the channel won't be
      * re-opened. May need to examine this more carefully.
-     * @todo Note that taking the failover mutex doesn't prevent this operation being interrupted by a failover,
+     * TODO  Note that taking the failover mutex doesn't prevent this operation being interrupted by a failover,
      * because the failover process sends the failover event before acquiring the mutex itself.
      */
     public void close(long timeout) throws JMSException
@@ -802,8 +797,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
     /**
      * Commits all messages done in this transaction and releases any locks currently held.
-     *
-     * <p/>If the commit fails, because the commit itself is interrupted by a fail-over between requesting that the
+     * <p>
+     * If the commit fails, because the commit itself is interrupted by a fail-over between requesting that the
      * commit be done, and receiving an acknowledgement that it has been done, then a JMSException will be thrown.
      * The client will be unable to determine whether or not the commit actually happened on the broker in this case.
      *
@@ -1237,8 +1232,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Declares the named queue.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      * @param name       The name of the queue to declare.
      * @param autoDelete
@@ -1246,7 +1241,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param exclusive  Flag to indicate that the queue is exclusive to this client.
      *
      * @throws AMQException If the queue cannot be declared for any reason.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     public void createQueue(final AMQShortString name, final boolean autoDelete, final boolean durable,
                             final boolean exclusive) throws AMQException
@@ -1256,8 +1251,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Declares the named queue.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      * @param name       The name of the queue to declare.
      * @param autoDelete
@@ -1266,7 +1261,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param arguments  Arguments used to set special properties of the queue
      *
      * @throws AMQException If the queue cannot be declared for any reason.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     public void createQueue(final AMQShortString name, final boolean autoDelete, final boolean durable,
                             final boolean exclusive, final Map<String, Object> arguments) throws AMQException
@@ -1684,11 +1679,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Stops message delivery in this session, and restarts message delivery with the oldest unacknowledged message.
-     *
-     * <p/>All consumers deliver messages in a serial order. Acknowledging a received message automatically acknowledges
+     * <p>
+     * All consumers deliver messages in a serial order. Acknowledging a received message automatically acknowledges
      * all messages that have been delivered to the client.
-     *
-     * <p/>Restarting a session causes it to take the following actions:
+     * <p>
+     * Restarting a session causes it to take the following actions:
      *
      * <ul>
      * <li>Stop message delivery.</li>
@@ -1697,14 +1692,15 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * Redelivered messages do not have to be delivered in exactly their original delivery order.</li>
      * </ul>
      *
-     * <p/>If the recover operation is interrupted by a fail-over, between asking that the broker begin recovery and
+     * <p>
+     * If the recover operation is interrupted by a fail-over, between asking that the broker begin recovery and
      * receiving acknowledgment that it has then a JMSException will be thrown. In this case it will not be possible
      * for the client to determine whether the broker is going to recover the session or not.
      *
      * @throws JMSException If the JMS provider fails to stop and restart message delivery due to some internal error.
      *                      Not that this does not necessarily mean that the recovery has failed, but simply that it is
      *                      not possible to tell if it has or not.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      *
      * Strategy for handling recover.
      * Flush any acks not yet sent.
@@ -1806,15 +1802,15 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Commits all messages done in this transaction and releases any locks currently held.
-     *
-     * <p/>If the rollback fails, because the rollback itself is interrupted by a fail-over between requesting that the
+     * <p>
+     * If the rollback fails, because the rollback itself is interrupted by a fail-over between requesting that the
      * rollback be done, and receiving an acknowledgement that it has been done, then a JMSException will be thrown.
      * The client will be unable to determine whether or not the rollback actually happened on the broker in this case.
      *
      * @throws JMSException If the JMS provider fails to rollback the transaction due to some internal error. This does
      *                      not mean that the rollback is known to have failed, merely that it is not known whether it
      *                      failed or not.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     public void rollback() throws JMSException
     {
@@ -2120,8 +2116,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Tests whether or not the specified queue is bound to the specified exchange under a particular routing key.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      * @param exchangeName The exchange name to test for binding against.
      * @param queueName    The queue name to check if bound.
@@ -2130,7 +2126,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @return <tt>true</tt> if the queue is bound to the exchange and routing key, <tt>false</tt> if not.
      *
      * @throws JMSException If the query fails for any reason.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     public abstract boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
             throws JMSException;
@@ -2141,7 +2137,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Called to mark the session as being closed. Useful when the session needs to be made invalid, e.g. after failover
-     * when the client has veoted resubscription. <p/> The caller of this method must already hold the failover mutex.
+     * when the client has veoted resubscription.
+     * <p>
+     * The caller of this method must already hold the failover mutex.
      */
     void markClosed()
     {
@@ -2296,7 +2294,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * Starts the session, which ensures that it is not suspended and that its event dispatcher is running.
      *
      * @throws AMQException If the session cannot be started for any reason.
-     * @todo This should be controlled by _stopped as it pairs with the stop method fixme or check the
+     * TODO  This should be controlled by _stopped as it pairs with the stop method fixme or check the
      * FlowControlledBlockingQueue _queue to see if we have flow controlled. will result in sending Flow messages
      * for each subsequent call to flow.. only need to do this if we have called stop.
      */
@@ -2638,8 +2636,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Returns the number of messages currently queued for the given destination.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      * @param amqd The destination to be checked
      *
@@ -2685,8 +2683,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Declares the named exchange and type of exchange.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      * @param name            The name of the exchange to declare.
      * @param type            The type of the exchange to declare.
@@ -2695,7 +2693,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param autoDelete
      * @param internal
      * @throws AMQException If the exchange cannot be declared for any reason.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     private void declareExchange(final AMQShortString name, final AMQShortString type,
                                  final boolean nowait, final boolean durable,
@@ -2716,12 +2714,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Declares a queue for a JMS destination.
-     *
-     * <p/>Note that for queues but not topics the name is generated in the client rather than the server. This allows
+     * <p>
+     * Note that for queues but not topics the name is generated in the client rather than the server. This allows
      * the name to be reused on failover if required. In general, the destination indicates whether it wants a name
      * generated or not.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      *
      * @param amqd            The destination to declare as a queue.
@@ -2731,8 +2729,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      *
      *
      * @throws AMQException If the queue cannot be declared for any reason.
-     * @todo Verify the destiation is valid or throw an exception.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Verify the destiation is valid or throw an exception.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     protected AMQShortString declareQueue(final AMQDestination amqd,
                                           final boolean noLocal) throws AMQException
@@ -2752,13 +2750,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Undeclares the specified queue.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      * @param queueName The name of the queue to delete.
      *
      * @throws JMSException If the queue could not be deleted for any reason.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     protected void deleteQueue(final AMQShortString queueName) throws JMSException
     {
@@ -2781,13 +2779,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Undeclares the specified temporary queue/topic.
-     *
-     * <p/>Note that this operation automatically retries in the event of fail-over.
+     * <p>
+     * Note that this operation automatically retries in the event of fail-over.
      *
      * @param amqQueue The name of the temporary destination to delete.
      *
      * @throws JMSException If the queue could not be deleted for any reason.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     protected void deleteTemporaryDestination(final TemporaryDestination amqQueue) throws JMSException
     {
@@ -3014,11 +3012,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /**
      * Suspends or unsuspends this session.
      *
-     * @param suspend <tt>true</tt> indicates that the session should be suspended, <tt>false<tt> indicates that it
+     * @param suspend true indicates that the session should be suspended, false indicates that it
      *                should be unsuspended.
      *
      * @throws AMQException If the session cannot be suspended for any reason.
-     * @todo Be aware of possible changes to parameter order as versions change.
+     * TODO  Be aware of possible changes to parameter order as versions change.
      */
     protected void suspendChannel(boolean suspend) throws AMQException // , FailoverException
     {

@@ -55,8 +55,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Wrapper for protocol session that provides type-safe access to session attributes. <p/> The underlying protocol
- * session is still available but clients should not use it to obtain session attributes.
+ * Wrapper for protocol session that provides type-safe access to session attributes.
+ * <p>
+ * The underlying protocol session is still available but clients should not use it to obtain session attributes.
  */
 public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 {

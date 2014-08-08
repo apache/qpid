@@ -1024,8 +1024,11 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     }
 
     /**
-     * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
-     * <p/> Argument true indicates we want strict FIFO semantics
+     * Used in the blocking receive methods to receive a message from the Session thread.
+     * <p>
+     * Or to notify of errors.
+     * <p>
+     * Argument true indicates we want strict FIFO semantics
      */
     protected BlockingQueue getSynchronousQueue()
     {

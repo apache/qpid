@@ -24,13 +24,8 @@ package org.apache.qpid.client.failover;
  * FailoverException is used to indicate that a synchronous request has failed to receive the reply that it is waiting
  * for because the fail-over process has been started whilst it was waiting for its reply. Synchronous methods generally
  * raise this exception to indicate that they must be re-tried once the fail-over process has completed.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Used to indicate failure of a synchronous request due to fail-over.
- * </table>
- *
- * @todo This exception is created and passed as an argument to a method, rather than thrown. The exception is being
+ * <p>
+ * TODO This exception is created and passed as an argument to a method, rather than thrown. The exception is being
  *       used to represent an event, passed out to other threads. Use of exceptions as arguments rather than as
  *       exceptions is extremly confusing. Ideally use a condition or set a flag and check it instead.
  *       This exceptions-as-events pattern seems to be in a similar style to Mina code, which is not pretty, but

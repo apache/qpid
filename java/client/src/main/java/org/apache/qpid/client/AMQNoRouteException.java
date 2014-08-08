@@ -25,11 +25,6 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQNoRouteException indicates that a mandatory message could not be routed.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents failure to route a mandatory message.
- * <tr><td>
  */
 public class AMQNoRouteException extends AMQUndeliveredException
 {

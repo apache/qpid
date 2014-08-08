@@ -218,7 +218,7 @@ public class AMQTopic extends AMQDestination implements Topic
      * Override since the queue is always private and we must ensure it remains null. If not,
      * reuse of the topic when registering consumers will make all consumers listen on the same (private) queue rather
      * than getting their own (private) queue.
-     * <p/>
+     * <p>
      * This is relatively nasty but it is difficult to come up with a more elegant solution, given
      * the requirement in the case on AMQQueue and possibly other AMQDestination subclasses to
      * use the underlying queue name even where it is server generated.
