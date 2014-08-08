@@ -137,8 +137,8 @@ class ReplicatingSubscription :
 
     BrokerInfo getBrokerInfo() const { return info; }
 
-void skipEnqueues(const ReplicationIdSet& ids);
-void skipDequeues(const ReplicationIdSet& ids);
+    void skipEnqueues(const ReplicationIdSet& ids);
+    void skipDequeues(const ReplicationIdSet& ids);
 
   protected:
     bool doDispatch();

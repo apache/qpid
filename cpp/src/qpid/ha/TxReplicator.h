@@ -66,7 +66,6 @@ class TxReplicator : public QueueReplicator {
     std::string getType() const;
 
     // QueueReplicator overrides
-    void route(broker::Deliverable& deliverable);
     using QueueReplicator::destroy;
     void destroy(sys::Mutex::ScopedLock&);
 

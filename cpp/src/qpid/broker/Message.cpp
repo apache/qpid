@@ -29,6 +29,7 @@
 #include "qpid/management/Manageable.h"
 #include "qpid/StringUtils.h"
 #include "qpid/log/Statement.h"
+#include "qpid/assert.h"
 
 #include <algorithm>
 #include <string.h>
@@ -46,11 +47,11 @@ using std::string;
 namespace qpid {
 namespace broker {
 
-Message::Message() : deliveryCount(-1), alreadyAcquired(false), replicationId(0)
+Message::Message() : deliveryCount(-1), alreadyAcquired(false), replicationId(0), isReplicationIdSet(false)
 {}
 
 Message::Message(boost::intrusive_ptr<SharedState> e, boost::intrusive_ptr<PersistableMessage> p)
-    : sharedState(e), persistentContext(p), deliveryCount(-1), alreadyAcquired(false), replicationId(0)
+    : sharedState(e), persistentContext(p), deliveryCount(-1), alreadyAcquired(false), replicationId(0), isReplicationIdSet(false)
 {
     if (persistentContext) persistentContext->setIngressCompletion(e);
 }
@@ -297,9 +298,18 @@ void Message::processProperties(MapHandler& handler) const
     sharedState->processProperties(handler);
 }
 
-uint64_t Message::getReplicationId() const { return replicationId; }
+bool Message::hasReplicationId() const {
+    return isReplicationIdSet;
+}
 
-void Message::setReplicationId(framing::SequenceNumber id) { replicationId = id; }
+uint64_t Message::getReplicationId() const {
+    return replicationId;
+}
+
+void Message::setReplicationId(framing::SequenceNumber id) {
+    replicationId = id;
+    isReplicationIdSet = true;
+}
 
 sys::AbsTime Message::getExpiration() const
 {

@@ -216,14 +216,14 @@ bool ReplicatingSubscription::deliver(
     try {
         bool result = false;
         if (skipEnqueue.contains(id)) {
-            QPID_LOG(trace, logPrefix << "Skip " << LogMessageId(*getQueue(), m));
+            QPID_LOG(trace, logPrefix << "Skip " << logMessageId(*getQueue(), m));
             skipEnqueue -= id;
             guard->complete(id); // This will never be acknowledged.
             notify();
             result = true;
         }
         else {
-            QPID_LOG(trace, logPrefix << "Replicated " << LogMessageId(*getQueue(), m));
+            QPID_LOG(trace, logPrefix << "Replicated " << logMessageId(*getQueue(), m));
             if (!ready && !isGuarded(l)) unready += id;
             sendIdEvent(id, l);
             result = ConsumerImpl::deliver(c, m);
@@ -231,7 +231,7 @@ bool ReplicatingSubscription::deliver(
         checkReady(l);
         return result;
     } catch (const std::exception& e) {
-        QPID_LOG(critical, logPrefix << "Error replicating " << LogMessageId(*getQueue(), m)
+        QPID_LOG(critical, logPrefix << "Error replicating " << logMessageId(*getQueue(), m)
                  << ": " << e.what());
         throw;
     }
@@ -268,7 +268,7 @@ void ReplicatingSubscription::acknowledged(const broker::DeliveryRecord& r) {
     // Finish completion of message, it has been acknowledged by the backup.
     ReplicationId id = r.getReplicationId();
     QPID_LOG(trace, logPrefix << "Acknowledged " <<
-             LogMessageId(*getQueue(), r.getMessageId(), id));
+             logMessageId(*getQueue(), r.getMessageId(), id));
     guard->complete(id);
     {
         Mutex::ScopedLock l(lock);

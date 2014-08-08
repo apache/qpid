@@ -95,17 +95,24 @@ ostream& operator<<(ostream& o, const UuidSet& ids) {
     return o;
 }
 
-LogMessageId::LogMessageId(const broker::Queue& q, QueuePosition pos, ReplicationId id) :
-    queue(q.getName()), position(pos), replicationId(id) {}
 
-LogMessageId::LogMessageId(const broker::Queue& q, const broker::Message& m) :
-    queue(q.getName()), position(m.getSequence()), replicationId(m.getReplicationId()) {}
-
-LogMessageId::LogMessageId(const std::string& q, const broker::Message& m) :
-    queue(q), position(m.getSequence()), replicationId(m.getReplicationId()) {}
-
-std::ostream& operator<<(std::ostream& o, const LogMessageId& m) {
-    return o  << m.queue << "[" << m.position << "]=" << m.replicationId;
+std::string logMessageId(const std::string& q, QueuePosition pos, ReplicationId id) {
+    return Msg() << q << "[" << pos << "]" << "=" << id;
+}
+std::string logMessageId(const std::string& q, ReplicationId id) {
+    return Msg() << q << "[]" << "=" << id;
+}
+std::string logMessageId(const std::string& q, const broker::Message& m)  {
+    return logMessageId(q, m.getSequence(), m.getReplicationId());
+}
+std::string logMessageId(const broker::Queue& q, QueuePosition pos, ReplicationId id) {
+    return logMessageId(q.getName(), pos, id);
+}
+std::string logMessageId(const broker::Queue& q, ReplicationId id) {
+    return logMessageId(q.getName(), id);
+}
+std::string logMessageId(const broker::Queue& q, const broker::Message& m) {
+    return logMessageId(q.getName(), m);
 }
 
 void UuidSet::encode(framing::Buffer& b) const {

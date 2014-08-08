@@ -127,20 +127,19 @@ void TxReplicator::sendMessage(const broker::Message& msg, sys::Mutex::ScopedLoc
     }
 }
 
-void TxReplicator::route(broker::Deliverable& deliverable) {
-    QueueReplicator::route(deliverable);
-}
-
 void TxReplicator::deliver(const broker::Message& m_) {
-    sys::Mutex::ScopedLock l(lock);
-    if (!txBuffer) return;
-    // Deliver message to the target queue, not the tx-queue.
+    boost::intrusive_ptr<broker::TxBuffer> txbuf;
     broker::Message m(m_);
-    m.setReplicationId(enq.id); // Use replicated id.
-    boost::shared_ptr<broker::Queue> queue =
-        haBroker.getBroker().getQueues().get(enq.queue);
-    QPID_LOG(trace, logPrefix << "Deliver " << LogMessageId(*queue, m));
-    DeliverableMessage dm(m, txBuffer.get());
+    {
+        sys::Mutex::ScopedLock l(lock);
+        if (!txBuffer) return;
+        txbuf = txBuffer;
+        m.setReplicationId(enq.id); // Use enqueued replicated id.
+    }
+    // Deliver message to the target queue, not the tx-queue.
+    boost::shared_ptr<broker::Queue> queue = haBroker.getBroker().getQueues().get(enq.queue);
+    QPID_LOG(trace, logPrefix << "Deliver " << logMessageId(*queue, m.getReplicationId()));
+    DeliverableMessage dm(m, txbuf.get());
     dm.deliverTo(queue);
 }
 

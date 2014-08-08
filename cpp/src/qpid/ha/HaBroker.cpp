@@ -71,7 +71,7 @@ class HaBroker::BrokerObserver : public broker::BrokerObserver {
   public:
     void queueCreate(const boost::shared_ptr<broker::Queue>& q) {
         q->getObservers().add(boost::shared_ptr<QueueSnapshot>(new QueueSnapshot));
-        q->getMessageInterceptors().add(boost::shared_ptr<IdSetter>(new IdSetter));
+        q->getMessageInterceptors().add(boost::shared_ptr<IdSetter>(new IdSetter(q->getName())));
     }
 };
 

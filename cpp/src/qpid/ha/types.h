@@ -132,17 +132,13 @@ typedef framing::SequenceNumber ReplicationId;
 typedef framing::SequenceSet QueuePositionSet;
 typedef framing::SequenceSet ReplicationIdSet;
 
-/** Helper for logging message ID  */
-struct LogMessageId {
-    typedef boost::shared_ptr<broker::Queue> QueuePtr;
-    LogMessageId(const broker::Queue& q, QueuePosition pos, ReplicationId id);
-    LogMessageId(const broker::Queue& q, const broker::Message& m);
-    LogMessageId(const std::string& q, const broker::Message& m);
-    const std::string& queue;
-    QueuePosition position;
-    ReplicationId replicationId;
-};
-std::ostream& operator<<(std::ostream&, const LogMessageId&);
+/** Helpers for logging message ID  */
+std::string logMessageId(const std::string& q, QueuePosition pos, ReplicationId id);
+std::string logMessageId(const std::string& q, ReplicationId id);
+std::string logMessageId(const std::string& q, const broker::Message& m);
+std::string logMessageId(const broker::Queue& q, QueuePosition pos, ReplicationId id);
+std::string logMessageId(const broker::Queue& q, ReplicationId id);
+std::string logMessageId(const broker::Queue& q, const broker::Message& m);
 
 /** Return short version of human-readable UUID. */
 inline std::string shortStr(const types::Uuid& uuid) { return uuid.str().substr(0,8); }
