@@ -27,18 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Captures the 'closed' state of an object, that is initially open, can be tested to see if it is closed, and provides
  * a 'close' method to close it.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Mark an object as closed.
- * <tr><td> Check if an object is closed.
- * <tr><td> Raise a JMS exception if an object is closed.
- * </table>
- *
- * @todo Might be better to make this an interface. This whole class doesn't really encapsulate a terribly neat
+ * <p>
+ * TODO  Might be better to make this an interface. This whole class doesn't really encapsulate a terribly neat
  *       piece of re-usable functionality. A simple interface defining a close method would suffice.
- *
- * @todo The convenience method {@link #checkNotClosed} is not that helpfull, what if the caller wants to do something
+ * <p>
+ * TODO  The convenience method {@link #checkNotClosed} is not that helpfull, what if the caller wants to do something
  *       other than throw an exception? It doesn't really represent a very usefull re-usable piece of code. Consider
  *       inlining it and dropping the method.
  */

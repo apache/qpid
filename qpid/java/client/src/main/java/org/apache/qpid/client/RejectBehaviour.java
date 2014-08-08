@@ -23,7 +23,7 @@ package org.apache.qpid.client;
 /**
  * This enum can be used only with for 0-8/0-9/0-9-1 protocols connections to notify
  * the client to delegate the requeue/DLQ decision to the server
- * if <code>SERVER</server> value is specified. Otherwise the messages won't be moved to
+ * if <code>SERVER</code> value is specified. Otherwise the messages won't be moved to
  * the DLQ (or dropped) when delivery count exceeds the maximum.
  */
 public enum RejectBehaviour

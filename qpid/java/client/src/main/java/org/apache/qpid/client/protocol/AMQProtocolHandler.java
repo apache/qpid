@@ -77,23 +77,24 @@ import org.apache.qpid.util.BytesDataOutput;
  * event on to more specific handlers for the type. In this sense, it channels the richer event model of AMQP,
  * expressed in terms of methods and so on, through the cruder, general purpose event model of MINA, expressed in
  * terms of "message received" and so on.
- *
- * <p/>There is a 1:1 mapping between an AMQProtocolHandler and an {@link AMQConnection}. The connection class is
+ * <p>
+ * There is a 1:1 mapping between an AMQProtocolHandler and an {@link AMQConnection}. The connection class is
  * exposed to the end user of the AMQP client API, and also implements the JMS Connection API, so provides the public
  * API calls through which an individual connection can be manipulated. This protocol handler talks to the network
  * through MINA, in a behind the scenes role; it is not an exposed part of the client API.
- *
- * <p/>There is a 1:many mapping between an AMQProtocolHandler and a set of {@link AMQSession}s. At the MINA level,
+ * <p>
+ * There is a 1:many mapping between an AMQProtocolHandler and a set of {@link AMQSession}s. At the MINA level,
  * there is one session per connection. At the AMQP level there can be many channels which are also called sessions in
  * JMS parlance. The {@link AMQSession}s are managed through an {@link AMQProtocolSession} instance. The protocol
  * session is similar to the MINA per-connection session, except that it can span the lifecycle of multiple MINA sessions
  * in the event of failover. See below for more information about this.
- *
- * <p/>Mina provides a session container that can be used to store/retrieve arbitrary objects as String named
+ * <p>
+ * Mina provides a session container that can be used to store/retrieve arbitrary objects as String named
  * attributes. A more convenient, type-safe, container for session data is provided in the form of
  * {@link AMQProtocolSession}.
  *
- * <p/>A common way to use MINA is to have a single instance of the event handler, and for MINA to pass in its session
+ * <p>
+ * A common way to use MINA is to have a single instance of the event handler, and for MINA to pass in its session
  * object with every event, and for per-connection data to be held in the MINA session (perhaps using a type-safe wrapper
  * as described above). This event handler is different, because dealing with failover complicates things. To the
  * end client of an AMQConnection, a failed over connection is still handled through the same connection instance, but
@@ -101,19 +102,13 @@ import org.apache.qpid.util.BytesDataOutput;
  * be used to track the state of the fail-over process, because it is destroyed and a new one is created, as the old
  * connection is shutdown and a new one created. For this reason, an AMQProtocolHandler is created per AMQConnection
  * and the protocol session data is held outside of the MINA IOSession.
- *
- * <p/>This handler is responsible for setting up the filter chain to filter all events for this handler through.
+ * <p>
+ * This handler is responsible for setting up the filter chain to filter all events for this handler through.
  * The filter chain is set up as a stack of event handers that perform the following functions (working upwards from
  * the network traffic at the bottom), handing off incoming events to an asynchronous thread pool to do the work,
  * optionally handling secure sockets encoding/decoding, encoding/decoding the AMQP format itself.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Maintain fail-over state.
- * <tr><td>
- * </table>
- *
- * @todo Use a single handler instance, by shifting everything to do with the 'protocol session' state, including
+ * <p>
+ * TODO  Use a single handler instance, by shifting everything to do with the 'protocol session' state, including
  * failover state, into AMQProtocolSession, and tracking that from AMQConnection? The lifecycles of
  * AMQProtocolSesssion and AMQConnection will be the same, so if there is high cohesion between them, they could
  * be merged, although there is sense in keeping the session model separate. Will clarify things by having data
@@ -204,8 +199,8 @@ public class AMQProtocolHandler implements ProtocolEngine
      * where the connection died, an attempt to failover automatically to a new connection may be started. The failover
      * process will be started, provided that it is the clients policy to allow failover, and provided that a failover
      * has not already been started or failed.
-     *
-     * @todo Clarify: presumably exceptionCaught is called when the client is sending during a connection failure and
+     * <p>
+     * TODO  Clarify: presumably exceptionCaught is called when the client is sending during a connection failure and
      * not otherwise? The above comment doesn't make that clear.
      */
     public void closed()
@@ -413,7 +408,7 @@ public class AMQProtocolHandler implements ProtocolEngine
      * protocol level waits.
      *
      * This will would normally be used to notify all Frame Listeners that Failover is about to occur and they should
-     * stop waiting and relinquish the Failover lock {@see FailoverHandler}.
+     * stop waiting and relinquish the Failover lock. See {@link FailoverHandler}.
      *
      * Once the {@link FailoverHandler} has re-established the connection then the listeners will be able to re-attempt
      * their protocol request and so listen again for the correct frame.
@@ -744,8 +739,8 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     /**
      * Closes the connection.
-     *
-     * <p/>If a failover exception occurs whilst closing the connection it is ignored, as the connection is closed
+     * <p>
+     * If a failover exception occurs whilst closing the connection it is ignored, as the connection is closed
      * anyway.
      *
      * @param timeout The timeout to wait for an acknowledgment to the close request.

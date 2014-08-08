@@ -44,23 +44,17 @@ import java.util.TreeMap;
  * authentication. It is capable of reading its configuration from a properties file containing call back handler
  * implementing class names for different SASL mechanism names. Instantiating this registry also has the effect of
  * configuring and registering the SASL client factory implementations using {@link DynamicSaslRegistrar}.
- *
- * <p/>The callback configuration should be specified in a properties file, refered to by the System property
+ * <p>
+ * The callback configuration should be specified in a properties file, refered to by the System property
  * "amp.callbackhandler.properties". The format of the properties file is:
- *
- * <p/><pre>
+ * <p>
+ * <pre>
  * CallbackHanlder.n.mechanism=fully.qualified.class.name where n is an ordinal
  * </pre>
- *
- * <p/>Where mechanism is an IANA-registered mechanism name and the fully qualified class name refers to a
+ * <p>
+ * Where mechanism is an IANA-registered mechanism name and the fully qualified class name refers to a
  * class that implements org.apache.qpid.client.security.AMQCallbackHanlder and provides a call back handler for the
  * specified mechanism.
- *
- * <p><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Parse callback properties.
- * <tr><td> Provide mapping from SASL mechanisms to callback implementations.
- * </table>
  */
 public class CallbackHandlerRegistry
 {

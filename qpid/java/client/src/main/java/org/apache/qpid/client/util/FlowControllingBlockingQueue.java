@@ -30,10 +30,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * A blocking queue that emits events above a user specified threshold allowing the caller to take action (e.g. flow
  * control) to try to prevent the queue growing (much) further. The underlying queue itself is not bounded therefore the
- * caller is not obliged to react to the events. <p/> This implementation is <b>only</b> safe where we have a single
+ * caller is not obliged to react to the events.
+ * <p>
+ * This implementation is <b>only</b> safe where we have a single
  * thread adding items and a single (different) thread removing items.
- *
- * @todo Make this implement java.util.Queue and hide the implementation. Then different queue types can be substituted.
+ * <p>
+ * TODO  Make this implement java.util.Queue and hide the implementation. Then different queue types can be substituted.
  */
 public class FlowControllingBlockingQueue
 {

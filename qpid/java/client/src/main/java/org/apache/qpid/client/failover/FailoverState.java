@@ -22,11 +22,6 @@ package org.apache.qpid.client.failover;
 
 /**
  * Defines the possible states of the failover process; not started, in progress, failed.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represent a one of the states of the fail-over process.
- * </table>
  */
 public final class FailoverState
 {

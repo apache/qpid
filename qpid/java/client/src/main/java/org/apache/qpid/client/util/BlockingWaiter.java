@@ -37,29 +37,22 @@ import java.util.concurrent.locks.ReentrantLock;
  * incoming Objects to a listener implemented as a sub-class of this and hands off the process or
  * error to a consumer. The producer of the event does not have to wait for the consumer to take the event, so this
  * differs from a 'rendezvous' in that sense.
- *
- * <p/>BlockingWaiters are used to coordinate when waiting for an an event that expect a response.
+ * <p>
+ * BlockingWaiters are used to coordinate when waiting for an an event that expect a response.
  * They are always used in a 'one-shot' manner, that is, to receive just one response. Usually the caller has to register
  * them as method listeners with an event dispatcher and remember to de-register them (in a finally block) once they
  * have been completed.
- *
- * <p/>The {@link #process} must return <tt>true</tt> on any incoming method that it handles. This indicates to
+ * <p>
+ * The {@link #process} must return <tt>true</tt> on any incoming method that it handles. This indicates to
  * this listeners that the object just processed ends the waiting process.
- *
- * <p/>Errors from the producer are rethrown to the consumer.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations </td>
- * <tr><td> Accept generic objects as events for processing via {@link #process}. <td>
- * <tr><td> Delegate handling and understanding of the object to a concrete implementation. <td>
- * <tr><td> Block until {@link #process} determines that waiting is no longer required <td>
- * <tr><td> Propagate the most recent exception to the consumer.<td>
- * </table>
- *
- * @todo Interruption is caught but not handled. This could be allowed to fall through. This might actually be useful
+ * <p>
+ * Errors from the producer are rethrown to the consumer.
+ * <p>
+ * TODO  Interruption is caught but not handled. This could be allowed to fall through. This might actually be useful
  * for fail-over where a thread is blocking when failure happens, it could be interrupted to abandon or retry
  * when this happens. At the very least, restore the interrupted status flag.
- * @todo If the retrotranslator can handle it, could use a SynchronousQueue to implement this rendezvous. Need to
+ * <p>
+ * TODO  If the retrotranslator can handle it, could use a SynchronousQueue to implement this rendezvous. Need to
  * check that SynchronousQueue has a non-blocking put method available.
  */
 public abstract class BlockingWaiter<T>

@@ -27,11 +27,6 @@ import org.apache.qpid.protocol.AMQConstant;
  * AMQSessionDirtyException represents all failures to send data on a transacted session that is
  * no longer in a state that the client expects. i.e. failover has occured so previously sent messages
  * will not be part of the transaction.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represent attempt to perform additional sends on a dirty session.
- * </table>
  */
 public class AMQSessionDirtyException extends AMQException
 {

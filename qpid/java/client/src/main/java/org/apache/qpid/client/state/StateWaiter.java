@@ -93,8 +93,8 @@ public class StateWaiter extends BlockingWaiter<AMQState>
 
     /**
      * Await for the required State to be achieved.
-     *
-     * <b>It is the responsibility of this class to remove the waiter from the StateManager
+     * <p>
+     * It is the responsibility of this class to remove the waiter from the StateManager
      *
      * @param timeout The time in milliseconds to wait for any of the states to be achieved.
      * @return The achieved state that was requested.
