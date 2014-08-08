@@ -43,7 +43,7 @@ import java.util.Map;
  * <p>
  * The following diagram represents the QmfData class hierarchy.
  * <p>
- * <img src="doc-files/QmfData.png"/>
+ * <img alt="" src="doc-files/QmfData.png">
  *
  * @author Fraser Adams
  */

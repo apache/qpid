@@ -89,7 +89,7 @@ import org.apache.qpid.qmf2.common.WorkQueue;
  * <p>
  * The diagram below shows the relationship between the Agent, the Subscription and SubscribableAgent interface.
  * <p>
- * <img src="doc-files/Subscriptions.png"/>
+ * <img alt="" src="doc-files/Subscriptions.png">
  * <p>
  * <h3>Receiving Asynchronous Notifications</h3>
  * This implementation of the QMF2 Agent actually supports two independent APIs to enable clients to receive
@@ -110,7 +110,7 @@ import org.apache.qpid.qmf2.common.WorkQueue;
  *      and asynchronous calls are processed on different JMS Sessions to facilitate this</li>
  * </ol>
  * <p>
- * <img src="doc-files/QmfEventListenerModel.png"/>
+ * <img alt="" src="doc-files/QmfEventListenerModel.png">
  * <p>
  * The QMF2 API has a work-queue Callback approach. All asynchronous events are represented by a WorkItem object.
  * When a QMF event occurs it is translated into a WorkItem object and placed in a FIFO queue. It is left to the
@@ -140,7 +140,7 @@ import org.apache.qpid.qmf2.common.WorkQueue;
  *  <li>It's generally not necessary to use a Notifier as the Console provides a blocking getNextWorkitem() method.</li>
  * </ol>
  * <p>
- * <img src="doc-files/WorkQueueEventModel.png"/>
+ * <img alt="" src="doc-files/WorkQueueEventModel.png">
  * <h3>Potential Issues with Qpid versions earlier than 0.12</h3>
  * Note 1: This uses QMF2 so requires that the "--mgmt-qmf2 yes" option is applied to the broker (this is the default
  * from Qpid 0.10).

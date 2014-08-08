@@ -31,7 +31,7 @@ import java.util.List;
  * a mixture of LogicalExpressions and BooleanExpressions.
  * <p>
  * The Expression structure is illustrated below in the context of its relationship with QmfQuery.
- * <img src="doc-files/QmfQuery.png"/>
+ * <img alt="" src="doc-files/QmfQuery.png">
  *
  * @author Fraser Adams
  */

@@ -78,7 +78,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  * is made available by this object. A console application must instatiate one of these objects.
  * <p>
  * If a name is supplied, it must be unique across all Consoles attached to the AMQP bus under the given
- * domain. If no name is supplied, a unique name will be synthesized in the format: "qmfc-<hostname>.<pid>"
+ * domain. If no name is supplied, a unique name will be synthesized in the format: {@literal "qmfc-<hostname>.<pid>"}
  * <p>
  * <h3>Interactions with remote Agent</h3>
  * As noted below, some Console methods require contacting a remote Agent. For these methods, the caller
@@ -89,7 +89,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  * <p>
  * The following diagram illustrates the interactions between the Console, Agent and client side Agent proxy.
  * <p>
- * <img src="doc-files/Console.png"/>
+ * <img alt="" src="doc-files/Console.png">
  * <p>
  * All blocking calls are considered thread safe - it is possible to have a multi-threaded implementation
  * have multiple blocking calls in flight simultaneously.
@@ -108,7 +108,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  * The SubscriptionManager is also used to maintain the Subscription query to enable ManagementAgent _data indications
  * to be tested in order to emulate Subscriptions to the broker ManagementAgent on the client side.
  * <p>
- * <img src="doc-files/Subscriptions.png"/>
+ * <img alt="" src="doc-files/Subscriptions.png">
  * <p>
  * <h3>Receiving Asynchronous Notifications</h3>
  * This implementation of the QMF2 Console actually supports two independent APIs to enable clients to receive
@@ -129,7 +129,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  *      and asynchronous calls are processed on different JMS Sessions to facilitate this</li>
  * </ol>
  * <p>
- * <img src="doc-files/QmfEventListenerModel.png"/>
+ * <img alt="" src="doc-files/QmfEventListenerModel.png">
  * <p>
  * The QMF2 API has a work-queue Callback approach. All asynchronous events are represented by a WorkItem object.
  * When a QMF event occurs it is translated into a WorkItem object and placed in a FIFO queue. It is left to the
@@ -160,7 +160,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  *  <li>It's generally not necessary to use a Notifier as the Console provides a blocking getNextWorkitem() method.</li>
  * </ol>
  * <p>
- * <img src="doc-files/WorkQueueEventModel.png"/>
+ * <img alt="" src="doc-files/WorkQueueEventModel.png">
 
 
  * <h3>Potential Issues with Qpid versions earlier than 0.12</h3>

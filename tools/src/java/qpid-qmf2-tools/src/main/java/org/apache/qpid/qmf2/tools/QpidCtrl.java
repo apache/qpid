@@ -167,7 +167,7 @@ public final class QpidCtrl
     private Console _console;
 
     /**
-     * Basic constructor. Creates JMS Session, Initialises Destinations, Producers & Consumers and starts connection.
+     * Basic constructor. Creates JMS Session, Initialises Destinations, Producers &amp; Consumers and starts connection.
      * @param url the Connection URL.
      * @param connectionOptions the connection options String to pass to ConnectionHelper.
      * @param pkg the package name of the object we're invoking the method on.

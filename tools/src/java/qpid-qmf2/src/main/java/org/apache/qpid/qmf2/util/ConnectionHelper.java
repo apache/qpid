@@ -79,17 +79,17 @@ import org.apache.qpid.messaging.util.AddressParser;
  * <p>
  * Java ConnectionURLs look like this:
  * <pre>
- * amqp://[&lt;user&gt;:&lt;pass&gt;@][&lt;clientid&gt;]/&lt;virtualhost&gt;[?&lt;option&gt;='&lt;value&gt;'[&&lt;option&gt;='&lt;value&gt;']]
+ * amqp://[&lt;user&gt;:&lt;pass&gt;@][&lt;clientid&gt;]/&lt;virtualhost&gt;[?&lt;option&gt;='&lt;value&gt;'[&amp;&lt;option&gt;='&lt;value&gt;']]
  * </pre>
  * This syntax is very powerful, but it can also be fairly complex to work with, especially when one realises
  * that one of the options in the above syntax is brokerlist='&lt;broker url&gt;' where broker url is itself a URL
  * of the format:
  * <pre>
- * &lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;][?&lt;option&gt;='&lt;value&gt;'[&&lt;option&gt;='&lt;value&gt;']]
+ * &lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;][?&lt;option&gt;='&lt;value&gt;'[&amp;&lt;option&gt;='&lt;value&gt;']]
  * </pre>
  * so one may see ConnectionURLs that look like:
  * <pre>
- * amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672?retries='10'&connectdelay='1000''
+ * {@literal amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672?retries='10'&connectdelay='1000''}
  * </pre>
  *
  * <p>
@@ -134,8 +134,8 @@ import org.apache.qpid.messaging.util.AddressParser;
  * <h3>Differences from Qpid M4 Java Connection URL format</h3>
  * Addresses are at the start of the URL rather than in the "brokerlist" option.
  * <p>
- * Option format is ?foo=bar;x=y rather than ?foo='bar'&x='y'. The use of "'" quotes is not common for URI query
- * strings. The use of "&" as a separator creates problems
+ * Option format is {@literal ?foo=bar;x=y } rather than {@literal ?foo='bar'&x='y'}. The use of "'" quotes is not common for URI query
+ * strings. The use of "&amp;" as a separator creates problems
  * <p>
  * user, pass and clientid are options rather than having a special place at the front of the URL. clientid is
  * a Qpid proprietary property and user/pass are not relevant in all authentication schemes.
@@ -151,7 +151,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  * The option format is the same as that of the C++ qpid::messaging Connection class. for example: "{reconnect: true,
  * tcp-nodelay: true}":
  * <p>
- * <table summary="Connection Options" width="100%" border="1"><colgroup><col><col><col></colgroup><thead>
+ * <table summary="Connection Options" width="100%" border="1"><thead>
  * <tr><th>option name</th><th>value type</th><th>semantics</th></tr></thead><tbody>
  * <tr>
  *      <td><code class="literal">maxprefetch</code></td>
@@ -295,7 +295,7 @@ import org.apache.qpid.messaging.util.AddressParser;
  *      <td>Kerberos trust store password</td>
  * </tr>
  * <tr>
- *      <td><code class="key_store</code></td>
+ *      <td><code class="literal">key_store</code></td>
  *      <td>string</td>
  *      <td>path to Kerberos key store </td>
  * </tr>

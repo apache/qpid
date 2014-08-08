@@ -36,7 +36,7 @@ package org.apache.qpid.qmf2.common;
  *      and asynchronous calls are processed on different JMS Sessions to facilitate this</li>
  * </ol>
  * <p>
- * <img src="doc-files/QmfEventListenerModel.png"/>
+ * <img alt="" src="doc-files/QmfEventListenerModel.png">
  * 
  * @author Fraser Adams
  */

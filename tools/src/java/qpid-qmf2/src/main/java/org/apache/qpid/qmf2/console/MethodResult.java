@@ -34,7 +34,7 @@ import org.apache.qpid.qmf2.common.QmfException;
  * <p>
  * Returned data is provided in QmfData map indexed by the name of the parameter. The QmfData map contains only those 
  * parameters that are classified as "output" by the SchemaMethod.
- * <p?
+ * <p>
  * Should a method call result in a failure, this failure is indicated by the presence of an error object in
  * the MethodResult. This object is represented by a QmfException object, which contains a description of the
  * reason for the failure. There are no returned parameters when a method call fails.
