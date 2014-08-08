@@ -32,9 +32,12 @@ public interface AMQMethodBody extends AMQBody
 {
     public static final byte TYPE = 1;
 
-    /** AMQP version */
+    /** AMQP major version 
+     * @return the major version*/
     public byte getMajor();
 
+    /** AMQP minor version 
+     * @return the minor version*/
     public byte getMinor();
 
 

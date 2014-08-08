@@ -22,13 +22,8 @@ package org.apache.qpid.framing;
 
 /**
  * AMQProtocolInstanceException indicates that the client and server differ on expected protocol version  in a header.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represent incorrect protocol version in frame header.
- * </table>
- *
- * @todo Not an AMQP exception as no status code.
+ * <p>
+ * TODO Not an AMQP exception as no status code.
  */
 public class AMQProtocolVersionException extends AMQProtocolHeaderException
 {

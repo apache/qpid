@@ -25,7 +25,7 @@ import javax.naming.NamingException;
 
 /**
  * A default implementation of {@link NameParser}
- * <p/>
+ * <p>
  * Based on class from ActiveMQ.
  */
 public class NameParserImpl implements NameParser

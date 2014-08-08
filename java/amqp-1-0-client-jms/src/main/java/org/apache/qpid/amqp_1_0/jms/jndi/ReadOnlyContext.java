@@ -45,13 +45,13 @@ import javax.naming.spi.NamingManager;
 /**
  * Based on class from ActiveMQ.
  * A read-only Context
- * <p/>
+ * <p>
  * This version assumes it and all its subcontext are read-only and any attempt
  * to modify (e.g. through bind) will result in an OperationNotSupportedException.
  * Each Context in the tree builds a cache of the entries in all sub-contexts
  * to optimise the performance of lookup.
- * </p>
- * <p>This implementation is intended to optimise the performance of lookup(String)
+ * <p>
+ * This implementation is intended to optimise the performance of lookup(String)
  * to about the level of a HashMap get. It has been observed that the scheme
  * resolution phase performed by the JVM takes considerably longer, so for
  * optimum performance lookups should be coded like:</p>
@@ -148,11 +148,6 @@ public class ReadOnlyContext implements Context, Serializable
      * to bind the remaining name.  It returns a map containing all the bindings from the next context, plus
      * the context it just created (if it in fact created it). (the names are suitably extended by the segment
      * originally lopped off).
-     *
-     * @param name
-     * @param value
-     * @return
-     * @throws javax.naming.NamingException
      */
     protected Map internalBind(String name, Object value) throws NamingException
     {

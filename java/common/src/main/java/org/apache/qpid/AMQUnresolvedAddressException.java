@@ -22,15 +22,10 @@ package org.apache.qpid;
 
 /**
  * AMQUnresolvedAddressException indicates failure to resolve a socket address.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents failre to resolve a socket address.
- * </table>
- *
- * @todo Not an AMQP exception as no status code.
- *
- * @todo Why replace java.nio.UnresolvedAddressException with this? This is checked, which may explain why, but it
+ * <p>
+ * TODO Not an AMQP exception as no status code.
+ * <p>
+ * TODO Why replace java.nio.UnresolvedAddressException with this? This is checked, which may explain why, but it
  *       doesn't wrap the underlying exception.
  */
 public class AMQUnresolvedAddressException extends AMQException

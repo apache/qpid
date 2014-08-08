@@ -22,13 +22,6 @@ package org.apache.qpid;
 
 /**
  * AMQDisconnectedException indicates that a broker disconnected without failover.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents disconnection without failover by the broker.
- * </table>
- *
- * @todo Not an AMQP exception as no status code.
  */
 public class AMQDisconnectedException extends AMQException
 {

@@ -23,12 +23,7 @@ package org.apache.qpid;
 /**
  * AMQPInvalidClassException indicates an error when trying to store an illegally typed argument in a field table.
  *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents illegal argument type for field table values.
- * </table>
- *
- * @todo Could just re-use an exising exception like IllegalArgumentException or ClassCastException.
+ * <p>TODO Could just re-use an exising exception like IllegalArgumentException or ClassCastException.
  */
 public class AMQPInvalidClassException extends RuntimeException
 {
