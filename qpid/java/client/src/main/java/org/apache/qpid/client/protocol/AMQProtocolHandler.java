@@ -20,8 +20,16 @@
  */
 package org.apache.qpid.client.protocol;
 
-import org.apache.qpid.client.HeartbeatListener;
-import org.apache.qpid.util.BytesDataOutput;
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +39,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.HeartbeatListener;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverHandler;
 import org.apache.qpid.client.failover.FailoverState;
@@ -59,16 +68,7 @@ import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
-
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.apache.qpid.util.BytesDataOutput;
 
 /**
  * AMQProtocolHandler is the client side protocol handler for AMQP, it handles all protocol events received from the
@@ -182,6 +182,7 @@ public class AMQProtocolHandler implements ProtocolEngine
     private long _lastReadTime = System.currentTimeMillis();
     private long _lastWriteTime = System.currentTimeMillis();
     private HeartbeatListener _heartbeatListener = HeartbeatListener.DEFAULT;
+    private Throwable _initialConnectionException;
 
     /**
      * Creates a new protocol handler, associated with the specified client connection instance.
@@ -219,6 +220,8 @@ public class AMQProtocolHandler implements ProtocolEngine
             // in order to execute AMQConnection#exceptionRecievedout out of synchronization block,
             // otherwise it might deadlock with failover mutex
             boolean failoverNotAllowed = false;
+            boolean failedWithoutConnecting = false;
+            Throwable initialConnectionException = null;
             synchronized (this)
             {
                 if (_logger.isDebugEnabled())
@@ -256,8 +259,11 @@ public class AMQProtocolHandler implements ProtocolEngine
                     }
                     else
                     {
+                        failedWithoutConnecting = true;
+                        initialConnectionException = _initialConnectionException;
                         _logger.debug("We are in process of establishing the initial connection");
                     }
+                    _initialConnectionException = null;
                 }
                 else
                 {
@@ -269,6 +275,16 @@ public class AMQProtocolHandler implements ProtocolEngine
             {
                 _connection.exceptionReceived(new AMQDisconnectedException(
                         "Server closed connection and reconnection not permitted.", _stateManager.getLastException()));
+            }
+            else if(failedWithoutConnecting)
+            {
+                if(initialConnectionException == null)
+                {
+                    initialConnectionException = _stateManager.getLastException();
+                }
+                String message = initialConnectionException == null ? "" : initialConnectionException.getMessage();
+                _connection.exceptionReceived(new AMQDisconnectedException(
+                        "Connection could not be established: " + message, initialConnectionException));
             }
         }
 
@@ -343,6 +359,7 @@ public class AMQProtocolHandler implements ProtocolEngine
             if (causeIsAConnectionProblem)
             {
                 _logger.info("Connection exception caught therefore going to attempt failover: " + cause, cause);
+                _initialConnectionException = cause;
             }
             else
             {
