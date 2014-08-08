@@ -43,8 +43,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Encapsulation of a subscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
- * that was given out by the broker and the channel id. <p/>
+ * Encapsulation of a subscription to a queue.
+ * <p>
+ * Ties together the protocol session of a subscriber, the consumer tag
+ * that was given out by the broker and the channel id.
  */
 public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implements FlowCreditManager.FlowCreditManagerListener
 {
@@ -170,10 +172,8 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
          * thread safe.
          *
-         *
          * @param entry   The message to send
          * @param batch
-         * @throws org.apache.qpid.AMQException
          */
         @Override
         public void send(MessageInstance entry, boolean batch)
@@ -286,10 +286,8 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
          * thread safe.
          *
-         *
          * @param entry   The message to send
          * @param batch
-         * @throws org.apache.qpid.AMQException
          */
         @Override
         public void send(MessageInstance entry, boolean batch)

@@ -27,7 +27,7 @@ public class ConfigFileHelper
 {
     /**
      * Returns absolute paths to the config file(s).
-     * <p/>
+     * <p>
      * If testConfigPath is a directory, its .js and .json files are returned.
      * Otherwise, the returned list just contains testConfigPath.
      */

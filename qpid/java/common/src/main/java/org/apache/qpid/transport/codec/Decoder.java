@@ -82,7 +82,7 @@ public interface Decoder
 	 * The uuid type encodes a universally unique id as defined by RFC-4122. 
 	 * The format and operations for this type can be found in section 4.1.2 of RFC-4122.
 	 * 
-	 * return a universally unique id as defined by RFC-4122.
+	 * @return a universally unique id as defined by RFC-4122.
 	 */    
     UUID readUuid();
 
@@ -114,14 +114,14 @@ public interface Decoder
 	 * Note that the encoded size refers to the number of octets of unicode, not necessarily the number of unicode 
 	 * characters since the UTF-8 unicode may include multi-byte character sequences.
 	 * 
-	 * return a string.
+	 * @return a string.
 	 */
     String readStr16();
 
 	/**
 	 * The vbin8 type encodes up to 255 octets of opaque binary data. 
 	 * 
-	 * return a byte array.
+	 * @return a byte array.
 	 */
     byte[] readVbin8();
     

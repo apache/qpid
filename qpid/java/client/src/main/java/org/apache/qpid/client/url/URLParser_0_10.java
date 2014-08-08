@@ -25,30 +25,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The format Qpid URL is based on the AMQP one.
- * The grammar is as follows:
- * <p> qpid_url          = "qpid:" [client_props "@"] port_addr_list ["/" future-parameters]
- * <p> port_addr_list 	 = [port_addr ","]* port_addr
- * <p> port_addr         = tcp_port_addr | tls_prot_addr | future_prot_addr
- * <p> tcp_port_addr     = tcp_id tcp_addr
- * <p> tcp_id            = "tcp:" | ""
- * <p> tcp_addr          = host [":" port]
- * <p> host              = <as per http://www.apps.ietf.org/>
- * <p> port              = number
- * <p> tls_prot_addr     = tls_id tls_addr
- * <p> tls_id            = "tls:" | ""
- * <p> tls_addr          = host [":" port]
- * <p> future_prot_addr  = future_prot_id future_prot_addr
- * <p> future_prot_id    = <placeholder, must end in ":". Example "sctp:">
- * <p> future_prot_addr  = <placeholder, protocl-specific address>
- * <p> future_parameters = <placeholder, not used in failover addresses>
- * <p> client_props      = [client_prop ";"]*  client_prop
- * <p> client_prop       = prop "=" val
- * <p> prop              = chars as per <as per http://www.apps.ietf.org/>
- * <p> val               = valid as per <as per http://www.apps.ietf.org/>
- * <p/>
- * Ex: qpid:virtualhost=tcp:host-foo,test,client_id=foo@tcp:myhost.com:5672,virtualhost=prod;
- * keystore=/opt/keystore@client_id2@tls:mysecurehost.com:5672
+ * The format Qpid URL is based on the AMQP one. The grammar is as follows:
+ * <p>
+ * <p>{@literal qpid_url          = "qpid:" [client_props "@"] port_addr_list ["/" future-parameters] }
+ * <p>{@literal port_addr_list 	 = [port_addr ","]* port_addr }
+ * <p>{@literal port_addr         = tcp_port_addr | tls_prot_addr | future_prot_addr }
+ * <p>{@literal tcp_port_addr     = tcp_id tcp_addr }
+ * <p>{@literal tcp_id            = "tcp:" | "" }
+ * <p>{@literal tcp_addr          = host [":" port] }
+ * <p>{@literal host              = <as per http://www.apps.ietf.org/> }
+ * <p>{@literal port              = number }
+ * <p>{@literal tls_prot_addr     = tls_id tls_addr }
+ * <p>{@literal tls_id            = "tls:" | "" }
+ * <p>{@literal tls_addr          = host [":" port] }
+ * <p>{@literal future_prot_addr  = future_prot_id future_prot_addr }
+ * <p>{@literal future_prot_id    = <placeholder, must end in ":". Example "sctp:"> }
+ * <p>{@literal future_prot_addr  = <placeholder, protocl-specific address> }
+ * <p>{@literal future_parameters = <placeholder, not used in failover addresses> }
+ * <p>{@literal client_props      = [client_prop ";"]*  client_prop }
+ * <p>{@literal client_prop       = prop "=" val }
+ * <p>{@literal prop              = chars as per <as per http://www.apps.ietf.org/> }
+ * <p>{@literal val               = valid as per <as per http://www.apps.ietf.org/> }
+ * <p>
+ * Ex:
+ * <p>
+ * {@literal qpid:virtualhost=tcp:host-foo,test,client_id=foo@tcp:myhost.com:5672,virtualhost=prod;
+ * keystore=/opt/keystore@client_id2@tls:mysecurehost.com:5672 }
  */
 public class URLParser_0_10
 {

@@ -30,7 +30,7 @@ public interface LogSubject
     /**
      * Provides the log message as as String.
      *
-     * @returns String the display representation of this LogSubject
+     * @return String the display representation of this LogSubject
      */
     public String toLogString();
 }

@@ -224,7 +224,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * @todo Some horrible stuff going on here with setting exceptions to be non-null to detect if an exception
+     * TODO Some horrible stuff going on here with setting exceptions to be non-null to detect if an exception
      * was thrown during the connection! Intention not clear. Use a flag anyway, not exceptions... Will fix soon.
      */
     public AMQConnection(ConnectionURL connectionURL) throws AMQException

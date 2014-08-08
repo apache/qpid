@@ -24,13 +24,6 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQChannelClosedException indicates that an operation cannot be performed becauase a channel has been closed.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents a failed operation on a closed channel.
- * </table>
- *
- * @todo Does this duplicate AMQChannelException?
  */
 public class AMQChannelClosedException extends AMQException
 {

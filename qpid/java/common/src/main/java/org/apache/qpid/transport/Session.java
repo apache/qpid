@@ -1206,6 +1206,7 @@ public class Session extends SessionInvoker
 
     /**
      * An auxiliary method for test purposes only
+     * @return true if flow is blocked
      */
     public boolean isFlowBlocked()
     {

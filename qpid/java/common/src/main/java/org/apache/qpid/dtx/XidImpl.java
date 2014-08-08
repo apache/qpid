@@ -99,14 +99,14 @@ public class XidImpl implements Xid
      * +---+---+---+---+---+---+---+-  -+---+---+-  -+---+
      * 0               4   5   6           6+g         6+g+b
      * format_id: an implementation specific format identifier
-     * <p/>
+     * <p>
      * gtrid_length: how many bytes of this form the transaction id
-     * <p/>
+     * <p>
      * bqual_length: how many bytes of this form the branch id
-     * <p/>
+     * <p>
      * data: a sequence of octets of at most 128 bytes containing the txn id and the
      * branch id
-     * <p/>
+     * <p>
      * Note - The sum of the two lengths must equal the length of the data field.
      *
      * @param xid an XID STring Form
@@ -239,14 +239,14 @@ public class XidImpl implements Xid
      * +---+---+---+---+---+---+---+-  -+---+---+-  -+---+
      * 0               4   5   6           6+g         6+g+b
      * format_id: an implementation specific format identifier
-     * <p/>
+     * <p>
      * gtrid_length: how many bytes of this form the transaction id
-     * <p/>
+     * <p>
      * bqual_length: how many bytes of this form the branch id
-     * <p/>
+     * <p>
      * data: a sequence of octets of at most 128 bytes containing the txn id and the
      * branch id
-     * <p/>
+     * <p>
      * Note - The sum of the two lengths must equal the length of the data field.
      *
      * @param xid an Xid to convert.

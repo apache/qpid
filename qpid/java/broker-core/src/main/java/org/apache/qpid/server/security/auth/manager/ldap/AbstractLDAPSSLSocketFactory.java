@@ -35,19 +35,16 @@ import javax.net.ssl.SSLSocketFactory;
  * <p>
  * Concrete implementations of this class are <b>generated dynamically</b> at runtime by
  * the {@link LDAPSSLSocketFactoryGenerator#createSubClass(String, SSLSocketFactory)} method.
- * </p>
  * <p>
  * Callers will create new instances of the concrete implementations by using the static
  * <code>#getDefault()</code> method. This will return an instance of the sub-class that is
  * associated with the {@link SSLSocketFactory}.
- * </p>
  * <p>
  * If callers are passing the sub-class to an API via class-name (i.e. String), the caller
  * <b>must</b> ensure that the context classloader of the thread to set to the classloader
  * of sub-class for the duration of the API call(s).
- * </p>
+ * <p>
  * For more details  see {@link LDAPSSLSocketFactoryGenerator}.
- * </p>
  */
 public abstract class AbstractLDAPSSLSocketFactory extends SSLSocketFactory
 {

@@ -32,31 +32,24 @@ import org.apache.qpid.protocol.AMQMethodListener;
  * incoming methods to a method listener implemented as a sub-class of this and hands off the processed method or
  * error to a consumer. The producer of the event does not have to wait for the consumer to take the event, so this
  * differs from a 'rendezvous' in that sense.
- *
- * <p/>BlockingMethodFrameListeners are used to coordinate waiting for replies to method calls that expect a response.
+ * <p>
+ * BlockingMethodFrameListeners are used to coordinate waiting for replies to method calls that expect a response.
  * They are always used in a 'one-shot' manner, that is, to recieve just one response. Usually the caller has to register
  * them as method listeners with an event dispatcher and remember to de-register them (in a finally block) once they
  * have been completed.
- *
- * <p/>The {@link #processMethod} must return <tt>true</tt> on any incoming method that it handles. This indicates to
+ * <p>
+ * The {@link #processMethod} must return <tt>true</tt> on any incoming method that it handles. This indicates to
  * this listeners that the method it is waiting for has arrived. Incoming methods are also filtered by channel prior to
  * being passed to the {@link #processMethod} method, so responses are only received for a particular channel. The
  * channel id must be passed to the constructor.
- *
- * <p/>Errors from the producer are rethrown to the consumer.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Accept notification of AMQP method events. <td> {@link AMQMethodEvent}
- * <tr><td> Delegate handling of the method to another method listener. <td> {@link AMQMethodBody}
- * <tr><td> Block until a method is handled by the delegated to handler.
- * <tr><td> Propagate the most recent exception to the consumer.
- * </table>
- *
- * @todo Might be neater if this method listener simply wrapped another that provided the method handling using a
+ * <p>
+ * Errors from the producer are rethrown to the consumer.
+ * <p>
+ * TODO  Might be neater if this method listener simply wrapped another that provided the method handling using a
  * methodRecevied method. The processMethod takes an additional channelId, however none of the implementations
  * seem to use it. So wrapping the listeners is possible.
- * @todo If the retrotranslator can handle it, could use a SynchronousQueue to implement this rendezvous. Need to
+ * <p>
+ * TODO  If the retrotranslator can handle it, could use a SynchronousQueue to implement this rendezvous. Need to
  * check that SynchronousQueue has a non-blocking put method available.
  */
 public abstract class BlockingMethodFrameListener extends BlockingWaiter<AMQMethodEvent> implements AMQMethodListener

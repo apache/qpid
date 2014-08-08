@@ -110,8 +110,8 @@ public class UpgradeFrom5To6 extends AbstractStoreUpgrade
      *
      * Message content is moved from the database messageContentDb_v5 to
      * MESSAGE_CONTENT. The structure of the database changes from ( message-id:
-     * long, chunk-id: int ) -> ( size: int, byte[] data ) to ( message-id:
-     * long) -> ( byte[] data )
+     * long, chunk-id: int ) {@literal ->} ( size: int, byte[] data ) to ( message-id:
+     * long) {@literal ->} ( byte[] data )
      *
      * That is we keep only one record per message, which contains all the
      * message content

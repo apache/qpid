@@ -24,11 +24,6 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQInvalidArgumentException indicates that an invalid argument has been passed to an AMQP method.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents an error due to an invalid argument being passed to an AMQP method.
- * </table>
  */
 public class AMQInvalidArgumentException extends AMQException
 {

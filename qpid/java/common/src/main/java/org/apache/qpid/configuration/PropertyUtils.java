@@ -26,15 +26,11 @@ import java.util.Iterator;
 /**
  * PropertyUtils provides helper methods for dealing with Java properties.
  *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Expand system properties into strings with named expansions.
- * </table>
- *
- * @todo Make the lookup method generic by passing in the properties to use for the expansion, rather than hard coding
+ * <p>
+ * TODO  Make the lookup method generic by passing in the properties to use for the expansion, rather than hard coding
  *       as system properties. The expansion code has greater potential for re-use that way.
- *
- * @todo Some more property related code could be added to this utils class, which might more appropriately reside under
+ * <p>
+ * TODO  Some more property related code could be added to this utils class, which might more appropriately reside under
  *       org.apache.qpid.util. For example standardised code to load properties from a resource name, currently found in
  *       QpidProperties and possibly other places could be moved here.
  */

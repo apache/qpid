@@ -109,6 +109,7 @@ public class ConnectionSettings
      * Gets the heartbeat interval (seconds) for 0-8/9/9-1 protocols.
      * 0 means heartbeating is disabled.
      * null means use the broker-supplied value.
+     * @return the heartbeat interval
      */
     public Integer getHeartbeatInterval08()
     {
@@ -129,6 +130,7 @@ public class ConnectionSettings
     /**
      * Gets the heartbeat interval (seconds) for the 0-10 protocol.
      * 0 means heartbeating is disabled.
+     * @return the heartbeat interval
      */
     public int getHeartbeatInterval010()
     {

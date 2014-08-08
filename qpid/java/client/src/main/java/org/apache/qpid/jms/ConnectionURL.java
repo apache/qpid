@@ -25,9 +25,9 @@ import org.apache.qpid.framing.AMQShortString;
 
 /**
  Connection URL format
- amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\'&option=\'value\';tcp://host:port/virtualpath?option=\'value\''&failover='method?option=\'value\'&option='value''"
+ {@literal amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\'&option=\'value\';tcp://host:port/virtualpath?option=\'value\''&failover='method?option=\'value\'&option='value''" }
  Options are of course optional except for requiring a single broker in the broker list.
- The option seperator is defined to be either '&' or ','
+ The option seperator is defined to be either {@literal '&' or ','}
   */
 public interface ConnectionURL
 {

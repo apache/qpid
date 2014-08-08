@@ -229,6 +229,13 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <!--The systests arent currently deployed, and their javadoc is rather broken anyway -->
+          <skip>true</skip>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 

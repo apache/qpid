@@ -60,7 +60,7 @@ public interface Encoder
 	/**
 	 * The uint64 type is a 64-bit unsigned integral value encoded in network byte order.
 	 * 
-	 * @param b the unsigned integer to be encoded.
+	 * @param l the unsigned integer to be encoded.
 	 */    
     void writeUint64(long l);
 

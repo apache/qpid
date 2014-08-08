@@ -24,13 +24,8 @@ import org.apache.qpid.AMQException;
 
 /**
  * AMQProtocolHeaderException indicates a format error in an AMQP frame header.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represent format error in frame header.
- * </table>
- *
- * @todo Not an AMQP exception as no status code.
+ * <p>
+ * TODO Not an AMQP exception as no status code.
  */
 public class AMQProtocolHeaderException extends AMQException
 {

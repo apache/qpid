@@ -34,18 +34,20 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * The state manager is responsible for managing the state of the protocol session. <p/>
+ * The state manager is responsible for managing the state of the protocol session.
+ * <p>
  * For each {@link org.apache.qpid.client.protocol.AMQProtocolHandler} there is a separate state manager.
- *
+ * <p>
  * The AMQStateManager is now attached to the {@link org.apache.qpid.client.protocol.AMQProtocolHandler} and that is the sole point of reference so that
  * As the {@link AMQProtocolSession} changes due to failover the AMQStateManager need not be copied around.
- *
+ * <p>
  * The StateManager works by any component can wait for a state change to occur by using the following sequence.
- *
- * <li>StateWaiter waiter = stateManager.createWaiter(Set<AMQState> states);
+ * <ul>
+ * <li>{@literal StateWaiter waiter = stateManager.createWaiter(Set<AMQState> states); }
  * <li> // Perform action that will cause state change
  * <li>waiter.await();
- *
+ * </ul>
+ * <p>
  * The two step process is required as there is an inherit race condition between starting a process that will cause
  * the state to change and then attempting to wait for that change. The interest in the change must be first set up so
  * that any asynchronous errors that occur can be delivered to the correct waiters.

@@ -24,11 +24,6 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQInvalidRoutingKeyException indicates an error with a routing key having an invalid format.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents a format error in a routing key.
- * </table>
  */
 public class AMQInvalidRoutingKeyException extends AMQException
 {

@@ -74,9 +74,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
         private Pattern likePattern;
 
-        /**
-         * @param right
-         */
         public LikeExpression(Expression right, String like, int escape)
         {
             super(right);
@@ -316,9 +313,9 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
     }
 
     /**
-     * Only Numeric expressions can be used in >, >=, < or <= expressions.s
+     * Only Numeric expressions can be used in {@literal >, >=, < or <=} expressions.
      *
-     * @param expr
+     * @param expr expression to check
      */
     public static void checkLessThanOperand(Expression expr)
     {
@@ -341,10 +338,10 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
     }
 
     /**
-     * Validates that the expression can be used in == or <> expression.
+     * Validates that the expression can be used in {@literal == or <>} expression.
      * Cannot not be NULL TRUE or FALSE literals.
      *
-     * @param expr
+     * @param expr expression to check
      */
     public static void checkEqualOperand(Expression expr)
     {
@@ -374,10 +371,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         }
     }
 
-    /**
-     * @param left
-     * @param right
-     */
     public ComparisonExpression(Expression left, Expression right)
     {
         super(left, right);

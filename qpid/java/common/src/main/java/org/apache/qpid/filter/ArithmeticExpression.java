@@ -30,10 +30,6 @@ public abstract class ArithmeticExpression extends BinaryExpression
     protected static final int LONG = 2;
     protected static final int DOUBLE = 3;
 
-    /**
-     * @param left
-     * @param right
-     */
     public ArithmeticExpression(Expression left, Expression right)
     {
         super(left, right);
@@ -262,11 +258,6 @@ public abstract class ArithmeticExpression extends BinaryExpression
         return evaluate(lvalue, rvalue);
     }
 
-    /**
-     * @param lvalue
-     * @param rvalue
-     * @return
-     */
     protected abstract Object evaluate(Object lvalue, Object rvalue);
 
 }

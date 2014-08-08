@@ -30,16 +30,6 @@ import java.util.Collection;
  * AMQType is a type that represents the different possible AMQP field table types. It provides operations for each
  * of the types to perform tasks such as calculating the size of an instance of the type, converting types between AMQP
  * and Java native types, and reading and writing instances of AMQP types in binary formats to and from byte buffers.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Get the equivalent one byte identifier for a type.
- * <tr><td> Calculate the size of an instance of an AMQP parameter type. <td> {@link EncodingUtils}
- * <tr><td> Convert an instance of an AMQP parameter into a compatable Java object tagged with its AMQP type.
- *     <td> {@link AMQTypedValue}
- * <tr><td> Write an instance of an AMQP parameter type to a byte buffer. <td> {@link EncodingUtils}
- * <tr><td> Read an instance of an AMQP parameter from a byte buffer. <td> {@link EncodingUtils}
- * </table>
  */
 public enum AMQType
 {
@@ -827,6 +817,7 @@ public enum AMQType
      *
      * @param value  An instance of the type.
      * @param buffer The byte buffer to write it to.
+     * @throws IOException if there is a problem writing to the buffer
      */
     public void writeToBuffer(Object value, DataOutput buffer) throws IOException
     {

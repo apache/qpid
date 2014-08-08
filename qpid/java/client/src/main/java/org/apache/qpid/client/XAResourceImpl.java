@@ -121,7 +121,7 @@ public class XAResourceImpl implements AMQXAResource
      * The transaction context is in a suspended state and must be resumed via the start method with TMRESUME specified.
      * <li> If TMFAIL is specified, the portion of work has failed. The resource manager may mark the transaction as rollback-only
      * <li> If TMSUCCESS is specified, the portion of work has completed successfully.
-     * /ul>
+     * </ul>
      *
      * @param xid  A global transaction identifier that is the same as the identifier used previously in the start method
      * @param flag One of TMSUCCESS, TMFAIL, or TMSUSPEND.
@@ -312,7 +312,7 @@ public class XAResourceImpl implements AMQXAResource
 
     /**
      * Obtains a list of prepared transaction branches.
-     * <p/>
+     * <p>
      * The transaction manager calls this method during recovery to obtain the list of transaction branches
      * that are currently in prepared or heuristically completed states.
      *

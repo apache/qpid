@@ -26,12 +26,8 @@ import org.apache.qpid.AMQException;
  * Indicates a failure to parse a property expansion. See {@link PropertyUtils} for the code that does property
  * expansions.
  *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaboration
- * <tr><td> Represent failure to expand a property name into a value.
- * </table>
- *
- * @todo Not an AMQP exception as no status code.
+ * <p>
+ * TODO Not an AMQP exception as no status code.
  */
 public class PropertyException extends AMQException
 {

@@ -64,13 +64,15 @@ public class QueueInformation
 
     /**
      * Params:
-     * 0: host, e.g. eqd-myserver.mydomain.com
-     * 1: port, e.g. 8999
-     * 2: vhost e.g. dev-only
-     * 3: username, e.g. guest
-     * 4: pwd, e.g. guest
-     * 5: loop pause, no value indicates one-off, any other value is millisecs
-     * ..: attributes=<csv attribute list> , queue=<csv queue list>
+     * <p>
+     * <p>0: host, e.g. eqd-myserver.mydomain.com
+     * <p>1: port, e.g. 8999
+     * <p>2: vhost e.g. dev-only
+     * <p>3: username, e.g. guest
+     * <p>4: pwd, e.g. guest
+     * <p>5: loop pause, no value indicates one-off, any other value is millisecs
+     * <p>..: {@literal attributes=<csv attribute list> , queue=<csv queue list>}
+     * <p>
      * The queue list can use wildcards such as * and ?. Basically any value
      * that JMX will accept in the query string for t name='' value of the queue.
      */

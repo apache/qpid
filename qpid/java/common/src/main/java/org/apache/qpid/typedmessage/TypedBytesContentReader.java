@@ -54,7 +54,7 @@ public class TypedBytesContentReader implements TypedBytesCodes
      * Check that there is at least a certain number of bytes available to read
      *
      * @param len the number of bytes
-     * @throws javax.jms.MessageEOFException if there are less than len bytes available to read
+     * @throws EOFException if there are less than len bytes available to read
      */
     public void checkAvailable(int len) throws EOFException
     {
@@ -183,7 +183,8 @@ public class TypedBytesContentReader implements TypedBytesCodes
      * Note that this method reads a unicode character as two bytes from the stream
      *
      * @return the character read from the stream
-     * @throws javax.jms.JMSException
+     * @throws EOFException if there are less than the required bytes available to read
+     * @throws TypedBytesFormatException if the current write type is not compatible
      */
     public char readChar() throws EOFException, TypedBytesFormatException
     {

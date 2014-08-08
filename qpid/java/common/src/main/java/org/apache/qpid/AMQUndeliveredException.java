@@ -24,11 +24,6 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQUndeliveredException indicates that a message, marked immediate or mandatory, could not be delivered.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents failure to delivery a message that must be delivered.
- * </table>
  */
 public class AMQUndeliveredException extends AMQException
 {
