@@ -47,6 +47,7 @@ public interface Message
 	 * <li> To Socket (Stream)
 	 * </ul>
 	 * @param src - the data to append
+	 * @throws IOException if there is an issue appending the data
 	 */
 	public void appendData(byte[] src) throws IOException;
 
@@ -63,6 +64,7 @@ public interface Message
      * <li> To Socket (Stream)
      * </ul>
      * @param src - the data to append
+     * @throws IOException if there is an issue appending the data
      */
     public void appendData(ByteBuffer src) throws IOException;
 
@@ -78,6 +80,7 @@ public interface Message
 	 * <li> From Socket as and when it gets streamed
 	 * </ul>
 	 * @param target  The target byte[] which the data gets copied to
+     * @throws IOException if there is an issue reading the data
 	 */
     public void readData(byte[] target) throws IOException;
 
@@ -94,7 +97,7 @@ public interface Message
      * </ul>
      *
      * @return A ByteBuffer containing data
-     * @throws IOException
+     * @throws IOException if there is an issue reading the data
      */
     public ByteBuffer readData() throws IOException;
 

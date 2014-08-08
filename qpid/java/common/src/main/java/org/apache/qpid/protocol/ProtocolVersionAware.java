@@ -25,11 +25,6 @@ import org.apache.qpid.framing.ProtocolVersion;
 /**
  * ProtocolVersionAware is implemented by all AMQP handling classes, that need to provide an awareness to callers of
  * the version of the AMQP protocol that they are able to handle.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities
- * <tr><td> Report the major and minor AMQP version handled.
- * </table>
  */
 public interface ProtocolVersionAware
 {

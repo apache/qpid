@@ -34,13 +34,8 @@ import java.nio.ByteBuffer;
 /**
  * AMQVersionAwareProtocolSession is implemented by all AMQP session classes, that need to provide an awareness to
  * callers of the version of the AMQP protocol that they are able to work with.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities
- * <tr><td> Provide the method registry for a specific version of the AMQP.
- * </table>
- *
- * @todo Why is this a seperate interface to {@link ProtocolVersionAware}, could they be combined into a single
+ * <p>
+ * TODO Why is this a seperate interface to {@link ProtocolVersionAware}, could they be combined into a single
  *       interface and one of them eliminated? Move getRegistry method to ProtocolVersionAware, make the sessions
  *       implement AMQProtocolWriter directly and drop this interface.
  */

@@ -26,11 +26,6 @@ import org.apache.qpid.framing.AMQDataBlock;
  * AMQProtocolWriter provides a method to write a frame of data 'to the wire', in the context of the object
  * that implements the method, usually some sort of session. The block of data, encapsulated by {@link AMQDataBlock},
  * will be encoded as it is written.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities
- * <tr><td> Write an encoded block of data to the write, in the context of a session.
- * </table>
  */
 public interface AMQProtocolWriter
 {
