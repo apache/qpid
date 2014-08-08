@@ -56,7 +56,7 @@ import org.apache.qpid.thread.Threading;
  * or both, each on it's own separate thread.
  * 
  * If con_count == ssn_count, then each entity created will have
- * it's own Connection. Else if con_count < ssn_count, then
+ * it's own Connection. Else if con_count {@literal <} ssn_count, then
  * a connection will be shared by ssn_count/con_count # of entities.
  * 
  * The if both sender and receiver options are set, it will
