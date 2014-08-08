@@ -25,15 +25,8 @@ import org.apache.qpid.protocol.AMQConstant;
 /**
  * AMQConnectionClosedException indicates that a connection has been closed.
  *
- * <p/>This exception is really used as an event, in order that the method handler that raises it creates an event
+ * <p>This exception is really used as an event, in order that the method handler that raises it creates an event
  * which is propagated to the io handler, in order to notify it of the connection closure.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents a the closure of a connection.
- * </table>
- *
- * @todo Should review where exceptions-as-events
  */
 public class AMQConnectionClosedException extends AMQException
 {

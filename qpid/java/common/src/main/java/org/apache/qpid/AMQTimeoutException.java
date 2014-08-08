@@ -24,11 +24,6 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQTimeoutException indicates that an expected response from a broker took too long.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Indicates that an expected response from a broker took too long.
- * </table>
  */
 public class AMQTimeoutException extends AMQException
 {

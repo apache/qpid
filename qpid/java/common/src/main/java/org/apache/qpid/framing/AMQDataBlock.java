@@ -39,7 +39,8 @@ public abstract class AMQDataBlock implements EncodableAMQDataBlock
 
     /**
      * Writes the datablock to the specified buffer.
-     * @param buffer
+     * @param buffer the buffer to write to
+     * @throws IOException if there is a problem writing the output
      */
     public abstract void writePayload(DataOutput buffer) throws IOException;
 

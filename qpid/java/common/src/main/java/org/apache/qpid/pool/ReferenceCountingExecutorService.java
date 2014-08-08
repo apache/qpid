@@ -33,28 +33,19 @@ import java.util.concurrent.TimeUnit;
  * the references taken, instantiating the service on the first reference, and shutting it down when the last
  * reference is released.
  *
- * <p/>It is important to ensure that an executor service is correctly shut down as failing to do so prevents the JVM
+ * <p>It is important to ensure that an executor service is correctly shut down as failing to do so prevents the JVM
  * from terminating due to the existence of non-daemon threads.
  *
- * <p/><table id="crc><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Provide a shared executor service. <td> {@link Executors}
- * <tr><td> Shutdown the executor service when not needed. <td> {@link ExecutorService}
- * <tr><td> Track references to the executor service.
- * <tr><td> Provide configuration of the executor service.
- * </table>
- *
- * @todo Might be more elegant to make this actually implement ExecutorService, providing better hiding of the
+ * <p>
+ * TODO  Might be more elegant to make this actually implement ExecutorService, providing better hiding of the
  *       implementation details. Also this class introduces a pattern (albeit specific to this usage) that could be
  *       generalized to reference count anything. That is, on first instance call a create method, on release of last
  *       instance call a destroy method. This could definitely be abstracted out as a re-usable piece of code; a
  *       reference counting factory. It could then be re-used to do reference counting in other places (such as
  *       messages). Countable objects have a simple create/destroy life cycle, capturable by an interface that the
  *       ref counting factory can call to manage the lifecycle.
- *
- * @todo {@link #_poolSize} should be static?
- *
- * @todo The {@link #getPool()} method breaks the encapsulation of the reference counter. Generally when getPool is used
+ * <p>
+ * TODO  The {@link #getPool()} method breaks the encapsulation of the reference counter. Generally when getPool is used
  *       further checks are applied to ensure that the executor service has not been shutdown. This passes responsibility
  *       for managing the lifecycle of the reference counted object onto the caller rather than neatly encapsulating it
  *       here. Could think about adding more state to the lifecycle, to mark ref counted objects as invalid, and have an

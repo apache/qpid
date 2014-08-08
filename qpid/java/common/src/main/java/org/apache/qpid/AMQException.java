@@ -26,14 +26,6 @@ import org.apache.qpid.protocol.AMQConstant;
 /**
  * AMQException forms the root exception of all exceptions relating to the AMQ protocol. It provides space to associate
  * a required AMQ error code with the exception, which is a numeric value, with a meaning defined by the protocol.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents an exception condition associated with an AMQ protocol status code.
- * </table>
- *
- * @todo This exception class is also used as a generic exception throughout Qpid code. This usage may not be strictly
- *       correct if this is to signify a protocol exception. Should review.
  */
 public class AMQException extends Exception
 {
@@ -117,9 +109,9 @@ public class AMQException extends Exception
      * Rethrown this exception as a new exception.
      *
      * Attempt to create a new exception of the same class if they have the default constructor of:
-     * {AMQConstant.class, String.class, Throwable.class}
-     * <p>
-     * Individual subclasses may override as requried to create a new instance.
+     * {AMQConstant.class, String.class, Throwable.class}.
+     *
+     * @return cloned exception
      */
     public AMQException cloneForCurrentThread()
     {

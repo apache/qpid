@@ -26,11 +26,6 @@ import org.apache.qpid.protocol.AMQConstant;
 /**
  * AMQFrameDecodingException indicates that an AMQP frame cannot be decoded because it does not have the correct
  * format as defined by the protocol.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents a format error in a protocol frame.
- * </table>
  */
 public class AMQFrameDecodingException extends AMQException
 {
