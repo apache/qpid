@@ -33,15 +33,6 @@ import java.util.Map;
  * value. It provides the ability to read and write fully typed parameters to and from byte buffers. It also provides
  * the ability to create such parameters from Java native value and a type tag or to extract the native value and type
  * from one.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Create a fully typed AMQP value from a native type and a type tag. <td> {@link AMQType}
- * <tr><td> Create a fully typed AMQP value from a binary representation in a byte buffer. <td> {@link AMQType}
- * <tr><td> Write a fully typed AMQP value to a binary representation in a byte buffer. <td> {@link AMQType}
- * <tr><td> Extract the type from a fully typed AMQP value.
- * <tr><td> Extract the value from a fully typed AMQP value.
- * </table>
  */
 public abstract class AMQTypedValue
 {

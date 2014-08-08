@@ -20,19 +20,12 @@
  */
 package org.apache.qpid.exchange;
 
-import org.apache.qpid.framing.AMQShortString;
-
 /**
  * Defines the names of the standard AMQP exchanges that every AMQP broker should provide. These exchange names
  * and type are given in the specification.
  *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Defines the standard AMQP exchange names.
- * <tr><td> Defines the standard AMQP exchange types.
- * </table>
- *
- * @todo A type safe enum, might be more appropriate for the exchange types.
+ * <p>
+ * TODO A type safe enum, might be more appropriate for the exchange types.
  */
 public class ExchangeDefaults
 {

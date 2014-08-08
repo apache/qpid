@@ -76,11 +76,14 @@ public class ContentHeaderBody implements AMQBody
     }
 
     /**
-     * Helper method that is used currently by the persistence layer (by BDB at the moment).
-     * @param buffer
-     * @param size
-     * @return
-     * @throws AMQFrameDecodingException
+     * Helper method that is used currently by the persistence layer.
+     * @param buffer buffer to decode
+     * @param size size of the body
+     *
+     * @return the decoded header body
+     * @throws AMQFrameDecodingException if there is a decoding issue
+     * @throws AMQProtocolVersionException if there is a version issue
+     * @throws IOException if there is an IO issue
      */
     public static ContentHeaderBody createFromBuffer(DataInputStream buffer, long size)
         throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
@@ -152,7 +155,9 @@ public class ContentHeaderBody implements AMQBody
         return weight;
     }
 
-    /** unsigned long but java can't handle that anyway when allocating byte array */
+    /** unsigned long but java can't handle that anyway when allocating byte array
+     *
+     * @return the body size */
     public long getBodySize()
     {
         return bodySize;

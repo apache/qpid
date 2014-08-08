@@ -137,6 +137,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
          * @param in input buffer
          * @return true if we have enough data to decode the PI frame fully, false if more
          * data is required
+         * @throws IOException if there is an issue reading the input
          */
         public boolean decodable(MarkableDataInput in) throws IOException
         {

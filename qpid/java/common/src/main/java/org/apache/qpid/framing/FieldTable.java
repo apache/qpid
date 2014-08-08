@@ -73,7 +73,8 @@ public class FieldTable
      * Construct a new field table.
      *
      * @param buffer the buffer from which to read data. The length byte must be read already
-     * @param length the length of the field table. Must be > 0.
+     * @param length the length of the field table. Must be great than 0.
+     * @throws IOException if there is an issue reading the buffer
      */
     public FieldTable(DataInput buffer, long length) throws IOException
     {

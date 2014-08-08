@@ -28,7 +28,7 @@ public interface BooleanExpression extends Expression
 {
 
     /**
-     * @param message
+     * @param message message to match
      * @return true if the expression evaluates to Boolean.TRUE.
      */
     public boolean matches(FilterableMessage message);

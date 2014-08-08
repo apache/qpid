@@ -46,7 +46,9 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
     }
 
 
-    /** unsigned short */
+    /** unsigned short
+     *
+     * @return body size*/
     abstract protected int getBodySize();
 
 

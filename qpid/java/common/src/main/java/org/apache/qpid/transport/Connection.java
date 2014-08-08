@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Rafael H. Schloming
  *
- * @todo the channels map should probably be replaced with something
+ * TODO the channels map should probably be replaced with something
  * more efficient, e.g. an array or a map implementation that can use
  * short instead of Short
  */

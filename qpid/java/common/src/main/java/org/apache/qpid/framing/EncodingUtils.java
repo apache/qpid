@@ -594,9 +594,9 @@ public class EncodingUtils
 
     /**
      * This is used for writing longstrs.
-     *
-     * @param buffer
-     * @param data
+     * @param buffer buffer to write to
+     * @param data data to write
+     * @throws IOException if there is an issue writing the output
      */
     public static void writeLongstr(DataOutput buffer, byte[] data) throws IOException
     {

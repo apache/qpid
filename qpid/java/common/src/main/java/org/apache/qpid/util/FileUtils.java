@@ -37,12 +37,6 @@ import java.util.List;
  * FileUtils provides some simple helper methods for working with files. It follows the convention of wrapping all
  * checked exceptions as runtimes, so code using these methods is free of try-catch blocks but does not expect to
  * recover from errors.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Read a text file as a string.
- * <tr><td> Open a file or default resource as an input stream.
- * </table>
  */
 public class FileUtils
 {
@@ -214,7 +208,7 @@ public class FileUtils
      *
      * @param src The source file name.
      * @param dst The destination file name.
-     * @throws IOException
+     * @throws IOException if there is an issue copying the file
      */
     public static void copyCheckedEx(File src, File dst) throws IOException
     {
@@ -228,7 +222,7 @@ public class FileUtils
      *
      * @param in The InputStream
      * @param dst The destination file name.
-     * @throws IOException
+     * @throws IOException if there is an issue copying the stream
      */
     public static void copy(InputStream in, File dst) throws IOException
     {
@@ -383,7 +377,7 @@ public class FileUtils
      * @param file the file to search
      * @param search the search String
      *
-     * @throws java.io.IOException
+     * @throws java.io.IOException if there is an issue searching the file
      * @return the list of matching entries
      */
     public static List<String> searchFile(File file, String search)
