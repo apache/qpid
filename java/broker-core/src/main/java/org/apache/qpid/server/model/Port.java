@@ -38,6 +38,12 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     String KEY_STORE                            = "keyStore";
     String TRUST_STORES                         = "trustStores";
 
+
+    String CONNECTION_MAXIMUM_AUTHENTICATION_DELAY = "connection.maximumAuthenticationDelay";
+
+    @ManagedContextDefault(name = CONNECTION_MAXIMUM_AUTHENTICATION_DELAY)
+    long DEFAULT_MAX_CONNECTION_AUTHENTICATION_DELAY = 10000l;
+
     // Attributes
 
     @ManagedAttribute(defaultValue = "*")

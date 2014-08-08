@@ -93,7 +93,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     // channels.  This value must be of the form 2^x - 1.
     private static final int CHANNEL_CACHE_SIZE = 0xff;
     private static final int REUSABLE_BYTE_BUFFER_CAPACITY = 65 * 1024;
-    private final Port _port;
+    private final Port<?> _port;
+    private final long _creationTime;
 
     private AMQShortString _contextKey;
 
@@ -166,12 +167,13 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private final ReentrantLock _receivedLock;
     private AtomicLong _lastWriteTime = new AtomicLong(System.currentTimeMillis());
-    private final Broker _broker;
+    private final Broker<?> _broker;
     private final Transport _transport;
 
     private volatile boolean _closeWhenNoRoute;
     private volatile boolean _stopped;
     private long _readBytes;
+    private boolean _authenticated;
 
     public AMQProtocolEngine(Broker broker,
                              final NetworkConnection network,
@@ -210,6 +212,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _dataDelivered = new StatisticsCounter("data-delivered-" + getSessionID());
         _messagesReceived = new StatisticsCounter("messages-received-" + getSessionID());
         _dataReceived = new StatisticsCounter("data-received-" + getSessionID());
+        _creationTime = System.currentTimeMillis();
     }
 
     private <T> T runAsSubject(PrivilegedAction<T> action)
@@ -277,7 +280,18 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             @Override
             public Void run()
             {
+
                 final long arrivalTime = System.currentTimeMillis();
+                if(!_authenticated &&
+                   (arrivalTime - _creationTime) > _port.getContextValue(Long.class,
+                                                                         Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))
+                {
+                    _logger.warn("Connection has taken more than "
+                                 + _port.getContextValue(Long.class, Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY)
+                                 + "ms to establish identity.  Closing as possible DoS.");
+                    getEventLogger().message(ConnectionMessages.IDLE_CLOSE());
+                    closeProtocolSession();
+                }
                 _lastReceivedTime = arrivalTime;
                 _lastIoTime = arrivalTime;
                 _readBytes += msg.remaining();
@@ -1200,6 +1214,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             throw new IllegalArgumentException("authorizedSubject cannot be null");
         }
 
+        _authenticated = true;
         _authorizedSubject.getPrincipals().addAll(authorizedSubject.getPrincipals());
         _authorizedSubject.getPrivateCredentials().addAll(authorizedSubject.getPrivateCredentials());
         _authorizedSubject.getPublicCredentials().addAll(authorizedSubject.getPublicCredentials());
@@ -1353,7 +1368,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     }
 
     @Override
-    public Port getPort()
+    public Port<?> getPort()
     {
         return _port;
     }

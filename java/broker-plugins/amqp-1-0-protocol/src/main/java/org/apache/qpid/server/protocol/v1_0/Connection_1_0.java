@@ -62,7 +62,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 public class Connection_1_0 implements ConnectionEventListener, AMQConnectionModel<Connection_1_0,Session_1_0>
 {
 
-    private final Port _port;
+    private final Port<?> _port;
     private final Broker _broker;
     private final SubjectCreator _subjectCreator;
     private VirtualHostImpl _vhost;
@@ -358,7 +358,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
     @Override
-    public Port getPort()
+    public Port<?> getPort()
     {
         return _port;
     }
