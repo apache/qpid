@@ -90,9 +90,14 @@ class Primary : public Role
     void removeReplica(const ReplicatingSubscription&);
 
     /** Skip replication of ids to queue on backup. */
-    void skip(const types::Uuid& backup,
-              const boost::shared_ptr<broker::Queue>& queue,
-              const ReplicationIdSet& ids);
+    void skipEnqueues(const types::Uuid& backup,
+                      const boost::shared_ptr<broker::Queue>& queue,
+                      const ReplicationIdSet& ids);
+
+    /** Skip replication of dequeue of ids to queue on backup. */
+    void skipDequeues(const types::Uuid& backup,
+                      const boost::shared_ptr<broker::Queue>& queue,
+                      const ReplicationIdSet& ids);
 
     // Called via BrokerObserver
     void queueCreate(const QueuePtr&);

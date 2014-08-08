@@ -265,14 +265,24 @@ void Primary::addReplica(ReplicatingSubscription& rs) {
     replicas[make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue())] = &rs;
 }
 
-void Primary::skip(
+void Primary::skipEnqueues(
     const types::Uuid& backup,
     const boost::shared_ptr<broker::Queue>& queue,
     const ReplicationIdSet& ids)
 {
     sys::Mutex::ScopedLock l(lock);
     ReplicaMap::const_iterator i = replicas.find(make_pair(backup, queue));
-    if (i != replicas.end()) i->second->addSkip(ids);
+    if (i != replicas.end()) i->second->skipEnqueues(ids);
+}
+
+void Primary::skipDequeues(
+    const types::Uuid& backup,
+    const boost::shared_ptr<broker::Queue>& queue,
+    const ReplicationIdSet& ids)
+{
+    sys::Mutex::ScopedLock l(lock);
+    ReplicaMap::const_iterator i = replicas.find(make_pair(backup, queue));
+    if (i != replicas.end()) i->second->skipDequeues(ids);
 }
 
 // Called from ReplicatingSubscription::cancel

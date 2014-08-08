@@ -137,8 +137,8 @@ class ReplicatingSubscription :
 
     BrokerInfo getBrokerInfo() const { return info; }
 
-    /** Skip replicating enqueue of of ids. */
-    void addSkip(const ReplicationIdSet& ids);
+void skipEnqueues(const ReplicationIdSet& ids);
+void skipDequeues(const ReplicationIdSet& ids);
 
   protected:
     bool doDispatch();
@@ -147,7 +147,8 @@ class ReplicatingSubscription :
     std::string logPrefix;
     QueuePosition position;
     ReplicationIdSet dequeues;  // Dequeues to be sent in next dequeue event.
-    ReplicationIdSet skip;   // Skip enqueues: messages already on backup and tx enqueues.
+    ReplicationIdSet skipEnqueue; // Enqueues to skip: messages already on backup and tx enqueues.
+    ReplicationIdSet skipDequeue; // Dequeues to skip: tx dequeues.
     ReplicationIdSet unready;   // Unguarded, replicated and un-acknowledged.
     bool wasStopped;
     bool ready;
