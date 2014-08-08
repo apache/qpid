@@ -472,6 +472,7 @@ bool Queue::getNextMessage(Message& m, Consumer::shared_ptr& c)
             }
         } else {
             QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
+            c->stopped();
             listeners.addListener(c);
             break;
         }

@@ -113,6 +113,8 @@ class ReplicatingSubscription :
     void cancel();
     void acknowledged(const broker::DeliveryRecord&);
     bool browseAcquired() const { return true; }
+    void stopped();
+
     // Hide the "queue deleted" error for a ReplicatingSubscription when a
     // queue is deleted, this is normal and not an error.
     bool hideDeletedError() { return true; }
@@ -147,6 +149,7 @@ class ReplicatingSubscription :
     ReplicationIdSet dequeues;  // Dequeues to be sent in next dequeue event.
     ReplicationIdSet skip;   // Skip enqueues: messages already on backup and tx enqueues.
     ReplicationIdSet unready;   // Unguarded, replicated and un-acknowledged.
+    bool wasStopped;
     bool ready;
     bool cancelled;
     BrokerInfo info;

@@ -20,7 +20,6 @@
 import os, signal, sys, time, imp, re, subprocess, glob, random, logging, shutil, math, unittest
 import traceback
 from qpid.datatypes import uuid4, UUID
-from qpid.harness import Skipped
 from brokertest import *
 from ha_test import *
 from threading import Thread, Lock, Condition
@@ -363,7 +362,9 @@ class ReplicationTests(HaBrokerTest):
             cluster[0].wait_status("ready")
             cluster.bounce(1)
             # FIXME aconway 2014-02-20: pr does not fail over with 1.0/swig
-            if qm == qpid_messaging: raise Skipped("FIXME SWIG client failover bug")
+            if qm == qpid_messaging:
+                print "WARNING: Skipping SWIG client failover bug"
+                return
             self.assertEqual("a", pr.fetch().content)
             pr.session.acknowledge()
             backup.assert_browse_backup("q", ["b"])
