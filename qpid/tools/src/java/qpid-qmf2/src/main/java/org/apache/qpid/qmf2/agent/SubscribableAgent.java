@@ -38,7 +38,7 @@ import org.apache.qpid.qmf2.common.QmfQuery;
  * <p>
  * The following diagram illustrates the interactions between the Agent, Subscription and SubscribableAgent.
  * <p>
- * <img src="doc-files/Subscriptions.png"/>
+ * <img alt="" src="doc-files/Subscriptions.png">
  *
  * @author Fraser Adams
  */

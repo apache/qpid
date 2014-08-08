@@ -59,7 +59,7 @@ public final class BooleanGreaterEqual extends BooleanExpression
     /**
      * Evaluate "greater than or equal to" expression against a QmfData instance.
      * N.B. to avoid complexities with types this class treats operands as Strings performing an appropriate evaluation
-     * of the String that makes sense for a given expression e.g. parsing as a double for >, >=, <, <=
+     * of the String that makes sense for a given expression e.g. parsing as a double for {@literal >, >=, <, <= }
      *
      * @param data the object to evaluate the expression against
      * @return true if query matches the QmfData instance, else false.

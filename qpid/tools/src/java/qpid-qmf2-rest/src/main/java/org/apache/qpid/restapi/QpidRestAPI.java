@@ -62,7 +62,7 @@ import org.apache.qpid.restapi.httpserver.Delegator;
  *                         hostname | ip-address [:&lt;port&gt;]   ex:  localhost,
  *                         10.1.1.7:10000, broker-host:10000,
  *                         guest/guest@localhost
- *                         Default is the host QpidRestAPI runs on & port 5672.
+ *                         Default is the host QpidRestAPI runs on &amp; port 5672.
  *        -i &lt;address&gt;,   --addr=&lt;address&gt;
  *                        the hostname of the QpidRestAPI default is the wildcard address
  *                        (Bind to a specific address on a multihomed host)

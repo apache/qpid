@@ -102,10 +102,10 @@ public final class ConnectionLogger implements QmfEventListener
     private boolean _stateChanged = false; 
 
     /**
-     * Basic constructor. Creates JMS Session, Initialises Destinations, Producers & Consumers and starts connection.
+     * Basic constructor. Creates JMS Session, Initialises Destinations, Producers &amp; Consumers and starts connection.
      * @param url the connection URL.
      * @param connectionOptions the options String to pass to ConnectionHelper.
-     * @param logQueues flags whether queue & binding information is logged as well as connection info.
+     * @param logQueues flags whether queue &amp; binding information is logged as well as connection info.
      */
     public ConnectionLogger(final String url, final String connectionOptions, final boolean logQueues)
     {

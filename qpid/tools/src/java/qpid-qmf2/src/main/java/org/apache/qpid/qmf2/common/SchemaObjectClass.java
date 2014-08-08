@@ -41,7 +41,7 @@ import java.util.Map;
  * the properties and methods are represented by an unordered map of SchemaProperty or SchemaMethod entries indexed by
  * property or method name, however these are actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY
  * and "List of SCHEMA_METHOD" elements that describe the schema objects's properties and methods". In this
- * implementation getProperties() returns a List<SchemaProperty> and getMethods() returns a List<SchemaMethod>
+ * implementation getProperties() returns a {@code List<SchemaProperty>} and getMethods() returns a {@code List<SchemaMethod>}
  * reflecting the reality of the protocol rather than what is suggested by the API documentation.
  *
  * @author Fraser Adams
@@ -151,7 +151,7 @@ public final class SchemaObjectClass extends SchemaClass
      * Note that <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a> suggests that
      * the properties are represented by an unordered map of SchemaProperty indexed by property name, however it
      * is actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe the
-     * schema objects's properties. In this implementation getProperties() returns a List<SchemaProperty> 
+     * schema objects's properties. In this implementation getProperties() returns a {@code List<SchemaProperty>} 
      * reflecting the reality of the protocol rather than what is suggested by the API documentation.
      *
      * @return Schema Object's properties.
@@ -203,7 +203,7 @@ public final class SchemaObjectClass extends SchemaClass
      * Note that <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a> suggests that
      * the methods are represented by an unordered map of SchemaMethod indexed by method name, however it
      * is actually represented in the QMF2 protocol as a "List of SCHEMA_METHOD elements that describe the
-     * schema objects's methods. In this implementation getMethods() returns a List<SchemaMethod> 
+     * schema objects's methods. In this implementation getMethods() returns a {@code List<SchemaMethod>} 
      * reflecting the reality of the protocol rather than what is suggested by the API documentation.
      *
      * @return Schema Object's methods.

@@ -35,7 +35,7 @@ import java.util.Map;
  * however is is actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe
  * the method's arguments". 
  * <p>
- * In this implementation getArguments() returns a List<SchemaProperty> reflecting the reality of the protocol
+ * In this implementation getArguments() returns a {@code List<SchemaProperty>} reflecting the reality of the protocol
  * rather than what is suggested by the API documentation.
  *
  * @author Fraser Adams
@@ -92,13 +92,13 @@ public final class SchemaMethod extends QmfData
     }
 
     /**
-     * Construct a SchemaMethod from a map of "name":<SchemaProperty> entries and description.
+     * Construct a SchemaMethod from a map of "name":{@code <SchemaProperty>} entries and description.
      *
      * Note this Constructor is the one given in the QMF2 API specification at
      * <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a>Note too that this method does not
      * set a name so setName() needs to be called explicitly by clients after construction.
      *
-     * @param args a Map of "name":<SchemaProperty> entries.
+     * @param args a Map of "name":{@code <SchemaProperty>} entries.
      * @param description a description of the SchemaMethod.
      */
     public SchemaMethod(final Map<String, SchemaProperty> args, final String description)
@@ -156,7 +156,7 @@ public final class SchemaMethod extends QmfData
      * <a href=https://cwiki.apache.org/confluence/display/qpid/QMFv2+API+Proposal>QMF2 API</a> suggests that
      * the parameter list is represented by an unordered map of SchemaProperty entries indexed by parameter name,
      * however is is actually represented in the QMF2 protocol as a "List of SCHEMA_PROPERTY elements that describe
-     * the method's arguments". In this implementation getArguments() returns a List<SchemaProperty> reflecting the
+     * the method's arguments". In this implementation getArguments() returns a {@code List<SchemaProperty>} reflecting the
      * reality of the protocol rather than what is suggested by the API documentation.
      *
      * @return the Method's arguments.

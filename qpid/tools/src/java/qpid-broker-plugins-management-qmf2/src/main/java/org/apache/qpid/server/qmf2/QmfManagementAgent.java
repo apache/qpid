@@ -117,8 +117,8 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
      * @param broker the root Broker Management Object from which the other Management Objects may be obtained.
      * to work without explicitly setting a Virtual Host, which I think is necessary because the C++ Broker and
      * the python command line tools aren't currently Virtual Host aware (are they?). The intention is to mark
-     * queues and exchanges with [vhost:<vhost-name>/]<object-name> in other words if we want to add things to
-     * the non-default Virtual Host prefix their names with [vhost:<vhost-name>/]. This approach *ought* to allow
+     * queues and exchanges with {@literal [vhost:<vhost-name>/]<object-name>} in other words if we want to add things to
+     * the non-default Virtual Host prefix their names with {@literal [vhost:<vhost-name>/]}. This approach *ought* to allow
      * non-Virtual Host aware command line tools the ability to add queues/exchanges to a particular vhost.
      */
     public QmfManagementAgent(final String url, final Broker broker)
@@ -598,7 +598,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
 
     /**
      * Callback method triggered when the underlying QMF2 Agent has WorkItems available for processing.
-     * The purpose of this method is mainly to handle the METHOD_CALL WorkItem and demultiplex & delegate
+     * The purpose of this method is mainly to handle the METHOD_CALL WorkItem and demultiplex &amp; delegate
      * to the invokeMethod() call on the relevant concrete QmfAgentData Object.
      * @param wi the WorkItem that has been passed by the QMF2 Agent to be processed here (mainly METHOD_CALL).
      */
