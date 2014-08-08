@@ -21,10 +21,17 @@
 package org.apache.qpid.server.message;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageImpl<X,T>, T extends StorableMessageMetaData> implements ServerMessage<T>
@@ -33,10 +40,14 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
     private static final AtomicIntegerFieldUpdater<AbstractServerMessageImpl> _refCountUpdater =
             AtomicIntegerFieldUpdater.newUpdater(AbstractServerMessageImpl.class, "_referenceCount");
 
+    private static final AtomicReferenceFieldUpdater<AbstractServerMessageImpl, Collection> _resourcesUpdater =
+            AtomicReferenceFieldUpdater.newUpdater(AbstractServerMessageImpl.class, Collection.class,"_resources");
+
 
     private volatile int _referenceCount = 0;
     private final StoredMessage<T> _handle;
     private final Object _connectionReference;
+    private volatile Collection<UUID> _resources;
 
 
     public AbstractServerMessageImpl(StoredMessage<T> handle, Object connectionReference)
@@ -117,6 +128,26 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
     }
 
     @Override
+    final public MessageReference<X> newReference(TransactionLogResource object)
+    {
+        return new Reference(this, object);
+    }
+
+    @Override
+    final public boolean isReferenced(TransactionLogResource resource)
+    {
+        Collection<UUID> resources = _resources;
+        return resources != null && resources.contains(resource.getId());
+    }
+
+    @Override
+    final public boolean isReferenced()
+    {
+        Collection<UUID> resources = _resources;
+        return resources != null && !resources.isEmpty();
+    }
+
+    @Override
     final public boolean isPersistent()
     {
         return _handle.getMetaData().isPersistent();
@@ -156,15 +187,52 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
                 AtomicIntegerFieldUpdater.newUpdater(Reference.class, "_released");
 
         private AbstractServerMessageImpl<X, T> _message;
+        private final UUID _resourceId;
         private volatile int _released;
 
         private Reference(final AbstractServerMessageImpl<X, T> message)
         {
+            this(message, null);
+        }
+        private Reference(final AbstractServerMessageImpl<X, T> message, TransactionLogResource resource)
+        {
             _message = message;
+            if(resource != null)
+            {
+                Collection<UUID> currentValue;
+                Collection<UUID> newValue;
+                _resourceId = resource.getId();
+                do
+                {
+                    currentValue = _message._resources;
+
+                    if(currentValue == null)
+                    {
+                        newValue = Collections.singleton(_resourceId);
+                    }
+                    else
+                    {
+                        if(currentValue.contains(_resourceId))
+                        {
+                            throw new MessageAlreadyReferencedException(_message.getMessageNumber(), resource);
+                        }
+                        newValue = new ArrayList<>(currentValue.size()+1);
+                        newValue.addAll(currentValue);
+                        newValue.add(_resourceId);
+                    }
+
+                }
+                while(!_resourcesUpdater.compareAndSet(_message, currentValue, newValue));
+            }
+            else
+            {
+                _resourceId = null;
+            }
             if(!_message.incrementReference())
             {
                 throw new MessageDeletedException(message.getMessageNumber());
             }
+
         }
 
         public X getMessage()
@@ -176,6 +244,34 @@ public abstract class AbstractServerMessageImpl<X extends AbstractServerMessageI
         {
             if(_releasedUpdater.compareAndSet(this,0,1))
             {
+                if(_resourceId != null)
+                {
+                    Collection<UUID> currentValue;
+                    Collection<UUID> newValue;
+                    do
+                    {
+                        currentValue = _message._resources;
+                        if(currentValue.size() == 1)
+                        {
+                            newValue = null;
+                        }
+                        else
+                        {
+                            UUID[] array = new UUID[currentValue.size()-1];
+                            int pos = 0;
+                            for(UUID uuid : currentValue)
+                            {
+                                if(!_resourceId.equals(uuid))
+                                {
+                                    array[pos++] = uuid;
+                                }
+                            }
+                            newValue = Arrays.asList(array);
+                        }
+                    }
+                    while(!_resourcesUpdater.compareAndSet(_message, currentValue, newValue));
+
+                }
                 _message.decrementReference();
             }
         }

@@ -19,14 +19,16 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 /**
  * Abstract test class for QueueEntryList implementations.
@@ -96,6 +98,7 @@ public abstract class QueueEntryListTestBase extends TestCase
         AMQMessageHeader hdr = mock(AMQMessageHeader.class);
         when(ref.getMessage()).thenReturn(message);
         when(message.newReference()).thenReturn(ref);
+        when(message.newReference(any(TransactionLogResource.class))).thenReturn(ref);
         when(message.getMessageHeader()).thenReturn(hdr);
         return message;
     }

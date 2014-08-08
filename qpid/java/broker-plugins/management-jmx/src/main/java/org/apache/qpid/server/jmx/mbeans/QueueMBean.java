@@ -59,6 +59,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.NotificationCheck;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
@@ -519,7 +520,8 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
                             final long messageId = message.getMessageNumber();
 
                             if ((messageId >= fromMessageId)
-                                && (messageId <= toMessageId))
+                                && (messageId <= toMessageId)
+                                && !(message.isReferenced((TransactionLogResource)destinationQueue)))
                             {
                                 txn.move(entry, destinationQueue);
                             }
@@ -571,8 +573,8 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
         }
 
         VirtualHost<?,?,?> vhost = _queue.getParent(VirtualHost.class);
-        final Queue<?> queue = vhost.getChildByName(Queue.class, toQueue);
-        if (queue == null)
+        final Queue<?> destinationQueue = vhost.getChildByName(Queue.class, toQueue);
+        if (destinationQueue == null)
         {
             throw new OperationsException("No such queue \""+ toQueue +"\"");
         }
@@ -591,9 +593,10 @@ public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueN
                             final long messageId = message.getMessageNumber();
 
                             if ((messageId >= fromMessageId)
-                                && (messageId <= toMessageId))
+                                && (messageId <= toMessageId)
+                                && !(message.isReferenced((TransactionLogResource)destinationQueue)))
                             {
-                                txn.copy(entry, queue);
+                                txn.copy(entry, destinationQueue);
                             }
 
                         }

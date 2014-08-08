@@ -20,6 +20,7 @@
 */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +37,7 @@ import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class StandardQueueEntryListTest extends QueueEntryListTestBase
@@ -73,6 +75,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             MessageReference ref = mock(MessageReference.class);
             when(ref.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(ref);
+            when(message.newReference(any(TransactionLogResource.class))).thenReturn(ref);
 
             final QueueEntry bleh = _sqel.add(message);
             assertNotNull("QE should not have been null", bleh);
@@ -163,6 +166,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             MessageReference ref = mock(MessageReference.class);
             when(ref.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(ref);
+            when(message.newReference(any(TransactionLogResource.class))).thenReturn(ref);
             QueueEntry bleh = sqel.add(message);
             assertNotNull("QE should not have been null", bleh);
             entriesMap.put(i,bleh);
@@ -264,6 +268,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             final MessageReference reference = mock(MessageReference.class);
             when(reference.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(reference);
+            when(message.newReference(any(TransactionLogResource.class))).thenReturn(reference);
             entries[i] = (OrderedQueueEntry) queueEntryList.add(message);
         }
 

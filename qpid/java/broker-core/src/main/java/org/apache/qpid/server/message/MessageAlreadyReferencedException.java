@@ -20,41 +20,12 @@
  */
 package org.apache.qpid.server.message;
 
-import java.nio.ByteBuffer;
-
-import org.apache.qpid.server.store.StorableMessageMetaData;
-import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 
-public interface ServerMessage<T extends StorableMessageMetaData> extends EnqueueableMessage, MessageContentSource
+public class MessageAlreadyReferencedException extends RuntimeException
 {
-    String getInitialRoutingAddress();
-
-    AMQMessageHeader getMessageHeader();
-
-    public StoredMessage<T> getStoredMessage();
-
-    boolean isPersistent();
-
-    long getSize();
-
-    long getExpiration();
-
-    MessageReference newReference();
-
-    MessageReference newReference(TransactionLogResource object);
-
-    boolean isReferenced(TransactionLogResource resource);
-
-    boolean isReferenced();
-
-    long getMessageNumber();
-
-    long getArrivalTime();
-
-    public int getContent(ByteBuffer buf, int offset);
-
-    public ByteBuffer getContent(int offset, int size);
-
-    Object getConnectionReference();
+    MessageAlreadyReferencedException(final long messageNumber, TransactionLogResource resource)
+    {
+        super("The message with id " + messageNumber + " is already referenced by resource " + resource.getName());
+    }
 }

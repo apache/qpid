@@ -24,7 +24,7 @@ import org.apache.qpid.server.message.ServerMessage;
 
 public interface QueueEntryList
 {
-    AMQQueue getQueue();
+    AMQQueue<?> getQueue();
 
     QueueEntry add(ServerMessage message);
 
