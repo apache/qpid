@@ -51,7 +51,7 @@ import java.util.zip.GZIPOutputStream;
  * <p>A of few additional optional features have been added:<br> -- Attach date pattern for current log file (@see
  * staticLogFileName)<br> -- Backup number increments for newer files (@see countDirection)<br> -- Infinite number of
  * backups by file size (@see maxSizeRollBackups)<br> <br> <p>A few notes and warnings:  For large or infinite number of
- * backups countDirection > 0 is highly recommended, with staticLogFileName = false if time based rolling is also used
+ * backups countDirection {@literal >} 0 is highly recommended, with staticLogFileName = false if time based rolling is also used
  * -- this will reduce the number of file renamings to few or none.  Changing staticLogFileName or countDirection
  * without clearing the directory could have nasty side effects.  If Date/Time based rolling is enabled,
  * CompositeRollingAppender will attempt to roll existing files in the directory without a date/time tag based on the
@@ -358,9 +358,9 @@ public class QpidCompositeRollingAppender extends FileAppender
     }
 
     /**
-     * By default newer files have lower numbers. (countDirection < 0) ie. log.1 is most recent, log.5 is the 5th
-     * backup, etc... countDirection > 0 does the opposite ie. log.1 is the first backup made, log.5 is the 5th backup
-     * made, etc. For infinite backups use countDirection > 0 to reduce rollOver costs.
+     * By default newer files have lower numbers. (countDirection {@literal <} 0) ie. log.1 is most recent, log.5 is the 5th
+     * backup, etc... countDirection {@literal >} 0 does the opposite ie. log.1 is the first backup made, log.5 is the 5th backup
+     * made, etc. For infinite backups use countDirection {@literal >} 0 to reduce rollOver costs.
      */
     public int getCountDirection()
     {
@@ -686,9 +686,9 @@ public class QpidCompositeRollingAppender extends FileAppender
     /**
      * Implements roll overs base on file size.
      *
-     * <p>If the maximum number of size based backups is reached (<code>curSizeRollBackups == maxSizeRollBackups</code)
+     * <p>If the maximum number of size based backups is reached (<code>curSizeRollBackups {@literal ==} maxSizeRollBackups</code>)
      * then the oldest file is deleted -- it's index determined by the sign of countDirection.<br> If
-     * <code>countDirection</code> < 0, then files {<code>File.1</code>, ..., <code>File.curSizeRollBackups -1</code>}
+     * <code>countDirection</code> {@literal <} 0, then files {<code>File.1</code>, ..., <code>File.curSizeRollBackups -1</code>}
      * are renamed to {<code>File.2</code>, ..., <code>File.curSizeRollBackups</code>}.  Moreover, <code>File</code> is
      * renamed <code>File.1</code> and closed.<br>
      *
@@ -697,7 +697,7 @@ public class QpidCompositeRollingAppender extends FileAppender
      * <p>If <code>maxSizeRollBackups</code> is equal to zero, then the <code>File</code> is truncated with no backup
      * files created.
      *
-     * <p>If <code>maxSizeRollBackups</code> < 0, then <code>File</code> is renamed if needed and no files are deleted.
+     * <p>If <code>maxSizeRollBackups</code> {@literal <} 0, then <code>File</code> is renamed if needed and no files are deleted.
      */
 
     // synchronization not necessary since doAppend is already synched

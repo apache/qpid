@@ -33,8 +33,8 @@ import org.apache.qpid.server.security.access.Operation;
  *
  * An action consists of an {@link Operation} on an {@link ObjectType} with certain properties, stored in a {@link java.util.Map}.
  * The operation and object should be an allowable combination, based on the {@link ObjectType#isAllowed(Operation)}
- * method of the object, which is exposed as the {@link #isAllowed()} method here. The internal {@link #propertiesMatch(Map)}
- * and {@link #valueMatches(String, String)} methods are used to determine wildcarded matching of properties, with
+ * method of the object, which is exposed as the {@link #isAllowed()} method here. The internal #propertiesMatch(Map)
+ * and #valueMatches(String, String) methods are used to determine wildcarded matching of properties, with
  * the empty string or "*" matching all values, and "*" at the end of a rule value indicating prefix matching.
  * <p>
  * The {@link #matches(Action)} method is intended to be used when determining precedence of rules, and
