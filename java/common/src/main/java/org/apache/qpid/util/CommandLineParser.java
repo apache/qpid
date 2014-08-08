@@ -31,13 +31,13 @@ import java.util.regex.Pattern;
 
 /**
  * CommandLineParser provides a utility for specifying the format of a command line and parsing command lines to ensure
- * that they fit their specified format. A command line is made up of flags and options, both may be refered to as
+ * that they fit their specified format. A command line is made up of flags and options, both may be referred to as
  * options. A flag is an option that does not take an argument (specifying it means it has the value 'true' and not
  * specifying it means it has the value 'false'). Options must take arguments but they can be set up with defaults so
- * that they take a default value when not set. Options may be mandatory in wich case it is an error not to specify
+ * that they take a default value when not set. Options may be mandatory in which case it is an error not to specify
  * them on the command line. Flags are never mandatory because they are implicitly set to false when not specified.
  *
- * <p/>Some example command lines are:
+ * <p>Some example command lines are:
  *
  * <ul>
  * <li>This one has two options that expect arguments:
@@ -52,14 +52,15 @@ import java.util.regex.Pattern;
  * <pre>
  * jar -tvf mytar.tar
  * </pre>
+ * </ul>
  *
- * <p/>The parsing rules are:
+ * <p>The parsing rules are:
  *
  * <ol>
  * <li>Flags may be combined after a single '-' because they never take arguments. Normally such flags are single letter
  * flags but this is only a convention and not enforced. Flags of more than one letter are usually specified on their own.
  * <li>Options expecting arguments must always be on their own.
- * <li>The argument to an option may be seperated from it by whitespace or appended directly onto the option.
+ * <li>The argument to an option may be separated from it by whitespace or appended directly onto the option.
  * <li>The argument to an option may never begin with a '-' character.
  * <li>All other arguments not beginning with a '-' character are free arguments that do not belong to any option.
  * <li>The second or later of a set of duplicate or repeated flags are ignored.
@@ -70,18 +71,8 @@ import java.util.regex.Pattern;
  * the "bar" argument.
  * </ol>
  *
- * <p/>By default, unknown options are simply ignored if specified on the command line. This behaviour may be changed
+ * <p>By default, unknown options are simply ignored if specified on the command line. This behaviour may be changed
  * so that the parser reports all unknowns as errors by using the {@link #setErrorsOnUnknowns} method.
- *
- * <p><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Accept a command line specification.
- * <tr><td> Parse a command line into properties, validating it against its specification.
- * <tr><td> Report all errors between a command line and its specification.
- * <tr><td> Provide a formatted usage string for a command line.
- * <tr><td> Provide a formatted options in force string for a command line.
- * <tr><td> Allow errors on unknowns behaviour to be turned on or off.
- * </table>
  */
 public class CommandLineParser
 {
@@ -106,7 +97,7 @@ public class CommandLineParser
      * array may therefore easily be used to configure the command line parser in a single method call with an easily
      * readable format.
      *
-     * <p/>Each array of strings must be 2, 3, 4 or 5 elements long. If any of the last three elements are missing they
+     * <p>Each array of strings must be 2, 3, 4 or 5 elements long. If any of the last three elements are missing they
      * are assumed to be null. The elements specify the following parameters:
      * <ol>
      * <li>The name of the option without the leading '-'. For example, "file".  To specify the format of the 'free'
@@ -121,7 +112,7 @@ public class CommandLineParser
      *     this is ignored for flags.
      * <li>A regular expression describing the format that the argument must take. Ignored if null.
      * </ol>
-     * <p/>An example call to this constructor is:
+     * <p>An example call to this constructor is:
      *
      * <pre>
      * CommandLineParser commandLine = new CommandLineParser(
@@ -234,7 +225,7 @@ public class CommandLineParser
      * Parses a set of command line arguments into a set of properties, keyed by the argument flag. The free arguments
      * are keyed by integers as strings starting at "1" and then "2", ... and so on.
      *
-     * <p/>See the class level comment for a description of the parsing rules.
+     * <p>See the class level comment for a description of the parsing rules.
      *
      * @param args The command line arguments.
      *
@@ -488,6 +479,7 @@ public class CommandLineParser
 
     /**
      * If a command line has been parsed, calling this method sets all of its parsed options into the specified properties.
+     * @param properties properties
      */
     public void addCommandLineToProperties(Properties properties)
     {
@@ -508,7 +500,7 @@ public class CommandLineParser
      * to be called to use this parser a second time which is not likely seeing as a command line is usually only
      * specified once. However, it is exposed as a public method for the rare case where this may be done.
      *
-     * <p/>Cleans the internal state of this parser, removing all stored errors and information about the options in
+     * <p>Cleans the internal state of this parser, removing all stored errors and information about the options in
      * force.
      */
     public void reset()
@@ -643,11 +635,6 @@ public class CommandLineParser
      * Holds information about a command line options. This includes what its name is, whether or not it is a flag,
      * whether or not it is mandatory, what its user comment is, what its argument reminder text is and what its
      * regular expression format is.
-     *
-     * <p><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Hold details of a command line option.
-     * </table>
      */
     protected static class CommandLineOption
     {

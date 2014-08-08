@@ -25,11 +25,6 @@ import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 /**
  * AMQCodecFactory is a Mina codec factory. It supplies the encoders and decoders need to read and write the bytes to
  * the wire.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations.
- * <tr><td> Supply the protocol decoder. <td> {@link AMQDecoder}
- * </table>
  */
 public class AMQCodecFactory
 {
@@ -44,6 +39,7 @@ public class AMQCodecFactory
      *
      * @param expectProtocolInitiation <tt>true</tt> if the first frame received is going to be a protocol initiation
      *                                 frame, <tt>false</tt> if it is going to be a standard AMQ data block.
+     * @param session protocol session (connection)
      */
     public AMQCodecFactory(boolean expectProtocolInitiation, AMQVersionAwareProtocolSession session)
     {

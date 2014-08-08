@@ -27,6 +27,7 @@ public interface Expression
 {
 
     /**
+     * @param message message to evaluate
      * @return the value of this expression
      */
     public Object evaluate(FilterableMessage message);

@@ -46,17 +46,11 @@ import java.util.ListIterator;
  * protocol initiation decoder. It is a cumulative decoder, which means that it can accumulate data to decode in the
  * buffer until there is enough data to decode.
  *
- * <p/>One instance of this class is created per session, so any changes or configuration done at run time to the
+ * <p>One instance of this class is created per session, so any changes or configuration done at run time to the
  * decoder will only affect decoding of the protocol session data to which is it bound.
  *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Delegate protocol initiation to its decoder. <td> {@link ProtocolInitiation.Decoder}
- * <tr><td> Delegate AMQP data to its decoder. <td> {@link AMQDataBlockDecoder}
- * <tr><td> Accept notification that protocol initiation has completed.
- * </table>
- *
- * @todo If protocol initiation decoder not needed, then don't create it. Probably not a big deal, but it adds to the
+ * <p>
+ * TODO If protocol initiation decoder not needed, then don't create it. Probably not a big deal, but it adds to the
  *       per-session overhead.
  */
 public class AMQDecoder
@@ -78,6 +72,7 @@ public class AMQDecoder
      * Creates a new AMQP decoder.
      *
      * @param expectProtocolInitiation <tt>true</tt> if this decoder needs to handle protocol initiation.
+     * @param session protocol session (connection)
      */
     public AMQDecoder(boolean expectProtocolInitiation, AMQVersionAwareProtocolSession session)
     {

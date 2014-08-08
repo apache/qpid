@@ -34,12 +34,12 @@ public interface NetworkConnection
     void close();
 
     /**
-     * Returns the remote address of the underlying socket.
+     * @return the remote address of the underlying socket.
      */
     SocketAddress getRemoteAddress();
 
     /**
-     * Returns the local address of the underlying socket.
+     * @return the local address of the underlying socket.
      */
     SocketAddress getLocalAddress();
 
