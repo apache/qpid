@@ -28,20 +28,14 @@ import java.util.Map;
 /**
  * Defines constants for AMQP codes and also acts as a factory for creating such constants from the raw codes. Each
  * constant also defines a short human readable description of the constant.
- *
- * @todo Why would a constant be defined that is not in the map? Seems more natural that getConstant should raise an
+ * <p>
+ * TODO  Why would a constant be defined that is not in the map? Seems more natural that getConstant should raise an
  *       exception for an unknown constant. Or else provide an explanation of why this is so. Also, there is no way for
  *       callers to determine the unknown status of a code except by comparing its name to "unknown code", which would
  *       seem to render this scheme a little bit pointless?
- *
- * @todo Java has a nice enum construct for doing this sort of thing. Maybe this is done in the old style for Java 1.4
+ * <p>
+ * TODO  Java has a nice enum construct for doing this sort of thing. Maybe this is done in the old style for Java 1.4
  *       backward compatability? Now that is handled through retrotranslater it may be time to use enum.
- *
- * <p/><tabld id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Define the set of AMQP status codes.
- * <tr><td> Provide a factory to lookup constants by their code.
- * <tr><td>
  */
 public final class AMQConstant
 {

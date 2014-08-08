@@ -24,11 +24,6 @@ import org.apache.qpid.framing.AMQShortString;
 
 /**
  * Specifies the different filter types for consumers that filter their messages.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represent different consumer filter types.
- * </table>
  */
 public enum AMQPFilterTypes
 {

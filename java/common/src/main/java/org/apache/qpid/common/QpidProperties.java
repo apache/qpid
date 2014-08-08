@@ -35,17 +35,13 @@ import java.util.Properties;
  * idea behind this, is that every build has these values incorporated directly into its jar file, so that code in the
  * wild can be identified, should its origination be forgotten.
  *
- * <p/>To get the build version of any Qpid code call the {@link #main} method. This version string is usually also
+ * <p>To get the build version of any Qpid code call the {@link #main} method. This version string is usually also
  * printed to the console on broker start up.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><td>Load build versioning information into the runtime, for code identification purposes.
- * </table>
- *
- * @todo Code to locate/load/log properties can be factored into a reusable properties utils class. Avoid having this
+ * <p>
+ * TODO  Code to locate/load/log properties can be factored into a reusable properties utils class. Avoid having this
  *       same snippet of loading code scattered in many places.
- *
- * @todo Could also add a build number property for a sequential build number assigned by an automated build system, for
+ * <p>
+ * TODO  Could also add a build number property for a sequential build number assigned by an automated build system, for
  *       build reproducability purposes.
  */
 public class QpidProperties

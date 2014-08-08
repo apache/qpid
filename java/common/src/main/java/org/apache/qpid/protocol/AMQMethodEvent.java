@@ -25,19 +25,14 @@ import org.apache.qpid.framing.AMQMethodBody;
 /**
  * AMQMethodEvent encapsulates an AMQP method call, and the channel on which that method call occurred.
  *
- * <p/>Supplies the:
+ * <p>Supplies the:
  * <ul>
  * <li>channel id</li>
  * <li>protocol method</li>
  * </ul>
  *
- * <p/>As the event contains the context in which it occurred, event listeners do not need to be statefull.
+ * <p>As the event contains the context in which it occurred, event listeners do not need to be statefull.
  * to listeners. Events are often handled by {@link AMQMethodListener}s.
- *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Encapsulate an AMQP method call and the channel as the context for the method call.
- * </table>
  */
 public class AMQMethodEvent<M extends AMQMethodBody>
 {
