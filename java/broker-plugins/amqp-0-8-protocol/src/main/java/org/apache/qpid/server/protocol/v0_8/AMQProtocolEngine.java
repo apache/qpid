@@ -1273,7 +1273,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public void readerIdle()
     {
-        // TODO - enforce disconnect on lack of inbound data
+        Subject.doAs(_authorizedSubject, new PrivilegedAction<Object>()
+        {
+            @Override
+            public Object run()
+            {
+                getEventLogger().message(ConnectionMessages.IDLE_CLOSE());
+                _network.close();
+                return null;
+            }
+        });
     }
 
     public synchronized void writerIdle()
