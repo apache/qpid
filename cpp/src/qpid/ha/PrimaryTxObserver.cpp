@@ -165,6 +165,7 @@ void PrimaryTxObserver::dequeue(
     if (replicationTest.useLevel(*q) == ALL) { // Ignore unreplicated queues.
         QPID_LOG(trace, logPrefix << "Dequeue: " << LogMessageId(*q, pos, id));
         empty = false;
+        dequeues[q] += id;
         txQueue->deliver(TxDequeueEvent(q->getName(), id).message());
     }
 }
@@ -180,25 +181,30 @@ struct Skip {
          const ReplicationIdSet& ids_) :
         backup(backup_), queue(queue_), ids(ids_) {}
 
-    void skip(Primary& p) const { p.skip(backup, queue, ids); }
+    void skipEnqueues(Primary& p) const { p.skipEnqueues(backup, queue, ids); }
+    void skipDequeues(Primary& p) const { p.skipDequeues(backup, queue, ids); }
 };
 } // namespace
 
+void PrimaryTxObserver::skip(Mutex::ScopedLock&) {
+    // Tell replicating subscriptions to skip IDs in the transaction.
+    vector<Skip> skipEnq, skipDeq;
+    for (UuidSet::iterator b = backups.begin(); b != backups.end(); ++b) {
+        for (QueueIdsMap::iterator q = enqueues.begin(); q != enqueues.end(); ++q)
+            skipEnq.push_back(Skip(*b, q->first, q->second));
+        for (QueueIdsMap::iterator q = dequeues.begin(); q != dequeues.end(); ++q)
+            skipDeq.push_back(Skip(*b, q->first, q->second));
+    }
+    Mutex::ScopedUnlock u(lock); // Outside lock
+    for_each(skipEnq.begin(), skipEnq.end(), boost::bind(&Skip::skipEnqueues, _1, boost::ref(primary)));
+    for_each(skipDeq.begin(), skipDeq.end(), boost::bind(&Skip::skipDequeues, _1, boost::ref(primary)));
+}
+
 bool PrimaryTxObserver::prepare() {
     QPID_LOG(debug, logPrefix << "Prepare " << backups);
-    vector<Skip> skips;
-    {
-        Mutex::ScopedLock l(lock);
-        checkState(SENDING, "Too late for prepare");
-        state = PREPARING;
-        // Tell replicating subscriptions to skip IDs in the transaction.
-        for (UuidSet::iterator b = backups.begin(); b != backups.end(); ++b)
-            for (QueueIdsMap::iterator q = enqueues.begin(); q != enqueues.end(); ++q)
-                skips.push_back(Skip(*b, q->first, q->second));
-    }
-    // Outside lock
-    for_each(skips.begin(), skips.end(),
-             boost::bind(&Skip::skip, _1, boost::ref(primary)));
+    Mutex::ScopedLock l(lock);
+    checkState(SENDING, "Too late for prepare");
+    state = PREPARING;
     txQueue->deliver(TxPrepareEvent().message());
     return true;
 }
@@ -208,6 +214,7 @@ void PrimaryTxObserver::commit() {
     Mutex::ScopedLock l(lock);
     checkState(PREPARING, "Cannot commit, not preparing");
     if (incomplete.size() == 0) {
+        skip(l); // Tell local replicating subscriptions to skip tx enqueue/dequeue.
         txQueue->deliver(TxCommitEvent().message());
         end(l);
     } else {

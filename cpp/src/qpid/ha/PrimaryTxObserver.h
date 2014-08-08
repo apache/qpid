@@ -99,6 +99,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     PrimaryTxObserver(Primary&, HaBroker&, const boost::intrusive_ptr<broker::TxBuffer>&);
     void initialize();
 
+    void skip(sys::Mutex::ScopedLock&);
     void checkState(State expect, const std::string& msg);
     void end(sys::Mutex::ScopedLock&);
     void txPrepareOkEvent(const std::string& data);
@@ -120,7 +121,7 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     types::Uuid id;
     std::string exchangeName;
     QueuePtr txQueue;
-    QueueIdsMap enqueues;
+    QueueIdsMap enqueues, dequeues;
     UuidSet backups;            // All backups of transaction.
     UuidSet incomplete;         // Incomplete backups (not yet responded to prepare)
     bool empty;                 // True if the transaction is empty - no enqueues/dequeues.
