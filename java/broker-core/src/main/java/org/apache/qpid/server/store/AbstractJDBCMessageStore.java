@@ -473,7 +473,11 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
                     if (results == 0)
                     {
-                        getLogger().warn("Message metadata not found for message id " + messageId);
+                        if (getLogger().isDebugEnabled())
+                        {
+                            getLogger().debug("Message id " + messageId
+                                              + " not found (attempt to remove failed - probably application initiated rollback)");
+                        }
                     }
 
                     if (getLogger().isDebugEnabled())
@@ -482,7 +486,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                     }
 
                     stmt = conn.prepareStatement(DELETE_FROM_MESSAGE_CONTENT);
-                    stmt.setLong(1,messageId);
+                    stmt.setLong(1, messageId);
                     results = stmt.executeUpdate();
                 }
                 finally
@@ -1492,7 +1496,6 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                 if(stored())
                 {
                     checkMessageStoreOpen();
-                    getLogger().debug("GET CONTENT for message id " + _messageId);
                     data = AbstractJDBCMessageStore.this.getAllContent(_messageId);
                     T metaData = _messageDataRef.getMetaData();
                     if (metaData == null)
@@ -1568,7 +1571,10 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         @Override
         public void remove()
         {
-            getLogger().debug("REMOVE called on message: " + _messageId);
+            if (getLogger().isDebugEnabled())
+            {
+                getLogger().debug("REMOVE called on message: " + _messageId);
+            }
             checkMessageStoreOpen();
 
             int delta = getMetaData().getContentSize();
@@ -1605,7 +1611,6 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         {
             if (!stored())
             {
-                getLogger().debug("STORING message id " + _messageId);
                 storeMetaData(conn, _messageId, _messageDataRef.getMetaData());
                 AbstractJDBCMessageStore.this.addContent(conn, _messageId,
                                                                _messageDataRef.getData() == null
@@ -1636,7 +1641,6 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
                     Pointer(final MessageData<T> ref)
                     {
-                        getLogger().debug("POST COMMIT for message id " + _messageId);
                         _ref = ref;
                     }
 

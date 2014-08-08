@@ -388,10 +388,11 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                     OperationStatus status = getMessageMetaDataDb().delete(tx, key);
                     if (status == OperationStatus.NOTFOUND)
                     {
-                        getLogger().info(
-                                "Message not found (attempt to remove failed - probably application initiated rollback) "
-                                +
-                                messageId);
+                        if (getLogger().isDebugEnabled())
+                        {
+                            getLogger().debug("Message id " + messageId
+                                + " not found (attempt to remove failed - probably application initiated rollback)");
+                        }
                     }
 
                     if (getLogger().isDebugEnabled())
@@ -426,7 +427,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                     catch(DatabaseException e2)
                     {
                         getLogger().warn(
-                                "Unable to abort transaction after LockConflictExcption on removal of message with id "
+                                "Unable to abort transaction after LockConflictException on removal of message with id "
                                 + messageId,
                                 e2);
                         // rethrow the original log conflict exception, the secondary exception should already have
