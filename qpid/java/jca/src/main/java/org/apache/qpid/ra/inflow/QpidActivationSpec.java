@@ -452,7 +452,7 @@ public class QpidActivationSpec extends ConnectionFactoryProperties implements A
 
    /**
     * Set the prefetch low
-    * @param value The value
+    * @param prefetchLow The value
     */
    public void setPrefetchLow(final Integer prefetchLow)
    {
@@ -480,7 +480,7 @@ public class QpidActivationSpec extends ConnectionFactoryProperties implements A
 
    /**
     * Set the prefetch high
-    * @param value The value
+    * @param prefetchHigh The value
     */
    public void setPrefetchHigh(final Integer prefetchHigh)
    {

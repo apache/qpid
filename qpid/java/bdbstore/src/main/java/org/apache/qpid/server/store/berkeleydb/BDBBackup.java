@@ -41,41 +41,38 @@ import java.util.Properties;
 
 /**
  * BDBBackup is a utility for taking hot backups of the current state of a BDB transaction log database.
- *
- * <p/>This utility makes the following assumptions/performs the following actions:
- *
- * <p/><ul> <li>The from and to directory locations will already exist. This scripts does not create them. <li>If this
+ * <p>
+ * This utility makes the following assumptions/performs the following actions:
+ * <p>
+ * <ul> <li>The from and to directory locations will already exist. This scripts does not create them. <li>If this
  * script fails to complete in one minute it will terminate. <li>This script always exits with code 1 on error, code 0
  * on success (standard unix convention). <li>This script will log out at info level, when it starts and ends and a list
  * of all files backed up. <li>This script logs all errors at error level. <li>This script does not perform regular
  * backups, wrap its calling script in a cron job or similar to do this. </ul>
- *
- * <p/>This utility is build around the BDB provided backup helper utility class, DbBackup. This utility class provides
+ * <p>
+ * This utility is build around the BDB provided backup helper utility class, DbBackup. This utility class provides
  * an ability to force BDB to stop writing to the current log file set, whilst the backup is taken, to ensure that a
  * consistent snapshot is acquired. Preventing BDB from writing to the current log file set, does not stop BDB from
  * continuing to run concurrently while the backup is running, it simply moves onto a new set of log files; this
  * provides a 'hot' backup facility.
- *
- * <p/>DbBackup can also help with incremental backups, by providing the number of the last log file backed up.
+ * <p>
+ * DbBackup can also help with incremental backups, by providing the number of the last log file backed up.
  * Subsequent backups can be taken, from later log files only. In a messaging application, messages are not expected to
  * be long-lived in most cases, so the log files will usually have been completely turned over between backups. This
  * utility does not support incremental backups for this reason.
- *
- * <p/>If the database is locked by BDB, as is required when using transactions, and therefore will always be the case
+ * <p>
+ * If the database is locked by BDB, as is required when using transactions, and therefore will always be the case
  * in Qpid, this utility cannot make use of the DbBackup utility in a seperate process. DbBackup, needs to ensure that
  * the BDB envinronment used to take the backup has exclusive write access to the log files. This utility can take a
  * backup as a standalone utility against log files, when a broker is not running, using the {@link #takeBackup(String,
  *String,com.sleepycat.je.Environment)} method.
- *
- * <p/>A seperate backup machanism is provided by the {@link #takeBackupNoLock(String,String)} method which can take a
+ * <p>
+ * A seperate backup machanism is provided by the {@link #takeBackupNoLock(String,String)} method which can take a
  * hot backup against a running broker. This works by finding out the set of files to copy, and then opening them all to
  * read, and repeating this process until a consistent set of open files is obtained. This is done to avoid the
  * situation where the BDB cleanup thread deletes a file, between the directory listing and opening of the file to copy.
  * All consistently opened files are copied. This is the default mechanism the the {@link #main} method of this utility
  * uses.
- *
- * <p/><table id="crc><caption>CRC Card</caption> <tr><th> Responsibilities <th> Collaborations <tr><td> Hot copy all
- * BDB log files from one directory to another. </table>
  */
 public class BDBBackup
 {
@@ -102,10 +99,10 @@ public class BDBBackup
     /**
      * Runs a backup of the BDB log files in a specified directory, copying the backed up files to another specified
      * directory.
-     *
-     * <p/>The following arguments must be specified:
-     *
-     * <p/><table><caption>Command Line</caption> <tr><th> Option <th> Comment <tr><td> -fromdir <td> The path to the
+     * <p>
+     * The following arguments must be specified:
+     * <table>
+     * <caption>Command Line</caption> <tr><th> Option <th> Comment <tr><td> -fromdir <td> The path to the
      * directory to back the bdb log file from. <tr><td> -todir   <td> The path to the directory to save the backed up
      * bdb log files to. </table>
      *

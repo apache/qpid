@@ -1230,7 +1230,6 @@ public class QpidRASessionImpl implements Session, QueueSession, TopicSession, X
    /**
     * Get the XA resource
     * @return The XA resource
-    * @exception IllegalStateException If non XA connection
     */
    public XAResource getXAResource()
    {
@@ -1713,8 +1712,8 @@ public class QpidRASessionImpl implements Session, QueueSession, TopicSession, X
    }
 
    /**
-    * @throws SystemException
-    * @throws RollbackException
+    * throws SystemException
+    * throws RollbackException
     *
     */
    public void checkState() throws JMSException
