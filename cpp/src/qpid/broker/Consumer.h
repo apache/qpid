@@ -91,6 +91,9 @@ class Consumer : public QueueCursor {
 
     const std::string& getTag() const { return tag; }
 
+    /** Called when there are no more messages immediately available for this consumer on the queue */
+    virtual void stopped() {}
+
   protected:
     //framing::SequenceNumber position;
     const std::string tag;  // <destination> from AMQP 0-10 Message.subscribe command
