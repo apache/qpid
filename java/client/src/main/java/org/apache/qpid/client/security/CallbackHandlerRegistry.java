@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.client.security;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.util.FileUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -38,6 +33,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.util.FileUtils;
 
 /**
  * CallbackHandlerRegistry is a registry for call back handlers for user authentication and interaction during user
@@ -75,7 +75,7 @@ public class CallbackHandlerRegistry
     /** Ordered collection of mechanisms for which callback handlers exist. */
     private Collection<String> _mechanisms;
 
-    private static final Collection<String> MECHS_THAT_NEED_USERPASS = Arrays.asList(new String [] {"PLAIN", "AMQPLAIN", "CRAM-MD5","CRAM-MD5-HASHED"});
+    private static final Collection<String> MECHS_THAT_NEED_USERPASS = Arrays.asList(new String [] {"PLAIN", "AMQPLAIN", "CRAM-MD5","CRAM-MD5-HASHED", "SCRAM-SHA-1", "SCRAM-SHA-256"});
 
     static
     {
