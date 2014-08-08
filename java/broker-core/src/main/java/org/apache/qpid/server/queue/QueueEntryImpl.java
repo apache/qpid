@@ -210,7 +210,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public boolean acquire(ConsumerImpl sub)
     {
-        final boolean acquired = acquire(((QueueConsumer<?>)sub).getOwningState());
+        final boolean acquired = acquire(((QueueConsumer<?>)sub).getOwningState().getLockedState());
         if(acquired)
         {
             _deliveryCountUpdater.compareAndSet(this,-1,0);
@@ -218,17 +218,57 @@ public abstract class QueueEntryImpl implements QueueEntry
         return acquired;
     }
 
+    @Override
+    public boolean lockAcquisition()
+    {
+        EntryState state = _state;
+        if(state instanceof ConsumerAcquiredState)
+        {
+            return _stateUpdater.compareAndSet(this, state, ((ConsumerAcquiredState)state).getLockedState());
+        }
+        return state instanceof LockedAcquiredState;
+    }
+
+    @Override
+    public boolean unlockAcquisition()
+    {
+        EntryState state = _state;
+        if(state instanceof LockedAcquiredState)
+        {
+            return _stateUpdater.compareAndSet(this, state, ((LockedAcquiredState)state).getUnlockedState());
+        }
+        return false;
+    }
+
     public boolean acquiredByConsumer()
     {
 
-        return (_state instanceof ConsumerAcquiredState);
+        return (_state instanceof ConsumerAcquiredState) || (_state instanceof LockedAcquiredState);
     }
 
+    @Override
     public boolean isAcquiredBy(ConsumerImpl consumer)
     {
         EntryState state = _state;
-        return state instanceof ConsumerAcquiredState
-               && ((ConsumerAcquiredState)state).getConsumer() == consumer;
+        return (state instanceof ConsumerAcquiredState
+               && ((ConsumerAcquiredState)state).getConsumer() == consumer)
+                || (state instanceof LockedAcquiredState
+                    && ((LockedAcquiredState)state).getConsumer() == consumer);
+    }
+
+    @Override
+    public boolean removeAcquisitionFromConsumer(ConsumerImpl consumer)
+    {
+        EntryState state = _state;
+        if(state instanceof ConsumerAcquiredState
+               && ((ConsumerAcquiredState)state).getConsumer() == consumer)
+        {
+            return _stateUpdater.compareAndSet(this,state,NON_CONSUMER_ACQUIRED_STATE);
+        }
+        else
+        {
+            return false;
+        }
     }
 
     public void release()
@@ -238,7 +278,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, AVAILABLE_STATE))
         {
 
-            if(state instanceof ConsumerAcquiredState)
+            if(state instanceof ConsumerAcquiredState || state instanceof LockedAcquiredState)
             {
                 getQueue().decrementUnackedMsgCount(this);
             }
@@ -267,6 +307,10 @@ public abstract class QueueEntryImpl implements QueueEntry
         if (state instanceof ConsumerAcquiredState)
         {
             return (QueueConsumer) ((ConsumerAcquiredState) state).getConsumer();
+        }
+        else if (state instanceof LockedAcquiredState)
+        {
+            return (QueueConsumer) ((LockedAcquiredState) state).getConsumer();
         }
         else
         {
@@ -312,7 +356,7 @@ public abstract class QueueEntryImpl implements QueueEntry
 
         if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, DEQUEUED_STATE))
         {
-            if (state instanceof ConsumerAcquiredState)
+            if (state instanceof ConsumerAcquiredState || state instanceof LockedAcquiredState)
             {
                 getQueue().decrementUnackedMsgCount(this);
             }

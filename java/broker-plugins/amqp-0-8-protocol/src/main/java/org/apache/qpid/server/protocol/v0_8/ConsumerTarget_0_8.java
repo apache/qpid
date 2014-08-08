@@ -20,11 +20,16 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -34,13 +39,9 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.StateChangeListener;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Encapsulation of a subscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
@@ -57,7 +58,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                                          final MessageInstance.State oldSate,
                                          final MessageInstance.State newState)
                 {
-                    if (oldSate == QueueEntry.State.ACQUIRED && (newState == QueueEntry.State.AVAILABLE || newState == QueueEntry.State.DEQUEUED))
+                    if (oldSate == QueueEntry.State.ACQUIRED && newState != QueueEntry.State.ACQUIRED)
                     {
                         restoreCredit(entry.getMessage());
                     }
@@ -74,8 +75,8 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
 
     public static ConsumerTarget_0_8 createBrowserTarget(AMQChannel channel,
-                                                             AMQShortString consumerTag, FieldTable filters,
-                                                             FlowCreditManager creditManager) throws AMQException
+                                                         AMQShortString consumerTag, FieldTable filters,
+                                                         FlowCreditManager creditManager) throws AMQException
     {
         return new BrowserConsumer(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
     }
@@ -555,6 +556,11 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                 }
             }
         });
+    }
+
+    @Override
+    public void acquisitionRemoved(final MessageInstance node)
+    {
     }
 
     public long getUnacknowledgedBytes()

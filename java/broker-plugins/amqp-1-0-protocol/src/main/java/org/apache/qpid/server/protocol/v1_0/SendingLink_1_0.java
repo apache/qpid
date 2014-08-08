@@ -636,19 +636,21 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     AutoCommitTransaction txn = new AutoCommitTransaction(_vhost.getMessageStore());
                     if(_consumer.acquires())
                     {
-                        txn.dequeue(Collections.singleton(queueEntry),
-                                new ServerTransaction.Action()
-                                {
-                                    public void postCommit()
-                                    {
-                                        queueEntry.delete();
-                                    }
+                        if(queueEntry.acquire() || queueEntry.isAcquired())
+                        {
+                            txn.dequeue(Collections.singleton(queueEntry),
+                                        new ServerTransaction.Action()
+                                        {
+                                            public void postCommit()
+                                            {
+                                                queueEntry.delete();
+                                            }
 
-                                    public void onRollback()
-                                    {
-                                        //To change body of implemented methods use File | Settings | File Templates.
-                                    }
-                                });
+                                            public void onRollback()
+                                            {
+                                            }
+                                        });
+                        }
                     }
                 }
                 else if(outcome instanceof Released)

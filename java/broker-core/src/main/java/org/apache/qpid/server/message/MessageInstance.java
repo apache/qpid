@@ -51,6 +51,8 @@ public interface MessageInstance
 
     boolean isAcquiredBy(ConsumerImpl consumer);
 
+    boolean removeAcquisitionFromConsumer(ConsumerImpl consumer);
+
     void setRedelivered();
 
     boolean isRedelivered();
@@ -66,6 +68,10 @@ public interface MessageInstance
     boolean expired();
 
     boolean acquire(ConsumerImpl sub);
+
+    boolean lockAcquisition();
+
+    boolean unlockAcquisition();
 
     int getMaximumDeliveryCount();
 
@@ -99,6 +105,7 @@ public interface MessageInstance
             State currentState = getState();
             return currentState == State.DEQUEUED || currentState == State.DELETED;
         }
+
     }
 
 
@@ -162,10 +169,12 @@ public interface MessageInstance
     public final class ConsumerAcquiredState<C extends ConsumerImpl> extends EntryState
     {
         private final C _consumer;
+        private final LockedAcquiredState<C> _lockedState;
 
         public ConsumerAcquiredState(C consumer)
         {
             _consumer = consumer;
+            _lockedState = new LockedAcquiredState<>(this);
         }
 
 
@@ -182,6 +191,43 @@ public interface MessageInstance
         public String toString()
         {
             return "{" + getState().name() + " : " + _consumer +"}";
+        }
+
+        public LockedAcquiredState<C> getLockedState()
+        {
+            return _lockedState;
+        }
+
+    }
+
+    public final class LockedAcquiredState<C extends ConsumerImpl> extends EntryState
+    {
+        private final ConsumerAcquiredState<C> _acquiredState;
+
+        public LockedAcquiredState(final ConsumerAcquiredState<C> acquiredState)
+        {
+            _acquiredState = acquiredState;
+        }
+
+        @Override
+        public State getState()
+        {
+            return State.ACQUIRED;
+        }
+
+        public C getConsumer()
+        {
+            return _acquiredState.getConsumer();
+        }
+
+        public String toString()
+        {
+            return "{" + getState().name() + " : " + _acquiredState.getConsumer() +"}";
+        }
+
+        public ConsumerAcquiredState<C> getUnlockedState()
+        {
+            return _acquiredState;
         }
     }
 

@@ -39,6 +39,8 @@ public interface QueueConsumer<X extends QueueConsumer<X>> extends ConsumerImpl,
 
     void send(QueueEntry entry, boolean batch);
 
+    void acquisitionRemoved(QueueEntry node);
+
     void queueDeleted();
 
     SubFlushRunner getRunner();

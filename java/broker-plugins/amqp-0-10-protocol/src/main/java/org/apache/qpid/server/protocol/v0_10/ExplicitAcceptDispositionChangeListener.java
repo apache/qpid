@@ -41,13 +41,13 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onAccept()
     {
-        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
+        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()) && _entry.lockAcquisition())
         {
             _target.getSessionModel().acknowledge(_target, _entry);
         }
         else
         {
-            _logger.warn("MessageAccept received for message which has not been acquired (likely client error)");
+            _logger.info("MessageAccept received for message which is not been acquired - message may have expired or been removed");
         }
 
     }
@@ -60,7 +60,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
         }
         else
         {
-            _logger.warn("MessageRelease received for message which has not been acquired (likely client error)");
+            _logger.warn("MessageRelease received for message which has not been acquired - message may have expired or been removed");
         }
     }
 
@@ -72,7 +72,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
         }
         else
         {
-            _logger.warn("MessageReject received for message which has not been acquired (likely client error)");
+            _logger.warn("MessageReject received for message which has not been acquired - message may have expired or been removed");
         }
 
     }
