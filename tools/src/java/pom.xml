@@ -27,7 +27,7 @@
   <groupId>org.apache.qpid</groupId>
   <artifactId>qpid-qmf2-parent</artifactId>
   <name>Qpid QMF2 Parent</name>
-  <version>0.30-SNAPSHOT</version>
+  <version>0.32-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
