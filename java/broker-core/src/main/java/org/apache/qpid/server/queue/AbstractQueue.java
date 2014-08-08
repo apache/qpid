@@ -2549,7 +2549,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                                                                                         final ServerTransaction txn,
                                                                                         final Action<? super MessageInstance> postEnqueueAction)
     {
-            txn.enqueue(this,message, new ServerTransaction.Action()
+        if(!message.isReferenced(this))
+        {
+            txn.enqueue(this, message, new ServerTransaction.Action()
             {
                 MessageReference _reference = message.newReference();
 
@@ -2571,6 +2573,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                 }
             });
             return 1;
+        }
+        else
+        {
+            return 0;
+        }
 
     }
 

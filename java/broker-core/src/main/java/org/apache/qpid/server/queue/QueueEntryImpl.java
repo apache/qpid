@@ -103,7 +103,7 @@ public abstract class QueueEntryImpl implements QueueEntry
     {
         _queueEntryList = queueEntryList;
 
-        _message = message == null ? null : message.newReference();
+        _message = message == null ? null : message.newReference(queueEntryList.getQueue());
 
         _entryIdUpdater.set(this, entryId);
         populateInstanceProperties();
@@ -112,7 +112,7 @@ public abstract class QueueEntryImpl implements QueueEntry
     public QueueEntryImpl(QueueEntryList queueEntryList, ServerMessage message)
     {
         _queueEntryList = queueEntryList;
-        _message = message == null ? null :  message.newReference();
+        _message = message == null ? null :  message.newReference(queueEntryList.getQueue());
         populateInstanceProperties();
     }
 

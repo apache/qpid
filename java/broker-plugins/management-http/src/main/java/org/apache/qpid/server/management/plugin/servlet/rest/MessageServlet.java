@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageDeletedException;
@@ -44,6 +45,7 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 public class MessageServlet extends AbstractServlet
 {
@@ -212,7 +214,11 @@ public class MessageServlet extends AbstractServlet
         @Override
         protected void updateEntry(QueueEntry entry, VirtualHost.Transaction txn)
         {
-            txn.move(entry, _destinationQueue);
+            ServerMessage msg = entry.getMessage();
+            if(msg != null && !msg.isReferenced((TransactionLogResource)_destinationQueue))
+            {
+                txn.move(entry, _destinationQueue);
+            }
         }
     }
 
@@ -229,7 +235,11 @@ public class MessageServlet extends AbstractServlet
         @Override
         protected void updateEntry(QueueEntry entry, VirtualHost.Transaction txn)
         {
-            txn.copy(entry, _destinationQueue);
+            ServerMessage msg = entry.getMessage();
+            if(msg != null && !msg.isReferenced((TransactionLogResource)_destinationQueue))
+            {
+                txn.copy(entry, _destinationQueue);
+            }
         }
     }
 

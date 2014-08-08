@@ -21,6 +21,7 @@
 
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -60,6 +61,7 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.queue.AbstractQueue.QueueEntryFilter;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -1157,6 +1159,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
 
         when(message.newReference()).thenReturn(ref);
+        when(message.newReference(any(TransactionLogResource.class))).thenReturn(ref);
 
         return message;
     }

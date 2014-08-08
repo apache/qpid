@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.server.txn;
 
+import java.nio.ByteBuffer;
+
 import org.apache.commons.lang.NotImplementedException;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.StoredMessage;
-
-import java.nio.ByteBuffer;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 /**
  * Mock Server Message allowing its persistent flag to be controlled from test.
@@ -55,6 +56,24 @@ class MockServerMessage implements ServerMessage
     public MessageReference newReference()
     {
         throw new NotImplementedException();
+    }
+
+    @Override
+    public MessageReference newReference(final TransactionLogResource object)
+    {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public boolean isReferenced(final TransactionLogResource resource)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isReferenced()
+    {
+        return false;
     }
 
     public boolean isImmediate()
