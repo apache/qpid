@@ -41,7 +41,7 @@ import org.apache.qpid.util.SystemUtils;
 /**
  * An abstract application registry that provides access to configuration information and handles the
  * construction and caching of configurable objects.
- * <p/>
+ * <p>
  * Subclasses should handle the construction of the "registered objects" such as the exchange registry.
  */
 public class ApplicationRegistry implements IApplicationRegistry

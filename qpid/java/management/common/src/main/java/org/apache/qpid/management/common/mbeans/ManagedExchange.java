@@ -134,8 +134,8 @@ public interface ManagedExchange
     /**
      * Removes an exchange binding from a queue.
      * 
-     * @param exchangeName the Exchange name
-     * @param routingKey the routing key
+     * @param queueName the Queue name
+     * @param binding the binding key
      * @throws IOException
      * @throws JMException
      * @since Qpid JMX API 1.8

@@ -54,13 +54,8 @@ public interface MessageSource extends TransactionLogResource, MessageNode
     /**
      * ExistingExclusiveConsumer signals a failure to create a consumer, because an exclusive consumer
      * already exists.
-     *
-     * <p/><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create a consumer, because an exclusive consumer already exists.
-     * </table>
-     *     *
-     * @todo Move to top level, used outside this class.
+     * <p>
+     * TODO Move to top level, used outside this class.
      */
     static final class ExistingExclusiveConsumer extends Exception
     {
@@ -73,13 +68,8 @@ public interface MessageSource extends TransactionLogResource, MessageNode
     /**
      * ExistingConsumerPreventsExclusive signals a failure to create an exclusive consumer, as a consumer
      * already exists.
-     *
-     * <p/><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create an exclusive consumer, as a consumer already exists.
-     * </table>
-     *     *
-     * @todo Move to top level, used outside this class.
+     * <p>
+     * TODO Move to top level, used outside this class.
      */
     static final class ExistingConsumerPreventsExclusive extends Exception
     {

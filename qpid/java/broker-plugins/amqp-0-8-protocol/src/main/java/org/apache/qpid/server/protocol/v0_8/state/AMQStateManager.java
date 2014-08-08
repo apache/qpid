@@ -43,8 +43,9 @@ import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
- * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
- * there is a separate state manager.
+ * The state manager is responsible for managing the state of the protocol session.
+ * <p>
+ * For each AMQProtocolHandler there is a separate state manager.
  */
 public class AMQStateManager implements AMQMethodListener
 {

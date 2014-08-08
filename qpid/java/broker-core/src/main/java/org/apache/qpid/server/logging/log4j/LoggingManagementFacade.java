@@ -122,11 +122,11 @@ public class LoggingManagementFacade
     /** The log4j XML configuration file DTD defines three possible element
      * combinations for specifying optional logger+level settings.
      * Must account for the following:
-     *
-     * <category name="x"> <priority value="y"/> </category>    OR
-     * <category name="x"> <level value="y"/> </category>    OR
-     * <logger name="x"> <level value="y"/> </logger>
-     *
+     * <p>
+     * {@literal <category name="x"> <priority value="y"/> </category>} OR
+     * {@literal <category name="x"> <level value="y"/> </category>} OR
+     * {@literal <logger name="x"> <level value="y"/> </logger>}
+     * <p>
      * Noting also that the level/priority child element is optional too,
      * and not the only possible child element.
      */
@@ -171,10 +171,10 @@ public class LoggingManagementFacade
      * The log4j XML configuration file DTD defines 2 possible element
      * combinations for specifying the optional root logger level settings
      * Must account for the following:
-     *
-     * <root> <priority value="y"/> </root>    OR
-     * <root> <level value="y"/> </root>
-     *
+     * <p>
+     * {@literal <root> <priority value="y"/> </root> } OR
+     * {@literal <root> <level value="y"/> </root>}
+     * <p>
      * Noting also that the level/priority child element is optional too,
      * and not the only possible child element.
      */

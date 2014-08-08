@@ -49,9 +49,6 @@ import org.apache.qpid.server.security.access.Permission;
 
 /**
  * Models the rule configuration for the access control plugin.
- *
- * The access control rule definitions are loaded from an external configuration file, passed in as the
- * target to the {@link load(ConfigurationFile)} method. The file specified
  */
 public class RuleSet implements EventLoggerProvider
 {
