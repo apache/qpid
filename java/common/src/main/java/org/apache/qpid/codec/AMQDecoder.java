@@ -20,6 +20,16 @@
  */
 package org.apache.qpid.codec;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQDataBlockDecoder;
 import org.apache.qpid.framing.AMQFrameDecodingException;
@@ -30,16 +40,6 @@ import org.apache.qpid.framing.ByteArrayDataInput;
 import org.apache.qpid.framing.EncodingUtils;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
-import java.io.ByteArrayInputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
 
 /**
  * AMQDecoder delegates the decoding of AMQP either to a data block decoder, or in the case of new connections, to a
@@ -92,6 +92,11 @@ public class AMQDecoder
     public void setExpectProtocolInitiation(boolean expectProtocolInitiation)
     {
         _expectProtocolInitiation = expectProtocolInitiation;
+    }
+
+    public void setMaxFrameSize(final long frameMax)
+    {
+        _dataBlockDecoder.setMaxFrameSize(frameMax);
     }
 
     private class RemainingByteArrayInputStream extends InputStream

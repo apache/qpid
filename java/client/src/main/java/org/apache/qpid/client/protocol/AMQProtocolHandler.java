@@ -47,7 +47,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
-import org.apache.qpid.codec.AMQCodecFactory;
+import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -165,7 +165,7 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     /** Object to lock on when changing the latch */
     private Object _failoverLatchChange = new Object();
-    private AMQCodecFactory _codecFactory;
+    private AMQDecoder _decoder;
 
     private ProtocolVersion _suggestedProtocolVersion;
 
@@ -189,7 +189,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         _connection = con;
         _protocolSession = new AMQProtocolSession(this, _connection);
         _stateManager = new AMQStateManager(_protocolSession);
-        _codecFactory = new AMQCodecFactory(false, _protocolSession);
+        _decoder = new AMQDecoder(false, _protocolSession);
         _failoverHandler = new FailoverHandler(this);
     }
 
@@ -460,7 +460,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         _lastReadTime = System.currentTimeMillis();
         try
         {
-            final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
+            final ArrayList<AMQDataBlock> dataBlocks = _decoder.decodeBuffer(msg);
 
             // Decode buffer
             int size = dataBlocks.size();
@@ -943,5 +943,10 @@ public class AMQProtocolHandler implements ProtocolEngine
     public void heartbeatBodyReceived()
     {
         _heartbeatListener.heartbeatReceived();
+    }
+
+    public void setMaxFrameSize(final long frameMax)
+    {
+        _decoder.setMaxFrameSize(frameMax == 0l ? 0xffffffffl : frameMax);
     }
 }

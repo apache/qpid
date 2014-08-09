@@ -33,6 +33,7 @@ import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.transport.Constant;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
@@ -91,7 +92,9 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
             _network = network;
 
             _connection.setNetworkConnection(network);
-            _connection.setSender(new Disassembler(wrapSender(sender), MAX_FRAME_SIZE));
+            Disassembler disassembler = new Disassembler(wrapSender(sender), Constant.MIN_MAX_FRAME_SIZE);
+            _connection.setSender(disassembler);
+            _connection.addFrameSizeObserver(disassembler);
             // FIXME Two log messages to maintain compatibility with earlier protocol versions
             _connection.getEventLogger().message(ConnectionMessages.OPEN(null, "0-10", null, null, false, true, false, false));
 
