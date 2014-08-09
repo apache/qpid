@@ -159,7 +159,7 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
         }
         else
         {
-            doAMQP08test(8192, new ResultEvaluator()
+            doAMQP08test(10000, new ResultEvaluator()
                                 {
 
                                     @Override
