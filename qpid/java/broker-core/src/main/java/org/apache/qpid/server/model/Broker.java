@@ -78,6 +78,11 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     @ManagedContextDefault(name = BROKER_FLOW_TO_DISK_THRESHOLD)
     public static final long DEFAULT_FLOW_TO_DISK_THRESHOLD = (long)(0.4 * (double)Runtime.getRuntime().maxMemory());
 
+    String BROKER_FRAME_SIZE = "qpid.broker_frame_size";
+    @ManagedContextDefault(name = BROKER_FRAME_SIZE)
+    long DEFAULT_FRAME_SIZE = 65535;
+
+
     @DerivedAttribute
     String getBuildVersion();
 

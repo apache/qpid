@@ -21,6 +21,12 @@
 package org.apache.qpid.codec;
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+
 import junit.framework.TestCase;
 
 import org.apache.qpid.framing.AMQDataBlock;
@@ -29,23 +35,15 @@ import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.HeartbeatBody;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-
 public class AMQDecoderTest extends TestCase
 {
 
-    private AMQCodecFactory _factory;
     private AMQDecoder _decoder;
 
 
     public void setUp()
     {
-        _factory = new AMQCodecFactory(false, null);
-        _decoder = _factory.getDecoder();
+        _decoder = new AMQDecoder(false, null);
     }
    
     

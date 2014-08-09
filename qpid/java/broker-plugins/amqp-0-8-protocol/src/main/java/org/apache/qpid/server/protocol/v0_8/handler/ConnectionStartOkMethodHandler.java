@@ -32,7 +32,6 @@ import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
@@ -59,7 +58,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
     public void methodReceived(AMQStateManager stateManager, ConnectionStartOkBody body, int channelId) throws AMQException
     {
-        Broker broker = stateManager.getBroker();
+        Broker<?> broker = stateManager.getBroker();
         AMQProtocolSession session = stateManager.getProtocolSession();
 
         _logger.info("SASL Mechanism selected: " + body.getMechanism());
@@ -113,7 +112,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
                     ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
-                                                                                          BrokerProperties.FRAME_SIZE,
+                                                                                          broker.getContextValue(Long.class,Broker.BROKER_FRAME_SIZE),
                                                                                           broker.getConnection_heartBeatDelay());
                     session.writeFrame(tuneBody.generateFrame(0));
                     break;

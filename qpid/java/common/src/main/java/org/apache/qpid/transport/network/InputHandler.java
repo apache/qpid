@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.transport.network;
 
-import org.apache.qpid.transport.ProtocolError;
-import org.apache.qpid.transport.ProtocolHeader;
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.SegmentType;
-
 import static org.apache.qpid.transport.network.InputHandler.State.ERROR;
 import static org.apache.qpid.transport.network.InputHandler.State.FRAME_BODY;
 import static org.apache.qpid.transport.network.InputHandler.State.FRAME_HDR;
@@ -34,6 +29,13 @@ import static org.apache.qpid.transport.util.Functions.str;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import org.apache.qpid.transport.Constant;
+import org.apache.qpid.transport.FrameSizeObserver;
+import org.apache.qpid.transport.ProtocolError;
+import org.apache.qpid.transport.ProtocolHeader;
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.SegmentType;
+
 
 /**
  * InputHandler
@@ -41,15 +43,17 @@ import java.nio.ByteOrder;
  * @author Rafael H. Schloming
  */
 
-public class InputHandler implements Receiver<ByteBuffer>
+public class InputHandler implements Receiver<ByteBuffer>, FrameSizeObserver
 {
+
+    private int _maxFrameSize = Constant.MIN_MAX_FRAME_SIZE;
 
     public enum State
     {
         PROTO_HDR,
         FRAME_HDR,
         FRAME_BODY,
-        ERROR;
+        ERROR
     }
 
     private final Receiver<NetworkEvent> receiver;
@@ -81,6 +85,11 @@ public class InputHandler implements Receiver<ByteBuffer>
     public InputHandler(Receiver<NetworkEvent> receiver)
     {
         this(receiver, PROTO_HDR);
+    }
+
+    public void setMaxFrameSize(final int maxFrameSize)
+    {
+        _maxFrameSize = maxFrameSize;
     }
 
     private void error(String fmt, Object ... args)
@@ -158,7 +167,8 @@ public class InputHandler implements Receiver<ByteBuffer>
             type = SegmentType.get(input.get(pos + 1));
             int size = (0xFFFF & input.getShort(pos + 2));
             size -= Frame.HEADER_SIZE;
-            if (size < 0 || size > (64*1024 - 12))
+            _maxFrameSize = 64 * 1024;
+            if (size < 0 || size > (_maxFrameSize - 12))
             {
                 error("bad frame size: %d", size);
                 return ERROR;
