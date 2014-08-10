@@ -20,22 +20,81 @@
  -->
 <div class="queue">
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Queue Attributes',  open: true">
+
         <div class="clear">
             <div class="formLabel-labelCell">Name:</div>
-            <div class="name"></div>
+            <div class="name formValue-valueCell"></div>
         </div>
         <div class="clear">
-            <div class="formLabel-labelCell">State:</div>
-            <div class="state"></div>
+        <div class="alignLeft">
+            <div class="clear">
+                <div class="formLabel-labelCell">Type:</div>
+                <div class="type formValue-valueCell"></div>
+                <div class="typeQualifier formValue-valueCell"></div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">State:</div>
+                <div class="state formValue-valueCell"></div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">Durable:</div>
+                <div class="durable formValue-valueCell"></div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">Lifespan:</div>
+                <div class="lifetimePolicy formValue-valueCell"></div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">Persist Messages:</div>
+                <div class="messageDurability formValue-valueCell"></div>
+            </div>
         </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Durable:</div>
-            <div class="durable"></div>
+        <div class="alignRight">
+            <div>
+                <div class="formLabel-labelCell">Inbound:</div>
+                <div class="formValue-valueCell">
+                    <span class="msgInRate"></span>
+                    <span> msg/s</span>
+                    <span class="bytesInRate"></span>
+                    <span class="bytesInRateUnits"></span>
+                </div>
+            </div>
+            <div>
+                <div class="formLabel-labelCell">Outbound:</div>
+                <div class="formValue-valueCell">
+                    <span class="msgOutRate"></span>
+                    <span> msg/s</span>
+                    <span class="bytesOutRate"></span>
+                    <span class="bytesOutRateUnits"></span>
+                </div>
+            </div>
+            <div>
+                <div class="formLabel-labelCell">Size:</div>
+                <div class="formValue-valueCell">
+                    <span class="queueDepthMessages"></span>
+                    <span> msgs</span>
+                    <span class="queueDepthBytes">(</span>
+                    <span class="queueDepthBytesUnits">)</span>
+                </div>
+            </div>
+            <div>
+                <div class="formLabel-labelCell">Pre-fetched:</div>
+                <div class="formValue-valueCell">
+                    <span class="unacknowledgedMessages"></span>
+                    <span> msgs</span>
+                    <span class="unacknowledgedBytes">(</span>
+                    <span class="unacknowledgedBytesUnits">)</span>
+                </div>
+            </div>
+            <div>
+                <div class="formLabel-labelCell">Oldest Message Age:</div>
+                <div class="formValue-valueCell">
+                    <span class="oldestMessageAge"></span>
+                    <span> secs</span>
+                </div>
+            </div>
         </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Persist Messages:</div>
-            <div class="messageDurability"></div>
-        </div>
+        <div class="clear"></div>
         <div class="clear">
             <div class="formLabel-labelCell">Enforced Max. Ttl(ms):</div>
             <div class="maximumMessageTtl"></div>
@@ -53,55 +112,12 @@
             <div class="owner"></div>
         </div>
         <div class="clear">
-            <div class="formLabel-labelCell">Lifespan:</div>
-            <div class="lifetimePolicy"></div>
-        </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Type:</div>
-            <div>
-                <span class="type"></span>
-                <span class="typeQualifier"></span>
-            </div>
-        </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Size:</div>
-            <div>
-                <span class="queueDepthMessages"></span>
-                <span> msgs</span>
-                <span class="queueDepthBytes">(</span>
-                <span class="queueDepthBytesUnits">)</span>
-            </div>
-        </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Pre-fetched:</div>
-            <div>
-                <span class="unacknowledgedMessages"></span>
-                <span> msgs</span>
-                <span class="unacknowledgedBytes">(</span>
-                <span class="unacknowledgedBytesUnits">)</span>
-            </div>
-        </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Inbound:</div>
-            <div>
-                <span class="msgInRate"></span>
-                <span> msg/s</span>
-                <span class="bytesInRate">(</span>
-                <span class="bytesInRateUnits">)</span>
-            </div>
-        </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Outbound:</div>
-            <div>
-                <span class="msgOutRate"></span>
-                <span> msg/s</span>
-                <span class="bytesOutRate">(</span>
-                <span class="bytesOutRateUnits">)</span>
-            </div>
-        </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">AlternateExchange:</div>
+            <div class="formLabel-labelCell">Alternate Exchange:</div>
             <div class="alternateExchange"></div>
+        </div>
+        <div class="clear">
+            <div class="formLabel-labelCell">Maximum Delivery Attempts:</div>
+            <div class="maximumDeliveryAttempts"></div>
         </div>
         <div class="clear messageGroups">
           <div class="clear">
@@ -132,6 +148,25 @@
         <button data-dojo-type="dijit.form.Button" class="moveMessagesButton" type="button">Move Messages</button>
         <button data-dojo-type="dijit.form.Button" class="copyMessagesButton" type="button">Copy Messages</button>
     </div>
+    <br/>
+    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Flow Control Settings', open: false">
+        <div class="clear">
+            <div class="formLabel-labelCell">Capacity:</div>
+            <div>
+                <span class="queueFlowControlSizeBytes"></span>
+                <span>B</span>
+            </div>
+        </div>
+        <div class="clear">
+            <div class="formLabel-labelCell">Resume Capacity:</div>
+            <div>
+                <span class="queueFlowResumeSizeBytes"></span>
+                <span>B</span>
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+
     <br/>
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Thresholds', open: false">
       <div class="clear">
