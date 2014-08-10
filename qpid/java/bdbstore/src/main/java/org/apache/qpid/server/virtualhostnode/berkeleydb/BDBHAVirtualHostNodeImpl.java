@@ -71,7 +71,6 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironment
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicationGroupListener;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -324,7 +323,13 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
         finally
         {
-            stopEnvironment();
+            closeEnvironment();
+
+            // closing the environment does not cause a state change.  Adjust the role
+            // so that our observers will see DETACHED rather than our previous role in the group.
+            ReplicatedEnvironment.State detached = ReplicatedEnvironment.State.DETACHED;
+            _lastReplicatedEnvironmentState.set(detached);
+            attributeSet(ROLE, _role, detached);
 
             //Perhaps, having STOPPED operational logging could be sufficient. However, on START we still will be seeing 2 logs: ATTACHED and STARTED
             getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DETACHED(getName(), getGroupName()));
@@ -345,7 +350,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
     }
 
-    private void stopEnvironment()
+    private void closeEnvironment()
     {
         ReplicatedEnvironmentFacade environmentFacade = getReplicatedEnvironmentFacade();
         if (environmentFacade != null && _environmentFacade.compareAndSet(environmentFacade, null))
@@ -412,7 +417,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
         finally
         {
-            stopEnvironment();
+            closeEnvironment();
             getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DETACHED(getName(), getGroupName()));
         }
     }
@@ -909,7 +914,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                             }
                             finally
                             {
-                                stopEnvironment();
+                                closeEnvironment();
                             }
                             notifyStateChanged(state, State.ERRORED);
                         }
