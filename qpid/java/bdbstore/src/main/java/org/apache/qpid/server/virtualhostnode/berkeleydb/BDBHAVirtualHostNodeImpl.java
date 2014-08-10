@@ -852,6 +852,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 if (nodeState == null)
                 {
                     remoteNode.setRole(ReplicatedEnvironment.State.UNKNOWN.name());
+                    remoteNode.setLastTransactionId(-1);
                     if (!remoteNode.isDetached())
                     {
                         getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DETACHED(remoteNode.getName(), getGroupName()));

@@ -356,20 +356,20 @@ define(["dojo/_base/xhr",
                              that.vhostsGrid =
                                 new UpdatableStore(that.brokerData.virtualhostnodes, query(".broker-virtualhosts")[0],
                                                 [
-                                                  { name: "Node Name", field: "name", width: "15%"},
+                                                  { name: "Node Name", field: "name", width: "10%"},
                                                   { name: "Node State", field: "state", width: "10%"},
                                                   { name: "Node Type", field: "type", width: "10%"},
-                                                  { name: "Host Name", field: "_item", width: "15%",
+                                                  { name: "Host Name", field: "_item", width: "10%",
                                                     formatter: function(item){
                                                       return item && item.virtualhosts? item.virtualhosts[0].name: "N/A";
                                                     }
                                                   },
-                                                  { name: "Host State", field: "_item", width: "10%",
+                                                  { name: "Host State", field: "_item", width: "15%",
                                                     formatter: function(item){
                                                       return item && item.virtualhosts? item.virtualhosts[0].state: "N/A";
                                                     }
                                                   },
-                                                  { name: "Host Type", field: "_item", width: "10%",
+                                                  { name: "Host Type", field: "_item", width: "15%",
                                                       formatter: function(item){
                                                         return item && item.virtualhosts? item.virtualhosts[0].type: "N/A";
                                                       }
