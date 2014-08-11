@@ -1450,6 +1450,31 @@ QPID_AUTO_TEST_CASE(testSessionCheckError)
     }
 }
 
+QPID_AUTO_TEST_CASE(testImmediateNextReceiver)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out("test message");
+    sender.send(out);
+    fix.session.createReceiver(fix.queue).setCapacity(1);
+    Receiver next;
+    qpid::sys::AbsTime start = qpid::sys::now();
+    try {
+        while (!fix.session.nextReceiver(next, qpid::messaging::Duration::IMMEDIATE)) {
+            qpid::sys::Duration running(start, qpid::sys::now());
+            if (running > 5*qpid::sys::TIME_SEC) {
+                throw qpid::types::Exception("Timed out spinning on nextReceiver(IMMEDIATE)");
+            }
+        }
+        Message in;
+        BOOST_CHECK(next.fetch(in, qpid::messaging::Duration::IMMEDIATE));
+        BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+        next.close();
+    } catch (const std::exception& e) {
+        BOOST_FAIL(e.what());
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
