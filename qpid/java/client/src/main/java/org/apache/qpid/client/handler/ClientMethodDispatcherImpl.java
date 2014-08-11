@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.client.handler;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +31,6 @@ import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQMethodNotImplementedException;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.framing.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ClientMethodDispatcherImpl implements MethodDispatcher
 {
@@ -101,6 +101,10 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         }
         
         DispatcherFactory factory = _dispatcherFactories.get(version);
+        if(factory == null)
+        {
+            throw new UnsupportedOperationException("The protocol version " + version + " is not supported");
+        }
         return factory.createMethodDispatcher(session);
     }
 

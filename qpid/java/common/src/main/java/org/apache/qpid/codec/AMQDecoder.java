@@ -66,6 +66,8 @@ public class AMQDecoder
 
     private AMQMethodBodyFactory _bodyFactory;
 
+    private boolean _firstRead = true;
+
     private List<ByteArrayInputStream> _remainingBufs = new ArrayList<ByteArrayInputStream>();
 
     /**
@@ -237,6 +239,17 @@ public class AMQDecoder
         {
             bais = null;
             msg = new ByteArrayDataInput(buf.array(),buf.arrayOffset()+buf.position(), buf.remaining());
+        }
+
+        // If this is the first read then we may be getting a protocol initiation back if we tried to negotiate
+        // an unsupported version
+        if(_firstRead && buf.hasRemaining())
+        {
+            _firstRead = false;
+            if(!_expectProtocolInitiation && buf.get(buf.position()) > 8)
+            {
+                _expectProtocolInitiation = true;
+            }
         }
 
         boolean enoughData = true;

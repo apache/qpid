@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.AMQException;
+import org.apache.qpid.transport.TransportException;
 
-/**
- * AMQProtocolHeaderException indicates a format error in an AMQP frame header.
- * <p>
- * TODO Not an AMQP exception as no status code.
- */
-public class AMQProtocolHeaderException extends AMQException
+public class AMQProtocolHeaderException extends TransportException
 {
     public AMQProtocolHeaderException(String message, Throwable cause)
     {
-        super(null, message, cause);
+        super(message, cause);
     }
 }
